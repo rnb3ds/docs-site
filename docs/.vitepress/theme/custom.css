@@ -1,22 +1,22 @@
 /**
- * CyberGoDev 自定义主题样式
+ * CyberGoDev Custom Theme Styles
  */
 
 /* ============================================
-   品牌色彩系统
+   Theme Color System
    ============================================ */
 
 :root {
-  /* 主题色 - NVIDIA 绿色系 */
+  /* Brand colors - NVIDIA green palette */
   --vp-c-brand-1: #76b900;
   --vp-c-brand-2: #5a8b00;
   --vp-c-brand-3: #4a7500;
   --vp-c-brand-soft: rgba(118, 185, 0, 0.14);
 
-  /* 强调色 */
+  /* Accent color */
   --vp-c-accent: #76b900;
 
-  /* 分隔线颜色 */
+  /* Divider colors */
   --vp-c-divider: rgba(118, 185, 0, 0.15);
   --vp-c-gutter: rgba(118, 185, 0, 0.15);
 }
@@ -30,13 +30,13 @@
   --vp-c-gutter: rgba(142, 208, 0, 0.12);
 }
 
-/* 自定义容器 */
+/* Custom block */
 .custom-block {
   border-radius: 8px;
 }
 
 /* ============================================
-   项目卡片网格布局
+   Project Card Grid Layout
    ============================================ */
 
 .project-grid {
@@ -176,7 +176,7 @@
 }
 
 /* ============================================
-   Hero 区域增强
+   Hero Section Enhancements
    ============================================ */
 
 .VPHero .name {
@@ -230,7 +230,7 @@
   transform: translateY(-2px);
 }
 
-/* 特性卡片 */
+/* Feature cards */
 .VPFeature .icon {
   color: var(--vp-c-brand-1);
   font-size: 1.5rem;
@@ -259,18 +259,18 @@
   margin-bottom: 32px;
 }
 
-/* 代码块 */
+/* Code groups */
 .vp-code-group .tabs label {
   font-weight: 500;
 }
 
 /* ============================================
-   导航栏样式
+   Navigation Bar Styles
    ============================================ */
 
 /*
- * Safari / 某些浏览器会在 body 或 app 根元素添加顶部边框。
- * 用组合选择器提高特异性，避免 !important。
+ * Safari and some browsers add a top border to the body or app root element.
+ * Use compound selectors to increase specificity and avoid !important.
  */
 html.VPApp,
 body.VPApp,
@@ -304,13 +304,13 @@ body.VPApp,
   }
 }
 
-/* 深色模式导航栏 */
+/* Dark mode navbar */
 .dark .VPNavBar,
 .dark .VPNavBar .content-body {
   background: rgba(30, 30, 30, 0.8);
 }
 
-/* 滚动时增强 */
+/* Enhanced on scroll */
 .VPNavBar.scroll,
 .VPNavBar.scroll .content-body,
 .has-sidebar .VPNav .VPNavBar,
@@ -327,7 +327,7 @@ body.VPApp,
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.25);
 }
 
-/* 导航栏顶部品牌线 */
+/* Navbar top brand line */
 .VPNavBar::before {
   display: block;
   content: "";
@@ -350,7 +350,7 @@ body.VPApp,
   }
 }
 
-/* Safari 黑线修复 — 仅用组合选择器 */
+/* Safari black line fix — compound selectors only */
 .VPApp::before,
 .VPApp::after,
 .VPNav::after,
@@ -365,7 +365,7 @@ body.VPApp,
   content: none;
 }
 
-/* 移动端导航 */
+/* Mobile navigation */
 .VPNavScreen {
   border-top: none;
   background-color: rgba(255, 255, 255, 0.95);
@@ -377,7 +377,7 @@ body.VPApp,
   background-color: rgba(30, 30, 30, 0.95);
 }
 
-/* 内容区域间距 */
+/* Content area spacing */
 .VPContent {
   padding-top: 0;
 }
@@ -407,7 +407,7 @@ body.VPApp,
 }
 
 /* ============================================
-   侧边栏滚动条
+   Sidebar Scrollbar
    ============================================ */
 
 .VPSidebar::-webkit-scrollbar {
@@ -446,7 +446,7 @@ body.VPApp,
 }
 
 /* ============================================
-   行内代码样式
+   Inline Code Styles
    ============================================ */
 
 .vp-doc :not(pre) > code {
@@ -471,7 +471,7 @@ body.VPApp,
 }
 
 /* ============================================
-   项目页导航栏标题
+   Project Page Navbar Title
    ============================================ */
 
 .VPNavBarTitle[data-project] .nav-title-org {
@@ -479,7 +479,7 @@ body.VPApp,
 }
 
 /* ============================================
-   隐藏 VitePress 默认搜索（由 ProjectSearch 替代）
+   Hide default VitePress search (replaced by ProjectSearch)
    ============================================ */
 
 .VPNavBarSearch {
@@ -487,7 +487,7 @@ body.VPApp,
 }
 
 /* ============================================
-   自定义站点底部
+   Custom Site Footer
    ============================================ */
 
 .site-footer {
@@ -615,7 +615,7 @@ body.VPApp,
   display: none;
 }
 
-/* Hide custom site footer on doc pages (sidebar present) — prevents sidebar overlap */
+/* Hide custom site footer on doc pages (sidebar present) to prevent sidebar overlap */
 .Layout.has-sidebar .site-footer {
   display: none;
 }
@@ -641,7 +641,7 @@ body.VPApp,
 }
 
 /* ============================================
-   文档反馈组件
+   Doc Feedback Component
    ============================================ */
 
 .doc-feedback {
