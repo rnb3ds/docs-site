@@ -20,7 +20,7 @@ function localeRedirectPlugin() {
   return {
     name: 'vitepress-locale-redirect',
     configureServer(server: any) {
-      server.middlewares.use((req: any, res: any, next: () => void) => {
+      const redirectMiddleware = (req: any, res: any, next: () => void) => {
         const url = (req.url || '/').split('?')[0].split('#')[0]
 
         const cookies = parseCookies(req.headers.cookie)
@@ -59,7 +59,17 @@ function localeRedirectPlugin() {
         }
 
         next()
-      })
+      }
+
+      // Post-hook: runs after all configureServer hooks complete.
+      // Unshift to the front of the middleware stack so our redirect
+      // intercepts requests BEFORE VitePress's page-serving middleware.
+      return () => {
+        server.middlewares.stack.unshift({
+          route: '',
+          handle: redirectMiddleware
+        })
+      }
     }
   }
 }

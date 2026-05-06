@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useData } from 'vitepress'
 import { PROJECTS } from '../../shared'
 import { STORAGE_KEYS } from '../../locales/languages'
@@ -7,19 +7,29 @@ import { findMatchingLanguage, getPreferencePath } from '../composables/useLangu
 
 const { lang } = useData()
 
+// Detect bare project path redirect during setup (before mount/render)
+const isBareProjectRedirect = ref(false)
+if (typeof window !== 'undefined') {
+  const pathname = window.location.pathname
+  isBareProjectRedirect.value = PROJECTS.some(p =>
+    pathname === `/${p}` || pathname === `/${p}/` || pathname.startsWith(`/${p}/`)
+  )
+}
+
 type NotFoundTranslations = {
   title: string
   desc: string
   goHome: string
   goBack: string
+  redirecting: string
 }
 
 const notFoundI18n: Record<string, NotFoundTranslations> = {
-  zh: { title: '页面未找到', desc: '抱歉，您访问的页面不存在或已被移除。', goHome: '返回首页', goBack: '返回上页' },
-  en: { title: 'Page Not Found', desc: 'Sorry, the page you are looking for does not exist or has been removed.', goHome: 'Go Home', goBack: 'Go Back' },
-  ko: { title: '페이지를 찾을 수 없습니다', desc: '죄송합니다. 요청하신 페이지가 존재하지 않거나 삭제되었습니다.', goHome: '홈으로', goBack: '뒤로 가기' },
-  ja: { title: 'ページが見つかりません', desc: '申し訳ありません。お探しのページは存在しないか、削除されました。', goHome: 'ホームへ', goBack: '戻る' },
-  ru: { title: 'Страница не найдена', desc: 'Извините, запрашиваемая страница не существует или была удалена.', goHome: 'На главную', goBack: 'Назад' }
+  zh: { title: '页面未找到', desc: '抱歉，您访问的页面不存在或已被移除。', goHome: '返回首页', goBack: '返回上页', redirecting: '正在跳转，请稍候...' },
+  en: { title: 'Page Not Found', desc: 'Sorry, the page you are looking for does not exist or has been removed.', goHome: 'Go Home', goBack: 'Go Back', redirecting: 'Redirecting, please wait...' },
+  ko: { title: '페이지를 찾을 수 없습니다', desc: '죄송합니다. 요청하신 페이지가 존재하지 않거나 삭제되었습니다.', goHome: '홈으로', goBack: '뒤로 가기', redirecting: '리디렉션 중, 잠시만 기다려 주세요...' },
+  ja: { title: 'ページが見つかりません', desc: '申し訳ありません。お探しのページは存在しないか、削除されました。', goHome: 'ホームへ', goBack: '戻る', redirecting: 'リダイレクト中です。少々お待ちください...' },
+  ru: { title: 'Страница не найдена', desc: 'Извините, запрашиваемая страница не существует или была удалена.', goHome: 'На главную', goBack: 'Назад', redirecting: 'Перенаправление, пожалуйста, подождите...' }
 }
 
 function getLangKey(): string {
@@ -47,12 +57,8 @@ function detectLangPrefix(): string {
 
 onMounted(() => {
   // Auto-redirect bare project paths (production fallback for static hosting)
-  const pathname = window.location.pathname
-  const isBare = PROJECTS.some(p =>
-    pathname === `/${p}` || pathname === `/${p}/`
-  )
-  if (isBare) {
-    window.location.replace(detectLangPrefix() + pathname)
+  if (isBareProjectRedirect.value) {
+    window.location.replace(detectLangPrefix() + window.location.pathname)
   }
 })
 
@@ -68,7 +74,13 @@ const goBack = () => {
 
 <template>
   <div class="not-found">
-    <div class="not-found-content">
+    <!-- Redirecting state for bare project paths -->
+    <div v-if="isBareProjectRedirect" class="redirect-content">
+      <div class="redirect-spinner"></div>
+      <p class="redirect-text">{{ t.redirecting }}</p>
+    </div>
+    <!-- Normal 404 state -->
+    <div v-else class="not-found-content">
       <h1 class="not-found-code">404</h1>
       <p class="not-found-title">
         {{ t.title }}
@@ -100,6 +112,31 @@ const goBack = () => {
 
 .not-found-content {
   max-width: 480px;
+}
+
+.redirect-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.redirect-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--vp-c-divider);
+  border-top-color: var(--vp-c-brand-1);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.redirect-text {
+  font-size: 1.1rem;
+  color: var(--vp-c-text-2);
 }
 
 .not-found-code {
