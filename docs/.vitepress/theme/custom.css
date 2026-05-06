@@ -479,14 +479,6 @@ body.VPApp,
 }
 
 /* ============================================
-   Hide default VitePress search (replaced by ProjectSearch)
-   ============================================ */
-
-.VPNavBarSearch {
-  display: none;
-}
-
-/* ============================================
    Custom Site Footer
    ============================================ */
 

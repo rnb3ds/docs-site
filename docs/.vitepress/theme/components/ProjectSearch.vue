@@ -22,6 +22,7 @@ const scopeAll = ref(false)
 const isLoading = ref(false)
 
 const index = shallowRef<MiniSearch<Result> | null>(null)
+let loadedLocale: string | null = null
 
 // Debounce
 let debounceTimer: ReturnType<typeof setTimeout>
@@ -36,7 +37,9 @@ watch(query, (val) => {
 
 // Load search index
 async function loadIndex() {
-  if (index.value) return
+  // Only skip if index is already loaded for the CURRENT locale
+  if (index.value && loadedLocale === localeIndex.value) return
+
   isLoading.value = true
   try {
     const localeKey = localeIndex.value || 'root'
@@ -55,12 +58,21 @@ async function loadIndex() {
       fields: ['title', 'titles', 'text'],
       storeFields: ['title', 'titles']
     })
+    loadedLocale = localeIndex.value
   } catch (e) {
     console.error('Failed to load search index:', e)
   } finally {
     isLoading.value = false
   }
 }
+
+// Reset index when locale changes
+watch(localeIndex, () => {
+  if (loadedLocale !== null && loadedLocale !== localeIndex.value) {
+    index.value = null
+    loadedLocale = null
+  }
+})
 
 // Search results
 const results = computed(() => {
@@ -231,111 +243,73 @@ const isMac = computed(() => {
 </script>
 
 <template>
-  <!-- Search Button -->
-  <div class="ProjectSearch">
-    <button type="button" class="ProjectSearchButton" @click="open">
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="20"
-        height="20"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        stroke-width="2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      >
-        <circle cx="11" cy="11" r="8" />
-        <path d="M21 21l-4.35-4.35" />
-      </svg>
-      <span class="button-text">{{ i18n.buttonText }}</span>
-      <span v-if="projectLabel" class="scope-badge">{{ projectLabel }}</span>
-      <span class="shortcut">
-        <kbd>{{ isMac ? '⌘' : 'Ctrl' }}</kbd>
-        <kbd>K</kbd>
-      </span>
-    </button>
-  </div>
+  <div>
+    <!-- Search Button -->
+    <div class="ProjectSearch">
+      <button type="button" class="ProjectSearchButton" @click="open">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+        <span class="button-text">{{ i18n.buttonText }}</span>
+        <span v-if="projectLabel" class="scope-badge">{{ projectLabel }}</span>
+        <span class="shortcut">
+          <kbd>{{ isMac ? '⌘' : 'Ctrl' }}</kbd>
+          <kbd>K</kbd>
+        </span>
+      </button>
+    </div>
 
-  <!-- Search Modal -->
-  <Teleport to="body">
-    <Transition name="search-backdrop">
-      <div v-if="show" class="ProjectSearchBackdrop" @click.self="close">
-        <div class="ProjectSearchModal">
-          <!-- Header -->
-          <div class="search-header">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              class="search-icon"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-            <input
-              ref="searchInput"
-              v-model="query"
-              class="search-input"
-              :placeholder="i18n.placeholder"
-            />
-            <div v-if="projectLabel" class="scope-toggle">
-              <button
-                type="button"
-                :class="['scope-btn', { active: !scopeAll }]"
-                @click="scopeAll = false"
-              >
-                {{ projectLabel }}
-              </button>
-              <button
-                type="button"
-                :class="['scope-btn', { active: scopeAll }]"
-                @click="scopeAll = true"
-              >
-                {{ i18n.all }}
-              </button>
-            </div>
-            <button type="button" class="esc-btn" @click="close">ESC</button>
-          </div>
-
-          <!-- Body -->
-          <div class="search-body">
-            <div v-if="isLoading" class="search-status">{{ i18n.loading }}</div>
-            <template v-else-if="results.length > 0">
-              <div
-                v-for="group in groupedResults"
-                :key="group.pageId"
-                class="result-group"
-              >
-                <div class="group-header">{{ group.pageName }}</div>
-                <a
-                  v-for="section in group.sections"
-                  :key="section.id"
-                  :href="section.id"
-                  class="result-item"
-                  @click.prevent="navigate(section.id)"
-                >
-                  <div class="result-breadcrumb" v-if="section.titles.length">
-                    {{ section.titles.join(' › ') }}
-                  </div>
-                  <div class="result-title">{{ section.title }}</div>
-                </a>
+    <!-- Search Modal -->
+    <Teleport to="body">
+      <Transition name="search-backdrop">
+        <div v-if="show" class="ProjectSearchBackdrop" @click.self="close">
+          <div class="ProjectSearchModal">
+            <!-- Header -->
+            <div class="search-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                class="search-icon">
+                <circle cx="11" cy="11" r="8" />
+                <path d="M21 21l-4.35-4.35" />
+              </svg>
+              <input ref="searchInput" v-model="query" class="search-input" :placeholder="i18n.placeholder" />
+              <div v-if="projectLabel" class="scope-toggle">
+                <button type="button" :class="['scope-btn', { active: !scopeAll }]" @click="scopeAll = false">
+                  {{ projectLabel }}
+                </button>
+                <button type="button" :class="['scope-btn', { active: scopeAll }]" @click="scopeAll = true">
+                  {{ i18n.all }}
+                </button>
               </div>
-            </template>
-            <div v-else-if="debouncedQuery.trim()" class="search-status">
-              {{ i18n.noResults }}
+              <button type="button" class="esc-btn" @click="close">ESC</button>
+            </div>
+
+            <!-- Body -->
+            <div class="search-body">
+              <div v-if="isLoading" class="search-status">{{ i18n.loading }}</div>
+              <template v-else-if="results.length > 0">
+                <div v-for="group in groupedResults" :key="group.pageId" class="result-group">
+                  <div class="group-header">{{ group.pageName }}</div>
+                  <a v-for="section in group.sections" :key="section.id" :href="section.id" class="result-item"
+                    @click.prevent="navigate(section.id)">
+                    <div class="result-breadcrumb" v-if="section.titles.length">
+                      {{ section.titles.join(' › ') }}
+                    </div>
+                    <div class="result-title">{{ section.title }}</div>
+                  </a>
+                </div>
+              </template>
+              <div v-else-if="debouncedQuery.trim()" class="search-status">
+                {{ i18n.noResults }}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Transition>
-  </Teleport>
+      </Transition>
+    </Teleport>
+  </div>
 </template>
 
 <style scoped>
@@ -556,6 +530,7 @@ const isMac = computed(() => {
 
 /* Mobile */
 @media (max-width: 768px) {
+
   .ProjectSearchButton .button-text,
   .ProjectSearchButton .shortcut {
     display: none;
