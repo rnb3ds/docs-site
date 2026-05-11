@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vitepress dev docs",
-    "build": "node --max-old-space-size=8192 ./node_modules/vitepress/bin/vitepress.js build docs",
+    "build": "node --max-old-space-size=8192 ./node_modules/vitepress/bin/vitepress.js build docs && node scripts/fix-clean-urls.js",
     "preview": "vitepress preview docs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
