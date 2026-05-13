@@ -1,6 +1,6 @@
 ---
 title: 类型定义 - CyberGo JSON | API 参考
-description: "CyberGo JSON 核心类型定义完整参考：包括 Result[T] 泛型结果、AccessResult 动态访问结果、BatchOperation、BatchResult、Schema 验证模式、Stats、HealthStatus、IterableValue 和编码错误类型。"
+description: "CyberGo JSON 核心类型定义完整参考：包括 Result[T] 泛型结果、AccessResult 动态访问结果、BatchOperation、BatchResult、Schema 验证模式、Stats、HealthStatus、IterableValue 和编码错误类型，提供完整的类型系统支撑。"
 ---
 
 # 类型定义
@@ -160,6 +160,7 @@ fmt.Println("类型:", result.Type)
 | `AsInt()` | `(int, error)` | 转换为整数（bool 不转换） |
 | `AsFloat64()` | `(float64, error)` | 转换为 float64（bool 不转换） |
 | `AsBool()` | `(bool, error)` | 转换为布尔值 |
+| `Ok()` | `bool` | 检查结果是否有效（路径存在且无错误） |
 
 ::: warning 注意
 `AsInt64()`, `AsArray()`, `AsObject()` 方法已移除。请使用 `GetTyped[T]` 获取这些类型。
@@ -276,6 +277,18 @@ cfg := json.DefaultSchemaConfig()
 cfg.Type = "object"
 cfg.Required = []string{"name", "email"}
 schema := json.NewSchemaWithConfig(cfg)
+```
+
+#### 使用 DefaultSchema
+
+签名：`func DefaultSchema() *Schema`
+
+返回包含默认配置的空 Schema 实例。
+
+```go
+schema := json.DefaultSchema()
+schema.Type = "object"
+schema.Required = []string{"id"}
 ```
 
 ### SchemaConfig 结构
@@ -463,6 +476,12 @@ type ParsedJSON struct {
 
 返回底层已解析的数据。
 
+### Release 方法
+
+签名：`func (p *ParsedJSON) Release()`
+
+释放已解析数据持有的资源。当不再需要 `ParsedJSON` 时调用，允许底层资源被垃圾回收。
+
 ```go
 processor, err := json.New()
 if err != nil {
@@ -563,14 +582,29 @@ type CheckResult struct {
 | `GetArray(path)` | 获取数组 |
 | `GetObject(path)` | 获取对象 |
 
+**带默认值获取**
+
+| 方法 | 说明 |
+|------|------|
+| `GetWithDefault(path, defaultValue)` | 获取值，不存在时返回默认值 |
+| `GetStringWithDefault(path, defaultValue)` | 获取字符串，不存在时返回默认值 |
+| `GetIntWithDefault(path, defaultValue)` | 获取整数，不存在时返回默认值 |
+| `GetFloat64WithDefault(path, defaultValue)` | 获取浮点数，不存在时返回默认值 |
+| `GetBoolWithDefault(path, defaultValue)` | 获取布尔值，不存在时返回默认值 |
+
 **检查与遍历**
 
 | 方法 | 说明 |
 |------|------|
 | `Exists(path)` | 检查字段是否存在 |
 | `IsNull(path)` | 检查指定路径是否为 null |
+| `IsNullData()` | 检查底层值是否为 null |
 | `IsEmpty(path)` | 检查指定路径是否为空 |
+| `IsEmptyData()` | 检查底层值是否为空 |
+| `GetData()` | 获取底层原始数据 |
 | `Break()` | 返回中断信号，停止迭代 |
+| `ForeachNested(path, fn)` | 遍历嵌套结构 |
+| `Release()` | 释放资源 |
 
 详见 [迭代器](./iterator) 文档。
 
@@ -589,6 +623,7 @@ JSON 语法解析错误，表示输入数据不是合法的 JSON 格式。
 ```go
 type SyntaxError struct {
     Offset int64 // 错误发生的位置（字节偏移量）
+    // 包含其他未导出字段
 }
 ```
 
@@ -741,6 +776,7 @@ if invalidErr, ok := err.(*json.InvalidUnmarshalError); ok {
 type MarshalerError struct {
     Type reflect.Type // 实现 MarshalJSON 或 MarshalText 的类型
     Err  error        // MarshalJSON 或 MarshalText 返回的错误
+    // 包含其他未导出字段
 }
 ```
 
@@ -951,6 +987,36 @@ type Token any
 ```
 
 通过 `Decoder.Token()` 获取。
+
+---
+
+## Number - JSON 数字
+
+`Number` 表示 JSON 数字字符串，在启用 `UseNumber` 模式时由 Decoder 使用。
+
+```go
+type Number string
+```
+
+### 方法
+
+| 方法 | 签名 | 说明 |
+|------|------|------|
+| `String` | `func (n Number) String() string` | 返回数字的字符串表示 |
+| `Float64` | `func (n Number) Float64() (float64, error)` | 转换为 float64 |
+| `Int64` | `func (n Number) Int64() (int64, error)` | 转换为 int64 |
+
+```go
+decoder := json.NewDecoder(strings.NewReader(`{"price": 19.99}`))
+decoder.UseNumber()
+var obj map[string]any
+decoder.Decode(&obj)
+
+if num, ok := obj["price"].(json.Number); ok {
+    f, _ := num.Float64()
+    fmt.Println(f) // 19.99
+}
+```
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: Validator - CyberGo JSON | Schema 검증기
-description: "CyberGo JSON 검증기 완전 참조: Validator 인터페이스 정의, Schema 검증 구조, ValidationError 검증 오류 타입, SchemaConfig 설정 옵션 및 사용자 정의 검증기 구현 가이드를 포함하여 완전한 JSON 데이터 구조와 내용 검증 기능을 제공합니다."
+description: "CyberGo JSON 검증기 완전 참조: Validator 인터페이스 정의, Schema 검증 구조, ValidationError 검증 오류 타입, SchemaConfig 설정 옵션 및 커스텀 검증기 구현 가이드를 포함하여 완전한 JSON 데이터 구조와 내용 검증 기능을 제공합니다."
 ---
 
 # Validator
@@ -128,9 +128,9 @@ type ValidationError struct {
 func (ve *ValidationError) Error() string
 ```
 
-## 사용자 정의 검증기
+## 커스텀 검증기
 
-`Validator` 인터페이스를 구현하여 사용자 정의 검증 로직을 생성합니다:
+`Validator` 인터페이스를 구현하여 커스텀 검증 로직을 생성합니다:
 
 ```go
 type SizeValidator struct {
@@ -163,9 +163,9 @@ defer processor.Close()
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `EnableValidation` | `bool` | 검증 활성화 |
-| `CustomValidators` | `[]Validator` | 사용자 정의 검증기 목록 |
+| `CustomValidators` | `[]Validator` | 커스텀 검증기 목록 |
 
-### 사용자 정의 검증기 사용
+### 커스텀 검증기 사용
 
 ```go
 cfg := json.DefaultConfig()

@@ -1,6 +1,6 @@
 ---
 title: Обработка ошибок - CyberGo JSON | Лучшие практики
-description: "Лучшие практики обработки ошибок CyberGo JSON: определение типа ошибки JsonsError, сопоставление ошибок через errors.Is/As, 12 стандартных переменных ошибок, стратегии восстановления, безопасный вывод SafeError и логирование для построения надёжных приложений обработки JSON на Go."
+description: "Лучшие практики обработки ошибок CyberGo JSON: JsonsError, errors.Is/As, стандартные ошибки, значения по умолчанию, SafeError, RedactedPath и стратегии восстановления."
 ---
 
 # Обработка ошибок
@@ -21,10 +21,10 @@ var (
     ErrSizeLimit          = errors.New("size limit exceeded")
     ErrSecurityViolation  = errors.New("security violation detected")
     ErrProcessorClosed    = errors.New("processor is closed")
-    ErrConcurrencyLimit   = errors.New("concurrency limit exceeded")
+    ErrConcurrencyLimit   = errors.New("concurrency limit exceeded") // Deprecated
     ErrUnsupportedPath    = errors.New("unsupported path operation")
-    ErrOperationTimeout   = errors.New("operation timeout")
-    ErrResourceExhausted  = errors.New("system resources exhausted")
+    ErrOperationTimeout   = errors.New("operation timeout")           // Deprecated
+    ErrResourceExhausted  = errors.New("system resources exhausted")  // Deprecated
 )
 ```
 
@@ -34,12 +34,12 @@ var (
 val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrPathNotFound) {
-        // Путь не найден
+        // Путь не существует
         return defaultName
     }
     if errors.Is(err, json.ErrTypeMismatch) {
-        // Несоответствие типов
-        return "", fmt.Errorf("Ошибка типа поля: %w", err)
+        // Несовпадение типа
+        return "", fmt.Errorf("ошибка типа поля: %w", err)
     }
     return "", err
 }
@@ -53,9 +53,9 @@ if err != nil {
 
 ```go
 type JsonsError struct {
-    Op      string `json:"op"`      // Тип операции: "get", "set", "delete", "marshal" и т.д.
-    Path    string `json:"path"`    // JSON путь (если есть)
-    Message string `json:"message"` // Читаемое сообщение об ошибке
+    Op      string `json:"op"`      // Тип операции: "get", "set", "delete", "marshal" и др.
+    Path    string `json:"path"`    // Путь JSON (если есть)
+    Message string `json:"message"` // Понятное сообщение об ошибке
     Err     error  `json:"err"`     // Базовая ошибка
 }
 
@@ -69,15 +69,15 @@ func (e *JsonsError) Is(target error) bool
 ```go
 val, err := json.Get(data, "user.name")
 if err != nil {
-    // Используйте errors.Is для проверки типа ошибки
+    // Использование errors.Is для проверки типа ошибки
     if errors.Is(err, json.ErrPathNotFound) {
-        // Путь не найден
+        // Путь не существует
     }
     if errors.Is(err, json.ErrTypeMismatch) {
-        // Несоответствие типов
+        // Несовпадение типа
     }
 
-    // Используйте errors.As для получения подробного контекста
+    // Использование errors.As для получения подробного контекста
     var jsonErr *json.JsonsError
     if errors.As(err, &jsonErr) {
         fmt.Printf("Операция: %s\n", jsonErr.Op)
@@ -87,12 +87,12 @@ if err != nil {
 }
 ```
 
-## Паттерны обработки ошибок
+## Шаблоны обработки ошибок
 
 ### Предоставление значений по умолчанию
 
 ```go
-// Типобезопасные функции получения со встроенной поддержкой значений по умолчанию
+// Типобезопасные функции получения имеют встроенную поддержку значений по умолчанию
 name := json.GetString(data, "user.name", "Аноним")
 age := json.GetInt(data, "user.age", 0)
 active := json.GetBool(data, "user.active", false)
@@ -138,7 +138,7 @@ if multiErr.HasError() {
 ```go
 val, err := json.Get(data, "config.api_key")
 if err != nil {
-    return fmt.Errorf("Ошибка чтения API ключа: %w", err)
+    return fmt.Errorf("ошибка чтения API-ключа: %w", err)
 }
 ```
 
@@ -153,30 +153,30 @@ type ValidationError struct {
 }
 
 func (e *ValidationError) Error() string {
-    return fmt.Sprintf("Ошибка валидации %s: %s", e.Field, e.Message)
+    return fmt.Sprintf("ошибка валидации %s: %s", e.Field, e.Message)
 }
 
 // Использование
 func validateUser(data string) error {
     name := json.GetString(data, "name")
     if name == "" {
-        return &ValidationError{Field: "name", Message: "Обязательное поле"}
+        return &ValidationError{Field: "name", Message: "обязательное поле"}
     }
     if len(name) < 2 {
-        return &ValidationError{Field: "name", Message: "Минимум 2 символа"}
+        return &ValidationError{Field: "name", Message: "минимум 2 символа"}
     }
     return nil
 }
 ```
 
-## Логирование
+## Ведение журнала
 
-### Структурированное логирование
+### Структурированный журнал
 
 ```go
 val, err := json.Get(data, path)
 if err != nil {
-    log.Error("Ошибка JSON операции",
+    log.Error("Ошибка JSON-операции",
         "path", path,
         "error", err,
         "error_type", fmt.Sprintf("%T", err),
@@ -185,7 +185,7 @@ if err != nil {
 }
 ```
 
-### Журналы аудита
+### Аудиторский журнал
 
 ```go
 func auditLog(op string, path string, err error) {
@@ -196,7 +196,7 @@ func auditLog(op string, path string, err error) {
             "error", err,
         )
     } else {
-        log.Info("Операция выполнена успешно",
+        log.Info("Операция успешна",
             "operation", op,
             "path", path,
         )
@@ -206,7 +206,7 @@ func auditLog(op string, path string, err error) {
 
 ## Стратегии восстановления
 
-### Безопасный вывод SafeError
+### SafeError — безопасный вывод
 
 `SafeError` возвращает безопасное для клиента сообщение об ошибке, удаляя внутреннюю контекстную информацию:
 
@@ -215,7 +215,7 @@ func auditLog(op string, path string, err error) {
 
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
-    // SafeError удаляет внутренние детали, такие как пути и контекст операции
+    // SafeError удаляет внутренние детали, такие как пути и контекст операций
     safeMsg := json.SafeError(err)
     http.Error(w, safeMsg, http.StatusBadRequest)
     return
@@ -259,48 +259,48 @@ func getConfig(data string) Config {
 
 ### Ошибки пользовательского ввода
 
-Вызваны JSON данными или путями, предоставленными пользователем:
+Вызваны JSON-данными или путём, предоставленными пользователем:
 
 ```go
 val, err := json.Get(data, "user.name")
 if err != nil {
     switch {
     case errors.Is(err, json.ErrInvalidJSON):
-        // Неверный формат JSON
-        return fmt.Errorf("Ошибка формата данных: %w", err)
+        // Ошибка формата JSON
+        return fmt.Errorf("ошибка формата данных: %w", err)
     case errors.Is(err, json.ErrPathNotFound):
-        // Путь не найден
-        return fmt.Errorf("Поле не найдено: %w", err)
+        // Путь не существует
+        return fmt.Errorf("поле не существует: %w", err)
     case errors.Is(err, json.ErrTypeMismatch):
-        // Несоответствие типов
-        return fmt.Errorf("Ошибка типа: %w", err)
+        // Несовпадение типа
+        return fmt.Errorf("ошибка типа: %w", err)
     case errors.Is(err, json.ErrInvalidPath):
-        // Синтаксическая ошибка пути
-        return fmt.Errorf("Синтаксическая ошибка пути: %w", err)
+        // Ошибка синтаксиса пути
+        return fmt.Errorf("ошибка синтаксиса пути: %w", err)
     case errors.Is(err, json.ErrUnsupportedPath):
-        // Неподдерживаемая операция с путём
-        return fmt.Errorf("Неподдерживаемая операция: %w", err)
+        // Неподдерживаемая операция пути
+        return fmt.Errorf("неподдерживаемая операция: %w", err)
     }
 }
 ```
 
-### Ошибки, связанные с безопасностью
+### Ошибки безопасности
 
-Обнаружены потенциальные угрозы безопасности:
+Обнаружена потенциальная угроза безопасности:
 
 ```go
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
     if errors.Is(err, json.ErrSecurityViolation) {
-        // Нарушение безопасности, запись в журнал и отклонение
+        // Нарушение безопасности, записать и отклонить
         log.Warn("Нарушение безопасности", "error", err)
-        return errors.New("Недопустимый ввод")
+        return errors.New("недопустимый ввод")
     }
     if errors.Is(err, json.ErrSizeLimit) {
-        return fmt.Errorf("Данные превышают размер: %w", err)
+        return fmt.Errorf("данные превышают ограничение размера: %w", err)
     }
     if errors.Is(err, json.ErrDepthLimit) {
-        return fmt.Errorf("Превышена глубина вложенности: %w", err)
+        return fmt.Errorf("превышен предел вложенности: %w", err)
     }
     return err
 }
@@ -308,26 +308,26 @@ if err != nil {
 
 ### Системные ошибки
 
-Системные ошибки временного характера:
+Системные временные ошибки:
 
 ```go
 val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrOperationTimeout) {
-        // Таймаут операции, можно повторить
-        return fmt.Errorf("Временная ошибка, повторите попытку: %w", err)
+        // Тайм-аут операции, можно повторить <Badge type="danger" text="Устарело" />
+        return fmt.Errorf("временная ошибка, повторите попытку: %w", err)
     }
     if errors.Is(err, json.ErrConcurrencyLimit) {
-        // Ограничение параллелизма
-        return fmt.Errorf("Система перегружена, попробуйте позже: %w", err)
+        // Ограничение параллелизма <Badge type="danger" text="Устарело" />
+        return fmt.Errorf("система занята, попробуйте позже: %w", err)
     }
     if errors.Is(err, json.ErrResourceExhausted) {
-        // Исчерпание ресурсов
-        return fmt.Errorf("Недостаточно системных ресурсов: %w", err)
+        // Исчерпание ресурсов <Badge type="danger" text="Устарело" />
+        return fmt.Errorf("недостаточно системных ресурсов: %w", err)
     }
     if errors.Is(err, json.ErrProcessorClosed) {
         // Процессор закрыт
-        return fmt.Errorf("Процессор недоступен: %w", err)
+        return fmt.Errorf("процессор недоступен: %w", err)
     }
     return err
 }
@@ -335,39 +335,39 @@ if err != nil {
 
 ## Лучшие практики обработки ошибок
 
-### 1. Различайте типы ошибок
+### 1. Различение типов ошибок
 
 ```go
 func processJSON(data string) error {
     val, err := json.Get(data, "user.name")
     if err != nil {
-        // Используйте errors.Is для различения типов ошибок
+        // Использование errors.Is для различения типов ошибок
         switch {
         case errors.Is(err, json.ErrInvalidJSON),
             errors.Is(err, json.ErrPathNotFound),
             errors.Is(err, json.ErrTypeMismatch),
             errors.Is(err, json.ErrInvalidPath):
-            // Ошибка пользовательского ввода, вернуть понятное сообщение
-            return fmt.Errorf("Ошибка формата данных: %w", err)
+            // Ошибка пользовательского ввода, вернуть дружественное сообщение
+            return fmt.Errorf("ошибка формата данных: %w", err)
         case errors.Is(err, json.ErrSecurityViolation):
             // Ошибка безопасности, записать и отклонить
             log.Warn("Нарушение безопасности", "error", err)
-            return errors.New("Недопустимый ввод")
-        case errors.Is(err, json.ErrOperationTimeout),
-            errors.Is(err, json.ErrConcurrencyLimit):
-            // Ошибка, допускающая повторную попытку
-            return fmt.Errorf("Временная ошибка, повторите попытку: %w", err)
+            return errors.New("недопустимый ввод")
+        case errors.Is(err, json.ErrOperationTimeout),          // Deprecated
+            errors.Is(err, json.ErrConcurrencyLimit): // Deprecated
+            // Повторяемая ошибка (эти ошибки в настоящее время не возвращаются библиотекой, сохранены для совместимости)
+            return fmt.Errorf("временная ошибка, повторите попытку: %w", err)
         default:
             // Системная ошибка
             log.Error("Системная ошибка", "error", err)
-            return errors.New("Внутренняя ошибка")
+            return errors.New("внутренняя ошибка")
         }
     }
     return nil
 }
 ```
 
-### 2. Используйте errors.As для получения контекста
+### 2. Использование errors.As для получения контекста
 
 ```go
 func handleWithDetail(data string, path string) error {
@@ -375,10 +375,10 @@ func handleWithDetail(data string, path string) error {
     if err != nil {
         var jsonErr *json.JsonsError
         if errors.As(err, &jsonErr) {
-            return fmt.Errorf("Операция %s не удалась (путь: %s): %w",
+            return fmt.Errorf("операция %s не удалась (путь: %s): %w",
                 jsonErr.Op, jsonErr.Path, jsonErr.Err)
         }
-        return fmt.Errorf("Операция не удалась: %w", err)
+        return fmt.Errorf("операция не удалась: %w", err)
     }
     return nil
 }
@@ -389,14 +389,14 @@ func handleWithDetail(data string, path string) error {
 ```go
 func deepProcess(data string) error {
     if err := processLevel1(data); err != nil {
-        return fmt.Errorf("Ошибка глубокой обработки: %w", err)
+        return fmt.Errorf("ошибка глубокой обработки: %w", err)
     }
     return nil
 }
 
 func processLevel1(data string) error {
     if err := processLevel2(data); err != nil {
-        return fmt.Errorf("Ошибка обработки уровня 1 (путь data.field): %w", err)
+        return fmt.Errorf("ошибка обработки уровня 1 (путь data.field): %w", err)
     }
     return nil
 }
@@ -407,10 +407,10 @@ func processLevel2(data string) error {
 }
 
 // Пример цепочки ошибок:
-// Ошибка глубокой обработки: Ошибка обработки уровня 1 (путь data.field): path not found
+// Ошибка глубокой обработки: ошибка обработки уровня 1 (путь data.field): path not found
 ```
 
-## Смотрите также
+## Связанные разделы
 
 - [Константы и ошибки](../api-reference/constants)
 - [Обзор безопасности](../security/)

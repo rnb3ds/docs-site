@@ -1,17 +1,17 @@
 ---
-title: 인터페이스 정의 - CyberGo JSON | API 참조
-description: "CyberGo JSON 확장 인터페이스 정의 완전 참조: CustomEncoder, TypeEncoder, Validator, Hook 인터페이스, PathParser 및 DangerousPattern을 포함하여 라이브러리의 인코딩, 검증 및 보안 방어 등 핵심 기능을 유연하게 확장할 수 있습니다."
+title: 인터페이스 정의 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON 확장 인터페이스 정의 완전 레퍼런스: CustomEncoder, TypeEncoder, Validator, Hook 인터페이스, PathParser 및 DangerousPattern을 포함하여 라이브러리의 인코딩, 검증 및 보안 방어 등 핵심 기능을 유연하게 확장할 수 있으며 커스텀 직렬화와 보안 전략 요구를 충족합니다."
 ---
 
 # 인터페이스 정의
 
-json 패키지는 여러 확장 인터페이스를 제공하여 JSON 처리 동작을 사용자 정의할 수 있습니다.
+json 패키지는 커스텀 JSON 처리 동작을 허용하는 여러 확장 인터페이스를 제공합니다.
 
 ## 인코더 인터페이스
 
 ### CustomEncoder
 
-사용자 정의 JSON 인코더 인터페이스입니다.
+커스텀 JSON 인코더 인터페이스입니다.
 
 ```go
 type CustomEncoder interface {
@@ -28,7 +28,7 @@ import stdjson "encoding/json"
 type UpperCaseEncoder struct{}
 
 func (e *UpperCaseEncoder) Encode(value any) (string, error) {
-    // 사용자 정의 인코딩 로직
+    // 커스텀 인코딩 로직
     switch v := value.(type) {
     case string:
         return fmt.Sprintf(`"%s"`, strings.ToUpper(v)), nil
@@ -42,7 +42,7 @@ func (e *UpperCaseEncoder) Encode(value any) (string, error) {
     }
 }
 
-// 설정에 적용
+// 설정 사용
 cfg := json.DefaultConfig()
 cfg.CustomEncoder = &UpperCaseEncoder{}
 processor, err := json.New(cfg)
@@ -128,15 +128,15 @@ if err != nil {
 
 ### Hook
 
-작업 인터셉트 인터페이스로, 사전/사후 처리를 지원합니다.
+작업 가로채기 인터페이스로, 전처리/후처리를 지원합니다.
 
 ```go
 type Hook interface {
     // Before는 작업 전에 호출됩니다
-    // 오류를 반환하면 작업이 중단됩니다
+    // 오류를 반환하면 작업을 중단합니다
     Before(ctx HookContext) error
 
-    // After는 작업 완료 후 호출됩니다
+    // After는 작업 완료 후에 호출됩니다
     // 결과를 수정하거나 오류를 확인할 수 있습니다
     After(ctx HookContext, result any, err error) (any, error)
 }
@@ -148,9 +148,9 @@ type Hook interface {
 
 ```go
 type HookContext struct {
-    Operation string        // 작업 유형: "get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string        // 입력 JSON 문자열 (marshal 시 비어 있을 수 있음)
-    Path      string        // 대상 경로 (marshal/unmarshal 시 비어 있을 수 있음)
+    Operation string        // 작업 타입: "get", "set", "delete", "marshal", "unmarshal"
+    JSONStr   string        // 입력 JSON 문자열 (marshal 시 비어있을 수 있음)
+    Path      string        // 대상 경로 (marshal/unmarshal 시 비어있을 수 있음)
     Value     any           // set 작업의 값
     Config    *Config       // 활성 설정
     StartTime time.Time     // 작업 시작 시간
@@ -265,12 +265,12 @@ p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
 
 시그니처: `func ErrorHook(handler func(ctx HookContext, err error) error) Hook`
 
-오류 인터셉트 훅을 생성합니다.
+오류 가로채기 훅을 생성합니다.
 
 ```go
 p.AddHook(json.ErrorHook(func(ctx json.HookContext, err error) error {
     sentry.CaptureException(err)
-    return err // 원래 또는 변환된 오류 반환
+    return err // 원래 오류 또는 변환된 오류 반환
 }))
 ```
 
@@ -284,27 +284,27 @@ p.AddHook(json.ErrorHook(func(ctx json.HookContext, err error) error {
 type PatternLevel int
 
 const (
-    // PatternLevelCritical - 항상 작업을 차단합니다
+    // PatternLevelCritical - 항상 작업 차단
     PatternLevelCritical PatternLevel = iota
 
-    // PatternLevelWarning - 엄격 모드에서 차단, 완화 모드에서 경고 기록
+    // PatternLevelWarning - 엄격 모드에서 차단, 느슨한 모드에서 경고 기록
     PatternLevelWarning
 
-    // PatternLevelInfo - 기록만 하고 차단하지 않음
+    // PatternLevelInfo - 기록만, 절대 차단하지 않음
     PatternLevelInfo
 )
 ```
 
 ### DangerousPattern
 
-위험 패턴 구조체로, 사용자 정의 보안 규칙을 정의하는 데 사용됩니다.
+위험 패턴 구조체로, 커스텀 보안 규칙을 정의하는 데 사용됩니다.
 
 ```go
 type DangerousPattern struct {
     // Pattern은 입력에서 감지할 부분 문자열입니다
     Pattern string
 
-    // Name은 패턴의 설명 이름입니다
+    // Name은 패턴의 설명적인 이름입니다
     Name string
 
     // Level은 해당 패턴의 심각도 수준을 결정합니다
@@ -315,14 +315,14 @@ type DangerousPattern struct {
 **사용 예제**
 
 ```go
-// 구조체 리터럴로 사용자 정의 위험 패턴 생성
+// 구조체 리터럴로 커스텀 위험 패턴 생성
 customPattern := json.DangerousPattern{
     Pattern: "eval(",
     Name:    "JavaScript eval 호출",
     Level:   json.PatternLevelCritical,
 }
 
-// 설정을 통해 추가
+// 설정으로 추가
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(customPattern)
 cfg.AddDangerousPattern(json.DangerousPattern{
@@ -351,8 +351,8 @@ type PathParser interface {
 type CustomPathParser struct{}
 
 func (p *CustomPathParser) ParsePath(path string) ([]json.PathSegment, error) {
-    // 사용자 정의 경로 파싱 로직
-    return nil, nil // 사용자 정의 파싱 구현
+    // 커스텀 경로 파싱 로직
+    return nil, nil // 커스텀 파싱 구현
 }
 ```
 
@@ -360,20 +360,20 @@ func (p *CustomPathParser) ParsePath(path string) ([]json.PathSegment, error) {
 
 ### Number
 
-JSON 숫자 타입으로, 숫자 정밀도를 보존합니다. 큰 숫자를 다루거나 정확한 소수가 필요할 때 사용합니다.
+JSON 숫자 타입으로, 숫자 정밀도를 보존합니다. 큰 숫자를 처리하거나 정확한 소수가 필요할 때 사용합니다.
 
 ```go
 type Number string
 ```
 
-::: tip 호환성 안내
+:::tip 호환성 안내
 라이브러리의 `Number` 타입은 `encoding/json.Number`와 100% 호환되며, 직접 교체하여 사용할 수 있습니다.
 :::
 
 **메서드**:
 
 ```go
-func (n Number) String() string              // 숫자의 리터럴 텍스트를 반환
+func (n Number) String() string              // 숫자의 리터럴 텍스트 반환
 func (n Number) Float64() (float64, error)   // float64로 변환
 func (n Number) Int64() (int64, error)       // int64로 변환
 ```
@@ -395,8 +395,8 @@ if err != nil {
 
 // 타입 단언으로 Number 가져오기
 if num, ok := val.(json.Number); ok {
-    // Number는 원래 정밀도를 보존합니다
-    fmt.Println(num.String()) // "9007199254740993" (전체 정밀도)
+    // Number는 원래 정밀도를 보존
+    fmt.Println(num.String()) // "9007199254740993" (완전한 정밀도)
 
     // 다른 타입으로 변환
     f, _ := num.Float64()
@@ -406,11 +406,64 @@ if num, ok := val.(json.Number); ok {
 
 ## 표준 라이브러리 호환 인터페이스
 
-::: info 안내
-`encoding/json` 호환 인터페이스(`Marshaler`, `Unmarshaler`, `TextMarshaler`, `TextUnmarshaler`)는 내부 구현으로 전환되어 공개 API로 내보내지지 않습니다. 라이브러리 내부에서 이러한 인터페이스를 구현한 타입을 자동으로 인식하므로 사용자가 명시적으로 참조할 필요가 없습니다.
+`json` 패키지는 `encoding/json`과 호환되는 다음 표준 인터페이스를 내보내며, 커스텀 타입의 인코딩 및 디코딩 동작에 사용됩니다.
 
-`Encoder`, `Decoder`, `Token`, `Delim`, `Number` 등의 인코딩/디코딩 타입은 [타입 정의](./types#encoder-json-인코더)를 참조하십시오.
-:::
+### Marshaler
+
+```go
+type Marshaler interface {
+    MarshalJSON() ([]byte, error)
+}
+```
+
+### Unmarshaler
+
+```go
+type Unmarshaler interface {
+    UnmarshalJSON(data []byte) error
+}
+```
+
+### TextMarshaler
+
+```go
+type TextMarshaler interface {
+    MarshalText() ([]byte, error)
+}
+```
+
+### TextUnmarshaler
+
+```go
+type TextUnmarshaler interface {
+    UnmarshalText(text []byte) error
+}
+```
+
+**사용 예제**
+
+```go
+type Person struct {
+    Name string
+}
+
+// Marshaler 인터페이스 구현
+func (p Person) MarshalJSON() ([]byte, error) {
+    return []byte(`{"name":"` + p.Name + `"}`), nil
+}
+
+// Unmarshaler 인터페이스 구현
+func (p *Person) UnmarshalJSON(data []byte) error {
+    var v struct{ Name string `json:"name"` }
+    if err := json.Unmarshal(data, &v); err != nil {
+        return err
+    }
+    p.Name = v.Name
+    return nil
+}
+```
+
+`Encoder`, `Decoder`, `Token`, `Delim`, `Number` 등 인코딩/디코딩 타입에 대한 자세한 내용은 [타입 정의](./types#encoder-json-인코더)를 참조하세요.
 
 ## 타입 정의
 
@@ -420,7 +473,7 @@ if num, ok := val.(json.Number); ok {
 
 ```go
 type Result[T any] struct {
-    Value  T     // 결과값
+    Value  T     // 결과 값
     Exists bool  // 경로가 존재하는지 여부
     Error  error // 오류 정보 (있는 경우)
 }
@@ -430,9 +483,9 @@ type Result[T any] struct {
 
 | 메서드 | 시그니처 | 설명 |
 |------|------|------|
-| `Ok` | `func (r Result[T]) Ok() bool` | 결과가 유효한지 (오류가 없고 존재하는지) |
-| `Unwrap` | `func (r Result[T]) Unwrap() T` | 값을 가져오고, 유효하지 않으면 제로값 반환 |
-| `UnwrapOr` | `func (r Result[T]) UnwrapOr(defaultValue T) T` | 값을 가져오거나 기본값 반환 |
+| `Ok` | `func (r Result[T]) Ok() bool` | 결과 유효성 (오류 없고 존재함) |
+| `Unwrap` | `func (r Result[T]) Unwrap() T` | 값 가져오기, 유효하지 않으면 제로값 반환 |
+| `UnwrapOr` | `func (r Result[T]) UnwrapOr(defaultValue T) T` | 값 또는 기본값 가져오기 |
 
 **사용 예제**:
 
@@ -441,7 +494,7 @@ type Result[T any] struct {
 name := json.GetTyped[string](data, "user.name")
 fmt.Println(name)
 
-// 기본값과 함께 가져오기
+// 기본값으로 가져오기
 name = json.GetTyped[string](data, "user.name", "unknown")
 ```
 
@@ -449,11 +502,11 @@ name = json.GetTyped[string](data, "user.name", "unknown")
 
 ### AccessResult
 
-동적 타입 접근 결과로, Processor.SafeGet에서 반환됩니다.
+동적 타입 접근 결과로, Processor.SafeGet이 반환합니다.
 
 ```go
 type AccessResult struct {
-    Value  any    // 결과값
+    Value  any    // 결과 값
     Exists bool   // 경로가 존재하는지 여부
     Type   string // 런타임 타입 정보
 }
@@ -462,11 +515,11 @@ type AccessResult struct {
 func (r AccessResult) Ok() bool                           // 존재 여부
 func (r AccessResult) Unwrap() any                        // 값 가져오기
 func (r AccessResult) UnwrapOr(defaultValue any) any      // 값 또는 기본값 가져오기
-func (r AccessResult) AsString() (string, error)          // 엄격 변환
-func (r AccessResult) AsStringConverted() (string, error) // 형식 변환
-func (r AccessResult) AsInt() (int, error)                // 엄격 변환
-func (r AccessResult) AsFloat64() (float64, error)        // 엄격 변환
-func (r AccessResult) AsBool() (bool, error)              // 엄격 변환
+func (r AccessResult) AsString() (string, error)          // 엄격한 변환
+func (r AccessResult) AsStringConverted() (string, error) // 포맷팅 변환
+func (r AccessResult) AsInt() (int, error)                // 엄격한 변환
+func (r AccessResult) AsFloat64() (float64, error)        // 엄격한 변환
+func (r AccessResult) AsBool() (bool, error)              // 엄격한 변환
 ```
 
 **타입 변환 메서드 설명**:
@@ -474,7 +527,7 @@ func (r AccessResult) AsBool() (bool, error)              // 엄격 변환
 | 메서드 | 변환 동작 | 설명 |
 |------|----------|------|
 | `AsString()` | 엄격 | string 타입만 허용, 문자열이 아니면 오류 반환 |
-| `AsStringConverted()` | 형식 변환 | fmt.Sprintf를 사용하여 임의의 값을 문자열 표현으로 변환 |
+| `AsStringConverted()` | 포맷팅 | fmt.Sprintf로 임의의 값을 문자열 표현으로 변환 |
 | `AsInt()` | 엄격 | bool을 int로 변환하지 않음, 정수와 파싱 가능한 숫자만 허용 |
 | `AsFloat64()` | 엄격 | bool을 float로 변환하지 않음, 부동소수점과 파싱 가능한 숫자만 허용 |
 | `AsBool()` | 엄격 | bool과 파싱 가능한 문자열만 허용 ("true"/"false"/"yes"/"no" 등) |
@@ -482,10 +535,10 @@ func (r AccessResult) AsBool() (bool, error)              // 엄격 변환
 ```go
 result := p.SafeGet(data, "user.age")
 
-// 엄격 변환 - 값이 정수가 아니면 오류 반환
+// 엄격한 변환 - 값이 정수가 아니면 오류 반환
 age, err := result.AsInt()
 
-// 형식 변환 - 임의의 값을 문자열로 변환
+// 포맷팅 변환 - 임의의 값을 문자열로 변환
 str, err := result.AsStringConverted() // 예: 30 -> "30"
 ```
 
@@ -493,7 +546,7 @@ str, err := result.AsStringConverted() // 예: 30 -> "30"
 
 ### Schema
 
-JSON Schema를 구조체로 정의하며, 타입 안전한 Schema 정의를 지원합니다.
+JSON Schema는 구조체로 정의되며, 타입 안전한 Schema 정의를 지원합니다.
 
 ```go
 type Schema struct {
@@ -538,7 +591,7 @@ schema := &json.Schema{
 
 ### SchemaConfig
 
-Schema 검증 설정입니다. `NewSchemaWithConfig`를 통해 Schema 인스턴스를 생성하는 데 사용됩니다.
+Schema 검증 설정입니다. `NewSchemaWithConfig`로 Schema 인스턴스를 생성하는 데 사용됩니다.
 
 ```go
 type SchemaConfig struct {
@@ -593,6 +646,6 @@ func (ve *ValidationError) Error() string
 
 ## 관련 문서
 
-- [Hook 훅 시스템](./hooks) - 훅 상세 사용 가이드
-- [Validator 검증기](./validator) - 검증기 상세 사용 가이드
-- [CustomEncoder](./custom-encoder) - 사용자 정의 인코더 가이드
+- [Hook 훅 시스템](./hooks) - 훅 자세한 사용 가이드
+- [Validator 검증기](./validator) - 검증기 자세한 사용 가이드
+- [CustomEncoder](./custom-encoder) - 커스텀 인코더 가이드

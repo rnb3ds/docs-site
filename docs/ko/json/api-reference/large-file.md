@@ -1,6 +1,6 @@
 ---
-title: 대용량 파일 처리 - CyberGo JSON | API 참조
-description: "CyberGo JSON 대용량 파일 처리 API 완전 참조: ForeachFile 스트림 처리, ForeachFileChunked 분배 처리, ForeachFileWithPath 경로 처리, ForeachFileNested 중첩 반복, 메모리 제어 설정 및 성능 최적화 모범 사례 가이드를 포함합니다."
+title: 대용량 파일 처리 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON 대용량 파일 처리 API 레퍼런스: ForeachFile 스트리밍 처리, ForeachFileChunked 배치, ForeachFileWithPath 경로 처리, ForeachFileNested 중첩 반복 및 메모리 제어 설정의 모범 사례를 포함합니다."
 ---
 
 # 대용량 파일 처리
@@ -12,7 +12,7 @@ description: "CyberGo JSON 대용량 파일 처리 API 완전 참조: ForeachFil
 
 ```go
 type Config struct {
-    // ... 다른 설정 ...
+    // ... 기타 설정 ...
 
     // 대용량 파일 처리 설정
     ChunkSize       int64 // 청크 크기 (기본값 1MB)
@@ -23,7 +23,7 @@ type Config struct {
 }
 ```
 
-### 사용자 정의 설정
+### 커스텀 설정
 
 ```go
 cfg := json.DefaultConfig()
@@ -44,7 +44,7 @@ defer p.Close()
 
 시그니처: `func (p *Processor) ForeachFile(filePath string, fn func(key any, item *IterableValue) error) error`
 
-대용량 파일의 JSON 배열 요소를 하나씩 처리합니다.
+대용량 파일의 JSON 배열 요소를 하나씩 반복합니다.
 
 **매개변수**
 
@@ -57,9 +57,9 @@ defer p.Close()
 
 | 반환값 | 설명 |
 |--------|------|
-| `nil` | 다음 항목 계속 처리 |
-| `item.Break()` | 반복 중단, 오류 반환하지 않음 |
-| 기타 `error` | 반복 중단하고 오류 반환 |
+| `nil` | 다음 항목으로 계속 처리 |
+| `item.Break()` | 반복 중지, 오류 반환 안 함 |
+| 기타 `error` | 반복 중지하고 오류 반환 |
 
 ```go
 p, err := json.New()
@@ -72,12 +72,12 @@ count := 0
 err = p.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
     count++
 
-    // IterableValue의 편리한 필드 접근 사용
+    // IterableValue 편리한 접근 필드 사용
     id := item.GetInt("id")
     name := item.GetString("name")
 
     if count%10000 == 0 {
-        log.Printf("%d건 레코드 처리 완료", count)
+        log.Printf("%d개의 레코드를 처리했습니다", count)
     }
     return nil
 })
@@ -90,10 +90,10 @@ err := p.ForeachFile("large-data.json", func(key any, item *json.IterableValue) 
     id := item.GetInt("id")
 
     if id == targetID {
-        // 대상을 찾음, 반복 중단
-        return item.Break() // 오류 없이 중단
+        // 대상을 찾음, 반복 중지
+        return item.Break() // 중지하지만 오류는 아님
     }
-    return nil // 계속 반복
+    return nil // 반복 계속
 })
 ```
 
@@ -103,7 +103,7 @@ err := p.ForeachFile("large-data.json", func(key any, item *json.IterableValue) 
 
 시그니처: `func (p *Processor) ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error) error`
 
-대용량 파일을 분배 처리하며, 매번 지정한 수의 요소를 처리합니다.
+대용량 파일을 배치로 처리합니다. 지정된 수의 요소를 한 번에 처리합니다.
 
 **매개변수**
 
@@ -120,9 +120,9 @@ if err != nil {
 }
 defer p.Close()
 
-// 매번 1000건 레코드 처리
+// 매번 1000개의 레코드 처리
 err = p.ForeachFileChunked("large-data.json", 1000, func(chunk []*json.IterableValue) error {
-    // 데이터베이스 일괄 쓰기
+    // 데이터베이스에 배치 쓰기
     for _, item := range chunk {
         id := item.GetInt("id")
         name := item.GetString("name")
@@ -149,7 +149,7 @@ err = p.ForeachFileChunked("large-data.json", 1000, func(chunk []*json.IterableV
 | `fn` | `func(key any, item *IterableValue) error` | 처리 콜백 |
 
 ```go
-// 파일 내 users 배열의 각 요소 처리
+// 파일에서 users 배열의 각 요소 처리
 err := p.ForeachFileWithPath("data.json", "users", func(key any, item *json.IterableValue) error {
     fmt.Printf("Name: %s\n", item.GetString("name"))
     return nil
@@ -162,7 +162,7 @@ err := p.ForeachFileWithPath("data.json", "users", func(key any, item *json.Iter
 
 시그니처: `func (p *Processor) ForeachFileNested(filePath string, fn func(key any, item *IterableValue) error) error`
 
-파일 내의 모든 중첩 JSON 구조를 재귀적으로 순회합니다.
+파일의 모든 중첩 JSON 구조를 재귀적으로 순회합니다.
 
 ```go
 // 모든 중첩 요소 재귀 순회
@@ -174,9 +174,9 @@ err := p.ForeachFileNested("data.json", func(key any, item *json.IterableValue) 
 
 ---
 
-## IterableValue 편의 메서드
+## IterableValue 편리한 메서드
 
-`ForeachFile*` 계열 메서드는 `IterableValue` 인터페이스를 제공하여 편리한 데이터 접근을 지원합니다:
+`ForeachFile*` 시리즈 메서드는 `IterableValue` 인터페이스를 제공하여 편리한 데이터 접근을 지원합니다:
 
 | 메서드 | 설명 | 예제 |
 |------|------|------|
@@ -188,7 +188,7 @@ err := p.ForeachFileNested("data.json", func(key any, item *json.IterableValue) 
 | `GetObject(path)` | 객체 가져오기 | `item.GetObject("profile")` |
 | `Exists(path)` | 필드 존재 여부 확인 | `item.Exists("email")` |
 | `IsNull(path)` | null 여부 확인 | `item.IsNull("deleted_at")` |
-| `GetData()` | 원본 데이터 가져오기 | `item.GetData()` |
+| `GetData()` | 원시 데이터 가져오기 | `item.GetData()` |
 | `Break()` | 중단 신호 반환 | `return item.Break()` |
 
 **경로 탐색 지원**
@@ -246,7 +246,7 @@ func main() {
 }
 ```
 
-### 데이터베이스 일괄 가져오기
+### 데이터베이스 배치 가져오기
 
 ```go
 package main
@@ -263,9 +263,9 @@ func main() {
     }
     defer p.Close()
 
-    // 배치당 500건 데이터베이스 쓰기
+    // 배치당 500건씩 데이터베이스에 쓰기
     err = p.ForeachFileChunked("users.json", 500, func(chunk []*json.IterableValue) error {
-        // 일괄 삽입
+        // 배치 삽입
         for _, item := range chunk {
             user := User{
                 ID:    item.GetInt("id"),
@@ -275,7 +275,7 @@ func main() {
             // db.Create(&user)
             _ = user
         }
-        log.Printf("%d건 레코드 일괄 삽입 완료", len(chunk))
+        log.Printf("%d개의 레코드를 배치 삽입했습니다", len(chunk))
         return nil
     })
 
@@ -287,11 +287,11 @@ func main() {
 
 ---
 
-## 패키지 수준 파일 반복 함수
+## 패키지 레벨 파일 반복 함수
 
-Processor 메서드 외에도 다음 함수는 Processor 인스턴스를 생성하지 않고 직접 호출할 수 있습니다. 내부적으로 전역 프로세서를 사용합니다.
+Processor 메서드 외에도, 다음 함수는 Processor 인스턴스를 생성하지 않고 직접 호출할 수 있습니다. 내부적으로 전역 프로세서를 사용합니다.
 
-### ForeachFile (패키지 수준 함수)
+### ForeachFile (패키지 레벨 함수)
 
 시그니처: `func ForeachFile(filePath string, fn func(key any, item *IterableValue) error) error`
 
@@ -304,11 +304,11 @@ err := json.ForeachFile("data.json", func(key any, item *json.IterableValue) err
 })
 ```
 
-### ForeachFileWithPath (패키지 수준 함수)
+### ForeachFileWithPath (패키지 레벨 함수)
 
 시그니처: `func ForeachFileWithPath(filePath, path string, fn func(key any, item *IterableValue) error) error`
 
-파일에서 JSON을 로드하고 경로에 따라 반복합니다.
+파일에서 JSON을 로드하고 경로로 반복합니다.
 
 ```go
 err := json.ForeachFileWithPath("data.json", "users", func(key any, item *json.IterableValue) error {
@@ -318,7 +318,7 @@ err := json.ForeachFileWithPath("data.json", "users", func(key any, item *json.I
 })
 ```
 
-### ForeachFileChunked (패키지 수준 함수)
+### ForeachFileChunked (패키지 레벨 함수)
 
 시그니처: `func ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error) error`
 
@@ -333,7 +333,7 @@ err := json.ForeachFileChunked("large_data.json", 100, func(chunk []*json.Iterab
 })
 ```
 
-### ForeachFileNested (패키지 수준 함수)
+### ForeachFileNested (패키지 레벨 함수)
 
 시그니처: `func ForeachFileNested(filePath string, fn func(key any, item *IterableValue) error) error`
 
@@ -350,6 +350,6 @@ err := json.ForeachFileNested("config.json", func(key any, item *json.IterableVa
 
 ## 관련 문서
 
-- [대용량 파일 처리 가이드](../large-files) - 전체 사용 가이드
-- [NDJSON 처리기](./jsonl) - JSONL/NDJSON 처리
-- [JSONLWriter](./jsonl#jsonlwriter) - JSONL 쓰기기
+- [대용량 파일 처리 가이드](../large-files) - 완전한 사용 가이드
+- [NDJSON 프로세서](./jsonl) - JSONL/NDJSON 처리
+- [JSONLWriter](./jsonl#jsonlwriter) - JSONL 쓰기

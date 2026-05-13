@@ -69,6 +69,33 @@ enabled := p.GetBool(data, "enabled")
 debug := p.GetBool(data, "debug", false)
 ```
 
+### GetWithContext
+
+シグネチャ：`func (p *Processor) GetWithContext(ctx context.Context, jsonStr, path string, cfg ...Config) (any, error)`
+
+コンテキスト付きのパス取得。タイムアウトとキャンセル操作をサポートします。`Get` のコンテキスト対応版です。
+
+::: info 注意
+Context は操作の前後でチェックされ、パース/ナビゲーション中にはチェックされません。大型 JSON ドキュメントの場合、操作中にキャンセルに応答しない場合があります。
+:::
+
+```go
+p, err := json.New()
+if err != nil {
+    panic(err)
+}
+defer p.Close()
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+val, err := p.GetWithContext(ctx, data, "items[0].name")
+if err != nil {
+    panic(err)
+}
+fmt.Println(val)
+```
+
 ## 安全なクエリ
 
 ### SafeGet

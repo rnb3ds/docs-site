@@ -1,5 +1,5 @@
 ---
-title: 수정 함수 - CyberGo JSON | API 참조
+title: 수정 함수 - CyberGo JSON | API 레퍼런스
 description: "CyberGo JSON 수정 함수 완전 참조: Set/SetMultiple 값 설정, Delete 키 삭제, MergeJSON/MergeMany JSON 병합을 포함하며, 자동 경로 생성, 원자적 작업 및 다양한 MergeMode 병합 전략을 지원하여 모든 JSON 데이터 수정 요구를 충족합니다."
 ---
 
@@ -280,7 +280,7 @@ result, err := json.MergeMany([]string{config1, config2, config3})
 
 시그니처: `func ProcessBatch(operations []BatchOperation, cfg ...Config) ([]BatchResult, error)`
 
-여러 JSON 작업을 배치로 처리합니다 (패키지 수준 함수, Processor 생성 불필요).
+여러 JSON 작업을 배치로 처리합니다 (패키지 레벨 함수, Processor 생성 불필요).
 
 ```go
 jsonStr := `{"user": {"name": "CyberGo", "age": 25}}`
@@ -331,7 +331,7 @@ type BatchResult struct {
 
 ## Processor 메서드
 
-Processor는 패키지 수준 함수와 동일한 시그니처의 수정 메서드를 제공합니다:
+Processor는 패키지 레벨 함수와 동일한 시그니처의 수정 메서드를 제공합니다:
 
 ```go
 p, err := json.New()

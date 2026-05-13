@@ -1,11 +1,11 @@
 ---
-title: 치트시트 - CyberGo JSON | API 빠른 참조
-description: "CyberGo JSON API 치트시트: 경로 쿼리 GetString/GetInt, 수정 작업 Set/Delete, 직렬화 Marshal/Unmarshal, 설정 옵션, 이터레이터 및 보안 함수 등 자주 사용하는 API의 빠른 참조 매뉴얼로, 개발자가 효율적으로 검색할 수 있도록 도와줍니다."
+title: 치트시트 - CyberGo JSON | API 빠른 참조하세요
+description: "CyberGo JSON API 치트시트: 경로 쿼리 GetString/GetInt, 수정 작업 Set/Delete, 직렬화 Marshal/Unmarshal, 설정 옵션, 반복자 및 보안 함수 등 자주 사용하는 API의 빠른 참조 매뉴얼로, 개발자가 필요한 함수 시그니처와 사용법을 효율적으로 찾을 수 있습니다."
 ---
 
 # 치트시트
 
-자주 사용하는 API 및 코드 스니펫을 빠르게 찾아보세요.
+자주 사용하는 API와 코드 조각을 빠르게 찾아보세요.
 
 ## 경로 쿼리
 
@@ -22,7 +22,7 @@ description: "CyberGo JSON API 치트시트: 경로 쿼리 GetString/GetInt, 수
 
 ### 기본값 포함
 
-`GetString`, `GetInt`, `GetFloat`, `GetBool` 등의 함수는 선택적 기본값 매개변수 전달을 지원합니다:
+`GetString`, `GetInt`, `GetFloat`, `GetBool` 등의 함수는 선택적 기본값 매개변수를 지원합니다:
 
 | 작업 | 함수 | 예제 |
 |------|------|------|
@@ -36,11 +36,11 @@ description: "CyberGo JSON API 치트시트: 경로 쿼리 GetString/GetInt, 수
 | 작업 | 함수 | 예제 |
 |------|------|------|
 | 값 설정 | `Set` | `json.Set(data, "user.name", "Alice")` |
-| 다중 설정 | `SetMultiple` | `json.SetMultiple(data, map[string]any{"a": 1, "b": 2})` |
+| 배치 설정 | `SetMultiple` | `json.SetMultiple(data, map[string]any{"a": 1, "b": 2})` |
 | 경로 생성 설정 | `SetCreate` | `json.SetCreate(data, "a.b.c", 1)` |
-| 다중 경로 생성 설정 | `SetMultipleCreate` | `json.SetMultipleCreate(data, updates)` |
+| 배치 경로 생성 설정 | `SetMultipleCreate` | `json.SetMultipleCreate(data, updates)` |
 | 값 삭제 | `Delete` | `json.Delete(data, "user.temporary")` |
-| 삭제 후 정리 | `DeleteClean` | `json.DeleteClean(data, "user.temporary")` |
+| 정리하며 삭제 | `DeleteClean` | `json.DeleteClean(data, "user.temporary")` |
 
 ```go
 // 값 설정
@@ -64,7 +64,7 @@ result, err := json.Delete(data, "user.temporary")
 | 디코딩 | `Unmarshal` | `json.Unmarshal(bytes, &v)` |
 | 파싱 | `Parse` | `var v T; json.Parse(jsonStr, &v)` |
 | any로 파싱 | `ParseAny` | `json.ParseAny(jsonStr)` |
-| 이쁘게 포맷 | `Prettify` | `json.Prettify(jsonStr)` |
+| 포맷팅 | `Prettify` | `json.Prettify(jsonStr)` |
 | 압축 | `Compact` | `json.Compact(&buf, []byte(data))` |
 
 ```go
@@ -85,14 +85,14 @@ parsed, err := json.ParseAny(`{"name": "test"}`)
 pretty, err := json.Prettify(`{"name":"Alice","age":30}`)
 ```
 
-## 검증
+## 유효성 검사
 
 | 작업 | 함수 | 예제 |
 |------|------|------|
-| 빠른 검증 | `Valid` | `json.Valid([]byte(data))` |
+| 빠른 검사 | `Valid` | `json.Valid([]byte(data))` |
 
 ```go
-// 빠른 검증
+// 빠른 검사
 if json.Valid([]byte(data)) {
     // 유효한 JSON
 }
@@ -122,9 +122,9 @@ errors, _ := p.ValidateSchema(data, schema)
 | 다중 병합 | `MergeMany` | `json.MergeMany([]string{s1, s2, s3})` |
 
 ```go
-// 비교 (키 순서 및 숫자 정밀도 무시)
+// 비교 (키 순서와 숫자 정밀도 무시)
 equal, _ := json.CompareJSON(`{"a":1.0,"b":2}`, `{"b":2,"a":1}`)
-fmt.Println("Equal:", equal) // true (순서 및 정밀도 무시)
+fmt.Println("Equal:", equal) // true (순서와 정밀도 무시)
 
 // JSON 병합
 base := `{"database":{"host":"localhost","port":5432},"debug":false}`
@@ -155,7 +155,7 @@ defer processor.Close()
 // 값 가져오기
 result := processor.GetString(data, "user.profile.name")
 
-// 안전하게 가져오기 (AccessResult 반환)
+// 안전한 가져오기 (AccessResult 반환)
 accessResult := processor.SafeGet(data, "user.age")
 age, err := accessResult.AsInt()
 ```
@@ -246,20 +246,20 @@ cfg := json.PrettyConfig()
 | `[n]` | 배열 인덱스 | `items[0]` |
 | `[*]` | 와일드카드 | `items[*].id` |
 | `[start:end]` | 슬라이스 | `items[0:5]` |
-| `[start:end:step]` | 간격 있는 슬라이스 | `items[0:10:2]` |
+| `[start:end:step]` | 스텝 슬라이스 | `items[0:10:2]` |
 | `{field1,field2}` | 필드 추출 | `user{name,email}` |
 | `[+]` | 추가 | `items[+]` |
 | `[-1]` | 음수 인덱스 (마지막) | `items[-1]` |
 
-## 일반 패턴
+## 일반적인 패턴
 
-### 중첩 값 안전하게 가져오기
+### 안전하게 중첩 값 가져오기
 
 ```go
 // 기본값이 있는 가져오기 함수 사용
 name := json.GetString(data, "user.profile.name", "unknown")
 
-// 오류 타입을 구분해야 할 때 Get 사용
+// 오류 유형을 구분해야 할 때 Get 사용
 val, err := json.Get(data, "user.profile.name")
 if err != nil {
     if errors.Is(err, json.ErrPathNotFound) {
@@ -273,7 +273,7 @@ if err != nil {
 ### 기본값으로 가져오기
 
 ```go
-// GetString/GetInt 등의 함수는 선택적 기본값 매개변수를 지원합니다
+// GetString/GetInt 등의 함수는 선택적 기본값 매개변수를 지원
 timeout := json.GetInt(data, "timeout", 30)
 debug := json.GetBool(data, "debug", false)
 name := json.GetString(data, "user.nickname", "unknown")
@@ -313,7 +313,7 @@ merged, _ := json.MergeJSON(defaults, userConfig)
 ```go
 val, err := json.Get(data, path)
 if err != nil {
-    // 오류 타입 확인
+    // 오류 유형 확인
     if errors.Is(err, json.ErrPathNotFound) {
         // 경로가 존재하지 않음
     } else if errors.Is(err, json.ErrInvalidJSON) {
@@ -332,7 +332,7 @@ paths := []string{"user.name", "user.email", "items[*].id"}
 result, _ := json.WarmupCache(data, paths)
 fmt.Printf("웜업 성공: %d/%d\n", result.Successful, result.TotalPaths)
 
-// 캐시 지우기
+// 캐시 삭제
 json.ClearCache()
 
 // 통계 가져오기
@@ -351,7 +351,7 @@ if err != nil {
 }
 json.SetGlobalProcessor(p)
 
-// 이후 모든 패키지 수준 함수가 이 프로세서를 사용
+// 이후 모든 패키지 레벨 함수가 이 프로세서를 사용
 name := json.GetString(data, "user.name")
 
 // 애플리케이션 종료 시 정리
@@ -360,8 +360,8 @@ defer json.ShutdownGlobalProcessor()
 
 ## 관련 문서
 
-- [패키지 함수](./api-reference/functions) - 완전한 API 참조
-- [유틸리티 함수](./api-reference/helpers) - 타입 변환 도구
+- [패키지 함수](./api-reference/functions) - 전체 API 참조하세요
+- [보조 함수](./api-reference/helpers) - 타입 변환 도구
 - [Processor](./api-reference/processor/) - 프로세서 메서드
 - [설정](./api-reference/config) - 설정 옵션
 - [타입 정의](./api-reference/types) - AccessResult, Schema 등

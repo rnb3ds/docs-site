@@ -1,6 +1,6 @@
 ---
 title: 错误处理 - CyberGo JSON | 最佳实践
-description: "CyberGo JSON 错误处理最佳实践：涵盖 JsonsError 错误类型判断、errors.Is/As 错误匹配、12 个标准错误变量、恢复策略、SafeError 安全输出和日志记录，帮助 Go 开发者构建健壮的 JSON 处理应用。"
+description: "CyberGo JSON 错误处理最佳实践：涵盖 JsonsError 结构化错误类型判断、errors.Is/As 错误匹配、标准错误变量、恢复策略、SafeError 安全输出和 RedactedPath 路径脱敏日志记录，构建健壮异常处理机制。"
 ---
 
 # 错误处理
@@ -21,10 +21,10 @@ var (
     ErrSizeLimit          = errors.New("size limit exceeded")
     ErrSecurityViolation  = errors.New("security violation detected")
     ErrProcessorClosed    = errors.New("processor is closed")
-    ErrConcurrencyLimit   = errors.New("concurrency limit exceeded")
+    ErrConcurrencyLimit   = errors.New("concurrency limit exceeded") // Deprecated
     ErrUnsupportedPath    = errors.New("unsupported path operation")
-    ErrOperationTimeout   = errors.New("operation timeout")
-    ErrResourceExhausted  = errors.New("system resources exhausted")
+    ErrOperationTimeout   = errors.New("operation timeout")           // Deprecated
+    ErrResourceExhausted  = errors.New("system resources exhausted")  // Deprecated
 )
 ```
 
@@ -314,15 +314,15 @@ if err != nil {
 val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrOperationTimeout) {
-        // 操作超时，可重试
+        // 操作超时，可重试 <Badge type="danger" text="已废弃" />
         return fmt.Errorf("暂时性错误，请重试: %w", err)
     }
     if errors.Is(err, json.ErrConcurrencyLimit) {
-        // 并发限制
+        // 并发限制 <Badge type="danger" text="已废弃" />
         return fmt.Errorf("系统繁忙，请稍后: %w", err)
     }
     if errors.Is(err, json.ErrResourceExhausted) {
-        // 资源耗尽
+        // 资源耗尽 <Badge type="danger" text="已废弃" />
         return fmt.Errorf("系统资源不足: %w", err)
     }
     if errors.Is(err, json.ErrProcessorClosed) {
@@ -353,9 +353,9 @@ func processJSON(data string) error {
             // 安全错误，记录并拒绝
             log.Warn("安全违规", "error", err)
             return errors.New("输入不合法")
-        case errors.Is(err, json.ErrOperationTimeout),
-            errors.Is(err, json.ErrConcurrencyLimit):
-            // 可重试错误
+        case errors.Is(err, json.ErrOperationTimeout),          // Deprecated
+            errors.Is(err, json.ErrConcurrencyLimit): // Deprecated
+            // 可重试错误（这些错误当前不会被库返回，保留用于兼容）
             return fmt.Errorf("暂时性错误，请重试: %w", err)
         default:
             // 系统错误

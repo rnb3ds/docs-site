@@ -1,16 +1,16 @@
 ---
 title: Processor - CyberGo JSON | Справочник API
-description: "Полный справочник CyberGo JSON Processor: создание экземпляра New, операции с данными GetString/Set/Delete, итерация Foreach, кодирование Encode, управление жизненным циклом Close, статистика Stats и конфигурация кэша. Подходит для высокочастотных JSON-операций и сценариев повторного использования данных."
+description: "Полный справочник Processor CyberGo JSON: создание через New, GetString/Set/Delete для операций с данными, Foreach для итерации, Encode для кодирования, Close для управления жизненным циклом, Stats для статистики и конфигурация кэша."
 ---
 
 # Processor
 
-Processor обеспечивает высокую производительность, настраиваемость и более гибкие возможности повторного использования, подходит для многократных операций с одним источником данных.
+Processor обеспечивает высокую производительность, настраиваемость и более гибкие возможности повторного использования, подходя для многократных операций с одним источником данных.
 
-## Особенности
+## Возможности
 
 - **Высокая производительность**: внутренний механизм кэширования, повторные операции более эффективны
-- **Настраиваемость**: поддержка различных параметров конфигурации
+- **Настраиваемость**: поддержка множества параметров конфигурации
 - **Цепочечные вызовы**: методы возвращают изменённый JSON, поддерживая последовательные операции
 - **Управление ресурсами**: явный контроль жизненного цикла
 
@@ -20,22 +20,22 @@ Processor обеспечивает высокую производительно
 
 Сигнатура: `func New(cfg ...Config) (*Processor, error)`
 
-Создаёт экземпляр Processor. Принимает необязательный параметр Config для настройки процессора.
+Создаёт экземпляр Processor. Использует необязательный параметр Config для настройки процессора.
 
 ```go
-// С конфигурацией по умолчанию
+// Использование конфигурации по умолчанию
 processor, err := json.New()
 if err != nil {
     panic(err)
 }
 defer processor.Close()
 
-// С пользовательской конфигурацией
+// Использование пользовательской конфигурации
 cfg := json.DefaultConfig()
 cfg.StrictMode = true
 processor, err := json.New(cfg)
 
-// С безопасной конфигурацией
+// Использование безопасной конфигурации
 processor, err := json.New(json.SecurityConfig())
 ```
 
@@ -55,33 +55,33 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 ## Каталог API
 
 | Категория | Описание |
-|------|------|
-| [Запросы по пути](./query) | GetString/Int/Float/Bool/Get/SafeGet/GetArray/GetObject |
-| [Изменение данных](./modify) | Set/Delete/DeleteClean |
-| [Методы вывода](./output) | Encode/EncodePretty/EncodeWithConfig/операции с Buffer |
-| [Разбор и загрузка](./parse) | ParseAny/Valid/LoadFromFile/LoadFromReader |
-| [Методы итерации](./iterate) | Foreach/ForeachWithPath/ForeachNested |
-| [Пакетные операции](./batch) | ProcessBatch |
+|-----------|----------|
+| [Запросы по пути](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
+| [Модификация данных](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/Delete/DeleteClean |
+| [Методы вывода](./output) | Encode/EncodePretty/EncodeWithConfig/Compact/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
+| [Парсинг и загрузка](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal/LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [Методы итерации](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
+| [Массовые операции](./batch) | ProcessBatch/WarmupCache |
 | [Обработка JSONL](./jsonl) | StreamJSONL/Parallel/Chunked/Map/Reduce/Filter |
-| [Жизненный цикл](./lifecycle) | Close/кэш/статистика/проверка здоровья |
+| [Жизненный цикл](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
 
 ---
 
 ## Управление глобальным процессором
 
-Функции пакетного уровня используют внутренний глобальный процессор. Им можно управлять с помощью следующих функций:
+Функции уровня пакета используют внутренний глобальный процессор. Им можно управлять с помощью следующих функций:
 
 ### SetGlobalProcessor
 
 Сигнатура: `func SetGlobalProcessor(processor *Processor)`
 
-Устанавливает пользовательский глобальный процессор. Все функции пакетного уровня (Get, Set, Marshal и т.д.) будут использовать этот процессор.
+Устанавливает пользовательский глобальный процессор. Все функции уровня пакета (Get, Set, Marshal и др.) будут использовать этот процессор.
 
 **Параметры**
 
 | Имя | Тип | Описание |
-|------|------|------|
-| `processor` | `*Processor` | Пользовательский экземпляр процессора |
+|-----|-----|----------|
+| `processor` | `*Processor` | Экземпляр пользовательского процессора |
 
 ```go
 package main
@@ -101,14 +101,14 @@ func main() {
     // Установка в качестве глобального процессора
     json.SetGlobalProcessor(processor)
 
-    // Теперь все функции пакетного уровня используют безопасную конфигурацию
+    // Теперь все функции уровня пакета используют безопасную конфигурацию
     data, err := json.Get(`{"name":"Alice"}`, "name")
     // Используются ограничения SecurityConfig
     _ = data
 }
 ```
 
-::: warning Внимание
+::: warning Примечание
 - Передача `nil` не выполнит никаких действий
 - Предыдущий глобальный процессор будет автоматически закрыт
 - Эта функция потокобезопасна
@@ -118,7 +118,7 @@ func main() {
 
 Сигнатура: `func ShutdownGlobalProcessor()`
 
-Закрывает и удаляет глобальный процессор. Последующие операции пакетного уровня создадут новый процессор по умолчанию.
+Закрывает и удаляет глобальный процессор. Последующие операции уровня пакета создадут новый процессор по умолчанию.
 
 ```go
 package main
@@ -141,17 +141,17 @@ func main() {
 }
 ```
 
-::: tip Варианты использования
-- Очистка ресурсов при завершении долго работающих сервисов
+::: tip Сценарии использования
+- Очистка ресурсов при завершении длительно работающего сервиса
 - Когда необходимо сбросить конфигурацию процессора
 - Изоляция различных тестовых случаев в тестовой среде
 :::
 
 ---
 
-## См. также
+## Связанные разделы
 
-- [Функции пакета](../functions) - справочник функций верхнего уровня
-- [Config](../config) - параметры конфигурации
-- [Определения интерфейсов](../interfaces) - интерфейсы Hook
-- [Система хуков](../hooks) - подробное руководство по использованию хуков
+- [Функции пакета](../functions) - Справочник функций верхнего уровня
+- [Config](../config) - Параметры конфигурации
+- [Определения интерфейсов](../interfaces) - Интерфейсы Hook
+- [Система хуков](../hooks) - Подробное руководство по использованию хуков

@@ -1,11 +1,11 @@
 ---
-title: Система хуков Hook - CyberGo JSON | Справочник API
-description: "Полный справочник системы хуков CyberGo JSON: подробное описание интерфейса Hook, LoggingHook для логирования, TimingHook для замеров производительности, ValidationHook для валидации данных, ErrorHook для обработки ошибок и реализации пользовательских хуков, поддерживающих вставку пользовательской логики до и после операций JSON."
+title: Система перехватчиков Hook - CyberGo JSON | Справочник API
+description: "Полный справочник системы перехватчиков CyberGo JSON: подробное описание интерфейса Hook, LoggingHook для логирования, TimingHook для замеров производительности, ValidationHook для валидации данных, ErrorHook для обработки ошибок и реализации пользовательских перехватчиков, поддерживающих вставку пользовательской логики до и после операций JSON."
 ---
 
-# Система хуков Hook
+# Система перехватчиков Hook
 
-Хуки позволяют вставлять пользовательскую логику до и после операций JSON, реализуя логирование, мониторинг производительности, валидацию и другие функции.
+Hook позволяет вставлять пользовательскую логику до и после JSON операций, реализуя логирование, мониторинг производительности, валидацию и другие функции.
 
 ## Интерфейс Hook
 
@@ -20,8 +20,8 @@ type Hook interface {
 
 | Метод | Описание |
 |------|------|
-| `Before(ctx HookContext) error` | Вызывается до операции, возврат ошибки прерывает операцию |
-| `After(ctx HookContext, result any, err error) (any, error)` | Вызывается после операции, может изменить результат или вернуть ошибку |
+| `Before(ctx HookContext) error` | Вызывается перед операцией, возврат ошибки прерывает операцию |
+| `After(ctx HookContext, result any, err error) (any, error)` | Вызывается после операции, может модифицировать результат или вернуть ошибку |
 
 ---
 
@@ -32,10 +32,10 @@ HookContext предоставляет контекстную информаци
 ```go
 type HookContext struct {
     Operation string      // Тип операции: "get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string      // Входная строка JSON (может быть пустой при marshal)
+    JSONStr   string      // Входная JSON строка (может быть пустой при marshal)
     Path      string      // Целевой путь (может быть пустым при marshal/unmarshal)
-    Value     any         // Значение для операции set
-    Config    *Config     // Текущая конфигурация
+    Value     any         // Значение операции set
+    Config    *Config     // Активная конфигурация
     StartTime time.Time   // Время начала операции
 }
 ```
@@ -45,17 +45,17 @@ type HookContext struct {
 | Поле | Тип | Описание |
 |------|------|------|
 | `Operation` | `string` | Тип операции, значения: `get`, `set`, `delete`, `marshal`, `unmarshal` |
-| `JSONStr` | `string` | Входная строка JSON |
-| `Path` | `string` | Выражение целевого пути |
-| `Value` | `any` | Значение для операции set |
-| `Config` | `*Config` | Текущая используемая конфигурация |
+| `JSONStr` | `string` | Входная JSON строка |
+| `Path` | `string` | Целевое выражение пути |
+| `Value` | `any` | Значение операции set |
+| `Config` | `*Config` | Текущая конфигурация |
 | `StartTime` | `time.Time` | Время начала операции |
 
 ---
 
 ## Адаптер HookFunc
 
-HookFunc — это структурный адаптер, позволяющий использовать функции как Hook. Подходит для сценариев, когда нужен только Before или After.
+HookFunc -- это адаптер структуры, позволяющий использовать функции в качестве Hook. Подходит для сценариев, когда нужен только Before или After.
 
 ```go
 type HookFunc struct {
@@ -67,7 +67,7 @@ type HookFunc struct {
 ### Пример
 
 ```go
-// Нужен только After
+// Требуется только After
 p.AddHook(&json.HookFunc{
     AfterFn: func(ctx json.HookContext, result any, err error) (any, error) {
         log.Printf("%s completed in %v", ctx.Operation, time.Since(ctx.StartTime))
@@ -75,7 +75,7 @@ p.AddHook(&json.HookFunc{
     },
 })
 
-// Нужен только Before
+// Требуется только Before
 p.AddHook(&json.HookFunc{
     BeforeFn: func(ctx json.HookContext) error {
         log.Printf("starting %s on path %s", ctx.Operation, ctx.Path)
@@ -90,7 +90,7 @@ p.AddHook(&json.HookFunc{
 
 ### LoggingHook
 
-Создаёт хук логирования.
+Создаёт перехватчик для логирования.
 
 ```go
 func LoggingHook(logger interface{ Info(msg string, args ...any) }) Hook
@@ -102,7 +102,7 @@ p.AddHook(json.LoggingHook(slog.Default()))
 
 ### TimingHook
 
-Создаёт хук замера времени, записывающий длительность операции.
+Создаёт перехватчик для замеров времени, записывающий длительность операций.
 
 ```go
 func TimingHook(recorder interface{ Record(op string, duration time.Duration) }) Hook
@@ -114,7 +114,7 @@ p.AddHook(json.TimingHook(myMetricsRecorder))
 
 ### ValidationHook
 
-Создаёт хук валидации, проверяющий входные данные до операции.
+Создаёт перехватчик для валидации входных данных перед операцией.
 
 ```go
 func ValidationHook(validator func(jsonStr, path string) error) Hook
@@ -131,7 +131,7 @@ p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
 
 ### ErrorHook
 
-Создаёт хук обработки ошибок, перехватывающий и обрабатывающий ошибки.
+Создаёт перехватчик для обработки ошибок, перехватывающий и обрабатывающий ошибки.
 
 ```go
 func ErrorHook(handler func(ctx HookContext, err error) error) Hook
@@ -140,7 +140,7 @@ func ErrorHook(handler func(ctx HookContext, err error) error) Hook
 ```go
 p.AddHook(json.ErrorHook(func(ctx json.HookContext, err error) error {
     sentry.CaptureException(err)
-    return err // Вернуть исходную или преобразованную ошибку
+    return err // Возвращает исходную или преобразованную ошибку
 }))
 ```
 
@@ -160,7 +160,7 @@ import (
     "github.com/cybergodev/json"
 )
 
-// Хук логирования
+// Перехватчик логирования
 type LoggingHook struct {
     logger *slog.Logger
 }
@@ -186,11 +186,11 @@ func main() {
         panic(err)
     }
     defer p.Close()
-    
-    // Добавить пользовательский Hook
+
+    // Добавление пользовательского Hook
     p.AddHook(&LoggingHook{logger: slog.Default()})
-    
-    // Использование процессора...
+
+    // Использование processor...
     val, err := p.Get(`{"name": "test"}`, "name")
     if err != nil {
         panic(err)
@@ -199,7 +199,7 @@ func main() {
 }
 ```
 
-### Упрощение с HookFunc
+### Упрощение с помощью HookFunc
 
 ```go
 // Нужно только записать время завершения
@@ -215,7 +215,7 @@ p.AddHook(&json.HookFunc{
 
 ## Настройка Hook
 
-### Добавление через Config
+### Через Config
 
 ```go
 cfg := json.DefaultConfig()
@@ -229,7 +229,7 @@ if err != nil {
 }
 ```
 
-### Добавление через Processor
+### Через Processor
 
 ```go
 p, err := json.New()
@@ -244,15 +244,15 @@ p.AddHook(json.TimingHook(myRecorder))
 
 ## Порядок выполнения
 
-### Хуки Before
+### Перехватчики Before
 
 - Выполняются в **порядке добавления**
-- Если любой Hook возвращает ошибку, операция прерывается
+- Любой Hook, возвращающий ошибку, прерывает операцию
 
-### Хуки After
+### Перехватчики After
 
 - Выполняются в **обратном порядке добавления**
-- Каждый Hook будет выполнен (даже если предыдущие вернули ошибку)
+- Каждый Hook выполняется (даже если предыдущий вернул ошибку)
 
 ```go
 // Порядок добавления: A, B, C
@@ -267,7 +267,7 @@ p.AddHook(hookC)
 
 ---
 
-## Рекомендации
+## Лучшие практики
 
 ### 1. Логирование
 
@@ -291,7 +291,7 @@ p.AddHook(json.TimingHook(&MetricsRecorder{}))
 
 ```go
 p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
-    if len(jsonStr) > 10*1024*1024 { // 10МБ
+    if len(jsonStr) > 10*1024*1024 { // 10MB
         return errors.New("JSON payload too large")
     }
     return nil
@@ -336,8 +336,8 @@ func (h *AuditHook) After(ctx json.HookContext, result any, err error) (any, err
 
 ---
 
-## Связанные разделы
+## Смотрите также
 
-- [Определения интерфейсов](./interfaces) - Расширения интерфейсов
-- [Validator](./validator) - Валидатор
+- [Определения интерфейсов](./interfaces) - Расширяемые интерфейсы
+- [Validator](./validator) - Валидаторы
 - [Config](./config) - Параметры конфигурации

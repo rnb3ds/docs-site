@@ -1,11 +1,11 @@
 ---
 title: Processor - Жизненный цикл - CyberGo JSON | Справочник API
-description: "Полный справочник по управлению жизненным циклом CyberGo JSON Processor: создание экземпляра New, закрытие и освобождение ресурсов Close, проверка состояния IsClosed, статистическая информация Stats, мониторинг здоровья HealthCheck, а также лучшие практики потокобезопасного закрытия и защиты ресурсов."
+description: "Справочник управления жизненным циклом Processor: New, Close, IsClosed, ClearCache, WarmupCache, GetStats, GetHealthStatus, AddHook, SetLogger, GetConfig."
 ---
 
 # Жизненный цикл и статистика
 
-Processor предоставляет полный набор возможностей для управления жизненным циклом, управления кэшем и мониторинга здоровья.
+Processor обеспечивает полное управление жизненным циклом, контроль кэша и мониторинг работоспособности.
 
 ## Жизненный цикл
 
@@ -44,10 +44,10 @@ if processor.IsClosed() {
 processor.ClearCache()
 ```
 
-Применяется когда:
-- Источник данных изменился
-- Использование памяти слишком высокое
-- Необходимо принудительное обновление
+Применимо для:
+- Изменение источника данных
+- Слишком высокое использование памяти
+- Необходимость принудительного обновления
 
 ### WarmupCache
 
@@ -77,14 +77,14 @@ type WarmupResult struct {
 ```
 
 | Поле | Тип | Описание |
-|------|------|------|
+|------|-----|----------|
 | `TotalPaths` | `int` | Общее количество путей |
 | `Successful` | `int` | Количество успешно прогретых путей |
 | `Failed` | `int` | Количество путей с ошибками |
 | `SuccessRate` | `float64` | Процент успешности (0-100) |
 | `FailedPaths` | `[]string` | Список путей с ошибками |
 
-## Статистическая информация
+## Статистика
 
 ### GetStats
 
@@ -118,10 +118,10 @@ type Stats struct {
 ```
 
 | Поле | Тип | Описание |
-|------|------|------|
+|------|-----|----------|
 | `CacheSize` | `int64` | Текущее количество записей в кэше |
 | `CacheMemory` | `int64` | Использование памяти кэшем (байты) |
-| `MaxCacheSize` | `int` | Максимальный лимит размера кэша |
+| `MaxCacheSize` | `int` | Максимальный предел размера кэша |
 | `HitCount` | `int64` | Количество попаданий в кэш |
 | `MissCount` | `int64` | Количество промахов кэша |
 | `HitRatio` | `float64` | Процент попаданий в кэш (0-1) |
@@ -132,18 +132,18 @@ type Stats struct {
 | `OperationCount` | `int64` | Общее количество операций |
 | `ErrorCount` | `int64` | Общее количество ошибок |
 
-## Проверка здоровья
+## Проверка работоспособности
 
 ### GetHealthStatus
 
 Сигнатура: `func (p *Processor) GetHealthStatus() HealthStatus`
 
-Получает состояние здоровья процессора.
+Получает состояние работоспособности процессора.
 
 ```go
 status := processor.GetHealthStatus()
 if status.Healthy {
-    fmt.Println("Процессор здоров")
+    fmt.Println("Процессор работоспособен")
 } else {
     for name, check := range status.Checks {
         if !check.Healthy {
@@ -158,29 +158,29 @@ if status.Healthy {
 ```go
 type HealthStatus struct {
     Timestamp time.Time              // Время проверки
-    Healthy   bool                   // Общее состояние здоровья
+    Healthy   bool                   // Общее состояние работоспособности
     Checks    map[string]CheckResult // Результаты отдельных проверок
 }
 
 type CheckResult struct {
-    Healthy  bool   // Здоров ли
+    Healthy  bool   // Работоспособен ли
     Message  string // Сообщение о состоянии
 }
 ```
 
 | Поле | Тип | Описание |
-|------|------|------|
+|------|-----|----------|
 | `Timestamp` | `time.Time` | Время проверки |
-| `Healthy` | `bool` | Общее состояние здоровья |
-| `Checks` | `map[string]CheckResult` | Подробности отдельных проверок |
+| `Healthy` | `bool` | Общее состояние работоспособности |
+| `Checks` | `map[string]CheckResult` | Детали отдельных проверок |
 
-## Расширяющие хуки
+## Расширение хуками
 
 ### AddHook
 
 Сигнатура: `func (p *Processor) AddHook(hook Hook)`
 
-Добавляет хук операций к процессору.
+Добавляет хук операции к процессору.
 
 ```go
 processor.AddHook(&LoggingHook{})
@@ -245,27 +245,27 @@ processor.WarmupCache(data, []string{
 // Регулярная проверка статистики
 stats := processor.GetStats()
 if stats.HitRatio < 0.5 {
-    // Низкий процент попаданий, рассмотрите настройку конфигурации кэша
+    // Низкий процент попаданий, рассмотрите изменение конфигурации кэша
 }
 ```
 
 ### Интеграция мониторинга
 
 ```go
-// Регулярная проверка здоровья
+// Регулярная проверка работоспособности
 go func() {
     ticker := time.NewTicker(30 * time.Second)
     for range ticker.C {
         status := processor.GetHealthStatus()
         if !status.Healthy {
-            log.Printf("Processor нездоров: %+v", status.Checks)
+            log.Printf("Processor неработоспособен: %+v", status.Checks)
         }
     }
 }()
 ```
 
-## См. также
+## Связанные разделы
 
-- [Config](../config) - параметры конфигурации (размер кэша, TTL и т.д.)
-- [Система хуков](../hooks) - подробное руководство по использованию хуков
-- [Определения интерфейсов](../interfaces) - интерфейсы Hook
+- [Config](../config) - Параметры конфигурации (размер кэша, TTL и др.)
+- [Система хуков](../hooks) - Подробное руководство по использованию хуков
+- [Определения интерфейсов](../interfaces) - Интерфейсы Hook

@@ -1,25 +1,25 @@
 ---
-title: "Функции запросов и получения - CyberGo JSON | Справочник API"
-description: "Полный справочник функций запросов и получения CyberGo JSON: включая типобезопасное получение Get/GetString/GetInt/GetFloat/GetBool, обобщённое получение GetTyped[T] и функции парсинга Parse/ParseAny с полной поддержкой выражений JSONPath."
+title: Функции запросов и получения - CyberGo JSON | Справочник API
+description: "Полный справочник функций запросов CyberGo JSON: Get/GetString/GetInt/GetFloat/GetBool типобезопасное получение, GetTyped[T] обобщённое получение и Parse/ParseAny парсинг, полная поддержка JSONPath."
 ---
 
 # Функции запросов и получения
 
-Функции запросов и получения, предоставляемые пакетом json, поддерживают выражения пути, типобезопасное получение и пакетные операции.
+Функции запросов и получения пакета json поддерживают выражения пути, типобезопасное получение и массовые операции.
 
-## Функции запросов по пути
+## Функции запроса по пути
 
 ### Get
 
 Сигнатура: `func Get(jsonStr, path string, cfg ...Config) (any, error)`
 
-Получение значения любого типа по пути.
+Получает значение любого типа по пути.
 
 **Параметры**
 
 | Имя | Тип | Обязательный | Описание |
-|------|------|------|------|
-| `jsonStr` | `string` | Да | JSON-строка |
+|-----|-----|:------------:|----------|
+| `jsonStr` | `string` | Да | Строка JSON |
 | `path` | `string` | Да | Выражение пути |
 | `cfg` | `Config` | Нет | Необязательная конфигурация |
 
@@ -42,15 +42,47 @@ func main() {
 }
 ```
 
+### GetWithContext
+
+Сигнатура: `func GetWithContext(ctx context.Context, jsonStr, path string, cfg ...Config) (any, error)`
+
+Получение по пути с контекстом. Поддерживает тайм-аут и отмену операции. Контекстно-зависимая версия `Get`.
+
+::: info Примечание
+Контекст проверяется до и после операции, но не во время парсинга/навигации. Для больших JSON-документов операция может не реагировать на отмену во время выполнения.
+:::
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    "github.com/cybergodev/json"
+)
+
+func main() {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    val, err := json.GetWithContext(ctx, `{"user":{"name":"Alice"}}`, "user.name")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(val) // Вывод: Alice
+}
+```
+
 ## Типобезопасные функции получения
 
-Типобезопасные функции получения предоставляют откат к нулевому значению через вариативный параметр `defaultValue`. Когда путь не существует, значение равно null или преобразование типа не удалось, возвращается `defaultValue` (если не предоставлен, возвращается нулевое значение соответствующего типа).
+Типобезопасные функции получения предоставляют возврат к нулевому значению через вариативный параметр `defaultValue`. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается `defaultValue` (если не указан — нулевое значение соответствующего типа).
 
 ### GetString
 
 Сигнатура: `func GetString(jsonStr, path string, defaultValue ...string) string`
 
-Получение строкового значения по пути.
+Получает строковое значение по пути.
 
 ```go
 package main
@@ -76,7 +108,7 @@ func main() {
 
 Сигнатура: `func GetInt(jsonStr, path string, defaultValue ...int) int`
 
-Получение целочисленного значения по пути.
+Получает целочисленное значение по пути.
 
 ```go
 package main
@@ -105,7 +137,7 @@ func main() {
 
 Сигнатура: `func GetFloat(jsonStr, path string, defaultValue ...float64) float64`
 
-Получение значения с плавающей точкой по пути.
+Получает число с плавающей точкой по пути.
 
 ```go
 package main
@@ -134,7 +166,7 @@ func main() {
 
 Сигнатура: `func GetBool(jsonStr, path string, defaultValue ...bool) bool`
 
-Получение логического значения по пути.
+Получает логическое значение по пути.
 
 ```go
 package main
@@ -163,7 +195,7 @@ func main() {
 
 Сигнатура: `func GetArray(jsonStr, path string, defaultValue ...[]any) []any`
 
-Получение массива по пути.
+Получает массив по пути.
 
 ```go
 package main
@@ -191,7 +223,7 @@ func main() {
 
 Сигнатура: `func GetObject(jsonStr, path string, defaultValue ...map[string]any) map[string]any`
 
-Получение объекта по пути.
+Получает объект по пути.
 
 ```go
 package main
@@ -219,9 +251,9 @@ func main() {
 
 Сигнатура: `func GetTyped[T any](jsonStr, path string, defaultValue ...T) T`
 
-Обобщённая функция получения с поддержкой пользовательских типов. Когда путь не существует или преобразование типа не удалось, возвращается `defaultValue` (если не предоставлен, возвращается нулевое значение `T`).
+Обобщённая функция получения, поддерживающая пользовательские типы. Если путь не существует или преобразование типа не удалось, возвращается `defaultValue` (если не указан — нулевое значение типа `T`).
 
-**Примечание к именованию**: `GetTyped[T]` эквивалентно семантике `GetAs[T]` и означает получение JSON-значения с преобразованием к указанному типу `T`.
+**Пояснение к именованию**: `GetTyped[T]` семантически эквивалентен `GetAs[T]`, что означает получение и преобразование JSON-значения в указанный тип `T`.
 
 ```go
 package main
@@ -243,7 +275,7 @@ func main() {
     user := json.GetTyped[User](jsonStr, "user")
     fmt.Printf("Name: %s, Age: %d\n", user.Name, user.Age)
 
-    // Пример со встроенным типом
+    // Примеры встроенных типов
     name := json.GetTyped[string](jsonStr, "user.name")
     fmt.Println(name) // Вывод: CyberGo
 
@@ -262,13 +294,13 @@ func main() {
 
 Сигнатура: `func Parse(jsonStr string, target any, cfg ...Config) error`
 
-Разбор JSON-строки в объект, на который указывает указатель `target`. `target` должен быть указателем.
+Парсит строку JSON в объект, на который указывает `target`. `target` должен быть указателем.
 
 **Параметры**
 
 | Имя | Тип | Обязательный | Описание |
-|------|------|------|------|
-| `jsonStr` | `string` | Да | JSON-строка |
+|-----|-----|:------------:|----------|
+| `jsonStr` | `string` | Да | Строка JSON |
 | `target` | `any` | Да | Указатель на целевой объект |
 | `cfg` | `Config` | Нет | Необязательная конфигурация |
 
@@ -342,7 +374,7 @@ func main() {
 
 Сигнатура: `func ParseAny(jsonStr string, cfg ...Config) (any, error)`
 
-Разбор JSON-строки и возврат корневого значения как типа `any` без предварительного объявления целевой переменной.
+Парсит строку JSON и возвращает корневое значение типа `any` без необходимости предварительно объявлять целевую переменную.
 
 ```go
 package main
@@ -362,15 +394,15 @@ func main() {
 ```
 
 ::: tip Parse vs ParseAny
-- `Parse(jsonStr, &target)` — разбор в целевой указатель, требует предварительного объявления переменной
-- `ParseAny(jsonStr)` — прямой возврат типа `any` без предварительного объявления
+- `Parse(jsonStr, &target)` — парсинг в целевой указатель, требует предварительного объявления переменной
+- `ParseAny(jsonStr)` — прямое возвращение типа `any`, без предварительного объявления
 :::
 
 ### Processor.Parse
 
 **Сигнатура**: `func (p *Processor) Parse(jsonStr string, target any, cfg ...Config) error`
 
-Разбор JSON в целевой указатель через экземпляр Processor.
+Парсит JSON в целевой указатель через экземпляр Processor.
 
 ```go
 p, err := json.New()
@@ -390,7 +422,7 @@ if err != nil {
 
 **Сигнатура**: `func (p *Processor) ParseAny(jsonStr string, cfg ...Config) (any, error)`
 
-Разбор JSON через экземпляр Processor с возвратом типа `any`, поведение аналогично функции `ParseAny` уровня пакета.
+Парсит JSON через экземпляр Processor и возвращает тип `any`, поведение аналогично функции уровня пакета `ParseAny`.
 
 ```go
 p, err := json.New()
@@ -402,7 +434,7 @@ defer p.Close()
 data, err := p.ParseAny(`{"name": "test"}`)
 ```
 
-Подробнее см. [Методы парсинга Processor](../processor/parse.md#Методы-парсинга).
+Подробнее см. [Методы парсинга Processor](../processor/parse.md#методы-парсинга).
 
 ## Функции валидации
 
@@ -410,7 +442,7 @@ data, err := p.ParseAny(`{"name": "test"}`)
 
 Сигнатура: `func Valid(data []byte) bool`
 
-Проверка корректности среза байт JSON. 100% совместимость с `encoding/json.Valid`.
+Проверяет валидность JSON-байтов. 100% совместима с `encoding/json.Valid`.
 
 ```go
 package main
@@ -423,7 +455,7 @@ import (
 func main() {
     data := []byte(`{"name": "test"}`)
     if json.Valid(data) {
-        fmt.Println("Корректный JSON")
+        fmt.Println("Валидный JSON")
     }
 }
 ```
@@ -432,7 +464,7 @@ func main() {
 
 Сигнатура: `func ValidWithConfig(jsonStr string, cfg ...Config) (bool, error)`
 
-Проверка корректности JSON-строки с использованием конфигурации и возврат возможной информации об ошибке.
+Проверяет валидность строки JSON с использованием конфигурации и возвращает возможную информацию об ошибке.
 
 ```go
 package main
@@ -449,18 +481,57 @@ func main() {
         panic(err)
     }
     if valid {
-        fmt.Println("Корректный JSON")
+        fmt.Println("Валидный JSON")
     }
 }
 ```
 
-## Безопасные функции получения
+### ValidateSchema
 
-### SafeGet (функция уровня пакета)
+Сигнатура: `func ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
+
+Валидирует JSON-данные с использованием JSON Schema. Возвращает список всех ошибок валидации.
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/cybergodev/json"
+)
+
+func main() {
+    schema := &json.Schema{
+        Type:     "object",
+        Required: []string{"name", "email"},
+        Properties: map[string]*json.Schema{
+            "name":  {Type: "string", MinLength: 1},
+            "email": {Type: "string", Format: "email"},
+            "age":   {Type: "integer", Minimum: 0},
+        },
+    }
+
+    errors, err := json.ValidateSchema(`{"name":"Alice","email":"alice@example.com","age":25}`, schema)
+    if err != nil {
+        panic(err)
+    }
+    for _, e := range errors {
+        fmt.Printf("Путь %s: %s\n", e.Path, e.Message)
+    }
+}
+```
+
+::: tip Подробнее
+Полное определение типа Schema и способы использования валидатора см. в разделе [Валидатор](../validator).
+:::
+
+## Функции безопасного получения
+
+### SafeGet (функция пакета)
 
 Сигнатура: `func SafeGet(jsonStr, path string, cfg ...Config) AccessResult`
 
-Выполнение типобезопасной операции получения, возвращает `AccessResult`, предоставляющий методы преобразования типов (`AsString`, `AsInt`, `AsFloat64`, `AsBool`).
+Выполняет типобезопасное получение, возвращает `AccessResult` с методами преобразования типов (`AsString`, `AsInt`, `AsFloat64`, `AsBool`).
 
 ```go
 package main
@@ -489,7 +560,7 @@ func main() {
 
 Сигнатура: `func (p *Processor) SafeGet(jsonStr, path string, cfg ...Config) AccessResult`
 
-Выполнение типобезопасной операции получения через экземпляр Processor.
+Выполняет типобезопасное получение через экземпляр Processor.
 
 ```go
 p, err := json.New()
@@ -511,11 +582,11 @@ if result.Exists {
 
 Следующие методы предоставляются как функции уровня пакета и как методы Processor.
 
-### GetMultiple (функция уровня пакета)
+### GetMultiple (функция пакета)
 
 Сигнатура: `func GetMultiple(jsonStr string, paths []string, cfg ...Config) (map[string]any, error)`
 
-Пакетное получение значений по нескольким путям (функция уровня пакета, не требует создания Processor).
+Массовое получение значений по нескольким путям (функция уровня пакета, не требует создания Processor).
 
 ```go
 jsonStr := `{"user": {"name": "CyberGo", "age": 30, "email": "test@example.com"}}`
@@ -532,7 +603,7 @@ fmt.Println(values["user.name"]) // Вывод: CyberGo
 
 Сигнатура: `func (p *Processor) GetMultiple(jsonStr string, paths []string, cfg ...Config) (map[string]any, error)`
 
-Пакетное получение значений по нескольким путям.
+Массовое получение значений по нескольким путям.
 
 ```go
 p, err := json.New()
@@ -555,7 +626,7 @@ fmt.Println(values["user.name"]) // Вывод: CyberGo
 
 Сигнатура: `func (p *Processor) ProcessBatch(operations []BatchOperation, cfg ...Config) ([]BatchResult, error)`
 
-Пакетная обработка нескольких JSON-операций.
+Массовая обработка нескольких JSON-операций.
 
 **Поля BatchOperation**: `Type string`, `JSONStr string`, `Path string`, `Value any`, `ID string`
 
@@ -583,7 +654,7 @@ for _, r := range results {
     if r.Error != nil {
         fmt.Printf("Операция %s не удалась: %v\n", r.ID, r.Error)
     } else {
-        fmt.Printf("Результат операции %s: %v\n", r.ID, r.Result)
+        fmt.Printf("Операция %s результат: %v\n", r.ID, r.Result)
     }
 }
 ```
@@ -595,24 +666,28 @@ for _, r := range results {
 Поля структуры `AccessResult`, используемой в `SafeGet`:
 
 | Поле | Тип | Описание |
-|------|------|------|
+|------|-----|----------|
 | `Value` | `any` | Полученное значение |
 | `Exists` | `bool` | Существует ли путь |
 | `Type` | `string` | Обнаруженный тип значения |
+
+**Методы**: `Ok()` · `Unwrap()` · `UnwrapOr()` · `AsString()` · `AsStringConverted()` · `AsInt()` · `AsFloat64()` · `AsBool()`
+
+Подробнее см. [Тип AccessResult](../types#accessresult-результат-доступа-к-свойству).
 
 ### Result[T]
 
 Поля обобщённой структуры `Result[T]`:
 
 | Поле | Тип | Описание |
-|------|------|------|
+|------|-----|----------|
 | `Value` | `T` | Полученное значение |
-| `Exists` | `bool` | Было ли значение найдено |
+| `Exists` | `bool` | Найдено ли значение |
 | `Error` | `error` | Информация об ошибке |
 
-## Смотрите также
+## Связанные разделы
 
-- [Функции изменения](./modify) - Операции изменения Set, Delete и др.
-- [Кодирование и декодирование](./encode-decode) - Операции сериализации Marshal, Unmarshal и др.
+- [Функции модификации](./modify) - Операции Set, Delete и др.
+- [Кодирование/декодирование](./encode-decode) - Операции сериализации Marshal, Unmarshal и др.
 - [Вспомогательные функции](../helpers) - Утилиты CompareJSON, MergeJSON и др.
 - [Параметры конфигурации](../config) - Подробное описание Config

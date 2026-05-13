@@ -11,7 +11,7 @@ Processor 提供多种 JSON 编码输出方法。
 
 ### Encode
 
-签名：`func (p *Processor) Encode(value any, config ...Config) (string, error)`
+签名：`func (p *Processor) Encode(value any, cfg ...Config) (string, error)`
 
 将任意值编码为 JSON 字符串。
 
@@ -25,7 +25,7 @@ fmt.Println(result)
 
 ### EncodePretty
 
-签名：`func (p *Processor) EncodePretty(value any, config ...Config) (string, error)`
+签名：`func (p *Processor) EncodePretty(value any, cfg ...Config) (string, error)`
 
 将任意值编码为格式化 JSON 字符串。
 

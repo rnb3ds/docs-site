@@ -1,6 +1,6 @@
 ---
 title: インターフェース定義 - CyberGo JSON | API リファレンス
-description: "CyberGo JSON 拡張インターフェース定義完全リファレンス：CustomEncoder、TypeEncoder、Validator、Hook インターフェース、PathParser、DangerousPattern を含み、エンコード、バリデーション、セキュリティなどのコア機能を柔軟に拡張可能。"
+description: "CyberGo JSON 拡張インターフェース定義完全リファレンス：CustomEncoder、TypeEncoder、Validator、Hook インターフェース、PathParser、DangerousPattern を含み、ライブラリのエンコード、バリデーション、セキュリティ防护などのコア機能の柔軟な拡張をサポートし、カスタムシリアライズとセキュリティ戦略のニーズを満たします。"
 ---
 
 # インターフェース定義
@@ -15,7 +15,7 @@ json パッケージは複数の拡張インターフェースを提供し、JSO
 
 ```go
 type CustomEncoder interface {
-    // Encode は Go 値を JSON 文字列に変換する
+    // Encode は Go 値を JSON 文字列に変換します
     Encode(value any) (string, error)
 }
 ```
@@ -53,11 +53,11 @@ if err != nil {
 
 ### TypeEncoder
 
-特定型用のエンコーダインターフェース。
+特定型のエンコーダインターフェース。
 
 ```go
 type TypeEncoder interface {
-    // Encode は特定型の値を JSON 文字列にエンコードする
+    // Encode は特定型の値を JSON 文字列にエンコードします
     Encode(v reflect.Value) (string, error)
 }
 ```
@@ -94,8 +94,8 @@ JSON バリデータインターフェース。
 
 ```go
 type Validator interface {
-    // Validate は JSON 文字列に問題がないかチェックする
-    // 有効な場合は nil を返し、それ以外は問題を説明するエラーを返す
+    // Validate は JSON 文字列に問題がないかチェックします
+    // 有効な場合は nil を返し、そうでない場合は問題を説明するエラーを返します
     Validate(jsonStr string) error
 }
 ```
@@ -110,7 +110,7 @@ type SizeValidator struct {
 func (v *SizeValidator) Validate(jsonStr string) error {
     // 入力データのサイズをチェック
     if int64(len(jsonStr)) > v.MaxSize {
-        return fmt.Errorf("JSON が最大サイズを超えています: %d", v.MaxSize)
+        return fmt.Errorf("JSON が最大サイズを超過: %d", v.MaxSize)
     }
     return nil
 }
@@ -132,12 +132,12 @@ if err != nil {
 
 ```go
 type Hook interface {
-    // Before は操作の前に呼び出される
-    // エラーを返すと操作を中止する
+    // Before は操作の前に呼び出されます
+    // エラーを返すと操作を中止します
     Before(ctx HookContext) error
 
-    // After は操作の完了後に呼び出される
-    // 結果の変更やエラーの確認が可能
+    // After は操作の完了後に呼び出されます
+    // 結果の変更やエラーのチェックが可能です
     After(ctx HookContext, result any, err error) (any, error)
 }
 ```
@@ -149,8 +149,8 @@ type Hook interface {
 ```go
 type HookContext struct {
     Operation string        // 操作タイプ: "get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string        // 入力 JSON 文字列（marshal の場合は空の可能性あり）
-    Path      string        // 対象パス（marshal/unmarshal の場合は空の可能性あり）
+    JSONStr   string        // 入力 JSON 文字列（marshal 時は空の可能性あり）
+    Path      string        // 対象パス（marshal/unmarshal 時は空の可能性あり）
     Value     any           // set 操作の値
     Config    *Config       // アクティブな設定
     StartTime time.Time     // 操作開始時刻
@@ -290,7 +290,7 @@ const (
     // PatternLevelWarning - 厳格モードではブロック、緩やかなモードでは警告を記録
     PatternLevelWarning
 
-    // PatternLevelInfo - ログ記録のみ、ブロックしない
+    // PatternLevelInfo - 記録のみ、ブロックしない
     PatternLevelInfo
 )
 ```
@@ -304,10 +304,10 @@ type DangerousPattern struct {
     // Pattern は入力内で検出する部分文字列
     Pattern string
 
-    // Name はパターンの説明名
+    // Name はパターンの説明的な名前
     Name string
 
-    // Level はこのパターンの処理方法を決定する重大度レベル
+    // Level はパターンの重大度レベルの処理方法を決定
     Level PatternLevel
 }
 ```
@@ -340,7 +340,7 @@ cfg.AddDangerousPattern(json.DangerousPattern{
 
 ```go
 type PathParser interface {
-    // ParsePath はパス文字列をパスセグメントに解析する
+    // ParsePath はパス文字列をパスセグメントに解析します
     ParsePath(path string) ([]PathSegment, error)
 }
 ```
@@ -367,7 +367,7 @@ type Number string
 ```
 
 ::: tip 互換性について
-ライブラリの `Number` 型は `encoding/json.Number` と 100% 互換であり、そのまま置き換えて使用できます。
+ライブラリの `Number` 型は `encoding/json.Number` と 100% 互換があり、直接置き換えて使用できます。
 :::
 
 **メソッド**：
@@ -396,7 +396,7 @@ if err != nil {
 // 型アサーションで Number を取得
 if num, ok := val.(json.Number); ok {
     // Number は元の精度を維持
-    fmt.Println(num.String()) // "9007199254740993" （完全な精度）
+    fmt.Println(num.String()) // "9007199254740993"（完全な精度）
 
     // 他の型に変換
     f, _ := num.Float64()
@@ -406,17 +406,70 @@ if num, ok := val.(json.Number); ok {
 
 ## 標準ライブラリ互換インターフェース
 
-::: info 説明
-`encoding/json` 互換インターフェース（`Marshaler`、`Unmarshaler`、`TextMarshaler`、`TextUnmarshaler`）は内部実装に移行し、公開 API としてエクスポートされなくなりました。ライブラリはこれらのインターフェースを実装する型を自動的に認識するため、ユーザーが明示的に参照する必要はありません。
+`json` パッケージは `encoding/json` と互換の以下の標準インターフェースをエクスポートし、カスタム型のエンコード/デコード動作の定義に使用します。
 
-`Encoder`、`Decoder`、`Token`、`Delim`、`Number` などのエンコード・デコード型の詳細については [型定義](./types#encoder-json-エンコーダ) を参照してください。
-:::
+### Marshaler
+
+```go
+type Marshaler interface {
+    MarshalJSON() ([]byte, error)
+}
+```
+
+### Unmarshaler
+
+```go
+type Unmarshaler interface {
+    UnmarshalJSON(data []byte) error
+}
+```
+
+### TextMarshaler
+
+```go
+type TextMarshaler interface {
+    MarshalText() ([]byte, error)
+}
+```
+
+### TextUnmarshaler
+
+```go
+type TextUnmarshaler interface {
+    UnmarshalText(text []byte) error
+}
+```
+
+**使用例**
+
+```go
+type Person struct {
+    Name string
+}
+
+// Marshaler インターフェースの実装
+func (p Person) MarshalJSON() ([]byte, error) {
+    return []byte(`{"name":"` + p.Name + `"}`), nil
+}
+
+// Unmarshaler インターフェースの実装
+func (p *Person) UnmarshalJSON(data []byte) error {
+    var v struct{ Name string `json:"name"` }
+    if err := json.Unmarshal(data, &v); err != nil {
+        return err
+    }
+    p.Name = v.Name
+    return nil
+}
+```
+
+`Encoder`、`Decoder`、`Token`、`Delim`、`Number` などのエンコード/デコード型の詳細は[型定義](./types#encoder-json-エンコーダ)を参照してください。
 
 ## 型定義
 
 ### Result[T]
 
-型安全な操作結果。ジェネリクス対応の結果処理を提供します。
+タイプセーフな操作結果。ジェネリック対応の結果処理を提供します。
 
 ```go
 type Result[T any] struct {
@@ -430,14 +483,14 @@ type Result[T any] struct {
 
 | メソッド | シグネチャ | 説明 |
 |------|------|------|
-| `Ok` | `func (r Result[T]) Ok() bool` | 結果が有効か（エラーなし、かつ存在する） |
+| `Ok` | `func (r Result[T]) Ok() bool` | 結果が有効か（エラーがなく存在するか） |
 | `Unwrap` | `func (r Result[T]) Unwrap() T` | 値を取得、無効な場合はゼロ値を返す |
 | `UnwrapOr` | `func (r Result[T]) UnwrapOr(defaultValue T) T` | 値またはデフォルト値を取得 |
 
 **使用例**：
 
 ```go
-// ジェネリクスで値を取得
+// ジェネリック取得で値を取得
 name := json.GetTyped[string](data, "user.name")
 fmt.Println(name)
 
@@ -462,38 +515,38 @@ type AccessResult struct {
 func (r AccessResult) Ok() bool                           // 存在するか
 func (r AccessResult) Unwrap() any                        // 値を取得
 func (r AccessResult) UnwrapOr(defaultValue any) any      // 値またはデフォルト値を取得
-func (r AccessResult) AsString() (string, error)          // 厳格な変換
+func (r AccessResult) AsString() (string, error)          // 厳格変換
 func (r AccessResult) AsStringConverted() (string, error) // フォーマット変換
-func (r AccessResult) AsInt() (int, error)                // 厳格な変換
-func (r AccessResult) AsFloat64() (float64, error)        // 厳格な変換
-func (r AccessResult) AsBool() (bool, error)              // 厳格な変換
+func (r AccessResult) AsInt() (int, error)                // 厳格変換
+func (r AccessResult) AsFloat64() (float64, error)        // 厳格変換
+func (r AccessResult) AsBool() (bool, error)              // 厳格変換
 ```
 
 **型変換メソッドの説明**：
 
 | メソッド | 変換動作 | 説明 |
 |------|----------|------|
-| `AsString()` | 厳格 | string 型のみ受け入れ、文字列以外はエラーを返す |
-| `AsStringConverted()` | フォーマット | fmt.Sprintf で任意の値を文字列表現に変換 |
-| `AsInt()` | 厳格 | bool を int に変換しない、整数と解析可能な数値のみ受け入れ |
-| `AsFloat64()` | 厳格 | bool を float に変換しない、浮動小数点数と解析可能な数値のみ受け入れ |
-| `AsBool()` | 厳格 | bool と解析可能な文字列のみ受け入れ（"true"/"false"/"yes"/"no" など） |
+| `AsString()` | 厳格 | string 型のみ受け入れ、非文字列はエラーを返す |
+| `AsStringConverted()` | フォーマット | fmt.Sprintf を使用して任意の値を文字列表現に変換 |
+| `AsInt()` | 厳格 | bool を int に変換しない、整数とパース可能な数値のみ受け入れ |
+| `AsFloat64()` | 厳格 | bool を float に変換しない、浮動小数点数とパース可能な数値のみ受け入れ |
+| `AsBool()` | 厳格 | bool とパース可能な文字列のみ受け入れ（"true"/"false"/"yes"/"no" など） |
 
 ```go
 result := p.SafeGet(data, "user.age")
 
-// 厳格な変換 - 値が整数でない場合はエラーを返す
+// 厳格変換 - 値が整数でない場合はエラーを返す
 age, err := result.AsInt()
 
 // フォーマット変換 - 任意の値を文字列に変換
-str, err := result.AsStringConverted() // 例： 30 -> "30"
+str, err := result.AsStringConverted() // 例: 30 -> "30"
 ```
 
 ## Schema 型
 
 ### Schema
 
-JSON Schema は構造体として定義され、型安全な Schema 定義をサポートします。
+JSON Schema は構造体として定義され、タイプセーフな Schema 定義をサポートします。
 
 ```go
 type Schema struct {
@@ -594,5 +647,5 @@ func (ve *ValidationError) Error() string
 ## 関連
 
 - [Hook フックシステム](./hooks) - フックの詳細な使用ガイド
-- [Validator バリデータ](./validator) - バリデータの詳細な使用ガイド
+- [バリデータ](./validator) - バリデータの詳細な使用ガイド
 - [CustomEncoder](./custom-encoder) - カスタムエンコーダガイド

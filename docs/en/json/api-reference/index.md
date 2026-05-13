@@ -36,7 +36,7 @@ This section provides the complete API reference for the `github.com/cybergodev/
 
 | Function | Description |
 |----------|-------------|
-| `Get`, `GetString`, `GetInt`, `GetFloat`, `GetBool`, `GetArray`, `GetObject` | Type-safe getters |
+| `Get`, `GetWithContext`, `GetString`, `GetInt`, `GetFloat`, `GetBool`, `GetArray`, `GetObject` | Type-safe getters |
 | `GetTyped[T]` | Generic getter |
 | `SafeGet` | Safe getter returning AccessResult |
 | `GetMultiple` | Batch getter |
@@ -79,16 +79,21 @@ This section provides the complete API reference for the `github.com/cybergodev/
 
 | Type/Method | Description |
 |-------------|-------------|
-| `ForeachFile` | File stream processing |
+| `StreamLinesInto[T]` | Stream read JSONL from Reader and convert to `[]T` |
+| `ParseJSONL` | Parse JSONL bytes to `[]any` |
+| `ToJSONL`, `ToJSONLString` | Convert `[]any` to JSONL format |
+| `JSONLWriter` | JSONL writer (Write/WriteAll/WriteRaw) |
 | `NDJSONProcessor` | NDJSON/JSONL processor |
-| `JSONLWriter` | JSONL writer |
+| `ForeachFile` | File stream processing |
 
 #### Validation
 
 | Function | Description |
 |----------|-------------|
-| `Valid` | JSON validation |
+| `Valid` | JSON validation (compatible with `encoding/json.Valid`) |
+| `ValidWithConfig` | JSON validation with configuration |
 | `ValidateSchema` | Schema validation (used with `Schema` type) |
+| `CompareJSON` | Compare JSON for equivalence |
 
 ## Naming Conventions
 

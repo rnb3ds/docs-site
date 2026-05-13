@@ -1,6 +1,6 @@
 ---
 title: JSONL 处理器 - CyberGo JSON | API 参考
-description: "CyberGo JSON JSONL/NDJSON 处理器参考：包括 StreamJSONL 流式处理、JSONLWriter 写入、StreamLinesInto[T] 泛型流、ParseJSONL 解析、ToJSONL 转换和配置选项，完整支持 JSON Lines 格式读写与高级操作。"
+description: "CyberGo JSON JSONL 处理器参考：包括 StreamJSONL 流式处理、JSONLWriter 写入、StreamLinesInto[T] 泛型流、ParseJSONL 解析、ToJSONL 转换和配置选项，支持 JSON Lines 格式读写操作。"
 ---
 
 # JSONL 处理器
@@ -95,6 +95,37 @@ err = p.StreamJSONLParallel(file, 8, func(lineNum int, item *json.IterableValue)
 ::: tip 性能提示
 对于 CPU 密集型操作（如数据转换、计算），使用并行处理可显著提升性能。对于 I/O 密集型操作，建议使用单线程处理。
 :::
+
+### StreamJSONLParallelWithContext
+
+签名：`func (p *Processor) StreamJSONLParallelWithContext(ctx context.Context, reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error) error`
+
+带上下文的并行处理 JSONL 数据。支持超时和取消操作。
+
+**参数**
+
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| `ctx` | `context.Context` | 上下文，用于取消和超时 |
+| `reader` | `io.Reader` | 数据源 |
+| `workers` | `int` | 工作协程数量（<=0 时默认 4） |
+| `fn` | `func(lineNum int, item *IterableValue) error` | 处理回调 |
+
+```go
+p, err := json.New()
+if err != nil {
+    panic(err)
+}
+defer p.Close()
+
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+err = p.StreamJSONLParallelWithContext(ctx, file, 8, func(lineNum int, item *json.IterableValue) error {
+    // 支持取消的并行处理
+    return processItem(item)
+})
+```
 
 ### StreamJSONLChunked
 
@@ -417,18 +448,24 @@ err := np.ProcessReader(file, func(lineNum int, obj map[string]any) error {
 
 ## 包级函数
 
-### StreamJSONLFile
-
-签名：`func StreamJSONLFile(filename string, fn func(lineNum int, item *IterableValue) error) error`
-
-包级函数，直接从文件流式处理 JSONL 数据，无需创建 Processor。
+::: warning 注意
+`StreamJSONLFile` 是 Processor 方法而非包级函数。使用前需要创建 Processor 实例：
 
 ```go
-err := json.StreamJSONLFile("data.jsonl", func(lineNum int, item *json.IterableValue) error {
+p, err := json.New()
+if err != nil {
+    panic(err)
+}
+defer p.Close()
+
+err = p.StreamJSONLFile("data.jsonl", func(lineNum int, item *json.IterableValue) error {
     fmt.Printf("行 %d: %v\n", lineNum, item.GetData())
     return nil
 })
 ```
+
+详见 [Processor JSONL 方法](./processor/jsonl#streamjsonlfile)。
+:::
 
 ### StreamLinesInto[T]
 

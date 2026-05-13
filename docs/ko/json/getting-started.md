@@ -1,6 +1,6 @@
 ---
 title: 빠른 시작 - CyberGo JSON | 5분 시작 가이드
-description: "CyberGo JSON 빠른 시작 가이드: 설치 및 설정, 경로 쿼리 GetString/GetInt, 인코딩/디코딩 Marshal/Unmarshal, 파일 읽기/쓰기 작업을 통해 5분 안에 Go JSON 처리 모범 사례를 마스터하세요. JSONPath 쿼리 및 타입 안전 가져오기를 지원합니다."
+description: "CyberGo JSON 빠른 시작 가이드: 설치 설정, 경로 쿼리 GetString/GetInt, 인코딩/디코딩 Marshal/Unmarshal, 파일 읽기/쓰기 작업, 5분 안에 Go JSON 처리 모범 사례를 익히세요. JSONPath 쿼리와 타입 안전 가져오기를 지원하며 encoding/json 표준 라이브러리와 100% 호환됩니다."
 ---
 
 # 빠른 시작
@@ -15,9 +15,9 @@ go get github.com/cybergodev/json
 
 ## 기본 사용법
 
-### 패키지 수준 함수
+### 패키지 레벨 함수
 
-라이브러리는 프로세서를 생성하지 않고도 사용할 수 있는 편리한 패키지 수준 함수를 제공합니다:
+라이브러리는 프로세서를 생성하지 않고도 사용할 수 있는 편리한 패키지 레벨 함수를 제공합니다:
 
 #### 값 가져오기
 
@@ -39,7 +39,7 @@ func main() {
         "meta": {"author": "dev"}
     }`
 
-    // 범용 가져오기
+    // 일반 가져오기
     val, err := json.Get(data, "name")
     if err != nil {
         panic(err)
@@ -96,8 +96,8 @@ last2 := json.GetString(data, "items[-1]") // "c"
 arr := json.GetArray(data, "items[0:2]")   // ["a", "b"]
 ```
 
-::: tip 더 많은 경로 문법
-기본 속성 및 배열 인덱스 외에도 **배열 슬라이스** `[1:5]`, **와일드카드** `[*]`, **필드 추출** `{name,email}` 등의 고급 문법을 지원합니다. 자세한 내용은 [경로 표현식 문법](./path-syntax)을 참조하세요.
+:::tip 더 많은 경로 문법
+기본 속성과 배열 인덱스 외에도 **배열 슬라이스** `[1:5]`, **와일드카드** `[*]`, **필드 추출** `{name,email}` 등의 고급 문법을 지원합니다. 자세한 내용은 [경로 표현식 문법](./path-syntax)을 참조하세요.
 :::
 
 #### 값 설정
@@ -129,7 +129,7 @@ updated, _ := json.Delete(data, "temp")
 fmt.Println(updated) // {"name":"test"}
 ```
 
-### 인코딩 및 디코딩
+### 인코딩과 디코딩
 
 표준 라이브러리와 완전히 호환됩니다:
 
@@ -173,7 +173,7 @@ fmt.Println(json.Valid([]byte(invalid))) // false
 ```go
 compact := `{"name":"test","nested":{"key":"value"}}`
 
-// 포맷팅 출력
+// 이쁘게 출력
 pretty, _ := json.Prettify(compact)
 fmt.Println(pretty)
 // {
@@ -197,7 +197,7 @@ fmt.Println(buf.String()) // {"name":"test"}
 
 ## Processor 사용
 
-빈번한 작업의 경우 더 나은 성능과 캐시 효과를 위해 `Processor` 사용을 권장합니다:
+빈번한 작업에는 더 나은 성능과 캐시 효과를 위해 `Processor`를 사용하는 것이 좋습니다:
 
 ```go
 package main
@@ -258,15 +258,15 @@ data := `{"users": [{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}]}`
 err := json.ForeachWithPath(data, "users", func(key any, item *json.IterableValue) {
     name := item.GetString("name")
     age := item.GetInt("age")
-    fmt.Printf("User %v: %s (age %d)\n", key, name, age)
+    fmt.Printf("사용자 %v: %s (나이 %d)\n", key, name, age)
 })
-// User 0: Alice (age 30)
-// User 1: Bob (age 25)
+// 사용자 0: Alice (나이 30)
+// 사용자 1: Bob (나이 25)
 ```
 
 ## 다음 단계
 
 - [경로 표현식 문법](./path-syntax) — 완전한 경로 쿼리 문법 배우기
-- [대용량 파일 처리](./large-files) — 대형 JSON 파일 처리
-- [API 문서](./api-reference/) — 완전한 API 참조 보기
-- [사용 예제](./examples) — 더 많은 실전 예제 탐색
+- [대용량 파일 처리](./large-files) — 대형 JSON 파일 처리하기
+- [API 문서](./api-reference/) — 완전한 API 참조 확인하기
+- [사용 예제](./examples) — 더 많은 실전 예제 살펴보기

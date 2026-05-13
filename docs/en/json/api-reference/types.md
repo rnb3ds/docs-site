@@ -1,6 +1,6 @@
 ---
 title: Type Definitions - CyberGo JSON | API Reference
-description: "CyberGo JSON core type definitions reference: including Result[T] generic result, AccessResult dynamic access result, BatchOperation, BatchResult, Schema validation schema, Stats, HealthStatus, IterableValue, and encoding error types."
+description: "CyberGo JSON core type definitions reference: including Result[T] generic result, AccessResult dynamic access result, BatchOperation, BatchResult, Schema validation schema, Stats, HealthStatus, IterableValue, and encoding error types, providing a complete type system foundation."
 ---
 
 # Type Definitions
@@ -160,6 +160,7 @@ fmt.Println("Type:", result.Type)
 | `AsInt()` | `(int, error)` | Convert to integer (bool not converted) |
 | `AsFloat64()` | `(float64, error)` | Convert to float64 (bool not converted) |
 | `AsBool()` | `(bool, error)` | Convert to boolean |
+| `Ok()` | `bool` | Check if result is valid (path exists and no error) |
 
 ::: warning Note
 `AsInt64()`, `AsArray()`, `AsObject()` methods have been removed. Please use `GetTyped[T]` to get these types.
@@ -276,6 +277,19 @@ cfg := json.DefaultSchemaConfig()
 cfg.Type = "object"
 cfg.Required = []string{"name", "email"}
 schema := json.NewSchemaWithConfig(cfg)
+```
+
+
+#### Using DefaultSchema
+
+Signature: `func DefaultSchema() *Schema`
+
+Returns an empty Schema instance with default configuration.
+
+```go
+schema := json.DefaultSchema()
+schema.Type = "object"
+schema.Required = []string{"id"}
 ```
 
 ### SchemaConfig Struct
@@ -463,6 +477,13 @@ Signature: `func (p *ParsedJSON) Data() any`
 
 Returns the underlying parsed data.
 
+
+### Release Method
+
+Signature: `func (p *ParsedJSON) Release()`
+
+Releases the resources held by the parsed data. Call when `ParsedJSON` is no longer needed, allowing underlying resources to be garbage collected.
+
 ```go
 processor, err := json.New()
 if err != nil {
@@ -563,6 +584,16 @@ Iterator value wrapper.
 | `GetArray(path)` | Get array |
 | `GetObject(path)` | Get object |
 
+**Get with Default Values**
+
+| Method | Description |
+|------|------|
+| `GetWithDefault(path, defaultValue)` | Get value, returns default when not present |
+| `GetStringWithDefault(path, defaultValue)` | Get string, returns default when not present |
+| `GetIntWithDefault(path, defaultValue)` | Get integer, returns default when not present |
+| `GetFloat64WithDefault(path, defaultValue)` | Get float, returns default when not present |
+| `GetBoolWithDefault(path, defaultValue)` | Get boolean, returns default when not present |
+
 **Check and Traverse**
 
 | Method | Description |
@@ -589,6 +620,7 @@ JSON syntax parsing error, indicating the input data is not valid JSON format.
 ```go
 type SyntaxError struct {
     Offset int64 // Position where the error occurred (byte offset)
+    // contains other unexported fields
 }
 ```
 
@@ -741,6 +773,7 @@ This error wraps the error returned by a type's `MarshalJSON` or `MarshalText` m
 type MarshalerError struct {
     Type reflect.Type // Type implementing MarshalJSON or MarshalText
     Err  error        // Error returned by MarshalJSON or MarshalText
+    // contains other unexported fields
 }
 ```
 
@@ -951,6 +984,39 @@ type Token any
 ```
 
 Obtained via `Decoder.Token()`.
+
+---
+
+
+---
+
+## Number - JSON Number
+
+`Number` represents a JSON number string, used by the Decoder when `UseNumber` mode is enabled.
+
+```go
+type Number string
+```
+
+### Methods
+
+| Method | Signature | Description |
+|------|------|------|
+| `String` | `func (n Number) String() string` | Returns string representation of the number |
+| `Float64` | `func (n Number) Float64() (float64, error)` | Converts to float64 |
+| `Int64` | `func (n Number) Int64() (int64, error)` | Converts to int64 |
+
+```go
+decoder := json.NewDecoder(strings.NewReader(`{"price": 19.99}`))
+decoder.UseNumber()
+var obj map[string]any
+decoder.Decode(&obj)
+
+if num, ok := obj["price"].(json.Number); ok {
+    f, _ := num.Float64()
+    fmt.Println(f) // 19.99
+}
+```
 
 ---
 

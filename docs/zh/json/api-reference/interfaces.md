@@ -1,6 +1,6 @@
 ---
 title: 接口定义 - CyberGo JSON | API 参考
-description: "CyberGo JSON 扩展接口定义完整参考：包括 CustomEncoder、TypeEncoder、Validator、Hook 接口、PathParser 和 DangerousPattern，支持灵活扩展库的编码、验证和安全防护等核心功能。"
+description: "CyberGo JSON 扩展接口定义完整参考：包括 CustomEncoder、TypeEncoder、Validator、Hook 接口、PathParser 和 DangerousPattern，支持灵活扩展库的编码、验证和安全防护等核心功能，满足自定义序列化和安全策略需求。"
 ---
 
 # 接口定义
@@ -406,11 +406,64 @@ if num, ok := val.(json.Number); ok {
 
 ## 标准库兼容接口
 
-::: info 说明
-`encoding/json` 兼容接口（`Marshaler`、`Unmarshaler`、`TextMarshaler`、`TextUnmarshaler`）已转为内部实现，不再作为公开 API 导出。库内部自动识别实现了这些接口的类型，无需用户显式引用。
+`json` 包导出以下与 `encoding/json` 兼容的标准接口，用于自定义类型的编码和解码行为。
+
+### Marshaler
+
+```go
+type Marshaler interface {
+    MarshalJSON() ([]byte, error)
+}
+```
+
+### Unmarshaler
+
+```go
+type Unmarshaler interface {
+    UnmarshalJSON(data []byte) error
+}
+```
+
+### TextMarshaler
+
+```go
+type TextMarshaler interface {
+    MarshalText() ([]byte, error)
+}
+```
+
+### TextUnmarshaler
+
+```go
+type TextUnmarshaler interface {
+    UnmarshalText(text []byte) error
+}
+```
+
+**使用示例**
+
+```go
+type Person struct {
+    Name string
+}
+
+// 实现 Marshaler 接口
+func (p Person) MarshalJSON() ([]byte, error) {
+    return []byte(`{"name":"` + p.Name + `"}`), nil
+}
+
+// 实现 Unmarshaler 接口
+func (p *Person) UnmarshalJSON(data []byte) error {
+    var v struct{ Name string `json:"name"` }
+    if err := json.Unmarshal(data, &v); err != nil {
+        return err
+    }
+    p.Name = v.Name
+    return nil
+}
+```
 
 `Encoder`、`Decoder`、`Token`、`Delim`、`Number` 等编解码类型详见 [类型定义](./types#encoder-json-编码器)。
-:::
 
 ## 类型定义
 

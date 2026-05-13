@@ -1,5 +1,5 @@
 ---
-title: 경로 표현식 문법 - CyberGo JSON | JSONPath 쿼리 가이드
+title: 경로 표현식 문법 - CyberGo JSON | JSONPath 가이드
 description: "CyberGo JSON 경로 표현식 문법 완전 참조 가이드입니다. 속성 접근 user.name, 배열 인덱스 items[0], 슬라이스 [start:end:step], 와일드카드 [*], 다중 필드 추출 {name,email} 등의 문법을 지원하여 JSON 데이터의 모든 노드를 유연하고 정확하게 찾고 조작할 수 있습니다."
 ---
 
@@ -110,7 +110,7 @@ json.GetInt(data, "items[-10]")     // 0
 | `GetBool` | `false` |
 | `GetArray` | `nil` |
 
-::: tip 인덱스 경계
+:::tip 인덱스 경계
 - 양수 인덱스는 `[0, len)` 범위 내에 있어야 하며, 음수 인덱스도 변환 후(`len + index`) 동일합니다
 - 범위 초과 접근은 해당 타입의 zero 값을 반환하며, panic이나 오류를 발생시키지 않습니다
 - 경로 존재 여부를 확인하려면 `Get`을 사용하고 error가 `json.ErrPathNotFound`인지 확인하세요
@@ -225,7 +225,7 @@ json.GetArray(data, "items[2:2]")     // []
 json.GetArray(data, "items[3:1]")     // []
 ```
 
-::: warning 슬라이스 vs 인덱스의 경계 처리 차이
+:::warning 슬라이스 vs 인덱스의 경계 처리 차이
 - **인덱스 범위 초과** (예: `items[10]`)는 해당 타입의 zero 값을 반환하며, 오류를 발생시키지 않습니다
 - **슬라이스 범위 초과** (예: `items[10:20]`)는 자동으로 잘라내어 빈 배열을 반환하며, 오류를 발생시키지 않습니다
 :::
@@ -316,7 +316,7 @@ json.GetArray(data, "orders{flat:items}[0:3]")
 // ["book", "pen", "laptop"]
 ```
 
-::: info 제한 사항
+:::info 제한 사항
 - `{flat:field1,field2}` 다중 필드 추출 시 `flat` 플래그는 적용되지 않습니다. 다중 필드 추출은 배열이 아닌 객체를 생성하기 때문입니다
 - 평탄화는 첫 번째 레이어뿐만 아니라 모든 레벨의 중첩 배열을 재귀적으로 펼칩니다
 :::

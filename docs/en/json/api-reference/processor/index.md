@@ -56,14 +56,14 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 | Category | Description |
 |----------|-------------|
-| [Path Query](./query) | GetString/Int/Float/Bool/Get/SafeGet/GetArray/GetObject |
-| [Data Modification](./modify) | Set/Delete/DeleteClean |
-| [Output Methods](./output) | Encode/EncodePretty/EncodeWithConfig/Buffer operations |
-| [Parse and Load](./parse) | ParseAny/Valid/LoadFromFile/LoadFromReader |
-| [Iteration Methods](./iterate) | Foreach/ForeachWithPath/ForeachNested |
-| [Batch Operations](./batch) | ProcessBatch |
+| [Path Query](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
+| [Data Modification](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/Delete/DeleteClean |
+| [Output Methods](./output) | Encode/EncodePretty/EncodeWithConfig/Compact/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
+| [Parse and Load](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal/LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [Iteration Methods](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
+| [Batch Operations](./batch) | ProcessBatch/WarmupCache |
 | [JSONL Processing](./jsonl) | StreamJSONL/Parallel/Chunked/Map/Reduce/Filter |
-| [Lifecycle](./lifecycle) | Close/Cache/Stats/Health Check |
+| [Lifecycle](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
 
 ---
 

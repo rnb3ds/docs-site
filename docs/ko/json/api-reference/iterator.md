@@ -1,13 +1,13 @@
 ---
-title: 반복기 - CyberGo JSON | API 참조
-description: "CyberGo JSON 반복 순회 API 완전 참조: Foreach 기본 반복, ForeachWithPath 경로 반복, ForeachNested 재귀 반복, IterableValue 반복 가능 값 타입, IteratorControl 반복 제어 및 ParallelForeach 병렬 반복의 모범 사례를 포함합니다."
+title: 반복자 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON 반복 순회 API 완전 레퍼런스: Foreach 기본 반복, ForeachWithPath 경로 반복, ForeachNested 재귀 반복, IterableValue 반복 가능 값 타입, IteratorControl 반복 제어 및 ParallelForeach 병렬 반복의 모범 사례를 포함합니다."
 ---
 
-# 반복기
+# 반복자
 
-json 패키지는 풍부한 반복기 기능을 제공하여 다양한 순회 방식을 지원합니다: 패키지 수준 함수, Processor 메서드, 스트림 반복, 배치 처리 및 병렬 처리.
+json 패키지는 풍부한 반복자 기능을 제공하여 다양한 순회 방식을 지원합니다: 패키지 레벨 함수, Processor 메서드, 스트림 반복, 배치 처리 및 병렬 처리.
 
-## 패키지 수준 반복 함수
+## 패키지 레벨 반복 함수
 
 Processor 인스턴스를 생성하지 않고 직접 호출할 수 있는 반복 함수입니다.
 

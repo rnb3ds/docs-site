@@ -1,6 +1,6 @@
 ---
 title: 查询与获取函数 - CyberGo JSON | API 参考
-description: "CyberGo JSON 查询与获取函数完整参考：包括 Get/GetString/GetInt/GetFloat/GetBool 等类型安全获取、GetTyped[T] 泛型获取和 Parse/ParseAny 解析函数，全面支持 JSONPath 路径表达式。"
+description: "CyberGo JSON 查询与获取函数完整参考：包括 Get/GetString/GetInt/GetFloat/GetBool 等类型安全获取、GetTyped[T] 泛型获取和 Parse/ParseAny 解析函数，全面支持 JSONPath 路径表达式，提供带默认值的零错误获取模式。"
 ---
 
 # 查询与获取函数
@@ -39,6 +39,38 @@ func main() {
         panic(err)
     }
     fmt.Println(val) // 输出: test
+}
+```
+
+### GetWithContext
+
+签名：`func GetWithContext(ctx context.Context, jsonStr, path string, cfg ...Config) (any, error)`
+
+带上下文的路径获取。支持超时和取消操作。`Get` 的上下文感知版本。
+
+::: info 注意
+Context 在操作前后检查，不在解析/导航过程中检查。对于大型 JSON 文档，操作期间可能不会响应取消。
+:::
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    "github.com/cybergodev/json"
+)
+
+func main() {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    val, err := json.GetWithContext(ctx, `{"user":{"name":"Alice"}}`, "user.name")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(val) // 输出: Alice
 }
 ```
 
@@ -454,6 +486,45 @@ func main() {
 }
 ```
 
+### ValidateSchema
+
+签名：`func ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
+
+使用 JSON Schema 验证 JSON 数据。返回所有验证错误的列表。
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/cybergodev/json"
+)
+
+func main() {
+    schema := &json.Schema{
+        Type:     "object",
+        Required: []string{"name", "email"},
+        Properties: map[string]*json.Schema{
+            "name":  {Type: "string", MinLength: 1},
+            "email": {Type: "string", Format: "email"},
+            "age":   {Type: "integer", Minimum: 0},
+        },
+    }
+
+    errors, err := json.ValidateSchema(`{"name":"Alice","email":"alice@example.com","age":25}`, schema)
+    if err != nil {
+        panic(err)
+    }
+    for _, e := range errors {
+        fmt.Printf("路径 %s: %s\n", e.Path, e.Message)
+    }
+}
+```
+
+::: tip 详见
+完整的 Schema 类型定义和验证器用法请参考 [验证器](../validator)。
+:::
+
 ## 安全获取函数
 
 ### SafeGet（包级函数）
@@ -599,6 +670,10 @@ for _, r := range results {
 | `Value` | `any` | 获取到的值 |
 | `Exists` | `bool` | 路径是否存在 |
 | `Type` | `string` | 检测到的值类型 |
+
+**方法**：`Ok()` · `Unwrap()` · `UnwrapOr()` · `AsString()` · `AsStringConverted()` · `AsInt()` · `AsFloat64()` · `AsBool()`
+
+详见 [AccessResult 类型](../types#accessresult-属性访问结果)。
 
 ### Result[T]
 

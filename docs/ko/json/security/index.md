@@ -1,6 +1,6 @@
 ---
 title: 보안 개요 - CyberGo JSON | 보안 모범 사례
-description: "CyberGo JSON 보안 모범 사례 가이드: 입력 검증 및 정제, MaxNestingDepthSecurity/MaxMemory 리소스 제한 방어, 경로 순회 공격 방어, JSON 인젝션 방어, 민감 데이터 필터링 및 감사 로그 설정을 다루어 개발자가 프로덕션 환경에서 JSON 데이터 보안을 보장하도록 돕습니다."
+description: "CyberGo JSON 보안 모범 사례 가이드: 입력 검증 및 정제, MaxNestingDepthSecurity/MaxMemory 리소스 제한 방어, 경로 순회 공격 방어, JSON 인젝션 방지, 민감 데이터 필터링 및 감사 로그 설정을 다루며, 개발자가 프로덕션 환경의 JSON 데이터 처리 보안을 전면적으로 보장할 수 있도록 돕습니다."
 ---
 
 # 보안 개요
@@ -31,7 +31,7 @@ cfg.MaxSecurityValidationSize = 100 * 1024 * 1024 // 보안 검증 제한을 100
 ```go
 // 사용자 입력 경로 검증
 func safePath(path string) bool {
-    // 특수 문자 차단
+    // 특수 문자 금지
     if strings.ContainsAny(path, `<>:"|\`) {
         return false
     }
@@ -55,7 +55,7 @@ bytes, _ := json.Marshal(data)
 
 ### 4. 민감 데이터 유출
 
-로그나 오류 메시지가 민감한 데이터를 노출할 수 있습니다.
+로그나 오류 정보가 민감 데이터를 노출할 수 있습니다.
 
 **방어 조치:**
 
@@ -88,6 +88,72 @@ cfg.AddHook(&FilterFieldsHook{fields: map[string]bool{
 
 ## 보안 설정 권장 사항
 
+### 위험 패턴 관리
+
+라이브러리는 기본 위험 패턴 감지가 내장되어 있으며, 커스텀 패턴의 등록, 해제 및 조회도 지원합니다.
+
+#### RegisterDangerousPattern
+
+시그니처: `func RegisterDangerousPattern(pattern DangerousPattern)`
+
+전역 위험 패턴을 등록합니다. 등록된 패턴은 기본 보안 설정을 사용하는 모든 작업에 적용됩니다.
+
+```go
+json.RegisterDangerousPattern(json.DangerousPattern{
+    Pattern: "eval(",
+    Name:    "eval-call",
+    Level:   json.PatternLevelCritical,
+})
+```
+
+#### UnregisterDangerousPattern
+
+시그니처: `func UnregisterDangerousPattern(pattern string)`
+
+패턴 문자열로 전역 위험 패턴을 해제합니다. 매개변수 `pattern`은 해제할 위험 패턴의 부분 문자열입니다 (`DangerousPattern.Pattern` 필드에 해당).
+
+```go
+json.UnregisterDangerousPattern("eval(")
+```
+
+#### ListDangerousPatterns
+
+시그니처: `func ListDangerousPatterns() []DangerousPattern`
+
+등록된 모든 위험 패턴(기본 패턴과 커스텀 패턴 포함)을 나열합니다.
+
+```go
+patterns := json.ListDangerousPatterns()
+for _, p := range patterns {
+    fmt.Printf("패턴: %s, 이름: %s, 수준: %s\n", p.Pattern, p.Name, p.Level)
+}
+```
+
+#### 위험 패턴 수준
+
+| 상수 | 타입 | 값 | 설명 |
+|------|------|-----|------|
+| `PatternLevelCritical` | `int` | `0` | 심각 수준, 매칭 시 작업 거부 |
+| `PatternLevelWarning` | `int` | `1` | 경고 수준, 엄격 모드에서 작업 거부 |
+| `PatternLevelInfo` | `int` | `2` | 정보 수준, 로그만 기록 |
+
+::: tip
+`PatternLevel`의 `String()` 메서드는 해당 문자열 표현(`"critical"`, `"warning"`, `"info"`)을 반환하여 로그 출력에 편리합니다.
+:::
+
+#### 기본 패턴 비활성화
+
+`Config.DisableDefaultPatterns`로 내장된 기본 경고 수준 패턴을 비활성화할 수 있습니다:
+
+```go
+cfg := json.DefaultConfig()
+cfg.DisableDefaultPatterns = true // 기본 경고 수준 패턴 비활성화
+```
+
+:::warning 주의
+`DisableDefaultPatterns`는 기본 경고 수준(`PatternLevelWarning`) 패턴만 비활성화합니다. 심각 수준(`PatternLevelCritical`)의 기본 패턴은 영향을 받지 않습니다.
+:::
+
 ### 프로덕션 환경 설정
 
 ```go
@@ -113,7 +179,7 @@ func DevelopmentConfig() json.Config {
 
 ### 커스텀 검증기
 
-`Validator` 인터페이스(`Validate(jsonStr string) error`)를 구현하여 입력을 검증합니다:
+`Validator` 인터페이스(`Validate(jsonStr string) error`)를 구현하여 입력 검증을 수행합니다:
 
 ```go
 // 커스텀 검증기 구현
@@ -142,7 +208,7 @@ cfg.CustomValidators = []json.Validator{&EmailValidator{}}
 
 ### Schema 검증
 
-Schema는 구조체 타입으로 JSON 구조를 검증하는 데 사용할 수 있습니다:
+Schema는 구조체 타입으로, JSON 구조를 검증하는 데 사용할 수 있습니다:
 
 ```go
 schema := &json.Schema{
@@ -164,14 +230,14 @@ schema := &json.Schema{
 ```go
 val, err := json.Get(data, path)
 if err != nil {
-    // 내부 오류 세부 정보 노출 금지
-    return errors.New("데이터 형식이 유효하지 않습니다")
+    // 내부 오류 세부 정보를 노출하지 않음
+    return errors.New("데이터 형식이 올바르지 않습니다")
 }
 ```
 
 ## 감사 로그
 
-### 주요 작업 기록
+### 핵심 작업 기록
 
 `Hook` 인터페이스(`Before`는 `error` 반환, `After`는 `(HookContext, any, error)`를 받아 `(any, error)` 반환)를 사용하여 감사 로그를 기록합니다:
 

@@ -1,11 +1,11 @@
 ---
 title: クイックスタート - CyberGo JSON | 5分で始めるガイド
-description: "CyberGo JSON クイックスタートガイド：インストール設定、パスクエリ GetString/GetInt、エンコード・デコード Marshal/Unmarshal、ファイル読み書き操作。5 分で Go JSON 処理のベストプラクティスを習得。JSONPath クエリと型安全な取得をサポート。"
+description: "CyberGo JSON クイックスタートガイド：インストール設定、パスクエリ GetString/GetInt、エンコード・デコード Marshal/Unmarshal、ファイル読み書き操作を5分で習得。JSONPath クエリと型安全な取得をサポートし、encoding/json 標準ライブラリと100%互換。"
 ---
 
 # クイックスタート
 
-このガイドは `github.com/cybergodev/json` ライブラリを素早く使い始めるのに役立ちます。
+このガイドでは、`github.com/cybergodev/json` ライブラリの基本的な使い方を素早く習得できます。
 
 ## インストール
 
@@ -17,7 +17,7 @@ go get github.com/cybergodev/json
 
 ### パッケージレベル関数
 
-ライブラリはプロセッサを作成せずに使用できる便利なパッケージレベル関数を提供しています：
+ライブラリはプロセッサを作成せずに直接使用できる便利なパッケージレベル関数を提供しています：
 
 #### 値の取得
 
@@ -67,7 +67,7 @@ func main() {
 
 #### ネストされたパス
 
-ドット区切りのネストされたパスをサポートします：
+ドット区切りのネストされたパスをサポートしています：
 
 ```go
 data := `{"user": {"profile": {"name": "Alice"}}}`
@@ -78,7 +78,7 @@ fmt.Println(name) // Alice
 
 #### 配列インデックス
 
-配列インデックスアクセスをサポートします：
+配列インデックスによるアクセスをサポートしています：
 
 ```go
 data := `{"items": ["a", "b", "c"]}`
@@ -96,8 +96,8 @@ last2 := json.GetString(data, "items[-1]") // "c"
 arr := json.GetArray(data, "items[0:2]")   // ["a", "b"]
 ```
 
-::: tip さらなるパス構文について
-基本的なプロパティや配列インデックスに加え、**配列スライス** `[1:5]`、**ワイルドカード** `[*]`、**フィールド抽出** `{name,email}` などの高度な構文もサポートしています。詳しくは [パス式の構文](./path-syntax) をご覧ください。
+::: tip パス構文について
+基本的なプロパティや配列インデックスに加えて、**配列スライス** `[1:5]`、**ワイルドカード** `[*]`、**フィールド抽出** `{name,email}` などの高度な構文もサポートしています。詳しくは [パス式の構文](./path-syntax) をご覧ください。
 :::
 
 #### 値の設定
@@ -105,15 +105,15 @@ arr := json.GetArray(data, "items[0:2]")   // ["a", "b"]
 ```go
 data := `{"name": "old"}`
 
-// 新しい値を設定
+// 新しい値の設定
 updated, _ := json.Set(data, "name", "new")
 fmt.Println(updated) // {"name":"new"}
 
-// 新しいフィールドを追加
+// 新しいフィールドの追加
 updated, _ = json.Set(data, "version", 1)
 fmt.Println(updated) // {"name":"old","version":1}
 
-// 複数フィールドを順番に設定
+// 複数フィールドの個別設定
 updated, _ = json.Set(data, "name", "updated")
 updated, _ = json.Set(updated, "version", 2)
 updated, _ = json.Set(updated, "active", true)
@@ -131,7 +131,7 @@ fmt.Println(updated) // {"name":"test"}
 
 ### エンコードとデコード
 
-標準ライブラリと完全に互換：
+標準ライブラリと完全に互換性があります：
 
 ```go
 type User struct {
@@ -173,7 +173,7 @@ fmt.Println(json.Valid([]byte(invalid))) // false
 ```go
 compact := `{"name":"test","nested":{"key":"value"}}`
 
-// 整形出力
+// フォーマット出力
 pretty, _ := json.Prettify(compact)
 fmt.Println(pretty)
 // {
@@ -197,7 +197,7 @@ fmt.Println(buf.String()) // {"name":"test"}
 
 ## Processor の使用
 
-頻繁な操作には、パフォーマンスとキャッシュ効果の良い `Processor` の使用を推奨します：
+頻繁に操作を行う場合は、`Processor` を使用することでパフォーマンスとキャッシュ効果が向上します：
 
 ```go
 package main
@@ -213,7 +213,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    defer p.Close() // リソース解放のため必ずクローズ
+    defer p.Close() // リソース解放のために必ずクローズ
 
     data := `{"name": "test", "value": 42}`
 
@@ -231,7 +231,7 @@ func main() {
 // デフォルト設定
 cfg := json.DefaultConfig()
 
-// セキュリティ強化設定（信頼できない入力の処理用）
+// セキュリティ強化設定（信頼できない入力を処理する場合）
 cfg = json.SecurityConfig()
 
 // フォーマット出力設定
@@ -269,4 +269,4 @@ err := json.ForeachWithPath(data, "users", func(key any, item *json.IterableValu
 - [パス式の構文](./path-syntax) — 完全なパスクエリ構文を学ぶ
 - [大規模ファイル処理](./large-files) — 大型 JSON ファイルの処理
 - [API ドキュメント](./api-reference/) — 完全な API リファレンスを参照
-- [使用例](./examples) — より多くの実践的なサンプル
+- [使用例](./examples) — より多くの実践的なサンプルを閲覧

@@ -1,6 +1,6 @@
 ---
-title: Getting Started - CyberGo JSON | 5-Minute Quick Start Guide
-description: "CyberGo JSON quick start guide: installation, path queries with GetString/GetInt, encoding/decoding with Marshal/Unmarshal, file I/O operations. Master Go JSON processing best practices in 5 minutes with JSONPath queries and type-safe getters."
+title: Getting Started - CyberGo JSON | 5-Minute Guide
+description: "CyberGo JSON quick start guide: installation, path queries GetString/GetInt, encoding/decoding Marshal/Unmarshal, file I/O operations. Master Go JSON best practices in 5 minutes with JSONPath queries and type-safe getters, 100% compatible with encoding/json."
 ---
 
 # Getting Started
@@ -58,7 +58,7 @@ func main() {
     fmt.Println(tags)  // [json go fast]
     fmt.Println(meta)  // map[author:dev]
 
-    // Get with default value
+    // Get with default values
     desc := json.GetString(data, "description", "N/A")
     count := json.GetInt(data, "count", 0)
     fmt.Println(desc, count) // N/A 0
@@ -76,7 +76,7 @@ name := json.GetString(data, "user.profile.name")
 fmt.Println(name) // Alice
 ```
 
-#### Array Indices
+#### Array Indexing
 
 Supports array index access:
 
@@ -92,12 +92,12 @@ last := json.GetString(data, "items.-1")   // "c"
 first := json.GetString(data, "items[0]")  // "a"
 last2 := json.GetString(data, "items[-1]") // "c"
 
-// Range access (returns array)
+// Range slicing (returns array)
 arr := json.GetArray(data, "items[0:2]")   // ["a", "b"]
 ```
 
 ::: tip More Path Syntax
-Beyond basic property and array index access, advanced syntax such as **array slicing** `[1:5]`, **wildcards** `[*]`, and **field extraction** `{name,email}` is also supported. See [Path Expression Syntax](./path-syntax) for details.
+Beyond basic property and array indexing, advanced syntax such as **array slicing** `[1:5]`, **wildcards** `[*]`, and **field extraction** `{name,email}` is also supported. See [Path Expression Syntax](./path-syntax) for details.
 :::
 
 #### Setting Values
@@ -129,7 +129,7 @@ updated, _ := json.Delete(data, "temp")
 fmt.Println(updated) // {"name":"test"}
 ```
 
-### Encoding & Decoding
+### Encoding and Decoding
 
 Fully compatible with the standard library:
 
@@ -266,7 +266,7 @@ err := json.ForeachWithPath(data, "users", func(key any, item *json.IterableValu
 
 ## Next Steps
 
-- [Path Expression Syntax](./path-syntax) — Learn the complete path query syntax
-- [Large File Processing](./large-files) — Processing large JSON files
-- [API Reference](./api-reference/) — View the complete API reference
-- [Usage Examples](./examples) — Browse more practical examples
+- [Path Expression Syntax](./path-syntax) -- Learn the complete path query syntax
+- [Large File Processing](./large-files) -- Process large JSON files
+- [API Reference](./api-reference/) -- View the complete API reference
+- [Usage Examples](./examples) -- Browse more practical examples
