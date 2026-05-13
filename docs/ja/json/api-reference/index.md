@@ -1,6 +1,6 @@
 ---
 title: API リファレンス - CyberGo JSON | 完全関数ドキュメント
-description: "CyberGo JSON 完全 API リファレンスマニュアル：GetString/GetInt パスクエリ、Set/Delete 変更操作、Marshal/Unmarshal シリアライズ、Processor プロセッサ、Schema バリデーション、Hook フック、セキュリティ設定を網羅し、encoding/json 標準ライブラリと 100% 互換。"
+description: "CyberGo JSON 完全 API リファレンスマニュアル：GetString/GetInt パスクエリ、Set/Delete 変更操作、Marshal/Unmarshal シリアライズ、Processor プロセッサ、Schema 検証、Hook フックとセキュリティ設定を網羅し、encoding/json 標準ライブラリと100%互換。"
 ---
 
 # API リファレンス
@@ -36,9 +36,9 @@ description: "CyberGo JSON 完全 API リファレンスマニュアル：GetStr
 
 | 関数 | 説明 |
 |------|------|
-| `Get`, `GetString`, `GetInt`, `GetFloat`, `GetBool`, `GetArray`, `GetObject` | 型安全な取得 |
+| `Get`, `GetWithContext`, `GetString`, `GetInt`, `GetFloat`, `GetBool`, `GetArray`, `GetObject` | 型安全な取得 |
 | `GetTyped[T]` | ジェネリック取得 |
-| `SafeGet` | 安全な取得 AccessResult |
+| `SafeGet` | セーフティ取得 AccessResult |
 | `GetMultiple` | 一括取得 |
 
 #### 変更操作
@@ -79,16 +79,21 @@ description: "CyberGo JSON 完全 API リファレンスマニュアル：GetStr
 
 | 型/メソッド | 説明 |
 |------|------|
-| `ForeachFile` | ファイルストリーミング処理 |
+| `StreamLinesInto[T]` | Reader から JSONL をストリーミング読み込みし `[]T` に変換 |
+| `ParseJSONL` | JSONL バイトを `[]any` にパース |
+| `ToJSONL`, `ToJSONLString` | `[]any` を JSONL 形式に変換 |
+| `JSONLWriter` | JSONL ライター（Write/WriteAll/WriteRaw） |
 | `NDJSONProcessor` | NDJSON/JSONL プロセッサ |
-| `JSONLWriter` | JSONL ライター |
+| `ForeachFile` | ファイルストリーミング処理 |
 
-#### バリデーション
+#### 検証
 
 | 関数 | 説明 |
 |------|------|
-| `Valid` | JSON バリデーション |
-| `ValidateSchema` | Schema バリデーション（`Schema` 型と併用） |
+| `Valid` | JSON 検証（`encoding/json.Valid` と互換） |
+| `ValidWithConfig` | 設定付き JSON 検証 |
+| `ValidateSchema` | Schema 検証（`Schema` 型と併用） |
+| `CompareJSON` | JSON の等価性比較 |
 
 ## 命名規約
 
@@ -98,13 +103,13 @@ description: "CyberGo JSON 完全 API リファレンスマニュアル：GetStr
 |------|------|------|
 | `Get{Type}` | 指定型の取得（defaultValue 対応） | `GetString`, `GetInt` |
 | `GetTyped[T]` | ジェネリック取得、T を返す | `GetTyped[User]` |
-| `New{Type}` | インスタンスの作成 | `New` （*Processor を返す）、`NewEncoder` |
+| `New{Type}` | インスタンスの作成 | `New`（`*Processor` を返す）, `NewEncoder` |
 | `Default{Type}` | デフォルト設定 | `DefaultConfig` |
 | `{Type}Config` | 設定プリセット | `SecurityConfig`, `PrettyConfig` |
 
 ## 関連
 
 - [クイックスタート](../getting-started) -- インストールと基本的な使い方
-- [パス式構文](../path-syntax) -- パスクエリ構文
+- [パス式の構文](../path-syntax) -- パスクエリ構文
 - [使用例](../examples) -- 実践的なコード例
-- [大ファイル処理](../large-files) -- ストリーミング処理ガイド
+- [大規模ファイル処理](../large-files) -- ストリーミング処理ガイド

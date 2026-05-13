@@ -1,11 +1,11 @@
 ---
-title: 출력 함수 - CyberGo JSON | API 참조
-description: "CyberGo JSON 출력과 포맷 출력 참조: Encode, EncodePretty, Prettify 함수와 표준 fmt 패키지를 사용하여 JSON 포맷 출력을 구현합니다. 비공개로 전환된 Print/PrintPretty 계열 함수를 대체하며, 사용자 정의 들여쓰기와 접두사를 지원합니다."
+title: 출력 함수 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON 출력과 포맷 출력 참조: Encode, EncodePretty, Prettify 함수와 표준 fmt 패키지를 사용하여 JSON 포맷 출력을 구현합니다. 비공개로 전환된 Print/PrintPretty 계열 함수를 대체하며, 커스텀 들여쓰기와 접두사를 지원합니다."
 ---
 
 # 출력 함수
 
-::: warning API 변경 안내
+:::warning API 변경 안내
 `Print`, `PrintPretty`, `PrintE`, `PrintPrettyE`는 내부 함수(소문자 명명)로 전환되어 공개 API로 내보내지지 않습니다. 다음 대안을 사용하십시오.
 :::
 
@@ -118,4 +118,4 @@ func main() {
 ## 관련 문서
 
 - [인코딩 디코딩 함수](./functions/encode-decode) - Encode, EncodePretty, Prettify
-- [패키지 함수](./functions) - 패키지 수준 함수 개요
+- [패키지 함수](./functions) - 패키지 레벨 함수 개요

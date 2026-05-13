@@ -1,6 +1,6 @@
 ---
 title: CustomEncoder - CyberGo JSON | Пользовательский кодировщик
-description: "Руководство по пользовательским кодировщикам CyberGo JSON: подробное описание интерфейса CustomEncoder и кодировщика типов TypeEncoder, способы настройки и примеры реализации, поддержка регистрации специализированной логики сериализации и десериализации JSON для пользовательских структур Go и нестандартных типов."
+description: "Полное руководство по пользовательскому кодировщику CyberGo JSON: подробное описание интерфейсов CustomEncoder и TypeEncoder, способы настройки и примеры реализации для пользовательских типов Go."
 ---
 
 # CustomEncoder
@@ -44,7 +44,7 @@ if err != nil {
 
 ## Интерфейс TypeEncoder
 
-Интерфейс кодировщика для конкретного типа, используемый для кодирования определённых типов.
+Интерфейс кодировщика для определённого типа, используемый для кодирования конкретных типов.
 
 ```go
 type TypeEncoder interface {
@@ -52,7 +52,7 @@ type TypeEncoder interface {
 }
 ```
 
-**Способ настройки**: через поле `CustomTypeEncoders` объекта `Config`.
+**Способ настройки**: регистрируется через поле `Config.CustomTypeEncoders`.
 
 ```go
 type TimeTypeEncoder struct{}
@@ -65,7 +65,7 @@ func (e *TimeTypeEncoder) Encode(v reflect.Value) (string, error) {
     return "", fmt.Errorf("неподдерживаемый тип: %v", v.Type())
 }
 
-// Зарегистрировать кодировщик типа
+// Регистрация кодировщика типа
 cfg := json.DefaultConfig()
 cfg.CustomTypeEncoders = map[reflect.Type]json.TypeEncoder{
     reflect.TypeOf(time.Time{}): &TimeTypeEncoder{},
@@ -86,7 +86,7 @@ import stdjson "encoding/json"
 type CompactEncoder struct{}
 
 func (e *CompactEncoder) Encode(value any) (string, error) {
-    // Компактное кодирование, используется стандартная библиотека для предотвращения бесконечной рекурсии
+    // Компактное кодирование, использование стандартной библиотеки для избежания бесконечной рекурсии
     data, err := stdjson.Marshal(value)
     if err != nil {
         return "", err
@@ -122,19 +122,19 @@ func (e *CustomTypeEncoder) Encode(v reflect.Value) (string, error) {
 ## Сравнение CustomEncoder и TypeEncoder
 
 | Свойство | CustomEncoder | TypeEncoder |
-|------|---------------|-------------|
-| Область действия | Глобальная, заменяет кодирование по умолчанию | Кодирование конкретного типа |
+|----------|---------------|-------------|
+| Область действия | Глобальная, замена кодирования по умолчанию | Кодирование конкретного типа |
 | Поле конфигурации | `Config.CustomEncoder` | `Config.CustomTypeEncoders` |
 | Сигнатура функции | `Encode(any) (string, error)` | `Encode(reflect.Value) (string, error)` |
 | Возвращаемое значение | `string` (строка JSON) | `string` (строка JSON) |
-| Вариант использования | Унификация поведения кодирования | Сериализационное отображение пользовательских типов |
+| Сценарий использования | Унификация кодирования | Маппинг сериализации пользовательских типов |
 
 ## Поля Config, связанные с кодированием
 
 | Поле | Тип | Описание |
-|------|------|------|
+|------|-----|----------|
 | `CustomEncoder` | `CustomEncoder` | Интерфейс пользовательского кодировщика |
-| `CustomTypeEncoders` | `map[reflect.Type]TypeEncoder` | Кодировщики, зарегистрированные по типам |
+| `CustomTypeEncoders` | `map[reflect.Type]TypeEncoder` | Кодировщики, зарегистрированные по типу |
 
 ## Связанные разделы
 

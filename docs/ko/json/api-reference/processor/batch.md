@@ -1,11 +1,11 @@
 ---
-title: Processor 배치 작업 - CyberGo JSON | API 참조
-description: "CyberGo JSON Processor 배치 작업 메서드 완전 참조: ProcessBatch 여러 작업 배치 처리, BatchOperation 작업 정의(get/set/delete 타입), BatchResult 결과 타입, 오류 처리 전략 및 ContinueOnError 설정을 지원하며 트랜잭션 배치 작업과 성능 최적화를 지원합니다."
+title: Processor 배치 작업 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON Processor 배치 작업 레퍼런스: ProcessBatch 다중 작업 처리, BatchOperation 정의(get/set/delete), BatchResult 결과 타입, ContinueOnError 설정 및 성능 최적화 전략을 포함합니다."
 ---
 
 # 배치 작업 메서드
 
-Processor는 배치 작업 기능을 제공하여 여러 JSON 작업을 한 번에 처리합니다.
+Processor는 배치 작업 능력을 제공하여, 한 번에 여러 JSON 작업을 처리합니다.
 
 ## ProcessBatch
 
@@ -48,7 +48,7 @@ type BatchOperation struct {
 | `JSONStr` | `string` | 작업할 JSON 문자열 |
 | `Path` | `string` | 대상 경로 |
 | `Value` | `any` | Set 작업 시 설정할 값 |
-| `ID` | `string` | 결과 매칭에 사용되는 작업 식별자 |
+| `ID` | `string` | 작업 식별자, 결과 매칭에 사용 |
 
 ## BatchResult 구조체
 
@@ -62,8 +62,8 @@ type BatchResult struct {
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `ID` | `string` | BatchOperation의 ID |
-| `Result` | `any` | 작업 결과 (Get은 값 반환, Set/Delete는 새 JSON 반환) |
+| `ID` | `string` | 해당 BatchOperation의 ID |
+| `Result` | `any` | 작업 결과 (Get은 반환값, Set/Delete는 새 JSON 반환) |
 | `Error` | `error` | 개별 작업의 오류 (다른 작업에 영향 없음) |
 
 ## 사용 예제
@@ -116,7 +116,7 @@ for _, r := range results {
 }
 ```
 
-## 주의사항
+## 주의 사항
 
 1. 각 작업은 독립적으로 실행되며, 하나의 실패가 다른 작업에 영향을 주지 않습니다
 2. 결과 순서는 작업 순서와 일치합니다
@@ -124,5 +124,5 @@ for _, r := range results {
 
 ## 관련 문서
 
-- [경로 조회](./query) - Get 계열 메서드
+- [경로 쿼리](./query) - Get 시리즈 메서드
 - [데이터 수정](./modify) - Set/Delete 메서드

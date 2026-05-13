@@ -1,6 +1,6 @@
 ---
-title: 보안 모드 - CyberGo JSON | API 참조
-description: "CyberGo JSON 보안 API 완전 참조: 보안 설정, AddDangerousPattern 위험 패턴 설정 및 입력 검증 메커니즘을 포함하여 JSON 인젝션, 깊은 중첩 공격 및 자원 고갈 등 보안 위협을 방어하며, 사용자 정의 보안 정책과 방어 규칙 설정을 지원하여 Go 애플리케이션의 보안을 보장합니다."
+title: 보안 모드 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON 보안 API 완전 참조: 보안 설정, AddDangerousPattern 위험 패턴 설정 및 입력 검증 메커니즘을 포함하여 JSON 인젝션, 깊은 중첩 공격 및 자원 고갈 등 보안 위협을 방어하며, 커스텀 보안 정책과 방어 규칙 설정을 지원하여 Go 애플리케이션의 보안을 보장합니다."
 ---
 
 # 보안 모드
@@ -69,8 +69,8 @@ PatternLevel의 문자열 표현을 반환합니다.
 
 ### 기본 패턴
 
-::: warning 내부 API
-내장 패턴 목록은 내부 함수로 관리되며, 공개 API로 내보내지 않습니다. Config의 `AdditionalDangerousPatterns` 필드를 통해 사용자 정의 패턴을 관리할 수 있습니다.
+:::warning 내부 API
+내장 패턴 목록은 내부 함수로 관리되며, 공개 API로 내보내지 않습니다. Config의 `AdditionalDangerousPatterns` 필드를 통해 커스텀 패턴을 관리할 수 있습니다.
 :::
 
 다음은 내장 위험 패턴 목록으로, 모두 Critical 수준입니다:
@@ -104,7 +104,7 @@ PatternLevel의 문자열 표현을 반환합니다.
 
 ### 핵심 패턴
 
-::: warning 내부 API
+:::warning 내부 API
 `GetCriticalPatterns`는 내부 함수로 전환되어 공개 API로 내보내지지 않습니다. 핵심 패턴(`__proto__`, `constructor[`, `prototype.`)은 항상 강제 검사되며 비활성화할 수 없습니다.
 :::
 
@@ -126,13 +126,13 @@ PatternLevel의 문자열 표현을 반환합니다.
 
 시그니처: `func (c *Config) AddDangerousPattern(pattern DangerousPattern)`
 
-설정에 사용자 정의 위험 패턴을 추가합니다.
+설정에 커스텀 위험 패턴을 추가합니다.
 
 ```go
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "malicious_keyword",
-    Name:    "사용자 정의 위험 패턴",
+    Name:    "커스텀 위험 패턴",
     Level:   json.PatternLevelCritical,
 })
 
@@ -171,7 +171,7 @@ func (c *Config) AddDangerousPattern(pattern DangerousPattern)
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "custom_dangerous_string",
-    Name:    "사용자 정의 위험 문자열",
+    Name:    "커스텀 위험 문자열",
     Level:   json.PatternLevelWarning,
 })
 ```
@@ -196,18 +196,18 @@ type Config struct {
 
 ## 전역 패턴 등록
 
-`Config`를 통해 인스턴스 수준 패턴을 설정하는 것 외에도, 패키지 수준 함수를 통해 전역 패턴 등록을 관리할 수 있습니다. 전역 등록의 패턴은 모든 Processor 인스턴스에 적용됩니다.
+`Config`를 통해 인스턴스 수준 패턴을 설정하는 것 외에도, 패키지 레벨 함수를 통해 전역 패턴 등록을 관리할 수 있습니다. 전역 등록의 패턴은 모든 Processor 인스턴스에 적용됩니다.
 
 ### RegisterDangerousPattern
 
 시그니처: `func RegisterDangerousPattern(pattern DangerousPattern)`
 
-전역 등록에 사용자 정의 위험 패턴을 추가합니다. 등록된 패턴은 모든 Processor 인스턴스에 적용됩니다.
+전역 등록에 커스텀 위험 패턴을 추가합니다. 등록된 패턴은 모든 Processor 인스턴스에 적용됩니다.
 
 ```go
 json.RegisterDangerousPattern(json.DangerousPattern{
     Pattern: "malicious_keyword",
-    Name:    "사용자 정의 위험 패턴",
+    Name:    "커스텀 위험 패턴",
     Level:   json.PatternLevelCritical,
 })
 ```
@@ -226,7 +226,7 @@ json.UnregisterDangerousPattern("malicious_keyword")
 
 시그니처: `func ListDangerousPatterns() []DangerousPattern`
 
-전역 등록의 모든 사용자 정의 패턴을 반환합니다.
+전역 등록의 모든 커스텀 패턴을 반환합니다.
 
 ```go
 patterns := json.ListDangerousPatterns()
@@ -235,16 +235,16 @@ for _, p := range patterns {
 }
 ```
 
-::: tip 전역 패턴 vs Config 패턴
+:::tip 전역 패턴 vs Config 패턴
 - **전역 패턴**(`RegisterDangerousPattern`): 모든 Processor 인스턴스가 공유, 애플리케이션 수준 보안 정책에 적합
-- **Config 패턴**(`Config.AddDangerousPattern`): 해당 Config를 사용하는 Processor에만 영향, 인스턴스 수준 사용자 정의에 적합
+- **Config 패턴**(`Config.AddDangerousPattern`): 해당 Config를 사용하는 Processor에만 영향, 인스턴스 수준 커스텀에 적합
 :::
 
 ---
 
 ## 전체 예제
 
-### 사용자 정의 보안 정책
+### 커스텀 보안 정책
 
 ```go
 package main
@@ -282,7 +282,7 @@ func main() {
     }
 
     // 등록된 패턴 확인
-    fmt.Printf("사용자 정의 패턴 수: %d\n", len(cfg.AdditionalDangerousPatterns))
+    fmt.Printf("커스텀 패턴 수: %d\n", len(cfg.AdditionalDangerousPatterns))
 }
 ```
 
@@ -291,11 +291,11 @@ func main() {
 ```go
 cfg := json.DefaultConfig()
 
-// 내장 경고 수준 패턴 비활성화, 사용자 정의 패턴만 사용
+// 내장 경고 수준 패턴 비활성화, 커스텀 패턴만 사용
 // 참고: 핵심 패턴(__proto__, constructor[, prototype.)은 항상 강제 실행됨
 cfg.DisableDefaultPatterns = true
 
-// 사용자 정의 패턴 추가
+// 커스텀 패턴 추가
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "xss_payload",
     Name:    "XSS 공격 페이로드",
@@ -320,7 +320,7 @@ cfg.AddDangerousPattern(json.DangerousPattern{
     Level:   json.PatternLevelInfo, // 기록만 하고 차단하지 않음
 })
 
-// 등록된 사용자 정의 패턴 확인
+// 등록된 커스텀 패턴 확인
 for _, p := range cfg.AdditionalDangerousPatterns {
     fmt.Printf("패턴: %s, 이름: %s, 수준: %s\n", p.Pattern, p.Name, p.Level)
 }

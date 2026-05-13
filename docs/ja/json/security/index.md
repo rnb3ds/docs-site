@@ -88,6 +88,72 @@ cfg.AddHook(&FilterFieldsHook{fields: map[string]bool{
 
 ## セキュリティ設定の推奨事項
 
+### 危険パターン管理
+
+ライブラリにはデフォルトの危険パターン検出が組み込まれており、カスタムパターンの登録、解除、照会もサポートしています。
+
+#### RegisterDangerousPattern
+
+シグネチャ：`func RegisterDangerousPattern(pattern DangerousPattern)`
+
+グローバル危険パターンを登録します。登録されたパターンは、デフォルトのセキュリティ設定を使用するすべての操作で有効になります。
+
+```go
+json.RegisterDangerousPattern(json.DangerousPattern{
+    Pattern: "eval(",
+    Name:    "eval-call",
+    Level:   json.PatternLevelCritical,
+})
+```
+
+#### UnregisterDangerousPattern
+
+シグネチャ：`func UnregisterDangerousPattern(pattern string)`
+
+パターン文字列でグローバル危険パターンを解除します。パラメータ `pattern` は解除する危険パターンの部分文字列です（`DangerousPattern.Pattern` フィールドに対応）。
+
+```go
+json.UnregisterDangerousPattern("eval(")
+```
+
+#### ListDangerousPatterns
+
+シグネチャ：`func ListDangerousPatterns() []DangerousPattern`
+
+登録されているすべての危険パターン（デフォルトパターンとカスタムパターンを含む）を一覧表示します。
+
+```go
+patterns := json.ListDangerousPatterns()
+for _, p := range patterns {
+    fmt.Printf("パターン: %s, 名前: %s, レベル: %s\n", p.Pattern, p.Name, p.Level)
+}
+```
+
+#### 危険パターンレベル
+
+| 定数 | 型 | 値 | 説明 |
+|------|------|-----|------|
+| `PatternLevelCritical` | `int` | `0` | 致命レベル、一致時に操作を拒否 |
+| `PatternLevelWarning` | `int` | `1` | 警告レベル、厳格モードでは操作を拒否 |
+| `PatternLevelInfo` | `int` | `2` | 情報レベル、ログ記録のみ |
+
+::: tip
+`PatternLevel` の `String()` メソッドは対応する文字列表現（`"critical"`、`"warning"`、`"info"`）を返し、ログ出力に便利です。
+:::
+
+#### デフォルトパターンの無効化
+
+`Config.DisableDefaultPatterns` で組み込みのデフォルト警告レベルパターンを無効にできます：
+
+```go
+cfg := json.DefaultConfig()
+cfg.DisableDefaultPatterns = true
+```
+
+::: warning 注意
+`__proto__`、`constructor[`、`prototype.` などの致命的パターンは常に強制チェックされ、無効化できません。
+:::
+
 ### プロダクション環境の設定
 
 ```go

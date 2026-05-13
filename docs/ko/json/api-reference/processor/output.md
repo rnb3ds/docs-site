@@ -1,6 +1,6 @@
 ---
-title: Processor 출력 메서드 - CyberGo JSON | API 참조
-description: "CyberGo JSON Processor 출력 메서드 참조: Encode 인코딩, EncodePretty 포맷, EncodeWithConfig 사용자 정의 설정, EncodeBatch/EncodeFields 배치 인코딩, Compact/Indent/HTMLEscape 포맷 작업을 포함하여 다양한 JSON 출력 요구를 충족합니다."
+title: Processor 출력 메서드 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON Processor 출력 메서드 레퍼런스: Encode 인코딩, EncodePretty 포맷팅, EncodeWithConfig 커스텀 설정, EncodeBatch/EncodeFields 배치 인코딩, Compact/Indent/HTMLEscape 포맷팅 작업을 포함하여 다양한 JSON 출력 요구를 충족합니다."
 ---
 
 # 출력 메서드
@@ -11,7 +11,7 @@ Processor는 다양한 JSON 인코딩 출력 메서드를 제공합니다.
 
 ### Encode
 
-시그니처: `func (p *Processor) Encode(value any, config ...Config) (string, error)`
+시그니처: `func (p *Processor) Encode(value any, cfg ...Config) (string, error)`
 
 임의의 값을 JSON 문자열로 인코딩합니다.
 
@@ -25,9 +25,9 @@ fmt.Println(result)
 
 ### EncodePretty
 
-시그니처: `func (p *Processor) EncodePretty(value any, config ...Config) (string, error)`
+시그니처: `func (p *Processor) EncodePretty(value any, cfg ...Config) (string, error)`
 
-임의의 값을 포맷된 JSON 문자열로 인코딩합니다.
+임의의 값을 포맷팅된 JSON 문자열로 인코딩합니다.
 
 ```go
 result, err := p.EncodePretty(user)
@@ -42,14 +42,14 @@ if err != nil {
 
 시그니처: `func (p *Processor) EncodeWithConfig(value any, cfg ...Config) (string, error)`
 
-지정된 설정을 사용하여 값을 JSON 문자열로 인코딩합니다.
+지정된 설정으로 값을 JSON 문자열로 인코딩합니다.
 
 **매개변수**
 
 | 이름 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `value` | `any` | 예 | 인코딩할 값 |
-| `cfg` | `Config` | 아니오 | 인코딩 설정 (선택) |
+| `cfg` | `Config` | 아니요 | 인코딩 설정 (선택) |
 
 ```go
 // PrettyConfig 사용
@@ -58,7 +58,7 @@ result, err := p.EncodeWithConfig(data, json.PrettyConfig())
 // SecurityConfig 사용
 result, err := p.EncodeWithConfig(data, json.SecurityConfig())
 
-// 사용자 정의 설정 사용
+// 커스텀 설정 사용
 cfg := json.DefaultConfig()
 cfg.Pretty = true
 cfg.SortKeys = true
@@ -70,7 +70,7 @@ result, err := p.EncodeWithConfig(data, cfg)
 
 시그니처: `func (p *Processor) EncodeBatch(pairs map[string]any, cfg ...Config) (string, error)`
 
-키-값 쌍을 배치로 JSON 객체로 인코딩합니다.
+키-값 쌍을 JSON 객체로 배치 인코딩합니다.
 
 ```go
 result, err := p.EncodeBatch(map[string]any{
@@ -128,7 +128,7 @@ fmt.Println(string(data)) // {"name":"CyberGo"}
 
 시그니처: `func (p *Processor) MarshalIndent(value any, prefix, indent string, cfg ...Config) ([]byte, error)`
 
-Go 값을 포맷된 JSON 바이트 슬라이스로 인코딩합니다. `encoding/json.MarshalIndent`와 100% 호환됩니다.
+Go 값을 포맷팅된 JSON 바이트 슬라이스로 인코딩합니다. `encoding/json.MarshalIndent`와 100% 호환됩니다.
 
 ```go
 data, err := p.MarshalIndent(user, "", "  ")
@@ -152,13 +152,13 @@ if err != nil {
 }
 ```
 
-## 포맷
+## 포맷팅
 
 ### Prettify
 
 시그니처: `func (p *Processor) Prettify(jsonStr string, cfg ...Config) (string, error)`
 
-JSON 문자열을 들여쓰기 형식으로 포맷합니다.
+JSON 문자열을 들여쓰기 형식으로 포맷팅합니다.
 
 ```go
 pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
@@ -171,18 +171,18 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 
 ### Print (비공개 전환)
 
-::: warning API 변경 안내
-`Print`, `PrintE`, `PrintPretty`, `PrintPrettyE`는 내부 메서드(소문자 명명)로 전환되어 공개 API로 내보내지지 않습니다. 다음 대안을 사용하십시오:
+:::warning API 변경 안내
+`Print`, `PrintE`, `PrintPretty`, `PrintPrettyE`는 내부 메서드(소문자 이름)로 전환되어 공개 API로 내보내지 않습니다. 다음 대안을 사용하세요:
 
 ```go
-// 압축 출력
+// 컴팩트 출력
 s, err := p.EncodeWithConfig(data)
 if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
 
-// 포맷 출력
+// 포맷팅 출력
 pretty, err := p.EncodePretty(data)
 if err != nil {
     log.Fatal(err)
@@ -195,7 +195,7 @@ fmt.Println(pretty)
 
 시그니처: `func (p *Processor) ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
 
-JSON 데이터가 지정된 Schema에 부합하는지 검증합니다.
+JSON 데이터가 지정된 Schema에 맞는지 검증합니다.
 
 ```go
 schema := &json.Schema{
@@ -216,7 +216,7 @@ for _, ve := range errors {
 }
 ```
 
-## 포맷 작업
+## 포맷팅 작업
 
 ### Compact
 
@@ -244,7 +244,7 @@ err := p.CompactBuffer(&buf, []byte(`{"name": "test"}`))
 
 시그니처: `func (p *Processor) Indent(dst *bytes.Buffer, src []byte, prefix, indent string, cfg ...Config) error`
 
-JSON을 포맷하여 Buffer에 씁니다.
+JSON을 포맷팅하여 Buffer에 씁니다.
 
 ```go
 var buf bytes.Buffer
@@ -265,4 +265,4 @@ p.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
 ## 관련 문서
 
 - [Config](../config) - 설정 옵션
-- [파싱과 로딩](./parse) - Parse/Load 메서드
+- [파싱 및 로드](./parse) - Parse/Load 메서드

@@ -69,6 +69,34 @@ enabled := p.GetBool(data, "enabled")
 debug := p.GetBool(data, "debug", false)
 ```
 
+
+### GetWithContext
+
+Signature: `func (p *Processor) GetWithContext(ctx context.Context, jsonStr, path string, cfg ...Config) (any, error)`
+
+Path query with context. Supports timeout and cancellation. A context-aware version of `Get`.
+
+::: info Note
+Context is checked before and after operations, not during parsing/navigation. For large JSON documents, cancellation may not be responded to during the operation.
+:::
+
+```go
+p, err := json.New()
+if err != nil {
+    panic(err)
+}
+defer p.Close()
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+val, err := p.GetWithContext(ctx, data, "items[0].name")
+if err != nil {
+    panic(err)
+}
+fmt.Println(val)
+```
+
 ## Safe Query
 
 ### SafeGet

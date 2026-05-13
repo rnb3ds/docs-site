@@ -91,9 +91,6 @@ type Config struct {
     // ===== 合并选项 =====
     MergeMode MergeMode // 合并策略
 
-    // ===== 上下文 =====
-    Context context.Context // 操作上下文
-
     // ===== 扩展点 =====
     CustomEncoder              CustomEncoder                // 自定义编码器
     CustomTypeEncoders         map[reflect.Type]TypeEncoder // 自定义类型编码器
@@ -229,7 +226,7 @@ cfgCopy.EnableValidation = true // 不影响原配置
 
 签名：`func (c *Config) Validate() error`
 
-验证配置并自动修正无效值。
+验证配置并自动修正无效值。此方法会**原地修改** Config，将不合法的字段修正为对应的最小有效值。
 
 ```go
 cfg := json.DefaultConfig()
@@ -237,7 +234,7 @@ cfg.MaxJSONSize = -1 // 无效值
 if err := cfg.Validate(); err != nil {
     panic(err)
 }
-// MaxJSONSize 会被自动修正为最小值
+// MaxJSONSize 会被原地修正为最小值
 ```
 
 ### ValidateWithWarnings
@@ -265,6 +262,21 @@ type ConfigWarning struct {
     OldValue any    // 原始值（无效值可能为 nil）
     NewValue any    // 修正后的值
     Reason   string // 修正原因
+}
+```
+
+### SecurityLimits 类型
+
+`SecurityLimits` 汇总 Config 中的安全相关限制字段。
+
+```go
+type SecurityLimits struct {
+    MaxNestingDepth           int   `json:"max_nesting_depth"`
+    MaxSecurityValidationSize int64 `json:"max_security_validation_size"`
+    MaxObjectKeys             int   `json:"max_object_keys"`
+    MaxArrayElements          int   `json:"max_array_elements"`
+    MaxJSONSize               int64 `json:"max_json_size"`
+    MaxPathDepth              int   `json:"max_path_depth"`
 }
 ```
 

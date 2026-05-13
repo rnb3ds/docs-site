@@ -1,5 +1,5 @@
 ---
-title: 인코딩 디코딩 함수 - CyberGo JSON | API 참조
+title: 인코딩 디코딩 함수 - CyberGo JSON | API 레퍼런스
 description: "CyberGo JSON 인코딩 디코딩 함수 참조: Marshal/Unmarshal 직렬화, Compact/Indent/HTMLEscape 포맷, Encode/EncodePretty/EncodeWithConfig/Prettify 설정형 인코딩을 포함하며, encoding/json과 100% 호환됩니다."
 ---
 
@@ -265,7 +265,7 @@ defer p.Close()
 
 시그니처: `func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-JSON 바이트를 압축하여 `dst` 버퍼에 씁니다. 패키지 수준 `Compact` 함수에 위임합니다.
+JSON 바이트를 압축하여 `dst` 버퍼에 씁니다. 패키지 레벨 `Compact` 함수에 위임합니다.
 
 ```go
 var buf bytes.Buffer
@@ -296,7 +296,7 @@ p.HTMLEscape(&buf, []byte(`{"html":"<script>"}`))
 ```
 
 :::tip
-전체 Processor 문서는 [Processor](../interfaces)를 참조하십시오.
+전체 Processor 문서는 [Processor](../interfaces)를 참조하세요.
 :::
 
 ## 설정 프리셋
@@ -315,7 +315,7 @@ cfg := json.SecurityConfig()
 ```
 
 :::tip
-전체 Config 필드 문서는 [설정](../config)을 참조하십시오.
+전체 Config 필드 문서는 [설정](../config)을 참조하세요.
 :::
 
 ## 관련 문서

@@ -36,7 +36,7 @@ description: "CyberGo JSON 完整 API 参考手册：涵盖 GetString/GetInt 路
 
 | 函数 | 说明 |
 |------|------|
-| `Get`, `GetString`, `GetInt`, `GetFloat`, `GetBool`, `GetArray`, `GetObject` | 类型安全获取 |
+| `Get`, `GetWithContext`, `GetString`, `GetInt`, `GetFloat`, `GetBool`, `GetArray`, `GetObject` | 类型安全获取 |
 | `GetTyped[T]` | 泛型获取 |
 | `SafeGet` | 安全获取 AccessResult |
 | `GetMultiple` | 批量获取 |
@@ -79,16 +79,21 @@ description: "CyberGo JSON 完整 API 参考手册：涵盖 GetString/GetInt 路
 
 | 类型/方法 | 说明 |
 |------|------|
-| `ForeachFile` | 文件流式处理 |
+| `StreamLinesInto[T]` | 从 Reader 流式读取 JSONL 并转换为 `[]T` |
+| `ParseJSONL` | 解析 JSONL 字节为 `[]any` |
+| `ToJSONL`, `ToJSONLString` | 将 `[]any` 转换为 JSONL 格式 |
+| `JSONLWriter` | JSONL 写入器（Write/WriteAll/WriteRaw） |
 | `NDJSONProcessor` | NDJSON/JSONL 处理器 |
-| `JSONLWriter` | JSONL 写入器 |
+| `ForeachFile` | 文件流式处理 |
 
 #### 验证
 
 | 函数 | 说明 |
 |------|------|
-| `Valid` | JSON 验证 |
+| `Valid` | JSON 验证（兼容 `encoding/json.Valid`） |
+| `ValidWithConfig` | 带配置的 JSON 验证 |
 | `ValidateSchema` | Schema 验证（配合 `Schema` 类型使用） |
+| `CompareJSON` | 比较 JSON 是否等价 |
 
 ## 命名约定
 

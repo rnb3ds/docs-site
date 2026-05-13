@@ -1,6 +1,6 @@
 ---
 title: 安全概述 - CyberGo JSON | 安全最佳实践
-description: "CyberGo JSON 安全最佳实践指南：涵盖输入验证与清洗、MaxNestingDepthSecurity/MaxMemory 资源限制防护、路径遍历攻击防御、JSON 注入防护、敏感数据过滤和审计日志配置，帮助开发者保障生产环境 JSON 数据安全。"
+description: "CyberGo JSON 安全最佳实践指南：涵盖输入验证与清洗、MaxNestingDepthSecurity/MaxMemory 资源限制防护、路径遍历攻击防御、JSON 注入防护、敏感数据过滤和审计日志配置，帮助开发者全面保障生产环境 JSON 数据处理安全。"
 ---
 
 # 安全概述
@@ -87,6 +87,72 @@ cfg.AddHook(&FilterFieldsHook{fields: map[string]bool{
 ```
 
 ## 安全配置建议
+
+### 危险模式管理
+
+库内置默认危险模式检测，也支持自定义模式的注册、注销和查询。
+
+#### RegisterDangerousPattern
+
+签名：`func RegisterDangerousPattern(pattern DangerousPattern)`
+
+注册全局危险模式。注册后的模式将在所有使用默认安全配置的操作中生效。
+
+```go
+json.RegisterDangerousPattern(json.DangerousPattern{
+    Pattern: "eval(",
+    Name:    "eval-call",
+    Level:   json.PatternLevelCritical,
+})
+```
+
+#### UnregisterDangerousPattern
+
+签名：`func UnregisterDangerousPattern(pattern string)`
+
+按模式字符串注销全局危险模式。参数 `pattern` 为要注销的危险模式子字符串（对应 `DangerousPattern.Pattern` 字段）。
+
+```go
+json.UnregisterDangerousPattern("eval(")
+```
+
+#### ListDangerousPatterns
+
+签名：`func ListDangerousPatterns() []DangerousPattern`
+
+列出所有已注册的危险模式（包括默认模式和自定义模式）。
+
+```go
+patterns := json.ListDangerousPatterns()
+for _, p := range patterns {
+    fmt.Printf("模式: %s, 名称: %s, 级别: %s\n", p.Pattern, p.Name, p.Level)
+}
+```
+
+#### 危险模式级别
+
+| 常量 | 类型 | 值 | 说明 |
+|------|------|-----|------|
+| `PatternLevelCritical` | `int` | `0` | 严重级别，匹配时拒绝操作 |
+| `PatternLevelWarning` | `int` | `1` | 警告级别，严格模式下拒绝操作 |
+| `PatternLevelInfo` | `int` | `2` | 信息级别，仅记录日志 |
+
+::: tip
+`PatternLevel` 的 `String()` 方法返回对应的字符串表示（`"critical"`、`"warning"`、`"info"`），便于日志输出。
+:::
+
+#### 禁用默认模式
+
+通过 `Config.DisableDefaultPatterns` 可以禁用内置的默认警告级模式：
+
+```go
+cfg := json.DefaultConfig()
+cfg.DisableDefaultPatterns = true // 禁用默认警告级模式
+```
+
+::: warning 注意
+`DisableDefaultPatterns` 仅禁用默认的警告级（`PatternLevelWarning`）模式。严重级别（`PatternLevelCritical`）的默认模式不受影响。
+:::
 
 ### 生产环境配置
 

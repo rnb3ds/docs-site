@@ -1,11 +1,11 @@
 ---
-title: Processor - Изменение данных - CyberGo JSON | Справочник API
-description: "Полный справочник методов изменения данных CyberGo JSON Processor: Set для установки значения по пути, SetMultiple для пакетной установки, Delete для удаления пути, CreatePaths для автоматического создания промежуточных путей. Все методы возвращают изменённую строку JSON, поддерживают цепочечные вызовы и параметр конфигурации CreatePaths для автоматического создания путей."
+title: Processor - Модификация данных - CyberGo JSON | Справочник API
+description: "Справочник методов модификации данных Processor: Set, SetMultiple, SetCreate, SetMultipleCreate, Delete, DeleteClean. Все методы поддерживают цепочечные вызовы."
 ---
 
-# Методы изменения данных
+# Методы модификации данных
 
-Processor предоставляет методы изменения данных, все методы возвращают изменённую строку JSON.
+Processor предоставляет методы модификации данных, все методы возвращают изменённую строку JSON.
 
 ## Set
 
@@ -57,7 +57,7 @@ result, err := p.Delete(data, "user.temporary")
 
 ```go
 result, err := p.DeleteClean(data, "user.temporary")
-// После удаления будут очищены null и пустые массивы
+// После удаления будут очищены возникшие null и пустые массивы
 ```
 
 **Разница между Delete и DeleteClean**:
@@ -77,7 +77,7 @@ result, _ := p.DeleteClean(data, "user.temp")
 
 Сигнатура: `func (p *Processor) SetMultiple(jsonStr string, updates map[string]any, cfg ...Config) (string, error)`
 
-Пакетная установка значений нескольких путей, возвращает изменённую строку JSON.
+Массовая установка значений по нескольким путям, возвращает изменённую строку JSON.
 
 ```go
 result, err := p.SetMultiple(data, map[string]any{
@@ -103,7 +103,7 @@ result, err := p.SetCreate(data, "user.profile.bio", "Developer")
 
 Сигнатура: `func (p *Processor) SetMultipleCreate(jsonStr string, updates map[string]any, cfg ...Config) (string, error)`
 
-Пакетная установка нескольких значений с автоматическим созданием промежуточных путей.
+Массовая установка нескольких значений с автоматическим созданием промежуточных путей.
 
 ```go
 result, err := p.SetMultipleCreate(data, map[string]any{
@@ -112,9 +112,9 @@ result, err := p.SetMultipleCreate(data, map[string]any{
 })
 ```
 
-## Цепочечные изменения
+## Цепочечная модификация
 
-Методы изменения поддерживают цепочечные вызовы:
+Методы модификации поддерживают цепочечные вызовы:
 
 ```go
 processor, _ := json.New()
@@ -124,7 +124,7 @@ result2, _ := processor.Set(result1, "user.version", "1.0.0")
 finalResult, _ := processor.Delete(result2, "user.temporary")
 ```
 
-## См. также
+## Связанные разделы
 
-- [Запросы по пути](./query) - семейство методов Get
-- [Пакетные операции](./batch) - пакетная обработка ProcessBatch
+- [Запросы по пути](./query) - Методы Get
+- [Массовые операции](./batch) - Массовая обработка ProcessBatch

@@ -1,6 +1,6 @@
 ---
 title: Query and Get Functions - CyberGo JSON | API Reference
-description: "CyberGo JSON query and get functions complete reference: including Get/GetString/GetInt/GetFloat/GetBool type-safe getters, GetTyped[T] generic getter, Parse/ParseAny parsing functions, with full JSONPath expression support."
+description: "CyberGo JSON query and get functions complete reference: including Get/GetString/GetInt/GetFloat/GetBool type-safe getters, GetTyped[T] generic getter, Parse/ParseAny parsing functions, with full JSONPath expression support, providing zero-error getter mode with default values."
 ---
 
 # Query and Get Functions
@@ -39,6 +39,39 @@ func main() {
         panic(err)
     }
     fmt.Println(val) // Output: test
+}
+```
+
+
+### GetWithContext
+
+Signature: `func GetWithContext(ctx context.Context, jsonStr, path string, cfg ...Config) (any, error)`
+
+Path query with context. Supports timeout and cancellation. A context-aware version of `Get`.
+
+::: info Note
+Context is checked before and after operations, not during parsing/navigation. For large JSON documents, cancellation may not be responded to during the operation.
+:::
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    "github.com/cybergodev/json"
+)
+
+func main() {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    val, err := json.GetWithContext(ctx, `{"user":{"name":"Alice"}}`, "user.name")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(val) // Output: Alice
 }
 ```
 
@@ -599,6 +632,10 @@ for _, r := range results {
 | `Value` | `any` | Retrieved value |
 | `Exists` | `bool` | Whether the path exists |
 | `Type` | `string` | Detected value type |
+
+**Methods**: `Ok()` · `Unwrap()` · `UnwrapOr()` · `AsString()` · `AsStringConverted()` · `AsInt()` · `AsFloat64()` · `AsBool()`
+
+See [AccessResult Type](../types#accessresult---property-access-result) for details.
 
 ### Result[T]
 

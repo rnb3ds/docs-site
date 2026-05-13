@@ -1,6 +1,6 @@
 ---
 title: Interface Definitions - CyberGo JSON | API Reference
-description: "CyberGo JSON extension interface definitions complete reference: including CustomEncoder, TypeEncoder, Validator, Hook interfaces, PathParser, and DangerousPattern, supporting flexible extension of encoding, validation, and security capabilities."
+description: "CyberGo JSON extension interface definitions complete reference: including CustomEncoder, TypeEncoder, Validator, Hook interfaces, PathParser, and DangerousPattern, supporting flexible extension of encoding, validation, and security capabilities, meeting custom serialization and security policy requirements."
 ---
 
 # Interface Definitions
@@ -406,11 +406,64 @@ if num, ok := val.(json.Number); ok {
 
 ## Standard Library Compatible Interfaces
 
-::: info Note
-The `encoding/json` compatible interfaces (`Marshaler`, `Unmarshaler`, `TextMarshaler`, `TextUnmarshaler`) have been converted to internal implementations and are no longer exported as public APIs. The library automatically recognizes types implementing these interfaces without requiring explicit user reference.
+The `json` package exports the following standard interfaces compatible with `encoding/json` for customizing encoding and decoding behavior of custom types.
 
-For encoding/decoding types like `Encoder`, `Decoder`, `Token`, `Delim`, `Number`, see [Type Definitions](./types#encoder-json-encoder).
-:::
+### Marshaler
+
+```go
+type Marshaler interface {
+    MarshalJSON() ([]byte, error)
+}
+```
+
+### Unmarshaler
+
+```go
+type Unmarshaler interface {
+    UnmarshalJSON(data []byte) error
+}
+```
+
+### TextMarshaler
+
+```go
+type TextMarshaler interface {
+    MarshalText() ([]byte, error)
+}
+```
+
+### TextUnmarshaler
+
+```go
+type TextUnmarshaler interface {
+    UnmarshalText(text []byte) error
+}
+```
+
+**Usage Example**
+
+```go
+type Person struct {
+    Name string
+}
+
+// Implement Marshaler interface
+func (p Person) MarshalJSON() ([]byte, error) {
+    return []byte(`{"name":"` + p.Name + `"}`), nil
+}
+
+// Implement Unmarshaler interface
+func (p *Person) UnmarshalJSON(data []byte) error {
+    var v struct{ Name string `json:"name"` }
+    if err := json.Unmarshal(data, &v); err != nil {
+        return err
+    }
+    p.Name = v.Name
+    return nil
+}
+```
+
+`Encoder`, `Decoder`, `Token`, `Delim`, `Number` and other encoding/decoding types are detailed in [Type Definitions](./types#encoder-json-encoder).
 
 ## Type Definitions
 

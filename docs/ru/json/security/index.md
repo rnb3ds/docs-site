@@ -1,35 +1,35 @@
 ---
-title: Обзор безопасности - CyberGo JSON | Лучшие практики безопасности
-description: "Руководство по лучшим практикам безопасности CyberGo JSON: валидация и очистка входных данных, защита ресурсных ограничений MaxNestingDepthSecurity/MaxMemory, предотвращение атак с обходом пути, защита от JSON-инъекций, фильтрация конфиденциальных данных и настройка журналов аудита для безопасной обработки JSON в продакшене."
+title: Обзор безопасности - CyberGo JSON | Лучшие практики
+description: "Руководство по безопасности CyberGo JSON: валидация входных данных, ресурсные ограничения MaxNestingDepthSecurity/MaxMemory, предотвращение атак обхода пути, защита от JSON-инъекций, фильтрация конфиденциальных данных и настройка аудиторского журнала."
 ---
 
 # Обзор безопасности
 
-Вопросы безопасности и лучшие практики при обработке JSON данных.
+Соображения безопасности и лучшие практики при обработке данных JSON.
 
-## Основные риски безопасности
+## Распространённые угрозы безопасности
 
-### 1. Атаки на исчерпание ресурсов
+### 1. Атаки исчерпания ресурсов
 
-Злонамеренно сформированный JSON может привести к исчерпанию памяти или перегрузке процессора.
+Злонамеренно сконструированный JSON может привести к исчерпанию памяти или перегрузке CPU.
 
-**Меры защиты:**
+**Защитные меры:**
 
 ```go
 cfg := json.DefaultConfig()
 cfg.MaxNestingDepthSecurity = 50                       // Ограничение глубины вложенности
-cfg.MaxJSONSize = 10 * 1024 * 1024             // Ограничение размера JSON (10МБ)
-cfg.MaxSecurityValidationSize = 100 * 1024 * 1024 // Увеличить лимит безопасности до 100МБ (по умолчанию 10МБ)
+cfg.MaxJSONSize = 10 * 1024 * 1024             // Ограничение размера JSON (10MB)
+cfg.MaxSecurityValidationSize = 100 * 1024 * 1024 // Увеличить лимит безопасности до 100MB (по умолчанию 10MB)
 ```
 
-### 2. Атаки с обходом пути
+### 2. Атаки обхода пути
 
 Злонамеренные пути могут получить доступ к непредусмотренным данным.
 
-**Меры защиты:**
+**Защитные меры:**
 
 ```go
-// Проверка пользовательского пути
+// Проверка пути, введённого пользователем
 func safePath(path string) bool {
     // Запрет специальных символов
     if strings.ContainsAny(path, `<>:"|\`) {
@@ -43,10 +43,10 @@ func safePath(path string) bool {
 
 Злонамеренные данные могут нарушить структуру JSON.
 
-**Меры защиты:**
+**Защитные меры:**
 
 ```go
-// Всегда используйте функции библиотеки для сериализации, не конкатенируйте строки
+// Всегда используйте библиотечные функции для сериализации, не конкатенируйте строки
 data := map[string]any{
     "user": userInput, // Библиотека автоматически экранирует
 }
@@ -57,7 +57,7 @@ bytes, _ := json.Marshal(data)
 
 Журналы или сообщения об ошибках могут раскрыть конфиденциальные данные.
 
-**Меры защиты:**
+**Защитные меры:**
 
 ```go
 // Использование пользовательского Hook для фильтрации конфиденциальных полей
@@ -86,7 +86,73 @@ cfg.AddHook(&FilterFieldsHook{fields: map[string]bool{
 }})
 ```
 
-## Рекомендации по настройке безопасности
+## Рекомендации по конфигурации безопасности
+
+### Управление опасными паттернами
+
+Библиотека имеет встроенное обнаружение опасных паттернов по умолчанию, а также поддерживает регистрацию, отмену регистрации и запрос пользовательских паттернов.
+
+#### RegisterDangerousPattern
+
+Сигнатура: `func RegisterDangerousPattern(pattern DangerousPattern)`
+
+Регистрирует глобальный опасный паттерн. После регистрации паттерн будет действовать во всех операциях, использующих конфигурацию безопасности по умолчанию.
+
+```go
+json.RegisterDangerousPattern(json.DangerousPattern{
+    Pattern: "eval(",
+    Name:    "eval-call",
+    Level:   json.PatternLevelCritical,
+})
+```
+
+#### UnregisterDangerousPattern
+
+Сигнатура: `func UnregisterDangerousPattern(pattern string)`
+
+Отменяет регистрацию глобального опасного паттерна по строке паттерна. Параметр `pattern` — подстрока опасного паттерна для отмены (соответствует полю `DangerousPattern.Pattern`).
+
+```go
+json.UnregisterDangerousPattern("eval(")
+```
+
+#### ListDangerousPatterns
+
+Сигнатура: `func ListDangerousPatterns() []DangerousPattern`
+
+Перечисляет все зарегистрированные опасные паттерны (включая паттерны по умолчанию и пользовательские).
+
+```go
+patterns := json.ListDangerousPatterns()
+for _, p := range patterns {
+    fmt.Printf("Паттерн: %s, Имя: %s, Уровень: %s\n", p.Pattern, p.Name, p.Level)
+}
+```
+
+#### Уровни опасных паттернов
+
+| Константа | Тип | Значение | Описание |
+|-----------|-----|----------|----------|
+| `PatternLevelCritical` | `int` | `0` | Критический уровень, при совпадении операция отклоняется |
+| `PatternLevelWarning` | `int` | `1` | Уровень предупреждения, в строгом режиме операция отклоняется |
+| `PatternLevelInfo` | `int` | `2` | Информационный уровень, только запись в журнал |
+
+::: tip
+Метод `String()` типа `PatternLevel` возвращает соответствующее строковое представление (`"critical"`, `"warning"`, `"info"`), удобное для вывода в журнал.
+:::
+
+#### Отключение паттернов по умолчанию
+
+Через `Config.DisableDefaultPatterns` можно отключить встроенные паттерны уровня предупреждения по умолчанию:
+
+```go
+cfg := json.DefaultConfig()
+cfg.DisableDefaultPatterns = true // Отключить паттерны уровня предупреждения по умолчанию
+```
+
+::: warning Примечание
+`DisableDefaultPatterns` отключает только паттерны уровня предупреждения по умолчанию (`PatternLevelWarning`). Паттерны критического уровня (`PatternLevelCritical`) по умолчанию не затрагиваются.
+:::
 
 ### Конфигурация для продакшена
 
@@ -120,7 +186,7 @@ func DevelopmentConfig() json.Config {
 type EmailValidator struct{}
 
 func (v *EmailValidator) Validate(jsonStr string) error {
-    // Проверка содержимого JSON строки
+    // Проверка содержимого строки JSON
     var data map[string]any
     if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
         return err
@@ -140,9 +206,9 @@ cfg := json.DefaultConfig()
 cfg.CustomValidators = []json.Validator{&EmailValidator{}}
 ```
 
-### Валидация по схеме
+### Schema-валидация
 
-Schema — это тип структуры, который можно использовать для валидации структуры JSON:
+Schema — тип структуры, который можно использовать для валидации структуры JSON:
 
 ```go
 schema := &json.Schema{
@@ -169,11 +235,11 @@ if err != nil {
 }
 ```
 
-## Журналы аудита
+## Аудиторский журнал
 
 ### Запись ключевых операций
 
-Используйте интерфейс `Hook` (`Before` возвращает `error`, `After` принимает `(HookContext, any, error)` и возвращает `(any, error)`) для записи журналов аудита:
+Используйте интерфейс `Hook` (`Before` возвращает `error`, `After` принимает `(HookContext, any, error)` и возвращает `(any, error)`) для записи аудиторского журнала:
 
 ```go
 type AuditHook struct {
@@ -181,18 +247,18 @@ type AuditHook struct {
 }
 
 func (h *AuditHook) Before(ctx json.HookContext) error {
-    h.logger.Info("Начало JSON операции", "op", ctx.Operation, "path", ctx.Path)
+    h.logger.Info("Начало JSON-операции", "op", ctx.Operation, "path", ctx.Path)
     return nil
 }
 
 func (h *AuditHook) After(ctx json.HookContext, result any, err error) (any, error) {
-    h.logger.Info("Завершение JSON операции", "op", ctx.Operation)
+    h.logger.Info("Завершение JSON-операции", "op", ctx.Operation)
     return result, err
 }
 ```
 
-## Смотрите также
+## Связанные разделы
 
 - [Контрольный список для продакшена](./production-checklist)
 - [Конфигурация Config](../api-reference/config)
-- [Validator](../api-reference/validator)
+- [Валидатор](../api-reference/validator)

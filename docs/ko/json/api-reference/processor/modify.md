@@ -1,6 +1,6 @@
 ---
-title: Processor 데이터 수정 - CyberGo JSON | API 참조
-description: "CyberGo JSON Processor 데이터 수정 메서드 완전 참조: Set 경로 값 설정, SetMultiple 배치 설정, Delete 경로 삭제, CreatePaths 자동 중간 경로 생성을 포함하며, 모든 메서드는 수정된 JSON 문자열을 반환하여 체인 호출과 CreatePaths 설정 옵션으로 경로 자동 생성을 지원합니다."
+title: Processor 데이터 수정 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON Processor 데이터 수정 메서드 완전 레퍼런스: Set 경로 설정, SetMultiple 배치 설정, SetCreate 중간 경로 자동 생성, Delete 경로 삭제 및 DeleteClean 정리 삭제, 모든 메서드는 체인 호출을 지원합니다."
 ---
 
 # 데이터 수정 메서드
@@ -11,7 +11,7 @@ Processor는 데이터 수정 메서드를 제공하며, 모든 메서드는 수
 
 시그니처: `func (p *Processor) Set(jsonStr, path string, value any, cfg ...Config) (string, error)`
 
-지정된 경로에 값을 설정하고 수정된 JSON 문자열을 반환합니다.
+지정된 경로에 값을 설정하고, 수정된 JSON 문자열을 반환합니다.
 
 ```go
 result, err := p.Set(data, "user.name", "NewName")
@@ -32,7 +32,7 @@ result, _ := p.Set(data, "user.active", true)
 // 객체
 result, _ := p.Set(data, "user.profile", map[string]any{
     "bio": "Developer",
-    "location": "Korea",
+    "location": "China",
 })
 
 // 배열
@@ -43,7 +43,7 @@ result, _ := p.Set(data, "items", []any{"a", "b", "c"})
 
 시그니처: `func (p *Processor) Delete(jsonStr, path string, cfg ...Config) (string, error)`
 
-지정된 경로의 값을 삭제하고 수정된 JSON 문자열을 반환합니다.
+지정된 경로의 값을 삭제하고, 수정된 JSON 문자열을 반환합니다.
 
 ```go
 result, err := p.Delete(data, "user.temporary")
@@ -63,12 +63,12 @@ result, err := p.DeleteClean(data, "user.temporary")
 **Delete와 DeleteClean의 차이**:
 
 ```go
-// 원래 데이터: {"user": {"temp": "value", "name": "test"}}
+// 원본 데이터: {"user": {"temp": "value", "name": "test"}}
 
 // Delete 후: {"user": {"name": "test"}}
 result, _ := p.Delete(data, "user.temp")
 
-// 삭제 후 부모 객체가 비어 있으면 DeleteClean은 계속 정리
+// 삭제 후 부모 객체가 비어있으면 DeleteClean은 계속 정리
 // {"user": {}} -> {}
 result, _ := p.DeleteClean(data, "user.temp")
 ```
@@ -77,7 +77,7 @@ result, _ := p.DeleteClean(data, "user.temp")
 
 시그니처: `func (p *Processor) SetMultiple(jsonStr string, updates map[string]any, cfg ...Config) (string, error)`
 
-여러 경로의 값을 배치로 설정하고 수정된 JSON 문자열을 반환합니다.
+여러 경로의 값을 배치로 설정하고, 수정된 JSON 문자열을 반환합니다.
 
 ```go
 result, err := p.SetMultiple(data, map[string]any{
@@ -91,10 +91,10 @@ result, err := p.SetMultiple(data, map[string]any{
 
 시그니처: `func (p *Processor) SetCreate(jsonStr, path string, value any, cfg ...Config) (string, error)`
 
-값을 설정하고 존재하지 않는 중간 경로를 자동으로 생성합니다. `Config.CreatePaths = true`로 설정한 `Set`과 동일합니다.
+값을 설정하고 존재하지 않는 중간 경로를 자동으로 생성합니다. `Config.CreatePaths = true`의 `Set`과 동일합니다.
 
 ```go
-// 중간 경로 user.profile이 존재하지 않으면 자동 생성
+// 중간 경로 user.profile이 존재하지 않으면 자동으로 생성
 result, err := p.SetCreate(data, "user.profile.bio", "Developer")
 // {"user":{"profile":{"bio":"Developer"}}}
 ```
@@ -108,7 +108,7 @@ result, err := p.SetCreate(data, "user.profile.bio", "Developer")
 ```go
 result, err := p.SetMultipleCreate(data, map[string]any{
     "user.profile.bio":      "Developer",
-    "user.profile.location": "Korea",
+    "user.profile.location": "China",
 })
 ```
 
@@ -126,5 +126,5 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 ## 관련 문서
 
-- [경로 조회](./query) - Get 계열 메서드
+- [경로 쿼리](./query) - Get 시리즈 메서드
 - [배치 작업](./batch) - ProcessBatch 배치 처리

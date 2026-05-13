@@ -34,7 +34,7 @@ type Config struct {
     ParallelThreshold int // 並列処理の閾値
 
     // ===== 処理オプション =====
-    EnableValidation bool // バリデーションを有効化
+    EnableValidation bool // 検証を有効化
     StrictMode       bool // 厳格モード
     CreatePaths      bool // パスを自動作成
     CleanupNulls     bool // null 値をクリーンアップ
@@ -44,9 +44,9 @@ type Config struct {
     // ===== 入力/出力オプション =====
     AllowComments    bool // コメントを許可
     PreserveNumbers  bool // 数値精度を維持
-    ValidateInput    bool // 入力をバリデーション
-    ValidateFilePath bool // ファイルパスをバリデーション
-    SkipValidation   bool // バリデーションをスキップ（信頼できる入力）
+    ValidateInput    bool // 入力を検証
+    ValidateFilePath bool // ファイルパスを検証
+    SkipValidation   bool // 検証をスキップ（信頼できる入力）
 
     // ===== エンコードオプション =====
     Pretty          bool            // フォーマット出力
@@ -54,7 +54,7 @@ type Config struct {
     Prefix          string          // プレフィックス
     EscapeHTML      bool            // HTML エスケープ
     SortKeys        bool            // キーのソート
-    ValidateUTF8    bool            // UTF-8 バリデーション
+    ValidateUTF8    bool            // UTF-8 検証
     MaxDepth        int             // エンコード最大深度
     DisallowUnknown bool            // 未知フィールドを禁止
     FloatPrecision  int             // 浮動小数点精度（-1 で自動）
@@ -71,7 +71,7 @@ type Config struct {
     EnableMetrics     bool // メトリクス収集を有効化
     EnableHealthCheck bool // ヘルスチェックを有効化
 
-    // ===== 大ファイル処理 =====
+    // ===== 大規模ファイル処理 =====
     ChunkSize       int64 // チャンクサイズ
     MaxMemory       int64 // 最大メモリ使用量
     BufferSize      int   // バッファサイズ
@@ -90,9 +90,6 @@ type Config struct {
 
     // ===== マージオプション =====
     MergeMode MergeMode // マージ戦略
-
-    // ===== コンテキスト =====
-    Context context.Context // 操作コンテキスト
 
     // ===== 拡張ポイント =====
     CustomEncoder              CustomEncoder                // カスタムエンコーダ
@@ -135,13 +132,13 @@ defer processor.Close()
 | MaxCacheSize | 128 | キャッシュエントリ最大数 |
 | EnableCache | true | キャッシュ有効 |
 | CacheResults | true | 操作結果をキャッシュ |
-| EnableValidation | true | バリデーション有効 |
-| ValidateInput | true | 入力バリデーション |
-| ValidateFilePath | true | ファイルパスバリデーション |
+| EnableValidation | true | 検証有効 |
+| ValidateInput | true | 入力検証 |
+| ValidateFilePath | true | ファイルパス検証 |
 | CreatePaths | true | パス自動作成 |
 | Pretty | false | フォーマット出力しない |
 | EscapeHTML | true | HTML エスケープ |
-| ValidateUTF8 | true | UTF-8 バリデーション |
+| ValidateUTF8 | true | UTF-8 検証 |
 | IncludeNulls | true | null を含める |
 | EscapeNewlines | true | 改行文字エスケープ |
 | EscapeTabs | true | タブ文字エスケープ |
@@ -196,7 +193,7 @@ defer processor.Close()
 | MaxPathDepth | 30 | 控えめなパス深度 |
 | FullSecurityScan | true | 完全セキュリティスキャン |
 | StrictMode | true | 厳格モード |
-| EnableValidation | true | バリデーション有効 |
+| EnableValidation | true | 検証有効 |
 | EnableCache | true | キャッシュ有効 |
 | MaxCacheSize | 256 | キャッシュサイズ |
 | CacheTTL | 3 分 | 短い TTL |
@@ -229,7 +226,7 @@ cfgCopy.EnableValidation = true // 元の設定には影響しない
 
 シグネチャ：`func (c *Config) Validate() error`
 
-設定を検証し、無効な値を自動修正します。
+設定を検証し、無効な値を自動修正します。このメソッドは Config を**インプレースで変更**し、無効なフィールドを対応する最小有効値に修正します。
 
 ```go
 cfg := json.DefaultConfig()
@@ -237,7 +234,7 @@ cfg.MaxJSONSize = -1 // 無効な値
 if err := cfg.Validate(); err != nil {
     panic(err)
 }
-// MaxJSONSize は最小値に自動修正される
+// MaxJSONSize はインプレースで最小値に修正される
 ```
 
 ### ValidateWithWarnings
@@ -265,6 +262,21 @@ type ConfigWarning struct {
     OldValue any    // 元の値（無効な値の場合は nil の可能性あり）
     NewValue any    // 修正後の値
     Reason   string // 修正理由
+}
+```
+
+### SecurityLimits 型
+
+`SecurityLimits` は Config 内のセキュリティ関連制限フィールドを集約します。
+
+```go
+type SecurityLimits struct {
+    MaxNestingDepth           int   `json:"max_nesting_depth"`
+    MaxSecurityValidationSize int64 `json:"max_security_validation_size"`
+    MaxObjectKeys             int   `json:"max_object_keys"`
+    MaxArrayElements          int   `json:"max_array_elements"`
+    MaxJSONSize               int64 `json:"max_json_size"`
+    MaxPathDepth              int   `json:"max_path_depth"`
 }
 ```
 

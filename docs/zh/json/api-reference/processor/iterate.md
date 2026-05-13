@@ -1,6 +1,6 @@
 ---
 title: Processor 迭代方法 - CyberGo JSON | API 参考
-description: "CyberGo JSON Processor 迭代方法参考：包括 Foreach/ForeachWithPath/ForeachWithError/ForeachNested 迭代函数、IterableValue 数据访问、IteratorControl 控制和批量迭代最佳实践，支持灵活遍历 JSON 数据结构。"
+description: "CyberGo JSON Processor 迭代方法参考：包括 Foreach/ForeachWithPath/ForeachNested 迭代、IterableValue 数据访问、IteratorControl 控制流和批量迭代实践。"
 ---
 
 # 迭代方法

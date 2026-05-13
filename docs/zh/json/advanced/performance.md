@@ -1,6 +1,6 @@
 ---
 title: 性能优化 - CyberGo JSON | 高性能指南
-description: "CyberGo JSON 性能优化指南：详解缓存策略 EnableCache/CacheTTL、并行处理 ParallelThreshold/MaxConcurrency、PreParse 预解析、WarmupCache 预热、对象池复用和基准测试分析，全面提升高频 JSON 处理性能表现。"
+description: "CyberGo JSON 性能优化指南：详解缓存策略 EnableCache/CacheTTL、并行处理 ParallelThreshold、PreParse 预解析优化、WarmupCache 预热和对象池复用，提升高频 JSON 处理性能。"
 ---
 
 # 性能优化

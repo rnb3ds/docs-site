@@ -1,26 +1,26 @@
 ---
 title: Processor - Методы итерации - CyberGo JSON | Справочник API
-description: "Справочник методов итерации CyberGo JSON Processor: функции итерации Foreach/ForeachWithPath/ForeachWithError/ForeachNested, доступ к данным IterableValue, управление IteratorControl и лучшие практики пакетной итерации с гибким обходом структур данных JSON."
+description: "Справочник методов итерации Processor: Foreach, ForeachWithPath, ForeachNested, ForeachWithError, IterableValue и методы файловой итерации."
 ---
 
 # Методы итерации
 
-Processor предоставляет различные методы итерации по JSON-массивам и объектам.
+Processor предоставляет различные методы для итерации массивов и объектов JSON.
 
 ## Foreach
 
 Сигнатура: `func (p *Processor) Foreach(jsonStr string, fn func(key any, item *IterableValue))`
 
-Итерирует по JSON-массиву или объекту.
+Итерирует массив или объект JSON.
 
 ```go
 p.Foreach(data, func(key any, item *json.IterableValue) {
-    fmt.Printf("Ключ: %v, Значение: %v\n", key, item.GetData())
+    fmt.Printf("Key: %v, Value: %v\n", key, item.GetData())
 })
 ```
 
-**При итерации по массиву**: key - индекс (int)
-**При итерации по объекту**: key - имя ключа (string)
+**При итерации массива**: key — индекс (int)
+**При итерации объекта**: key — имя ключа (string)
 
 ## ForeachWithPath
 
@@ -34,15 +34,15 @@ err := p.ForeachWithPath(data, "items", func(key any, item *json.IterableValue) 
 })
 ```
 
-Применяется для:
-- Итерации по вложенным массивам
-- Итерации по объектам по указанному пути
+Применимо для:
+- Итерации вложенных массивов
+- Итерации объектов по указанному пути
 
 ## ForeachNested
 
 Сигнатура: `func (p *Processor) ForeachNested(jsonStr string, fn func(key any, item *IterableValue))`
 
-Рекурсивно итерирует по всем вложенным уровням.
+Рекурсивно итерирует все вложенные уровни.
 
 ```go
 p.ForeachNested(data, func(key any, item *json.IterableValue) {
@@ -87,18 +87,18 @@ result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {
 })
 ```
 
-Подходит для сценариев, когда после итерации необходимо продолжить цепочечные операции.
+Подходит для сценариев, где после итерации нужно продолжить цепочечные операции.
 
 ## ForeachWithError
 
 Сигнатура: `func (p *Processor) ForeachWithError(jsonStr, path string, fn func(key any, item *IterableValue) error) error`
 
-Итерирует по указанному пути, callback поддерживает возврат ошибки.
+Итерирует по указанному пути, обратный вызов поддерживает возврат ошибки.
 
 ```go
 err := p.ForeachWithError(data, "items", func(key any, item *json.IterableValue) error {
     if item.GetInt("id") == 0 {
-        return fmt.Errorf("невалидный элемент с индексом %v", key)
+        return fmt.Errorf("invalid item at index %v", key)
     }
     return nil // Продолжить итерацию
 })
@@ -108,7 +108,7 @@ err := p.ForeachWithError(data, "items", func(key any, item *json.IterableValue)
 
 Сигнатура: `func (p *Processor) ForeachNestedWithError(jsonStr string, fn func(key any, item *IterableValue) error) error`
 
-Рекурсивно итерирует по всем вложенным уровням, callback поддерживает возврат ошибки.
+Рекурсивно итерирует все вложенные уровни, обратный вызов поддерживает возврат ошибки.
 
 ```go
 err := p.ForeachNestedWithError(data, func(key any, item *json.IterableValue) error {
@@ -137,7 +137,7 @@ err := p.ForeachWithPathAndIterator(data, "items", func(key any, item *json.Iter
 
 Сигнатура: `func (p *Processor) ForeachWithPathAndControl(jsonStr, path string, fn func(key any, value any) IteratorControl) error`
 
-Итерирует по указанному пути по исходным значениям, использует `IteratorControl` для управления потоком.
+Итерирует исходные значения по указанному пути, использует `IteratorControl` для управления потоком.
 
 ```go
 err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.IteratorControl {
@@ -148,36 +148,36 @@ err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.
 
 ## IterableValue
 
-`IterableValue` в callback итерации предоставляет следующие возможности:
+`IterableValue` в обратном вызове итерации предоставляет следующие возможности:
 
 | Метод | Описание |
-|------|------|
-| `GetData() any` | Получает текущее значение |
-| `Get(path string) any` | Получает значение по пути |
-| `GetString(key string) string` | Получает строковое значение |
-| `GetInt(key string) int` | Получает целочисленное значение |
-| `GetFloat64(key string) float64` | Получает значение с плавающей точкой |
-| `GetBool(key string) bool` | Получает логическое значение |
-| `GetArray(key string) []any` | Получает значение массива |
-| `GetObject(key string) map[string]any` | Получает значение объекта |
-| `GetWithDefault(key string, defaultValue any) any` | Получает значение (со значением по умолчанию) |
-| `GetStringWithDefault(key string, defaultValue string) string` | Получает строку (со значением по умолчанию) |
-| `GetIntWithDefault(key string, defaultValue int) int` | Получает целое число (со значением по умолчанию) |
-| `GetFloat64WithDefault(key string, defaultValue float64) float64` | Получает число с плавающей точкой (со значением по умолчанию) |
-| `GetBoolWithDefault(key string, defaultValue bool) bool` | Получает логическое значение (со значением по умолчанию) |
-| `Exists(key string) bool` | Проверяет, существует ли поле |
-| `IsNull(key string) bool` | Проверяет, равно ли поле null |
-| `IsNullData() bool` | Проверяет, равно ли текущее значение null |
-| `IsEmpty(key string) bool` | Проверяет, пусто ли поле |
-| `IsEmptyData() bool` | Проверяет, пусто ли текущее значение |
+|-------|----------|
+| `GetData() any` | Получить текущее значение |
+| `Get(path string) any` | Получить значение по пути |
+| `GetString(key string) string` | Получить строковое значение |
+| `GetInt(key string) int` | Получить целочисленное значение |
+| `GetFloat64(key string) float64` | Получить число с плавающей точкой |
+| `GetBool(key string) bool` | Получить логическое значение |
+| `GetArray(key string) []any` | Получить значение массива |
+| `GetObject(key string) map[string]any` | Получить значение объекта |
+| `GetWithDefault(key string, defaultValue any) any` | Получить значение (со значением по умолчанию) |
+| `GetStringWithDefault(key string, defaultValue string) string` | Получить строку (со значением по умолчанию) |
+| `GetIntWithDefault(key string, defaultValue int) int` | Получить целое число (со значением по умолчанию) |
+| `GetFloat64WithDefault(key string, defaultValue float64) float64` | Получить число с плавающей точкой (со значением по умолчанию) |
+| `GetBoolWithDefault(key string, defaultValue bool) bool` | Получить логическое значение (со значением по умолчанию) |
+| `Exists(key string) bool` | Проверить, существует ли поле |
+| `IsNull(key string) bool` | Проверить, равно ли поле null |
+| `IsNullData() bool` | Проверить, равно ли текущее значение null |
+| `IsEmpty(key string) bool` | Проверить, пусто ли поле |
+| `IsEmptyData() bool` | Проверить, пусто ли текущее значение |
 | `Break() error` | Возвращает сигнал ошибки для прерывания итерации |
-| `Release()` | Освобождает ресурсы в пул объектов |
-| `ForeachNested(path string, fn func(key any, item *IterableValue))` | Рекурсивно итерирует по вложенным структурам |
+| `Release()` | Освобождает ресурсы обратно в пул объектов |
+| `ForeachNested(path string, fn func(key any, item *IterableValue))` | Рекурсивная итерация вложенных структур |
 
 ## Сравнение методов
 
-| Метод | Параметр пути | Рекурсия | Возвращаемое значение | Callback с ошибкой |
-|------|:--------:|:----:|--------|:--------:|
+| Метод | Параметр пути | Рекурсия | Возвращаемое значение | Обратный вызов ошибки |
+|-------|:------------:|:--------:|----------------------|:---------------------:|
 | `Foreach` | Нет | Нет | Нет | Нет |
 | `ForeachWithPath` | Да | Нет | error | Нет |
 | `ForeachNested` | Нет | Да | Нет | Нет |
@@ -191,7 +191,7 @@ err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.
 
 ## Методы файловой итерации
 
-Processor предоставляет методы прямой итерации из файлов, подходящие для обработки больших JSON-файлов.
+Processor предоставляет методы для прямой итерации из файлов, подходящие для обработки больших JSON-файлов.
 
 ### ForeachFile
 
@@ -202,9 +202,9 @@ Processor предоставляет методы прямой итерации 
 **Параметры**
 
 | Имя | Тип | Описание |
-|------|------|------|
+|-----|-----|----------|
 | `filePath` | `string` | Путь к JSON-файлу |
-| `fn` | `func(key any, item *IterableValue) error` | Callback итерации |
+| `fn` | `func(key any, item *IterableValue) error` | Обратный вызов итерации |
 
 ```go
 err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
@@ -222,7 +222,7 @@ err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error 
 Загружает JSON из файла и итерирует по указанному пути.
 
 ```go
-// Итерировать только по массиву users
+// Итерировать только массив users
 err := p.ForeachFileWithPath("data.json", ".users", func(key any, item *json.IterableValue) error {
     name := item.GetString("name")
     fmt.Printf("Пользователь: %s\n", name)
@@ -236,20 +236,20 @@ err := p.ForeachFileWithPath("data.json", ".users", func(key any, item *json.Ite
 
 Сигнатура: `func (p *Processor) ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error) error`
 
-По fragmentam итерирует JSON-массив из файла, подходит для пакетной обработки больших наборов данных.
+Построчно итерирует JSON-массив в файле, подходит для массовой обработки больших наборов данных.
 
 **Параметры**
 
 | Имя | Тип | Описание |
-|------|------|------|
+|-----|-----|----------|
 | `filePath` | `string` | Путь к JSON-файлу |
 | `chunkSize` | `int` | Количество элементов в пакете (при <=0 по умолчанию 100) |
-| `fn` | `func(chunk []*IterableValue) error` | Callback пакетной обработки |
+| `fn` | `func(chunk []*IterableValue) error` | Обратный вызов пакетной обработки |
 
 ```go
 // Обработка по 100 записей в пакете
 err := p.ForeachFileChunked("large_data.json", 100, func(chunk []*json.IterableValue) error {
-    // Пакетная вставка в базу данных
+    // Массовая вставка в базу данных
     records := make([]Record, len(chunk))
     for i, item := range chunk {
         records[i] = Record{
@@ -261,10 +261,10 @@ err := p.ForeachFileChunked("large_data.json", 100, func(chunk []*json.IterableV
 })
 ```
 
-::: tip Варианты использования
-- Пакетная вставка в базу данных
+::: tip Сценарии использования
+- Массовая вставка в базу данных
 - Пакетные вызовы API
-- Обработка больших файлов с ограниченной памятью
+- Обработка больших файлов при ограниченной памяти
 :::
 
 ---
@@ -273,11 +273,11 @@ err := p.ForeachFileChunked("large_data.json", 100, func(chunk []*json.IterableV
 
 Сигнатура: `func (p *Processor) ForeachFileNested(filePath string, fn func(key any, item *IterableValue) error) error`
 
-Загружает JSON из файла и рекурсивно итерирует по всем вложенным структурам.
+Загружает JSON из файла и рекурсивно итерирует все вложенные структуры.
 
 ```go
 err := p.ForeachFileNested("config.json", func(key any, item *json.IterableValue) error {
-    // Обход всех пар ключ-значение на всех уровнях
+    // Обход всех ключей и значений на всех уровнях
     fmt.Printf("Путь: %v, Тип: %T\n", key, item.GetData())
     return nil
 })
@@ -313,11 +313,11 @@ err := p.ForeachFileNested("config.json", func(key any, item *json.IterableValue
 
 ## Сравнение методов файловой итерации
 
-| Метод | Параметр пути | Рекурсия | Фрагментация | Подходящий сценарий |
-|------|:--------:|:----:|:----:|----------|
+| Метод | Параметр пути | Рекурсия | Порциями | Подходящий сценарий |
+|-------|:------------:|:--------:|:--------:|---------------------|
 | `ForeachFile` | Нет | Нет | Нет | Простой обход файла |
 | `ForeachFileWithPath` | Да | Нет | Нет | Целевой обход |
-| `ForeachFileChunked` | Нет | Нет | **Да** | Пакетная обработка, ограниченная память |
+| `ForeachFileChunked` | Нет | Нет | **Да** | Массовая обработка, ограниченная память |
 | `ForeachFileNested` | Нет | **Да** | Нет | Глубокий обход всех узлов |
 
 ---
@@ -326,7 +326,7 @@ err := p.ForeachFileNested("config.json", func(key any, item *json.IterableValue
 
 ### Прерывание итерации
 
-Возврат `item.Break()` в функции callback прерывает итерацию:
+Возврат `item.Break()` в функции обратного вызова прерывает итерацию:
 
 ```go
 err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
@@ -356,8 +356,8 @@ if err != nil {
 
 ---
 
-## См. также
+## Связанные разделы
 
-- [Запросы по пути](./query) - семейство методов Get
-- [Пакетные операции](./batch) - пакетная обработка ProcessBatch
+- [Запросы по пути](./query) - Методы Get
+- [Массовые операции](./batch) - Массовая обработка ProcessBatch
 - [Файловые операции](../functions/file-io) - LoadFromFile/SaveToFile

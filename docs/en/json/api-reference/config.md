@@ -91,9 +91,6 @@ type Config struct {
     // ===== Merge Options =====
     MergeMode MergeMode // Merge strategy
 
-    // ===== Context =====
-    Context context.Context // Operation context
-
     // ===== Extension Points =====
     CustomEncoder              CustomEncoder                // Custom encoder
     CustomTypeEncoders         map[reflect.Type]TypeEncoder // Custom type encoders
@@ -229,7 +226,7 @@ cfgCopy.EnableValidation = true // Does not affect original config
 
 Signature: `func (c *Config) Validate() error`
 
-Validates the configuration and automatically corrects invalid values.
+Validates the configuration and automatically corrects invalid values. This method **modifies the Config in place**, correcting invalid fields to their corresponding minimum valid values.
 
 ```go
 cfg := json.DefaultConfig()
@@ -237,7 +234,7 @@ cfg.MaxJSONSize = -1 // Invalid value
 if err := cfg.Validate(); err != nil {
     panic(err)
 }
-// MaxJSONSize will be automatically corrected to minimum value
+// MaxJSONSize will be corrected in place to minimum value
 ```
 
 ### ValidateWithWarnings
@@ -265,6 +262,22 @@ type ConfigWarning struct {
     OldValue any    // Original value (may be nil for invalid values)
     NewValue any    // Corrected value
     Reason   string // Correction reason
+}
+```
+
+
+### SecurityLimits Type
+
+`SecurityLimits` summarizes the security-related limit fields in Config.
+
+```go
+type SecurityLimits struct {
+    MaxNestingDepth           int   `json:"max_nesting_depth"`
+    MaxSecurityValidationSize int64 `json:"max_security_validation_size"`
+    MaxObjectKeys             int   `json:"max_object_keys"`
+    MaxArrayElements          int   `json:"max_array_elements"`
+    MaxJSONSize               int64 `json:"max_json_size"`
+    MaxPathDepth              int   `json:"max_path_depth"`
 }
 ```
 

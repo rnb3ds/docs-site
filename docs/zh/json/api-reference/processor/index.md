@@ -56,14 +56,14 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 | 类别 | 说明 |
 |------|------|
-| [路径查询](./query) | GetString/Int/Float/Bool/Get/SafeGet/GetArray/GetObject |
-| [数据修改](./modify) | Set/Delete/DeleteClean |
-| [输出方法](./output) | Encode/EncodePretty/EncodeWithConfig/Buffer 操作 |
-| [解析与加载](./parse) | ParseAny/Valid/LoadFromFile/LoadFromReader |
-| [迭代方法](./iterate) | Foreach/ForeachWithPath/ForeachNested |
-| [批量操作](./batch) | ProcessBatch |
+| [路径查询](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
+| [数据修改](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/Delete/DeleteClean |
+| [输出方法](./output) | Encode/EncodePretty/EncodeWithConfig/Compact/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
+| [解析与加载](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal/LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [迭代方法](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
+| [批量操作](./batch) | ProcessBatch/WarmupCache |
 | [JSONL 处理](./jsonl) | StreamJSONL/Parallel/Chunked/Map/Reduce/Filter |
-| [生命周期](./lifecycle) | Close/缓存/统计/健康检查 |
+| [生命周期](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
 
 ---
 

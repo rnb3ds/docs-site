@@ -1,11 +1,11 @@
 ---
-title: Config 설정 - CyberGo JSON | API 참조
-description: "CyberGo JSON Config 설정 옵션 완전 참조: DefaultConfig 기본 설정, SecurityConfig 보안 설정, PrettyConfig 포맷 설정, 캐시 설정, 크기 제한, 보안 옵션, 인코딩 옵션을 자세히 설명하며 Processor 및 모든 JSON 작업의 동작을 사용자 정의합니다."
+title: Config 설정 - CyberGo JSON | API 레퍼런스
+description: "CyberGo JSON Config 설정 옵션 완전 참조: DefaultConfig 기본 설정, SecurityConfig 보안 설정, PrettyConfig 포맷 설정, 캐시 설정, 크기 제한, 보안 옵션, 인코딩 옵션을 자세히 설명하며 Processor 및 모든 JSON 작업의 동작을 커스터마이즈합니다."
 ---
 
 # Config
 
-Config는 Processor와 모든 JSON 작업의 동작을 사용자 정의하는 데 사용됩니다.
+Config는 Processor와 모든 JSON 작업의 동작을 커스터마이즈하는 데 사용됩니다.
 
 ## Config 구조체
 
@@ -43,13 +43,13 @@ type Config struct {
 
     // ===== 입력/출력 옵션 =====
     AllowComments    bool // 주석 허용
-    PreserveNumbers  bool // 숫자 정밀도 보존
-    ValidateInput    bool // 입력 유효성 검사
-    ValidateFilePath bool // 파일 경로 유효성 검사
-    SkipValidation   bool // 유효성 검사 건너뛰기 (신뢰할 수 있는 입력)
+    PreserveNumbers  bool // 숫자 정밀도 유지
+    ValidateInput    bool // 입력 검증
+    ValidateFilePath bool // 파일 경로 검증
+    SkipValidation   bool // 검증 건너뛰기 (신뢰된 입력)
 
     // ===== 인코딩 옵션 =====
-    Pretty          bool            // 포맷 출력
+    Pretty          bool            // 포맷팅 출력
     Indent          string          // 들여쓰기 문자열
     Prefix          string          // 접두사
     EscapeHTML      bool            // HTML 이스케이프
@@ -57,7 +57,7 @@ type Config struct {
     ValidateUTF8    bool            // UTF-8 검증
     MaxDepth        int             // 최대 인코딩 깊이
     DisallowUnknown bool            // 알 수 없는 필드 금지
-    FloatPrecision  int             // 부동소수점 정밀도 (-1이면 자동)
+    FloatPrecision  int             // 부동소수점 정밀도 (-1은 자동)
     FloatTruncate   bool            // 부동소수점 자르기
     DisableEscaping bool            // 이스케이프 비활성화
     EscapeUnicode   bool            // 유니코드 이스케이프
@@ -65,7 +65,7 @@ type Config struct {
     EscapeNewlines  bool            // 줄바꿈 이스케이프
     EscapeTabs      bool            // 탭 이스케이프
     IncludeNulls    bool            // null 값 포함
-    CustomEscapes   map[rune]string // 사용자 정의 이스케이프 매핑
+    CustomEscapes   map[rune]string // 커스텀 이스케이프 매핑
 
     // ===== 관측 가능성 =====
     EnableMetrics     bool // 메트릭 수집 활성화
@@ -91,17 +91,14 @@ type Config struct {
     // ===== 병합 옵션 =====
     MergeMode MergeMode // 병합 전략
 
-    // ===== 컨텍스트 =====
-    Context context.Context // 작업 컨텍스트
-
-    // ===== 확장 지점 =====
-    CustomEncoder              CustomEncoder                // 사용자 정의 인코더
-    CustomTypeEncoders         map[reflect.Type]TypeEncoder // 사용자 정의 타입 인코더
-    CustomValidators           []Validator                  // 사용자 정의 유효성 검사기
+    // ===== 확장 포인트 =====
+    CustomEncoder              CustomEncoder                // 커스텀 인코더
+    CustomTypeEncoders         map[reflect.Type]TypeEncoder // 커스텀 타입 인코더
+    CustomValidators           []Validator                  // 커스텀 검증기
     AdditionalDangerousPatterns []DangerousPattern           // 추가 위험 패턴
     DisableDefaultPatterns     bool                         // 기본 경고 수준 패턴 비활성화
     Hooks                      []Hook                       // 작업 훅
-    CustomPathParser           PathParser                   // 사용자 정의 경로 파서
+    CustomPathParser           PathParser                   // 커스텀 경로 파서
 }
 ```
 
@@ -136,10 +133,10 @@ defer processor.Close()
 | EnableCache | true | 캐시 활성화 |
 | CacheResults | true | 작업 결과 캐시 |
 | EnableValidation | true | 유효성 검사 활성화 |
-| ValidateInput | true | 입력 유효성 검사 |
-| ValidateFilePath | true | 파일 경로 유효성 검사 |
+| ValidateInput | true | 입력 검증 |
+| ValidateFilePath | true | 파일 경로 검증 |
 | CreatePaths | true | 경로 자동 생성 |
-| Pretty | false | 포맷 출력 안 함 |
+| Pretty | false | 포맷팅 출력 안 함 |
 | EscapeHTML | true | HTML 이스케이프 |
 | ValidateUTF8 | true | UTF-8 검증 |
 | IncludeNulls | true | null 포함 |
@@ -156,7 +153,7 @@ defer processor.Close()
 | JSONLBufferSize | 64KB | JSONL 버퍼 크기 |
 | JSONLMaxLineSize | 1MB | JSONL 최대 줄 크기 |
 | JSONLSkipEmpty | true | 빈 줄 건너뛰기 |
-| JSONLSkipComments | false | 주석 건너뛰지 않음 |
+| JSONLSkipComments | false | 주석 줄 건너뛰지 않음 |
 | JSONLContinueOnErr | false | 오류 시 중지 |
 | JSONLWorkers | 4 | 병렬 작업 수 |
 | JSONLChunkSize | 1000 | JSONL 청크 크기 |
@@ -167,12 +164,12 @@ defer processor.Close()
 
 시그니처: `func SecurityConfig() Config`
 
-신뢰할 수 없는 입력을 처리하는 데 적합한 보안 설정을 반환합니다.
+신뢰할 수 없는 입력 처리에 적합한 보안 설정을 반환합니다.
 
 ```go
 // 다음 시나리오에 권장:
 // - 공개 API 및 웹 서비스
-// - 사용자 제출 데이터
+// - 사용자가 제출한 데이터
 // - 외부 웹훅
 // - 인증 엔드포인트
 // - 금융 데이터 처리
@@ -205,7 +202,7 @@ defer processor.Close()
 
 시그니처: `func PrettyConfig() Config`
 
-포맷 출력 설정을 반환합니다.
+포맷팅 출력 설정을 반환합니다.
 
 ```go
 result, err := json.EncodeWithConfig(data, json.PrettyConfig())
@@ -217,7 +214,7 @@ result, err := json.EncodeWithConfig(data, json.PrettyConfig())
 
 시그니처: `func (c *Config) Clone() *Config`
 
-설정을 깊은 복사합니다.
+설정의 깊은 복사본을 생성합니다.
 
 ```go
 cfg := json.DefaultConfig()
@@ -229,15 +226,15 @@ cfgCopy.EnableValidation = true // 원래 설정에 영향 없음
 
 시그니처: `func (c *Config) Validate() error`
 
-설정을 검증하고 잘못된 값을 자동으로 수정합니다.
+설정을 검증하고 유효하지 않은 값을 자동으로 수정합니다. 이 메서드는 Config를 **원본에서 수정**하며, 유효하지 않은 필드를 해당하는 최소 유효값으로 수정합니다.
 
 ```go
 cfg := json.DefaultConfig()
-cfg.MaxJSONSize = -1 // 잘못된 값
+cfg.MaxJSONSize = -1 // 유효하지 않은 값
 if err := cfg.Validate(); err != nil {
     panic(err)
 }
-// MaxJSONSize가 최솟값으로 자동 수정됩니다
+// MaxJSONSize가 최소값으로 원본 수정됨
 ```
 
 ### ValidateWithWarnings
@@ -262,9 +259,24 @@ for _, w := range warnings {
 ```go
 type ConfigWarning struct {
     Field    string // 수정된 필드명
-    OldValue any    // 원래 값 (잘못된 값은 nil일 수 있음)
+    OldValue any    // 원래 값 (유효하지 않은 값은 nil일 수 있음)
     NewValue any    // 수정된 값
     Reason   string // 수정 사유
+}
+```
+
+### SecurityLimits 타입
+
+`SecurityLimits`는 Config의 보안 관련 제한 필드를 요약합니다.
+
+```go
+type SecurityLimits struct {
+    MaxNestingDepth           int   `json:"max_nesting_depth"`
+    MaxSecurityValidationSize int64 `json:"max_security_validation_size"`
+    MaxObjectKeys             int   `json:"max_object_keys"`
+    MaxArrayElements          int   `json:"max_array_elements"`
+    MaxJSONSize               int64 `json:"max_json_size"`
+    MaxPathDepth              int   `json:"max_path_depth"`
 }
 ```
 
@@ -283,7 +295,7 @@ cfg.AddHook(json.LoggingHook(slog.Default()))
 
 시그니처: `func (c *Config) AddValidator(validator Validator)`
 
-사용자 정의 유효성 검사기를 추가합니다.
+커스텀 검증기를 추가합니다.
 
 ```go
 cfg := json.DefaultConfig()
@@ -330,14 +342,14 @@ if err != nil {
 defer processor.Close()
 ```
 
-### 포맷 출력
+### 포맷팅 출력
 
 ```go
-// JSON 포맷
+// JSON 포맷팅
 result, err := json.EncodeWithConfig(data, json.PrettyConfig())
 ```
 
-### 사용자 정의 설정
+### 커스텀 설정
 
 ```go
 cfg := json.DefaultConfig()
@@ -350,7 +362,7 @@ cfg.EnableValidation = true
 // 훅
 cfg.Hooks = []json.Hook{json.LoggingHook(slog.Default())}
 
-// 유효성 검사기
+// 검증기
 cfg.CustomValidators = []json.Validator{&MyValidator{}}
 
 processor, err := json.New(cfg)
@@ -360,10 +372,10 @@ if err != nil {
 defer processor.Close()
 ```
 
-### 복제 및 수정
+### 복제와 수정
 
 ```go
-// 기본 설정 기반으로 변형 생성
+// 기본 설정을 기반으로 변형 생성
 base := json.DefaultConfig()
 
 // 변형 1: 개발 설정
@@ -395,15 +407,15 @@ const (
 )
 ```
 
-::: info 내부 상수
-경로 검증 길이 제한(`maxPathLength`), 캐시 키 길이 제한(`maxCacheKeyLength`) 등의 상수는 내부 구현으로 전환되어 공개 API로 내보내지지 않습니다. 관련 기본값은 `Config` 구조체의 필드 기본값으로 반영됩니다.
+:::info 내부 상수
+경로 검증 길이 제한(`maxPathLength`), 캐시 키 길이 제한(`maxCacheKeyLength`) 등의 상수는 내부 구현으로 전환되어 공개 API로 내보내지 않습니다. 관련 기본값은 `Config` 구조체의 필드 기본값으로 반영됩니다.
 :::
 
 ---
 
 ## 병합 모드
 
-`MergeMode`는 `MergeJSON`과 `MergeMany` 함수의 병합 전략을 제어합니다.
+`MergeMode`는 `MergeJSON` 및 `MergeMany` 함수의 병합 전략을 제어합니다.
 
 ### MergeUnion (기본값)
 
@@ -422,7 +434,7 @@ result, err := json.MergeJSON(
 
 ### MergeIntersection
 
-두 객체 모두에 존재하는 키만 보존합니다.
+두 객체 모두에 존재하는 키만 유지합니다.
 
 ```go
 cfg := json.DefaultConfig()
@@ -437,7 +449,7 @@ result, err := json.MergeJSON(
 
 ### MergeDifference
 
-기본 객체에만 존재하고 덮어쓰기 객체에 없는 키만 보존합니다.
+기본 객체에만 존재하고 덮어쓰기 객체에 존재하지 않는 키만 유지합니다.
 
 ```go
 cfg := json.DefaultConfig()
@@ -454,7 +466,7 @@ result, err := json.MergeJSON(
 
 ## 보안 권장 사항
 
-| 설정 항목 | 권장값 | 설명 |
+| 설정 항목 | 권장 값 | 설명 |
 |--------|--------|------|
 | MaxJSONSize | 10-100MB | 서버 메모리에 따라 조정 |
 | MaxNestingDepthSecurity | 30-50 | 깊은 중첩 공격 방지 |

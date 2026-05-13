@@ -1,17 +1,17 @@
 ---
 title: Примеры расширенных функций - CyberGo JSON | Продвинутые приёмы
-description: "Коллекция практических примеров расширенных функций CyberGo JSON, включая массовое кодирование EncodeBatch, выборочную кодировку полей EncodeFields, предварительный разбор PreParse, безопасное получение SafeGet, прогрев кэша WarmupCache и оптимизацию с пулом памяти — демонстрация продвинутых методов и стратегий производительности промышленного уровня."
+description: "Коллекция практических примеров расширенных функций CyberGo JSON, включая массовое кодирование EncodeBatch, выборочную кодировку полей EncodeFields, предварительный разбор PreParse, безопасное получение SafeGet, прогрев кэша WarmupCache и оптимизацию с пулом памяти -- демонстрация продвинутых методов и стратегий производительности промышленного уровня."
 ---
 
 # Примеры расширенных функций
 
-Этот документ предоставляет полные примеры расширенных функций: массовое кодирование, предварительный разбор, перехватчики, расширенная конфигурация и другие продвинутые возможности.
+В этом документе представлены полные примеры расширенных функций: массовое кодирование, предварительный разбор, перехватчики, расширенная конфигурация и другие.
 
 ## Массовое кодирование
 
 ### EncodeBatch
 
-Быстрое кодирование нескольких пар ключ-значение в JSON-объект:
+Быстрое кодирование нескольких пар ключ-значение в JSON объект:
 
 ```go
 package main
@@ -22,7 +22,7 @@ import (
 )
 
 func main() {
-    // Построение JSON из разрозненных данных
+    // Создание JSON из разрозненных данных
     pairs := map[string]any{
         "id":      1001,
         "name":    "Alice",
@@ -32,14 +32,14 @@ func main() {
         "balance": 1250.50,
     }
 
-    // Массовое кодирование в JSON-объект с помощью EncodeBatch
+    // Массовое кодирование в JSON объект с помощью EncodeBatch
     result, err := json.EncodeBatch(pairs)
     if err != nil {
         panic(err)
     }
     fmt.Println(result)
 
-    // Использование EncodeBatch с PrettyConfig для форматированного вывода
+    // Форматированный вывод с PrettyConfig
     pretty, err := json.EncodeBatch(pairs, json.PrettyConfig())
     if err != nil {
         panic(err)
@@ -48,11 +48,11 @@ func main() {
 }
 ```
 
-## Выборочное кодирование полей
+## Выборочная кодировка полей
 
 ### EncodeFields
 
-Кодирование только указанных полей структуры — подходит для фильтрации конфиденциальной информации в ответах API:
+Кодировка только указанных полей структуры, подходит для фильтрации конфиденциальной информации в ответах API:
 
 ```go
 package main
@@ -79,7 +79,7 @@ func main() {
         Salt:     "randomsalt",
     }
 
-    // Кодирование только открытых полей (исключая конфиденциальную информацию)
+    // Кодировка только открытых полей (исключая конфиденциальную информацию)
     publicFields := []string{"id", "name", "email"}
     result, err := json.EncodeFields(user, publicFields)
     if err != nil {
@@ -92,7 +92,7 @@ func main() {
 
 ## Оптимизация предварительного разбора
 ### PreParse
-Предварительный разбор JSON позволяет избежать повторного парсинга и повышает производительность многократных запросов:
+Предварительный разбор JSON для избежания повторного парсинга и повышения производительности многократных запросов:
 ```go
 package main
 
@@ -102,7 +102,7 @@ import (
 )
 
 func main() {
-    // Большие JSON-данные
+    // Большие JSON данные
     largeJSON := `{
         "users": [
             {"id": 1, "name": "Alice", "email": "alice@example.com"},
@@ -128,7 +128,7 @@ func main() {
         panic(err)
     }
 
-    // Многократные запросы с повторным использованием результата предразбора
+    // Многократные запросы с повторным использованием результата предварительного разбора
     total, _ := p.GetFromParsed(parsed, "metadata.total")
     page, _ := p.GetFromParsed(parsed, "metadata.page")
 
@@ -136,16 +136,16 @@ func main() {
     for i := 0; i < 3; i++ {
         path := fmt.Sprintf("users.%d.name", i)
         name, _ := p.GetFromParsed(parsed, path)
-        fmt.Printf("Пользователь %d: %v\n", i, name)
+        fmt.Printf("User %d: %v\n", i, name)
     }
 
-    fmt.Printf("Всего: %v, Страница: %v\n", total, page)
+    fmt.Printf("Total: %v, Page: %v\n", total, page)
 }
 ```
 
 ## Безопасное получение
 ### SafeGet
-Возвращает структурированный результат, поддерживает цепочечные вызовы и преобразование типов:
+Возвращает структурированный результат с поддержкой цепочки вызовов и преобразования типов:
 ```go
 package main
 
@@ -171,30 +171,30 @@ func main() {
     }
     defer p.Close()
 
-    // Безопасное получение отдельного поля
+    // Безопасное получение одного поля
     nameResult := p.SafeGet(data, "user.name")
     if nameResult.Ok() {
         name, _ := nameResult.AsString()
-        fmt.Println("Имя:", name)
+        fmt.Println("Name:", name)
     }
 
     // Безопасное получение с преобразованием типа
     ageResult := p.SafeGet(data, "user.age")
     if ageResult.Ok() {
         age, _ := ageResult.AsInt()
-        fmt.Println("Возраст:", age)
+        fmt.Println("Age:", age)
     }
 
     // Безопасное получение логического значения
     activeResult := p.SafeGet(data, "user.active")
     if activeResult.Ok() {
         active, _ := activeResult.AsBool()
-        fmt.Println("Активен:", active)
+        fmt.Println("Active:", active)
     }
 
     // Несуществующий путь не вызывает panic
     emailResult := p.SafeGet(data, "user.email")
-    fmt.Println("Email существует:", emailResult.Ok()) // false
+    fmt.Println("Email exists:", emailResult.Ok()) // false
 
     // Использование значения по умолчанию
     email := emailResult.UnwrapOr("N/A")
@@ -214,7 +214,7 @@ import (
 )
 
 func main() {
-    // Большие JSON-данные (имитация)
+    // Большие JSON данные (имитация)
     largeJSON := `{
         "products": [
             {"id": 1, "name": "Product A", "price": 100},
@@ -250,21 +250,21 @@ func main() {
 
     fmt.Printf("Прогрев завершён: %d/%d успешно\n", result.Successful, result.TotalPaths)
     if len(result.FailedPaths) > 0 {
-        fmt.Println("Неудачные пути:", result.FailedPaths)
+        fmt.Println("Неудавшиеся пути:", result.FailedPaths)
     }
 
     // Последующие запросы будут использовать кэш
     for i := 0; i < 3; i++ {
         path := fmt.Sprintf("products.%d.name", i)
         name := p.GetString(largeJSON, path)
-        fmt.Printf("Продукт %d: %s\n", i, name)
+        fmt.Printf("Product %d: %s\n", i, name)
     }
 }
 ```
 
-## Массовые операции
+## Пакетные операции
 ### ProcessBatch
-Массовое выполнение нескольких операций для повышения эффективности:
+Пакетное выполнение нескольких операций для повышения эффективности:
 ```go
 package main
 
@@ -276,7 +276,7 @@ import (
 func main() {
     data := `{"users": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]}`
 
-    // Определение массовых операций
+    // Определение пакетных операций
     operations := []json.BatchOperation{
         {Type: "get", Path: "users.0.name", JSONStr: data},
         {Type: "get", Path: "users", JSONStr: data},
@@ -284,7 +284,7 @@ func main() {
         {Type: "delete", Path: "users.0.id", JSONStr: data},
     }
 
-    // Выполнение массовых операций
+    // Выполнение пакетных операций
     results, err := json.ProcessBatch(operations)
     if err != nil {
         panic(err)
@@ -304,7 +304,7 @@ func main() {
 
 ## Оптимизация памяти ключей и значений
 
-Библиотека внутренне использует пул строк памяти (string interning) для автоматической оптимизации использования памяти повторяющимися ключами и значениями. Ручное управление не требуется.
+Библиотека внутренне использует пул строковой памяти (string interning) для автоматической оптимизации памяти повторяющихся ключей и значений. Ручное управление не требуется.
 
 ```go
 package main
@@ -315,8 +315,8 @@ import (
 )
 
 func main() {
-    // Библиотека автоматически использует пул памяти для повторяющихся ключей и значений
-    // При обработке больших объёмов данных повторяющиеся строковые ключи автоматически используют общую память
+    // Библиотека автоматически использует пул памяти для повторяющихся ключей
+    // При обработке больших данных повторяющиеся строковые ключи автоматически используют общую память
     records := make([]map[string]any, 10000)
     for i := range records {
         records[i] = map[string]any{
@@ -332,11 +332,11 @@ func main() {
         "type":   "user",
     })
 
-    fmt.Println("Пример:", string(result))
+    fmt.Println("Sample:", string(result))
 }
 ```
 
-## Что дальше
-- [Синтаксис выражений пути](./path-syntax) — полный справочник синтаксиса путей
-- [Обработка больших файлов](./large-files) — руководство по потоковой обработке
-- [Документация API](./api-reference/) — полный справочник API
+## Следующие шаги
+- [Синтаксис выражений пути](./path-syntax) -- полный справочник синтаксиса путей
+- [Обработка больших файлов](./large-files) -- руководство по потоковой обработке
+- [API документация](./api-reference/) -- полный справочник API

@@ -1,21 +1,21 @@
 ---
-title: "Функции пакета - CyberGo JSON | Справочник API"
-description: "Справочник функций уровня пакета CyberGo JSON: включает Get/GetString/GetInt/GetTyped запросы по пути, Set/Delete/MergeJSON модификацию, Marshal/Unmarshal кодирование/декодирование и LoadFromFile/SaveToFile файловые операции, вызываемые напрямую без создания экземпляра Processor."
+title: Функции пакета - CyberGo JSON | Справочник API
+description: "Справочник функций уровня пакета CyberGo JSON: Get/GetString/GetInt/GetTyped запросы по пути, Set/Delete/MergeJSON модификация, Marshal/Unmarshal кодирование/декодирование и LoadFromFile/SaveToFile файловые операции."
 ---
 
 # Функции пакета
 
-Функции верхнего уровня, предоставляемые пакетом json, которые можно вызывать напрямую без создания экземпляра Processor. Классификация по функциональности:
+Функции верхнего уровня пакета json, которые можно вызывать напрямую без создания экземпляра Processor. Сгруппированы по функциональности:
 
 ## [Запросы и получение](./functions/get)
 
-Функции запросов по пути, типобезопасного получения, пакетных операций, разбора и валидации.
+Функции запросов по пути, типобезопасного получения, массовых операций, парсинга и валидации.
 
-**Основные функции**: [`Get`](./functions/get) · [`GetString`](./functions/get) · [`GetInt`](./functions/get) · [`GetFloat`](./functions/get) · [`GetBool`](./functions/get) · [`GetArray`](./functions/get) · [`GetObject`](./functions/get) · [`GetTyped[T]`](./functions/get) · [`SafeGet`](./functions/get) · [`GetMultiple`](./functions/get) · [`ProcessBatch`](./functions/get) · [`Parse`](./functions/get) · [`ParseAny`](./functions/get) · [`Valid`](./functions/get) · [`ValidWithConfig`](./functions/get)
+**Основные функции**: [`Get`](./functions/get#get) · [`GetWithContext`](./functions/get#getwithcontext) · [`GetString`](./functions/get#getstring) · [`GetInt`](./functions/get#getint) · [`GetFloat`](./functions/get#getfloat) · [`GetBool`](./functions/get#getbool) · [`GetArray`](./functions/get#getarray) · [`GetObject`](./functions/get#getobject) · [`GetTyped[T]`](./functions/get#gettyped-t) · [`SafeGet`](./functions/get#safeget-функция-пакета) · [`GetMultiple`](./functions/get#getmultiple-функция-пакета) · [`ProcessBatch`](./functions/get#processor-processbatch) · [`Parse`](./functions/get#parse) · [`ParseAny`](./functions/get#parseany) · [`Valid`](./functions/get#valid) · [`ValidWithConfig`](./functions/get#validwithconfig) · [`ValidateSchema`](./functions/get#validateschema)
 
 ## [Операции модификации](./functions/modify)
 
-Функции установки, удаления и слияния JSON данных.
+Функции установки, удаления и объединения JSON-данных.
 
 **Основные функции**: [`Set`](./functions/modify#set) · [`SetMultiple`](./functions/modify#setmultiple) · [`SetCreate`](./functions/modify#setcreate) · [`SetMultipleCreate`](./functions/modify#setmultiplecreate) · [`Delete`](./functions/modify#delete) · [`DeleteClean`](./functions/modify#deleteclean) · [`MergeJSON`](./functions/modify#mergejson) · [`MergeMany`](./functions/modify#mergemany)
 
@@ -23,55 +23,55 @@ description: "Справочник функций уровня пакета Cybe
 
 Функции сериализации, десериализации и потокового кодирования/декодирования.
 
-**Основные функции**: [`Marshal`](./functions/encode-decode#marshal) · [`Unmarshal`](./functions/encode-decode#unmarshal) · [`MarshalIndent`](./functions/encode-decode#marshalindent) · [`Encode`](./functions/encode-decode#encode) · [`EncodePretty`](./functions/encode-decode#encodepretty) · [`EncodeWithConfig`](./functions/encode-decode#encodewithconfig) · [`Prettify`](./functions/encode-decode#prettify) · [`Compact`](./functions/encode-decode#compact) · [`Indent`](./functions/encode-decode#indent) · [`HTMLEscape`](./functions/encode-decode#htmlescape) · [`NewEncoder`](./types#encoder) · [`NewDecoder`](./types#decoder) · [`EncodeBatch`](./processor/output#encodebatch) · [`EncodeFields`](./processor/output#encodefields) · [`EncodeStream`](./processor/output#encodestream) · [`SaveToWriter`](./functions/file-io#savetowriter)
+**Основные функции**: [`Marshal`](./functions/encode-decode#marshal) · [`Unmarshal`](./functions/encode-decode#unmarshal) · [`MarshalIndent`](./functions/encode-decode#marshalindent) · [`Encode`](./functions/encode-decode#encode) · [`EncodePretty`](./functions/encode-decode#encodepretty) · [`EncodeWithConfig`](./functions/encode-decode#encodewithconfig) · [`Prettify`](./functions/encode-decode#prettify) · [`Compact`](./functions/encode-decode#compact) · [`Indent`](./functions/encode-decode#indent) · [`HTMLEscape`](./functions/encode-decode#htmlescape) · [`NewEncoder`](./types#encoder-кодировщик-json) · [`NewDecoder`](./types#decoder-декодировщик-json) · [`EncodeBatch`](./processor/output#encodebatch) · [`EncodeFields`](./processor/output#encodefields) · [`EncodeStream`](./processor/output#encodestream) · [`SaveToWriter`](./functions/file-io#savetowriter)
 
 ## [Файловые операции](./functions/file-io)
 
 Функции чтения/записи файлов и обработки JSONL.
 
-**Основные функции**: [`LoadFromFile`](./functions/file-io#loadfromfile) · [`LoadFromReader`](./functions/file-io#loadfromreader) · [`SaveToFile`](./functions/file-io#savetofile) · [`MarshalToFile`](./functions/file-io#marshaltofile) · [`UnmarshalFromFile`](./functions/file-io#unmarshalfromfile) · [`SaveToWriter`](./functions/file-io#savetowriter) · [`ParseJSONL`](./functions/file-io#parsejsonl) · [`ToJSONL`](./functions/file-io#tojsonl) · [`ToJSONLString`](./functions/file-io#tojsonlstring) · [`StreamLinesInto[T]`](./functions/file-io#streamlinesintot)
+**Основные функции**: [`LoadFromFile`](./functions/file-io#loadfromfile) · [`LoadFromReader`](./functions/file-io#loadfromreader) · [`SaveToFile`](./functions/file-io#savetofile) · [`MarshalToFile`](./functions/file-io#marshaltofile) · [`UnmarshalFromFile`](./functions/file-io#unmarshalfromfile) · [`SaveToWriter`](./functions/file-io#savetowriter) · [`ParseJSONL`](./functions/file-io#parsejsonl) · [`ToJSONL`](./functions/file-io#tojsonl) · [`ToJSONLString`](./functions/file-io#tojsonlstring) · [`StreamLinesInto[T]`](./functions/file-io#streamlinesinto)
 
 ## [Итерация файлов](./large-file)
 
 Функции потоковой итерации файлов (функции уровня пакета, не требуют создания Processor).
 
-**Основные функции**: [`ForeachFile`](./large-file) · [`ForeachFileWithPath`](./large-file) · [`ForeachFileChunked`](./large-file) · [`ForeachFileNested`](./large-file)
+**Основные функции**: [`ForeachFile`](./large-file#foreachfile-функция-пакета) · [`ForeachFileWithPath`](./large-file#foreachfilewithpath-функция-пакета) · [`ForeachFileChunked`](./large-file#foreachfilechunked-функция-пакета) · [`ForeachFileNested`](./large-file#foreachfilenested-функция-пакета)
 
-## [Вспомогательные инструменты](./helpers)
+## [Вспомогательные утилиты](./helpers)
 
-Инструментальные функции для преобразования типов, сравнения, управления кэшем и обработки ошибок.
+Функции для преобразования типов, сравнения, управления кэшем и обработки ошибок.
 
-**Основные функции**: [`CompareJSON`](./helpers#comparejson) · [`MergeJSON`](./helpers#mergejson) · [`MergeMany`](./helpers#mergemany) · [`ClearCache`](./helpers#clearcache) · [`GetStats`](./helpers#getstats) · [`GetHealthStatus`](./helpers#gethealthstatus) · [`SetGlobalProcessor`](./helpers#setglobalprocessor) · [`ShutdownGlobalProcessor`](./helpers#shutdownglobalprocessor) · [`SafeError`](./helpers#safeerror) · [`RedactedPath`](./helpers#redactedpath) · [`WarmupCache`](./helpers#warmupcache)
+**Основные функции**: [`CompareJSON`](./helpers#comparejson) · [`MergeJSON`](./helpers#mergejson) · [`MergeMany`](./helpers#mergemany) · [`ClearCache`](./helpers#clearcache-функция-пакета) · [`GetStats`](./helpers#getstats-функция-пакета) · [`GetHealthStatus`](./helpers#gethealthstatus-функция-пакета) · [`SetGlobalProcessor`](./helpers#setglobalprocessor) · [`ShutdownGlobalProcessor`](./helpers#shutdownglobalprocessor) · [`SafeError`](./helpers#safeerror) · [`RedactedPath`](./helpers#redactedpath) · [`WarmupCache`](./helpers#warmupcache)
 
 ---
 
 ## Быстрая навигация
 
 | Назначение | Рекомендуемая функция | Документация |
-|------------|-----------------------|--------------|
-| Получение одного значения | `GetString`, `GetInt`, `GetFloat`, `GetBool` | [Запросы и получение](./functions/get) |
-| Получение любого типа | `Get`, `GetTyped[T]` | [Запросы и получение](./functions/get) |
-| Получение со значением по умолчанию | `GetString(data, path, "default")` | [Запросы и получение](./functions/get) |
-| Обобщённое получение | `GetTyped[T](data, path, defaultValue...)` | [Запросы и получение](./functions/get) |
-| Пакетное получение | `GetMultiple` | [Запросы и получение](./functions/get) |
+|------------|----------------------|--------------|
+| Получение одного значения | `GetString`, `GetInt`, `GetFloat`, `GetBool` | [Запросы и получение](./functions/get#функции-запроса-по-пути) |
+| Получение любого типа | `Get`, `GetTyped[T]` | [Запросы и получение](./functions/get#обобщённые-функции-получения) |
+| Получение с значением по умолчанию | `GetString(data, path, "default")` | [Запросы и получение](./functions/get#типобезопасные-функции-получения) |
+| Обобщённое получение | `GetTyped[T](data, path, defaultValue...)` | [Запросы и получение](./functions/get#обобщённые-функции-получения) |
+| Массовое получение | `GetMultiple` | [Запросы и получение](./functions/get#расширенные-методы-processor) |
 | Модификация JSON | `Set`, `Delete`, `SetCreate`, `DeleteClean` | [Операции модификации](./functions/modify) |
-| Сериализация | `Marshal`, `Encode` | [Кодирование/декодирование](./functions/encode-decode) |
-| Десериализация | `Unmarshal`, `Parse` | [Кодирование/декодирование](./functions/encode-decode) |
-| Форматирование | `Prettify`, `Processor.Compact` | [Кодирование/декодирование](./functions/encode-decode) |
-| Печать вывода | `Encode` + `fmt.Println`, `EncodePretty` | [Функции печати](./print) |
-| Пакетное кодирование | `EncodeBatch`, `EncodeFields`, `EncodeStream` | [Пакетное кодирование](./functions/encode-decode) · [Вывод обработчика](./processor/output) |
-| Валидация | `Valid` | [Запросы и получение](./functions/get) |
-| Чтение/запись файлов | `LoadFromFile`, `SaveToFile` | [Файловые операции](./functions/file-io) |
-| Обработка JSONL | `ParseJSONL`, `ToJSONL` | [Файловые операции](./functions/file-io) |
-| Сравнение | `CompareJSON` | [Вспомогательные инструменты](./helpers) |
-| Слияние | `MergeJSON`, `MergeMany` | [Операции модификации](./functions/modify) |
-| Преобразование типов | Методы преобразования типов `AccessResult` | [Вспомогательные инструменты](./helpers) |
-| Обработка ошибок | `JsonsError`, `errors.Is` | [Константы и ошибки](./constants) |
+| Сериализация | `Marshal`, `Encode` | [Кодирование/декодирование](./functions/encode-decode#функции-сериализации) |
+| Десериализация | `Unmarshal`, `Parse` | [Кодирование/декодирование](./functions/encode-decode#функции-сериализации) · [Запросы и получение](./functions/get#функции-парсинга) |
+| Форматирование | `Prettify`, `Processor.Compact` | [Кодирование/декодирование](./functions/encode-decode#функции-сериализации) |
+| Печать вывода | `Encode` + `fmt.Println`, `EncodePretty` | [Функции вывода](./print) |
+| Массовое кодирование | `EncodeBatch`, `EncodeFields`, `EncodeStream` | [Массовое кодирование](./functions/encode-decode#функции-массового-кодирования) · [Вывод процессора](./processor/output) |
+| Валидация | `Valid` | [Запросы и получение](./functions/get#функции-валидации) |
+| Чтение/запись файлов | `LoadFromFile`, `SaveToFile` | [Файловые операции](./functions/file-io#функции-чтения-файлов) |
+| Обработка JSONL | `ParseJSONL`, `ToJSONL` | [Файловые операции](./functions/file-io#функции-обработки-jsonl) |
+| Сравнение | `CompareJSON` | [Вспомогательные утилиты](./helpers#функции-сравнения-json) |
+| Объединение | `MergeJSON`, `MergeMany` | [Операции модификации](./functions/modify#функции-объединения) |
+| Преобразование типов | Методы преобразования типа `AccessResult` | [Вспомогательные утилиты](./helpers#методы-преобразования-типов-accessresult) |
+| Обработка ошибок | `JsonsError`, `errors.Is` | [Константы ошибок](./constants#переменные-ошибок) |
 
 ## Связанные разделы
 
-- [Processor](./processor/) - Методы обработчика
+- [Processor](./processor/) - Методы процессора
 - [Config](./config) - Параметры конфигурации
 - [Константы и ошибки](./constants) - Типы ошибок
 - [Определения интерфейсов](./interfaces) - Расширяемые интерфейсы
-- [Синтаксис выражений пути](../path-syntax) - Подробное описание синтаксиса путей
+- [Синтаксис выражений пути](../path-syntax) - Подробное описание синтаксиса пути

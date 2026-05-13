@@ -86,6 +86,73 @@ cfg.AddHook(&FilterFieldsHook{fields: map[string]bool{
 }})
 ```
 
+
+### Dangerous Pattern Management
+
+The library includes built-in default dangerous pattern detection and supports custom pattern registration, unregistration, and querying.
+
+#### RegisterDangerousPattern
+
+Signature: `func RegisterDangerousPattern(pattern DangerousPattern)`
+
+Registers a global dangerous pattern. Registered patterns take effect in all operations using the default security configuration.
+
+```go
+json.RegisterDangerousPattern(json.DangerousPattern{
+    Pattern: "eval(",
+    Name:    "eval-call",
+    Level:   json.PatternLevelCritical,
+})
+```
+
+#### UnregisterDangerousPattern
+
+Signature: `func UnregisterDangerousPattern(pattern string)`
+
+Unregisters a global dangerous pattern by pattern string. The `pattern` parameter is the dangerous pattern substring to unregister (corresponding to the `DangerousPattern.Pattern` field).
+
+```go
+json.UnregisterDangerousPattern("eval(")
+```
+
+#### ListDangerousPatterns
+
+Signature: `func ListDangerousPatterns() []DangerousPattern`
+
+Lists all registered dangerous patterns (including default and custom patterns).
+
+```go
+patterns := json.ListDangerousPatterns()
+for _, p := range patterns {
+    fmt.Printf("Pattern: %s, Name: %s, Level: %s\n", p.Pattern, p.Name, p.Level)
+}
+```
+
+#### Dangerous Pattern Levels
+
+| Constant | Type | Value | Description |
+|------|------|-----|------|
+| `PatternLevelCritical` | `int` | `0` | Critical level, rejects operation on match |
+| `PatternLevelWarning` | `int` | `1` | Warning level, rejects operation in strict mode |
+| `PatternLevelInfo` | `int` | `2` | Info level, only logs |
+
+::: tip
+The `String()` method of `PatternLevel` returns the corresponding string representation (`"critical"`, `"warning"`, `"info"`) for convenient log output.
+:::
+
+#### Disabling Default Patterns
+
+Use `Config.DisableDefaultPatterns` to disable built-in default warning-level patterns:
+
+```go
+cfg := json.DefaultConfig()
+cfg.DisableDefaultPatterns = true // Disable default warning-level patterns
+```
+
+::: warning Note
+`DisableDefaultPatterns` only disables default warning-level (`PatternLevelWarning`) patterns. Default critical-level (`PatternLevelCritical`) patterns are not affected.
+:::
+
 ## Security Configuration Recommendations
 
 ### Production Configuration

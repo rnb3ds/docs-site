@@ -42,6 +42,38 @@ func main() {
 }
 ```
 
+### GetWithContext
+
+シグネチャ：`func GetWithContext(ctx context.Context, jsonStr, path string, cfg ...Config) (any, error)`
+
+コンテキスト付きのパス取得。タイムアウトとキャンセル操作をサポートします。`Get` のコンテキスト対応版です。
+
+::: info 注意
+Context は操作の前後でチェックされ、パース/ナビゲーション中にはチェックされません。大型 JSON ドキュメントの場合、操作中にキャンセルに応答しない場合があります。
+:::
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    "github.com/cybergodev/json"
+)
+
+func main() {
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+
+    val, err := json.GetWithContext(ctx, `{"user":{"name":"Alice"}}`, "user.name")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(val) // 出力: Alice
+}
+```
+
 ## 型安全な取得関数
 
 型安全な取得関数は、`defaultValue` 可変長引数によりゼロ値フォールバックを提供します。パスが存在しない、値が null、または型変換に失敗した場合、`defaultValue` を返します（指定されていない場合は対応する型のゼロ値を返します）。
@@ -454,6 +486,45 @@ func main() {
 }
 ```
 
+### ValidateSchema
+
+シグネチャ：`func ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
+
+JSON Schema を使用して JSON データを検証します。すべての検証エラーのリストを返します。
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/cybergodev/json"
+)
+
+func main() {
+    schema := &json.Schema{
+        Type:     "object",
+        Required: []string{"name", "email"},
+        Properties: map[string]*json.Schema{
+            "name":  {Type: "string", MinLength: 1},
+            "email": {Type: "string", Format: "email"},
+            "age":   {Type: "integer", Minimum: 0},
+        },
+    }
+
+    errors, err := json.ValidateSchema(`{"name":"Alice","email":"alice@example.com","age":25}`, schema)
+    if err != nil {
+        panic(err)
+    }
+    for _, e := range errors {
+        fmt.Printf("パス %s: %s\n", e.Path, e.Message)
+    }
+}
+```
+
+::: tip 詳しくは
+完全な Schema 型定義とバリデータの使用方法については [バリデータ](../validator) を参照してください。
+:::
+
 ## 安全な取得関数
 
 ### SafeGet（パッケージレベル関数）
@@ -599,6 +670,10 @@ for _, r := range results {
 | `Value` | `any` | 取得された値 |
 | `Exists` | `bool` | パスが存在するかどうか |
 | `Type` | `string` | 検出された値の型 |
+
+**メソッド**：`Ok()` · `Unwrap()` · `UnwrapOr()` · `AsString()` · `AsStringConverted()` · `AsInt()` · `AsFloat64()` · `AsBool()`
+
+詳しくは [AccessResult 型](../types#accessresult-プロパティアクセス結果) を参照してください。
 
 ### Result[T]
 

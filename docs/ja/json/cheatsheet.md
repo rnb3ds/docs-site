@@ -1,9 +1,9 @@
 ---
-title: クイックリファレンス - CyberGo JSON | API クイックリファレンス
-description: "CyberGo JSON API クイックリファレンス：パスクエリ GetString/GetInt、変更操作 Set/Delete、シリアライズ Marshal/Unmarshal、設定オプション、イテレータ、セーフティ関数などよく使う API のクイックリファレンス。開発者が効率的に検索できるよう設計されています。"
+title: チートシート - CyberGo JSON | API クイックリファレンス
+description: "CyberGo JSON API チートシート：パスクエリ GetString/GetInt、変更操作 Set/Delete、シリアライズ Marshal/Unmarshal、設定オプション、イテレータ、セーフティ関数などよく使う API のクイックリファレンス。開発者が必要な関数シグネチャと使い方を効率よく検索できます。"
 ---
 
-# クイックリファレンス
+# チートシート
 
 よく使う API とコードスニペットを素早く検索できます。
 
@@ -11,43 +11,43 @@ description: "CyberGo JSON API クイックリファレンス：パスクエリ 
 
 | 操作 | 関数 | 例 |
 |------|------|------|
-| 文字列の取得 | `GetString` | `json.GetString(data, "user.name")` |
-| 整数の取得 | `GetInt` | `json.GetInt(data, "count")` |
-| 浮動小数点数の取得 | `GetFloat` | `json.GetFloat(data, "price")` |
-| 真偽値の取得 | `GetBool` | `json.GetBool(data, "enabled")` |
-| 配列の取得 | `GetArray` | `json.GetArray(data, "items")` |
-| オブジェクトの取得 | `GetObject` | `json.GetObject(data, "user")` |
-| 任意の値の取得 | `Get` | `json.Get(data, "items[0].id")` |
+| 文字列を取得 | `GetString` | `json.GetString(data, "user.name")` |
+| 整数を取得 | `GetInt` | `json.GetInt(data, "count")` |
+| 浮動小数点数を取得 | `GetFloat` | `json.GetFloat(data, "price")` |
+| ブーリアンを取得 | `GetBool` | `json.GetBool(data, "enabled")` |
+| 配列を取得 | `GetArray` | `json.GetArray(data, "items")` |
+| オブジェクトを取得 | `GetObject` | `json.GetObject(data, "user")` |
+| 任意の値を取得 | `Get` | `json.Get(data, "items[0].id")` |
 | ジェネリック取得 | `GetTyped[T]` | `json.GetTyped[User](data, "user")` |
 
 ### デフォルト値付き
 
-`GetString`、`GetInt`、`GetFloat`、`GetBool` などの関数は、オプションのデフォルト値パラメータをサポートしています：
+`GetString`、`GetInt`、`GetFloat`、`GetBool` などの関数はオプションのデフォルト値パラメータをサポートしています：
 
 | 操作 | 関数 | 例 |
 |------|------|------|
 | 文字列 | `GetString` | `json.GetString(data, "name", "unknown")` |
 | 整数 | `GetInt` | `json.GetInt(data, "count", 0)` |
 | 浮動小数点数 | `GetFloat` | `json.GetFloat(data, "rate", 0.5)` |
-| 真偽値 | `GetBool` | `json.GetBool(data, "debug", false)` |
+| ブーリアン | `GetBool` | `json.GetBool(data, "debug", false)` |
 
 ## 変更操作
 
 | 操作 | 関数 | 例 |
 |------|------|------|
-| 値の設定 | `Set` | `json.Set(data, "user.name", "Alice")` |
+| 値を設定 | `Set` | `json.Set(data, "user.name", "Alice")` |
 | 一括設定 | `SetMultiple` | `json.SetMultiple(data, map[string]any{"a": 1, "b": 2})` |
 | パスを作成して設定 | `SetCreate` | `json.SetCreate(data, "a.b.c", 1)` |
 | 一括パス作成設定 | `SetMultipleCreate` | `json.SetMultipleCreate(data, updates)` |
-| 値の削除 | `Delete` | `json.Delete(data, "user.temporary")` |
+| 値を削除 | `Delete` | `json.Delete(data, "user.temporary")` |
 | 削除してクリーンアップ | `DeleteClean` | `json.DeleteClean(data, "user.temporary")` |
 
 ```go
-// 値の設定
+// 値を設定
 result, err := json.Set(`{"user":{}}`, "user.name", "Alice")
 // {"user":{"name":"Alice"}}
 
-// 複数フィールドを個別に設定
+// 複数のフィールドを順番に設定
 result, err = json.Set(data, "user.name", "Bob")
 result, err = json.Set(result, "user.age", 25)
 
@@ -63,7 +63,7 @@ result, err := json.Delete(data, "user.temporary")
 | フォーマット付きエンコード | `MarshalIndent` | `json.MarshalIndent(data, "", "  ")` |
 | デコード | `Unmarshal` | `json.Unmarshal(bytes, &v)` |
 | パース | `Parse` | `var v T; json.Parse(jsonStr, &v)` |
-| any へのパース | `ParseAny` | `json.ParseAny(jsonStr)` |
+| any にパース | `ParseAny` | `json.ParseAny(jsonStr)` |
 | フォーマット | `Prettify` | `json.Prettify(jsonStr)` |
 | 圧縮 | `Compact` | `json.Compact(&buf, []byte(data))` |
 
@@ -81,7 +81,7 @@ err = json.Parse(`{"name": "test"}`, &result)
 // any にパース
 parsed, err := json.ParseAny(`{"name": "test"}`)
 
-// JSON 文字列のフォーマット
+// JSON 文字列をフォーマット
 pretty, err := json.Prettify(`{"name":"Alice","age":30}`)
 ```
 
@@ -89,15 +89,15 @@ pretty, err := json.Prettify(`{"name":"Alice","age":30}`)
 
 | 操作 | 関数 | 例 |
 |------|------|------|
-| 高速バリデーション | `Valid` | `json.Valid([]byte(data))` |
+| クイックバリデーション | `Valid` | `json.Valid([]byte(data))` |
 
 ```go
-// 高速バリデーション
+// クイックバリデーション
 if json.Valid([]byte(data)) {
     // 有効な JSON
 }
 
-// スキーマバリデーション
+// Schema バリデーション
 schema := &json.Schema{
     Type:     "object",
     Required: []string{"name"},
@@ -145,7 +145,7 @@ result, _ := json.MergeMany([]string{
 ## Processor メソッド
 
 ```go
-// プロセッサの作成
+// プロセッサを作成
 processor, err := json.New()
 if err != nil {
     panic(err)
@@ -155,7 +155,7 @@ defer processor.Close()
 // 値の取得
 result := processor.GetString(data, "user.profile.name")
 
-// セーフ取得（AccessResult を返す）
+// セーフティ取得（AccessResult を返す）
 accessResult := processor.SafeGet(data, "user.age")
 age, err := accessResult.AsInt()
 ```
@@ -177,10 +177,10 @@ processor, err := json.New(cfg)
 
 ## ストリーム処理
 
-### Processor.ForeachFile（大ファイル）
+### Processor.ForeachFile（大規模ファイル）
 
 ```go
-// 大ファイルの処理
+// 大規模ファイルを処理
 processor, err := json.New()
 if err != nil {
     panic(err)
@@ -188,17 +188,17 @@ if err != nil {
 defer processor.Close()
 
 err = processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
-    // データ項目の処理
+    // データ項目を処理
     id := item.GetInt("id")
     name := item.GetString("name")
-    return nil // item.Break() を返すと中断可能
+    return nil // item.Break() を返すと中断
 })
 ```
 
 ### NDJSON/JSONL
 
 ```go
-// JSONL のパース
+// JSONL をパース
 results, err := json.ParseJSONL(jsonlBytes)
 
 // ジェネリックパース（StreamLinesInto を使用）
@@ -251,9 +251,9 @@ cfg := json.PrettyConfig()
 | `[+]` | 追加 | `items[+]` |
 | `[-1]` | 負のインデックス（末尾） | `items[-1]` |
 
-## 一般的なパターン
+## よくあるパターン
 
-### ネストされた値の安全な取得
+### ネストされた値のセーフティ取得
 
 ```go
 // デフォルト値付きの取得関数を使用
@@ -265,7 +265,7 @@ if err != nil {
     if errors.Is(err, json.ErrPathNotFound) {
         // パスが存在しない
     } else if errors.Is(err, json.ErrTypeMismatch) {
-        // 型の不一致
+        // タイプの不一致
     }
 }
 ```
@@ -289,7 +289,7 @@ case string:
 case float64:
     fmt.Println("数値:", v)
 case bool:
-    fmt.Println("真偽値:", v)
+    fmt.Println("ブーリアン:", v)
 case []any:
     fmt.Println("配列:", len(v), "個の要素")
 case map[string]any:
@@ -313,13 +313,13 @@ merged, _ := json.MergeJSON(defaults, userConfig)
 ```go
 val, err := json.Get(data, path)
 if err != nil {
-    // エラータイプの確認
+    // エラータイプを確認
     if errors.Is(err, json.ErrPathNotFound) {
         // パスが存在しない
     } else if errors.Is(err, json.ErrInvalidJSON) {
-        // JSON 形式エラー
+        // JSON フォーマットエラー
     } else if errors.Is(err, json.ErrTypeMismatch) {
-        // 型の不一致
+        // タイプの不一致
     }
 }
 ```
@@ -332,10 +332,10 @@ paths := []string{"user.name", "user.email", "items[*].id"}
 result, _ := json.WarmupCache(data, paths)
 fmt.Printf("ウォームアップ成功: %d/%d\n", result.Successful, result.TotalPaths)
 
-// キャッシュのクリア
+// キャッシュをクリア
 json.ClearCache()
 
-// 統計情報の取得
+// 統計を取得
 stats := json.GetStats()
 fmt.Printf("キャッシュヒット率: %.2f%%\n", stats.HitRatio * 100)
 ```
@@ -343,7 +343,7 @@ fmt.Printf("キャッシュヒット率: %.2f%%\n", stats.HitRatio * 100)
 ## グローバルプロセッサ
 
 ```go
-// カスタムグローバルプロセッサの設定
+// カスタムグローバルプロセッサを設定
 cfg := json.SecurityConfig()
 p, err := json.New(cfg)
 if err != nil {
@@ -351,7 +351,7 @@ if err != nil {
 }
 json.SetGlobalProcessor(p)
 
-// 以降のすべてのパッケージレベル関数はこのプロセッサを使用
+// 以降、すべてのパッケージレベル関数がこのプロセッサを使用
 name := json.GetString(data, "user.name")
 
 // アプリケーション終了時にクリーンアップ

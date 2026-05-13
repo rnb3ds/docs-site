@@ -1,5 +1,5 @@
 ---
-title: Processor JSONL 메서드 - CyberGo JSON | API 참조
+title: Processor JSONL 메서드 - CyberGo JSON | API 레퍼런스
 description: "CyberGo JSON Processor JSONL 메서드: StreamJSONL/StreamJSONLParallel/StreamJSONLChunked 스트림 처리, ForeachJSONL 반복, MapJSONL 매핑, ReduceJSONL 리덕션, FilterJSONL 필터링, CollectJSONL 수집, FirstJSONL 검색을 지원합니다."
 ---
 
@@ -69,7 +69,7 @@ err := processor.StreamJSONLParallel(file, 8, func(lineNum int, item *json.Itera
 fmt.Printf("%d행 처리 완료\n", count)
 ```
 
-::: tip 성능 팁
+:::tip 성능 팁
 - CPU 집약적 작업에 적합합니다 (데이터 변환, 계산 등)
 - I/O 집약적 작업은 단일 스레드 `StreamJSONL`을 권장합니다
 - 워커 수는 CPU 코어 수로 설정하는 것을 권장합니다
@@ -267,7 +267,7 @@ if err != nil {
 fmt.Printf("%d개 레코드 수집 완료\n", len(items))
 ```
 
-::: warning 메모리 주의
+:::warning 메모리 주의
 이 메서드는 모든 데이터를 메모리에 로드하므로 초대용량 파일에는 적합하지 않습니다. 대용량 파일은 `StreamJSONL`로 행 단위 처리하는 것을 권장합니다.
 :::
 
@@ -419,6 +419,6 @@ func main() {
 
 ## 관련 문서
 
-- [JSONL 프로세서](../jsonl) - 패키지 수준 JSONL 함수
+- [JSONL 프로세서](../jsonl) - 패키지 레벨 JSONL 함수
 - [대용량 파일 처리](../../large-files) - 대용량 파일 처리 가이드
 - [반복자](../iterator) - IterableValue 타입 상세

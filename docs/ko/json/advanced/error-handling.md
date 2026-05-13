@@ -1,11 +1,11 @@
 ---
 title: 오류 처리 - CyberGo JSON | 모범 사례
-description: "CyberGo JSON 오류 처리 모범 사례: JsonsError 오류 타입 판별, errors.Is/As 오류 매칭, 12개 표준 오류 변수, 복구 전략, SafeError 안전 출력 및 로그 기록을 다루어 Go 개발자가 견고한 JSON 처리 애플리케이션을 구축하도록 돕습니다."
+description: "CyberGo JSON 오류 처리 모범 사례: JsonsError 구조화된 오류 타입 판단, errors.Is/As 오류 매칭, 표준 오류 변수, 복구 전략, SafeError 안전한 출력 및 RedactedPath 경로 마스킹 로그 기록을 다루며, 견고한 예외 처리 메커니즘을 구축합니다."
 ---
 
 # 오류 처리
 
-JSON 작업 중 오류를 올바르게 처리하는 방법입니다.
+JSON 작업 중 발생하는 오류를 올바르게 처리합니다.
 
 ## 오류 타입
 
@@ -21,10 +21,10 @@ var (
     ErrSizeLimit          = errors.New("size limit exceeded")
     ErrSecurityViolation  = errors.New("security violation detected")
     ErrProcessorClosed    = errors.New("processor is closed")
-    ErrConcurrencyLimit   = errors.New("concurrency limit exceeded")
+    ErrConcurrencyLimit   = errors.New("concurrency limit exceeded") // Deprecated
     ErrUnsupportedPath    = errors.New("unsupported path operation")
-    ErrOperationTimeout   = errors.New("operation timeout")
-    ErrResourceExhausted  = errors.New("system resources exhausted")
+    ErrOperationTimeout   = errors.New("operation timeout")           // Deprecated
+    ErrResourceExhausted  = errors.New("system resources exhausted")  // Deprecated
 )
 ```
 
@@ -56,7 +56,7 @@ type JsonsError struct {
     Op      string `json:"op"`      // 작업 타입: "get", "set", "delete", "marshal" 등
     Path    string `json:"path"`    // JSON 경로 (있는 경우)
     Message string `json:"message"` // 사람이 읽을 수 있는 오류 메시지
-    Err     error  `json:"err"`     // 내부 오류
+    Err     error  `json:"err"`     // 기저 오류
 }
 
 func (e *JsonsError) Error() string
@@ -64,7 +64,7 @@ func (e *JsonsError) Unwrap() error
 func (e *JsonsError) Is(target error) bool
 ```
 
-### 사용
+### 사용법
 
 ```go
 val, err := json.Get(data, "user.name")
@@ -92,7 +92,7 @@ if err != nil {
 ### 기본값 제공
 
 ```go
-// 타입 안전 가져오기 함수에 내장된 기본값 지원
+// 타입 안전 가져오기 함수에 기본값 지원 내장
 name := json.GetString(data, "user.name", "익명")
 age := json.GetInt(data, "user.age", 0)
 active := json.GetBool(data, "user.active", false)
@@ -121,7 +121,7 @@ func (e *MultiError) Error() string {
     return strings.Join(msgs, "; ")
 }
 
-// 사용
+// 사용법
 var multiErr MultiError
 for _, path := range requiredPaths {
     if _, err := json.Get(data, path); err != nil {
@@ -156,11 +156,11 @@ func (e *ValidationError) Error() string {
     return fmt.Sprintf("검증 실패 %s: %s", e.Field, e.Message)
 }
 
-// 사용
+// 사용법
 func validateUser(data string) error {
     name := json.GetString(data, "name")
     if name == "" {
-        return &ValidationError{Field: "name", Message: "필수 입력"}
+        return &ValidationError{Field: "name", Message: "필수 항목"}
     }
     if len(name) < 2 {
         return &ValidationError{Field: "name", Message: "최소 2자 이상"}
@@ -206,16 +206,16 @@ func auditLog(op string, path string, err error) {
 
 ## 복구 전략
 
-### SafeError 안전 출력
+### SafeError 안전한 출력
 
-`SafeError`는 내부 컨텍스트 정보를 제거하여 클라이언트에 안전한 오류 메시지를 반환합니다:
+`SafeError`는 내부 컨텍스트 정보를 제거한 클라이언트에 안전한 오류 메시지를 반환합니다:
 
 ```go
 // 시그니처: func SafeError(err error) string
 
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
-    // SafeError는 경로 및 작업 컨텍스트 등 내부 세부 정보를 제거합니다
+    // SafeError는 경로와 작업 컨텍스트 등 내부 세부 정보를 제거합니다
     safeMsg := json.SafeError(err)
     http.Error(w, safeMsg, http.StatusBadRequest)
     return
@@ -236,7 +236,7 @@ func withRetry(fn func() error, maxRetries int) error {
     return err
 }
 
-// 사용
+// 사용법
 err := withRetry(func() error {
     return processData(data)
 }, 3)
@@ -248,7 +248,7 @@ err := withRetry(func() error {
 func getConfig(data string) Config {
     cfg := DefaultConfig()
 
-    // 타입 안전 가져오기 함수의 내장 기본값 사용
+    // 타입 안전 가져오기 함수 사용, 기본값 내장
     strict := json.GetBool(data, "config.strict", true)
 
     return cfg
@@ -259,7 +259,7 @@ func getConfig(data string) Config {
 
 ### 사용자 입력 오류
 
-사용자가 제공한 JSON 데이터나 경로로 인해 발생:
+사용자가 제공한 JSON 데이터나 경로로 인해 발생합니다:
 
 ```go
 val, err := json.Get(data, "user.name")
@@ -292,12 +292,12 @@ if err != nil {
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
     if errors.Is(err, json.ErrSecurityViolation) {
-        // 보안 위반, 기록 후 거부
+        // 보안 위반, 기록 및 거부
         log.Warn("보안 위반", "error", err)
-        return errors.New("입력이 유효하지 않습니다")
+        return errors.New("입력이 올바르지 않습니다")
     }
     if errors.Is(err, json.ErrSizeLimit) {
-        return fmt.Errorf("데이터가 크기 제한을 초과함: %w", err)
+        return fmt.Errorf("데이터가 크기 제한을 초과했습니다: %w", err)
     }
     if errors.Is(err, json.ErrDepthLimit) {
         return fmt.Errorf("중첩 깊이 제한 초과: %w", err)
@@ -314,20 +314,20 @@ if err != nil {
 val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrOperationTimeout) {
-        // 작업 시간 초과, 재시도 가능
-        return fmt.Errorf("일시적 오류, 다시 시도하십시오: %w", err)
+        // 작업 시간 초과, 재시도 가능 <Badge type="danger" text="사용 중단" />
+        return fmt.Errorf("일시적 오류, 다시 시도해 주세요: %w", err)
     }
     if errors.Is(err, json.ErrConcurrencyLimit) {
-        // 동시성 제한
-        return fmt.Errorf("시스템이 혼잡합니다, 잠시 후 다시 시도하십시오: %w", err)
+        // 동시성 제한 <Badge type="danger" text="사용 중단" />
+        return fmt.Errorf("시스템이 혼잡합니다, 잠시 후 다시 시도해 주세요: %w", err)
     }
     if errors.Is(err, json.ErrResourceExhausted) {
-        // 리소스 고갈
-        return fmt.Errorf("시스템 리소스 부족: %w", err)
+        // 리소스 고갈 <Badge type="danger" text="사용 중단" />
+        return fmt.Errorf("시스템 리소스가 부족합니다: %w", err)
     }
     if errors.Is(err, json.ErrProcessorClosed) {
         // 프로세서가 닫힘
-        return fmt.Errorf("프로세서를 사용할 수 없음: %w", err)
+        return fmt.Errorf("프로세서를 사용할 수 없습니다: %w", err)
     }
     return err
 }
@@ -335,28 +335,28 @@ if err != nil {
 
 ## 오류 처리 모범 사례
 
-### 1. 오류 타입 구분
+### 1. 오류 유형 구분
 
 ```go
 func processJSON(data string) error {
     val, err := json.Get(data, "user.name")
     if err != nil {
-        // errors.Is로 오류 타입 구분
+        // errors.Is로 오류 유형 구분
         switch {
         case errors.Is(err, json.ErrInvalidJSON),
             errors.Is(err, json.ErrPathNotFound),
             errors.Is(err, json.ErrTypeMismatch),
             errors.Is(err, json.ErrInvalidPath):
-            // 사용자 입력 오류, 친절한 안내 반환
+            // 사용자 입력 오류, 친절한 팁 반환
             return fmt.Errorf("데이터 형식 오류: %w", err)
         case errors.Is(err, json.ErrSecurityViolation):
-            // 보안 오류, 기록 후 거부
+            // 보안 오류, 기록 및 거부
             log.Warn("보안 위반", "error", err)
-            return errors.New("입력이 유효하지 않습니다")
-        case errors.Is(err, json.ErrOperationTimeout),
-            errors.Is(err, json.ErrConcurrencyLimit):
-            // 재시도 가능한 오류
-            return fmt.Errorf("일시적 오류, 다시 시도하십시오: %w", err)
+            return errors.New("입력이 올바르지 않습니다")
+        case errors.Is(err, json.ErrOperationTimeout),          // Deprecated
+            errors.Is(err, json.ErrConcurrencyLimit): // Deprecated
+            // 재시도 가능한 오류 (이러한 오류는 현재 라이브러리에서 반환되지 않으며, 호환성을 위해 유지)
+            return fmt.Errorf("일시적 오류, 다시 시도해 주세요: %w", err)
         default:
             // 시스템 오류
             log.Error("시스템 오류", "error", err)
@@ -406,7 +406,7 @@ func processLevel2(data string) error {
     return err
 }
 
-// 오류 체인 예시:
+// 오류 체인 예제:
 // 깊이 처리 실패: 1단계 처리 실패 (경로 data.field): path not found
 ```
 

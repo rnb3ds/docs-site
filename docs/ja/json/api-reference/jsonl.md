@@ -96,6 +96,37 @@ err = p.StreamJSONLParallel(file, 8, func(lineNum int, item *json.IterableValue)
 CPU 負荷の高い操作（データ変換や計算など）では、並列処理によりパフォーマンスが大幅に向上します。I/O 負荷の高い操作の場合は、シングルスレッド処理を推奨します。
 :::
 
+### StreamJSONLParallelWithContext
+
+シグネチャ：`func (p *Processor) StreamJSONLParallelWithContext(ctx context.Context, reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error) error`
+
+コンテキスト付きの並列 JSONL データ処理。タイムアウトとキャンセル操作をサポートします。
+
+**パラメータ**
+
+| 名前 | 型 | 説明 |
+|------|------|------|
+| `ctx` | `context.Context` | キャンセルとタイムアウト用のコンテキスト |
+| `reader` | `io.Reader` | データソース |
+| `workers` | `int` | ワーカーゴルーチン数（0 以下の場合はデフォルト 4） |
+| `fn` | `func(lineNum int, item *IterableValue) error` | 処理コールバック |
+
+```go
+p, err := json.New()
+if err != nil {
+    panic(err)
+}
+defer p.Close()
+
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+err = p.StreamJSONLParallelWithContext(ctx, file, 8, func(lineNum int, item *json.IterableValue) error {
+    // キャンセル対応の並列処理
+    return processItem(item)
+})
+```
+
 ### StreamJSONLChunked
 
 シグネチャ：`func (p *Processor) StreamJSONLChunked(reader io.Reader, chunkSize int, fn func(chunk []*IterableValue) error) error`

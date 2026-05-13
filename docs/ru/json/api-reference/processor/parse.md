@@ -1,24 +1,24 @@
 ---
-title: Processor - Разбор и загрузка - CyberGo JSON | Справочник API
-description: "Полный справочник методов разбора и валидации CyberGo JSON Processor: валидация Valid, разбор Parse в переменную, ParseAny с возвратом произвольного типа, предварительный разбор PreParse для оптимизации, быстрое получение GetFromParsed, поддержка конфигурации AllowComments для комментариев и StrictMode для строгого режима."
+title: Processor - Парсинг и загрузка - CyberGo JSON | Справочник API
+description: "Справочник методов парсинга и загрузки Processor: Valid, ValidBytes, Parse, ParseAny, PreParse, GetFromParsed, LoadFromFile, SaveToFile, MarshalToFile."
 ---
 
-# Методы разбора и загрузки
+# Методы парсинга и загрузки
 
-Processor предоставляет функции разбора JSON и загрузки данных.
+Processor предоставляет функциональность парсинга JSON и загрузки данных.
 
 ## Методы валидации
 
 ### Valid
 
-Сигнатура: `func (p *Processor) valid(jsonStr string, cfg ...Config) (bool, error)`
+Сигнатура: `func (p *Processor) Valid(jsonStr string, cfg ...Config) (bool, error)`
 
-Проверяет, является ли строка JSON допустимой.
+Проверяет, является ли строка JSON валидной.
 
 ```go
 valid, err := p.Valid(data)
 if valid && err == nil {
-    // Допустимый JSON
+    // Валидный JSON
 }
 ```
 
@@ -26,28 +26,28 @@ if valid && err == nil {
 
 Сигнатура: `func (p *Processor) ValidBytes(data []byte) bool`
 
-Проверяет, является ли срез байтов допустимым JSON.
+Проверяет, является ли байтовый срез валидным JSON.
 
 ```go
 if p.ValidBytes([]byte(data)) {
-    // Допустимый JSON
+    // Валидный JSON
 }
 ```
 
-## Методы разбора
+## Методы парсинга
 
 ### Parse
 
 Сигнатура: `func (p *Processor) Parse(jsonStr string, target any, cfg ...Config) error`
 
-Разбирает строку JSON в целевую переменную. Поддерживает стандартный режим и режим сохранения чисел.
+Парсит строку JSON в целевую переменную. Поддерживает стандартный режим и режим сохранения чисел.
 
 ```go
-// Разбор в map
+// Парсинг в map
 var obj map[string]any
 err := p.Parse(`{"name":"Alice"}`, &obj)
 
-// Разбор в структуру
+// Парсинг в структуру
 type User struct { Name string }
 var user User
 err = p.Parse(`{"name":"Alice"}`, &user)
@@ -63,7 +63,7 @@ err = p.Parse(`{"price":19.99}`, &data, cfg)
 
 Сигнатура: `func (p *Processor) ParseAny(jsonStr string, cfg ...Config) (any, error)`
 
-Разбирает строку JSON в тип `any`.
+Парсит строку JSON в тип `any`.
 
 ```go
 data, err := p.ParseAny(`{"name": "test"}`)
@@ -76,7 +76,7 @@ if err != nil {
 
 Сигнатура: `func (p *Processor) PreParse(jsonStr string, cfg ...Config) (*ParsedJSON, error)`
 
-Предварительно разбирает данные JSON для предотвращения повторного разбора при последующих множественных запросах к одним и тем же данным.
+Предварительно парсит JSON-данные для последующих многократных запросов к одним и тем же данным без повторного парсинга.
 
 ```go
 parsed, err := p.PreParse(jsonStr)
@@ -84,7 +84,7 @@ if err != nil {
     panic(err)
 }
 
-// Множественные запросы к разобранным данным
+// Многократные запросы к распарсенным данным
 name, _ := p.GetFromParsed(parsed, "user.name")
 age, _ := p.GetFromParsed(parsed, "user.age")
 ```
@@ -93,13 +93,13 @@ age, _ := p.GetFromParsed(parsed, "user.age")
 
 Сигнатура: `func (p *Processor) GetFromParsed(parsed *ParsedJSON, path string, cfg ...Config) (any, error)`
 
-Получает значение из предварительно разобранных данных. Используется вместе с `PreParse` для повышения производительности множественных запросов.
+Получает значение из предварительно распарсенных данных. Используется вместе с `PreParse` для повышения производительности многократных запросов.
 
 ### SetFromParsed
 
 Сигнатура: `func (p *Processor) SetFromParsed(parsed *ParsedJSON, path string, value any, cfg ...Config) (*ParsedJSON, error)`
 
-Устанавливает значение в предварительно разобранных данных, возвращает новый `ParsedJSON`.
+Устанавливает значение в предварительно распарсенных данных, возвращает новый `ParsedJSON`.
 
 ```go
 parsed, _ := p.PreParse(jsonStr)
@@ -112,7 +112,7 @@ newParsed, err := p.SetFromParsed(parsed, "user.name", "Bob")
 
 Сигнатура: `func (p *Processor) LoadFromFile(filePath string, cfg ...Config) (string, error)`
 
-Загружает данные JSON из файла и возвращает исходную строку.
+Загружает JSON-данные из файла и возвращает исходную строку.
 
 ```go
 data, err := p.LoadFromFile("config.json")
@@ -122,9 +122,9 @@ if err != nil {
 fmt.Println(data) // Исходная строка JSON
 ```
 
-### LoadFromFileAsData (приватизирован)
+### LoadFromFileAsData (приватизировано)
 
-::: warning Замечание об изменении API
+::: warning Изменение API
 `LoadFromFileAsData` преобразован во внутренний метод (`loadFromFileAsData`) и больше не экспортируется как публичный API. Используйте комбинацию `LoadFromFile` + `Parse`:
 
 ```go
@@ -134,7 +134,7 @@ if err != nil {
 }
 var data any
 err = p.Parse(jsonStr, &data)
-// Тип data: map[string]any или []any
+// data имеет тип map[string]any или []any
 if obj, ok := data.(map[string]any); ok {
     fmt.Println(obj["name"])
 }
@@ -147,7 +147,7 @@ if obj, ok := data.(map[string]any); ok {
 
 Сигнатура: `func (p *Processor) LoadFromReader(reader io.Reader, cfg ...Config) (string, error)`
 
-Загружает данные JSON из Reader и возвращает исходную строку.
+Загружает JSON-данные из Reader и возвращает исходную строку.
 
 ```go
 file, _ := os.Open("data.json")
@@ -159,9 +159,9 @@ if err != nil {
 }
 ```
 
-### LoadFromReaderAsData (приватизирован)
+### LoadFromReaderAsData (приватизировано)
 
-::: warning Замечание об изменении API
+::: warning Изменение API
 `LoadFromReaderAsData` преобразован во внутренний метод (`loadFromReaderAsData`) и больше не экспортируется как публичный API. Используйте комбинацию `LoadFromReader` + `Parse`:
 
 ```go
@@ -180,12 +180,12 @@ err = p.Parse(jsonStr, &data)
 ## Выбор метода
 
 | Сценарий | Рекомендуемый метод |
-|------|----------|
+|----------|---------------------|
 | Нужна исходная строка | `LoadFromFile` / `LoadFromReader` |
-| Нужны разобранные данные | `LoadFromFile` + `Parse` / `LoadFromReader` + `Parse` |
-| Множественные запросы к одним данным | `PreParse` + `GetFromParsed` |
+| Нужны распарсенные данные | `LoadFromFile` + `Parse` / `LoadFromReader` + `Parse` |
+| Многократные запросы к одним данным | `PreParse` + `GetFromParsed` |
 | Только проверка валидности | `Valid` / `ValidBytes` |
-| Разбор в целевую переменную | `Parse` |
+| Парсинг в целевую переменную | `Parse` |
 | Сохранение данных в файл | `SaveToFile` / `MarshalToFile` |
 | Запись в Writer | `SaveToWriter` |
 | Чтение из файла и декодирование | `UnmarshalFromFile` |
@@ -196,12 +196,12 @@ err = p.Parse(jsonStr, &data)
 
 Сигнатура: `func (p *Processor) SaveToFile(filePath string, data any, cfg ...Config) error`
 
-Сохраняет данные в JSON-файл. Автоматически создаёт родительские каталоги.
+Сохраняет данные как JSON-файл. Автоматически создаёт родительские каталоги.
 
 ```go
 err := p.SaveToFile("data.json", map[string]any{"name": "CyberGo"})
 
-// Сохранение форматированного вывода с PrettyConfig
+// Сохранение с форматированием используя PrettyConfig
 err = p.SaveToFile("data.json", data, json.PrettyConfig())
 ```
 
@@ -243,7 +243,7 @@ var buf bytes.Buffer
 err := p.SaveToWriter(&buf, data, json.PrettyConfig())
 ```
 
-## См. также
+## Связанные разделы
 
-- [Методы вывода](./output) - методы Encode/EncodePretty
-- [Запросы по пути](./query) - семейство методов Get
+- [Методы вывода](./output) - Методы Encode/EncodePretty
+- [Запросы по пути](./query) - Методы Get

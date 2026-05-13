@@ -7,7 +7,7 @@ description: "CyberGo JSON 대용량 파일 처리 완전 가이드: ForeachFile
 
 대형 JSON 파일(예: 로그, 설정, 데이터 내보내기)을 메모리에 직접 로드하면 메모리 부족이 발생할 수 있습니다. json 라이브러리는 다양한 효율적인 처리 방법을 제공합니다.
 
-::: warning
+:::warning 경고
 `ForeachFile` 및 `ForeachFileChunked`는 반복 전에 전체 파일을 메모리에 로드합니다. "청크" 동작은 메모리 내 데이터의 반복 방식에만 영향을 미치며, 파일 읽기 방식에는 영향을 주지 않습니다. 메모리를 진정으로 제어해야 하는 초대용량 파일 처리의 경우 `NDJSONProcessor`를 JSONL 형식과 함께 사용하거나 `StreamIterator`를 사용하세요.
 :::
 
@@ -291,4 +291,4 @@ defer processor.Close()
 
 ## 다음 단계
 
-- [API 문서](./api-reference/) — 완전한 API 참조
+- [API 문서](./api-reference/) — 완전한 API 참조하세요

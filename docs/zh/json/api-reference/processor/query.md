@@ -69,6 +69,33 @@ enabled := p.GetBool(data, "enabled")
 debug := p.GetBool(data, "debug", false)
 ```
 
+### GetWithContext
+
+签名：`func (p *Processor) GetWithContext(ctx context.Context, jsonStr, path string, cfg ...Config) (any, error)`
+
+带上下文的路径获取。支持超时和取消操作，是 `Get` 的上下文感知版本。
+
+::: info 注意
+Context 在操作前后检查，不在解析/导航过程中检查。对于大型 JSON 文档，操作期间可能不会响应取消。
+:::
+
+```go
+p, err := json.New()
+if err != nil {
+    panic(err)
+}
+defer p.Close()
+
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+
+val, err := p.GetWithContext(ctx, data, "items[0].name")
+if err != nil {
+    panic(err)
+}
+fmt.Println(val)
+```
+
 ## 安全查询
 
 ### SafeGet

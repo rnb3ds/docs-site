@@ -1,6 +1,6 @@
 ---
 title: JSONL Processor - CyberGo JSON | API Reference
-description: "CyberGo JSON JSONL/NDJSON processor reference: including StreamJSONL stream processing, JSONLWriter writing, StreamLinesInto[T] generic streaming, ParseJSONL parsing, ToJSONL conversion and configuration options, with full support for JSON Lines format read/write and advanced operations."
+description: "CyberGo JSON JSONL/NDJSON processor reference: including StreamJSONL stream processing, JSONLWriter writing, StreamLinesInto[T] generic streaming, ParseJSONL parsing, ToJSONL conversion and configuration options, supporting JSON Lines format read/write operations."
 ---
 
 # JSONL Processor
@@ -95,6 +95,38 @@ err = p.StreamJSONLParallel(file, 8, func(lineNum int, item *json.IterableValue)
 ::: tip Performance Tip
 For CPU-intensive operations (such as data transformation and computation), parallel processing can significantly improve performance. For I/O-intensive operations, single-threaded processing is recommended.
 :::
+
+
+### StreamJSONLParallelWithContext
+
+Signature: `func (p *Processor) StreamJSONLParallelWithContext(ctx context.Context, reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error) error`
+
+Parallel processing of JSONL data with context. Supports timeout and cancellation.
+
+**Parameters**
+
+| Name | Type | Description |
+|------|------|------|
+| `ctx` | `context.Context` | Context for cancellation and timeout |
+| `reader` | `io.Reader` | Data source |
+| `workers` | `int` | Number of worker goroutines (defaults to 4 when <=0) |
+| `fn` | `func(lineNum int, item *IterableValue) error` | Processing callback |
+
+```go
+p, err := json.New()
+if err != nil {
+    panic(err)
+}
+defer p.Close()
+
+ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+defer cancel()
+
+err = p.StreamJSONLParallelWithContext(ctx, file, 8, func(lineNum int, item *json.IterableValue) error {
+    // Parallel processing with cancellation support
+    return processItem(item)
+})
+```
 
 ### StreamJSONLChunked
 

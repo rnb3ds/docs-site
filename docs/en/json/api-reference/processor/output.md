@@ -11,7 +11,7 @@ Processor provides multiple JSON encoding output methods.
 
 ### Encode
 
-Signature: `func (p *Processor) Encode(value any, config ...Config) (string, error)`
+Signature: `func (p *Processor) Encode(value any, cfg ...Config) (string, error)`
 
 Encodes any value to a JSON string.
 
@@ -25,7 +25,7 @@ fmt.Println(result)
 
 ### EncodePretty
 
-Signature: `func (p *Processor) EncodePretty(value any, config ...Config) (string, error)`
+Signature: `func (p *Processor) EncodePretty(value any, cfg ...Config) (string, error)`
 
 Encodes any value to a formatted JSON string.
 

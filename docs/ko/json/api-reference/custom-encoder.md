@@ -1,15 +1,15 @@
 ---
-title: CustomEncoder - CyberGo JSON | 사용자 정의 인코더
-description: "CyberGo JSON 사용자 정의 인코더 가이드: CustomEncoder 인터페이스와 TypeEncoder 타입 인코더의 정의, 설정 방식 및 구현 예제를 상세히 설명하며, 사용자 정의 Go 구조체와 비표준 타입에 대한 전용 JSON 직렬화/역직렬화 로직 등록을 지원하여 인코딩/디코딩 동작을 유연하게 제어합니다."
+title: CustomEncoder - CyberGo JSON | 커스텀 인코더
+description: "CyberGo JSON 커스텀 인코더 완전 가이드: CustomEncoder 인터페이스와 TypeEncoder 타입 인코더의 정의, 설정 방식과 구현 예제를 자세히 설명하며 커스텀 Go 구조체와 비표준 타입에 전용 JSON 직렬화 로직을 등록하고 인코딩 출력 동작을 유연하게 제어합니다."
 ---
 
 # CustomEncoder
 
-json 라이브러리는 두 가지 사용자 정의 인코더 인터페이스를 제공하여 사용자 정의 타입에 전용 직렬화 로직을 등록할 수 있습니다.
+json 라이브러리는 두 가지 커스텀 인코더 인터페이스를 제공하여, 커스텀 타입에 전용 직렬화 로직을 등록할 수 있습니다.
 
 ## CustomEncoder 인터페이스
 
-전역 사용자 정의 인코더 인터페이스로, 기본 인코딩 동작을 교체합니다.
+전역 커스텀 인코더 인터페이스로, 기본 인코딩 동작을 교체합니다.
 
 ```go
 type CustomEncoder interface {
@@ -76,7 +76,7 @@ if err != nil {
 }
 ```
 
-## 사용자 정의 인코더 예제
+## 커스텀 인코더 예제
 
 ### 완전한 CustomEncoder 구현
 
@@ -127,16 +127,16 @@ func (e *CustomTypeEncoder) Encode(v reflect.Value) (string, error) {
 | 설정 필드 | `Config.CustomEncoder` | `Config.CustomTypeEncoders` |
 | 함수 시그니처 | `Encode(any) (string, error)` | `Encode(reflect.Value) (string, error)` |
 | 반환값 | `string` (JSON 문자열) | `string` (JSON 문자열) |
-| 적용 시나리오 | 통일된 인코딩 동작 | 사용자 정의 타입의 직렬화 매핑 |
+| 적합한 시나리오 | 통합 인코딩 동작 | 커스텀 타입의 직렬화 매핑 |
 
 ## Config의 인코딩 관련 필드
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `CustomEncoder` | `CustomEncoder` | 사용자 정의 인코더 인터페이스 |
+| `CustomEncoder` | `CustomEncoder` | 커스텀 인코더 인터페이스 |
 | `CustomTypeEncoders` | `map[reflect.Type]TypeEncoder` | 타입별로 등록된 인코더 |
 
 ## 관련 문서
 
-- [인터페이스 정의](./interfaces) - CustomEncoder 및 TypeEncoder 인터페이스
-- [설정 옵션](./config) - Config 인코딩 관련 필드
+- [인터페이스 정의](./interfaces) - CustomEncoder와 TypeEncoder 인터페이스
+- [설정 옵션](./config) - Config 인코딩 관련 문서 필드
