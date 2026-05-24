@@ -1,5 +1,5 @@
 ---
-title: Security Overview - HTTPC
+title: "Security Overview - HTTPC"
 description: "HTTPC security: TLS 1.2+ enforcement, SSRF protection, CRLF prevention, cookie security, redirect whitelisting, and response size limits."
 ---
 

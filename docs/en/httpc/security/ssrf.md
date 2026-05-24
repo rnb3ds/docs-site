@@ -1,5 +1,5 @@
 ---
-title: SSRF Protection - HTTPC
+title: "SSRF Protection - HTTPC"
 description: "HTTPC SSRF protection: private IP blocking, CIDR exemption, DNS rebinding prevention, redirect whitelisting, and cloud metadata endpoint security."
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: Middleware - HTTPC
+title: "Middleware - HTTPC"
 description: "HTTPC middleware: Chain composition, eight built-in middleware factories, AuditMiddlewareWithConfig, and AuditEvent type definitions."
 ---
 

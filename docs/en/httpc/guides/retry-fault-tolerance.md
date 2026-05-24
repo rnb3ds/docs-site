@@ -1,5 +1,5 @@
 ---
-title: Retry and Fault Tolerance - HTTPC
+title: "Retry and Fault Tolerance - HTTPC"
 description: "HTTPC retry and fault tolerance: exponential backoff, retry conditions, custom RetryPolicy, Retry-After parsing, and per-request control."
 ---
 

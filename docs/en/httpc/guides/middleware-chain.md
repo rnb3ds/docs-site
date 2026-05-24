@@ -1,5 +1,5 @@
 ---
-title: Middleware Chain - HTTPC
+title: "Middleware Chain - HTTPC"
 description: "HTTPC middleware chain: onion model, eight built-in middleware, Chain composition, and custom MiddlewareFunc development with examples."
 ---
 

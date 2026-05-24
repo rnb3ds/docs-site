@@ -1,5 +1,5 @@
 ---
-title: Getting Started - HTTPC
+title: "Getting Started - HTTPC"
 description: "Get started with HTTPC in five minutes: install the module, make GET/POST requests, configure the client, parse JSON, and handle errors with ClientError."
 ---
 

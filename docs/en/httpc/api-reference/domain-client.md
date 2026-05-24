@@ -1,5 +1,5 @@
 ---
-title: Domain Client - HTTPC
+title: "Domain Client - HTTPC"
 description: "HTTPC domain client API: NewDomain, seven HTTP methods, four downloads, URL concatenation, DomainClienter interface, and session management."
 ---
 

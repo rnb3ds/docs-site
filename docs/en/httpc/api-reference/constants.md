@@ -1,5 +1,5 @@
 ---
-title: Constants and Types - HTTPC
+title: "Constants and Types - HTTPC"
 description: "HTTPC constants and types: BodyKind enum, FormData/FileData upload, AuditEvent struct, and SourceIPKey/UserIDKey context keys."
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: Error Types - HTTPC
+title: "Error Types - HTTPC"
 description: "HTTPC error types: ClientError with Code/IsRetryable, twelve ErrorType enums, thirteen sentinel errors, and errors.Is/As matching."
 ---
 

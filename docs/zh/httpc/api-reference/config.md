@@ -1,5 +1,5 @@
 ---
-title: 配置 - HTTPC
+title: "配置 - HTTPC"
 description: "HTTPC 配置系统 API 参考：Config 主结构体及 Timeouts、Connection、Security、Retry、Middleware 五个子配置组的全部字段说明、DefaultConfig 等五种预设函数、ValidateConfig 验证与 Cookie 安全配置。"
 ---
 

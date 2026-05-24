@@ -1,5 +1,5 @@
 ---
-title: Basic Usage - HTTPC
+title: "Basic Usage - HTTPC"
 description: "HTTPC basic examples: GET/POST with JSON, file uploads, custom config, proxy, middleware, download with progress, and domain client usage."
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: TLS and Certificate Pinning - HTTPC
+title: "TLS and Certificate Pinning - HTTPC"
 description: "HTTPC TLS and certificate pinning: version control, cipher suites, custom CA, mTLS, SPKI pinning strategies, and HTTP/2 configuration."
 ---
 

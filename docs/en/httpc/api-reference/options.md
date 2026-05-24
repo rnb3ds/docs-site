@@ -1,5 +1,5 @@
 ---
-title: Request Options - HTTPC
+title: "Request Options - HTTPC"
 description: "HTTPC 27 request options: headers, auth, body formats (JSON/XML/form/binary/multipart), query params, cookies, timeout/retry/redirect, and callbacks."
 ---
 

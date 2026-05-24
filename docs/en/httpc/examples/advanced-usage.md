@@ -1,5 +1,5 @@
 ---
-title: Advanced Examples - HTTPC
+title: "Advanced Examples - HTTPC"
 description: "HTTPC advanced examples: custom RetryPolicy, full middleware chain, REST API wrapper, concurrent downloads, and HMAC-SHA256 signing middleware."
 ---
 

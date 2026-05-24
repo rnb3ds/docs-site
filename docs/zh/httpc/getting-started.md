@@ -1,5 +1,5 @@
 ---
-title: 快速开始 - HTTPC
+title: "快速开始 - HTTPC"
 description: "五分钟快速上手 HTTPC 安全 HTTP 客户端库，涵盖 go get 安装、GET/POST 请求、五种配置预设、JSON 解析、Bearer Token 认证与 ClientError 错误分类处理。"
 ---
 

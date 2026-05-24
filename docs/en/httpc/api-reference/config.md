@@ -1,6 +1,6 @@
 ---
-title: Configuration - HTTPC
-description: HTTPC configuration API reference covering the Config struct, five sub-config groups, five preset functions, and the Validate method.
+title: "Configuration - HTTPC"
+description: "HTTPC configuration API reference covering the Config struct, five sub-config groups, five preset functions, and the Validate method."
 ---
 
 # Configuration

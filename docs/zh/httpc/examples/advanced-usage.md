@@ -1,5 +1,5 @@
 ---
-title: 高级示例 - HTTPC
+title: "高级示例 - HTTPC"
 description: "HTTPC 高级示例集：自定义 RetryPolicy 重试策略（仅 502/503/504）、完整中间件链配置含 Recovery/Timeout/Logging/Metrics/Audit、RESTful API 客户端封装、sync.WaitGroup 并发下载与 HMAC-SHA256 请求签名自定义中间件。"
 ---
 

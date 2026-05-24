@@ -1,5 +1,5 @@
 ---
-title: Domain Client and Sessions - HTTPC
+title: "Domain Client and Sessions - HTTPC"
 description: "HTTPC domain client and sessions: NewDomain creation, URL concatenation, session headers, auto Cookie management, and CookieSecurity validation."
 ---
 

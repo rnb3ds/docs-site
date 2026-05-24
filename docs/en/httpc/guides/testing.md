@@ -1,5 +1,5 @@
 ---
-title: Testing Guide - HTTPC
+title: "Testing Guide - HTTPC"
 description: "HTTPC testing guide: TestingConfig setup, httptest.Server mocks, table-driven tests, error/delay simulation, and ReleaseResult resource cleanup."
 ---
 

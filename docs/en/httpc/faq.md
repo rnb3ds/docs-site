@@ -1,5 +1,5 @@
 ---
-title: FAQ - HTTPC
+title: "FAQ - HTTPC"
 description: "HTTPC FAQ: package-level vs client usage, five config presets, proxy/DoH setup, errors.Is/As matching, ReleaseResult pool reuse, and timeout tuning."
 ---
 

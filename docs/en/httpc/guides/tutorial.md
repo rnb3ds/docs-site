@@ -1,5 +1,5 @@
 ---
-title: Tutorial - HTTPC
+title: "Tutorial - HTTPC"
 description: "Build a GitHub API client in 30 minutes: requests, JSON parsing, domain client, middleware, error handling, file download, and concurrency."
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: HTTP Client - HTTPC
+title: "HTTP Client - HTTPC"
 description: "CyberGo HTTPC is a secure Go HTTP client with TLS 1.2+, SSRF protection, smart retry, middleware chains, and object pool reuse for microservices."
 ---
 

@@ -1,5 +1,5 @@
 ---
-title: 实战教程 - HTTPC
+title: "实战教程 - HTTPC"
 description: "三十分钟实战教程：从 httpc.Get 逐步构建 GitHub REST API 客户端，涵盖 JSON 解析、NewDomain 域名客户端、WithJSON 发送数据、中间件链、ClientError 错误处理与文件下载。"
 ---
 

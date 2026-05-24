@@ -1,5 +1,5 @@
 ---
-title: API Reference - HTTPC
+title: "API Reference - HTTPC"
 description: "HTTPC API reference index: package functions, 27 request options, Config presets, middleware, domain client, session, download, and error types."
 ---
 

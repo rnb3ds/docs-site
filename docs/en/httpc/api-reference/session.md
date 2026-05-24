@@ -1,5 +1,5 @@
 ---
-title: Session Management - HTTPC
+title: "Session Management - HTTPC"
 description: "HTTPC SessionManager API: NewSessionManager, SessionConfig, header/cookie CRUD, CookieSecurity validation, and UpdateFromResult sync."
 ---
 

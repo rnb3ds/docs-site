@@ -1,5 +1,5 @@
 ---
-title: Error Handling - HTTPC
+title: "Error Handling - HTTPC"
 description: "HTTPC error handling: twelve ErrorType classifications, ClientError with IsRetryable, sentinel error matching with errors.Is/As, and layered timeout strategies."
 ---
 

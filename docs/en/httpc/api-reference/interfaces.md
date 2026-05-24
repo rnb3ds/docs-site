@@ -1,5 +1,5 @@
 ---
-title: Interface Definitions - HTTPC
+title: "Interface Definitions - HTTPC"
 description: "HTTPC core interfaces: Client, Doer, DomainClienter with session, RetryPolicy, and RequestMutator/ResponseMutator types."
 ---
 

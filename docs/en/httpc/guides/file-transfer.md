@@ -1,5 +1,5 @@
 ---
-title: File Upload and Download - HTTPC
+title: "File Upload and Download - HTTPC"
 description: "HTTPC file transfer: Multipart upload, download with progress callbacks, resumable downloads, SHA-256 checksums, and path security protection."
 ---
 

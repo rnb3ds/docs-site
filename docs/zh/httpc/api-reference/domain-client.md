@@ -1,5 +1,5 @@
 ---
-title: 域名客户端 - HTTPC
+title: "域名客户端 - HTTPC"
 description: "HTTPC 域名客户端 API 参考：NewDomain 创建函数、Get/Post 等七种 HTTP 方法与 Request 通用方法、四种下载方法、URL 自动拼接规则、DomainClienter 接口的 SetHeader/SetCookie 会话管理与 Close 生命周期。"
 ---
 
