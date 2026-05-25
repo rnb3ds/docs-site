@@ -1,6 +1,6 @@
 ---
 title: "오류 타입 - HTTPC"
-description: "HTTPC 오류 타입 API 레퍼런스: ClientError 구조체 8개 필드 및 Code, IsRetryable, Unwrap 등 5개 메서드, ErrorTypeNetwork 등 12가지 ErrorType 열거형, ErrNilConfig 등 13개 센티넬 오류 변수와 errors.Is/As 매칭 예제."
+description: "HTTPC 오류 타입 API 레퍼런스: ClientError 구조체 8개 필드와 Code, IsRetryable, Unwrap 등 5개 메서드, ErrorTypeNetwork 등 12가지 오류 분류 열거, ErrNilConfig 등 13개 센티넬 오류 변수와 errors.Is/As 매칭 예제를 다룹니다."
 ---
 
 # 오류 타입
@@ -19,44 +19,44 @@ type ClientError = engine.ClientError
 type ClientError struct {
     Type       ErrorType  // 오류 분류
     Message    string     // 오류 설명
-    Cause      error      // 기저 오류
+    Cause      error      // 근본 오류
     URL        string     // 요청 URL (마스킹됨)
     Method     string     // HTTP 메서드
     Attempts   int        // 시도한 횟수
     StatusCode int        // HTTP 상태 코드 (해당하는 경우)
-    Host       string     // 호스트 이름 (서킷 브레이커용)
+    Host       string     // 호스트명 (서킷 브레이커용)
 }
 ```
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `Type` | `ErrorType` | 오류 분류, switch 판단에 사용 |
-| `Message` | `string` | 오류 설명 정보 |
-| `Cause` | `error` | 기저 오류, `Unwrap()`으로 가져올 수 있음 |
+| `Message` | `string` | 오류 설명 메시지 |
+| `Cause` | `error` | 근본 오류, `Unwrap()`으로 접근 가능 |
 | `URL` | `string` | 요청 URL (자격 증명 마스킹됨) |
 | `Method` | `string` | HTTP 메서드 (GET, POST 등) |
 | `Attempts` | `int` | 재시도한 횟수 |
 | `StatusCode` | `int` | HTTP 상태 코드 (HTTP 오류가 아닌 경우 0) |
-| `Host` | `string` | 요청 호스트 이름 |
+| `Host` | `string` | 요청 호스트명 |
 
 ### 메서드
 
 | 메서드 | 반환값 | 설명 |
-|------|--------|------|
-| `Error()` | `string` | `METHOD URL: Message: Cause (attempt N)` 형식 |
-| `Code()` | `string` | 읽을 수 있는 오류 코드, 예: `"NETWORK_ERROR"`, `"TIMEOUT"` |
+|--------|--------|------|
+| `Error()` | `string` | `METHOD URL: Message: Cause (attempt N)` 형식으로 포맷 |
+| `Code()` | `string` | 읽기 쉬운 오류 코드, 예: `"NETWORK_ERROR"`, `"TIMEOUT"` |
 | `IsRetryable()` | `bool` | 재시도 가능 여부 |
-| `Unwrap()` | `error` | 기저 오류 언래핑 |
-| `WithType(t ErrorType)` | `*ClientError` | 오류 타입이 설정된 사본 반환 (원본 수정 없음) |
+| `Unwrap()` | `error` | 근본 오류 언랩 |
+| `WithType(t ErrorType)` | `*ClientError` | 오류 타입이 설정된 복사본 반환 (원본 수정하지 않음) |
 
 ```go
 var clientErr *httpc.ClientError
 if errors.As(err, &clientErr) {
-    fmt.Println("오류 코드:", clientErr.Code())
+    fmt.Println("오류 타입:", clientErr.Code())
     fmt.Println("요청 URL:", clientErr.URL)
     fmt.Println("재시도 횟수:", clientErr.Attempts)
     fmt.Println("재시도 가능:", clientErr.IsRetryable())
-    fmt.Println("기저 오류:", clientErr.Unwrap())
+    fmt.Println("근본 오류:", clientErr.Unwrap())
 }
 ```
 
@@ -66,13 +66,13 @@ if errors.As(err, &clientErr) {
 type ErrorType = engine.ErrorType
 ```
 
-오류 분류 열거형.
+오류 분류 열거입니다.
 
 | 상수 | 설명 | 재시도 가능 |
-|------|------|--------|
+|------|------|-------------|
 | `ErrorTypeUnknown` | 알 수 없음/미분류 오류 | 아니요 |
 | `ErrorTypeNetwork` | 네트워크 오류 (연결 거부, DNS 실패 등) | 상황에 따라 |
-| `ErrorTypeTimeout` | 요청 시간 초과 | 예 |
+| `ErrorTypeTimeout` | 요청 타임아웃 | 예 |
 | `ErrorTypeContextCanceled` | 컨텍스트 취소 | 아니요 |
 | `ErrorTypeResponseRead` | 응답 본문 읽기 오류 | 상황에 따라 |
 | `ErrorTypeTransport` | 전송 계층 오류 | 예 |
@@ -83,7 +83,7 @@ type ErrorType = engine.ErrorType
 | `ErrorTypeValidation` | 요청 검증 오류 | 아니요 |
 | `ErrorTypeHTTP` | HTTP 계층 오류 | 상황에 따라 |
 
-### 타입 판별
+### 타입 판단
 
 ```go
 result, err := client.Get(url)
@@ -92,7 +92,7 @@ if err != nil {
     if errors.As(err, &clientErr) {
         switch clientErr.Type {
         case httpc.ErrorTypeTimeout:
-            log.Println("요청 시간 초과")
+            log.Println("요청 타임아웃")
         case httpc.ErrorTypeNetwork:
             log.Println("네트워크 오류")
         case httpc.ErrorTypeTLS:
@@ -114,16 +114,16 @@ if err != nil {
 
 ## 오류 변수
 
-### 구성 오류
+### 설정 오류
 
 | 변수 | 설명 |
 |------|------|
-| `ErrNilConfig` | 구성이 nil |
-| `ErrInvalidTimeout` | 타임아웃 값이 유효하지 않음 |
-| `ErrInvalidRetry` | 재시도 구성이 유효하지 않음 |
-| `ErrInvalidConnection` | 연결 구성이 유효하지 않음 |
-| `ErrInvalidSecurity` | 보안 구성이 유효하지 않음 |
-| `ErrInvalidMiddleware` | 미들웨어 구성이 유효하지 않음 |
+| `ErrNilConfig` | 설정이 nil |
+| `ErrInvalidTimeout` | 타임아웃 값이 무효 |
+| `ErrInvalidRetry` | 재시도 설정이 무효 |
+| `ErrInvalidConnection` | 연결 설정이 무효 |
+| `ErrInvalidSecurity` | 보안 설정이 무효 |
+| `ErrInvalidMiddleware` | 미들웨어 설정이 무효 |
 
 ### 요청 오류
 
@@ -156,15 +156,15 @@ if err != nil {
 
 ```go
 if errors.Is(err, httpc.ErrClientClosed) {
-    // 클라이언트가 이미 닫힘
+    // 클라이언트가 닫힘
 }
 if errors.Is(err, httpc.ErrResponseBodyEmpty) {
     // 응답 본문이 비어 있음
 }
 ```
 
-## 참고
+## 관련 항목
 
 - [오류 처리](../advanced/error-handling) - 완전한 오류 처리 가이드
-- [상수와 열거형](./constants) - BodyKind 등 상수 참조
+- [상수와 열거](./constants) - BodyKind 등 상수 참조
 - [재시도와 장애 허용](../guides/retry-fault-tolerance) - 재시도 전략 가이드

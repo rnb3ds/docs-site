@@ -1,13 +1,13 @@
 ---
 title: "Connection Pool and Proxy - HTTPC"
-description: "HTTPC connection pool and proxy: pool tuning, HTTP/SOCKS5 proxy, system proxy detection, DNS-over-HTTPS, HTTP/2, object pool reuse, and concurrent patterns."
+description: "HTTPC connection pool and proxy configuration guide: MaxIdleConns parameter tuning with scenario recommendations, ProxyURL manual proxy and system proxy detection, SOCKS5 proxy, DoH three-provider fallback, HTTP/2 configuration, built-in object pool automatic management, and concurrent request patterns."
 ---
 
 # Connection Pool and Proxy
 
 ## Connection Pool Configuration
 
-The connection pool is a critical factor in HTTP client performance. HTTPC uses `ConnectionConfig` to manage the connection pool.
+Connection pools are a key factor in HTTP client performance. HTTPC uses `ConnectionConfig` to manage connection pools.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -15,16 +15,16 @@ cfg := httpc.DefaultConfig()
 // Connection pool parameters
 cfg.Connection.MaxIdleConns = 100         // Global max idle connections
 cfg.Connection.MaxConnsPerHost = 20       // Max connections per host
-cfg.Timeouts.IdleConn = 120 * time.Second // Idle connection keep-alive duration
+cfg.Timeouts.IdleConn = 120 * time.Second // Idle connection keep-alive
 ```
 
-### Parameter Reference
+### Parameter Description
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `MaxIdleConns` | 50 | Global maximum idle connections |
-| `MaxConnsPerHost` | 10 | Maximum connections per host (active + idle) |
-| `IdleConn` | 90s | Idle connection timeout, closed after expiry |
+| `MaxIdleConns` | 50 | Global max idle connections |
+| `MaxConnsPerHost` | 10 | Max connections per host (including active + idle) |
+| `IdleConn` | 90s | Idle connection timeout; closed after expiry |
 | `Dial` | 10s | Connection establishment timeout |
 | `TLSHandshake` | 10s | TLS handshake timeout |
 | `ResponseHeader` | 0 | Disabled (uses Request timeout) |
@@ -34,12 +34,12 @@ cfg.Timeouts.IdleConn = 120 * time.Second // Idle connection keep-alive duration
 | Scenario | MaxIdleConns | MaxConnsPerHost | IdleConn |
 |----------|-------------|-----------------|----------|
 | High-concurrency API | 100 | 20 | 120s |
-| General services | 50 | 10 | 90s |
+| General service | 50 | 10 | 90s |
 | Low-frequency requests | 10 | 2 | 30s |
 | Internal microservices | 50 | 10 | 60s |
 
 :::tip
-`MaxConnsPerHost` includes both active and idle connections. New requests exceeding this limit will queue until a connection is released.
+`MaxConnsPerHost` includes both active and idle connections. New requests exceeding this limit queue until a connection is released.
 :::
 
 ## Proxy Configuration
@@ -61,7 +61,7 @@ cfg.Connection.ProxyURL = "http://user:password@proxy.example.com:8080"
 ```
 
 :::tip
-The `Config.String()` method automatically sanitizes usernames and passwords in proxy URLs.
+`Config.String()` automatically masks the username and password in proxy URLs.
 :::
 
 ### SOCKS5 Proxy
@@ -108,7 +108,7 @@ Default DoH providers (in priority order):
 | AliDNS | `223.5.5.5/resolve` | Optimized for China region |
 
 :::tip
-When DoH is enabled, DNS resolution results are cached for the `DoHCacheTTL` duration. If all DoH providers are unavailable, it falls back to system DNS.
+When DoH is enabled, DNS resolution results are cached for `DoHCacheTTL` duration. If all DoH providers are unavailable, it falls back to system DNS.
 :::
 
 ## HTTP/2
@@ -132,10 +132,10 @@ result, err := client.Get(url)
 if err != nil {
     return err
 }
-defer httpc.ReleaseResult(result) // Return to object pool
+// Result objects are automatically managed by the built-in object pool, GC handles cleanup
 ```
 
-In high-concurrency scenarios, `ReleaseResult` can significantly reduce GC pressure.
+In high-concurrency scenarios, object pool reuse significantly reduces GC pressure.
 
 ## Concurrent Request Pattern
 
@@ -165,18 +165,18 @@ func fetchAll(ctx context.Context, urls []string) ([]*httpc.Result, error) {
 }
 ```
 
-## Connection Pool Troubleshooting
+## Connection Pool Common Issues
 
 | Problem | Cause | Solution |
 |---------|-------|----------|
-| Excessive TIME_WAIT | Idle connection timeout too short | Increase `IdleConn` timeout |
+| Many TIME_WAIT | Idle connection timeout too short | Increase `IdleConn` timeout |
 | Connection refused | Insufficient connections per host | Increase `MaxConnsPerHost` |
 | Requests queuing | Connection pool too small | Increase `MaxIdleConns` |
 
-For a complete list of performance anti-patterns and optimization tips, see [Performance Optimization](./performance).
+For complete performance anti-patterns and optimization recommendations, see [Performance Optimization](./performance).
 
 ## Next Steps
 
 - [Performance Optimization](./performance) - Performance tuning guide
-- [Config API](../api-reference/config) - Connection configuration reference
+- [Configuration API](../api-reference/config) - Connection configuration reference
 - [Security Overview](../security/) - SSRF and TLS security

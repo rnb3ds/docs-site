@@ -1,6 +1,6 @@
 ---
 title: "Interface Definitions - HTTPC"
-description: "HTTPC core interfaces: Client, Doer, DomainClienter with session, RetryPolicy, and RequestMutator/ResponseMutator types."
+description: "HTTPC core interfaces API reference: Client full-featured interface with seven HTTP methods, Doer minimal execution interface, DomainClienter domain client, RetryPolicy retry strategy, RequestMutator/ResponseMutator middleware interfaces, and Handler/MiddlewareFunc definitions."
 ---
 
 # Interface Definitions
@@ -82,7 +82,7 @@ type DomainClienter interface {
 }
 ```
 
-Domain-scoped client that automatically manages cookies and request headers. See [Domain Client](./domain-client) and [Session Management](./session) for details.
+Domain-scoped client with automatic cookie and header management. See [Domain Client](./domain-client) and [Session Management](./session) for details.
 
 ## RetryPolicy
 
@@ -94,16 +94,16 @@ type RetryPolicy interface {
 }
 ```
 
-Custom retry policy interface.
+Custom retry strategy interface.
 
 | Method | Description |
 |--------|-------------|
-| `ShouldRetry(resp, err, attempt)` | Determine whether to retry; `attempt` starts from 0 |
+| `ShouldRetry(resp, err, attempt)` | Determines whether to retry; `attempt` starts from 0 |
 | `GetDelay(attempt)` | Returns the wait time before the next retry |
 | `MaxRetries()` | Returns the maximum retry count |
 
 :::warning Internal Type Limitation
-The `resp` parameter type `ResponseReader` in `ShouldRetry` is an internal interface (located in the `internal/types` package) and cannot be directly referenced from external code. Therefore, `RetryPolicy` can only be implemented within the same module. Most scenarios can be satisfied through `RetryConfig` configuration and the `WithMaxRetries` option. If you need a custom policy, implement the `RetryPolicy` interface in an internal package within your project.
+The `resp` parameter type `ResponseReader` in `ShouldRetry` is an internal interface (located in the `internal/types` package) that external code cannot reference directly. Therefore, `RetryPolicy` can only be implemented within the same module. Most scenarios can be satisfied through `RetryConfig` configuration and the `WithMaxRetries` option. If you need a custom policy, implement the `RetryPolicy` interface within your project's internal package.
 :::
 
 The following example demonstrates the `RetryPolicy` implementation pattern. Note that `ResponseReader` is an internal type -- this code can only compile within the `httpc` module:
@@ -173,7 +173,7 @@ type RequestMutator interface {
 }
 ```
 
-Used in middleware, providing read/write access to the request. Composed from internal interfaces `RequestReader` and `RequestWriter`.
+Used in middleware to provide read-write access to requests. Composed from internal interfaces `RequestReader` and `RequestWriter`.
 
 ### ResponseMutator
 
@@ -216,7 +216,7 @@ type ResponseMutator interface {
 }
 ```
 
-Used in middleware, providing read/write access to the response. Composed from internal interfaces `ResponseReader` and `ResponseWriter`.
+Used in middleware to provide read-write access to responses. Composed from internal interfaces `ResponseReader` and `ResponseWriter`.
 
 ### Handler
 

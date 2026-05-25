@@ -1,18 +1,18 @@
 ---
 title: "ミドルウェア - HTTPC"
-description: "HTTPCミドルウェアシステムAPIリファレンス：Chainオニオンモデル組み合わせ、Recovery/Logging/RequestID/Timeout/Header/Metrics/Auditの8つの組み込みミドルウェア、AuditMiddlewareWithConfig設定型監査とAuditEvent監査イベント構造体。"
+description: "HTTPC ミドルウェアシステム API リファレンス：Chain オニオンモデル組み合わせ、Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit 8 つの内蔵ミドルウェア、AuditMiddlewareWithConfig 設定型監査と AuditEvent 監査イベント構造体の詳細。"
 ---
 
 # ミドルウェア
 
-HTTPCはオニオンモデルのミドルウェアアーキテクチャを採用しており、`MiddlewareFunc`でリクエスト処理ロジックをラップします。
+HTTPC はオニオンモデルのミドルウェアアーキテクチャを採用し、`MiddlewareFunc` を通じてリクエスト処理ロジックをラップします。
 
 ```go
 type MiddlewareFunc func(Handler) Handler
 type Handler func(ctx context.Context, req RequestMutator) (ResponseMutator, error)
 ```
 
-ミドルウェアは`Config.Middleware.Middlewares`で設定し、順番に実行されます：
+ミドルウェアは `Config.Middleware.Middlewares` で設定し、順番に実行されます：
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -32,7 +32,7 @@ client, _ := httpc.New(&httpc.Config{
 func Chain(middlewares ...MiddlewareFunc) MiddlewareFunc
 ```
 
-複数のミドルウェアを1つのミドルウェアにまとめます。渡された順序で実行され、最後のミドルウェアが完了すると最終Handlerを呼び出します。
+複数のミドルウェアを単一のミドルウェアに組み合わせます。渡された順序で実行され、最後のミドルウェアの処理が終わると最終 Handler を呼び出します。
 
 ```go
 combined := httpc.Chain(
@@ -41,7 +41,7 @@ combined := httpc.Chain(
 )
 ```
 
-## 組み込みミドルウェア
+## 内蔵ミドルウェア
 
 ### RecoveryMiddleware
 
@@ -49,7 +49,7 @@ combined := httpc.Chain(
 func RecoveryMiddleware() MiddlewareFunc
 ```
 
-panicリカバリミドルウェア。処理チェーン内のpanicをキャッチし、スタック情報を含むerrorに変換して返します。
+panic リカバリミドルウェア。処理チェーン内の panic をキャッチし、スタック情報を含む error に変換して返します。
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -67,7 +67,7 @@ client, _ := httpc.New(&httpc.Config{
 func LoggingMiddleware(log func(format string, args ...any)) MiddlewareFunc
 ```
 
-リクエストログミドルウェア。メソッド、URL、ステータスコード、所要時間を記録します。URLは自動的にマスクされます（認証情報を削除）。
+リクエストログミドルウェア。メソッド、URL、ステータスコード、所要時間を記録します。URL は自動的にマスクされます（認証情報を削除）。
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -86,12 +86,12 @@ client, _ := httpc.New(&httpc.Config{
 func RequestIDMiddleware(headerName string, generator func() string) MiddlewareFunc
 ```
 
-各リクエストにユニークIDを追加します。デフォルトでは`crypto/rand`で32文字の16進IDを生成します。
+各リクエストにユニーク ID を追加します。デフォルトでは `crypto/rand` で 32 文字の 16 進数 ID を生成します。
 
 | パラメータ | 説明 |
-|------------|------|
+|-----------|------|
 | `headerName` | ヘッダー名（例：`"X-Request-ID"`） |
-| `generator` | カスタムID生成関数。`nil`でデフォルトの暗号セキュアジェネレーターを使用 |
+| `generator` | カスタム ID 生成関数。`nil` を渡すとデフォルトの暗号セキュアジェネレーターを使用 |
 
 ```go
 // デフォルトジェネレーターを使用
@@ -103,8 +103,8 @@ middleware := httpc.RequestIDMiddleware("X-Request-ID", func() string {
 })
 ```
 
-:::tip ヒント
-デフォルトジェネレーターは`crypto/rand`を使用しており、生成されるIDは予測不可能で、セキュリティが重要なシナリオに適しています。
+:::tip
+デフォルトジェネレーターは `crypto/rand` を使用しており、生成される ID は予測不可能なため、セキュリティが重要なシナリオに適しています。
 :::
 
 ### TimeoutMiddleware
@@ -113,7 +113,7 @@ middleware := httpc.RequestIDMiddleware("X-Request-ID", func() string {
 func TimeoutMiddleware(timeout time.Duration) MiddlewareFunc
 ```
 
-ミドルウェアレベルのタイムアウト制御。クライアント内蔵のタイムアウトより前に適用され、タイムアウト時にコンテキストをキャンセルしてエラーを返します。
+ミドルウェアレベルのタイムアウト制御。クライアントの内蔵タイムアウトより前に有効になります。タイムアウト時にコンテキストをキャンセルし、エラーを返します。
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -131,7 +131,7 @@ client, _ := httpc.New(&httpc.Config{
 func HeaderMiddleware(headers map[string]string) MiddlewareFunc
 ```
 
-各リクエストに静的ヘッダーを追加します。作成時にヘッダーの安全性が検証されます（CRLFインジェクション防止）。
+各リクエストに静的ヘッダーを追加します。作成時にヘッダーのセキュリティ検証（CRLF インジェクション対策）を行います。
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -172,7 +172,7 @@ client, _ := httpc.New(&httpc.Config{
 func AuditMiddleware(onAudit func(event AuditEvent)) MiddlewareFunc
 ```
 
-セキュリティ監査ミドルウェア。金融、医療、行政などのコンプライアンスシナリオに適しています。完全なリクエスト/レスポンス情報を記録し、URLは自動的にマスクされます。
+セキュリティ監査ミドルウェア。金融、医療、行政などのコンプライアンスシナリオに適しています。完全なリクエスト/レスポンス情報を記録し、URL は自動的にマスクされます。
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -194,7 +194,7 @@ client, _ := httpc.New(&httpc.Config{
 func AuditMiddlewareWithConfig(onAudit func(event AuditEvent), config *AuditMiddlewareConfig) MiddlewareFunc
 ```
 
-設定付きセキュリティ監査ミドルウェア。
+設定付きのセキュリティ監査ミドルウェア。
 
 ```go
 config := &httpc.AuditMiddlewareConfig{
@@ -224,7 +224,7 @@ client, _ := httpc.New(&httpc.Config{
 type AuditEvent struct {
     Timestamp     time.Time           `json:"timestamp"`
     Method        string              `json:"method"`
-    URL           string              `json:"url"`              // マスク済み（認証情報削除済み）
+    URL           string              `json:"url"`              // マスク済み（認証情報を削除）
     StatusCode    int                 `json:"statusCode"`
     Duration      time.Duration       `json:"duration"`
     Attempts      int                 `json:"attempts"`
@@ -245,12 +245,12 @@ type AuditEvent struct {
 func (e AuditEvent) MarshalJSON() ([]byte, error)
 ```
 
-カスタムJSONシリアライズ。2つの特別なフィールドを処理します：
+カスタム JSON シリアライズ。2 つの特別なフィールドを処理します：
 
 | フィールド | 変換ルール |
-|------------|------------|
-| `Duration` | `durationMs`（ミリ秒整数）を追加。元の`duration`フィールド（ナノ秒）は保持 |
-| `Error` | `error`（エラーメッセージ文字列）に変換。nilの場合は省略 |
+|-----------|-----------|
+| `Duration` | `durationMs`（ミリ秒整数）を追加、元の `duration` フィールド（ナノ秒）を保持 |
+| `Error` | `error`（エラーメッセージ文字列）に変換、nil の場合は省略 |
 
 ```go
 event := httpc.AuditEvent{
@@ -267,19 +267,19 @@ data, _ := json.Marshal(event)
 
 ```go
 type AuditMiddlewareConfig struct {
-    Format         string   // "text"（デフォルト）または"json"
-    IncludeHeaders bool     // リクエスト/レスポンスヘッダーを含めるか
+    Format         string   // "text"（デフォルト）または "json"
+    IncludeHeaders bool     // リクエスト/レスポンスヘッダーを含むかどうか
     MaskHeaders    []string // マスクが必要なヘッダー名
-    SanitizeError  bool     // エラー情報をマスクするか
+    SanitizeError  bool     // エラー情報をマスクするかどうか
 }
 ```
 
 | フィールド | デフォルト | 説明 |
-|------------|------------|------|
+|-----------|-----------|------|
 | Format | `"text"` | 出力形式 |
-| IncludeHeaders | `false` | ヘッダーを記録するか |
-| MaskHeaders | `["Authorization", "Cookie", ...]` | 標準機密ヘッダーリスト |
-| SanitizeError | `true` | エラー情報を`[sanitized]`に置換 |
+| IncludeHeaders | `false` | ヘッダーを記録するかどうか |
+| MaskHeaders | `["Authorization", "Cookie", ...]` | 標準的な機密ヘッダーリスト |
+| SanitizeError | `true` | エラー情報を `[sanitized]` に置換 |
 
 ### DefaultAuditMiddlewareConfig
 
@@ -287,17 +287,17 @@ type AuditMiddlewareConfig struct {
 func DefaultAuditMiddlewareConfig() *AuditMiddlewareConfig
 ```
 
-デフォルト監査設定を返します。
+デフォルトの監査設定を返します。
 
 ### 監査コンテキストキー
 
 リクエストコンテキストで監査情報を渡します：
 
 ```go
-// 送信元IPを設定
+// ソース IP を設定
 ctx = context.WithValue(ctx, httpc.SourceIPKey, "192.168.1.1")
 
-// ユーザーIDを設定
+// ユーザー ID を設定
 ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 
 result, err := client.Request(ctx, "GET", url)
@@ -305,11 +305,11 @@ result, err := client.Request(ctx, "GET", url)
 
 | 定数 | タイプ | 説明 |
 |------|--------|------|
-| `SourceIPKey` | `auditContextKey` | 送信元IPコンテキストキー |
-| `UserIDKey` | `auditContextKey` | ユーザー識別子コンテキストキー |
+| `SourceIPKey` | `auditContextKey` | ソース IP コンテキストキー |
+| `UserIDKey` | `auditContextKey` | ユーザー識別コンテキストキー |
 
 ## 関連項目
 
-- [インターフェース定義](./interfaces) - MiddlewareFunc、Handlerタイプ定義
+- [インターフェース定義](./interfaces) - MiddlewareFunc、Handler タイプ定義
 - [ミドルウェアチェーン](../guides/middleware-chain) - ミドルウェア使用ガイド
-- [定数とタイプ](./constants) - AuditEvent、AuditMiddlewareConfigタイプ
+- [定数とタイプ](./constants) - AuditEvent、AuditMiddlewareConfig タイプ

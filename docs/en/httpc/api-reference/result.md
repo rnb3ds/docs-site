@@ -1,11 +1,11 @@
 ---
 title: "Result - HTTPC"
-description: "HTTPC Result response type API reference covering body access, status checks, cookie operations, JSON parsing, and file saving methods."
+description: "HTTPC Result response type API reference: StatusCode/Body/RawBody basic methods, status checks, cookie operations, Unmarshal JSON parsing, SaveToFile file saving, automatic object pooling, and RequestInfo/ResponseInfo/RequestMeta sub-types."
 ---
 
 # Result
 
-Result wraps the HTTP response and request metadata, providing convenient access methods. Obtained via `Client.Request()` or package-level functions.
+Result wraps HTTP response and request metadata, providing convenient access methods. Obtained via `Client.Request()` or package-level functions.
 
 ```go
 type Result struct {
@@ -20,14 +20,13 @@ result, err := httpc.Get("https://api.example.com/users/1")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 fmt.Println(result.StatusCode()) // 200
 fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
-:::warning
-You must call `ReleaseResult(result)` after use to return it to the object pool. Do not access the Result after calling this.
+:::tip
+Result uses an internal object pool for performance optimization. GC handles cleanup automatically -- no manual release needed.
 :::
 
 ## Basic Methods
@@ -54,7 +53,7 @@ Returns the response body as a string. Nil-safe, returns empty string.
 func (r *Result) RawBody() []byte
 ```
 
-Returns the raw response body bytes. Nil-safe, returns nil.
+Returns the response body as raw bytes. Nil-safe, returns nil.
 
 ### Proto
 
@@ -126,7 +125,7 @@ Returns all cookies from the response.
 func (r *Result) GetCookie(name string) *http.Cookie
 ```
 
-Gets a response cookie by name; returns nil if not found.
+Gets a response cookie by name, returns nil if not found.
 
 ```go
 cookie := result.GetCookie("session")
@@ -198,7 +197,7 @@ fmt.Println(user.Name)
 func (r *Result) SaveToFile(filePath string) error
 ```
 
-Saves the response body to a file. The file path undergoes security validation (path traversal prevention, symlink checking, system path protection).
+Saves the response body to a file. File path is security-validated (path traversal protection, symlink checking, system path protection).
 
 | Error | Trigger Condition |
 |-------|-------------------|
@@ -206,7 +205,6 @@ Saves the response body to a file. The file path undergoes security validation (
 
 ```go
 result, _ := client.Get("https://example.com/data.csv")
-defer httpc.ReleaseResult(result)
 
 if err := result.SaveToFile("/tmp/data.csv"); err != nil {
     log.Fatal(err)
@@ -221,7 +219,7 @@ if err := result.SaveToFile("/tmp/data.csv"); err != nil {
 func (r *Result) String() string
 ```
 
-Returns a human-readable string representation. Sensitive headers are automatically sanitized and the response body is truncated to 200 characters.
+Returns a human-readable string representation. Sensitive headers are automatically masked, response body is truncated to 200 characters.
 
 ```go
 result, _ := client.Get(url)
@@ -242,7 +240,7 @@ type RequestInfo struct {
 }
 ```
 
-Request details. Accessed via `result.Request`.
+Request details. Access via `result.Request`.
 
 ### ResponseInfo
 
@@ -259,7 +257,7 @@ type ResponseInfo struct {
 }
 ```
 
-Response data. Accessed via `result.Response`.
+Response data. Access via `result.Response`.
 
 ### RequestMeta
 
@@ -272,7 +270,7 @@ type RequestMeta struct {
 }
 ```
 
-Request execution metadata. Accessed via `result.Meta`.
+Request execution metadata. Access via `result.Meta`.
 
 ```go
 result, _ := client.Get(url)
@@ -282,22 +280,8 @@ fmt.Println(result.Meta.Attempts)       // 2 (retried once)
 fmt.Println(result.Meta.RedirectCount)  // 1 (followed one redirect)
 ```
 
-## ReleaseResult
-
-```go
-func ReleaseResult(r *Result)
-```
-
-Returns the Result to the object pool. Response body data is securely cleared (entire backing array zeroed to prevent sensitive data leakage), all internal data is zeroed, and no fields or methods of the Result can be accessed after calling.
-
-```go
-result, _ := httpc.Get(url)
-defer httpc.ReleaseResult(result)
-// Use result...
-```
-
 ## See Also
 
 - [Package Functions](./functions) - Request methods that return Result
 - [Request Options](./options) - Configure request behavior
-- [File Download](./download) - DownloadResult type for downloads
+- [File Download](./download) - Download result type DownloadResult

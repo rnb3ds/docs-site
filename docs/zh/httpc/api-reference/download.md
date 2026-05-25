@@ -91,7 +91,7 @@ type DownloadProgressCallback func(downloaded, total int64, speed float64)
 ```go
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r%.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\r%.1f%% (%.1f bytes/s)", pct, speed)
 }
 ```
 
@@ -134,10 +134,10 @@ type DownloadResult struct {
 | `RequestHeaders` | `http.Header` | 请求头 |
 
 ```go
-fmt.Printf("下载完成: %s, 耗时 %v, 平均速度 %s\n",
-    httpc.FormatBytes(result.BytesWritten),
+fmt.Printf("下载完成: %d bytes, 耗时 %v, 平均速度 %.1f bytes/s\n",
+    result.BytesWritten,
     result.Duration,
-    httpc.FormatSpeed(result.AverageSpeed),
+    result.AverageSpeed,
 )
 ```
 

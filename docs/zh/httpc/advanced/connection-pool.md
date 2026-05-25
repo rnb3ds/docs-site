@@ -1,6 +1,6 @@
 ---
 title: "连接池与代理 - HTTPC"
-description: "HTTPC 连接池与代理配置指南：MaxIdleConns 等参数调优与场景推荐、ProxyURL 手动代理与系统代理检测、SOCKS5 代理、DoH 三提供商回退、HTTP/2 配置、ReleaseResult 对象池复用与并发请求模式。"
+description: "HTTPC 连接池与代理配置指南：MaxIdleConns 等参数调优与场景推荐、ProxyURL 手动代理与系统代理检测、SOCKS5 代理、DoH 三提供商回退、HTTP/2 配置、内置对象池自动管理与并发请求模式。"
 ---
 
 # 连接池与代理
@@ -132,10 +132,10 @@ result, err := client.Get(url)
 if err != nil {
     return err
 }
-defer httpc.ReleaseResult(result) // 归还到对象池
+// Result 对象由内置对象池自动管理，GC 自动回收
 ```
 
-高并发场景中，`ReleaseResult` 可显著减少 GC 压力。
+高并发场景中，对象池复用可显著减少 GC 压力。
 
 ## 并发请求模式
 

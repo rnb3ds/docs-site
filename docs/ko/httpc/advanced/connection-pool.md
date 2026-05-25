@@ -1,13 +1,13 @@
 ---
 title: "연결 풀과 프록시 - HTTPC"
-description: "HTTPC 연결 풀과 프록시 설정 가이드: MaxIdleConns 등 매개변수 튜닝과 시나리오별 추천, ProxyURL 수동 프록시와 시스템 프록시 감지, SOCKS5 프록시, DoH 세 제공자 대체, HTTP/2 설정, ReleaseResult 객체 풀 재사용과 동시성 요청 패턴."
+description: "HTTPC 연결 풀과 프록시 설정 가이드: MaxIdleConns 등 매개변수 튜닝과 시나리오별 추천, ProxyURL 수동 프록시와 시스템 프록시 감지, SOCKS5 프록시, DoH 세 제공자 폴백, HTTP/2 설정, 내장 객체 풀 자동 관리와 동시성 요청 패턴을 다룹니다."
 ---
 
 # 연결 풀과 프록시
 
 ## 연결 풀 설정
 
-연결 풀은 HTTP 클라이언트 성능의 핵심 요소입니다. HTTPC는 `ConnectionConfig`를 통해 연결 풀을 관리합니다.
+연결 풀은 HTTP 클라이언트 성능의 핵심 요소입니다. HTTPC은 `ConnectionConfig`로 연결 풀을 관리합니다.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -21,11 +21,11 @@ cfg.Timeouts.IdleConn = 120 * time.Second // 유휴 연결 유지 시간
 ### 매개변수 설명
 
 | 매개변수 | 기본값 | 설명 |
-|----------|--------|------|
+|-----------|--------|------|
 | `MaxIdleConns` | 50 | 전역 최대 유휴 연결 수 |
-| `MaxConnsPerHost` | 10 | 호스트당 최대 연결 수 (활성 + 유휴 포함) |
-| `IdleConn` | 90s | 유휴 연결 타임아웃, 초과 시 연결 종료 |
-| `Dial` | 10s | 연결 생성 타임아웃 |
+| `MaxConnsPerHost` | 10 | 호스트당 최대 연결 수 (활성+유휴 포함) |
+| `IdleConn` | 90s | 유휴 연결 타임아웃, 초과 시 연결 닫기 |
+| `Dial` | 10s | 연결 수립 타임아웃 |
 | `TLSHandshake` | 10s | TLS 핸드셰이크 타임아웃 |
 | `ResponseHeader` | 0 | 비활성화 (Request 타임아웃 사용) |
 
@@ -39,7 +39,7 @@ cfg.Timeouts.IdleConn = 120 * time.Second // 유휴 연결 유지 시간
 | 마이크로서비스 내부 | 50 | 10 | 60s |
 
 :::tip
-`MaxConnsPerHost`는 활성 연결과 유휴 연결을 모두 포함합니다. 이 제한을 초과하는 새 요청은 연결이 해제될 때까지 대기열에서 대기합니다.
+`MaxConnsPerHost`는 활성 연결과 유휴 연결을 모두 포함합니다. 이 제한을 초과하는 새 요청은 연결 해제를 대기합니다.
 :::
 
 ## 프록시 설정
@@ -85,13 +85,13 @@ cfg.Connection.EnableSystemProxy = true
 
 프록시 우선순위:
 
-1. `ProxyURL` (수동 지정, 최고 우선순위)
+1. `ProxyURL` (수동 지정, 최우선)
 2. `EnableSystemProxy` (시스템 프록시 감지)
 3. 직접 연결 (프록시 없음)
 
 ## DNS-over-HTTPS
 
-DoH를 활성화하면 DNS 리졸브 지연을 줄이고 DNS 하이재킹을 방지할 수 있습니다:
+DoH를 활성화하여 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지합니다:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -103,17 +103,17 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute
 
 | 제공자 | 주소 | 설명 |
 |--------|------|------|
-| Cloudflare | `1.1.1.1/dns-query` | 가장 빠름, 개인정보 보호 우선 |
-| Google | `8.8.8.8/resolve` | 전 세계적 범위 |
+| Cloudflare | `1.1.1.1/dns-query` | 가장 빠름, 프라이버시 우선 |
+| Google | `8.8.8.8/resolve` | 글로벌 커버리지 |
 | AliDNS | `223.5.5.5/resolve` | 중국 지역 최적화 |
 
 :::tip
-DoH가 활성화되면 DNS 리졸브 결과가 `DoHCacheTTL` 시간 동안 캐시됩니다. 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS로 대체됩니다.
+DoH 활성화 시 DNS 해석 결과가 `DoHCacheTTL` 시간 동안 캐시됩니다. 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS로 폴백합니다.
 :::
 
 ## HTTP/2
 
-기본적으로 HTTP/2가 활성화됩니다 (TLS 필요):
+기본적으로 HTTP/2가 활성화되어 있습니다 (TLS 필요):
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -122,7 +122,7 @@ cfg.Connection.EnableHTTP2 = false // HTTP/2 비활성화
 
 HTTP/2 특징:
 - 멀티플렉싱: 단일 연결로 여러 동시 요청 처리
-- 헤더 압축: 반복되는 헤더 전송 감소
+- 헤더 압축: 반복 헤더 전송 감소
 - 서버 푸시
 
 ## 객체 풀 재사용
@@ -132,10 +132,10 @@ result, err := client.Get(url)
 if err != nil {
     return err
 }
-defer httpc.ReleaseResult(result) // 객체 풀로 반환
+// Result 객체는 내장 객체 풀로 자동 관리되며, GC가 자동 회수
 ```
 
-고동시성 시나리오에서 `ReleaseResult`는 GC 부하를 크게 줄일 수 있습니다.
+고동시성 시나리오에서 객체 풀 재사용은 GC 부하를 크게 줄일 수 있습니다.
 
 ## 동시성 요청 패턴
 
@@ -171,12 +171,12 @@ func fetchAll(ctx context.Context, urls []string) ([]*httpc.Result, error) {
 |------|------|-----------|
 | 대량의 TIME_WAIT | 유휴 연결 타임아웃이 너무 짧음 | `IdleConn` 타임아웃 증가 |
 | 연결 거부 | 호스트당 연결 수 부족 | `MaxConnsPerHost` 증가 |
-| 요청 대기 발생 | 연결 풀이 너무 작음 | `MaxIdleConns` 증가 |
+| 요청 대기 | 연결 풀이 너무 작음 | `MaxIdleConns` 증가 |
 
-성능 안티패턴과 최적화 제안에 대한 자세한 내용은 [성능 최적화](./performance)를 참조하세요.
+성능 안티패턴과 최적화 제안의 전체 내용은 [성능 최적화](./performance)를 참조하세요.
 
 ## 다음 단계
 
 - [성능 최적화](./performance) - 성능 튜닝 가이드
 - [설정 API](../api-reference/config) - 연결 설정 참조
-- [보안 개요](../security/) - SSRF 및 TLS 보안
+- [보안 개요](../security/) - SSRF와 TLS 보안

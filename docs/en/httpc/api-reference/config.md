@@ -1,6 +1,6 @@
 ---
 title: "Configuration - HTTPC"
-description: "HTTPC configuration API reference covering the Config struct, five sub-config groups, five preset functions, and the Validate method."
+description: "HTTPC configuration system API reference: Config main struct and all fields for the five sub-config groups (Timeouts, Connection, Security, Retry, Middleware), five preset functions including DefaultConfig, ValidateConfig validation, and Cookie security configuration."
 ---
 
 # Configuration
@@ -17,7 +17,7 @@ type Config struct {
 }
 ```
 
-Main configuration struct. Obtain secure defaults through `DefaultConfig()`.
+Main configuration struct. Use `DefaultConfig()` to get secure defaults.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -33,8 +33,8 @@ type TimeoutConfig struct {
     Request        time.Duration // Total request timeout (including retries), default 180s
     Dial           time.Duration // TCP connection timeout, default 10s
     TLSHandshake   time.Duration // TLS handshake timeout, default 10s
-    ResponseHeader time.Duration // Wait for response header timeout, default 0 (disabled, uses context timeout)
-    IdleConn       time.Duration // Idle connection keep-alive duration, default 90s
+    ResponseHeader time.Duration // Wait for response header timeout, default 0 (disabled, relies on context timeout)
+    IdleConn       time.Duration // Idle connection keep-alive time, default 90s
 }
 ```
 
@@ -49,7 +49,7 @@ type TimeoutConfig struct {
 Setting to 0 means no timeout (not recommended for production).
 
 :::tip ResponseHeader Design
-`ResponseHeader` defaults to 0 (disabled). In this case, `Timeouts.Request` or `WithTimeout()` serves as the sole timeout mechanism, ensuring `WithTimeout()` has full control over request duration. This design is essential for AI APIs and long-polling endpoints. Only set to a positive value when you need a hard transport-level cap (e.g., defense-in-depth against Slowloris attacks), but be aware this will override `WithTimeout`.
+`ResponseHeader` defaults to 0 (disabled). In this case, `Timeouts.Request` or `WithTimeout()` serves as the sole timeout mechanism, ensuring `WithTimeout()` has full control over request duration. This design is suitable for AI APIs and long-polling scenarios that require extended response times. Only set a positive value when you need a transport-layer hard cap (e.g., to defend against Slowloris attacks), but note that this will override `WithTimeout`.
 :::
 
 ## ConnectionConfig
@@ -64,8 +64,7 @@ type ConnectionConfig struct {
     EnableCookies          bool          // Enable cookie management, default false
     EnableDoH              bool          // Enable DNS-over-HTTPS, default false
     DoHCacheTTL            time.Duration // DoH cache TTL, default 5min
-    BrowserFingerprint     string        // TLS fingerprint spoofing, default "" (uses standard Go TLS)
-    MaxResponseHeaderBytes int64         // Max response header bytes, default 0 (uses Go standard library default 10MB)
+    MaxResponseHeaderBytes int64         // Max response header bytes, default 0 (uses Go stdlib default 10MB)
 }
 ```
 
@@ -79,24 +78,7 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-Default DoH providers (in priority order): Cloudflare → Google → AliDNS. See [Connection Pool and Proxy](../advanced/connection-pool) for details.
-
-### TLS Fingerprint Spoofing
-
-Enable `BrowserFingerprint` to mimic real browser TLS ClientHello handshakes, bypassing TLS fingerprint-based anti-bot detection. When set, connections use utls instead of Go's standard `crypto/tls`:
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.BrowserFingerprint = "chrome" // Options: "chrome", "firefox", "safari", "ios"
-```
-
-| Value | Emulated Browser |
-|-------|-----------------|
-| `"chrome"` | Google Chrome |
-| `"firefox"` | Mozilla Firefox |
-| `"safari"` | Apple Safari |
-| `"ios"` | iOS Safari |
-| `""` (default) | Uses standard Go TLS |
+Default DoH providers (by priority): Cloudflare -> Google -> AliDNS. See [Connection Pool and Proxy](../advanced/connection-pool) for details.
 
 ## SecurityConfig
 
@@ -108,7 +90,7 @@ type SecurityConfig struct {
     InsecureSkipVerify      bool           // Skip certificate verification (testing only)
     MaxResponseBodySize     int64          // Response body size limit, default 10MB
     MaxRequestBodySize      int64          // Request body size limit, default 0 (uses MaxResponseBodySize value)
-    MaxDecompressedBodySize int64          // Decompressed size limit, default 100MB
+    MaxDecompressedBodySize int64          // Decompressed body size limit, default 100MB
     AllowPrivateIPs         bool           // Allow private IPs, default false
     SSRFExemptCIDRs         []string       // SSRF exempt CIDRs
     ValidateURL             bool           // URL validation, default true
@@ -137,7 +119,7 @@ cfg.Security.SSRFExemptCIDRs = []string{
 
 ```go
 type RetryConfig struct {
-    MaxRetries    int           // Maximum retry count, default 3
+    MaxRetries    int           // Max retry count, default 3
     Delay         time.Duration // Initial retry delay, default 1s
     BackoffFactor float64       // Backoff multiplier, default 2.0
     EnableJitter  bool          // Enable jitter, default true
@@ -163,7 +145,7 @@ type MiddlewareConfig struct {
     UserAgent       string           // User-Agent, default "httpc/1.0"
     Headers         map[string]string // Default request headers
     FollowRedirects bool             // Follow redirects, default true
-    MaxRedirects    int              // Maximum redirect count, default 10
+    MaxRedirects    int              // Max redirect count, default 10
 }
 ```
 
@@ -175,7 +157,7 @@ type MiddlewareConfig struct {
 func DefaultConfig() *Config
 ```
 
-Secure default configuration. SSRF protection is enabled by default.
+Secure default configuration. SSRF protection enabled by default.
 
 ### SecureConfig
 
@@ -183,10 +165,10 @@ Secure default configuration. SSRF protection is enabled by default.
 func SecureConfig() *Config
 ```
 
-Security-first configuration. Shorter timeouts, auto-redirects disabled, strict SSRF protection.
+Security-first configuration. Shorter timeouts, auto-redirect disabled, strict SSRF protection.
 
-| Configuration | Value |
-|---------------|-------|
+| Setting | Value |
+|---------|-------|
 | Request timeout | 15s |
 | Dial timeout | 5s |
 | TLSHandshake timeout | 5s |
@@ -206,14 +188,14 @@ Security-first configuration. Shorter timeouts, auto-redirects disabled, strict 
 func PerformanceConfig() *Config
 ```
 
-High throughput configuration. Larger connection pool, longer timeouts, maintains security validation.
+High throughput configuration. Larger connection pool, longer timeouts, security validation preserved.
 
 :::tip
-PerformanceConfig keeps `ValidateURL` and `ValidateHeaders` enabled for security. In trusted environments, you can manually disable them: `cfg.Security.ValidateURL = false`, but be aware of security risks (injection attacks, SSRF).
+PerformanceConfig keeps `ValidateURL` and `ValidateHeaders` enabled for security. For maximum performance in trusted environments, you can manually disable them: `cfg.Security.ValidateURL = false`, but be aware of security risks (injection attacks, SSRF).
 :::
 
-| Configuration | Value |
-|---------------|-------|
+| Setting | Value |
+|---------|-------|
 | Request timeout | 60s |
 | Dial timeout | 15s |
 | TLSHandshake timeout | 15s |
@@ -236,10 +218,10 @@ PerformanceConfig keeps `ValidateURL` and `ValidateHeaders` enabled for security
 func TestingConfig() *Config
 ```
 
-Test environment configuration. Disables security checks, short timeouts.
+Testing environment configuration. Security checks disabled, short timeouts.
 
-| Configuration | Value |
-|---------------|-------|
+| Setting | Value |
+|---------|-------|
 | Dial timeout | 5s |
 | TLSHandshake timeout | 5s |
 | ResponseHeader timeout | 0 (disabled, uses Request timeout) |
@@ -258,7 +240,7 @@ Test environment configuration. Disables security checks, short timeouts.
 | UserAgent | httpc-test/1.0 |
 
 :::danger
-This configuration disables TLS verification and SSRF protection. **Only use it for testing.** A security warning is printed when used in non-test environments.
+This configuration disables TLS verification and SSRF protection. **For testing only**. Using it outside test environments will print a security warning.
 :::
 
 ### MinimalConfig
@@ -267,10 +249,10 @@ This configuration disables TLS verification and SSRF protection. **Only use it 
 func MinimalConfig() *Config
 ```
 
-Lightweight configuration. Disables retries and redirects, minimal connection pool.
+Lightweight configuration. Retries and redirects disabled, minimal connection pool.
 
-| Configuration | Value |
-|---------------|-------|
+| Setting | Value |
+|---------|-------|
 | Dial timeout | 5s |
 | TLSHandshake timeout | 5s |
 | ResponseHeader timeout | 0 (disabled, uses Request timeout) |
@@ -309,7 +291,7 @@ if err := httpc.ValidateConfig(cfg); err != nil {
 func (c *Config) String() string
 ```
 
-Returns a safe string representation. ProxyURL credentials are sanitized, TLSConfig displays as `<configured>` or `<default>`, and Headers are not output.
+Returns a safe string representation. ProxyURL credentials are masked, TLSConfig displays as `<configured>` or `<default>`, Headers are not output.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -335,8 +317,8 @@ Cookie security attribute validation configuration.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `RequireSecure` | `bool` | Require cookies to have the Secure attribute |
-| `RequireHttpOnly` | `bool` | Require cookies to have the HttpOnly attribute |
+| `RequireSecure` | `bool` | Require Cookie to have Secure attribute |
+| `RequireHttpOnly` | `bool` | Require Cookie to have HttpOnly attribute |
 | `RequireSameSite` | `string` | Required SameSite value, e.g. `"Strict"`, `"Lax"`; empty string means no check |
 | `AllowSameSiteNone` | `bool` | Whether to allow SameSite=None |
 | `RequireSecureForSameSiteNone` | `bool` | Require Secure attribute when SameSite=None (default `true`) |

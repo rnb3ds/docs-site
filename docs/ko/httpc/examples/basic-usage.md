@@ -1,9 +1,9 @@
 ---
-title: "기본 사용법 - HTTPC"
-description: "HTTPC 기본 사용법 예제 모음: 쿼리 매개변수와 인증 포함 GET 요청, JSON/폼/파일 업로드 POST 요청, FormData 다중 필드 폼, DefaultConfig 사용자 정의 설정, ProxyURL 프록시, Recovery/Logging 미들웨어, RequestID/Metrics 메트릭 수집과 진행률 콜백 파일 다운로드 완전한 코드."
+title: "기본 예제 - HTTPC"
+description: "HTTPC 기본 예제 모음: 쿼리 매개변수와 인증이 포함된 GET 요청, JSON/폼/파일 업로드 POST 요청, FormData 다중 필드 폼, DefaultConfig 커스텀 설정, ProxyURL 프록시, Recovery/Logging 미들웨어, RequestID/Metrics 메트릭 수집과 진행률 콜백이 포함된 파일 다운로드 완전한 코드를 제공합니다."
 ---
 
-# 기본 사용법
+# 기본 예제
 
 ## GET 요청
 
@@ -24,7 +24,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())
@@ -68,7 +67,6 @@ result, err := httpc.Post("https://httpbin.org/post",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // JSON 응답 파싱
 var response map[string]any
@@ -122,7 +120,7 @@ result, err := httpc.Post("https://api.example.com/upload",
 
 ## 클라이언트 생성
 
-### 사용자 정의 구성
+### 커스텀 설정
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -139,7 +137,7 @@ if err != nil {
 defer client.Close()
 ```
 
-### 프록시 구성
+### 프록시 설정
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -188,7 +186,7 @@ cfg.FilePath = "/tmp/file.zip"
 cfg.Overwrite = true
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r다운로드 중: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\r다운로드 중: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.DownloadWithOptions("https://example.com/file.zip", cfg)
@@ -196,10 +194,10 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\n다운로드 완료: %s, 소요 시간 %v, 평균 속도 %s\n",
-    httpc.FormatBytes(result.BytesWritten),
+fmt.Printf("\n다운로드 완료: %d bytes, 소요 시간 %v, 평균 속도 %.2f MB/s\n",
+    result.BytesWritten,
     result.Duration,
-    httpc.FormatSpeed(result.AverageSpeed),
+    float64(result.AverageSpeed)/1024/1024,
 )
 ```
 
@@ -216,7 +214,7 @@ defer dc.Close()
 dc.SetHeader("Authorization", "Bearer "+token)
 dc.SetHeader("Accept", "application/json")
 
-// 요청은 자동으로 세션 헤더와 Cookie를 포함
+// 요청에 세션 헤더와 Cookie 자동 포함
 users, _ := dc.Get("/users")
 user, _ := dc.Get("/users/1")
 
@@ -225,6 +223,6 @@ fmt.Println(users.StatusCode()) // 200
 
 ## 다음 단계
 
-- [고급 예제](./advanced-usage) - 사용자 정의 재시도, 미들웨어 체인, 동시성 다운로드
-- [요청과 응답](../guides/request-response) - 요청 옵션 상세 설명
+- [고급 예제](./advanced-usage) - 커스텀 재시도, 미들웨어 체인, 동시 다운로드
+- [요청과 응답](../guides/request-response) - 요청 옵션 상세
 - [도메인 클라이언트와 세션](../guides/domain-session) - 세션 관리

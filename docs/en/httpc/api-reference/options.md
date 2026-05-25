@@ -1,6 +1,6 @@
 ---
 title: "Request Options - HTTPC"
-description: "HTTPC 27 request options: headers, auth, body formats (JSON/XML/form/binary/multipart), query params, cookies, timeout/retry/redirect, and callbacks."
+description: "HTTPC request options API reference: WithHeader request headers, WithBearerToken authentication, WithJSON/WithXML/WithForm/WithBinary request body, WithQuery query parameters, five cookie options, and WithOnRequest/WithOnResponse callback functions."
 ---
 
 # Request Options
@@ -15,7 +15,7 @@ result, err := client.Post(url,
 )
 ```
 
-All options can be freely combined and are applied in the order passed.
+All options can be freely combined and are applied in the order they are passed.
 
 ## Headers
 
@@ -25,7 +25,7 @@ All options can be freely combined and are applied in the order passed.
 func WithHeader(key, value string) RequestOption
 ```
 
-Sets a single request header. Key and value are security-validated (CRLF injection prevention).
+Sets a single request header. Keys and values are security-validated (CRLF injection protection).
 
 ```go
 result, err := client.Get(url,
@@ -56,7 +56,7 @@ result, err := client.Get(url,
 func WithUserAgent(userAgent string) RequestOption
 ```
 
-Sets the User-Agent header. Convenience wrapper for `WithHeader("User-Agent", ...)`.
+Sets the User-Agent header. This is a convenience wrapper for `WithHeader("User-Agent", ...)`.
 
 ## Authentication
 
@@ -66,7 +66,7 @@ Sets the User-Agent header. Convenience wrapper for `WithHeader("User-Agent", ..
 func WithBasicAuth(username, password string) RequestOption
 ```
 
-Sets HTTP Basic authentication. Username cannot be empty; credentials have length limits.
+Sets HTTP Basic authentication. Username cannot be empty, credentials length is limited.
 
 ```go
 result, err := client.Get(url,
@@ -157,7 +157,7 @@ result, err := client.Post(url,
 func WithFile(fieldName, filename string, content []byte) RequestOption
 ```
 
-Convenience file upload. Automatically constructs a multipart request body; filename is processed for path traversal protection.
+Convenient file upload. Automatically builds a multipart request body. Filename is processed for path traversal protection.
 
 ```go
 result, err := client.Post(url,
@@ -171,7 +171,7 @@ result, err := client.Post(url,
 func WithBinary(data []byte, contentType ...string) RequestOption
 ```
 
-Sets a binary request body. Default Content-Type is `application/octet-stream`; can be customized.
+Sets a binary request body. Default Content-Type is `application/octet-stream`, customizable.
 
 ```go
 result, err := client.Post(url,
@@ -198,7 +198,7 @@ Generic request body setting, supporting auto-detection and explicit type specif
 | `io.Reader` | Not set (handled by caller) |
 | Other types | application/json |
 
-**Explicit type specification:**
+**Explicit type specification**:
 
 ```go
 // Auto-detect (default)
@@ -263,7 +263,7 @@ result, err := client.Get(url,
 func WithCookie(cookie http.Cookie) RequestOption
 ```
 
-Adds a single cookie, security-validated.
+Adds a single cookie, with security validation.
 
 ```go
 result, err := client.Get(url,
@@ -296,7 +296,7 @@ result, err := client.Get("https://api.example.com",
 func WithCookieMap(cookies map[string]string) RequestOption
 ```
 
-Adds simple cookies in bulk. Suitable for name-value-only scenarios.
+Adds simple cookies in bulk. Suitable for scenarios requiring only name-value pairs.
 
 ```go
 result, err := client.Get(url,
@@ -327,7 +327,7 @@ result, err := client.Get(url,
 func WithSecureCookie(securityConfig *CookieSecurityConfig) RequestOption
 ```
 
-Forces validation of request cookie security attributes (Secure, HttpOnly, SameSite).
+Enforces validation of request cookie security attributes (Secure, HttpOnly, SameSite).
 
 ```go
 result, err := client.Get(url,
@@ -358,7 +358,7 @@ result, err := client.Get(url, httpc.WithContext(ctx))
 func WithTimeout(timeout time.Duration) RequestOption
 ```
 
-Sets per-request timeout, overriding the client default. Range: 0 to 30 minutes.
+Sets a per-request timeout, overriding the client default. Range: 0 to 30 minutes.
 
 ```go
 result, err := client.Get(url, httpc.WithTimeout(5*time.Second))
@@ -370,7 +370,7 @@ result, err := client.Get(url, httpc.WithTimeout(5*time.Second))
 func WithMaxRetries(maxRetries int) RequestOption
 ```
 
-Sets per-request maximum retry count, overriding client configuration. Range: 0-10.
+Sets the per-request maximum retry count, overriding the client configuration. Range: 0-10.
 
 ```go
 result, err := client.Get(url, httpc.WithMaxRetries(3))
@@ -385,7 +385,7 @@ func WithFollowRedirects(follow bool) RequestOption
 Controls whether to follow redirects.
 
 ```go
-// Disable redirect following
+// Disable following redirects
 result, err := client.Get(url, httpc.WithFollowRedirects(false))
 ```
 
@@ -395,7 +395,7 @@ result, err := client.Get(url, httpc.WithFollowRedirects(false))
 func WithMaxRedirects(maxRedirects int) RequestOption
 ```
 
-Sets per-request maximum redirect count. Range: 0-50.
+Sets the per-request maximum redirect count. Range: 0-50.
 
 ### WithStreamBody
 
@@ -403,7 +403,7 @@ Sets per-request maximum redirect count. Range: 0-50.
 func WithStreamBody(stream bool) RequestOption
 ```
 
-Enables streaming mode; response body is not cached in memory. Used internally for file downloads to avoid large files consuming memory.
+Enables streaming mode where the response body is not cached in memory. Used internally for file downloads to avoid memory consumption with large files.
 
 ```go
 result, err := client.Get(url, httpc.WithStreamBody(true))
@@ -417,7 +417,7 @@ result, err := client.Get(url, httpc.WithStreamBody(true))
 func WithOnRequest(callback func(req RequestMutator) error) RequestOption
 ```
 
-Registers a pre-send callback. Multiple can be chained and execute in the order added. Returning an error aborts the request.
+Registers a pre-send callback. Multiple callbacks can be chained and execute in the order added. Returning an error aborts the request.
 
 ```go
 result, err := client.Get(url,
@@ -434,7 +434,7 @@ result, err := client.Get(url,
 func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
 ```
 
-Registers a post-response callback. Multiple can be chained and execute in the order added.
+Registers a post-receive callback. Multiple callbacks can be chained and execute in the order added.
 
 ```go
 result, err := client.Get(url,

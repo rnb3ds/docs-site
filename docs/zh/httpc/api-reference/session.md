@@ -1,6 +1,6 @@
 ---
 title: "会话管理 - HTTPC"
-description: "HTTPC SessionManager 会话管理 API 参考：NewSessionManager 创建、SessionConfig 配置、SetHeader/SetHeaders 会话头 CRUD、SetCookie/SetCookies Cookie 方法、SetCookieSecurity 安全验证与 UpdateFromResult 响应同步。"
+description: "HTTPC SessionManager API 参考：NewSessionManager 创建、SessionConfig 配置、SetHeader/SetHeaders 头管理、SetCookie/SetCookies 方法、SetCookieSecurity 验证与 UpdateFromResult 响应同步。"
 ---
 
 # 会话管理

@@ -1,6 +1,6 @@
 ---
 title: "인터페이스 정의 - HTTPC"
-description: "HTTPC 핵심 인터페이스 API 레퍼런스: Client 전체 기능 인터페이스(7가지 HTTP 메서드와 4가지 다운로드), Doer 최소 실행 인터페이스, DomainClienter 도메인 클라이언트(세션 관리 포함), RetryPolicy 재시도 전략, RequestMutator/ResponseMutator 미들웨어 인터페이스와 Handler/MiddlewareFunc 정의."
+description: "HTTPC 핵심 인터페이스 API 레퍼런스: Client 전체 기능 인터페이스에 일곱 가지 HTTP 메서드 포함, Doer 최소 실행 인터페이스, DomainClienter 도메인 클라이언트, RetryPolicy 재시도 전략, RequestMutator/ResponseMutator 미들웨어 인터페이스와 Handler/MiddlewareFunc 정의를 다룹니다."
 ---
 
 # 인터페이스 정의
@@ -31,7 +31,7 @@ type Client interface {
 }
 ```
 
-기본 클라이언트 인터페이스로, `New()`로 생성합니다. 자세한 내용은 [패키지 함수](./functions)를 참조하세요.
+메인 클라이언트 인터페이스로, `New()`로 생성합니다. 자세한 내용은 [패키지 함수](./functions)를 참조하세요.
 
 ## Doer
 
@@ -41,13 +41,13 @@ type Doer interface {
 }
 ```
 
-최소 인터페이스로, 핵심 `Request` 메서드만 포함합니다. 사용자 정의 구현에 적합합니다.
+최소 인터페이스로, 핵심 `Request` 메서드만 포함합니다. 커스텀 구현에 적합합니다.
 
 ```go
 type MyDoer struct{}
 
 func (d *MyDoer) Request(ctx context.Context, method, url string, options ...httpc.RequestOption) (*httpc.Result, error) {
-    // 사용자 정의 구현
+    // 커스텀 구현
     return nil, nil
 }
 ```
@@ -94,24 +94,24 @@ type RetryPolicy interface {
 }
 ```
 
-사용자 정의 재시도 전략 인터페이스.
+커스텀 재시도 전략 인터페이스입니다.
 
 | 메서드 | 설명 |
-|------|------|
+|--------|------|
 | `ShouldRetry(resp, err, attempt)` | 재시도 여부 판단, `attempt`는 0부터 시작 |
 | `GetDelay(attempt)` | 다음 재시도 전 대기 시간 반환 |
 | `MaxRetries()` | 최대 재시도 횟수 반환 |
 
 :::warning 내부 타입 제한
-`ShouldRetry`의 `resp` 매개변수 타입 `ResponseReader`는 내부 인터페이스(`internal/types` 패키지에 위치)이므로 외부 코드에서 직접 참조할 수 없습니다. 따라서 `RetryPolicy`는 같은 모듈 내에서만 구현할 수 있습니다. 대부분의 시나리오는 `RetryConfig` 구성과 `WithMaxRetries` 옵션으로 재시도 요구를 충족할 수 있습니다. 사용자 정의 전략이 필요한 경우 프로젝트 내부 패키지에서 `RetryPolicy` 인터페이스를 구현하세요.
+`ShouldRetry`의 `resp` 매개변수 타입 `ResponseReader`는 내부 인터페이스(`internal/types` 패키지에 위치)이므로 외부 코드에서 직접 참조할 수 없습니다. 따라서 `RetryPolicy`는 같은 모듈 내에서만 구현할 수 있습니다. 대부분의 시나리오는 `RetryConfig` 설정과 `WithMaxRetries` 옵션으로 재시도 요구사항을 충족할 수 있습니다. 커스텀 전략이 필요한 경우 프로젝트 내부 패키지에서 `RetryPolicy` 인터페이스를 구현하세요.
 :::
 
-아래 예제는 `RetryPolicy`의 구현 패턴을 보여줍니다. `ResponseReader`는 내부 타입임에 유의하세요 -- 이 코드는 `httpc` 모듈 내부에서만 컴파일할 수 있습니다:
+다음 예제는 `RetryPolicy`의 구현 패턴을 보여줍니다. `ResponseReader`는 내부 타입이므로 이 코드는 `httpc` 모듈 내부에서만 컴파일됩니다:
 
 ```go
-// 참고: ResponseReader는 내부 타입(internal/types 패키지)입니다.
+// 주의: ResponseReader는 내부 타입(internal/types 패키지)입니다.
 // 이 코드는 httpc 모듈 외부에서 컴파일할 수 없습니다.
-// 대부분의 사용자는 RetryConfig와 WithMaxRetries로 재시도를 구성해야 합니다.
+// 대부분의 사용자는 RetryConfig와 WithMaxRetries로 재시도를 설정해야 합니다.
 
 type MyRetryPolicy struct {
     maxRetries int
@@ -224,7 +224,7 @@ type ResponseMutator interface {
 type Handler func(ctx context.Context, req RequestMutator) (ResponseMutator, error)
 ```
 
-요청 처리 함수 서명.
+요청 처리 함수 서명입니다.
 
 ### MiddlewareFunc
 

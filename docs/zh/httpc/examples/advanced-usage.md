@@ -77,7 +77,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode())
 }
@@ -143,7 +142,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     log.Printf("总请求数: %d", atomic.LoadInt64(&requestCount))
 }
@@ -194,7 +192,6 @@ func (c *APIClient) GetUser(ctx context.Context, id int) (*User, error) {
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     if !result.IsSuccess() {
         return nil, fmt.Errorf("API error: %d", result.StatusCode())
@@ -214,7 +211,6 @@ func (c *APIClient) CreateUser(ctx context.Context, name string) (*User, error) 
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     var user User
     if err := result.Unmarshal(&user); err != nil {
@@ -292,7 +288,7 @@ func main() {
             cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
                 fmt.Printf("\r%s: %.1f%% (%s/s)", name,
                     float64(downloaded)/float64(total)*100,
-                    httpc.FormatSpeed(speed))
+                    float64(speed)/1024/1024)
             }
 
             result, err := client.DownloadWithOptions(u, cfg)
@@ -303,13 +299,13 @@ func main() {
 
             atomic.AddInt64(&successCount, 1)
             atomic.AddInt64(&totalBytes, result.BytesWritten)
-            fmt.Printf("\n%s 完成: %s\n", name, httpc.FormatBytes(result.BytesWritten))
+            fmt.Printf("\n%s 完成: %s\n", name, result.BytesWritten)
         }(filename, url)
     }
 
     wg.Wait()
     fmt.Printf("\n下载完成: %d/%d, 总计 %s\n",
-        successCount, len(urls), httpc.FormatBytes(totalBytes))
+        successCount, len(urls), totalBytes)
 }
 ```
 
@@ -362,8 +358,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
-
     log.Println(result.StatusCode())
 }
 ```

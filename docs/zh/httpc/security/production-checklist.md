@@ -40,7 +40,6 @@ description: "HTTPC 生产环境安全检查清单：TLS 核查、SSRF AllowPriv
 ### 资源管理
 
 - [ ] 客户端使用后调用 `Close()`
-- [ ] Result 使用后调用 `ReleaseResult()`
 - [ ] 使用 `defer` 确保资源释放
 
 ## 推荐项

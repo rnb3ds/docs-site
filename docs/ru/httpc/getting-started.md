@@ -1,6 +1,6 @@
 ---
-title: "Быстрый старт — HTTPC"
-description: "Пять минут для начала работы с безопасной библиотекой HTTP-клиента HTTPC: установка через go get, запросы GET/POST, пять предустановок конфигурации, парсинг JSON, аутентификация Bearer Token и обработка ошибок ClientError."
+title: "Быстрый старт - HTTPC"
+description: "Пятиминутный быстрый старт с библиотекой безопасного HTTP-клиента HTTPC: установка через go get и инициализация проекта, отправка GET/POST запросов и обработка ответов, выбор из пяти предустановок конфигурации, парсинг JSON и привязка типов, аутентификация Bearer Token и обработка ошибок ClientError."
 ---
 
 # Быстрый старт
@@ -13,7 +13,7 @@ go get github.com/cybergodev/httpc
 
 ## Базовые запросы
 
-Нет необходимости создавать клиент — используйте функции уровня пакета:
+Нет необходимости создавать клиент — используйте функции пакета напрямую:
 
 ```go
 package main
@@ -30,7 +30,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())       // содержимое ответа
@@ -56,12 +55,12 @@ result, err := client.Get("https://httpbin.org/get")
 ### Предустановки конфигурации
 
 | Конфигурация | Назначение | Особенности |
-|---------------|------------|-------------|
+|---------------|-----------|-------------|
 | `DefaultConfig()` | Общие сценарии | Безопасные значения по умолчанию, защита SSRF включена |
-| `SecureConfig()` | Чувствительные к безопасности сценарии | Отключены автоматические редиректы, строгие таймауты |
+| `SecureConfig()` | Чувствительные к безопасности | Отключены авто-перенаправления, строгие таймауты |
 | `PerformanceConfig()` | Высокая пропускная способность | Большой пул соединений, длинные таймауты, Cookie включены |
 | `TestingConfig()` | Тестовая среда | Отключены проверки безопасности и HTTP/2, короткие таймауты |
-| `MinimalConfig()` | Лёгкие запросы | Без повторных попыток, без редиректов |
+| `MinimalConfig()` | Лёгкие запросы | Без повторных попыток, без перенаправлений |
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -77,7 +76,6 @@ result, err := client.Get("https://httpbin.org/json")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // Проверка статуса
 result.StatusCode()     // 200
@@ -124,31 +122,30 @@ result, err := client.Get("https://api.example.com/data")
 if err != nil {
     var clientErr *httpc.ClientError
     if errors.As(err, &clientErr) {
-        log.Printf("код ошибки: %s", clientErr.Code())
+        log.Printf("Код ошибки: %s", clientErr.Code())
     }
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // HTTP-коды состояния проверяются вручную
 switch {
 case result.IsSuccess():
-    // 2xx — успех
+    // 2xx успешно
 case result.IsClientError():
-    log.Printf("ошибка клиента: %d", result.StatusCode())
+    log.Printf("Ошибка клиента: %d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("ошибка сервера: %d", result.StatusCode())
+    log.Printf("Ошибка сервера: %d", result.StatusCode())
 }
 ```
 
-:::tip Совет
-Коды 4xx/5xx не возвращаются как `error`, проверяйте их через `result.IsSuccess()` и подобные методы. Подробнее в [Обработке ошибок](./advanced/error-handling).
+:::tip
+4xx/5xx не возвращаются как `error`, проверяйте их через `result.IsSuccess()` и другие методы. Подробнее см. [Обработка ошибок](./advanced/error-handling).
 :::
 
 ## Что дальше
 
-- **[Практическое руководство](./guides/tutorial)** — создание клиента GitHub API за 30 минут
-- **[Запросы и ответы](./guides/request-response)** — полные опции запросов и обработка ответов
-- **[Базовые примеры](./examples/basic-usage)** — практические примеры GET/POST/промежуточного ПО
-- **[Шпаргалка](./cheatsheet)** — быстрый справочник по частым операциям
-- **[Безопасность](./security/)** — лучшие практики безопасности
+- **[Практическое руководство](./guides/tutorial)** - создание клиента GitHub API за 30 минут
+- **[Запросы и ответы](./guides/request-response)** - полные параметры запросов и обработка ответов
+- **[Базовые примеры](./examples/basic-usage)** - практические примеры GET/POST/промежуточного ПО
+- **[Шпаргалка](./cheatsheet)** - быстрый справочник типичных операций
+- **[Безопасность](./security/)** - лучшие практики безопасности

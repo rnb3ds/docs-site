@@ -1,11 +1,11 @@
 ---
 title: "파일 다운로드 - HTTPC"
-description: "HTTPC 파일 다운로드 API 레퍼런스: DownloadFile 등 4개의 패키지 레벨 다운로드 함수 시그니처, DownloadConfig 구성 구조체, DownloadProgressCallback 진행률 콜백, DownloadResult 결과 타입, SHA-256 체크섬 검증과 UNC 경로 방어 등 6계층 보안 보호."
+description: "HTTPC 파일 다운로드 API 레퍼런스: DownloadFile 등 네 개 패키지 다운로드 함수 서명, DownloadConfig 설정 구조체, DownloadProgressCallback 진행률 콜백, DownloadResult 결과 타입, SHA-256 체크섬 검증과 UNC 경로 방어 등 6계층 보안을 다룹니다."
 ---
 
 # 파일 다운로드
 
-## 패키지 레벨 다운로드 함수
+## 패키지 다운로드 함수
 
 ### DownloadFile
 
@@ -25,7 +25,7 @@ result, err := httpc.DownloadFile("https://example.com/file.zip", "/tmp/file.zip
 func DownloadWithOptions(url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 ```
 
-구성이 포함된 다운로드로, 이어받기와 진행률 콜백을 지원합니다.
+설정이 포함된 다운로드로, 이어받기와 진행률 콜백을 지원합니다.
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -50,7 +50,7 @@ func DownloadFileWithContext(ctx context.Context, url string, filePath string, o
 func DownloadWithOptionsWithContext(ctx context.Context, url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 ```
 
-구성과 컨텍스트 제어가 포함된 파일 다운로드입니다.
+설정과 컨텍스트 제어가 포함된 파일 다운로드입니다.
 
 ## DownloadConfig
 
@@ -83,15 +83,15 @@ type DownloadProgressCallback func(downloaded, total int64, speed float64)
 ```
 
 | 매개변수 | 타입 | 설명 |
-|----------|------|------|
+|-----------|------|------|
 | `downloaded` | `int64` | 다운로드된 바이트 수 |
-| `total` | `int64` | 전체 바이트 수 (-1은 알 수 없음을 의미) |
+| `total` | `int64` | 전체 바이트 수 (-1은 알 수 없음) |
 | `speed` | `float64` | 현재 속도 (바이트/초) |
 
 ```go
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r%.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\r%.1f%% (%.1f bytes/s)", pct, speed)
 }
 ```
 
@@ -119,12 +119,12 @@ type DownloadResult struct {
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `FilePath` | `string` | 파일 저장 경로 |
-| `BytesWritten` | `int64` | 기록된 바이트 수 |
+| `BytesWritten` | `int64` | 쓰기 바이트 수 |
 | `Duration` | `time.Duration` | 다운로드 소요 시간 |
 | `AverageSpeed` | `float64` | 평균 속도 (바이트/초) |
 | `StatusCode` | `int` | HTTP 상태 코드 |
 | `ContentLength` | `int64` | Content-Length 헤더 값 |
-| `Resumed` | `bool` | 이어받기로 완료되었는지 여부 |
+| `Resumed` | `bool` | 이어받기 완료 여부 |
 | `ResponseCookies` | `[]*http.Cookie` | 응답 Cookie |
 | `ActualChecksum` | `string` | 실제 계산된 체크섬 |
 | `Proto` | `string` | HTTP 프로토콜 버전 (예: `"HTTP/1.1"`, `"HTTP/2.0"`) |
@@ -134,10 +134,10 @@ type DownloadResult struct {
 | `RequestHeaders` | `http.Header` | 요청 헤더 |
 
 ```go
-fmt.Printf("다운로드 완료: %s, 소요 시간 %v, 평균 속도 %s\n",
-    httpc.FormatBytes(result.BytesWritten),
+fmt.Printf("다운로드 완료: %d bytes, 소요 시간 %v, 평균 속도 %.1f bytes/s\n",
+    result.BytesWritten,
     result.Duration,
-    httpc.FormatSpeed(result.AverageSpeed),
+    result.AverageSpeed,
 )
 ```
 
@@ -149,13 +149,13 @@ fmt.Printf("다운로드 완료: %s, 소요 시간 %v, 평균 속도 %s\n",
 type ChecksumAlgorithm string
 ```
 
-다운로드 파일 무결성 검증 알고리즘입니다.
+다운로드 파일 무결성 검증 알고리즘.
 
 | 상수 | 값 | 설명 |
 |------|-----|------|
 | `ChecksumSHA256` | `"sha256"` | SHA-256 해시 알고리즘 |
 
-### 사용 예시
+### 사용 예제
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -165,19 +165,19 @@ cfg.ChecksumAlgorithm = httpc.ChecksumSHA256
 
 result, err := httpc.DownloadWithOptions(url, cfg)
 if err != nil {
-    // 체크섬 불일치 시 자동으로 오류를 반환하고 다운로드된 파일을 삭제합니다
+    // 체크섬 불일치 시 자동으로 오류 반환 및 다운로드된 파일 삭제
     log.Fatal(err)
 }
 fmt.Println("체크섬:", result.ActualChecksum)
 ```
 
 :::tip
-`Checksum`을 설정하면 다운로드 완료 시 자동으로 파일 무결성을 검증합니다. 검증 실패 시 파일이 자동으로 삭제되고 오류가 반환되므로 수동 비교가 필요하지 않습니다.
+`Checksum`을 설정하면 다운로드 완료 시 파일 무결성이 자동 검증됩니다. 검증 실패 시 파일이 자동 삭제되고 오류가 반환되므로 수동 비교가 필요 없습니다.
 :::
 
 ## 보안 보호
 
-파일 다운로드에는 다중 계층의 보안 보호가 내장되어 있습니다:
+파일 다운로드에 내장된 다층 보안 보호:
 
 | 보호 | 설명 |
 |------|------|
@@ -186,7 +186,7 @@ fmt.Println("체크섬:", result.ActualChecksum)
 | 시스템 경로 보호 | 시스템 디렉토리 쓰기 금지 |
 | 경로 순회 감지 | `../` 경로 순회 감지 |
 | 심볼릭 링크 감지 | 심볼릭 링크 공격 방지 |
-| 상위 디렉토리 감지 | 상위 디렉토리 심볼릭 링크 재귀 검사 |
+| 상위 디렉토리 검사 | 상위 디렉토리 심볼릭 링크 재귀 검사 |
 
 ## 이어받기
 
@@ -202,12 +202,12 @@ if result.Resumed {
 ```
 
 이어받기 메커니즘:
-1. 로컬 파일 크기 확인 -> `Range` 요청 오프셋으로 사용
-2. 서버가 206 (Partial Content) 반환 -> 이어서 기록
-3. 서버가 416 (Range Not Satisfiable) 반환 -> 오류 반환
-4. 서버가 200 반환 (Range 미지원) -> 오류 반환 (로컬 부분 파일 덮어쓰기 방지)
+1. 로컬 파일 크기 확인 → `Range` 요청 오프셋으로 사용
+2. 서버가 206 (Partial Content) 반환 → 이어쓰기
+3. 서버가 416 (Range Not Satisfiable) 반환 → 오류 반환
+4. 서버가 200 반환 (Range 미지원) → 오류 반환 (로컬 부분 파일 덮어쓰기 방지)
 
-## 참고
+## 관련 항목
 
 - [파일 업로드와 다운로드](../guides/file-transfer) - 사용 가이드
 - [패키지 함수](./functions) - 보조 함수 참조

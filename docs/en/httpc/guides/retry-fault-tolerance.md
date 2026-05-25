@@ -1,6 +1,6 @@
 ---
 title: "Retry and Fault Tolerance - HTTPC"
-description: "HTTPC retry and fault tolerance: exponential backoff, retry conditions, custom RetryPolicy, Retry-After parsing, and per-request control."
+description: "HTTPC retry and fault tolerance guide: default exponential backoff retry strategy with RetryConfig, 408/429/5xx automatic retry conditions, RetryPolicy custom interface (with internal type limitation notes), Retry-After response header automatic parsing, backoff strategy selection, per-request WithMaxRetries control, and best practices."
 ---
 
 # Retry and Fault Tolerance
@@ -17,11 +17,11 @@ cfg.Retry.EnableJitter = true      // Enable jitter
 client, _ := httpc.New(cfg)
 ```
 
-Default retry delay sequence: `1s → 2s → 4s` (with random jitter)
+Default retry delay sequence: `1s -> 2s -> 4s` (with random jitter)
 
 ### Retry Conditions
 
-By default, the following errors trigger a retry:
+By default, the following errors trigger retries:
 
 | Condition | Retry |
 |-----------|-------|
@@ -30,21 +30,21 @@ By default, the following errors trigger a retry:
 | 5xx server errors (500/502/503/504) | Yes |
 | 408 Request Timeout / 429 Too Many Requests | Yes |
 | Other 4xx client errors | No |
-| Context cancellation | No |
+| Context canceled | No |
 | Configuration validation errors | No |
 
-## Custom Retry Policy
+## Custom Retry Strategy
 
-Implement the `RetryPolicy` interface to fully control retry behavior:
+Implement the `RetryPolicy` interface for full control over retry behavior:
 
 :::warning Internal Type
-The `resp` parameter type `ResponseReader` in `RetryPolicy.ShouldRetry` is an internal interface (defined in the `internal/types` package) and cannot be directly referenced from external packages. Custom `RetryPolicy` must be implemented in a package within the same module as `httpc`. Most scenarios can be satisfied through `RetryConfig` field configuration.
+The `resp` parameter type `ResponseReader` in `RetryPolicy.ShouldRetry` is an internal interface (defined in the `internal/types` package) that external packages cannot reference directly. Custom `RetryPolicy` must be implemented in a package within the same module as `httpc`. Most scenarios can be satisfied through `RetryConfig` field configuration.
 :::
 
 ```go
-// NOTE: ResponseReader is an internal type (internal/types package).
+// Note: ResponseReader is an internal type (internal/types package).
 // This code can only compile within the github.com/cybergodev/httpc module.
-// Most users should configure retry via RetryConfig and WithMaxRetries.
+// Most users should configure retries via RetryConfig and WithMaxRetries.
 
 type MyRetryPolicy struct {
     maxAttempts int
@@ -59,7 +59,7 @@ func (p *MyRetryPolicy) ShouldRetry(resp ResponseReader, err error, attempt int)
     if err != nil {
         return true
     }
-    // Only retry on 502, 503, 504
+    // Only retry 502, 503, 504
     return resp.StatusCode() == 502 || resp.StatusCode() == 503 || resp.StatusCode() == 504
 }
 
@@ -73,7 +73,7 @@ func (p *MyRetryPolicy) MaxRetries() int {
     return p.maxAttempts
 }
 
-// Apply custom policy
+// Apply custom strategy
 cfg := httpc.DefaultConfig()
 cfg.Retry.CustomPolicy = &MyRetryPolicy{maxAttempts: 5}
 ```
@@ -81,7 +81,7 @@ cfg.Retry.CustomPolicy = &MyRetryPolicy{maxAttempts: 5}
 ## Per-Request Control
 
 ```go
-// Retry a single request 5 times
+// Retry single request 5 times
 result, err := client.Get(url, httpc.WithMaxRetries(5))
 
 // Disable retries
@@ -95,7 +95,7 @@ result, err := client.Request(ctx, "GET", url, httpc.WithMaxRetries(3))
 
 ## Retry-After Support
 
-HTTPC automatically parses the `Retry-After` response header returned by the server:
+HTTPC automatically parses the `Retry-After` response header from the server:
 
 ```go
 // Server returns: Retry-After: 120
@@ -128,18 +128,18 @@ cfg.Retry.BackoffFactor = 1.0
 ### Linear Growth
 
 ```go
-// Requires a custom RetryPolicy implementation:
+// Requires custom RetryPolicy implementation:
 // delay * (attempt + 1)
-// See the custom retry strategy example in advanced usage
+// See the custom retry strategy in advanced examples
 ```
 
 ### Random Jitter
 
-Enable jitter to avoid the "thundering herd" effect:
+Enable jitter to avoid "thundering herd":
 
 ```go
 cfg.Retry.EnableJitter = true
-// Adds random offset to the base delay, preventing all clients from retrying simultaneously
+// Adds random offset to base delay, preventing all clients from retrying simultaneously
 ```
 
 ## Error Handling and Retries
@@ -150,7 +150,7 @@ if err != nil {
     var clientErr *httpc.ClientError
     if errors.As(err, &clientErr) {
         if clientErr.Type == httpc.ErrorTypeRetryExhausted {
-            log.Printf("Failed after %d retries", clientErr.Attempts)
+            log.Printf("Still failed after %d retries", clientErr.Attempts)
         }
     }
     return err
@@ -160,7 +160,7 @@ if err != nil {
 ## Best Practices
 
 | Scenario | Recommendation |
-|----------|---------------|
+|----------|----------------|
 | API calls | MaxRetries=3, Delay=1s, Backoff=2.0 |
 | Microservice communication | MaxRetries=2, Delay=500ms |
 | File downloads | MaxRetries=5, Delay=2s, Backoff=2.0 |
@@ -168,11 +168,11 @@ if err != nil {
 | Non-idempotent operations (POST) | Only retry on network errors |
 
 :::warning
-Non-idempotent POST requests are also retried by default. For precise control, implement a custom `RetryPolicy`.
+Non-idempotent POST requests are retried by default. For precise control, implement a custom `RetryPolicy`.
 :::
 
 ## Next Steps
 
 - [Error Handling](../advanced/error-handling) - Complete error handling guide
-- [Config API](../api-reference/config) - Retry configuration reference
+- [Configuration API](../api-reference/config) - Retry configuration reference
 - [Interface Definitions](../api-reference/interfaces) - RetryPolicy interface reference

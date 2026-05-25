@@ -16,7 +16,6 @@ result, err := httpc.Get("https://api.example.com/data")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 fmt.Println(result.StatusCode())
 fmt.Println(result.Body())
@@ -167,7 +166,6 @@ result, err := client.Get("https://api.example.com/users/1")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // 状态检查
 result.StatusCode()     // 200

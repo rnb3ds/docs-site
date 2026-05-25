@@ -1,6 +1,6 @@
 ---
 title: "Session Management - HTTPC"
-description: "HTTPC SessionManager API: NewSessionManager, SessionConfig, header/cookie CRUD, CookieSecurity validation, and UpdateFromResult sync."
+description: "HTTPC SessionManager API reference: NewSessionManager creation, SessionConfig configuration, SetHeader/SetHeaders header management, SetCookie/SetCookies methods, SetCookieSecurity validation, and UpdateFromResult response sync."
 ---
 
 # Session Management
@@ -34,7 +34,7 @@ type SessionConfig struct {
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `CookieSecurity` | `*CookieSecurityConfig` | Cookie security validation configuration; nil means no validation |
+| `CookieSecurity` | `*CookieSecurityConfig` | Cookie security validation config; nil means no validation |
 
 ```go
 func DefaultSessionConfig() *SessionConfig
@@ -50,7 +50,7 @@ Returns default configuration (no cookie security validation).
 func (s *SessionManager) SetHeader(key, value string) error
 ```
 
-Sets a session header. Automatically included with all subsequent requests. Validates header key-value validity.
+Sets a session header. All subsequent requests will include it automatically. Validates header key-value validity.
 
 ```go
 err := sm.SetHeader("Authorization", "Bearer "+token)
@@ -77,7 +77,7 @@ err := sm.SetHeaders(map[string]string{
 func (s *SessionManager) DeleteHeader(key string)
 ```
 
-Deletes the specified session header.
+Removes a specific session header.
 
 ### ClearHeaders
 
@@ -103,7 +103,7 @@ Returns a copy of all session headers.
 func (s *SessionManager) SetCookie(cookie *http.Cookie) error
 ```
 
-Sets a session cookie. Validates cookie validity and, if CookieSecurity is configured, also validates security attributes.
+Sets a session cookie. Validates cookie validity and security attributes if CookieSecurity is configured.
 
 ```go
 err := sm.SetCookie(&http.Cookie{
@@ -128,7 +128,7 @@ Sets multiple cookies at once.
 func (s *SessionManager) DeleteCookie(name string)
 ```
 
-Deletes a cookie by name.
+Removes a cookie by name.
 
 ### ClearCookies
 
@@ -152,7 +152,7 @@ Returns a copy of all cookies.
 func (s *SessionManager) GetCookie(name string) *http.Cookie
 ```
 
-Gets a copy of a cookie by name; returns nil if not found.
+Gets a copy of a cookie by name, returns nil if it does not exist.
 
 ## Cookie Security
 

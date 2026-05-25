@@ -1,19 +1,19 @@
 ---
 title: "FAQ - HTTPC"
-description: "HTTPC FAQ: package-level vs client usage, five config presets, proxy/DoH setup, errors.Is/As matching, ReleaseResult pool reuse, and timeout tuning."
+description: "HTTPC frequently asked questions: choosing between package-level functions and client instances, comparison of five configuration presets and their use cases, HTTP/SOCKS5 proxy and DoH configuration, errors.Is/As error matching patterns, and four-level timeout tuning strategies."
 ---
 
 # FAQ
 
 ## When should I use package-level functions vs. creating a client?
 
-**Package-level functions** are suitable for simple scenarios: one-off requests, scripts, and tools.
+**Package-level functions** are suitable for simple scenarios: one-off requests, scripts, tools.
 
 ```go
 result, _ := httpc.Get("https://api.example.com/data")
 ```
 
-**Creating a client** is better when you need custom configuration, connection pool reuse, or middleware.
+**Creating a client** is suitable when you need custom configuration, connection pool reuse, or middleware.
 
 ```go
 client, _ := httpc.New(httpc.PerformanceConfig())
@@ -24,7 +24,7 @@ defer client.Close()
 
 | Preset | Use Case |
 |--------|----------|
-| `DefaultConfig()` | General use, secure defaults |
+| `DefaultConfig()` | General purpose, secure defaults |
 | `SecureConfig()` | Handling user-provided URLs, financial/medical scenarios |
 | `PerformanceConfig()` | Internal microservice communication, high-concurrency APIs |
 | `TestingConfig()` | Unit testing, local development |
@@ -69,21 +69,11 @@ case result.IsSuccess():
     // 2xx success
 case result.IsClientError():
     // 4xx client error
-    log.Printf("Invalid request parameters: %d", result.StatusCode())
+    log.Printf("Request parameter error: %d", result.StatusCode())
 case result.IsServerError():
     // 5xx server error
     log.Printf("Server failure: %d", result.StatusCode())
 }
-```
-
-## Why do I need to call ReleaseResult?
-
-`ReleaseResult` returns the Result to the object pool, reducing GC pressure. It zeroes the entire response body backing array to prevent sensitive data leakage in the object pool. The performance improvement is significant in high-concurrency scenarios.
-
-```go
-result, _ := client.Get(url)
-defer httpc.ReleaseResult(result)
-// Do not access result after this point
 ```
 
 ## How do I disable retries?
@@ -112,7 +102,7 @@ result, _ := client.Request(ctx, "GET", url)
 // 2. Request option
 result, _ := client.Get(url, httpc.WithTimeout(5*time.Second))
 
-// 3. Middleware-enforced timeout
+// 3. Middleware enforced timeout
 middleware := httpc.TimeoutMiddleware(5 * time.Second)
 
 // 4. Client default timeout
@@ -133,13 +123,13 @@ client, _ := httpc.New(cfg)
 
 ## Why does TestingConfig print a warning?
 
-`TestingConfig` disables security features (TLS verification, SSRF protection), which poses security risks outside test environments. A warning is printed when a non-test environment is detected.
+`TestingConfig` disables security features (TLS verification, SSRF protection), which poses security risks in non-test environments. A warning is printed when a non-test environment is detected.
 
 Only use it in `*_test.go` files or local development.
 
 ## How do I enable DNS-over-HTTPS?
 
-DoH reduces DNS resolution latency and prevents DNS hijacking:
+DoH can reduce DNS resolution latency and prevent DNS hijacking:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -147,15 +137,15 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-By default, three providers are used (with fallback priority): Cloudflare, Google, and AliDNS. If all DoH providers are unavailable, it automatically falls back to system DNS.
+It defaults to three providers: Cloudflare, Google, and AliDNS (with priority-based fallback). If all DoH providers are unavailable, it automatically falls back to system DNS.
 
 :::tip
-DoH is useful for scenarios requiring DNS resolution security. Regular API calls don't need it enabled; the default DNS is sufficient.
+DoH is useful for scenarios that require DNS resolution security. For regular API calls, there is no need to enable it; the default DNS is sufficient.
 :::
 
 ## More Resources
 
-- [Getting Started](./getting-started) - Get started in 5 minutes
+- [Quick Start](./getting-started) - Get started in 5 minutes
 - [Tutorial](./guides/tutorial) - A step-by-step complete example
 - [Configuration API](./api-reference/config) - Complete configuration reference
 - [Error Handling](./advanced/error-handling) - Error handling guide

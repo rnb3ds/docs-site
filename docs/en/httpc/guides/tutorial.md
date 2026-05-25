@@ -1,24 +1,24 @@
 ---
 title: "Tutorial - HTTPC"
-description: "Build a GitHub API client in 30 minutes: requests, JSON parsing, domain client, middleware, error handling, file download, and concurrency."
+description: "Thirty-minute hands-on tutorial: build a complete GitHub REST API client step by step from httpc.Get, covering JSON response parsing, NewDomain domain client, WithJSON sending data, middleware chain composition, ClientError error handling, and file download functionality."
 ---
 
-# Tutorial: Building a GitHub API Client
+# Tutorial: Build a GitHub API Client
 
-Build a GitHub API client to connect the core concepts of HTTPC. Takes about 30 minutes.
+Build a GitHub API client step by step, connecting HTTPC's core concepts. Approximately 30 minutes to complete.
 
-**What you will learn:**
+**You will learn:**
 
-- Creating clients and configuration presets
+- Creating clients and using configuration presets
 - Sending GET/POST requests and handling JSON responses
-- Using domain clients to manage API base URLs
+- Using the domain client to manage API base URLs
 - Adding middleware for logging and metrics
 - Handling errors and retries
-- Optimizing performance with object pool reuse
+- Leveraging automatic object pool management for performance
 
 ## Step 1: Basic Request
 
-Install the dependency and create `main.go`:
+Install dependencies and create `main.go`:
 
 ```bash
 go get github.com/cybergodev/httpc
@@ -39,7 +39,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())       // JSON response
@@ -47,8 +46,8 @@ func main() {
 ```
 
 Key points:
-- The package-level function `httpc.Get` requires no client creation, ideal for quick validation
-- `defer httpc.ReleaseResult(result)` returns the result to the object pool
+- Package-level function `httpc.Get` requires no client creation, suitable for quick validation
+- Result objects are automatically managed by the built-in object pool, GC handles cleanup
 
 ## Step 2: Parsing JSON Responses
 
@@ -64,21 +63,20 @@ result, err := httpc.Get("https://api.github.com/repos/golang/go")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 var repo Repo
 if err := result.Unmarshal(&repo); err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("%s (⭐ %d)\n", repo.FullName, repo.Stars)
+fmt.Printf("%s (Stars %d)\n", repo.FullName, repo.Stars)
 fmt.Printf("Language: %s\n", repo.Language)
 fmt.Printf("Description: %s\n", repo.Description)
 ```
 
 Key points:
-- `result.Unmarshal(&v)` directly parses the JSON response into a struct
-- Define Go structs that correspond to the API response
+- `result.Unmarshal(&v)` directly parses JSON responses into structs
+- Define Go structs that correspond to API responses
 
 ## Step 3: Creating a Domain Client
 
@@ -102,16 +100,15 @@ result, err := client.Get("/repos/golang/go",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 ```
 
 Key points:
-- `NewDomain` creates a scoped client where paths are relative to the baseURL
-- `SetHeader` sets persistent request headers, automatically included with every request
-- `WithHeader` is passed as a request option, only effective for the current request
-- Domain clients automatically manage cookies
+- `NewDomain` creates a scoped client; paths are relative to baseURL
+- `SetHeader` sets persistent headers included with every request
+- `WithHeader` passed as a request option applies only to that request
+- Domain client automatically manages cookies
 
-## Step 4: Sending Data (Creating an Issue)
+## Step 4: Sending Data (Create Issue)
 
 ```go
 type CreateIssueRequest struct {
@@ -130,7 +127,6 @@ result, err := client.Post("/repos/owner/repo/issues",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 if !result.IsSuccess() {
     log.Fatalf("Creation failed: %d %s", result.StatusCode(), result.Body())
@@ -163,7 +159,7 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RequestIDMiddleware("X-Request-ID", nil),
 }
 
-// Pass config to NewDomain to create a domain client with middleware
+// Pass configuration to NewDomain to create a domain client with middleware
 client, err := httpc.NewDomain("https://api.github.com", cfg)
 if err != nil {
     log.Fatal(err)
@@ -180,11 +176,10 @@ result, err := client.Get("/repos/golang/go",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 var repo Repo
 result.Unmarshal(&repo)
-fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
+fmt.Printf("%s: Stars %d\n", repo.FullName, repo.Stars)
 ```
 
 Key points:
@@ -193,7 +188,7 @@ Key points:
 - `RecoveryMiddleware` prevents panic crashes
 - `RequestIDMiddleware` generates a unique ID for each request
 
-## Step 6: Error Handling and Retries
+## Step 6: Error Handling and Retry
 
 ```go
 result, err := client.Get("/repos/golang/go")
@@ -202,7 +197,7 @@ if err != nil {
     if errors.As(err, &clientErr) {
         switch clientErr.Type {
         case httpc.ErrorTypeTimeout:
-            log.Println("Request timed out, retry later")
+            log.Println("Request timeout, retry later")
         case httpc.ErrorTypeNetwork:
             log.Println("Network error")
         case httpc.ErrorTypeTLS:
@@ -217,7 +212,6 @@ if err != nil {
     }
     return
 }
-defer httpc.ReleaseResult(result)
 
 // Handle HTTP status codes
 switch {
@@ -245,10 +239,10 @@ cfg.Retry.EnableJitter = true
 
 Key points:
 - HTTPC separates network errors from HTTP status codes
-- `ClientError` provides error classification and retryability assessment
-- Automatically retries on 408, 429, 500, 502, 503, 504 by default
+- `ClientError` provides error classification and retryability checks
+- 408, 429, 500, 502, 503, 504 are automatically retried by default
 
-## Step 7: File Download (Downloading a Release Package)
+## Step 7: File Download (Download Release Package)
 
 ```go
 dlCfg := httpc.DefaultDownloadConfig()
@@ -256,7 +250,7 @@ dlCfg.FilePath = "go1.22.0.linux-amd64.tar.gz"
 dlCfg.Overwrite = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rDownload progress: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\rDownload progress: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.DownloadWithOptions(
@@ -267,15 +261,15 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\nDownload complete: %s (%s)\n",
+fmt.Printf("\nDownload complete: %s (%d bytes)\n",
     result.FilePath,
-    httpc.FormatBytes(result.BytesWritten),
+    result.BytesWritten,
 )
 ```
 
 ## Step 8: Concurrent Requests
 
-Fetch multiple repositories simultaneously:
+Fetch multiple repository details simultaneously:
 
 ```go
 func fetchRepos(ctx context.Context, repos []string) error {
@@ -304,20 +298,19 @@ func fetchRepos(ctx context.Context, repos []string) error {
 
         var repo Repo
         results[i].Unmarshal(&repo)
-        fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
-        httpc.ReleaseResult(results[i])
+        fmt.Printf("%s: Stars %d\n", repo.FullName, repo.Stars)
     }
     return nil
 }
 ```
 
 :::tip
-`PerformanceConfig()` provides a large connection pool configuration, suitable for high-concurrency scenarios. Remember to use `ReleaseResult` correctly in concurrent code.
+`PerformanceConfig()` provides a large connection pool configuration suitable for high-concurrency scenarios. Result objects are automatically managed by the built-in object pool.
 :::
 
 ## Complete Example
 
-The complete code integrating the above steps:
+Full code integrating the above steps:
 
 ```go
 package main
@@ -358,26 +351,25 @@ func main() {
     }
     defer client.Close()
 
-    // Fetch repository info
+    // Fetch repository information
     result, err := client.Get("https://api.github.com/repos/golang/go",
         httpc.WithHeader("Authorization", "Bearer "+token),
     )
     if err != nil {
         var clientErr *httpc.ClientError
         if errors.As(err, &clientErr) && clientErr.IsRetryable() {
-            log.Fatal("Request failed (retried):", err)
+            log.Fatal("Request failed (after retries):", err)
         }
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     if result.IsSuccess() {
         var repo Repo
         result.Unmarshal(&repo)
-        fmt.Printf("✅ %s\n", repo.FullName)
-        fmt.Printf("   ⭐ %d | Language: %s\n", repo.Stars, repo.Language)
+        fmt.Printf("%s\n", repo.FullName)
+        fmt.Printf("   Stars %d | Language: %s\n", repo.Stars, repo.Language)
         fmt.Printf("   %s\n", repo.Description)
-        fmt.Printf("   Duration: %s (retried %d times)\n",
+        fmt.Printf("   Duration: %s (retries %d)\n",
             result.Meta.Duration, result.Meta.Attempts)
     }
 }

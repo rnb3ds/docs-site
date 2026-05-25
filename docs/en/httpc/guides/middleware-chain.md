@@ -1,18 +1,18 @@
 ---
 title: "Middleware Chain - HTTPC"
-description: "HTTPC middleware chain: onion model, eight built-in middleware, Chain composition, and custom MiddlewareFunc development with examples."
+description: "HTTPC middleware chain guide: onion model execution principle with bidirectional request/response processing, eight built-in middleware including Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit configuration, Chain manual composition, custom MiddlewareFunc development, and circuit breaker short-circuit middleware example."
 ---
 
 # Middleware Chain
 
 ## Onion Model
 
-HTTPC middleware follows the onion model -- requests go from outside in, responses go from inside out:
+HTTPC middleware follows an onion model -- requests go from outer to inner, responses from inner to outer:
 
 ```text
-Request →  Recovery  →  Logging  →  RequestID  → Handler
-                                                      ↓
-Response ←  Recovery  ←  Logging  ←  RequestID  ← Response
+Request ->  Recovery  ->  Logging  ->  RequestID  -> Handler
+                                                              |
+Response <-  Recovery  <-  Logging  <-  RequestID  <- Response
 ```
 
 ```go
@@ -38,7 +38,7 @@ httpc.RecoveryMiddleware()
 
 ### LoggingMiddleware
 
-Request/response logging with automatic URL sanitization:
+Request/response logging with automatic URL masking:
 
 ```go
 httpc.LoggingMiddleware(func(format string, args ...any) {
@@ -49,10 +49,10 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 
 ### RequestIDMiddleware
 
-Adds a unique ID to each request, generated using `crypto/rand`:
+Adds a unique ID to each request, generated with `crypto/rand`:
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // Default 32-character hex
+httpc.RequestIDMiddleware("X-Request-ID", nil) // Default 32-char hex
 
 // Custom generator
 httpc.RequestIDMiddleware("X-Request-ID", func() string {
@@ -62,7 +62,7 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 
 ### TimeoutMiddleware
 
-Middleware-level timeout, enforced before the client timeout:
+Middleware-level timeout enforced before the client timeout:
 
 ```go
 httpc.TimeoutMiddleware(30 * time.Second)
@@ -95,7 +95,7 @@ httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.D
 
 ### AuditMiddleware
 
-Security auditing for compliance scenarios such as finance and healthcare:
+Security auditing for financial, medical, and other compliance scenarios:
 
 ```go
 httpc.AuditMiddleware(func(event httpc.AuditEvent) {
@@ -156,7 +156,7 @@ func CORSMiddleware(origin string) httpc.MiddlewareFunc {
             // Call next handler
             resp, err := next(ctx, req)
 
-            // Response phase: record or modify response
+            // Response phase: log or modify response
             if resp != nil {
                 log.Printf("Response status: %d", resp.StatusCode())
             }

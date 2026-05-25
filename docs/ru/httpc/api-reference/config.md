@@ -1,6 +1,6 @@
 ---
-title: "Конфигурация — HTTPC"
-description: "Справочник API системы конфигурации HTTPC: описание всех полей основной структуры Config и пяти подгрупп Timeouts, Connection, Security, Retry, Middleware, пять функций предустановок DefaultConfig/SecureConfig/PerformanceConfig/TestingConfig/MinimalConfig, валидация ValidateConfig и конфигурация безопасности Cookie."
+title: "Конфигурация - HTTPC"
+description: "Справочник API системы конфигурации HTTPC: основная структура Config и описание всех полей пяти подконфигураций Timeouts, Connection, Security, Retry, Middleware, пять предустановок DefaultConfig и др., ValidateConfig и безопасность Cookie."
 ---
 
 # Конфигурация
@@ -46,17 +46,17 @@ type TimeoutConfig struct {
 | ResponseHeader | 0 | 30min |
 | IdleConn | 90s | 30min |
 
-Установка в 0 означает отсутствие таймаута (не рекомендуется для production).
+Значение 0 означает отсутствие таймаута (не рекомендуется для продакшена).
 
-:::tip Совет Дизайн ResponseHeader
-`ResponseHeader` по умолчанию равен 0 (отключен). В этом случае используется `Timeouts.Request` или `WithTimeout()` как единственный механизм таймаута, что обеспечивает полный контроль `WithTimeout()` над длительностью запроса. Этот дизайн подходит для AI API и длинного опроса, где требуется расширенное время ответа. Устанавливайте положительное значение только при необходимости жёсткого ограничения транспортного уровня (например, для защиты от атак Slowloris), но учтите, что это переопределит `WithTimeout`.
+:::tip Дизайн ResponseHeader
+`ResponseHeader` по умолчанию равен 0 (отключен), при этом используется `Timeouts.Request` или `WithTimeout()` как единственный механизм таймаута, что обеспечивает полный контроль `WithTimeout()` над длительностью запроса. Этот дизайн подходит для AI API и long-polling, где требуется увеличенное время ответа. Устанавливайте положительное значение только при необходимости жёсткого ограничения транспортного уровня (например, для защиты от атак Slowloris), но учтите, что это переопределит `WithTimeout`.
 :::
 
 ## ConnectionConfig
 
 ```go
 type ConnectionConfig struct {
-    MaxIdleConns           int           // Глобальный максимум простаивающих соединений, по умолчанию 50
+    MaxIdleConns           int           // Глобальное максимальное число простаивающих соединений, по умолчанию 50
     MaxConnsPerHost        int           // Максимум соединений на хост, по умолчанию 10
     ProxyURL               string        // Адрес прокси, например "http://proxy:8080"
     EnableSystemProxy      bool          // Автообнаружение системного прокси, по умолчанию false
@@ -64,8 +64,7 @@ type ConnectionConfig struct {
     EnableCookies          bool          // Включить управление Cookie, по умолчанию false
     EnableDoH              bool          // Включить DNS-over-HTTPS, по умолчанию false
     DoHCacheTTL            time.Duration // TTL кэша DoH, по умолчанию 5min
-    BrowserFingerprint     string        // Маскировка TLS-отпечатка, по умолчанию "" (стандартный Go TLS)
-    MaxResponseHeaderBytes int64         // Максимальный размер заголовков ответа в байтах, по умолчанию 0 (стандарт Go 10MB)
+    MaxResponseHeaderBytes int64         // Максимальный размер заголовков ответа в байтах, по умолчанию 0 (используется стандартное значение Go 10MB)
 }
 ```
 
@@ -79,24 +78,7 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-Провайдеры DoH по умолчанию (по приоритету): Cloudflare → Google → AliDNS. Подробнее в [Пул соединений и прокси](../advanced/connection-pool).
-
-### Маскировка TLS-отпечатка
-
-Включение `BrowserFingerprint` имитирует TLS ClientHello реального браузера, обходя антибот-детекцию на основе TLS-отпечатков. После настройки соединения используют utls вместо стандартного Go `crypto/tls`:
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.BrowserFingerprint = "chrome" // варианты: "chrome", "firefox", "safari", "ios"
-```
-
-| Значение | Имитируемый браузер |
-|----------|---------------------|
-| `"chrome"` | Google Chrome |
-| `"firefox"` | Mozilla Firefox |
-| `"safari"` | Apple Safari |
-| `"ios"` | iOS Safari |
-| `""` (по умолчанию) | Стандартный Go TLS |
+Провайдеры DoH по умолчанию (по приоритету): Cloudflare → Google → AliDNS. Подробнее см. [Пул соединений и прокси](../advanced/connection-pool).
 
 ## SecurityConfig
 
@@ -107,20 +89,20 @@ type SecurityConfig struct {
     MaxTLSVersion           uint16         // Максимальная версия TLS, по умолчанию TLS 1.3
     InsecureSkipVerify      bool           // Пропуск проверки сертификата (только для тестов)
     MaxResponseBodySize     int64          // Лимит размера тела ответа, по умолчанию 10MB
-    MaxRequestBodySize      int64          // Лимит размера тела запроса, по умолчанию 0 (используется MaxResponseBodySize)
+    MaxRequestBodySize      int64          // Лимит размера тела запроса, по умолчанию 0 (используется значение MaxResponseBodySize)
     MaxDecompressedBodySize int64          // Лимит размера после распаковки, по умолчанию 100MB
     AllowPrivateIPs         bool           // Разрешить приватные IP, по умолчанию false
     SSRFExemptCIDRs         []string       // Исключения CIDR для SSRF
     ValidateURL             bool           // Валидация URL, по умолчанию true
-    ValidateHeaders         bool           // Валидация заголовков, по умолчанию true
+    ValidateHeaders         bool           // Валидация заголовков запроса, по умолчанию true
     StrictContentLength     bool           // Строгий Content-Length, по умолчанию true
     CookieSecurity          *CookieSecurityConfig // Проверка безопасности Cookie
     RedirectWhitelist       []string       // Белый список доменов для перенаправлений
 }
 ```
 
-:::warning Предупреждение Защита от SSRF
-`AllowPrivateIPs` по умолчанию `false`, блокирует соединения с приватными/зарезервированными IP (127.0.0.1, 10.x, 192.168.x и др.). Устанавливайте `true` только при подключении к внутренним сервисам.
+:::warning Защита от SSRF
+`AllowPrivateIPs` по умолчанию `false`, блокирует подключение к приватным/зарезервированным IP (127.0.0.1, 10.x, 192.168.x и др.). Устанавливайте `true` только при подключении к внутренним сервисам.
 :::
 
 ### Пример исключений SSRF
@@ -137,11 +119,11 @@ cfg.Security.SSRFExemptCIDRs = []string{
 
 ```go
 type RetryConfig struct {
-    MaxRetries    int           // Максимум повторных попыток, по умолчанию 3
+    MaxRetries    int           // Максимальное число повторных попыток, по умолчанию 3
     Delay         time.Duration // Начальная задержка повтора, по умолчанию 1s
-    BackoffFactor float64       // Множитель отката, по умолчанию 2.0
+    BackoffFactor float64       // Множитель экспоненциальной задержки, по умолчанию 2.0
     EnableJitter  bool          // Включить джиттер, по умолчанию true
-    MaxRetryDelay time.Duration // Максимальная задержка повтора, по умолчанию 30s
+    MaxRetryDelay time.Duration // Максимальный предел задержки повтора, по умолчанию 30s
     CustomPolicy  RetryPolicy   // Пользовательская стратегия повторов
 }
 ```
@@ -163,7 +145,7 @@ type MiddlewareConfig struct {
     UserAgent       string           // User-Agent, по умолчанию "httpc/1.0"
     Headers         map[string]string // Заголовки по умолчанию
     FollowRedirects bool             // Следовать перенаправлениям, по умолчанию true
-    MaxRedirects    int              // Максимум перенаправлений, по умолчанию 10
+    MaxRedirects    int              // Максимальное число перенаправлений, по умолчанию 10
 }
 ```
 
@@ -187,11 +169,11 @@ func SecureConfig() *Config
 
 | Параметр | Значение |
 |----------|----------|
-| Request таймаут | 15s |
-| Dial таймаут | 5s |
-| TLSHandshake таймаут | 5s |
-| ResponseHeader таймаут | 10s (защита от Slowloris) |
-| IdleConn таймаут | 30s |
+| Таймаут Request | 15s |
+| Таймаут Dial | 5s |
+| Таймаут TLSHandshake | 5s |
+| Таймаут ResponseHeader | 10s (защита от Slowloris) |
+| Таймаут IdleConn | 30s |
 | MaxIdleConns | 20 |
 | MaxConnsPerHost | 5 |
 | MaxResponseBodySize | 5MB |
@@ -206,19 +188,19 @@ func SecureConfig() *Config
 func PerformanceConfig() *Config
 ```
 
-Высокопроизводительная конфигурация. Больший пул соединений, более длинные таймауты, сохраняются проверки безопасности.
+Конфигурация для высокой пропускной способности. Увеличенный пул соединений, более длинные таймауты, с сохранением проверок безопасности.
 
-:::tip Совет
-PerformanceConfig сохраняет `ValidateURL` и `ValidateHeaders` включёнными для обеспечения безопасности. Для максимальной производительности в доверенной среде можно отключить вручную: `cfg.Security.ValidateURL = false`, но учитывайте риски безопасности (инъекции, SSRF).
+:::tip
+PerformanceConfig сохраняет включёнными `ValidateURL` и `ValidateHeaders` для обеспечения безопасности. Если в доверенной среде требуется максимальная производительность, можно вручную отключить: `cfg.Security.ValidateURL = false`, но учитывайте риски безопасности (инъекции, SSRF).
 :::
 
 | Параметр | Значение |
 |----------|----------|
-| Request таймаут | 60s |
-| Dial таймаут | 15s |
-| TLSHandshake таймаут | 15s |
-| ResponseHeader таймаут | 0 (отключено, используется Request таймаут) |
-| IdleConn таймаут | 120s |
+| Таймаут Request | 60s |
+| Таймаут Dial | 15s |
+| Таймаут TLSHandshake | 15s |
+| Таймаут ResponseHeader | 0 (отключено, используется таймаут Request) |
+| Таймаут IdleConn | 120s |
 | MaxIdleConns | 100 |
 | MaxConnsPerHost | 20 |
 | EnableCookies | true |
@@ -240,10 +222,10 @@ func TestingConfig() *Config
 
 | Параметр | Значение |
 |----------|----------|
-| Dial таймаут | 5s |
-| TLSHandshake таймаут | 5s |
-| ResponseHeader таймаут | 0 (отключено, используется Request таймаут) |
-| IdleConn таймаут | 30s |
+| Таймаут Dial | 5s |
+| Таймаут TLSHandshake | 5s |
+| Таймаут ResponseHeader | 0 (отключено, используется таймаут Request) |
+| Таймаут IdleConn | 30s |
 | MaxIdleConns | 10 |
 | MaxConnsPerHost | 5 |
 | EnableHTTP2 | false |
@@ -257,8 +239,8 @@ func TestingConfig() *Config
 | EnableJitter | false |
 | UserAgent | httpc-test/1.0 |
 
-:::danger Опасность
-Эта конфигурация отключает проверку TLS и защиту SSRF, **используйте только для тестирования**. При использовании вне тестовой среды выводится предупреждение безопасности.
+:::danger
+Эта конфигурация отключает проверку TLS и защиту SSRF, **используйте только для тестов**. Использование вне тестовой среды вызовет предупреждение безопасности.
 :::
 
 ### MinimalConfig
@@ -267,14 +249,14 @@ func TestingConfig() *Config
 func MinimalConfig() *Config
 ```
 
-Лёгкая конфигурация. Отключены повторы и перенаправления, минимальный пул соединений.
+Лёгкая конфигурация. Отключены повторные попытки и перенаправления, минимальный пул соединений.
 
 | Параметр | Значение |
 |----------|----------|
-| Dial таймаут | 5s |
-| TLSHandshake таймаут | 5s |
-| ResponseHeader таймаут | 0 (отключено, используется Request таймаут) |
-| IdleConn таймаут | 30s |
+| Таймаут Dial | 5s |
+| Таймаут TLSHandshake | 5s |
+| Таймаут ResponseHeader | 0 (отключено, используется таймаут Request) |
+| Таймаут IdleConn | 30s |
 | MaxIdleConns | 10 |
 | MaxConnsPerHost | 2 |
 | MaxResponseBodySize | 1MB |
@@ -292,11 +274,11 @@ func MinimalConfig() *Config
 func ValidateConfig(cfg *Config) error
 ```
 
-Проверяет корректность конфигурации. `New()` вызывает автоматически, но можно вызвать явно.
+Проверяет корректность конфигурации. `New()` вызывает автоматически, также можно вызывать явно.
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Retry.MaxRetries = 100 //超出 диапазона
+cfg.Retry.MaxRetries = 100 // вне диапазона
 
 if err := httpc.ValidateConfig(cfg); err != nil {
     log.Fatal(err) // invalid retry configuration: Retry.MaxRetries must be 0-10, got 100
@@ -338,7 +320,7 @@ type CookieSecurityConfig struct {
 | `RequireSecure` | `bool` | Требовать установки атрибута Secure |
 | `RequireHttpOnly` | `bool` | Требовать установки атрибута HttpOnly |
 | `RequireSameSite` | `string` | Требуемое значение SameSite, например `"Strict"`, `"Lax"`; пустая строка — без проверки |
-| `AllowSameSiteNone` | `bool` | Разрешать ли SameSite=None |
+| `AllowSameSiteNone` | `bool` | Разрешить ли SameSite=None |
 | `RequireSecureForSameSiteNone` | `bool` | Требовать атрибут Secure при SameSite=None (по умолчанию `true`) |
 
 ### DefaultCookieSecurityConfig
@@ -347,7 +329,7 @@ type CookieSecurityConfig struct {
 func DefaultCookieSecurityConfig() *CookieSecurityConfig
 ```
 
-Конфигурация безопасности Cookie по умолчанию. Не требует атрибутов Secure/HttpOnly/SameSite, но принуждает Cookie с SameSite=None иметь установленный Secure.
+Конфигурация безопасности Cookie по умолчанию. Не требует атрибутов Secure/HttpOnly/SameSite, но принудительно требует Secure для Cookie с SameSite=None.
 
 ### StrictCookieSecurityConfig
 

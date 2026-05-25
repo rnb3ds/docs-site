@@ -1,35 +1,35 @@
 ---
-title: "Расширенные примеры — HTTPC"
-description: "Набор расширенных примеров HTTPC: пользовательская стратегия повторных попыток RetryPolicy (повтор только для 502/503/504), настройка цепочки промежуточного ПО с Recovery/Timeout/Logging/Metrics/Audit, обёртка клиента RESTful API, параллельные запросы через sync.WaitGroup, аутентификация с подписью HMAC-SHA256 и пользовательское промежуточное ПО."
+title: "Расширенные примеры - HTTPC"
+description: "Набор расширенных примеров HTTPC: пользовательская стратегия RetryPolicy с повторами только для 502/503/504, полная цепочка промежуточного ПО с Recovery/Timeout/Logging/Metrics/Audit, обёртка клиента RESTful API, параллельная загрузка через sync.WaitGroup и пользовательское промежуточное ПО подписи запросов HMAC-SHA256."
 ---
 
 # Расширенные примеры
 
-## Пользовательская стратегия повторных попыток
+## Пользовательская стратегия повторов
 
-Повторные попытки только для 502/503/504 с фиксированной задержкой:
+Повторять только при 502/503/504 с фиксированной задержкой:
 
-:::warning Предупреждение Внутренние типы
-Тип параметра `resp` метода `RetryPolicy.ShouldRetry` — `ResponseReader`, который является внутренним интерфейсом (определён в пакете `internal/types`), недоступным для прямого импорта внешними пакетами. Пользовательский `RetryPolicy` должен быть реализован в пакете того же модуля, что и `httpc`. Для большинства сценариев достаточно настройки через `RetryConfig`. Приведённый пример демонстрирует паттерн реализации, фактический код компилируется только внутри модуля `httpc`.
+:::warning Внутренние типы
+Параметр `resp` метода `RetryPolicy.ShouldRetry` имеет тип `ResponseReader` — внутренний интерфейс (определён в пакете `internal/types`), который невозможно импортировать из внешних пакетов. Пользовательский `RetryPolicy` должен быть реализован в том же модуле, что и `httpc`. Большинство сценариев покрываются конфигурацией `RetryConfig`. Следующий пример демонстрирует шаблон реализации, фактический код должен компилироваться внутри модуля `httpc`.
 :::
 
 ```go
 // Внимание: ResponseReader — внутренний тип (пакет internal/types).
-// Этот код компилируется только внутри модуля github.com/cybergodev/httpc.
-// Большинству пользователей следует настраивать повторные попытки через RetryConfig и WithMaxRetries.
+// Этот код можно скомпилировать только внутри модуля github.com/cybergodev/httpc.
+// Большинство пользователей должны настраивать повторы через RetryConfig и WithMaxRetries.
 
 type selectiveRetry struct {
     maxAttempts int
     baseDelay   time.Duration
 }
 
-// Определяет, следует ли повторить попытку
+// Определяет, следует ли повторить
 func (p *selectiveRetry) ShouldRetry(resp ResponseReader, err error, attempt int) bool {
     if attempt >= p.maxAttempts {
         return false
     }
     if err != nil {
-        return true // Повтор при сетевой ошибке
+        return true // Повторять при сетевых ошибках
     }
     return resp.StatusCode() == 502 || resp.StatusCode() == 503 || resp.StatusCode() == 504
 }
@@ -77,7 +77,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode())
 }
@@ -109,7 +108,7 @@ func main() {
         },
     )
 
-    // Журнал аудита (формат JSON)
+    // Лог аудита (формат JSON)
     auditCfg := &httpc.AuditMiddlewareConfig{
         Format:         "json",
         IncludeHeaders: true,
@@ -125,7 +124,7 @@ func main() {
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
         httpc.RecoveryMiddleware(),                              // восстановление после panic
         httpc.TimeoutMiddleware(30 * time.Second),              // принудительный таймаут
-        httpc.RequestIDMiddleware("X-Request-ID", nil),         // ID запроса
+        httpc.RequestIDMiddleware("X-Request-ID", nil),         // Request ID
         httpc.LoggingMiddleware(func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
         }),
@@ -143,7 +142,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     log.Printf("Всего запросов: %d", atomic.LoadInt64(&requestCount))
 }
@@ -194,7 +192,6 @@ func (c *APIClient) GetUser(ctx context.Context, id int) (*User, error) {
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     if !result.IsSuccess() {
         return nil, fmt.Errorf("API error: %d", result.StatusCode())
@@ -214,7 +211,6 @@ func (c *APIClient) CreateUser(ctx context.Context, name string) (*User, error) 
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     var user User
     if err := result.Unmarshal(&user); err != nil {
@@ -292,28 +288,28 @@ func main() {
             cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
                 fmt.Printf("\r%s: %.1f%% (%s/s)", name,
                     float64(downloaded)/float64(total)*100,
-                    httpc.FormatSpeed(speed))
+                    float64(speed)/1024/1024)
             }
 
             result, err := client.DownloadWithOptions(u, cfg)
             if err != nil {
-                log.Printf("%s не удалось загрузить: %v", name, err)
+                log.Printf("%s ошибка загрузки: %v", name, err)
                 return
             }
 
             atomic.AddInt64(&successCount, 1)
             atomic.AddInt64(&totalBytes, result.BytesWritten)
-            fmt.Printf("\n%s завершён: %s\n", name, httpc.FormatBytes(result.BytesWritten))
+            fmt.Printf("\n%s завершён: %s\n", name, result.BytesWritten)
         }(filename, url)
     }
 
     wg.Wait()
     fmt.Printf("\nЗагрузка завершена: %d/%d, всего %s\n",
-        successCount, len(urls), httpc.FormatBytes(totalBytes))
+        successCount, len(urls), totalBytes)
 }
 ```
 
-## Пользовательское промежуточное ПО: подпись запроса
+## Пользовательское промежуточное ПО: подпись запросов
 
 ```go
 package main
@@ -362,14 +358,12 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
-
     log.Println(result.StatusCode())
 }
 ```
 
 ## Что дальше
 
-- [Цепочка промежуточного ПО](../guides/middleware-chain) — подробное описание архитектуры промежуточного ПО
-- [Повторные попытки и отказоустойчивость](../guides/retry-fault-tolerance) — пользовательские стратегии повторных попыток
-- [Оптимизация производительности](../advanced/performance) — рекомендации по настройке производительности
+- [Цепочки промежуточного ПО](../guides/middleware-chain) - подробное описание архитектуры промежуточного ПО
+- [Повторные попытки и отказоустойчивость](../guides/retry-fault-tolerance) - пользовательские стратегии повторов
+- [Оптимизация производительности](../advanced/performance) - рекомендации по настройке производительности

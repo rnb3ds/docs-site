@@ -1,6 +1,6 @@
 ---
 title: "요청과 응답 - HTTPC"
-description: "HTTPC 요청과 응답 처리 가이드: 패키지 레벨 함수와 클라이언트 요청, WithHeader/WithJSON/WithForm 등 요청 옵션, WithBearerToken 인증, WithQuery 쿼리 매개변수, Cookie 관리, 컨텍스트 제어, 스트리밍 응답과 압축 해제 크기 제한 구성."
+description: "HTTPC 요청과 응답 처리 가이드: 패키지 함수와 클라이언트 요청, WithHeader/WithJSON/WithForm 등 요청 옵션, WithBearerToken 인증, WithQuery 쿼리 매개변수, Cookie 관리, 컨텍스트 제어, 스트리밍 응답과 압축 해제 크기 제한 설정을 다룹니다."
 ---
 
 # 요청과 응답
@@ -16,13 +16,12 @@ result, err := httpc.Get("https://api.example.com/data")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 fmt.Println(result.StatusCode())
 fmt.Println(result.Body())
 ```
 
-지원되는 HTTP 메서드: `Get`, `Post`, `Put`, `Patch`, `Delete`, `Head`, `Options`.
+지원하는 HTTP 메서드: `Get`, `Post`, `Put`, `Patch`, `Delete`, `Head`, `Options`.
 
 ### 클라이언트 인스턴스
 
@@ -80,14 +79,14 @@ result, err := client.Post(url, httpc.WithForm(map[string]string{
 
 // 바이너리 (기본 application/octet-stream)
 result, err := client.Post(url, httpc.WithBinary(data))
-// 유형 지정
+// 타입 지정
 result, err := client.Post(url, httpc.WithBinary(data, "image/png"))
 
-// 자동 감지 유형
+// 자동 타입 감지
 result, err := client.Post(url, httpc.WithBody(data))
 // string → text/plain; charset=utf-8, []byte → application/octet-stream,
 // map[string]string → application/x-www-form-urlencoded,
-// *FormData → multipart/form-data, io.Reader → 그대로 전달,
+// *FormData → multipart/form-data, io.Reader → passed through,
 // 기타 → application/json
 // 명시적 지정 가능: httpc.WithBody(data, httpc.BodyJSON)
 ```
@@ -140,7 +139,7 @@ result, err := client.Get(url, httpc.WithMaxRetries(5))
 
 // 리다이렉트
 result, err := client.Get(url,
-    httpc.WithFollowRedirects(false),    // 리다이렉트 금지
+    httpc.WithFollowRedirects(false),    // 리다이렉트 비활성화
     httpc.WithMaxRedirects(3),           // 최대 3회 리다이렉트
 )
 ```
@@ -167,7 +166,6 @@ result, err := client.Get("https://api.example.com/users/1")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // 상태 확인
 result.StatusCode()     // 200
@@ -218,13 +216,13 @@ result, err := httpc.Request(ctx, "GET", url)
 
 ## 스트리밍 응답
 
-`WithStreamBody(true)`는 내부 메커니즘으로, 파일 다운로드 시 전체 응답 본문이 메모리에 캐시되는 것을 방지하는 데 사용됩니다. 활성화하면 응답 본문이 `Result`에 읽히지 않습니다 (`Body()` 및 `RawBody()`가 빈 값을 반환).
+`WithStreamBody(true)`는 내부 메커니즘으로, 파일 다운로드 시 전체 응답 본문을 메모리에 캐시하지 않기 위해 사용됩니다. 활성화하면 응답 본문이 `Result`에 읽히지 않습니다(`Body()`와 `RawBody()`가 빈 값을 반환).
 
-:::warning 주의
-`WithStreamBody(true)`는 파일 다운로드 API(`DownloadFile`, `DownloadWithOptions`)에서 내부적으로 사용됩니다. 스트리밍 방식으로 응답 내용을 가져오려면 [파일 다운로드 API](./file-transfer)를 사용하십시오.
+:::warning
+`WithStreamBody(true)`는 파일 다운로드 API(`DownloadFile`, `DownloadWithOptions`)에서 내부적으로 사용됩니다. 응답 내용을 스트리밍으로 가져오려면 [파일 다운로드 API](./file-transfer)를 사용하세요.
 :::
 
-대용량 파일을 다운로드하려면 다운로드 API를 사용하십시오:
+대용량 파일을 다운로드하려면 다운로드 API를 사용하세요:
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -234,7 +232,7 @@ result, err := client.DownloadWithOptions(url, cfg)
 
 ## 응답 압축 해제
 
-HTTPC는 gzip, deflate 등 콘텐츠 인코딩의 압축 해제를 자동으로 처리합니다. 보안 구성을 통해 압축 해제 후 크기를 제한하여 압축 폭탄 공격을 방지할 수 있습니다:
+HTTPC은 gzip, deflate 등 콘텐츠 인코딩의 압축 해제를 자동으로 처리합니다. 보안 설정을 통해 압축 해제 후 크기를 제한하여 압축 폭탄 공격을 방지할 수 있습니다:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -242,12 +240,12 @@ cfg.Security.MaxResponseBodySize = 10 * 1024 * 1024      // 압축 본문 최대
 cfg.Security.MaxDecompressedBodySize = 100 * 1024 * 1024  // 압축 해제 후 최대 100MB
 ```
 
-| 구성 항목 | 기본값 | 설명 |
-|--------|--------|------|
+| 설정 항목 | 기본값 | 설명 |
+|-----------|--------|------|
 | `MaxResponseBodySize` | 10MB | 원본 응답 본문 크기 상한 |
 | `MaxDecompressedBodySize` | 100MB | 압축 해제 후 응답 본문 크기 상한 |
 
-한도를 초과하면 `"exceeds limit"` 정보가 포함된 오류가 반환되며, `ClientError` 유형으로 확인할 수 있습니다. `ErrResponseBodyTooLarge`는 `Result.Unmarshal()`에서 50MB JSON 크기 제한을 초과하는 응답 본문을 파싱할 때 반환됩니다(`MaxResponseBodySize`와 별개).
+한도를 초과하면 `"exceeds limit"` 정보가 포함된 오류가 반환되며, `ClientError` 타입으로 확인할 수 있습니다. `ErrResponseBodyTooLarge`는 `Result.Unmarshal()`에서 50MB JSON 크기 제한을 초과하는 응답 본문을 파싱할 때 반환됩니다(`MaxResponseBodySize`와 별개).
 
 ## 다음 단계
 

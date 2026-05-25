@@ -64,7 +64,6 @@ type ConnectionConfig struct {
     EnableCookies          bool          // 启用 Cookie 管理，默认 false
     EnableDoH              bool          // 启用 DNS-over-HTTPS，默认 false
     DoHCacheTTL            time.Duration // DoH 缓存 TTL，默认 5min
-    BrowserFingerprint     string        // TLS 指纹伪装，默认 ""（使用标准 Go TLS）
     MaxResponseHeaderBytes int64         // 响应头最大字节数，默认 0（使用 Go 标准库默认 10MB）
 }
 ```
@@ -80,23 +79,6 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
 默认 DoH 提供商（按优先级）：Cloudflare → Google → AliDNS。详见 [连接池与代理](../advanced/connection-pool)。
-
-### TLS 指纹伪装
-
-启用 `BrowserFingerprint` 模拟真实浏览器的 TLS ClientHello 握手，绕过基于 TLS 指纹的反爬检测。设置后连接使用 utls 替代 Go 标准 `crypto/tls`：
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.BrowserFingerprint = "chrome" // 可选: "chrome", "firefox", "safari", "ios"
-```
-
-| 值 | 模拟浏览器 |
-|------|----------|
-| `"chrome"` | Google Chrome |
-| `"firefox"` | Mozilla Firefox |
-| `"safari"` | Apple Safari |
-| `"ios"` | iOS Safari |
-| `""` (默认) | 使用标准 Go TLS |
 
 ## SecurityConfig
 

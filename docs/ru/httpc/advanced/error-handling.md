@@ -1,6 +1,6 @@
 ---
-title: "Обработка ошибок — HTTPC"
-description: "Руководство по обработке ошибок HTTPC: двенадцать типов ErrorType, поля структуры ClientError и определение IsRetryable, сопоставление ошибок-сигналов через errors.Is/As, обработка исчерпания повторных попыток, таймаут и отмена context, единая обработка ошибок в промежуточном ПО и лучшие практики разделения таймаутов."
+title: "Обработка ошибок - HTTPC"
+description: "Руководство по обработке ошибок HTTPC: двенадцать типов ошибок ErrorType, поля ClientError и определение повторяемости IsRetryable, сопоставление переменных-сигналов через errors.Is/As, обработка исчерпания повторных попыток, таймауты и отмена context, единая обработка ошибок через промежуточное ПО и лучшие практики разделения таймаутов."
 ---
 
 # Обработка ошибок
@@ -28,7 +28,7 @@ if err != nil {
         case httpc.ErrorTypeCertificate:
             log.Printf("Ошибка проверки сертификата: %v", err)
         case httpc.ErrorTypeRetryExhausted:
-            log.Printf("Исчерпаны повторные попытки: %v", err)
+            log.Printf("Повторные попытки исчерпаны: %v", err)
         case httpc.ErrorTypeValidation:
             log.Printf("Ошибка валидации запроса: %v", err)
         case httpc.ErrorTypeContextCanceled:
@@ -44,7 +44,7 @@ if err != nil {
 var clientErr *httpc.ClientError
 if errors.As(err, &clientErr) && clientErr.IsRetryable() {
     // Ошибку можно повторить
-    log.Println("Повторяемая ошибка, повторите позже")
+    log.Println("Повторяемая ошибка, попробуйте позже")
 }
 ```
 
@@ -62,17 +62,17 @@ if errors.Is(err, httpc.ErrResponseBodyEmpty) {
 }
 
 if errors.Is(err, httpc.ErrInvalidURL) {
-    // Недопустимый формат URL
+    // Некорректный формат URL
 }
 
 if errors.Is(err, httpc.ErrInvalidHeader) {
-    // Недопустимый заголовок запроса
+    // Некорректный заголовок запроса
 }
 ```
 
 ## Повторные попытки и ошибки
 
-Подробнее о настройке повторных попыток см. в [Повторных попытках и отказоустойчивости](../guides/retry-fault-tolerance). Здесь рассматривается обработка ошибок после исчерпания повторных попыток:
+Подробная конфигурация повторов описана в [Повторные попытки и отказоустойчивость](../guides/retry-fault-tolerance), здесь рассматривается обработка ошибок после исчерпания повторных попыток:
 
 ```go
 result, err := client.Get(url)
@@ -80,7 +80,7 @@ if err != nil {
     var clientErr *httpc.ClientError
     if errors.As(err, &clientErr) {
         if clientErr.Type == httpc.ErrorTypeRetryExhausted {
-            log.Printf("Не удалось после %d повторных попыток", clientErr.Attempts)
+            log.Printf("Ошибка после %d повторных попыток", clientErr.Attempts)
         }
     }
     return err
@@ -106,7 +106,7 @@ if err != nil {
 
 ## Лучшие практики обработки ошибок
 
-### 1. Разделяйте клиентские и серверные ошибки
+### 1. Разделяйте ошибки клиента и сервера
 
 ```go
 result, err := client.Get(url)
@@ -147,19 +147,19 @@ metricsMiddleware := httpc.MetricsMiddleware(func(method, url string, statusCode
 // Таймаут клиента по умолчанию
 cfg.Timeouts.Request = 30 * time.Second
 
-// Принудительный таймаут через промежуточное ПО
+// Принудительный таймаут промежуточного ПО
 timeoutMiddleware := httpc.TimeoutMiddleware(30 * time.Second)
 
 // Переопределение для отдельного запроса
 result, err := client.Get(url, httpc.WithTimeout(10 * time.Second))
 
-// Таймаут контекста (самый точный)
+// Таймаут контекста (наиболее точный)
 ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 result, err := client.Request(ctx, "GET", url)
 ```
 
 ## Что дальше
 
-- [Типы ошибок API](../api-reference/errors) — справочник типов ошибок и переменных
-- [Повторные попытки и отказоустойчивость](../guides/retry-fault-tolerance) — настройка стратегии повторных попыток
-- [Цепочка промежуточного ПО](../guides/middleware-chain) — единая обработка ошибок через промежуточное ПО
+- [Типы ошибок API](../api-reference/errors) - справочник типов и переменных ошибок
+- [Повторные попытки и отказоустойчивость](../guides/retry-fault-tolerance) - конфигурация стратегии повторов
+- [Цепочки промежуточного ПО](../guides/middleware-chain) - единая обработка ошибок через промежуточное ПО

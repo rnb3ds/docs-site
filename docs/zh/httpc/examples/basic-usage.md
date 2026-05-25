@@ -24,7 +24,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())
@@ -68,7 +67,6 @@ result, err := httpc.Post("https://httpbin.org/post",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // 解析 JSON 响应
 var response map[string]any
@@ -188,7 +186,7 @@ cfg.FilePath = "/tmp/file.zip"
 cfg.Overwrite = true
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r下载中: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\r下载中: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.DownloadWithOptions("https://example.com/file.zip", cfg)
@@ -196,10 +194,10 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\n下载完成: %s, 耗时 %v, 平均速度 %s\n",
-    httpc.FormatBytes(result.BytesWritten),
+fmt.Printf("\n下载完成: %d bytes, 耗时 %v, 平均速度 %.2f MB/s\n",
+    result.BytesWritten,
     result.Duration,
-    httpc.FormatSpeed(result.AverageSpeed),
+    float64(result.AverageSpeed)/1024/1024,
 )
 ```
 

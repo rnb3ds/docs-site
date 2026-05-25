@@ -1,6 +1,6 @@
 ---
 title: "常见问题 - HTTPC"
-description: "HTTPC 常见问题解答：包级函数与客户端实例选择依据、五种配置预设对比、HTTP/SOCKS5 代理与 DoH 设置、errors.Is/As 错误匹配、ReleaseResult 对象池管理与四级超时调优。"
+description: "HTTPC 常见问题解答：包级函数与客户端实例选择依据、五种配置预设对比与适用场景、HTTP/SOCKS5 代理与 DoH 设置方法、errors.Is/As 错误匹配模式与四级超时体系调优策略详解。"
 ---
 
 # 常见问题
@@ -74,16 +74,6 @@ case result.IsServerError():
     // 5xx 服务端错误
     log.Printf("服务端故障: %d", result.StatusCode())
 }
-```
-
-## 为什么需要调用 ReleaseResult？
-
-`ReleaseResult` 将 Result 归还到对象池，减少 GC 压力。归还会对响应体整块清零以防止敏感数据残留，避免信息在对象池中泄漏。高并发场景中性能提升显著。
-
-```go
-result, _ := client.Get(url)
-defer httpc.ReleaseResult(result)
-// 之后不要再访问 result
 ```
 
 ## 如何禁用重试？

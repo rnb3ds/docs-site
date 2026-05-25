@@ -1,6 +1,6 @@
 ---
 title: "Error Types - HTTPC"
-description: "HTTPC error types: ClientError with Code/IsRetryable, twelve ErrorType enums, thirteen sentinel errors, and errors.Is/As matching."
+description: "HTTPC error types API reference: ClientError struct with eight fields and five methods including Code, IsRetryable, and Unwrap, twelve ErrorType enums including ErrorTypeNetwork, thirteen sentinel error variables like ErrNilConfig, and errors.Is/As matching examples."
 ---
 
 # Error Types
@@ -20,20 +20,20 @@ type ClientError struct {
     Type       ErrorType  // Error classification
     Message    string     // Error description
     Cause      error      // Underlying error
-    URL        string     // Request URL (sanitized)
+    URL        string     // Request URL (masked)
     Method     string     // HTTP method
     Attempts   int        // Number of attempts made
     StatusCode int        // HTTP status code (if applicable)
-    Host       string     // Hostname (for circuit breakers)
+    Host       string     // Hostname (for circuit breaker use)
 }
 ```
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `Type` | `ErrorType` | Error classification, used for switch statements |
-| `Message` | `string` | Error description message |
+| `Type` | `ErrorType` | Error classification for switch statements |
+| `Message` | `string` | Error description |
 | `Cause` | `error` | Underlying error, accessible via `Unwrap()` |
-| `URL` | `string` | Request URL (credentials sanitized) |
+| `URL` | `string` | Request URL (credentials masked) |
 | `Method` | `string` | HTTP method (GET, POST, etc.) |
 | `Attempts` | `int` | Number of retries attempted |
 | `StatusCode` | `int` | HTTP status code (0 for non-HTTP errors) |
@@ -41,20 +41,20 @@ type ClientError struct {
 
 ### Methods
 
-| Method | Return Value | Description |
-|--------|-------------|-------------|
+| Method | Return | Description |
+|--------|--------|-------------|
 | `Error()` | `string` | Formatted as `METHOD URL: Message: Cause (attempt N)` |
 | `Code()` | `string` | Readable error code, e.g. `"NETWORK_ERROR"`, `"TIMEOUT"` |
 | `IsRetryable()` | `bool` | Whether the error is retryable |
-| `Unwrap()` | `error` | Unwrap the underlying error |
+| `Unwrap()` | `error` | Unwraps the underlying error |
 | `WithType(t ErrorType)` | `*ClientError` | Returns a copy with the error type set (does not modify original) |
 
 ```go
 var clientErr *httpc.ClientError
 if errors.As(err, &clientErr) {
-    fmt.Println("Error code:", clientErr.Code())
+    fmt.Println("Error type:", clientErr.Code())
     fmt.Println("Request URL:", clientErr.URL)
-    fmt.Println("Retry count:", clientErr.Attempts)
+    fmt.Println("Retry attempts:", clientErr.Attempts)
     fmt.Println("Retryable:", clientErr.IsRetryable())
     fmt.Println("Underlying error:", clientErr.Unwrap())
 }
@@ -73,7 +73,7 @@ Error classification enum.
 | `ErrorTypeUnknown` | Unknown/unclassified error | No |
 | `ErrorTypeNetwork` | Network error (connection refused, DNS failure, etc.) | Conditional |
 | `ErrorTypeTimeout` | Request timeout | Yes |
-| `ErrorTypeContextCanceled` | Context cancellation | No |
+| `ErrorTypeContextCanceled` | Context canceled | No |
 | `ErrorTypeResponseRead` | Response body read error | Conditional |
 | `ErrorTypeTransport` | Transport layer error | Yes |
 | `ErrorTypeRetryExhausted` | Retries exhausted | No |
@@ -83,7 +83,7 @@ Error classification enum.
 | `ErrorTypeValidation` | Request validation error | No |
 | `ErrorTypeHTTP` | HTTP layer error | Conditional |
 
-### Type Detection
+### Type Checking
 
 ```go
 result, err := client.Get(url)
@@ -166,5 +166,5 @@ if errors.Is(err, httpc.ErrResponseBodyEmpty) {
 ## See Also
 
 - [Error Handling](../advanced/error-handling) - Complete error handling guide
-- [Constants and Enums](./constants) - BodyKind and other constant references
+- [Constants and Types](./constants) - BodyKind and other constants reference
 - [Retry and Fault Tolerance](../guides/retry-fault-tolerance) - Retry strategy guide

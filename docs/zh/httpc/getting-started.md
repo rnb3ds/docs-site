@@ -1,6 +1,6 @@
 ---
 title: "快速开始 - HTTPC"
-description: "五分钟快速上手 HTTPC 安全 HTTP 客户端库，涵盖 go get 安装、GET/POST 请求、五种配置预设、JSON 解析、Bearer Token 认证与 ClientError 错误分类处理。"
+description: "五分钟快速上手 HTTPC 安全 HTTP 客户端库，涵盖 go get 安装与项目初始化、GET/POST 请求发送与响应处理、五种配置预设选型、JSON 解析与类型绑定、Bearer Token 认证和 ClientError 错误分类处理。"
 ---
 
 # 快速开始
@@ -30,7 +30,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())       // 响应内容
@@ -77,7 +76,6 @@ result, err := client.Get("https://httpbin.org/json")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // 状态检查
 result.StatusCode()     // 200
@@ -128,7 +126,6 @@ if err != nil {
     }
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // HTTP 状态码需手动检查
 switch {

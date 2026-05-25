@@ -1,13 +1,13 @@
 ---
 title: "基本的な使い方 - HTTPC"
-description: "HTTPC基本的な使用例：クエリパラメータと認証付きGETリクエスト、JSON/フォーム/ファイルアップロードPOSTリクエスト、FormDataマルチフィールドフォーム、DefaultConfigカスタム設定、ProxyURLプロキシ、Recovery/Loggingミドルウェア、RequestID/Metricsメトリクス収集とプログレスコールバック付きファイルダウンロードの完全なコード。"
+description: "HTTPC 基本的な使用例：クエリパラメータと認証付きの GET リクエスト、JSON/フォーム/ファイルアップロード POST リクエスト、FormData マルチフィールドフォーム、DefaultConfig カスタム設定、ProxyURL プロキシ、Recovery/Logging ミドルウェア、RequestID/Metrics メトリクス収集と進捗コールバック付きファイルダウンロードの完全なコード。"
 ---
 
 # 基本的な使い方
 
-## GETリクエスト
+## GET リクエスト
 
-### 基本的なGET
+### 基本 GET
 
 ```go
 package main
@@ -24,7 +24,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())
@@ -52,9 +51,9 @@ result, err := httpc.Get("https://api.example.com/me",
 )
 ```
 
-## POSTリクエスト
+## POST リクエスト
 
-### JSONリクエストボディ
+### JSON ボディ
 
 ```go
 data := map[string]any{
@@ -68,9 +67,8 @@ result, err := httpc.Post("https://httpbin.org/post",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
-// JSONレスポンスの解析
+// JSON レスポンスの解析
 var response map[string]any
 if err := result.Unmarshal(&response); err != nil {
     log.Fatal(err)
@@ -163,7 +161,7 @@ cfg.Middleware.UserAgent = "my-app/1.0"
 client, _ := httpc.New(cfg)
 ```
 
-### リクエストID + メトリクス
+### リクエスト ID + メトリクス
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -188,7 +186,7 @@ cfg.FilePath = "/tmp/file.zip"
 cfg.Overwrite = true
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rダウンロード中: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\rダウンロード中: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.DownloadWithOptions("https://example.com/file.zip", cfg)
@@ -196,10 +194,10 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\nダウンロード完了: %s, 所要時間 %v, 平均速度 %s\n",
-    httpc.FormatBytes(result.BytesWritten),
+fmt.Printf("\nダウンロード完了: %d bytes, 所要時間 %v, 平均速度 %.2f MB/s\n",
+    result.BytesWritten,
     result.Duration,
-    httpc.FormatSpeed(result.AverageSpeed),
+    float64(result.AverageSpeed)/1024/1024,
 )
 ```
 
@@ -212,11 +210,11 @@ if err != nil {
 }
 defer dc.Close()
 
-// セッション情報を設定
+// セッション情報の設定
 dc.SetHeader("Authorization", "Bearer "+token)
 dc.SetHeader("Accept", "application/json")
 
-// リクエストに自動的にセッションヘッダーとCookieが付与される
+// リクエストには自動的にセッションヘッダーと Cookie が付与される
 users, _ := dc.Get("/users")
 user, _ := dc.Get("/users/1")
 
@@ -225,6 +223,6 @@ fmt.Println(users.StatusCode()) // 200
 
 ## 次のステップ
 
-- [高度な使用例](./advanced-usage) - カスタムリトライ、ミドルウェアチェーン、並行ダウンロード
+- [高度な使用例](./advanced-usage) - カスタムリトライ、ミドルウェアチェーン、並列ダウンロード
 - [リクエストとレスポンス](../guides/request-response) - リクエストオプションの詳細
 - [ドメインクライアントとセッション](../guides/domain-session) - セッション管理

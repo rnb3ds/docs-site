@@ -1,6 +1,6 @@
 ---
 title: "Result - HTTPC"
-description: "HTTPC Result 响应类型 API 参考：StatusCode/Body/RawBody 基础方法、IsSuccess/IsClientError 状态判断、Cookie 操作、Unmarshal JSON 解析、SaveToFile 文件保存与 RequestInfo/ResponseInfo/RequestMeta 子类型。"
+description: "HTTPC Result 响应类型 API 参考：StatusCode/Body/RawBody 基础方法、状态判断、Cookie 操作、Unmarshal JSON 解析、SaveToFile 文件保存与 RequestInfo/ResponseInfo/RequestMeta 子类型。Result 自动池化，GC 自动回收。"
 ---
 
 # Result
@@ -20,14 +20,13 @@ result, err := httpc.Get("https://api.example.com/users/1")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 fmt.Println(result.StatusCode()) // 200
 fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
-:::warning
-使用完毕后必须调用 `ReleaseResult(result)` 归还对象池。调用后不可再访问 Result。
+:::tip
+Result 使用内部对象池优化性能，GC 自动回收，无需手动释放。
 :::
 
 ## 基础方法
@@ -206,7 +205,6 @@ func (r *Result) SaveToFile(filePath string) error
 
 ```go
 result, _ := client.Get("https://example.com/data.csv")
-defer httpc.ReleaseResult(result)
 
 if err := result.SaveToFile("/tmp/data.csv"); err != nil {
     log.Fatal(err)
@@ -280,20 +278,6 @@ result, _ := client.Get(url)
 fmt.Println(result.Meta.Duration)      // 125ms
 fmt.Println(result.Meta.Attempts)       // 2（重试了 1 次）
 fmt.Println(result.Meta.RedirectCount)  // 1（跟随了 1 次重定向）
-```
-
-## ReleaseResult
-
-```go
-func ReleaseResult(r *Result)
-```
-
-将 Result 归还对象池。响应体数据会被安全清除（整块清零防止敏感数据残留），所有内部数据清零，调用后不可再访问 Result 的任何字段或方法。
-
-```go
-result, _ := httpc.Get(url)
-defer httpc.ReleaseResult(result)
-// 使用 result...
 ```
 
 ## 另见

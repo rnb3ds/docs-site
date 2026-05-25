@@ -1,18 +1,18 @@
 ---
 title: "Middleware - HTTPC"
-description: "HTTPC middleware: Chain composition, eight built-in middleware factories, AuditMiddlewareWithConfig, and AuditEvent type definitions."
+description: "HTTPC middleware system API reference: Chain onion-model composition, Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit eight built-in middleware, AuditMiddlewareWithConfig configurable audit, and AuditEvent audit event types."
 ---
 
 # Middleware
 
-HTTPC uses an onion model middleware architecture, wrapping request handling logic through `MiddlewareFunc`.
+HTTPC uses an onion-model middleware architecture, wrapping request handling logic via `MiddlewareFunc`.
 
 ```go
 type MiddlewareFunc func(Handler) Handler
 type Handler func(ctx context.Context, req RequestMutator) (ResponseMutator, error)
 ```
 
-Middleware is configured in `Config.Middleware.Middlewares` and executed in order:
+Middleware is configured in `Config.Middleware.Middlewares` and executes in order:
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -32,7 +32,7 @@ client, _ := httpc.New(&httpc.Config{
 func Chain(middlewares ...MiddlewareFunc) MiddlewareFunc
 ```
 
-Combines multiple middleware into a single middleware. Executes in the order passed, with the last middleware calling the final Handler after processing.
+Combines multiple middleware into a single middleware. Executes in the order passed; the last middleware calls the final Handler when done.
 
 ```go
 combined := httpc.Chain(
@@ -49,7 +49,7 @@ combined := httpc.Chain(
 func RecoveryMiddleware() MiddlewareFunc
 ```
 
-Panic recovery middleware. Catches panics in the handler chain and converts them to errors with stack trace information.
+Panic recovery middleware. Catches panics in the processing chain and converts them to errors with stack traces.
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -67,7 +67,7 @@ client, _ := httpc.New(&httpc.Config{
 func LoggingMiddleware(log func(format string, args ...any)) MiddlewareFunc
 ```
 
-Request logging middleware. Records method, URL, status code, and duration. URLs are automatically sanitized (credentials removed).
+Request logging middleware. Logs method, URL, status code, and duration. URLs are automatically masked (credentials removed).
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -86,7 +86,7 @@ client, _ := httpc.New(&httpc.Config{
 func RequestIDMiddleware(headerName string, generator func() string) MiddlewareFunc
 ```
 
-Adds a unique ID to each request. Uses `crypto/rand` by default to generate a 32-character hex ID.
+Adds a unique ID to each request. Defaults to a 32-character hex ID generated with `crypto/rand`.
 
 | Parameter | Description |
 |-----------|-------------|
@@ -131,7 +131,7 @@ client, _ := httpc.New(&httpc.Config{
 func HeaderMiddleware(headers map[string]string) MiddlewareFunc
 ```
 
-Adds static headers to all requests. Header safety is validated at creation time (CRLF injection prevention).
+Adds static headers to every request. Header security is validated at creation time (CRLF injection protection).
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -152,7 +152,7 @@ client, _ := httpc.New(&httpc.Config{
 func MetricsMiddleware(onMetrics func(method, url string, statusCode int, duration time.Duration, err error)) MiddlewareFunc
 ```
 
-Metrics collection middleware. Calls the callback after each request completes, passing method, URL, status code, duration, and error information.
+Metrics collection middleware. Invokes the callback after each request completes, passing method, URL, status code, duration, and error.
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -172,7 +172,7 @@ client, _ := httpc.New(&httpc.Config{
 func AuditMiddleware(onAudit func(event AuditEvent)) MiddlewareFunc
 ```
 
-Security audit middleware for compliance scenarios such as finance, healthcare, and government. Records complete request/response information with automatic URL sanitization.
+Security audit middleware, suitable for financial, medical, government, and other compliance scenarios. Records complete request/response information; URLs are automatically masked.
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -194,7 +194,7 @@ client, _ := httpc.New(&httpc.Config{
 func AuditMiddlewareWithConfig(onAudit func(event AuditEvent), config *AuditMiddlewareConfig) MiddlewareFunc
 ```
 
-Security audit middleware with configuration.
+Configurable security audit middleware.
 
 ```go
 config := &httpc.AuditMiddlewareConfig{
@@ -224,7 +224,7 @@ client, _ := httpc.New(&httpc.Config{
 type AuditEvent struct {
     Timestamp     time.Time           `json:"timestamp"`
     Method        string              `json:"method"`
-    URL           string              `json:"url"`              // Sanitized (credentials removed)
+    URL           string              `json:"url"`              // Masked (credentials removed)
     StatusCode    int                 `json:"statusCode"`
     Duration      time.Duration       `json:"duration"`
     Attempts      int                 `json:"attempts"`
@@ -248,7 +248,7 @@ func (e AuditEvent) MarshalJSON() ([]byte, error)
 Custom JSON serialization, handling two special fields:
 
 | Field | Conversion Rule |
-|-------|-----------------|
+|-------|----------------|
 | `Duration` | Adds `durationMs` (integer milliseconds), preserves original `duration` field (nanoseconds) |
 | `Error` | Converts to `error` (error message string), omitted when nil |
 
@@ -269,8 +269,8 @@ data, _ := json.Marshal(event)
 type AuditMiddlewareConfig struct {
     Format         string   // "text" (default) or "json"
     IncludeHeaders bool     // Whether to include request/response headers
-    MaskHeaders    []string // Header names to sanitize
-    SanitizeError  bool     // Whether to sanitize error messages
+    MaskHeaders    []string // Header names to mask
+    SanitizeError  bool     // Whether to mask error messages
 }
 ```
 
@@ -291,7 +291,7 @@ Returns default audit configuration.
 
 ### Audit Context Keys
 
-Pass audit information through request context:
+Pass audit information via request context:
 
 ```go
 // Set source IP
@@ -306,7 +306,7 @@ result, err := client.Request(ctx, "GET", url)
 | Constant | Type | Description |
 |----------|------|-------------|
 | `SourceIPKey` | `auditContextKey` | Source IP context key |
-| `UserIDKey` | `auditContextKey` | User identifier context key |
+| `UserIDKey` | `auditContextKey` | User ID context key |
 
 ## See Also
 

@@ -1,6 +1,6 @@
 ---
 title: "测试指南 - HTTPC"
-description: "HTTPC 测试指南：TestingConfig 测试专用配置、net/http/httptest 模拟服务器集成、模拟错误响应/延迟/重定向/文件上传场景、表格驱动测试模式、context 超时测试与 ReleaseResult 资源清理最佳实践。"
+description: "HTTPC 测试指南：TestingConfig 测试专用配置、net/http/httptest 模拟服务器集成、模拟错误响应/延迟/重定向/文件上传场景、表格驱动测试模式与 context 超时测试最佳实践。"
 ---
 
 # 测试指南
@@ -74,7 +74,6 @@ func TestGetUser(t *testing.T) {
     if err != nil {
         t.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     if !result.IsSuccess() {
         t.Fatalf("expected success, got %d", result.StatusCode())
@@ -197,7 +196,6 @@ func TestHTTPMethods(t *testing.T) {
             if err != nil {
                 t.Fatal(err)
             }
-            defer httpc.ReleaseResult(result)
 
             if result.Body() != tt.name {
                 t.Errorf("expected %s, got %s", tt.name, result.Body())
@@ -213,7 +211,6 @@ func TestHTTPMethods(t *testing.T) {
 |------|------|
 | 使用 `httptest.Server` | 模拟真实 HTTP 行为，无需网络依赖 |
 | 使用 `TestingConfig()` | 禁用安全检查，避免本地连接被阻止 |
-| 调用 `ReleaseResult()` | 归还对象池，保持测试性能 |
 | 使用 `defer` | 确保资源释放，即使测试失败 |
 | 表格驱动 | 覆盖多种输入，代码简洁 |
 

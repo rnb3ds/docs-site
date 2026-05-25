@@ -1,6 +1,6 @@
 ---
 title: "치트시트 - HTTPC"
-description: "HTTPC 치트시트: 클라이언트 생성과 5가지 프리셋 설정, Get/Post 등 7가지 메서드, 27개의 WithXxx 요청 옵션, Result 응답 처리, 미들웨어 체인, ClientError 오류 타입과 파일 다운로드 완전한 코드 스니펫."
+description: "HTTPC 치트시트: 클라이언트 생성과 다섯 가지 프리셋 설정, Get/Post 등 일곱 가지 요청 메서드, 27개 WithXxx 요청 옵션, Result 응답 처리, 미들웨어 체인 조합, ClientError 오류 분류, 파일 다운로드와 도메인 클라이언트 작업의 완전한 코드 조각을 제공합니다."
 ---
 
 # 치트시트
@@ -22,7 +22,7 @@ client, _ = httpc.New(cfg)
 ## HTTP 메서드
 
 ```go
-// 패키지 레벨 함수 (기본 클라이언트 사용)
+// 패키지 함수 (기본 클라이언트 사용)
 result, _ := httpc.Get(url)
 result, _ := httpc.Post(url)
 result, _ := httpc.Put(url)
@@ -59,7 +59,7 @@ httpc.WithFormData(formData)            // multipart/form-data
 httpc.WithFile("file", "doc.pdf", data) // 파일 업로드
 httpc.WithBinary([]byte{...})           // application/octet-stream
 httpc.WithBinary([]byte{...}, "image/png") // 타입 지정
-httpc.WithBody(data)                    // 자동 감지 타입
+httpc.WithBody(data)                    // 자동 타입 감지
 httpc.WithBody(data, httpc.BodyJSON)    // 명시적 지정: BodyJSON/BodyXML/BodyForm/BodyBinary/BodyMultipart
 ```
 
@@ -130,8 +130,7 @@ result.RequestCookies()                // 모든 요청 Cookie
 result.GetRequestCookie("name")        // 요청 Cookie 가져오기
 result.HasRequestCookie("name")        // 요청 Cookie 확인
 result.SaveToFile("/path/to/file")     // 파일로 저장
-result.String()                        // 사람이 읽을 수 있는 표현 (민감한 헤더 마스킹)
-httpc.ReleaseResult(result)            // 객체 풀로 반환
+result.String()                        // 사람이 읽을 수 있는 표현 (민감 헤더 마스킹)
 ```
 
 ## 설정
@@ -199,7 +198,7 @@ if err != nil {
         case httpc.ErrorTypeTLS:
             // TLS 오류
         case httpc.ErrorTypeDNS:
-            // DNS 리졸브 오류
+            // DNS 해석 오류
         case httpc.ErrorTypeContextCanceled:
             // 컨텍스트 취소
         case httpc.ErrorTypeRetryExhausted:
@@ -229,7 +228,7 @@ dlCfg.FilePath = "/path/to/file"
 dlCfg.Overwrite = true
 dlCfg.ResumeDownload = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
-    fmt.Printf("\r%.1f%% (%s/s)", float64(downloaded)/float64(total)*100, httpc.FormatSpeed(speed))
+    fmt.Printf("\r%.1f%% (%.2f MB/s)", float64(downloaded)/float64(total)*100, float64(speed)/1024/1024)
 }
 dlResult, err := client.DownloadWithOptions(url, dlCfg)
 

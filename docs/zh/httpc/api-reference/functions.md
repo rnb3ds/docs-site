@@ -1,6 +1,6 @@
 ---
 title: "包函数 - HTTPC"
-description: "HTTPC 包级函数与客户端方法 API 参考：Get/Post 等七种 HTTP 包级函数、New 客户端创建、SetDefaultClient 默认客户端管理、DownloadFile 等四个下载函数、ReleaseResult 对象池复用、FormatBytes 辅助函数与 NewDomain 域名客户端。"
+description: "HTTPC 包级函数与客户端方法 API 参考：Get/Post 等七种 HTTP 方法、New 客户端创建、四个下载函数、SetSecurityWarnOutput 安全警告与 NewDomain 域名客户端创建。"
 ---
 
 # 包函数
@@ -142,25 +142,6 @@ func CloseDefaultClient() error
 
 关闭默认客户端并重置。下次调用包级函数时会创建新客户端。
 
-## 结果管理
-
-### ReleaseResult
-
-```go
-func ReleaseResult(r *Result)
-```
-
-将 Result 归还到对象池以减少 GC 压力。调用后不可再使用 Result。
-
-```go
-result, _ := httpc.Get(url)
-defer httpc.ReleaseResult(result)
-```
-
-:::warning
-调用 `ReleaseResult` 后不要访问 Result，其内部数据会被清零。
-:::
-
 ## 下载函数
 
 包级下载函数使用默认客户端，Client 接口也提供同名方法。
@@ -236,31 +217,25 @@ result, err = client.DownloadWithOptionsWithContext(ctx, url, downloadOpts)
 
 ## 辅助函数
 
-### FormatBytes
+### SetSecurityWarnOutput
 
 ```go
-func FormatBytes(bytes int64) string
+func SetSecurityWarnOutput(w io.Writer)
 ```
 
-格式化字节数为人类可读字符串。
+重定向安全警告输出（如 `TestingConfig`、`InsecureSkipVerify` 警告）。传入 `io.Discard` 可静默所有警告。
 
 ```go
-httpc.FormatBytes(1536)      // "1.50 KB"
-httpc.FormatBytes(1048576)   // "1.00 MB"
+// 静默所有安全警告
+httpc.SetSecurityWarnOutput(io.Discard)
+
+// 重定向到自定义日志
+httpc.SetSecurityWarnOutput(log.Writer())
 ```
 
-### FormatSpeed
-
-```go
-func FormatSpeed(bytesPerSecond float64) string
-```
-
-格式化传输速率为人类可读字符串。
-
-```go
-httpc.FormatSpeed(1536.0)    // "1.50 KB/s"
-httpc.FormatSpeed(1048576.0) // "1.00 MB/s"
-```
+:::warning
+此函数主要用于测试。生产环境应使用 `SecureConfig()` 或 `DefaultConfig()`，而非抑制警告。
+:::
 
 ## 域名客户端
 

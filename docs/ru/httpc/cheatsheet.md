@@ -1,6 +1,6 @@
 ---
-title: "Шпаргалка — HTTPC"
-description: "Шпаргалка HTTPC: создание клиента и пять предустановок конфигурации, семь HTTP-методов Get/Post, 27 функций параметров запросов WithXxx, обработка ответов Result, цепочка промежуточного ПО, тип ошибок ClientError и полные фрагменты кода для загрузки файлов."
+title: "Шпаргалка - HTTPC"
+description: "Шпаргалка HTTPC: создание клиента и пять предустановок конфигурации, семь методов запроса Get/Post, 27 параметров запроса WithXxx, обработка ответов Result, композиция цепочки промежуточного ПО, классификация ошибок ClientError, загрузка файлов и операции доменного клиента."
 ---
 
 # Шпаргалка
@@ -22,7 +22,7 @@ client, _ = httpc.New(cfg)
 ## HTTP-методы
 
 ```go
-// Функции уровня пакета (используют клиент по умолчанию)
+// Функции пакета (используют клиент по умолчанию)
 result, _ := httpc.Get(url)
 result, _ := httpc.Post(url)
 result, _ := httpc.Put(url)
@@ -39,7 +39,7 @@ result, _ := httpc.Request(ctx, "GET", url)
 result, _ := client.Request(ctx, "POST", url)
 ```
 
-## Параметры запросов
+## Параметры запроса
 
 ### Заголовки запроса
 
@@ -58,7 +58,7 @@ httpc.WithForm(map[string]string{...})  // x-www-form-urlencoded
 httpc.WithFormData(formData)            // multipart/form-data
 httpc.WithFile("file", "doc.pdf", data) // загрузка файла
 httpc.WithBinary([]byte{...})           // application/octet-stream
-httpc.WithBinary([]byte{...}, "image/png") // с указанием типа
+httpc.WithBinary([]byte{...}, "image/png") // указание типа
 httpc.WithBody(data)                    // автоопределение типа
 httpc.WithBody(data, httpc.BodyJSON)    // явное указание: BodyJSON/BodyXML/BodyForm/BodyBinary/BodyMultipart
 ```
@@ -102,11 +102,11 @@ httpc.WithStreamBody(true)
 
 ```go
 httpc.WithOnRequest(func(req httpc.RequestMutator) error {
-    log.Printf("отправка %s %s", req.Method(), req.URL())
+    log.Printf("Отправка %s %s", req.Method(), req.URL())
     return nil
 })
 httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
-    log.Printf("получен ответ: %d", resp.StatusCode())
+    log.Printf("Получен ответ: %d", resp.StatusCode())
     return nil
 })
 ```
@@ -130,8 +130,7 @@ result.RequestCookies()                // все Cookie запроса
 result.GetRequestCookie("name")        // получение Cookie запроса
 result.HasRequestCookie("name")        // проверка Cookie запроса
 result.SaveToFile("/path/to/file")     // сохранение в файл
-result.String()                        // читаемое представление (заголовки с маскировкой)
-httpc.ReleaseResult(result)            // возврат в пул объектов
+result.String()                        // читаемое представление (конфиденциальные заголовки маскируются)
 ```
 
 ## Конфигурация
@@ -203,11 +202,11 @@ if err != nil {
         case httpc.ErrorTypeContextCanceled:
             // Контекст отменён
         case httpc.ErrorTypeRetryExhausted:
-            // Исчерпаны повторные попытки
+            // Повторные попытки исчерпаны
         case httpc.ErrorTypeValidation:
             // Ошибка валидации запроса
         case httpc.ErrorTypeHTTP:
-            // Ошибка уровня HTTP
+            // Ошибка на уровне HTTP
         // Другие: ErrorTypeUnknown, ErrorTypeResponseRead,
         //         ErrorTypeTransport, ErrorTypeCertificate
         }
@@ -229,11 +228,11 @@ dlCfg.FilePath = "/path/to/file"
 dlCfg.Overwrite = true
 dlCfg.ResumeDownload = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
-    fmt.Printf("\r%.1f%% (%s/s)", float64(downloaded)/float64(total)*100, httpc.FormatSpeed(speed))
+    fmt.Printf("\r%.1f%% (%.2f MB/s)", float64(downloaded)/float64(total)*100, float64(speed)/1024/1024)
 }
 dlResult, err := client.DownloadWithOptions(url, dlCfg)
 
-// dlResult имеет тип *DownloadResult (не *Result)
+// Тип dlResult — *DownloadResult (не *Result)
 // Поля: FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
 ```
 
