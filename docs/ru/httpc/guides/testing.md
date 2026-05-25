@@ -1,13 +1,13 @@
 ---
-title: "Руководство по тестированию — HTTPC"
-description: "Руководство по тестированию HTTPC: конфигурация TestingConfig для тестовой среды, интеграция с net/http/httptest для моделирования серверов, моделирование ошибочных ответов/задержек/перенаправлений/загрузки файлов, табличные тесты, тестирование таймаутов context и лучшие практики очистки ресурсов ReleaseResult."
+title: "Руководство по тестированию - HTTPC"
+description: "Руководство по тестированию HTTPC: конфигурация TestingConfig для тестовой среды, интеграция с имитационным сервером net/http/httptest, моделирование сценариев ошибочных ответов, задержек, перенаправлений и загрузки файлов, паттерн табличных тестов и лучшие практики тестирования."
 ---
 
 # Руководство по тестированию
 
 ## TestingConfig
 
-`TestingConfig()` специально разработана для тестовой среды — отключает проверки безопасности, сокращает таймауты, ускоряя выполнение тестов:
+`TestingConfig()` специально разработана для тестовой среды: отключены проверки безопасности, сокращены таймауты, ускоряется выполнение тестов:
 
 ```go
 func TestAPI(t *testing.T) {
@@ -22,13 +22,13 @@ func TestAPI(t *testing.T) {
 }
 ```
 
-:::danger Опасность
-`TestingConfig` отключает проверку TLS, защиту от SSRF и другие функции безопасности, **используйте только в тестовой среде**. При использовании вне тестовой среды выводится предупреждение безопасности.
+:::danger
+`TestingConfig` отключает проверку TLS, защиту SSRF и другие функции безопасности, **используйте только в тестовой среде**. При использовании вне тестовой среды выводится предупреждение безопасности.
 :::
 
 ## Интеграция с httptest.Server
 
-Используйте стандартную библиотеку `net/http/httptest` для создания имитационного сервера, реализуя интеграционные тесты без реального бэкенда:
+Используйте стандартную библиотеку `net/http/httptest` для создания имитационного сервера и выполнения интеграционных тестов без реального бэкенда:
 
 ```go
 package main
@@ -74,7 +74,6 @@ func TestGetUser(t *testing.T) {
     if err != nil {
         t.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     if !result.IsSuccess() {
         t.Fatalf("expected success, got %d", result.StatusCode())
@@ -94,9 +93,9 @@ func TestGetUser(t *testing.T) {
 }
 ```
 
-## Моделирование различных сценариев
+## Имитация различных сценариев
 
-### Моделирование ошибочных ответов
+### Имитация ошибочных ответов
 
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +107,7 @@ server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *htt
 defer server.Close()
 ```
 
-### Моделирование задержки
+### Имитация задержек
 
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +126,7 @@ if err == nil {
 }
 ```
 
-### Моделирование перенаправления
+### Имитация перенаправлений
 
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +141,7 @@ server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *htt
 defer server.Close()
 ```
 
-### Моделирование загрузки файлов
+### Имитация загрузки файлов
 
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -150,7 +149,7 @@ server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *htt
         t.Errorf("expected POST, got %s", r.Method)
     }
 
-    // Разбор multipart-формы
+    // Парсинг multipart-формы
     r.ParseMultipartForm(10 << 20)
     file, header, err := r.FormFile("upload")
     if err != nil {
@@ -197,7 +196,6 @@ func TestHTTPMethods(t *testing.T) {
             if err != nil {
                 t.Fatal(err)
             }
-            defer httpc.ReleaseResult(result)
 
             if result.Body() != tt.name {
                 t.Errorf("expected %s, got %s", tt.name, result.Body())
@@ -212,13 +210,12 @@ func TestHTTPMethods(t *testing.T) {
 | Практика | Описание |
 |----------|----------|
 | Используйте `httptest.Server` | Имитация реального HTTP-поведения без сетевых зависимостей |
-| Используйте `TestingConfig()` | Отключает проверки безопасности, предотвращая блокировку локальных соединений |
-| Вызывайте `ReleaseResult()` | Возврат в пул объектов для поддержания производительности тестов |
+| Используйте `TestingConfig()` | Отключение проверок безопасности предотвращает блокировку локальных подключений |
 | Используйте `defer` | Гарантия освобождения ресурсов даже при неудачных тестах |
-| Табличные тесты | Покрытие различных входных данных, лаконичный код |
+| Табличные тесты | Покрытие различных входных данных при лаконичном коде |
 
 ## Что дальше
 
-- [Конфигурация API](../api-reference/config) — подробные параметры TestingConfig
-- [Типы ошибок](../api-reference/errors) — справочник утверждений об ошибках
-- [Цепочка промежуточного ПО](./middleware-chain) — паттерны тестирования промежуточного ПО
+- [Конфигурация API](../api-reference/config) - подробные параметры TestingConfig
+- [Типы ошибок](../api-reference/errors) - справочник утверждений ошибок
+- [Цепочки промежуточного ПО](./middleware-chain) - паттерны тестирования промежуточного ПО

@@ -1,13 +1,13 @@
 ---
 title: "ミドルウェアチェーン - HTTPC"
-description: "HTTPCミドルウェアチェーンガイド：オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、Recovery/Logging/RequestID/Timeout/Header/Metrics/Auditの8つの組み込みミドルウェア設定、Chain手動組み合わせパターン、カスタムMiddlewareFuncの作成方法とサーキットブレーカーショートサーキットミドルウェアの例。"
+description: "HTTPC ミドルウェアチェーンガイド：オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit 8 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc の作成方法とサーキットブレーカーショートサーキットミドルウェアの実装例。"
 ---
 
 # ミドルウェアチェーン
 
 ## オニオンモデル
 
-HTTPCのミドルウェアはオニオンモデルを採用しています。リクエストは外から内へ、レスポンスは内から外へ流れます：
+HTTPC のミドルウェアはオニオンモデルを採用しています。リクエストは外から内へ、レスポンスは内から外へ流れます：
 
 ```text
 リクエスト →  Recovery  →  Logging  →  RequestID  → Handler
@@ -18,19 +18,19 @@ HTTPCのミドルウェアはオニオンモデルを採用しています。リ
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RecoveryMiddleware(),    // 最外層：panicリカバリ
-    httpc.LoggingMiddleware(log.Printf), // 第2層：ログ記録
-    httpc.RequestIDMiddleware("X-Request-ID", nil), // 最内層：リクエストID
+    httpc.RecoveryMiddleware(),    // 最外層：panic リカバリ
+    httpc.LoggingMiddleware(log.Printf), // 第 2 層：ログ記録
+    httpc.RequestIDMiddleware("X-Request-ID", nil), // 最内層：リクエスト ID
 }
 
 client, _ := httpc.New(cfg)
 ```
 
-## 組み込みミドルウェア
+## 内蔵ミドルウェア
 
 ### RecoveryMiddleware
 
-panicリカバリ。プロセスクラッシュを防止：
+panic リカバリ。プロセスのクラッシュを防止：
 
 ```go
 httpc.RecoveryMiddleware()
@@ -38,7 +38,7 @@ httpc.RecoveryMiddleware()
 
 ### LoggingMiddleware
 
-リクエスト/レスポンスログ。URLは自動的にマスク：
+リクエスト/レスポンスログ。URL は自動的にマスク：
 
 ```go
 httpc.LoggingMiddleware(func(format string, args ...any) {
@@ -49,10 +49,10 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 
 ### RequestIDMiddleware
 
-各リクエストにユニークIDを追加。`crypto/rand`で生成：
+各リクエストにユニーク ID を追加。`crypto/rand` で生成：
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // デフォルト32文字hex
+httpc.RequestIDMiddleware("X-Request-ID", nil) // デフォルト 32 文字 hex
 
 // カスタムジェネレーター
 httpc.RequestIDMiddleware("X-Request-ID", func() string {
@@ -62,7 +62,7 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 
 ### TimeoutMiddleware
 
-ミドルウェアレベルのタイムアウト。クライアントのタイムアウトより前に強制適用：
+ミドルウェア層のタイムアウト。クライアントタイムアウトより前に強制実行：
 
 ```go
 httpc.TimeoutMiddleware(30 * time.Second)
@@ -95,7 +95,7 @@ httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.D
 
 ### AuditMiddleware
 
-セキュリティ監査。金融、医療などのコンプライアンスシナリオ向け：
+セキュリティ監査。金融、医療などのコンプライアンスシナリオに使用：
 
 ```go
 httpc.AuditMiddleware(func(event httpc.AuditEvent) {
@@ -122,7 +122,7 @@ httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
 }, auditCfg)
 ```
 
-監査イベントはコンテキストからSourceIPとUserIDの抽出をサポートします：
+監査イベントはコンテキストから SourceIP と UserID の抽出をサポートします：
 
 ```go
 ctx := context.WithValue(context.Background(), httpc.SourceIPKey, "192.168.1.1")
@@ -131,7 +131,7 @@ ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 
 ## 手動チェーン組み合わせ
 
-`Chain`関数でミドルウェアを組み合わせます：
+`Chain` 関数でミドルウェアを組み合わせます：
 
 ```go
 middleware := httpc.Chain(
@@ -153,7 +153,7 @@ func CORSMiddleware(origin string) httpc.MiddlewareFunc {
             // リクエストフェーズ：リクエストを変更
             req.SetHeader("Origin", origin)
 
-            // 次のハンドラーを呼び出す
+            // 次のハンドラーを呼び出し
             resp, err := next(ctx, req)
 
             // レスポンスフェーズ：記録または変更
@@ -215,6 +215,6 @@ client, _ := httpc.New(cfg)
 
 ## 次のステップ
 
-- [ミドルウェアAPI](../api-reference/middleware) - 完全なミドルウェアリファレンス
-- [リトライとフォールトトレランス](./retry-fault-tolerance) - リトライ戦略ガイド
+- [ミドルウェア API](../api-reference/middleware) - 完全なミドルウェアリファレンス
+- [リトライとフォールトトレランス](./retry-fault-tolerance) - リトライポリシーガイド
 - [セキュリティ概要](../security/) - 監査ミドルウェアのセキュリティプラクティス

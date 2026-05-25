@@ -1,6 +1,6 @@
 ---
 title: "API 参考 - HTTPC"
-description: "HTTPC API 参考索引：按核心、请求响应、高级功能三组分类导航包级函数、27 个 WithXxx 请求选项函数、Config 配置系统、8 个内置中间件工厂、域名客户端、会话管理、文件下载与错误类型的详细文档链接。"
+description: "HTTPC API 参考索引：按核心、请求响应、高级功能三组分类导航，涵盖包级 HTTP 函数、27 个 WithXxx 请求选项、Config 配置系统与五种预设、8 个内置中间件工厂、域名客户端与会话管理、文件下载与断点续传、错误类型与常量枚举。"
 ---
 
 # API 参考
@@ -81,5 +81,4 @@ result.Unmarshal(&data)       // JSON 解析
 result.IsSuccess()            // 是否 2xx
 result.Meta.Duration          // 请求耗时
 result.Meta.Attempts          // 重试次数
-defer httpc.ReleaseResult(result) // 释放到对象池
 ```

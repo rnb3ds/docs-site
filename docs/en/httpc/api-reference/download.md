@@ -1,6 +1,6 @@
 ---
 title: "File Download - HTTPC"
-description: "HTTPC file download API reference covering download functions, DownloadConfig, progress callbacks, checksum verification, and path security."
+description: "HTTPC file download API reference: four package-level download functions including DownloadFile, DownloadConfig configuration struct, DownloadProgressCallback progress callback, DownloadResult result type, SHA-256 checksum verification, UNC path prevention, and six-layer security protection."
 ---
 
 # File Download
@@ -25,7 +25,7 @@ result, err := httpc.DownloadFile("https://example.com/file.zip", "/tmp/file.zip
 func DownloadWithOptions(url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 ```
 
-Download with configuration, supporting resumable downloads and progress callbacks.
+Configurable download with resumable support and progress callbacks.
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -91,7 +91,7 @@ type DownloadProgressCallback func(downloaded, total int64, speed float64)
 ```go
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r%.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\r%.1f%% (%.1f bytes/s)", pct, speed)
 }
 ```
 
@@ -124,7 +124,7 @@ type DownloadResult struct {
 | `AverageSpeed` | `float64` | Average speed (bytes/second) |
 | `StatusCode` | `int` | HTTP status code |
 | `ContentLength` | `int64` | Content-Length header value |
-| `Resumed` | `bool` | Whether resumed from breakpoint |
+| `Resumed` | `bool` | Whether completed via resume |
 | `ResponseCookies` | `[]*http.Cookie` | Response cookies |
 | `ActualChecksum` | `string` | Actually computed checksum |
 | `Proto` | `string` | HTTP protocol version (e.g. `"HTTP/1.1"`, `"HTTP/2.0"`) |
@@ -134,10 +134,10 @@ type DownloadResult struct {
 | `RequestHeaders` | `http.Header` | Request headers |
 
 ```go
-fmt.Printf("Download complete: %s, duration %v, average speed %s\n",
-    httpc.FormatBytes(result.BytesWritten),
+fmt.Printf("Download complete: %d bytes, duration %v, average speed %.1f bytes/s\n",
+    result.BytesWritten,
     result.Duration,
-    httpc.FormatSpeed(result.AverageSpeed),
+    result.AverageSpeed,
 )
 ```
 
@@ -149,7 +149,7 @@ fmt.Printf("Download complete: %s, duration %v, average speed %s\n",
 type ChecksumAlgorithm string
 ```
 
-File integrity verification algorithm for downloads.
+Download file integrity verification algorithm.
 
 | Constant | Value | Description |
 |----------|-------|-------------|
@@ -165,14 +165,14 @@ cfg.ChecksumAlgorithm = httpc.ChecksumSHA256
 
 result, err := httpc.DownloadWithOptions(url, cfg)
 if err != nil {
-    // Checksum mismatch automatically returns an error and deletes the downloaded file
+    // Automatically returns error and deletes downloaded file on checksum mismatch
     log.Fatal(err)
 }
 fmt.Println("Checksum:", result.ActualChecksum)
 ```
 
 :::tip
-When `Checksum` is set, file integrity is automatically verified upon download completion. If verification fails, the file is automatically deleted and an error is returned -- no manual comparison needed.
+When `Checksum` is set, file integrity is automatically verified upon download completion. A failed verification automatically deletes the file and returns an error -- no manual comparison needed.
 :::
 
 ## Security Protection
@@ -183,10 +183,10 @@ File downloads include multiple layers of built-in security:
 |------------|-------------|
 | UNC path blocking | Blocks `\\server\share` format paths |
 | Control character filtering | Blocks control characters in paths |
-| System path protection | Prevents writing to system directories |
+| System path protection | Blocks writing to system directories |
 | Path traversal detection | Detects `../` path traversal |
 | Symlink detection | Prevents symlink attacks |
-| Parent directory detection | Recursively checks parent directory symlinks |
+| Parent directory check | Recursively checks parent directory symlinks |
 
 ## Resumable Downloads
 
@@ -202,13 +202,13 @@ if result.Resumed {
 ```
 
 Resume mechanism:
-1. Check local file size → use as `Range` request offset
-2. Server returns 206 (Partial Content) → append write
-3. Server returns 416 (Range Not Satisfiable) → return error
-4. Server returns 200 (Range not supported) → return error (protects local partial file from being overwritten)
+1. Check local file size -> use as `Range` request offset
+2. Server returns 206 (Partial Content) -> append write
+3. Server returns 416 (Range Not Satisfiable) -> return error
+4. Server returns 200 (Range not supported) -> return error (protect local partial file from being overwritten)
 
 ## See Also
 
 - [File Upload and Download](../guides/file-transfer) - Usage guide
-- [Package Functions](./functions) - Helper functions reference
+- [Package Functions](./functions) - Helper function reference
 - [Domain Client](./domain-client) - Domain client download methods

@@ -1,17 +1,17 @@
 ---
-title: "Цепочка промежуточного ПО — HTTPC"
-description: "Руководство по цепочке промежуточного ПО HTTPC: принцип выполнения луковой модели с двунаправленной обработкой запросов/ответов, конфигурация восьми встроенных промежуточных ПО Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit, паттерн композиции Chain и методы написания пользовательского MiddlewareFunc, включая пример промежуточного ПО с размыкателем цепи."
+title: "Цепочки промежуточного ПО - HTTPC"
+description: "Руководство по цепочке промежуточного ПО HTTPC: принцип выполнения луковой модели и двусторонняя обработка запроса/ответа, конфигурация восьми встроенных промежуточных ПО Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit, паттерн ручной композиции Chain, метод написания пользовательского MiddlewareFunc и пример промежуточного ПО с размыкателем цепи."
 ---
 
-# Цепочка промежуточного ПО
+# Цепочки промежуточного ПО
 
 ## Луковая модель
 
-Промежуточное ПО HTTPC использует луковую модель: запросы идут снаружи внутрь, ответы — изнутри наружу:
+Промежуточное ПО HTTPC использует луковую модель: запрос проходит снаружи внутрь, ответ — изнутри наружу:
 
 ```text
 Запрос →  Recovery  →  Logging  →  RequestID  → Handler
-                                                        ↓
+                                                          ↓
 Ответ  ←  Recovery  ←  Logging  ←  RequestID  ← Response
 ```
 
@@ -20,7 +20,7 @@ cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RecoveryMiddleware(),    // Внешний слой: восстановление после panic
     httpc.LoggingMiddleware(log.Printf), // Второй слой: логирование
-    httpc.RequestIDMiddleware("X-Request-ID", nil), // Внутренний слой: ID запроса
+    httpc.RequestIDMiddleware("X-Request-ID", nil), // Внутренний слой: Request ID
 }
 
 client, _ := httpc.New(cfg)
@@ -49,10 +49,10 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 
 ### RequestIDMiddleware
 
-Добавляет уникальный ID к каждому запросу, генерируется через `crypto/rand`:
+Добавляет уникальный ID каждому запросу, генерируется с использованием `crypto/rand`:
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // По умолчанию 32 символа hex
+httpc.RequestIDMiddleware("X-Request-ID", nil) // 32-символьный hex по умолчанию
 
 // Пользовательский генератор
 httpc.RequestIDMiddleware("X-Request-ID", func() string {
@@ -95,7 +95,7 @@ httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.D
 
 ### AuditMiddleware
 
-Аудит безопасности для финансовых, медицинских и других сценариев соответствия:
+Безопасность аудит для финансовых, медицинских и других сценариев с требованиями соответствия:
 
 ```go
 httpc.AuditMiddleware(func(event httpc.AuditEvent) {
@@ -156,7 +156,7 @@ func CORSMiddleware(origin string) httpc.MiddlewareFunc {
             // Вызов следующего обработчика
             resp, err := next(ctx, req)
 
-            // Фаза ответа: логирование или модификация ответа
+            // Фаза ответа: запись или модификация ответа
             if resp != nil {
                 log.Printf("Статус ответа: %d", resp.StatusCode())
             }
@@ -215,6 +215,6 @@ client, _ := httpc.New(cfg)
 
 ## Что дальше
 
-- [Промежуточное ПО API](../api-reference/middleware) — полный справочник промежуточного ПО
-- [Повторные попытки и отказоустойчивость](./retry-fault-tolerance) — руководство по настройке повторных попыток
-- [Обзор безопасности](../security/) — практики безопасности с промежуточным ПО аудита
+- [Промежуточное ПО API](../api-reference/middleware) - полный справочник промежуточного ПО
+- [Повторные попытки и отказоустойчивость](./retry-fault-tolerance) - руководство по стратегии повторов
+- [Обзор безопасности](../security/) - практики безопасности промежуточного ПО аудита

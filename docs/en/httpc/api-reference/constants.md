@@ -1,6 +1,6 @@
 ---
 title: "Constants and Types - HTTPC"
-description: "HTTPC constants and types: BodyKind enum, FormData/FileData upload, AuditEvent struct, and SourceIPKey/UserIDKey context keys."
+description: "HTTPC constants and types API reference: BodyKind six request body enums and auto-detection rules, FormData and FileData file upload types, AuditEvent audit event struct, AuditMiddlewareConfig audit configuration, and SourceIPKey context key definitions."
 ---
 
 # Constants and Types
@@ -11,7 +11,7 @@ description: "HTTPC constants and types: BodyKind enum, FormData/FileData upload
 type BodyKind int
 ```
 
-Request body type, used with `WithBody` to specify the request body format.
+Request body type, used with `WithBody` to specify the body format.
 
 | Constant | Value | Description | Content-Type |
 |----------|-------|-------------|-------------|
@@ -75,7 +75,7 @@ form := &httpc.FormData{
 result, err := client.Post(url, httpc.WithFormData(form))
 ```
 
-## Audit Event
+## Audit Events
 
 ### AuditEvent
 
@@ -83,7 +83,7 @@ result, err := client.Post(url, httpc.WithFormData(form))
 type AuditEvent struct {
     Timestamp     time.Time           `json:"timestamp"`
     Method        string              `json:"method"`
-    URL           string              `json:"url"`           // Sanitized (credentials removed)
+    URL           string              `json:"url"`           // Masked (credentials removed)
     StatusCode    int                 `json:"statusCode"`
     Duration      time.Duration       `json:"duration"`
     Attempts      int                 `json:"attempts"`
@@ -102,8 +102,8 @@ type AuditEvent struct {
 type AuditMiddlewareConfig struct {
     Format         string   // "text" or "json"
     IncludeHeaders bool     // Include request/response headers
-    MaskHeaders    []string // Header names to sanitize
-    SanitizeError  bool     // Sanitize error messages
+    MaskHeaders    []string // Header names to mask
+    SanitizeError  bool     // Mask error messages
 }
 ```
 
@@ -115,7 +115,7 @@ type AuditMiddlewareConfig struct {
 | `UserIDKey` | `auditContextKey` | User ID in audit events |
 
 ```go
-// Pass audit information through context
+// Pass audit information via context
 ctx := context.WithValue(context.Background(), httpc.SourceIPKey, "192.168.1.1")
 ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 
@@ -129,7 +129,7 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
 }
 client, _ := httpc.New(cfg)
 
-// Values from context are read by middleware when sending requests
+// Values from context are read by the middleware when sending requests
 result, err := client.Request(ctx, "GET", url)
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "패키지 함수 - HTTPC"
-description: "HTTPC 패키지 레벨 함수와 클라이언트 메서드 API 레퍼런스: Get/Post 등 7가지 HTTP 패키지 레벨 함수, New 클라이언트 생성, SetDefaultClient 기본 클라이언트 관리, DownloadFile 등 4개의 다운로드 함수, ReleaseResult 객체 풀 재사용, FormatBytes 보조 함수와 NewDomain 도메인 클라이언트."
+description: "HTTPC 패키지 레벨 함수와 클라이언트 메서드 API 레퍼런스: Get/Post 등 일곱 가지 HTTP 메서드, New 클라이언트 생성, 네 개 다운로드 함수, SetSecurityWarnOutput 보안 경고와 NewDomain 도메인 클라이언트 생성을 다룹니다."
 ---
 
 # 패키지 함수
@@ -73,7 +73,7 @@ Client 인터페이스는 패키지 레벨 함수와 동일한 HTTP 메서드와
 func New(config ...*Config) (Client, error)
 ```
 
-새로운 HTTP 클라이언트를 생성합니다. 구성을 전달하지 않거나 `nil`을 전달하면 `DefaultConfig()`를 사용합니다.
+새 HTTP 클라이언트를 생성합니다. 설정을 전달하지 않거나 `nil`을 전달하면 `DefaultConfig()`를 사용합니다.
 
 ```go
 client, err := httpc.New()
@@ -100,7 +100,7 @@ result, err := client.Request(ctx, "GET", url, options...)
 
 ### Close
 
-Client 인터페이스 메서드로, 클라이언트가 보유한 리소스(연결 풀, Transport)를 해제합니다. 호출 후에는 다시 사용할 수 없습니다.
+Client 인터페이스 메서드로, 클라이언트가 보유한 리소스(연결 풀, Transport)를 해제합니다. 호출 후에는 더 이상 사용할 수 없습니다.
 
 ```go
 // Client 인터페이스 메서드
@@ -120,17 +120,17 @@ defer client.Close()
 func SetDefaultClient(client Client) error
 ```
 
-사용자 정의 클라이언트를 기본 클라이언트로 설정하여 패키지 레벨 함수에서 사용합니다. 이전 기본 클라이언트는 자동으로 닫힙니다.
+커스텀 클라이언트를 기본 클라이언트로 설정하여 패키지 함수에서 사용합니다. 이전 기본 클라이언트는 자동으로 닫힙니다.
 
 :::warning 제한
-`httpc.New()`로 생성된 클라이언트만 허용하며, 이미 닫힌 클라이언트는 설정할 수 없습니다.
+`httpc.New()`로 생성된 클라이언트만 허용되며, 이미 닫힌 클라이언트는 설정할 수 없습니다.
 :::
 
 ```go
 client, _ := httpc.New(httpc.PerformanceConfig())
 httpc.SetDefaultClient(client)
 
-// 이후 패키지 레벨 함수는 PerformanceConfig 사용
+// 이후 패키지 함수는 PerformanceConfig 사용
 result, _ := httpc.Get(url)
 ```
 
@@ -140,26 +140,7 @@ result, _ := httpc.Get(url)
 func CloseDefaultClient() error
 ```
 
-기본 클라이언트를 닫고 초기화합니다. 다음에 패키지 레벨 함수를 호출하면 새 클라이언트가 생성됩니다.
-
-## 결과 관리
-
-### ReleaseResult
-
-```go
-func ReleaseResult(r *Result)
-```
-
-Result를 객체 풀로 반환하여 GC 부하를 줄입니다. 호출 후 Result를 다시 사용할 수 없습니다.
-
-```go
-result, _ := httpc.Get(url)
-defer httpc.ReleaseResult(result)
-```
-
-:::warning 주의
-`ReleaseResult` 호출 후 Result에 접근하지 마세요. 내부 데이터가 초기화됩니다.
-:::
+기본 클라이언트를 닫고 초기화합니다. 다음 패키지 함수 호출 시 새 클라이언트가 생성됩니다.
 
 ## 다운로드 함수
 
@@ -174,7 +155,7 @@ func DownloadFile(url string, filePath string, options ...RequestOption) (*Downl
 기본 클라이언트를 사용하여 파일을 지정된 경로에 다운로드합니다.
 
 ```go
-// 패키지 레벨 함수
+// 패키지 함수
 result, err := httpc.DownloadFile("https://example.com/file.zip", "/tmp/file.zip")
 
 // Client 인터페이스 메서드
@@ -187,7 +168,7 @@ result, err := client.DownloadFile("https://example.com/file.zip", "/tmp/file.zi
 func DownloadWithOptions(url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 ```
 
-구성이 포함된 파일 다운로드로, 이어받기와 진행률 콜백을 지원합니다.
+설정이 포함된 파일 다운로드로, 이어받기와 진행률 콜백을 지원합니다.
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -198,7 +179,7 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     fmt.Printf("\r%.1f%%", float64(downloaded)/float64(total)*100)
 }
 
-// 패키지 레벨 함수
+// 패키지 함수
 result, err := httpc.DownloadWithOptions(url, cfg)
 // Client 인터페이스 메서드
 result, err = client.DownloadWithOptions(url, cfg)
@@ -213,7 +194,7 @@ func DownloadFileWithContext(ctx context.Context, url string, filePath string, o
 컨텍스트 제어가 포함된 파일 다운로드로, 타임아웃과 취소를 지원합니다.
 
 ```go
-// 패키지 레벨 함수
+// 패키지 함수
 result, err := httpc.DownloadFileWithContext(ctx, url, "/tmp/file.zip")
 // Client 인터페이스 메서드
 result, err = client.DownloadFileWithContext(ctx, url, "/tmp/file.zip")
@@ -225,10 +206,10 @@ result, err = client.DownloadFileWithContext(ctx, url, "/tmp/file.zip")
 func DownloadWithOptionsWithContext(ctx context.Context, url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 ```
 
-구성과 컨텍스트 제어가 포함된 파일 다운로드입니다.
+설정과 컨텍스트 제어가 포함된 파일 다운로드입니다.
 
 ```go
-// 패키지 레벨 함수
+// 패키지 함수
 result, err := httpc.DownloadWithOptionsWithContext(ctx, url, downloadOpts)
 // Client 인터페이스 메서드
 result, err = client.DownloadWithOptionsWithContext(ctx, url, downloadOpts)
@@ -236,31 +217,25 @@ result, err = client.DownloadWithOptionsWithContext(ctx, url, downloadOpts)
 
 ## 보조 함수
 
-### FormatBytes
+### SetSecurityWarnOutput
 
 ```go
-func FormatBytes(bytes int64) string
+func SetSecurityWarnOutput(w io.Writer)
 ```
 
-바이트 수를 사람이 읽을 수 있는 문자열로 포맷합니다.
+보안 경고 출력을 리다이렉트합니다(`TestingConfig`, `InsecureSkipVerify` 경고 등). `io.Discard`를 전달하면 모든 경고를 음소거할 수 있습니다.
 
 ```go
-httpc.FormatBytes(1536)      // "1.50 KB"
-httpc.FormatBytes(1048576)   // "1.00 MB"
+// 모든 보안 경고 음소거
+httpc.SetSecurityWarnOutput(io.Discard)
+
+// 커스텀 로그로 리다이렉트
+httpc.SetSecurityWarnOutput(log.Writer())
 ```
 
-### FormatSpeed
-
-```go
-func FormatSpeed(bytesPerSecond float64) string
-```
-
-전송 속도를 사람이 읽을 수 있는 문자열로 포맷합니다.
-
-```go
-httpc.FormatSpeed(1536.0)    // "1.50 KB/s"
-httpc.FormatSpeed(1048576.0) // "1.00 MB/s"
-```
+:::warning
+이 함수는 주로 테스트용입니다. 프로덕션 환경에서는 경고를 억제하기보다 `SecureConfig()` 또는 `DefaultConfig()`를 사용하세요.
+:::
 
 ## 도메인 클라이언트
 
@@ -280,9 +255,9 @@ dc.SetHeader("Authorization", "Bearer "+token)
 result, err := dc.Get("/users")
 ```
 
-## 참고
+## 관련 항목
 
 - [Result](./result) - 응답 결과 타입과 메서드
-- [요청 옵션](./options) - 요청 구성 옵션
+- [요청 옵션](./options) - 요청 설정 옵션
 - [도메인 클라이언트](./domain-client) - 도메인 범위 클라이언트
 - [파일 다운로드](./download) - 다운로드 함수와 타입

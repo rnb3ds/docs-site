@@ -1,11 +1,11 @@
 ---
 title: "リクエストオプション - HTTPC"
-description: "HTTPC 27個のリクエストオプション関数APIリファレンス：WithHeaderリクエストヘッダー、WithBearerToken認証、WithJSON/WithXML/WithForm/WithBinary各種リクエストボディ、WithQueryクエリパラメータ、5種類のCookieオプションとWithOnRequest/WithOnResponseコールバック。"
+description: "HTTPC リクエストオプション API リファレンス：WithHeader ヘッダー、WithBearerToken 認証、WithJSON/WithXML/WithForm/WithBinary ボディ、WithQuery パラメータ、5 種類の Cookie オプション、WithOnRequest/WithOnResponse コールバック関数。"
 ---
 
 # リクエストオプション
 
-リクエストオプションは関数型の設定項目で、`RequestOption`タイプを通じてリクエストメソッドに渡し、きめ細かなリクエスト制御を実現します。
+リクエストオプションは関数型の設定項目で、`RequestOption` タイプを通じてリクエストメソッドに渡し、きめ細かなリクエスト制御を実現します。
 
 ```go
 result, err := client.Post(url,
@@ -15,7 +15,7 @@ result, err := client.Post(url,
 )
 ```
 
-すべてのオプションは自由に組み合わせ可能で、渡された順序で順次適用されます。
+すべてのオプションは自由に組み合わせ可能で、渡された順に適用されます。
 
 ## リクエストヘッダー
 
@@ -25,7 +25,7 @@ result, err := client.Post(url,
 func WithHeader(key, value string) RequestOption
 ```
 
-単一のリクエストヘッダーを設定します。キーと値はセキュリティ検証を受けます（CRLFインジェクション防止）。
+単一のリクエストヘッダーを設定します。キーと値はセキュリティ検証を通過します（CRLF インジェクション対策）。
 
 ```go
 result, err := client.Get(url,
@@ -56,7 +56,7 @@ result, err := client.Get(url,
 func WithUserAgent(userAgent string) RequestOption
 ```
 
-User-Agentヘッダーを設定します。`WithHeader("User-Agent", ...)`の便利なラッパーです。
+User-Agent ヘッダーを設定します。`WithHeader("User-Agent", ...)` の便利なラッパーです。
 
 ## 認証
 
@@ -66,7 +66,7 @@ User-Agentヘッダーを設定します。`WithHeader("User-Agent", ...)`の便
 func WithBasicAuth(username, password string) RequestOption
 ```
 
-HTTP Basic認証を設定します。ユーザー名は空にできず、認証情報の長さに制限があります。
+HTTP Basic 認証を設定します。ユーザー名は空にできず、認証情報の長さに制限があります。
 
 ```go
 result, err := client.Get(url,
@@ -80,7 +80,7 @@ result, err := client.Get(url,
 func WithBearerToken(token string) RequestOption
 ```
 
-`Authorization: Bearer <token>`ヘッダーを設定します。Tokenは空にできません。
+`Authorization: Bearer <token>` ヘッダーを設定します。Token は空にできません。
 
 ```go
 result, err := client.Get(url,
@@ -96,7 +96,7 @@ result, err := client.Get(url,
 func WithJSON(data any) RequestOption
 ```
 
-JSONリクエストボディを設定し、自動的に`Content-Type: application/json`を追加します。
+JSON リクエストボディを設定します。自動的に `Content-Type: application/json` が追加されます。
 
 ```go
 result, err := client.Post(url,
@@ -113,7 +113,7 @@ result, err := client.Post(url,
 func WithXML(data any) RequestOption
 ```
 
-XMLリクエストボディを設定し、自動的に`Content-Type: application/xml`を追加します。
+XML リクエストボディを設定します。自動的に `Content-Type: application/xml` が追加されます。
 
 ### WithForm
 
@@ -121,7 +121,7 @@ XMLリクエストボディを設定し、自動的に`Content-Type: application
 func WithForm(data map[string]string) RequestOption
 ```
 
-URLエンコードフォームリクエストボディを設定し、自動的に`Content-Type: application/x-www-form-urlencoded`を追加します。
+URL エンコードフォームのリクエストボディを設定します。自動的に `Content-Type: application/x-www-form-urlencoded` が追加されます。
 
 ```go
 result, err := client.Post(url,
@@ -138,7 +138,7 @@ result, err := client.Post(url,
 func WithFormData(data *FormData) RequestOption
 ```
 
-`multipart/form-data`リクエストボディを設定します。ファイルとフィールドの混合アップロードをサポートします。
+`multipart/form-data` リクエストボディを設定します。ファイルとフィールドの混合アップロードに対応します。
 
 ```go
 result, err := client.Post(url,
@@ -157,7 +157,7 @@ result, err := client.Post(url,
 func WithFile(fieldName, filename string, content []byte) RequestOption
 ```
 
-簡単なファイルアップロード。自動的にmultipartリクエストボディを構築します。ファイル名はパストラバーサル防止処理を受けます。
+ファイルアップロードの便利な関数。自動的に multipart リクエストボディを構築します。ファイル名はパストラバーサル対策の処理を通過します。
 
 ```go
 result, err := client.Post(url,
@@ -171,7 +171,7 @@ result, err := client.Post(url,
 func WithBinary(data []byte, contentType ...string) RequestOption
 ```
 
-バイナリリクエストボディを設定します。デフォルトのContent-Typeは`application/octet-stream`で、カスタマイズ可能です。
+バイナリリクエストボディを設定します。デフォルトの Content-Type は `application/octet-stream` で、カスタマイズ可能です。
 
 ```go
 result, err := client.Post(url,
@@ -185,17 +185,17 @@ result, err := client.Post(url,
 func WithBody(data any, kind ...BodyKind) RequestOption
 ```
 
-汎用リクエストボディ設定。自動検出と明示的なタイプ指定をサポートします。
+汎用リクエストボディ設定。自動検出と明示的なタイプ指定に対応します。
 
-**自動検出ルール**（デフォルト`BodyAuto`）：
+**自動検出ルール**（デフォルト `BodyAuto`）：
 
 | 入力タイプ | Content-Type |
-|------------|-------------|
+|-----------|-------------|
 | `string` | text/plain; charset=utf-8 |
 | `[]byte` | application/octet-stream |
 | `map[string]string` | application/x-www-form-urlencoded |
 | `*FormData` | multipart/form-data |
-| `io.Reader` | 設定しない（呼び出し元が処理） |
+| `io.Reader` | 設定なし（呼び出し元が処理） |
 | その他のタイプ | application/json |
 
 **明示的なタイプ指定**：
@@ -204,21 +204,21 @@ func WithBody(data any, kind ...BodyKind) RequestOption
 // 自動検出（デフォルト）
 result, _ := client.Post(url, httpc.WithBody(data))
 
-// JSON強制
+// JSON を強制
 result, _ := client.Post(url, httpc.WithBody(data, httpc.BodyJSON))
 
-// XML強制
+// XML を強制
 result, _ := client.Post(url, httpc.WithBody(data, httpc.BodyXML))
 ```
 
 | 定数 | 意味 |
 |------|------|
 | `BodyAuto` | 自動検出（デフォルト） |
-| `BodyJSON` | JSON強制 |
-| `BodyXML` | XML強制 |
-| `BodyForm` | フォーム強制 |
-| `BodyBinary` | バイナリ強制 |
-| `BodyMultipart` | multipart強制（`*FormData`が必要） |
+| `BodyJSON` | JSON を強制 |
+| `BodyXML` | XML を強制 |
+| `BodyForm` | フォームを強制 |
+| `BodyBinary` | バイナリを強制 |
+| `BodyMultipart` | multipart を強制（`*FormData` が必要） |
 
 ## クエリパラメータ
 
@@ -263,7 +263,7 @@ result, err := client.Get(url,
 func WithCookie(cookie http.Cookie) RequestOption
 ```
 
-単一のCookieを追加します。セキュリティ検証を受けます。
+単一の Cookie を追加します。セキュリティ検証を通過します。
 
 ```go
 result, err := client.Get(url,
@@ -277,7 +277,7 @@ result, err := client.Get(url,
 func WithCookies(cookies []http.Cookie) RequestOption
 ```
 
-Cookieを一括追加します。`WithCookie`の複数回呼び出しより効率的です。容量を事前に割り当て、一度の走査ですべてのCookieを検証します。
+Cookie を一括追加します。`WithCookie` を複数回呼び出すよりも効率的です。容量を事前に割り当て、1 回の走査ですべての Cookie を検証します。
 
 ```go
 cookies := []http.Cookie{
@@ -296,7 +296,7 @@ result, err := client.Get("https://api.example.com",
 func WithCookieMap(cookies map[string]string) RequestOption
 ```
 
-シンプルなCookieを一括追加します。name-valueのみ必要なシナリオに適しています。
+シンプルな Cookie を一括追加します。name-value のみが必要なケースに適しています。
 
 ```go
 result, err := client.Get(url,
@@ -313,7 +313,7 @@ result, err := client.Get(url,
 func WithCookieString(cookieString string) RequestOption
 ```
 
-生のCookieヘッダー文字列からCookieを追加します。
+生の Cookie ヘッダー文字列から Cookie を追加します。
 
 ```go
 result, err := client.Get(url,
@@ -327,7 +327,7 @@ result, err := client.Get(url,
 func WithSecureCookie(securityConfig *CookieSecurityConfig) RequestOption
 ```
 
-リクエストCookieのセキュリティ属性（Secure、HttpOnly、SameSite）の検証を強制します。
+リクエスト Cookie のセキュリティ属性（Secure、HttpOnly、SameSite）の検証を強制します。
 
 ```go
 result, err := client.Get(url,
@@ -343,7 +343,7 @@ result, err := client.Get(url,
 func WithContext(ctx context.Context) RequestOption
 ```
 
-リクエストコンテキストを設定します。タイムアウトとキャンセルをサポートします。コンテキストはnilにできません。
+リクエストコンテキストを設定します。タイムアウトとキャンセルに対応します。コンテキストは nil にできません。
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -358,7 +358,7 @@ result, err := client.Get(url, httpc.WithContext(ctx))
 func WithTimeout(timeout time.Duration) RequestOption
 ```
 
-単一リクエストのタイムアウトを設定し、クライアントのデフォルトタイムアウトを上書きします。範囲：0〜30分。
+単一リクエストのタイムアウトを設定します。クライアントのデフォルトタイムアウトをオーバーライドします。範囲：0 ～ 30 分。
 
 ```go
 result, err := client.Get(url, httpc.WithTimeout(5*time.Second))
@@ -370,7 +370,7 @@ result, err := client.Get(url, httpc.WithTimeout(5*time.Second))
 func WithMaxRetries(maxRetries int) RequestOption
 ```
 
-単一リクエストの最大リトライ回数を設定し、クライアント設定を上書きします。範囲：0〜10。
+単一リクエストの最大リトライ回数を設定します。クライアント設定をオーバーライドします。範囲：0-10。
 
 ```go
 result, err := client.Get(url, httpc.WithMaxRetries(3))
@@ -395,7 +395,7 @@ result, err := client.Get(url, httpc.WithFollowRedirects(false))
 func WithMaxRedirects(maxRedirects int) RequestOption
 ```
 
-単一リクエストの最大リダイレクト回数を設定します。範囲：0〜50。
+単一リクエストの最大リダイレクト回数を設定します。範囲：0-50。
 
 ### WithStreamBody
 
@@ -403,7 +403,7 @@ func WithMaxRedirects(maxRedirects int) RequestOption
 func WithStreamBody(stream bool) RequestOption
 ```
 
-ストリーミングモードを有効にします。レスポンスボディはメモリにキャッシュされません。ファイルダウンロードで内部的に使用され、大きなファイルによるメモリ消費を防ぎます。
+ストリーミングモードを有効にします。レスポンスボディはメモリにキャッシュされません。内部的にファイルダウンロードで使用され、大きなファイルのメモリ消費を防ぎます。
 
 ```go
 result, err := client.Get(url, httpc.WithStreamBody(true))
@@ -417,7 +417,7 @@ result, err := client.Get(url, httpc.WithStreamBody(true))
 func WithOnRequest(callback func(req RequestMutator) error) RequestOption
 ```
 
-リクエスト送信前のコールバックを登録します。チェーン登録が可能で、追加した順序で実行されます。コールバックがエラーを返すとリクエストが中止されます。
+リクエスト送信前のコールバックを登録します。チェーン登録が可能で、追加順に実行されます。コールバックがエラーを返すとリクエストが中止されます。
 
 ```go
 result, err := client.Get(url,
@@ -434,7 +434,7 @@ result, err := client.Get(url,
 func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
 ```
 
-レスポンス受信後のコールバックを登録します。チェーン登録が可能で、追加した順序で実行されます。
+レスポンス受信後のコールバックを登録します。チェーン登録が可能で、追加順に実行されます。
 
 ```go
 result, err := client.Get(url,
@@ -447,6 +447,6 @@ result, err := client.Get(url,
 
 ## 関連項目
 
-- [定数とタイプ](./constants) - BodyKind定数とタイプエイリアス
-- [インターフェース定義](./interfaces) - RequestMutator、ResponseMutatorインターフェース
-- [リクエストとレスポンス](../guides/request-response) - リクエストオプション使用ガイド
+- [定数とタイプ](./constants) - BodyKind 定数とタイプエイリアス
+- [インターフェース定義](./interfaces) - RequestMutator、ResponseMutator インターフェース
+- [リクエストとレスポンス](../guides/request-response) - リクエストオプションの使用ガイド

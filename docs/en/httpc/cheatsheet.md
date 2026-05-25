@@ -1,9 +1,9 @@
 ---
-title: "Cheatsheet - HTTPC"
-description: "HTTPC cheatsheet: client creation, seven HTTP methods, request options, response handling, config presets, middleware, and error types."
+title: "Cheat Sheet - HTTPC"
+description: "HTTPC cheat sheet: client creation with five configuration presets, seven HTTP request methods including Get/Post, 27 WithXxx request options, Result response handling, middleware chain composition, ClientError error classification, file download, and domain client operations with complete code snippets."
 ---
 
-# Cheatsheet
+# Cheat Sheet
 
 ## Creating a Client
 
@@ -58,7 +58,7 @@ httpc.WithForm(map[string]string{...})  // x-www-form-urlencoded
 httpc.WithFormData(formData)            // multipart/form-data
 httpc.WithFile("file", "doc.pdf", data) // File upload
 httpc.WithBinary([]byte{...})           // application/octet-stream
-httpc.WithBinary([]byte{...}, "image/png") // Specify type
+httpc.WithBinary([]byte{...}, "image/png") // With content type
 httpc.WithBody(data)                    // Auto-detect type
 httpc.WithBody(data, httpc.BodyJSON)    // Explicit: BodyJSON/BodyXML/BodyForm/BodyBinary/BodyMultipart
 ```
@@ -130,8 +130,7 @@ result.RequestCookies()                // All request cookies
 result.GetRequestCookie("name")        // Get request cookie
 result.HasRequestCookie("name")        // Check request cookie
 result.SaveToFile("/path/to/file")     // Save to file
-result.String()                        // Human-readable representation (sensitive headers masked)
-httpc.ReleaseResult(result)            // Release to object pool
+result.String()                        // Human-readable representation (sensitive headers redacted)
 ```
 
 ## Configuration
@@ -229,7 +228,7 @@ dlCfg.FilePath = "/path/to/file"
 dlCfg.Overwrite = true
 dlCfg.ResumeDownload = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
-    fmt.Printf("\r%.1f%% (%s/s)", float64(downloaded)/float64(total)*100, httpc.FormatSpeed(speed))
+    fmt.Printf("\r%.1f%% (%.2f MB/s)", float64(downloaded)/float64(total)*100, float64(speed)/1024/1024)
 }
 dlResult, err := client.DownloadWithOptions(url, dlCfg)
 

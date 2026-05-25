@@ -1,11 +1,11 @@
 ---
-title: "Доменный клиент и сессии — HTTPC"
-description: "Руководство по доменному клиенту и управлению сессиями HTTPC: создание через NewDomain, автоматическая сборка URL, управление заголовками сессии SetHeader, автоматическое управление и захват Cookie, стратегия проверки безопасности CookieSecurity и пример обёртки клиента REST API."
+title: "Доменный клиент и сессии - HTTPC"
+description: "Руководство по доменному клиенту и управлению сессиями HTTPC: создание доменного клиента через NewDomain, правила автоматической сборки URL, управление заголовками сессии SetHeader, автоматическое управление Cookie и захват ответов, стратегия проверки безопасности CookieSecurity и практический пример обёртки REST API клиента."
 ---
 
 # Доменный клиент и сессии
 
-Доменный клиент (DomainClient) — это клиент управления сессиями для определённого домена с автоматическим поддержанием Cookie и заголовков.
+Доменный клиент (DomainClient) — это клиент управления сессиями для одного домена, автоматически поддерживающий Cookie и заголовки запросов.
 
 ## Создание доменного клиента
 
@@ -19,18 +19,18 @@ defer dc.Close()
 // Cookie автоматически включены
 dc.SetHeader("Authorization", "Bearer "+token)
 
-// Использование относительных путей для запросов
+// Использование относительных путей для отправки запросов
 result, err := dc.Get("/users")
 ```
 
-:::tip Совет
+:::tip
 `NewDomain` автоматически включает управление Cookie (`EnableCookies = true`), ручная настройка не требуется.
 :::
 
 ## Управление заголовками сессии
 
 ```go
-// Установка заголовков сессии (автоматически добавляются ко всем последующим запросам)
+// Установка заголовков сессии (все последующие запросы автоматически их содержат)
 dc.SetHeader("Authorization", "Bearer "+token)
 dc.SetHeader("Accept", "application/json")
 
@@ -45,7 +45,7 @@ dc.SetHeaders(map[string]string{
 dc.DeleteHeader("X-Version")
 dc.ClearHeaders()
 
-// Запрос
+// Получение
 headers := dc.GetHeaders()
 ```
 
@@ -58,14 +58,14 @@ dc.SetCookie(&http.Cookie{Name: "session", Value: "abc123"})
 // Массовая установка
 dc.SetCookies([]*http.Cookie{
     {Name: "session", Value: "abc123"},
-    {Name: "lang", Value: "ru"},
+    {Name: "lang", Value: "zh"},
 })
 
-// Автоматический захват Cookie из ответов
+// Автоматический захват Cookie из ответа
 result, _ := dc.Get("/login")
-// Set-Cookie от сервера автоматически сохраняются в сессию
+// Cookie из Set-Cookie сервера автоматически сохраняются в сессию
 
-// Запрос
+// Получение
 cookie := dc.GetCookie("session")
 cookies := dc.GetCookies()
 
@@ -74,11 +74,11 @@ dc.DeleteCookie("session")
 dc.ClearCookies()
 ```
 
-:::tip Совет
-После каждого запроса Cookie, возвращённые сервером, автоматически обновляются в сессии — ручная обработка не требуется.
+:::tip
+После каждого запроса Cookie, возвращённые сервером, автоматически обновляются в сессии, ручная обработка не требуется.
 :::
 
-## Способы выполнения запросов
+## Способы запросов
 
 ```go
 // Относительные пути
@@ -93,7 +93,7 @@ result, _ := dc.Options("/users")
 // С контекстом
 result, _ := dc.Request(ctx, "GET", "/users")
 
-// Абсолютный URL (пропускает сборку с base URL)
+// Абсолютный URL (обходит объединение с base URL)
 result, _ := dc.Get("https://other-api.com/data")
 ```
 
@@ -104,7 +104,7 @@ result, _ := dc.Get("https://other-api.com/data")
 dc.URL()     // "https://api.example.com"
 dc.Domain()  // "api.example.com"
 
-// Доступ к底层 SessionManager
+// Доступ к базовому SessionManager
 session := dc.Session()
 if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
     log.Fatal(err)
@@ -113,7 +113,7 @@ if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
 
 ## Проверка безопасности Cookie
 
-Можно настроить политику безопасности Cookie для принятия только тех, которые соответствуют стандартам безопасности:
+Можно настроить стратегию безопасности Cookie, принимая только Cookie, соответствующие стандартам безопасности:
 
 ```go
 dc, _ := httpc.NewDomain("https://api.example.com")
@@ -123,7 +123,7 @@ session := dc.Session()
 session.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
 // Требуется: Secure=true, HttpOnly=true, SameSite=Strict
 
-// Cookie, не соответствующие требованиям безопасности, вызовут ошибку SetCookie
+// Cookie, не соответствующие требованиям безопасности, вызовут ошибку при SetCookie
 if err := dc.SetCookie(&http.Cookie{
     Name:  "insecure",
     Value: "test",
@@ -171,7 +171,6 @@ func main() {
     if err := loginResult.Unmarshal(&loginResp); err != nil {
         log.Fatal(err)
     }
-    httpc.ReleaseResult(loginResult)
 
     // Установка заголовков сессии
     if err := dc.SetHeader("Authorization", "Bearer "+loginResp.Token); err != nil {
@@ -186,7 +185,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(users)
 
     fmt.Println(users.StatusCode()) // 200
 }
@@ -194,6 +192,6 @@ func main() {
 
 ## Что дальше
 
-- [Доменный клиент API](../api-reference/domain-client) — полный справочник API
-- [Управление сессиями API](../api-reference/session) — справочник SessionManager
-- [Запросы и ответы](./request-response) — руководство по базовым запросам
+- [Доменный клиент API](../api-reference/domain-client) - полный справочник API
+- [Управление сессиями API](../api-reference/session) - справочник по SessionManager
+- [Запросы и ответы](./request-response) - руководство по базовым запросам

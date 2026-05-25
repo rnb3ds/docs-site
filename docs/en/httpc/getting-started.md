@@ -1,9 +1,9 @@
 ---
-title: "Getting Started - HTTPC"
-description: "Get started with HTTPC in five minutes: install the module, make GET/POST requests, configure the client, parse JSON, and handle errors with ClientError."
+title: "Quick Start - HTTPC"
+description: "Get started with the HTTPC secure HTTP client library in five minutes, covering go get installation and project initialization, GET/POST request sending and response handling, five configuration presets, JSON parsing and type binding, Bearer Token authentication, and ClientError error classification."
 ---
 
-# Getting Started
+# Quick Start
 
 ## Installation
 
@@ -13,7 +13,7 @@ go get github.com/cybergodev/httpc
 
 ## Basic Requests
 
-No need to create a client. Use package-level functions directly:
+No need to create a client - use package-level functions directly:
 
 ```go
 package main
@@ -30,7 +30,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())       // Response body
@@ -41,7 +40,7 @@ Supported HTTP methods: `Get`, `Post`, `Put`, `Patch`, `Delete`, `Head`, `Option
 
 ## Creating a Client
 
-Create a client instance when you need custom configuration:
+When you need custom configuration, create a client instance:
 
 ```go
 client, err := httpc.New()
@@ -55,11 +54,11 @@ result, err := client.Get("https://httpbin.org/get")
 
 ### Configuration Presets
 
-| Preset | Use Case | Characteristics |
-|--------|----------|-----------------|
-| `DefaultConfig()` | General use | Secure defaults, SSRF protection enabled |
+| Configuration | Purpose | Features |
+|---------------|---------|----------|
+| `DefaultConfig()` | General purpose | Secure defaults, SSRF protection enabled |
 | `SecureConfig()` | Security-sensitive scenarios | Disables auto-redirect, strict timeouts |
-| `PerformanceConfig()` | High throughput | Large connection pool, longer timeouts, cookies enabled |
+| `PerformanceConfig()` | High throughput scenarios | Large connection pool, long timeouts, cookies enabled |
 | `TestingConfig()` | Test environments | Disables security checks and HTTP/2, short timeouts |
 | `MinimalConfig()` | Lightweight requests | No retries, no redirects |
 
@@ -77,7 +76,6 @@ result, err := client.Get("https://httpbin.org/json")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // Status check
 result.StatusCode()     // 200
@@ -128,7 +126,6 @@ if err != nil {
     }
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // HTTP status codes need manual checking
 switch {
@@ -142,13 +139,13 @@ case result.IsServerError():
 ```
 
 :::tip
-4xx/5xx responses are not returned as `error`. Check them using methods like `result.IsSuccess()`. See [Error Handling](./advanced/error-handling) for details.
+4xx/5xx are not returned as `error`. Check them via `result.IsSuccess()` and similar methods. See [Error Handling](./advanced/error-handling) for details.
 :::
 
 ## Next Steps
 
 - **[Tutorial](./guides/tutorial)** - Build a GitHub API client in 30 minutes
-- **[Request and Response](./guides/request-response)** - Complete request options and response handling
-- **[Basic Usage](./examples/basic-usage)** - Practical examples for GET/POST/middleware
-- **[Cheatsheet](./cheatsheet)** - Quick reference for common operations
+- **[Request & Response](./guides/request-response)** - Complete request options and response handling
+- **[Basic Examples](./examples/basic-usage)** - Practical examples for GET/POST/middleware
+- **[Cheat Sheet](./cheatsheet)** - Quick reference for common operations
 - **[Security](./security/)** - Security best practices

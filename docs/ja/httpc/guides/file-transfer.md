@@ -1,13 +1,13 @@
 ---
 title: "ファイルアップロードとダウンロード - HTTPC"
-description: "HTTPCファイルアップロードとダウンロードガイド：WithFile簡単アップロード、WithFormData Multipartマルチファイルアップロード、DownloadFile基本ダウンロード、DownloadWithOptionsプログレスコールバック付き、レジュームダウンロードResumeDownload、SHA-256チェックサムとUNCパスなどのセキュリティ防護。"
+description: "HTTPC ファイルアップロードとダウンロードガイド：WithFile で簡単アップロード、WithFormData Multipart マルチファイルアップロード、DownloadFile 基本ダウンロード、DownloadWithOptions プログレス付きダウンロード、レジューム ResumeDownload、SHA-256 チェックサムと UNC パスなどのセキュリティ防護。"
 ---
 
 # ファイルアップロードとダウンロード
 
 ## ファイルアップロード
 
-### 簡単ファイルアップロード
+### シンプルなファイルアップロード
 
 ```go
 fileContent, err := os.ReadFile("document.pdf")
@@ -20,9 +20,9 @@ result, err := httpc.Post("https://api.example.com/upload",
 )
 ```
 
-### Multipartフォーム
+### Multipart フォーム
 
-ファイルのアップロードと同時にフォームフィールドを送信：
+ファイルと一緒にフォームフィールドを送信：
 
 ```go
 form := &httpc.FormData{
@@ -82,11 +82,11 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("ダウンロード完了: %s\n", httpc.FormatBytes(result.BytesWritten))
+fmt.Printf("ダウンロード完了: %d bytes\n", result.BytesWritten)
 fmt.Printf("所要時間: %v\n", result.Duration)
 ```
 
-### プログレスコールバック付き
+### 進捗コールバック付き
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -94,7 +94,7 @@ cfg.FilePath = "/tmp/file.zip"
 cfg.Overwrite = true
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rダウンロード中: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\rダウンロード中: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := httpc.DownloadWithOptions("https://example.com/file.zip", cfg)
@@ -102,13 +102,13 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\nダウンロード完了: %s, 平均速度 %s\n",
-    httpc.FormatBytes(result.BytesWritten),
-    httpc.FormatSpeed(result.AverageSpeed),
+fmt.Printf("\nダウンロード完了: %d bytes, 平均速度 %.2f MB/s\n",
+    result.BytesWritten,
+    float64(result.AverageSpeed)/1024/1024,
 )
 ```
 
-### レジュームダウンロード
+### レジューム
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -121,12 +121,12 @@ if err != nil {
 }
 
 if result.Resumed {
-    fmt.Printf("レジューム完了: ブレークポイントから再開\n")
+    fmt.Printf("レジューム完了: ブレイクポイントから再開\n")
 }
 ```
 
-:::tip ヒント
-レジュームダウンロードはサーバーが`Range`リクエストヘッダーをサポートしている必要があります。サーバーがサポートしていない場合（206ではなく200を返す）、ダウンロード済みの部分ファイルを保護するためにエラーが返されます。
+:::tip
+レジュームはサーバーが `Range` リクエストヘッダーをサポートしている必要があります。サーバーがサポートしていない場合（206 ではなく 200 を返す）、ダウンロード済みの部分ファイルを保護するためにエラーが返されます。
 :::
 
 ### コンテキスト制御付き
@@ -146,18 +146,18 @@ if err != nil {
 
 ## セキュリティ保護
 
-ファイルダウンロードには多層セキュリティ保護が内蔵されています：
+ファイルダウンロードは多層セキュリティ保護を内蔵しています：
 
 | 保護層 | 説明 |
 |--------|------|
-| パス検証 | UNCパス、制御文字、パストラバーサルをブロック |
-| システムパス保護 | `/etc/`、`C:\Windows\`などのシステムディレクトリへの書き込みを禁止 |
+| パス検証 | UNC パス、制御文字、パストラバーサルをブロック |
+| システムパス保護 | `/etc/`、`C:\Windows\` などのシステムディレクトリへの書き込みを禁止 |
 | シンボリックリンク検出 | シンボリックリンク攻撃を防止 |
-| ファイルサイズ制限 | `MaxResponseBodySize`による制限 |
+| ファイルサイズ制限 | `MaxResponseBodySize` による制限 |
 
 ## ドメインクライアントでのダウンロード
 
-ドメインクライアントのダウンロードでは、レスポンスCookieが自動的にセッションにキャプチャされます：
+ドメインクライアントのダウンロードでは、レスポンス Cookie が自動的にセッションにキャプチャされます：
 
 ```go
 dc, _ := httpc.NewDomain("https://api.example.com")
@@ -165,12 +165,12 @@ defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
 
-// ダウンロードしつつセッションを自動管理
+// ダウンロードしながらセッションを自動管理
 result, err := dc.DownloadFile("/files/report.pdf", "/tmp/report.pdf")
 ```
 
 ## 次のステップ
 
-- [ファイルダウンロードAPI](../api-reference/download) - 完全なダウンロードAPIリファレンス
+- [ファイルダウンロード API](../api-reference/download) - 完全なダウンロード API リファレンス
 - [ドメインクライアントとセッション](./domain-session) - セッション管理
-- [リクエストとレスポンス](./request-response) - 基本的なリクエストガイド
+- [リクエストとレスポンス](./request-response) - 基本リクエストガイド

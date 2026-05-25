@@ -1,11 +1,11 @@
 ---
-title: "Управление сессиями — HTTPC"
-description: "Справочник API управления сессиями SessionManager HTTPC: создание NewSessionManager, конфигурация SessionConfig, CRUD заголовков сессии SetHeader/SetHeaders, методы Cookie SetCookie/SetCookies, проверка безопасности SetCookieSecurity и синхронизация ответов UpdateFromResult."
+title: "Управление сессиями - HTTPC"
+description: "Справочник API SessionManager HTTPC: создание через NewSessionManager, конфигурация SessionConfig, управление заголовками SetHeader/SetHeaders, методы SetCookie/SetCookies, проверка безопасности SetCookieSecurity и синхронизация ответов UpdateFromResult."
 ---
 
 # Управление сессиями
 
-SessionManager обеспечивает потокобезопасное хранение Cookie и заголовков запросов, используется внутри DomainClient.
+SessionManager предоставляет потокобезопасное хранилище Cookie и заголовков запросов, используемое внутри DomainClient.
 
 ## NewSessionManager
 
@@ -50,7 +50,7 @@ func DefaultSessionConfig() *SessionConfig
 func (s *SessionManager) SetHeader(key, value string) error
 ```
 
-Устанавливает заголовок сессии. Все последующие запросы автоматически включают его. Проверяет корректность ключа и значения заголовка.
+Устанавливает заголовок сессии. Все последующие запросы будут автоматически его содержать. Проверяет корректность ключа и значения заголовка.
 
 ```go
 err := sm.SetHeader("Authorization", "Bearer "+token)
@@ -103,7 +103,7 @@ func (s *SessionManager) GetHeaders() map[string]string
 func (s *SessionManager) SetCookie(cookie *http.Cookie) error
 ```
 
-Устанавливает Cookie сессии. Проверяет корректность Cookie, а при настроенной CookieSecurity также проверяет атрибуты безопасности.
+Устанавливает Cookie сессии. Проверяет корректность Cookie, а при наличии CookieSecurity также проверяет атрибуты безопасности.
 
 ```go
 err := sm.SetCookie(&http.Cookie{
@@ -152,7 +152,7 @@ func (s *SessionManager) GetCookies() []*http.Cookie
 func (s *SessionManager) GetCookie(name string) *http.Cookie
 ```
 
-Получает копию Cookie по имени, возвращает nil если не существует.
+Получает копию Cookie по имени, возвращает nil если не найден.
 
 ## Безопасность Cookie
 
@@ -174,7 +174,7 @@ sm.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
 func (s *SessionManager) UpdateFromResult(result *Result)
 ```
 
-Обновляет Cookie сессии из результата запроса. Небезопасные Cookie незаметно пропускаются.
+Обновляет Cookie сессии из результата запроса. Небезопасные Cookie silently пропускаются.
 
 ### UpdateFromCookies
 
@@ -186,6 +186,6 @@ func (s *SessionManager) UpdateFromCookies(cookies []*http.Cookie)
 
 ## См. также
 
-- [Доменный клиент](./domain-client) — справочник DomainClient
-- [Доменный клиент и сессии](../guides/domain-session) — руководство по использованию
-- [Определения интерфейсов](./interfaces) — справочник интерфейса DomainClienter
+- [Доменный клиент](./domain-client) - справочник по DomainClient
+- [Доменный клиент и сессии](../guides/domain-session) - руководство по использованию
+- [Интерфейсы](./interfaces) - справочник по интерфейсу DomainClienter

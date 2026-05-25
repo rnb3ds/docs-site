@@ -1,6 +1,6 @@
 ---
 title: "Error Handling - HTTPC"
-description: "HTTPC error handling: twelve ErrorType classifications, ClientError with IsRetryable, sentinel error matching with errors.Is/As, and layered timeout strategies."
+description: "HTTPC error handling guide: twelve ErrorType classifications, ClientError fields and IsRetryable check, sentinel error matching with errors.Is/As, retry exhausted handling, context timeout and cancellation, middleware-based unified error handling, and layered timeout best practices."
 ---
 
 # Error Handling
@@ -9,7 +9,7 @@ description: "HTTPC error handling: twelve ErrorType classifications, ClientErro
 
 HTTPC uses `ClientError` to classify errors, supporting `errors.As` and `errors.Is`.
 
-### Error Type Detection
+### Error Type Checking
 
 ```go
 result, err := client.Get("https://api.example.com/data")
@@ -28,7 +28,7 @@ if err != nil {
         case httpc.ErrorTypeCertificate:
             log.Printf("Certificate verification failed: %v", err)
         case httpc.ErrorTypeRetryExhausted:
-            log.Printf("Retry exhausted: %v", err)
+            log.Printf("Retries exhausted: %v", err)
         case httpc.ErrorTypeValidation:
             log.Printf("Request validation failed: %v", err)
         case httpc.ErrorTypeContextCanceled:
@@ -38,7 +38,7 @@ if err != nil {
 }
 ```
 
-### Retryable Check
+### Retryability Check
 
 ```go
 var clientErr *httpc.ClientError
@@ -62,17 +62,17 @@ if errors.Is(err, httpc.ErrResponseBodyEmpty) {
 }
 
 if errors.Is(err, httpc.ErrInvalidURL) {
-    // Invalid URL format
+    // URL format is invalid
 }
 
 if errors.Is(err, httpc.ErrInvalidHeader) {
-    // Invalid request header
+    // Header is invalid
 }
 ```
 
-## Retry and Errors
+## Retries and Errors
 
-For retry configuration details, see [Retry and Fault Tolerance](../guides/retry-fault-tolerance). Here we focus on error handling after retries are exhausted:
+For detailed retry configuration, see [Retry and Fault Tolerance](../guides/retry-fault-tolerance). Here we focus on error handling after retries are exhausted:
 
 ```go
 result, err := client.Get(url)
@@ -80,7 +80,7 @@ if err != nil {
     var clientErr *httpc.ClientError
     if errors.As(err, &clientErr) {
         if clientErr.Type == httpc.ErrorTypeRetryExhausted {
-            log.Printf("Failed after %d retries", clientErr.Attempts)
+            log.Printf("Still failed after %d retries", clientErr.Attempts)
         }
     }
     return err
@@ -98,7 +98,7 @@ if err != nil {
     var clientErr *httpc.ClientError
     if errors.As(err, &clientErr) {
         if clientErr.Type == httpc.ErrorTypeContextCanceled {
-            log.Println("Request canceled (timeout or manual cancellation)")
+            log.Println("Request was canceled (timeout or manual cancel)")
         }
     }
 }
@@ -106,18 +106,18 @@ if err != nil {
 
 ## Error Handling Best Practices
 
-### 1. Distinguish Client Errors from Server Errors
+### 1. Distinguish Between Client Errors and Server Errors
 
 ```go
 result, err := client.Get(url)
 if err != nil {
-    // Network-level error
+    // Network-layer error
     handleNetworkError(err)
     return
 }
 
 if result.IsClientError() {
-    // 4xx - Client request error
+    // 4xx - Client request was incorrect
     log.Printf("Client error: %d", result.StatusCode())
 } else if result.IsServerError() {
     // 5xx - Server failure

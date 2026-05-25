@@ -1,6 +1,6 @@
 ---
 title: "Advanced Examples - HTTPC"
-description: "HTTPC advanced examples: custom RetryPolicy, full middleware chain, REST API wrapper, concurrent downloads, and HMAC-SHA256 signing middleware."
+description: "HTTPC advanced examples: custom RetryPolicy retry strategy (502/503/504 only), complete middleware chain with Recovery/Timeout/Logging/Metrics/Audit, RESTful API client wrapper, sync.WaitGroup concurrent downloads, and HMAC-SHA256 request signing custom middleware."
 ---
 
 # Advanced Examples
@@ -10,13 +10,13 @@ description: "HTTPC advanced examples: custom RetryPolicy, full middleware chain
 Retry only on 502/503/504 with fixed delay:
 
 :::warning Internal Type
-The `resp` parameter type `ResponseReader` in `RetryPolicy.ShouldRetry` is an internal interface (defined in the `internal/types` package) and cannot be referenced from external packages. Custom `RetryPolicy` implementations must be in a package within the same module as `httpc`. Most scenarios can be satisfied through `RetryConfig` configuration. The following example demonstrates the implementation pattern, but the actual code must compile within the `httpc` module.
+The `resp` parameter type `ResponseReader` in `RetryPolicy.ShouldRetry` is an internal interface (defined in the `internal/types` package) that external packages cannot reference directly. Custom `RetryPolicy` must be implemented in a package within the same module as `httpc`. Most scenarios can be satisfied through `RetryConfig` configuration. The following example demonstrates the implementation pattern; actual code must compile within the `httpc` module.
 :::
 
 ```go
 // Note: ResponseReader is an internal type (internal/types package).
 // This code can only compile within the github.com/cybergodev/httpc module.
-// Most users should configure retries through RetryConfig and WithMaxRetries.
+// Most users should configure retries via RetryConfig and WithMaxRetries.
 
 type selectiveRetry struct {
     maxAttempts int
@@ -47,7 +47,7 @@ cfg := httpc.DefaultConfig()
 cfg.Retry.CustomPolicy = &selectiveRetry{maxAttempts: 5, baseDelay: time.Second}
 ```
 
-Alternative approach for external projects -- using `RetryConfig`:
+Alternative for external projects -- using `RetryConfig` configuration:
 
 ```go
 package main
@@ -77,7 +77,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode())
 }
@@ -109,7 +108,7 @@ func main() {
         },
     )
 
-    // Audit log (JSON format)
+    // Audit logging (JSON format)
     auditCfg := &httpc.AuditMiddlewareConfig{
         Format:         "json",
         IncludeHeaders: true,
@@ -143,7 +142,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     log.Printf("Total requests: %d", atomic.LoadInt64(&requestCount))
 }
@@ -194,7 +192,6 @@ func (c *APIClient) GetUser(ctx context.Context, id int) (*User, error) {
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     if !result.IsSuccess() {
         return nil, fmt.Errorf("API error: %d", result.StatusCode())
@@ -214,7 +211,6 @@ func (c *APIClient) CreateUser(ctx context.Context, name string) (*User, error) 
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     var user User
     if err := result.Unmarshal(&user); err != nil {
@@ -249,7 +245,7 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("Retrieved: %+v\n", user)
+    fmt.Printf("Fetched: %+v\n", user)
 }
 ```
 
@@ -292,7 +288,7 @@ func main() {
             cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
                 fmt.Printf("\r%s: %.1f%% (%s/s)", name,
                     float64(downloaded)/float64(total)*100,
-                    httpc.FormatSpeed(speed))
+                    float64(speed)/1024/1024)
             }
 
             result, err := client.DownloadWithOptions(u, cfg)
@@ -303,13 +299,13 @@ func main() {
 
             atomic.AddInt64(&successCount, 1)
             atomic.AddInt64(&totalBytes, result.BytesWritten)
-            fmt.Printf("\n%s complete: %s\n", name, httpc.FormatBytes(result.BytesWritten))
+            fmt.Printf("\n%s complete: %s\n", name, result.BytesWritten)
         }(filename, url)
     }
 
     wg.Wait()
     fmt.Printf("\nDownloads complete: %d/%d, total %s\n",
-        successCount, len(urls), httpc.FormatBytes(totalBytes))
+        successCount, len(urls), totalBytes)
 }
 ```
 
@@ -362,14 +358,12 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
-
     log.Println(result.StatusCode())
 }
 ```
 
 ## Next Steps
 
-- [Middleware Chain](../guides/middleware-chain) - Middleware architecture in detail
+- [Middleware Chain](../guides/middleware-chain) - Middleware architecture in depth
 - [Retry and Fault Tolerance](../guides/retry-fault-tolerance) - Custom retry strategies
-- [Performance Optimization](../advanced/performance) - Performance tuning recommendations
+- [Performance Optimization](../advanced/performance) - Performance tuning tips

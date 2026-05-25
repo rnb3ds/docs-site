@@ -1,6 +1,6 @@
 ---
 title: "파일 업로드와 다운로드 - HTTPC"
-description: "HTTPC 파일 업로드와 다운로드 가이드: WithFile 간단한 업로드, WithFormData Multipart 다중 파일 업로드, DownloadFile 기본 다운로드, DownloadWithOptions 진행률 콜백, 이어받기 ResumeDownload, SHA-256 체크섬과 UNC 경로 등 보안 보호."
+description: "HTTPC 파일 업로드와 다운로드 가이드: WithFile 간단 업로드, WithFormData Multipart 다중 파일 업로드, DownloadFile 기본 다운로드, DownloadWithOptions 진행률 콜백 포함, ResumeDownload 이어받기, SHA-256 체크섬과 UNC 경로 등 보안 방어를 다룹니다."
 ---
 
 # 파일 업로드와 다운로드
@@ -82,7 +82,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("다운로드 완료: %s\n", httpc.FormatBytes(result.BytesWritten))
+fmt.Printf("다운로드 완료: %d bytes\n", result.BytesWritten)
 fmt.Printf("소요 시간: %v\n", result.Duration)
 ```
 
@@ -94,7 +94,7 @@ cfg.FilePath = "/tmp/file.zip"
 cfg.Overwrite = true
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r다운로드 중: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\r다운로드 중: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := httpc.DownloadWithOptions("https://example.com/file.zip", cfg)
@@ -102,9 +102,9 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\n다운로드 완료: %s, 평균 속도 %s\n",
-    httpc.FormatBytes(result.BytesWritten),
-    httpc.FormatSpeed(result.AverageSpeed),
+fmt.Printf("\n다운로드 완료: %d bytes, 평균 속도 %.2f MB/s\n",
+    result.BytesWritten,
+    float64(result.AverageSpeed)/1024/1024,
 )
 ```
 
@@ -125,8 +125,8 @@ if result.Resumed {
 }
 ```
 
-:::tip 사용 팁
-이어받기는 서버가 `Range` 요청 헤더를 지원해야 합니다. 서버가 지원하지 않는 경우(206 대신 200 반환), 이미 다운로드한 부분 파일을 보호하기 위해 오류를 반환합니다.
+:::tip
+이어받기는 서버가 `Range` 요청 헤더를 지원해야 합니다. 서버가 지원하지 않는 경우(200 대신 206이 아닌 응답), 이미 다운로드된 부분 파일을 보호하기 위해 오류를 반환합니다.
 :::
 
 ### 컨텍스트 제어 포함
@@ -138,7 +138,7 @@ defer cancel()
 result, err := httpc.DownloadFileWithContext(ctx, url, "/tmp/file.zip")
 if err != nil {
     if errors.Is(err, context.DeadlineExceeded) {
-        log.Println("다운로드 시간 초과")
+        log.Println("다운로드 타임아웃")
     }
     log.Fatal(err)
 }
@@ -146,10 +146,10 @@ if err != nil {
 
 ## 보안 방어
 
-파일 다운로드에는 다층 보안 보호가 내장되어 있습니다:
+파일 다운로드에 내장된 다층 보안 보호:
 
 | 보호 계층 | 설명 |
-|--------|------|
+|-----------|------|
 | 경로 검증 | UNC 경로, 제어 문자, 경로 순회 차단 |
 | 시스템 경로 보호 | `/etc/`, `C:\Windows\` 등 시스템 디렉토리 쓰기 금지 |
 | 심볼릭 링크 감지 | 심볼릭 링크 공격 방지 |
@@ -165,7 +165,7 @@ defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
 
-// 다운로드 및 자동 세션 관리
+// 다운로드 및 세션 자동 관리
 result, err := dc.DownloadFile("/files/report.pdf", "/tmp/report.pdf")
 ```
 

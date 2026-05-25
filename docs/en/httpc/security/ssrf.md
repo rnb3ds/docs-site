@@ -1,20 +1,20 @@
 ---
 title: "SSRF Protection - HTTPC"
-description: "HTTPC SSRF protection: private IP blocking, CIDR exemption, DNS rebinding prevention, redirect whitelisting, and cloud metadata endpoint security."
+description: "HTTPC SSRF protection in depth: default blocking of IPv4/IPv6 private IPs, SSRFExemptCIDRs precise exemptions, DNS rebinding prevention, RedirectWhitelist redirect whitelisting, AWS/GCP/Azure cloud metadata protection, and AllowPrivateIPs usage notes."
 ---
 
 # SSRF Protection
 
-SSRF (Server-Side Request Forgery) is an attack where an attacker exploits the server to make requests to internal network resources. HTTPC enables SSRF protection by default.
+SSRF (Server-Side Request Forgery) is an attack where an attacker uses the server to make internal network requests. HTTPC enables SSRF protection by default.
 
 ## Default Behavior
 
 ```go
 cfg := httpc.DefaultConfig()
-// AllowPrivateIPs = false → blocks all private IPs by default
+// AllowPrivateIPs = false -> blocks all private IPs by default
 ```
 
-Default blocked IP ranges:
+Blocked IP ranges by default:
 
 | Range | CIDR | Description |
 |-------|------|-------------|
@@ -41,33 +41,33 @@ cfg.Security.SSRFExemptCIDRs = []string{
 ```
 
 :::warning
-CIDR exemptions should be as precise as possible. Avoid using overly broad ranges (e.g., `0.0.0.0/0`), which effectively disables SSRF protection.
+CIDR exemptions should be as precise as possible. Avoid using overly broad ranges (e.g. `0.0.0.0/0`) as this effectively disables SSRF protection.
 :::
 
-## DNS Rebinding Protection
+## DNS Rebinding Prevention
 
-HTTPC uses a "resolve-verify-dial" pattern to prevent DNS rebinding attacks:
+HTTPC uses a "resolve-validate-dial" pattern to prevent DNS rebinding attacks:
 
-1. Resolve the domain name to IP addresses
-2. Verify all resolved IPs against the private address list
-3. Dial directly to the verified IP (instead of resolving the domain again)
+1. Resolve domain to IP addresses
+2. Validate all resolved IPs against private address lists
+3. Dial directly to the validated IP (instead of re-resolving the domain)
 
 ```go
 // Attack scenario:
 // 1. Attacker controls DNS for evil.com
-// 2. First resolution returns a public IP (passes verification)
-// 3. Actual connection resolves to 127.0.0.1 (bypasses verification)
+// 2. First resolution returns a public IP (passes validation)
+// 3. Actual connection resolves to 127.0.0.1 (bypasses validation)
 //
-// HTTPC defense: After verification, dial using the verified IP directly, no re-resolution
+// HTTPC defense: after validation, dials directly using the validated IP, never re-resolves
 ```
 
 ## Redirect SSRF Checking
 
-Redirect targets also undergo SSRF verification:
+Redirect targets also undergo SSRF validation:
 
 ```go
-// Assume request to public-api.com, server returns 302 redirect to http://169.254.169.254/
-// HTTPC verifies the redirect target's IP, blocking access to metadata services
+// Suppose a request to public-api.com returns 302 redirect to http://169.254.169.254/
+// HTTPC validates the redirect target's IP, blocking access to metadata services
 ```
 
 ### Redirect Domain Whitelist
@@ -77,15 +77,15 @@ cfg := httpc.DefaultConfig()
 cfg.Security.RedirectWhitelist = []string{
     "api.example.com",
     "auth.example.com",
-    "*.cdn.example.com",  // Supports wildcards
+    "*.cdn.example.com",  // Wildcard support
 }
 
-// Redirects to non-whitelisted domains will be blocked
+// Redirects to non-whitelisted domains are blocked
 ```
 
 ## Cloud Environment Metadata Protection
 
-Metadata service addresses for major cloud providers:
+Metadata service addresses for major cloud platforms:
 
 | Platform | Address | Description |
 |----------|---------|-------------|
@@ -94,13 +94,13 @@ Metadata service addresses for major cloud providers:
 | Azure | `169.254.169.254` | Instance metadata |
 | Alibaba Cloud | `100.100.100.200` | Metadata service |
 
-HTTPC blocks AWS/Azure metadata access by default (`169.254.169.254` is in the `169.254.0.0/16` block list). GCP metadata (`metadata.google.internal`) is blocked through DNS resolution verification.
+HTTPC blocks AWS/Azure metadata access by default (`169.254.169.254` is in the `169.254.0.0/16` block list). GCP metadata (`metadata.google.internal`) is blocked through DNS resolution validation.
 
 :::warning
-Alibaba Cloud metadata (`100.100.100.200`) falls within the CGNAT range (`100.64.0.0/10`), which is **not** in the default block list to support VPNs like Tailscale/WireGuard. If you need to protect against Alibaba Cloud metadata access, use other security measures such as firewall rules.
+Alibaba Cloud metadata (`100.100.100.200`) is in the CGNAT range (`100.64.0.0/10`). To support VPNs like Tailscale/WireGuard, this range is **not** in the default block list. If you need to protect against Alibaba Cloud metadata access, use additional security measures such as firewall rules.
 :::
 
-## Disabling SSRF Protection
+## Completely Disabling SSRF Protection
 
 Only use in testing environments:
 
@@ -114,16 +114,16 @@ cfg.Security.AllowPrivateIPs = true
 ```
 
 :::danger
-Never set `AllowPrivateIPs = true` in production environments.
+Never set `AllowPrivateIPs = true` in production.
 :::
 
 ## Best Practices
 
-1. Use `SecureConfig()` as the security baseline
+1. Use `SecureConfig()` as a security baseline
 2. Only exempt necessary CIDR ranges
-3. Configure `RedirectWhitelist` to restrict redirect targets
+3. Configure `RedirectWhitelist` to limit redirect destinations
 4. Regularly audit `SSRFExemptCIDRs` configuration
-5. Use audit middleware to log all requests
+5. Use audit middleware to record all requests
 
 ## Next Steps
 

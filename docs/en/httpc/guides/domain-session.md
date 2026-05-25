@@ -1,11 +1,11 @@
 ---
 title: "Domain Client and Sessions - HTTPC"
-description: "HTTPC domain client and sessions: NewDomain creation, URL concatenation, session headers, auto Cookie management, and CookieSecurity validation."
+description: "HTTPC domain client and session management guide: NewDomain creation of domain-scoped client, URL auto-concatenation rules, SetHeader session header maintenance, auto Cookie management with response capture, CookieSecurity security validation strategy, and REST API client wrapper practical example."
 ---
 
 # Domain Client and Sessions
 
-The domain client (DomainClient) is a session management client for a specific domain, automatically maintaining cookies and request headers.
+The domain client (DomainClient) is a session management client for a specific domain, automatically maintaining cookies and headers.
 
 ## Creating a Domain Client
 
@@ -16,7 +16,7 @@ if err != nil {
 }
 defer dc.Close()
 
-// Cookies automatically enabled
+// Cookies are automatically enabled
 dc.SetHeader("Authorization", "Bearer "+token)
 
 // Send requests using relative paths
@@ -34,7 +34,7 @@ result, err := dc.Get("/users")
 dc.SetHeader("Authorization", "Bearer "+token)
 dc.SetHeader("Accept", "application/json")
 
-// Batch set
+// Set multiple at once
 dc.SetHeaders(map[string]string{
     "Authorization": "Bearer " + token,
     "Accept":        "application/json",
@@ -52,10 +52,10 @@ headers := dc.GetHeaders()
 ## Cookie Management
 
 ```go
-// Set cookie
+// Set cookies
 dc.SetCookie(&http.Cookie{Name: "session", Value: "abc123"})
 
-// Batch set
+// Set multiple
 dc.SetCookies([]*http.Cookie{
     {Name: "session", Value: "abc123"},
     {Name: "lang", Value: "en"},
@@ -63,7 +63,7 @@ dc.SetCookies([]*http.Cookie{
 
 // Response cookies are automatically captured
 result, _ := dc.Get("/login")
-// Set-Cookie from the server is automatically stored in the session
+// Set-Cookie from server is automatically stored in session
 
 // Query
 cookie := dc.GetCookie("session")
@@ -75,7 +75,7 @@ dc.ClearCookies()
 ```
 
 :::tip
-After each request, cookies returned by the server are automatically updated in the session without manual handling.
+After each request, cookies returned by the server are automatically updated in the session -- no manual handling needed.
 :::
 
 ## Request Methods
@@ -93,14 +93,14 @@ result, _ := dc.Options("/users")
 // With context
 result, _ := dc.Request(ctx, "GET", "/users")
 
-// Absolute URL (skips base URL concatenation)
+// Absolute URL (bypasses base URL concatenation)
 result, _ := dc.Get("https://other-api.com/data")
 ```
 
 ## Session Access
 
 ```go
-// Get basic info
+// Get basic information
 dc.URL()     // "https://api.example.com"
 dc.Domain()  // "api.example.com"
 
@@ -113,7 +113,7 @@ if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
 
 ## Cookie Security Validation
 
-You can configure cookie security policies to only accept cookies that meet security standards:
+You can configure a cookie security policy to only accept cookies that meet security standards:
 
 ```go
 dc, _ := httpc.NewDomain("https://api.example.com")
@@ -123,11 +123,11 @@ session := dc.Session()
 session.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
 // Requires: Secure=true, HttpOnly=true, SameSite=Strict
 
-// Cookies that don't meet security requirements will cause SetCookie to return an error
+// Cookies that don't meet security requirements cause SetCookie to return an error
 if err := dc.SetCookie(&http.Cookie{
     Name:  "insecure",
     Value: "test",
-    // Missing Secure, HttpOnly → rejected
+    // Missing Secure, HttpOnly -> rejected
 }); err != nil {
     log.Println("Cookie rejected:", err)
 }
@@ -171,14 +171,13 @@ func main() {
     if err := loginResult.Unmarshal(&loginResp); err != nil {
         log.Fatal(err)
     }
-    httpc.ReleaseResult(loginResult)
 
     // Set session header
     if err := dc.SetHeader("Authorization", "Bearer "+loginResp.Token); err != nil {
         log.Fatal(err)
     }
 
-    // Subsequent requests automatically carry token and cookies
+    // Subsequent requests automatically include token and cookies
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
 
@@ -186,7 +185,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(users)
 
     fmt.Println(users.StatusCode()) // 200
 }

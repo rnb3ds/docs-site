@@ -1,13 +1,13 @@
 ---
 title: "Package Functions - HTTPC"
-description: "HTTPC package functions: seven HTTP verbs, New creation, SetDefaultClient, four download functions, ReleaseResult pool reuse, and helpers."
+description: "HTTPC package-level functions and client methods API reference: seven HTTP methods including Get/Post, New client creation, four download functions, SetSecurityWarnOutput helper function, and NewDomain domain client creation."
 ---
 
 # Package Functions
 
 ## Package-Level HTTP Methods
 
-Send requests directly without creating a client. Internally uses a lazily initialized default client.
+No need to create a client - send requests directly. Uses a lazily initialized default client internally.
 
 ### Get
 
@@ -54,7 +54,7 @@ func Options(url string, options ...RequestOption) (*Result, error)
 func Request(ctx context.Context, method, url string, options ...RequestOption) (*Result, error)
 ```
 
-Generic request method with context, supporting timeout and cancellation control.
+Generic request method with context support for timeout and cancellation control.
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -65,7 +65,7 @@ result, err := httpc.Request(ctx, "GET", "https://api.example.com/data")
 
 ## Client Methods
 
-The Client interface provides the same HTTP methods as package-level functions, plus the context-aware `Request` method.
+The Client interface provides the same HTTP methods as package-level functions, plus a `Request` method with context.
 
 ### New
 
@@ -73,7 +73,7 @@ The Client interface provides the same HTTP methods as package-level functions, 
 func New(config ...*Config) (Client, error)
 ```
 
-Creates a new HTTP client. Passing no config or `nil` uses `DefaultConfig()`.
+Creates a new HTTP client. Pass no config or `nil` to use `DefaultConfig()`.
 
 ```go
 client, err := httpc.New()
@@ -122,7 +122,7 @@ func SetDefaultClient(client Client) error
 
 Sets a custom client as the default client for package-level functions. The old default client is automatically closed.
 
-:::warning Limitation
+:::warning
 Only accepts clients created via `httpc.New()`. Cannot set a closed client.
 :::
 
@@ -141,25 +141,6 @@ func CloseDefaultClient() error
 ```
 
 Closes the default client and resets it. A new client will be created on the next package-level function call.
-
-## Result Management
-
-### ReleaseResult
-
-```go
-func ReleaseResult(r *Result)
-```
-
-Returns the Result to the object pool to reduce GC pressure. Cannot use the Result after calling.
-
-```go
-result, _ := httpc.Get(url)
-defer httpc.ReleaseResult(result)
-```
-
-:::warning
-Do not access the Result after calling `ReleaseResult`, as its internal data is zeroed.
-:::
 
 ## Download Functions
 
@@ -236,31 +217,25 @@ result, err = client.DownloadWithOptionsWithContext(ctx, url, downloadOpts)
 
 ## Helper Functions
 
-### FormatBytes
+### SetSecurityWarnOutput
 
 ```go
-func FormatBytes(bytes int64) string
+func SetSecurityWarnOutput(w io.Writer)
 ```
 
-Formats bytes into a human-readable string.
+Redirects security warning output (such as `TestingConfig`, `InsecureSkipVerify` warnings). Pass `io.Discard` to silence all warnings.
 
 ```go
-httpc.FormatBytes(1536)      // "1.50 KB"
-httpc.FormatBytes(1048576)   // "1.00 MB"
+// Silence all security warnings
+httpc.SetSecurityWarnOutput(io.Discard)
+
+// Redirect to custom log
+httpc.SetSecurityWarnOutput(log.Writer())
 ```
 
-### FormatSpeed
-
-```go
-func FormatSpeed(bytesPerSecond float64) string
-```
-
-Formats transfer speed into a human-readable string.
-
-```go
-httpc.FormatSpeed(1536.0)    // "1.50 KB/s"
-httpc.FormatSpeed(1048576.0) // "1.00 MB/s"
-```
+:::warning
+This function is primarily for testing. Production environments should use `SecureConfig()` or `DefaultConfig()` rather than suppressing warnings.
+:::
 
 ## Domain Client
 
@@ -270,7 +245,7 @@ httpc.FormatSpeed(1048576.0) // "1.00 MB/s"
 func NewDomain(baseURL string, config ...*Config) (DomainClienter, error)
 ```
 
-Creates a domain-scoped client that automatically manages cookies and request headers.
+Creates a domain-scoped client with automatic cookie and header management.
 
 ```go
 dc, err := httpc.NewDomain("https://api.example.com")
@@ -282,7 +257,7 @@ result, err := dc.Get("/users")
 
 ## See Also
 
-- [Result](./result) - Response result type and methods
+- [Result](./result) - Response result types and methods
 - [Request Options](./options) - Request configuration options
 - [Domain Client](./domain-client) - Domain-scoped client
 - [File Download](./download) - Download functions and types

@@ -1,11 +1,11 @@
 ---
 title: "Result - HTTPC"
-description: "HTTPC ResultレスポンスタイプAPIリファレンス：StatusCode/Body/RawBody基本メソッド、IsSuccess/IsClientErrorステータス判定、Cookie操作、Unmarshal JSON解析、SaveToFileファイル保存とRequestInfo/ResponseInfo/RequestMetaサブタイプ。"
+description: "HTTPC Result レスポンスタイプ API リファレンス：StatusCode/Body/RawBody 基本メソッド、ステータス判定、Cookie 操作、Unmarshal JSON 解析、SaveToFile ファイル保存と RequestInfo/ResponseInfo/RequestMeta サブタイプ。Result は自動プール管理され、GC が自動的にクリーンアップします。"
 ---
 
 # Result
 
-ResultはHTTPレスポンスとリクエストメタデータをカプセル化し、便利なアクセスメソッドを提供します。`Client.Request()`またはパッケージ関数で取得します。
+Result は HTTP レスポンスとリクエストメタデータをカプセル化し、便利なアクセスメソッドを提供します。`Client.Request()` またはパッケージレベル関数で取得します。
 
 ```go
 type Result struct {
@@ -20,14 +20,13 @@ result, err := httpc.Get("https://api.example.com/users/1")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 fmt.Println(result.StatusCode()) // 200
 fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
-:::warning 警告
-使用後は必ず`ReleaseResult(result)`を呼び出してオブジェクトプールに返却してください。呼び出し後はResultにアクセスできません。
+:::tip
+Result は内部オブジェクトプールでパフォーマンスを最適化しており、GC が自動的にクリーンアップするため、手動での解放は不要です。
 :::
 
 ## 基本メソッド
@@ -38,7 +37,7 @@ fmt.Println(result.Body())       // {"id":1,"name":"test"}
 func (r *Result) StatusCode() int
 ```
 
-HTTPステータスコードを返します。nilセーフで、0を返します。
+HTTP ステータスコードを返します。nil セーフで、0 を返します。
 
 ### Body
 
@@ -46,7 +45,7 @@ HTTPステータスコードを返します。nilセーフで、0を返します
 func (r *Result) Body() string
 ```
 
-レスポンスボディの文字列を返します。nilセーフで、空文字列を返します。
+レスポンスボディの文字列を返します。nil セーフで、空文字列を返します。
 
 ### RawBody
 
@@ -54,7 +53,7 @@ func (r *Result) Body() string
 func (r *Result) RawBody() []byte
 ```
 
-レスポンスボディの生バイトを返します。nilセーフで、nilを返します。
+レスポンスボディの生バイトを返します。nil セーフで、nil を返します。
 
 ### Proto
 
@@ -62,7 +61,7 @@ func (r *Result) RawBody() []byte
 func (r *Result) Proto() string
 ```
 
-HTTPプロトコルバージョンを返します（例：`"HTTP/1.1"`、`"HTTP/2.0"`）。
+HTTP プロトコルバージョンを返します（例：`"HTTP/1.1"`、`"HTTP/2.0"`）。
 
 ## ステータス判定
 
@@ -72,7 +71,7 @@ HTTPプロトコルバージョンを返します（例：`"HTTP/1.1"`、`"HTTP/
 func (r *Result) IsSuccess() bool
 ```
 
-ステータスコードが2xxの場合にtrueを返します。
+ステータスコードが 2xx の場合に true を返します。
 
 ### IsRedirect
 
@@ -80,7 +79,7 @@ func (r *Result) IsSuccess() bool
 func (r *Result) IsRedirect() bool
 ```
 
-ステータスコードが3xxの場合にtrueを返します。
+ステータスコードが 3xx の場合に true を返します。
 
 ### IsClientError
 
@@ -88,7 +87,7 @@ func (r *Result) IsRedirect() bool
 func (r *Result) IsClientError() bool
 ```
 
-ステータスコードが4xxの場合にtrueを返します。
+ステータスコードが 4xx の場合に true を返します。
 
 ### IsServerError
 
@@ -96,7 +95,7 @@ func (r *Result) IsClientError() bool
 func (r *Result) IsServerError() bool
 ```
 
-ステータスコードが5xxの場合にtrueを返します。
+ステータスコードが 5xx の場合に true を返します。
 
 ```go
 result, _ := client.Get(url)
@@ -110,7 +109,7 @@ case result.IsServerError():
 }
 ```
 
-## Cookieメソッド
+## Cookie メソッド
 
 ### ResponseCookies
 
@@ -118,7 +117,7 @@ case result.IsServerError():
 func (r *Result) ResponseCookies() []*http.Cookie
 ```
 
-レスポンス内のすべてのCookieを返します。
+レスポンスに含まれるすべての Cookie を返します。
 
 ### GetCookie
 
@@ -126,7 +125,7 @@ func (r *Result) ResponseCookies() []*http.Cookie
 func (r *Result) GetCookie(name string) *http.Cookie
 ```
 
-名前でレスポンスCookieを取得します。見つからない場合はnilを返します。
+名前でレスポンス Cookie を取得します。見つからない場合は nil を返します。
 
 ```go
 cookie := result.GetCookie("session")
@@ -141,7 +140,7 @@ if cookie != nil {
 func (r *Result) HasCookie(name string) bool
 ```
 
-レスポンスに指定した名前のCookieが存在するかを確認します。
+レスポンスに指定した名前の Cookie が存在するかを確認します。
 
 ### RequestCookies
 
@@ -149,7 +148,7 @@ func (r *Result) HasCookie(name string) bool
 func (r *Result) RequestCookies() []*http.Cookie
 ```
 
-リクエストで送信されたすべてのCookieを返します。
+リクエストで送信されたすべての Cookie を返します。
 
 ### GetRequestCookie
 
@@ -157,7 +156,7 @@ func (r *Result) RequestCookies() []*http.Cookie
 func (r *Result) GetRequestCookie(name string) *http.Cookie
 ```
 
-名前でリクエストCookieを取得します。
+名前でリクエスト Cookie を取得します。
 
 ### HasRequestCookie
 
@@ -165,9 +164,9 @@ func (r *Result) GetRequestCookie(name string) *http.Cookie
 func (r *Result) HasRequestCookie(name string) bool
 ```
 
-リクエストに指定した名前のCookieが存在するかを確認します。
+リクエストに指定した名前の Cookie が存在するかを確認します。
 
-## JSON解析
+## JSON 解析
 
 ### Unmarshal
 
@@ -175,12 +174,12 @@ func (r *Result) HasRequestCookie(name string) bool
 func (r *Result) Unmarshal(v any) error
 ```
 
-JSONレスポンスボディをターゲット変数に解析します。`json.Unmarshal`の規約に従います。
+JSON レスポンスボディをターゲット変数に解析します。`json.Unmarshal` の規約に従います。
 
 | エラー | 発生条件 |
-|--------|----------|
+|--------|---------|
 | `ErrResponseBodyEmpty` | レスポンスボディが空 |
-| `ErrResponseBodyTooLarge` | レスポンスボディが50MBのJSON解析サイズ制限を超過 |
+| `ErrResponseBodyTooLarge` | レスポンスボディが 50MB の JSON 解析サイズ制限を超過 |
 
 ```go
 var user User
@@ -198,15 +197,14 @@ fmt.Println(user.Name)
 func (r *Result) SaveToFile(filePath string) error
 ```
 
-レスポンスボディをファイルに保存します。ファイルパスはセキュリティ検証を受けます（パストラバーサル防止、シンボリックリンクチェック、システムパス保護）。
+レスポンスボディをファイルに保存します。ファイルパスはセキュリティ検証を通過します（パストラバーサル対策、シンボリックリンクチェック、システムパス保護）。
 
 | エラー | 発生条件 |
-|--------|----------|
+|--------|---------|
 | `ErrResponseBodyEmpty` | レスポンスボディが空 |
 
 ```go
 result, _ := client.Get("https://example.com/data.csv")
-defer httpc.ReleaseResult(result)
 
 if err := result.SaveToFile("/tmp/data.csv"); err != nil {
     log.Fatal(err)
@@ -221,7 +219,7 @@ if err := result.SaveToFile("/tmp/data.csv"); err != nil {
 func (r *Result) String() string
 ```
 
-人間が読める文字列表現を返します。機密ヘッダーは自動的にマスクされ、レスポンスボディは200文字で切り詰められます。
+人間可読の文字列表現を返します。機密ヘッダーは自動的にマスクされ、レスポンスボディは 200 文字に切り詰められます。
 
 ```go
 result, _ := client.Get(url)
@@ -242,7 +240,7 @@ type RequestInfo struct {
 }
 ```
 
-リクエストの詳細情報。`result.Request`でアクセスします。
+リクエストの詳細。`result.Request` でアクセスします。
 
 ### ResponseInfo
 
@@ -259,7 +257,7 @@ type ResponseInfo struct {
 }
 ```
 
-レスポンスデータ。`result.Response`でアクセスします。
+レスポンスデータ。`result.Response` でアクセスします。
 
 ### RequestMeta
 
@@ -272,32 +270,18 @@ type RequestMeta struct {
 }
 ```
 
-リクエスト実行メタデータ。`result.Meta`でアクセスします。
+リクエスト実行メタデータ。`result.Meta` でアクセスします。
 
 ```go
 result, _ := client.Get(url)
 
 fmt.Println(result.Meta.Duration)      // 125ms
-fmt.Println(result.Meta.Attempts)       // 2（1回リトライ）
-fmt.Println(result.Meta.RedirectCount)  // 1（1回リダイレクトに追従）
-```
-
-## ReleaseResult
-
-```go
-func ReleaseResult(r *Result)
-```
-
-Resultをオブジェクトプールに返却します。レスポンスボディデータは安全にクリアされ（機密データの残留を防止するため全体をゼロクリア）、すべての内部データがゼロクリアされます。呼び出し後はResultのフィールドやメソッドにアクセスできません。
-
-```go
-result, _ := httpc.Get(url)
-defer httpc.ReleaseResult(result)
-// resultを使用...
+fmt.Println(result.Meta.Attempts)       // 2（1 回リトライ）
+fmt.Println(result.Meta.RedirectCount)  // 1（1 回リダイレクトに追従）
 ```
 
 ## 関連項目
 
-- [パッケージ関数](./functions) - Resultを取得するリクエストメソッド
+- [パッケージ関数](./functions) - Result を取得するリクエストメソッド
 - [リクエストオプション](./options) - リクエスト動作の設定
-- [ファイルダウンロード](./download) - ダウンロード結果タイプDownloadResult
+- [ファイルダウンロード](./download) - ダウンロード結果タイプ DownloadResult

@@ -1,6 +1,6 @@
 ---
 title: "API Reference - HTTPC"
-description: "HTTPC API reference index: package functions, 27 request options, Config presets, middleware, domain client, session, download, and error types."
+description: "HTTPC API reference index: categorized navigation across three groups -- core, request/response, and advanced features -- covering package-level HTTP functions, 27 WithXxx request options, Config configuration system with five presets, 8 built-in middleware factories, domain client with session management, file download with resumable support, and error types with constant enums."
 ---
 
 # API Reference
@@ -13,7 +13,7 @@ HTTPC provides 27 request option functions, 5 configuration presets, 8 built-in 
 httpc package
 ├── Client interface - Main client, supports all HTTP methods
 ├── DomainClienter interface - Domain-scoped client with built-in session management
-├── Config - Configuration system (timeout/connection/security/retry/middleware)
+├── Config - Configuration system (timeouts/connection/security/retry/middleware)
 ├── RequestOption - 27 request option functions
 ├── MiddlewareFunc - Middleware chain
 ├── Result - Response result (includes request metadata)
@@ -26,16 +26,16 @@ httpc package
 
 | Module | Description |
 |--------|-------------|
-| [Package Functions](./functions) | Get/Post/Put/Patch/Delete and other package-level functions, client methods, and helper functions |
-| [Configuration](./config) | Config struct, 5 preset configurations, validation functions, and Cookie security |
-| [Interfaces](./interfaces) | Client, Doer, DomainClienter, RetryPolicy, and other core interfaces |
+| [Package Functions](./functions) | Package-level functions like Get/Post/Put/Patch/Delete, client methods, and helper functions |
+| [Configuration](./config) | Config struct, 5 configuration presets, validation functions, and cookie security |
+| [Interfaces](./interfaces) | Core interfaces including Client, Doer, DomainClienter, and RetryPolicy |
 | [Result](./result) | Result, RequestInfo, ResponseInfo, RequestMeta types and all methods |
 
 ### Request and Response
 
 | Module | Description |
 |--------|-------------|
-| [Request Options](./options) | 27 WithXxx request option functions (headers, body, auth, cookies, callbacks, etc.) |
+| [Request Options](./options) | 27 WithXxx request option functions (headers, body, authentication, cookies, callbacks, etc.) |
 | [Middleware](./middleware) | Chain composition, 8 built-in middleware factories, and audit event types |
 | [Error Types](./errors) | ClientError, 12 ErrorType enums, and 13 error variables |
 
@@ -43,9 +43,9 @@ httpc package
 
 | Module | Description |
 |--------|-------------|
-| [Domain Client](./domain-client) | DomainClient creation, HTTP methods, download methods, and URL joining rules |
+| [Domain Client](./domain-client) | DomainClient creation, HTTP methods, download methods, and URL concatenation rules |
 | [Session Management](./session) | SessionManager cookie/header management and security validation |
-| [File Download](./download) | Download functions, DownloadConfig, resume support, and security protections |
+| [File Download](./download) | Download functions, DownloadConfig, resumable downloads, and security protection |
 | [Constants and Types](./constants) | BodyKind enum, FormData/FileData, and audit context keys |
 
 ## Quick Reference
@@ -61,10 +61,10 @@ client, err := httpc.New(customConfig)         // Custom configuration
 ### Sending Requests
 
 ```go
-// Package-level function
+// Package-level functions
 result, err := httpc.Get(url, options...)
 
-// Client method
+// Client methods
 result, err := client.Get(url, options...)
 
 // With context
@@ -81,5 +81,4 @@ result.Unmarshal(&data)       // JSON parsing
 result.IsSuccess()            // Is 2xx
 result.Meta.Duration          // Request duration
 result.Meta.Attempts          // Retry count
-defer httpc.ReleaseResult(result) // Release to object pool
 ```

@@ -1,6 +1,6 @@
 ---
 title: "File Upload and Download - HTTPC"
-description: "HTTPC file transfer: Multipart upload, download with progress callbacks, resumable downloads, SHA-256 checksums, and path security protection."
+description: "HTTPC file upload and download guide: WithFile simple upload, WithFormData multipart multi-file upload, DownloadFile basic download, DownloadWithOptions with progress callbacks, resumable downloads with ResumeDownload, SHA-256 checksums, and UNC path security protection."
 ---
 
 # File Upload and Download
@@ -22,7 +22,7 @@ result, err := httpc.Post("https://api.example.com/upload",
 
 ### Multipart Form
 
-Upload files along with form fields:
+Upload files with accompanying form fields:
 
 ```go
 form := &httpc.FormData{
@@ -82,7 +82,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("Download complete: %s\n", httpc.FormatBytes(result.BytesWritten))
+fmt.Printf("Download complete: %d bytes\n", result.BytesWritten)
 fmt.Printf("Duration: %v\n", result.Duration)
 ```
 
@@ -94,7 +94,7 @@ cfg.FilePath = "/tmp/file.zip"
 cfg.Overwrite = true
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rDownloading: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\rDownloading: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := httpc.DownloadWithOptions("https://example.com/file.zip", cfg)
@@ -102,13 +102,13 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\nDownload complete: %s, average speed %s\n",
-    httpc.FormatBytes(result.BytesWritten),
-    httpc.FormatSpeed(result.AverageSpeed),
+fmt.Printf("\nDownload complete: %d bytes, average speed %.2f MB/s\n",
+    result.BytesWritten,
+    float64(result.AverageSpeed)/1024/1024,
 )
 ```
 
-### Resumable Download
+### Resumable Downloads
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -121,12 +121,12 @@ if err != nil {
 }
 
 if result.Resumed {
-    fmt.Printf("Resumed download: recovered from breakpoint\n")
+    fmt.Printf("Resumed download complete: recovered from breakpoint\n")
 }
 ```
 
 :::tip
-Resumable downloads require server support for the `Range` request header. If the server does not support it (returns 200 instead of 206), an error will be returned to protect the partially downloaded file.
+Resumable downloads depend on server support for the `Range` request header. If the server does not support it (returns 200 instead of 206), an error is returned to protect the existing partial file.
 :::
 
 ### With Context Control
@@ -151,13 +151,13 @@ File downloads include multiple layers of built-in security:
 | Protection Layer | Description |
 |------------------|-------------|
 | Path validation | Blocks UNC paths, control characters, path traversal |
-| System path protection | Prevents writing to `/etc/`, `C:\Windows\`, and other system directories |
-| Symlink detection | Prevents symbolic link attacks |
-| File size limits | Limited by `MaxResponseBodySize` |
+| System path protection | Blocks writing to `/etc/`, `C:\Windows\`, and other system directories |
+| Symlink detection | Prevents symlink attacks |
+| File size limits | Subject to `MaxResponseBodySize` limit |
 
 ## Domain Client Downloads
 
-Domain client downloads automatically capture response cookies to the session:
+Domain client downloads automatically capture response cookies into the session:
 
 ```go
 dc, _ := httpc.NewDomain("https://api.example.com")
@@ -165,7 +165,7 @@ defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
 
-// Download and automatically manage session
+// Download with automatic session management
 result, err := dc.DownloadFile("/files/report.pdf", "/tmp/report.pdf")
 ```
 

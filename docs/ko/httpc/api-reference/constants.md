@@ -1,6 +1,6 @@
 ---
 title: "상수와 타입 - HTTPC"
-description: "HTTPC 상수와 보조 타입 API 레퍼런스: BodyKind 6가지 요청 본문 열거형 및 자동 감지 규칙, FormData와 FileData 파일 업로드 타입, AuditEvent 감사 이벤트 구조체, AuditMiddlewareConfig 감사 구성과 SourceIPKey 등 컨텍스트 키 정의."
+description: "HTTPC 상수와 보조 타입 API 레퍼런스: BodyKind 여섯 가지 요청 본문 열거와 자동 감지 규칙, FormData와 FileData 파일 업로드 타입, AuditEvent 감사 이벤트 구조체, AuditMiddlewareConfig 감사 설정과 SourceIPKey 등 컨텍스트 키 정의를 다룹니다."
 ---
 
 # 상수와 타입
@@ -25,7 +25,7 @@ type BodyKind int
 ### BodyAuto 감지 규칙
 
 | 입력 타입 | Content-Type |
-|----------|-------------|
+|-----------|-------------|
 | `string` | text/plain; charset=utf-8 |
 | `[]byte` | application/octet-stream |
 | `*FormData` | multipart/form-data |
@@ -34,7 +34,7 @@ type BodyKind int
 | 기타 타입 | application/json |
 
 ```go
-// 자동 감지 (기본)
+// 자동 감지 (기본값)
 result, _ := client.Post(url, httpc.WithBody(data))
 
 // JSON 강제
@@ -83,7 +83,7 @@ result, err := client.Post(url, httpc.WithFormData(form))
 type AuditEvent struct {
     Timestamp     time.Time           `json:"timestamp"`
     Method        string              `json:"method"`
-    URL           string              `json:"url"`           // 마스킹됨 (자격 증명 제거됨)
+    URL           string              `json:"url"`           // 마스킹됨 (자격 증명 제거)
     StatusCode    int                 `json:"statusCode"`
     Duration      time.Duration       `json:"duration"`
     Attempts      int                 `json:"attempts"`
@@ -111,15 +111,15 @@ type AuditMiddlewareConfig struct {
 
 | 상수 | 타입 | 설명 |
 |------|------|------|
-| `SourceIPKey` | `auditContextKey` | 감사 이벤트의 출발지 IP |
+| `SourceIPKey` | `auditContextKey` | 감사 이벤트의 출처 IP |
 | `UserIDKey` | `auditContextKey` | 감사 이벤트의 사용자 ID |
 
 ```go
-// 컨텍스트를 통해 감사 정보 전달
+// context로 감사 정보 전달
 ctx := context.WithValue(context.Background(), httpc.SourceIPKey, "192.168.1.1")
 ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 
-// Config에서 감사 미들웨어 구성
+// Config에 감사 미들웨어 설정
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.AuditMiddleware(func(event httpc.AuditEvent) {
@@ -129,12 +129,12 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
 }
 client, _ := httpc.New(cfg)
 
-// 요청 시 컨텍스트의 값이 미들웨어에서 읽힘
+// 요청 시 context의 값이 미들웨어에서 읽힘
 result, err := client.Request(ctx, "GET", url)
 ```
 
-## 참고
+## 관련 항목
 
 - [오류 타입](./errors) - ClientError, ErrorType 및 오류 변수의 완전한 참조
 - [요청 옵션](./options) - BodyKind의 WithBody 사용
-- [미들웨어](./middleware) - AuditMiddleware 및 감사 구성
+- [미들웨어](./middleware) - AuditMiddleware와 감사 설정

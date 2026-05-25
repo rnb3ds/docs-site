@@ -1,6 +1,6 @@
 ---
 title: "域名客户端与会话 - HTTPC"
-description: "HTTPC 域名客户端与会话管理指南：NewDomain 创建、URL 自动拼接、SetHeader 会话头维护、Cookie 自动管理与捕获、CookieSecurity 安全验证策略与 REST API 客户端封装示例。"
+description: "HTTPC 域名客户端与会话管理指南：NewDomain 创建域名作用域客户端、URL 自动拼接规则、SetHeader 会话头维护、Cookie 自动管理与响应捕获、CookieSecurity 安全验证策略与 REST API 客户端封装实战示例。"
 ---
 
 # 域名客户端与会话
@@ -171,7 +171,6 @@ func main() {
     if err := loginResult.Unmarshal(&loginResp); err != nil {
         log.Fatal(err)
     }
-    httpc.ReleaseResult(loginResult)
 
     // 设置会话头
     if err := dc.SetHeader("Authorization", "Bearer "+loginResp.Token); err != nil {
@@ -186,7 +185,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(users)
 
     fmt.Println(users.StatusCode()) // 200
 }

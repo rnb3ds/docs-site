@@ -1,25 +1,25 @@
 ---
 title: "Security Overview - HTTPC"
-description: "HTTPC security: TLS 1.2+ enforcement, SSRF protection, CRLF prevention, cookie security, redirect whitelisting, and response size limits."
+description: "HTTPC security features overview: TLS 1.2+ version control, SSRF private IP blocking with CIDR exemptions, CRLF injection prevention, StrictCookieSecurityConfig cookie security, RedirectWhitelist redirect whitelisting, and response body size limits."
 ---
 
 # Security Overview
 
 HTTPC is secure by default -- all security features work out of the box.
 
-## Security Features Overview
+## Security Feature Overview
 
 | Feature | Default | Description |
 |---------|---------|-------------|
-| Minimum TLS version | TLS 1.2 | Rejects TLS 1.0/1.1 |
-| SSRF protection | Enabled | Blocks private IP connections |
-| URL validation | Enabled | Validates URL format and protocol |
-| Header validation | Enabled | Prevents CRLF injection |
-| Strict Content-Length check | Enabled | Prevents response smuggling |
+| TLS minimum version | TLS 1.2 | Rejects TLS 1.0/1.1 |
+| SSRF protection | On | Blocks private IP connections |
+| URL validation | On | Validates URL format and protocol |
+| Header validation | On | Prevents CRLF injection |
+| Content-Length strict checking | On | Prevents response smuggling |
 | Cookie security validation | Optional | Validates cookie security attributes |
 | Response body size limit | 10MB | Prevents memory exhaustion |
 | Decompressed body size limit | 100MB | Prevents decompression bombs |
-| Redirect limit | 10 | Prevents infinite redirects |
+| Redirect limit | 10 times | Prevents infinite redirects |
 
 ## TLS Security
 
@@ -31,25 +31,25 @@ cfg.Security.MaxTLSVersion = tls.VersionTLS13
 ```
 
 :::danger
-`InsecureSkipVerify` is for testing only. Never set it to `true` in production.
+`InsecureSkipVerify` is for testing only. Never set to `true` in production.
 :::
 
 ## SSRF Protection
 
-SSRF (Server-Side Request Forgery) is an attack where an attacker exploits the server to make requests to internal network resources.
+SSRF (Server-Side Request Forgery) is an attack where an attacker uses the server to make internal network requests.
 
 ```go
-// Default: block private IPs
+// Default: blocks private IPs
 cfg := httpc.DefaultConfig()
-// AllowPrivateIPs = false → blocks 127.0.0.1, 10.x, 192.168.x, etc.
+// AllowPrivateIPs = false -> blocks 127.0.0.1, 10.x, 192.168.x, etc.
 
-// Exempt specific CIDRs (e.g., VPN, VPC)
+// Exempt specific CIDRs (e.g. VPN, VPC)
 cfg.Security.SSRFExemptCIDRs = []string{
     "10.0.0.0/8",       // VPC internal
     "100.64.0.0/10",    // Tailscale
 }
 
-// Security preset: strongest SSRF protection
+// Secure preset: strongest SSRF protection
 client, _ := httpc.New(httpc.SecureConfig())
 ```
 
@@ -71,7 +71,7 @@ client, _ := httpc.New(httpc.SecureConfig())
 Automatically prevents CRLF injection and header smuggling:
 
 ```go
-// The following headers will be rejected
+// The following headers are rejected
 httpc.WithHeader("X-Custom", "value\r\nInjected: header") // CRLF injection
 httpc.WithHeader("X-Bad", "value\x00null")                // Control characters
 ```
@@ -91,7 +91,7 @@ cfg.Security.CookieSecurity = httpc.StrictCookieSecurityConfig()
 // Disable redirects (security-sensitive scenarios)
 cfg := httpc.SecureConfig() // FollowRedirects = false
 
-// Restrict redirect domains
+// Limit redirect domains
 cfg := httpc.DefaultConfig()
 cfg.Security.RedirectWhitelist = []string{
     "api.example.com",
@@ -103,7 +103,7 @@ cfg.Security.RedirectWhitelist = []string{
 
 ```go
 auditMiddleware := httpc.AuditMiddleware(func(event httpc.AuditEvent) {
-    // URL is sanitized (credentials removed)
+    // URL is masked (credentials removed)
     log.Printf("[AUDIT] %s %s -> %d (%v)",
         event.Method, event.URL, event.StatusCode, event.Duration)
 })
@@ -112,7 +112,7 @@ cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{auditMiddleware}
 ```
 
-### Audit with Configuration
+### Configurable Audit
 
 ```go
 auditCfg := &httpc.AuditMiddlewareConfig{
@@ -129,6 +129,6 @@ auditMiddleware := httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) 
 
 ## Next Steps
 
-- [SSRF Protection](./ssrf) - Detailed SSRF protection and configuration
+- [SSRF Protection](./ssrf) - SSRF protection in depth and configuration
 - [TLS and Certificate Pinning](./tls-certpin) - TLS configuration and certificate pinning
 - [Production Checklist](./production-checklist) - Pre-launch checklist

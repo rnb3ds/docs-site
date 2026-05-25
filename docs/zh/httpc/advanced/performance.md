@@ -1,6 +1,6 @@
 ---
 title: "性能优化 - HTTPC"
-description: "HTTPC 性能优化指南：Default/Secure/Performance/Minimal 四种预设对比与场景选型、基于预设微调连接池与超时、ReleaseResult 对象池复用减少 GC 压力与常见性能反模式。"
+description: "HTTPC 性能优化指南：Default/Secure/Performance/Minimal 四种预设对比与场景选型、基于预设微调连接池与超时参数、内置对象池自动管理减少 GC 压力、并发请求模式与常见性能反模式分析。"
 ---
 
 # 性能优化
@@ -43,18 +43,18 @@ client, _ := httpc.New(cfg)
 
 ## 对象池复用
 
-HTTPC 内置 Result 对象池，使用 `ReleaseResult` 归还：
+HTTPC 内置 Result 对象池，自动管理对象生命周期：
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-defer httpc.ReleaseResult(result) // 归还到对象池
+// Result 对象由内置对象池自动管理，GC 自动回收
 ```
 
 :::tip
-高并发场景中，`ReleaseResult` 可显著减少 GC 压力。
+高并发场景中，对象池复用可显著减少 GC 压力。
 :::
 
 ## 性能反模式
@@ -62,7 +62,6 @@ defer httpc.ReleaseResult(result) // 归还到对象池
 | 反模式 | 原因 | 正确做法 |
 |--------|------|----------|
 | 每个请求创建客户端 | 连接无法复用 | 全局复用客户端 |
-| 忽略 ReleaseResult | 增加 GC 压力 | defer 归还 |
 | 过大 MaxResponseBodySize | 内存占用 | 合理设置限制 |
 | 热路径中用 result.String() | 字符串构建开销 | 直接用 Body() |
 

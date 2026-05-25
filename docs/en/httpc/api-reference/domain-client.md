@@ -1,11 +1,11 @@
 ---
 title: "Domain Client - HTTPC"
-description: "HTTPC domain client API: NewDomain, seven HTTP methods, four downloads, URL concatenation, DomainClienter interface, and session management."
+description: "HTTPC domain client API reference: NewDomain creation function, seven HTTP methods including Get/Post and Request generic method, four download methods, URL auto-concatenation rules, DomainClienter interface with SetHeader/SetCookie session management, and Close lifecycle."
 ---
 
 # Domain Client
 
-The domain client provides request management for a specific domain, automatically maintaining cookies and request headers.
+The domain client provides request management for a specific domain, automatically maintaining cookies and headers.
 
 ## NewDomain
 
@@ -33,12 +33,12 @@ if err != nil {
 defer dc.Close()
 ```
 
-**Parameter description:**
+**Parameters:**
 
 | Parameter | Type | Description |
 |-----------|------|-------------|
 | `baseURL` | `string` | Base URL (must include scheme and host) |
-| `config` | `...*Config` | Optional configuration; defaults to DefaultConfig() if not provided |
+| `config` | `...*Config` | Optional configuration; uses DefaultConfig() if not provided |
 
 **Returns:** `DomainClienter` interface (not the concrete `*DomainClient` type).
 
@@ -47,7 +47,7 @@ defer dc.Close()
 All methods accept relative paths or absolute URLs:
 
 ```go
-// Relative paths: auto-concatenated with baseURL
+// Relative path: auto-concatenated with baseURL
 result, err := dc.Get("/users")
 result, err := dc.Post("/users", httpc.WithJSON(data))
 result, err := dc.Put("/users/1", httpc.WithJSON(data))
@@ -56,7 +56,7 @@ result, err := dc.Delete("/users/1")
 result, err := dc.Head("/users/1")
 result, err := dc.Options("/users")
 
-// Absolute URLs: used directly
+// Absolute URL: used directly
 result, err := dc.Get("https://other-api.com/data")
 ```
 
@@ -66,7 +66,7 @@ result, err := dc.Get("https://other-api.com/data")
 result, err := dc.Request(ctx, "GET", "/users", options...)
 ```
 
-Generic request method with context, supporting timeout and cancellation control.
+Generic request method with context support for timeout and cancellation control.
 
 ## Download Methods
 
@@ -82,18 +82,18 @@ result, err := dc.DownloadFileWithContext(ctx, "/files/report.pdf", "/tmp/report
 result, err := dc.DownloadWithOptionsWithContext(ctx, "/files/report.pdf", downloadOpts)
 ```
 
-Response cookies from downloads are automatically captured to the session.
+Download response cookies are automatically captured into the session.
 
 ## Access Methods
 
 ```go
 dc.URL()      // string - Base URL
-dc.Domain()   // string - Domain name (without port)
+dc.Domain()   // string - Domain (without port)
 dc.Session()  // *SessionManager - Underlying session manager
 dc.Close()    // error - Close client and release resources
 ```
 
-## URL Joining Rules
+## URL Concatenation Rules
 
 | Input Path | Result (baseURL = `https://api.example.com/v1`) |
 |------------|------|
@@ -103,7 +103,7 @@ dc.Close()    // error - Close client and release resources
 | `https://other.com/api` | `https://other.com/api` (absolute URL) |
 
 :::warning
-Only `http://` and `https://` protocol absolute URLs are allowed; other protocols are rejected (prevents SSRF).
+Only `http://` and `https://` protocol absolute URLs are allowed; other protocols are rejected (SSRF prevention).
 :::
 
 ## DomainClienter Interface
@@ -132,10 +132,10 @@ type DomainClienter interface {
 }
 ```
 
-Use the interface type rather than the concrete type for easier testing and implementation swapping.
+Using the interface type rather than the concrete type is recommended for easier testing and implementation swapping.
 
 ## See Also
 
-- [Session Management](./session) - SessionManager detailed reference
+- [Session Management](./session) - Detailed SessionManager reference
 - [Domain Client and Sessions](../guides/domain-session) - Usage guide
 - [Interface Definitions](./interfaces) - Client, Doer interface reference

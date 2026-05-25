@@ -1,6 +1,6 @@
 ---
 title: "实战教程 - HTTPC"
-description: "三十分钟实战教程：从 httpc.Get 逐步构建 GitHub REST API 客户端，涵盖 JSON 解析、NewDomain 域名客户端、WithJSON 发送数据、中间件链、ClientError 错误处理与文件下载。"
+description: "三十分钟实战教程：从 httpc.Get 逐步构建完整的 GitHub REST API 客户端，涵盖 JSON 响应解析、NewDomain 域名客户端、WithJSON 发送数据、中间件链组合、ClientError 错误处理与文件下载功能。"
 ---
 
 # 实战教程：构建 GitHub API 客户端
@@ -14,7 +14,7 @@ description: "三十分钟实战教程：从 httpc.Get 逐步构建 GitHub REST 
 - 使用域名客户端管理 API 基础 URL
 - 添加中间件实现日志和指标
 - 处理错误与重试
-- 使用对象池复用优化性能
+- 使用对象池自动管理优化性能
 
 ## 第 1 步：基本请求
 
@@ -39,7 +39,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())       // JSON 响应
@@ -48,7 +47,7 @@ func main() {
 
 要点：
 - 包级函数 `httpc.Get` 无需创建客户端，适合快速验证
-- `defer httpc.ReleaseResult(result)` 将结果归还对象池
+- Result 对象由内置对象池自动管理，GC 自动回收
 
 ## 第 2 步：解析 JSON 响应
 
@@ -64,7 +63,6 @@ result, err := httpc.Get("https://api.github.com/repos/golang/go")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 var repo Repo
 if err := result.Unmarshal(&repo); err != nil {
@@ -102,7 +100,6 @@ result, err := client.Get("/repos/golang/go",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 ```
 
 要点：
@@ -130,7 +127,6 @@ result, err := client.Post("/repos/owner/repo/issues",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 if !result.IsSuccess() {
     log.Fatalf("创建失败: %d %s", result.StatusCode(), result.Body())
@@ -180,7 +176,6 @@ result, err := client.Get("/repos/golang/go",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 var repo Repo
 result.Unmarshal(&repo)
@@ -217,7 +212,6 @@ if err != nil {
     }
     return
 }
-defer httpc.ReleaseResult(result)
 
 // 处理 HTTP 状态码
 switch {
@@ -256,7 +250,7 @@ dlCfg.FilePath = "go1.22.0.linux-amd64.tar.gz"
 dlCfg.Overwrite = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r下载进度: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\r下载进度: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.DownloadWithOptions(
@@ -267,9 +261,9 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\n下载完成: %s (%s)\n",
+fmt.Printf("\n下载完成: %s (%d bytes)\n",
     result.FilePath,
-    httpc.FormatBytes(result.BytesWritten),
+    result.BytesWritten,
 )
 ```
 
@@ -305,14 +299,13 @@ func fetchRepos(ctx context.Context, repos []string) error {
         var repo Repo
         results[i].Unmarshal(&repo)
         fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
-        httpc.ReleaseResult(results[i])
     }
     return nil
 }
 ```
 
 :::tip
-`PerformanceConfig()` 提供大连接池配置，适合高并发场景。记得在并发中正确使用 `ReleaseResult`。
+`PerformanceConfig()` 提供大连接池配置，适合高并发场景。Result 对象由内置对象池自动管理。
 :::
 
 ## 完整示例
@@ -369,7 +362,6 @@ func main() {
         }
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     if result.IsSuccess() {
         var repo Repo

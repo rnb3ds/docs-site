@@ -1,6 +1,6 @@
 ---
 title: "TLS and Certificate Pinning - HTTPC"
-description: "HTTPC TLS and certificate pinning: version control, cipher suites, custom CA, mTLS, SPKI pinning strategies, and HTTP/2 configuration."
+description: "HTTPC TLS and certificate pinning guide: TLS 1.2-1.3 version control and cipher suites, custom CA certificate loading, mTLS mutual authentication, VerifyPeerCertificate SPKI public key pinning strategy, InsecureSkipVerify warning, and HTTP/2 negotiation."
 ---
 
 # TLS and Certificate Pinning
@@ -11,8 +11,8 @@ HTTPC requires TLS 1.2+ by default, recommending TLS 1.3:
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Security.MinTLSVersion = tls.VersionTLS12  // default
-cfg.Security.MaxTLSVersion = tls.VersionTLS13  // default
+cfg.Security.MinTLSVersion = tls.VersionTLS12  // Default
+cfg.Security.MaxTLSVersion = tls.VersionTLS13  // Default
 ```
 
 ### Version Details
@@ -21,7 +21,7 @@ cfg.Security.MaxTLSVersion = tls.VersionTLS13  // default
 |---------|--------|---------------|
 | TLS 1.0 | Insecure, deprecated | Rejected |
 | TLS 1.1 | Insecure, deprecated | Rejected |
-| TLS 1.2 | Secure | Minimum required |
+| TLS 1.2 | Secure | Minimum requirement |
 | TLS 1.3 | Most secure, recommended | Supported |
 
 ## Cipher Suites
@@ -42,8 +42,8 @@ The default configuration only allows secure cipher suites:
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Security.TLSConfig = &tls.Config{
-    MinVersion: tls.VersionTLS13,  // Enforce TLS 1.3
-    // Other custom configuration
+    MinVersion: tls.VersionTLS13,  // Force TLS 1.3
+    // Other custom settings
 }
 ```
 
@@ -79,7 +79,7 @@ client, _ := httpc.New(cfg)
 
 ## Certificate Pinning
 
-Certificate pinning prevents man-in-the-middle attacks by verifying the public key hash of the server's certificate.
+Certificate pinning prevents man-in-the-middle attacks by verifying the public key hash of the server certificate.
 
 ### SPKI Hash Pinning
 
@@ -95,25 +95,25 @@ The most common pinning method, verifying the SPKI hash of any certificate in th
 // Pin Let's Encrypt intermediate certificate
 cfg := httpc.DefaultConfig()
 cfg.Security.TLSConfig = &tls.Config{
-    InsecureSkipVerify: true, // Fully replaces standard verification, must complete all checks in VerifyPeerCertificate yourself
+    InsecureSkipVerify: true, // Fully replaces standard validation, must perform all checks in VerifyPeerCertificate
     VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
         // Implement certificate pinning logic here
-        // Note: When InsecureSkipVerify=true, standard chain verification is skipped, full certificate verification must be done here
+        // Note: With InsecureSkipVerify=true, standard chain validation is skipped; complete certificate validation must be done here
         return nil
     },
 }
 ```
 
 :::warning
-Certificate pinning increases maintenance costs. If the server changes certificates (e.g., Let's Encrypt renewal), the client needs to update its pinned values accordingly.
-It is recommended to pin multiple certificates (e.g., leaf + intermediate) and establish an update mechanism.
+Certificate pinning increases maintenance costs. If the server changes certificates (e.g., Let's Encrypt renewal), the client needs to update pinned values accordingly.
+It is recommended to pin multiple certificates simultaneously (e.g., leaf certificate + intermediate certificate) and set up an update mechanism.
 :::
 
 ### Pinning Strategies
 
 | Strategy | Security | Maintenance Cost | Recommendation |
-|----------|----------|-----------------|----------------|
-| Pin root certificate | Low | Low | Tamper detection only |
+|----------|----------|------------------|----------------|
+| Pin root certificate | Low | Low | Tamper protection only |
 | Pin intermediate certificate | Medium | Medium | Recommended |
 | Pin leaf certificate | High | High | High-security scenarios |
 | Pin multiple levels | High | Medium | Best |
@@ -123,16 +123,16 @@ It is recommended to pin multiple certificates (e.g., leaf + intermediate) and e
 ```go
 // For testing only!
 cfg := httpc.TestingConfig()
-// InsecureSkipVerify = true → skips TLS certificate verification
+// InsecureSkipVerify = true -> Skips TLS certificate verification
 ```
 
 :::danger
-`InsecureSkipVerify = true` disables all TLS security measures. Only use in testing environments. Never set to `true` in production.
+`InsecureSkipVerify = true` disables all TLS security measures. Use only in testing environments. Never set to `true` in production.
 :::
 
 ## HTTP/2
 
-HTTP/2 is enabled by default and is only available with TLS:
+HTTP/2 is enabled by default and only available with TLS:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -142,13 +142,13 @@ cfg.Connection.EnableHTTP2 = false // Disable HTTP/2
 ## Best Practices
 
 1. Use the default TLS configuration (TLS 1.2+)
-2. When pinning certificates, pin intermediate certificates and prepare backup pins
+2. When pinning certificates, pin the intermediate certificate and prepare backup pins
 3. Regularly update pinned values in sync with server certificate renewals
-4. Use `SecureConfig()` as the security baseline
-5. Never set `InsecureSkipVerify` in production environments
+4. Use `SecureConfig()` as a security baseline
+5. Never set `InsecureSkipVerify` in production
 
 ## Next Steps
 
 - [SSRF Protection](./ssrf) - SSRF security configuration
 - [Security Overview](./) - Security features overview
-- [Config API](../api-reference/config) - SecurityConfig reference
+- [Configuration API](../api-reference/config) - SecurityConfig reference

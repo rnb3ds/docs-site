@@ -1,6 +1,6 @@
 ---
 title: "チートシート - HTTPC"
-description: "HTTPCチートシート：クライアント作成と5種のプリセット設定、Get/Postなど7種のHTTPメソッド、27個のWithXxxリクエストオプション、Resultレスポンス処理、ミドルウェアチェーン、ClientErrorエラータイプ、ファイルダウンロードの完全なコードスニペット。"
+description: "HTTPC チートシート：クライアント作成と 5 つのプリセット設定、Get/Post など 7 種類のリクエストメソッド、27 個の WithXxx リクエストオプション、Result レスポンス処理、ミドルウェアチェーンの組み合わせ、ClientError エラー分類、ファイルダウンロードとドメインクライアント操作の完全なコードスニペットを提供します。"
 ---
 
 # チートシート
@@ -19,7 +19,7 @@ cfg.Retry.MaxRetries = 5
 client, _ = httpc.New(cfg)
 ```
 
-## HTTPメソッド
+## HTTP メソッド
 
 ```go
 // パッケージ関数（デフォルトクライアントを使用）
@@ -59,8 +59,8 @@ httpc.WithFormData(formData)            // multipart/form-data
 httpc.WithFile("file", "doc.pdf", data) // ファイルアップロード
 httpc.WithBinary([]byte{...})           // application/octet-stream
 httpc.WithBinary([]byte{...}, "image/png") // タイプ指定
-httpc.WithBody(data)                    // 自動検出
-httpc.WithBody(data, httpc.BodyJSON)    // 明示指定：BodyJSON/BodyXML/BodyForm/BodyBinary/BodyMultipart
+httpc.WithBody(data)                    // タイプ自動検出
+httpc.WithBody(data, httpc.BodyJSON)    // 明示的指定：BodyJSON/BodyXML/BodyForm/BodyBinary/BodyMultipart
 ```
 
 ### クエリパラメータ
@@ -122,16 +122,15 @@ result.IsSuccess()                     // 2xx
 result.IsRedirect()                    // 3xx
 result.IsClientError()                 // 4xx
 result.IsServerError()                 // 5xx
-result.Unmarshal(&data)                // JSON解析
-result.GetCookie("name")               // レスポンスCookieの取得
-result.HasCookie("name")               // レスポンスCookieの確認
-result.ResponseCookies()               // 全レスポンスCookie
-result.RequestCookies()                // 全リクエストCookie
-result.GetRequestCookie("name")        // リクエストCookieの取得
-result.HasRequestCookie("name")        // リクエストCookieの確認
+result.Unmarshal(&data)                // JSON 解析
+result.GetCookie("name")               // レスポンス Cookie を取得
+result.HasCookie("name")               // レスポンス Cookie を確認
+result.ResponseCookies()               // 全レスポンス Cookie
+result.RequestCookies()                // 全リクエスト Cookie
+result.GetRequestCookie("name")        // リクエスト Cookie を取得
+result.HasRequestCookie("name")        // リクエスト Cookie を確認
 result.SaveToFile("/path/to/file")     // ファイルに保存
 result.String()                        // 人間可読表現（機密ヘッダーはマスク済み）
-httpc.ReleaseResult(result)            // オブジェクトプールに返却
 ```
 
 ## 設定
@@ -197,9 +196,9 @@ if err != nil {
         case httpc.ErrorTypeNetwork:
             // ネットワークエラー
         case httpc.ErrorTypeTLS:
-            // TLSエラー
+            // TLS エラー
         case httpc.ErrorTypeDNS:
-            // DNS解決エラー
+            // DNS 解決エラー
         case httpc.ErrorTypeContextCanceled:
             // コンテキストキャンセル
         case httpc.ErrorTypeRetryExhausted:
@@ -207,7 +206,7 @@ if err != nil {
         case httpc.ErrorTypeValidation:
             // リクエスト検証エラー
         case httpc.ErrorTypeHTTP:
-            // HTTP層エラー
+            // HTTP 層エラー
         // その他: ErrorTypeUnknown, ErrorTypeResponseRead,
         //       ErrorTypeTransport, ErrorTypeCertificate
         }
@@ -229,11 +228,11 @@ dlCfg.FilePath = "/path/to/file"
 dlCfg.Overwrite = true
 dlCfg.ResumeDownload = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
-    fmt.Printf("\r%.1f%% (%s/s)", float64(downloaded)/float64(total)*100, httpc.FormatSpeed(speed))
+    fmt.Printf("\r%.1f%% (%.2f MB/s)", float64(downloaded)/float64(total)*100, float64(speed)/1024/1024)
 }
 dlResult, err := client.DownloadWithOptions(url, dlCfg)
 
-// dlResultのタイプは*DownloadResult（*Resultではない）
+// dlResult の型は *DownloadResult（*Result ではない）
 // フィールド: FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
 ```
 
@@ -245,4 +244,4 @@ defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
 result, _ := dc.Get("/users")
-``
+```

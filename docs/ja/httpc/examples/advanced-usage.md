@@ -1,29 +1,29 @@
 ---
 title: "高度な使用例 - HTTPC"
-description: "HTTPC高度な使用例：カスタムRetryPolicyリトライ戦略（502/503/504のみ）、Recovery/Timeout/Logging/Metrics/Auditを含む完全なミドルウェアチェーン設定、RESTful APIクライアントラッパー、sync.WaitGroup並行ダウンロードとHMAC-SHA256リクエスト署名カスタムミドルウェア。"
+description: "HTTPC 高度な使用例：カスタム RetryPolicy リトライ戦略（502/503/504 のみ）、Recovery/Timeout/Logging/Metrics/Audit を含む完全なミドルウェアチェーン、RESTful API クライアントラッパー、sync.WaitGroup 並列ダウンロードと HMAC-SHA256 リクエスト署名カスタムミドルウェア。"
 ---
 
 # 高度な使用例
 
 ## カスタムリトライポリシー
 
-502/503/504のみリトライし、固定遅延を使用：
+502/503/504 のみリトライし、固定遅延を使用：
 
-:::warning 警告 内部タイプ
-`RetryPolicy.ShouldRetry`の`resp`パラメータタイプ`ResponseReader`は内部インターフェース（`internal/types`パッケージで定義）であり、外部パッケージからは直接参照できません。カスタム`RetryPolicy`は`httpc`と同じモジュール内のパッケージでのみ実装可能です。ほとんどのシナリオでは`RetryConfig`設定で要件を満たせます。以下の例は実装パターンを示すもので、実際のコードは`httpc`モジュール内でコンパイルする必要があります。
+:::warning 内部タイプ
+`RetryPolicy.ShouldRetry` の `resp` パラメータのタイプ `ResponseReader` は内部インターフェース（`internal/types` パッケージに定義）であり、外部パッケージからは直接参照できません。カスタム `RetryPolicy` は `httpc` と同じモジュール内のパッケージで実装する必要があります。ほとんどのシナリオでは `RetryConfig` 設定で要件を満たせます。以下の例は実装パターンを示していますが、実際のコードは `httpc` モジュール内部でコンパイルする必要があります。
 :::
 
 ```go
-// 注意：ResponseReaderは内部タイプ（internal/typesパッケージ）です。
-// このコードはgithub.com/cybergodev/httpcモジュール内でのみコンパイル可能です。
-// ほとんどのユーザーはRetryConfigとWithMaxRetriesでリトライを設定してください。
+// 注意：ResponseReader は内部タイプ（internal/types パッケージ）です。
+// このコードは github.com/cybergodev/httpc モジュール内でのみコンパイル可能です。
+// ほとんどのユーザーは RetryConfig と WithMaxRetries でリトライを設定してください。
 
 type selectiveRetry struct {
     maxAttempts int
     baseDelay   time.Duration
 }
 
-// リトライすべきかどうかを判定
+// リトライするかどうかを判定
 func (p *selectiveRetry) ShouldRetry(resp ResponseReader, err error, attempt int) bool {
     if attempt >= p.maxAttempts {
         return false
@@ -47,7 +47,7 @@ cfg := httpc.DefaultConfig()
 cfg.Retry.CustomPolicy = &selectiveRetry{maxAttempts: 5, baseDelay: time.Second}
 ```
 
-外部プロジェクトでの代替アプローチ - `RetryConfig`設定を使用：
+外部プロジェクトでの代替案 — `RetryConfig` 設定を使用：
 
 ```go
 package main
@@ -77,7 +77,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode())
 }
@@ -109,7 +108,7 @@ func main() {
         },
     )
 
-    // 監査ログ（JSON形式）
+    // 監査ログ（JSON 形式）
     auditCfg := &httpc.AuditMiddlewareConfig{
         Format:         "json",
         IncludeHeaders: true,
@@ -123,9 +122,9 @@ func main() {
 
     cfg := httpc.DefaultConfig()
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-        httpc.RecoveryMiddleware(),                              // panicリカバリ
+        httpc.RecoveryMiddleware(),                              // panic リカバリ
         httpc.TimeoutMiddleware(30 * time.Second),              // 強制タイムアウト
-        httpc.RequestIDMiddleware("X-Request-ID", nil),         // リクエストID
+        httpc.RequestIDMiddleware("X-Request-ID", nil),         // リクエスト ID
         httpc.LoggingMiddleware(func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
         }),
@@ -143,13 +142,12 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     log.Printf("総リクエスト数: %d", atomic.LoadInt64(&requestCount))
 }
 ```
 
-## REST APIクライアントラッパー
+## REST API クライアントラッパー
 
 ```go
 package main
@@ -194,7 +192,6 @@ func (c *APIClient) GetUser(ctx context.Context, id int) (*User, error) {
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     if !result.IsSuccess() {
         return nil, fmt.Errorf("API error: %d", result.StatusCode())
@@ -214,7 +211,6 @@ func (c *APIClient) CreateUser(ctx context.Context, name string) (*User, error) 
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     var user User
     if err := result.Unmarshal(&user); err != nil {
@@ -237,14 +233,14 @@ func main() {
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
 
-    // ユーザーを作成
+    // ユーザーの作成
     user, err := api.CreateUser(ctx, "Alice")
     if err != nil {
         log.Fatal(err)
     }
     fmt.Printf("作成: %+v\n", user)
 
-    // ユーザーを取得
+    // ユーザーの取得
     user, err = api.GetUser(ctx, user.ID)
     if err != nil {
         log.Fatal(err)
@@ -253,7 +249,7 @@ func main() {
 }
 ```
 
-## 並行ダウンロード
+## 並列ダウンロード
 
 ```go
 package main
@@ -292,7 +288,7 @@ func main() {
             cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
                 fmt.Printf("\r%s: %.1f%% (%s/s)", name,
                     float64(downloaded)/float64(total)*100,
-                    httpc.FormatSpeed(speed))
+                    float64(speed)/1024/1024)
             }
 
             result, err := client.DownloadWithOptions(u, cfg)
@@ -303,13 +299,13 @@ func main() {
 
             atomic.AddInt64(&successCount, 1)
             atomic.AddInt64(&totalBytes, result.BytesWritten)
-            fmt.Printf("\n%s 完了: %s\n", name, httpc.FormatBytes(result.BytesWritten))
+            fmt.Printf("\n%s 完了: %s\n", name, result.BytesWritten)
         }(filename, url)
     }
 
     wg.Wait()
     fmt.Printf("\nダウンロード完了: %d/%d, 合計 %s\n",
-        successCount, len(urls), httpc.FormatBytes(totalBytes))
+        successCount, len(urls), totalBytes)
 }
 ```
 
@@ -362,8 +358,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
-
     log.Println(result.StatusCode())
 }
 ```
@@ -371,5 +365,5 @@ func main() {
 ## 次のステップ
 
 - [ミドルウェアチェーン](../guides/middleware-chain) - ミドルウェアアーキテクチャの詳細
-- [リトライとフォールトトレランス](../guides/retry-fault-tolerance) - カスタムリトライ戦略
+- [リトライとフォールトトレランス](../guides/retry-fault-tolerance) - カスタムリトライポリシー
 - [パフォーマンス最適化](../advanced/performance) - パフォーマンスチューニングの提案

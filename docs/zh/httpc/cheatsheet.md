@@ -1,6 +1,6 @@
 ---
 title: "速查表 - HTTPC"
-description: "HTTPC 速查表：客户端创建与五种预设配置、Get/Post 等七种方法、27 个 WithXxx 请求选项、Result 响应处理、中间件链、ClientError 错误类型与文件下载完整代码片段。"
+description: "HTTPC 速查表：提供客户端创建与五种预设配置、Get/Post 等七种请求方法、27 个 WithXxx 请求选项、Result 响应处理、中间件链组合、ClientError 错误分类、文件下载与域名客户端操作的完整代码片段。"
 ---
 
 # 速查表
@@ -131,7 +131,6 @@ result.GetRequestCookie("name")        // 获取请求 Cookie
 result.HasRequestCookie("name")        // 检查请求 Cookie
 result.SaveToFile("/path/to/file")     // 保存到文件
 result.String()                        // 人类可读表示（敏感头部脱敏）
-httpc.ReleaseResult(result)            // 释放到对象池
 ```
 
 ## 配置
@@ -229,7 +228,7 @@ dlCfg.FilePath = "/path/to/file"
 dlCfg.Overwrite = true
 dlCfg.ResumeDownload = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
-    fmt.Printf("\r%.1f%% (%s/s)", float64(downloaded)/float64(total)*100, httpc.FormatSpeed(speed))
+    fmt.Printf("\r%.1f%% (%.2f MB/s)", float64(downloaded)/float64(total)*100, float64(speed)/1024/1024)
 }
 dlResult, err := client.DownloadWithOptions(url, dlCfg)
 

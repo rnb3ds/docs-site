@@ -1,22 +1,22 @@
 ---
 title: "HTTP Client - HTTPC"
-description: "CyberGo HTTPC is a secure Go HTTP client with TLS 1.2+, SSRF protection, smart retry, middleware chains, and object pool reuse for microservices."
+description: "CyberGo HTTPC is a secure, high-performance HTTP client library for Go, featuring built-in TLS 1.2+ enforcement, SSRF protection, smart exponential backoff retry strategy, onion-model middleware chain, and Result object pool reuse for microservice communication and high-concurrency API call scenarios."
 ---
 
 # HTTPC
 
-A secure HTTP client library that is secure by default, with built-in smart retries, middleware chains, and object pool reuse.
+A secure HTTP client library with secure defaults, built-in smart retries, middleware chain, and object pool reuse.
 
 ## Features
 
-- **TLS 1.2+** - Enforces minimum TLS version, defaulting to TLS 1.2-1.3
-- **SSRF Protection** - Blocks private IP connections by default, with configurable CIDR exemptions
-- **Smart Retries** - Exponential backoff with jitter, customizable retry strategies
-- **Connection Pool Management** - High-performance connection reuse with HTTP/2 support
-- **Middleware Chain** - Built-in middleware for logging, auditing, metrics, recovery, request IDs, and more
-- **File Downloads** - Supports resumable downloads, progress callbacks, and checksum verification
-- **DNS-over-HTTPS** - Built-in DoH resolution to reduce DNS hijacking risks
-- **Object Pool Reuse** - Built-in sync.Pool to reduce memory allocations and lower GC pressure
+- **TLS 1.2+** - Enforces minimum TLS version, defaults to TLS 1.2-1.3
+- **SSRF Protection** - Blocks private IP connections by default, configurable CIDR exemptions
+- **Smart Retries** - Exponential backoff with jitter, customizable retry policies
+- **Connection Pool Management** - High-performance connection reuse, HTTP/2 support
+- **Middleware Chain** - Logging, audit, metrics, recovery, request ID, and other built-in middleware
+- **File Download** - Resumable downloads, progress callbacks, checksum verification
+- **DNS-over-HTTPS** - Built-in DoH resolution, reducing DNS hijacking risk
+- **Object Pool Reuse** - Built-in sync.Pool for automatic Result object management, reducing GC pressure
 
 ## Installation
 
@@ -24,7 +24,7 @@ A secure HTTP client library that is secure by default, with built-in smart retr
 go get github.com/cybergodev/httpc
 ```
 
-## 30-Second Quickstart
+## 30-Second Quick Start
 
 ```go
 package main
@@ -39,7 +39,6 @@ func main() {
     if err != nil {
         panic(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
 }
@@ -51,27 +50,27 @@ Choose your reading path based on your goal:
 
 | Goal | Recommended |
 |------|-------------|
-| Get started in 5 minutes | [Getting Started](./getting-started) |
-| Hands-on tutorial in 30 minutes | [Tutorial](./guides/tutorial) |
-| Look up a specific usage | [Cheatsheet](./cheatsheet) |
-| Learn about security features | [Security Overview](./security/) |
-| Look up API signatures | [API Reference](./api-reference/) |
+| 5-minute setup | [Quick Start](./getting-started) |
+| 30-minute hands-on | [Tutorial](./guides/tutorial) |
+| Look up a specific usage | [Cheat Sheet](./cheatsheet) |
+| Learn about security | [Security Overview](./security/) |
+| Check API signatures | [API Reference](./api-reference/) |
 
 ## Core Concepts
 
 HTTPC provides three usage patterns, from simple to flexible:
 
 ```text
-Package-level functions    Client instance                Domain client
-httpc.Get()  →  client, _ := httpc.New()  →  dc, _ := httpc.NewDomain(url)
-One-off requests     Custom config/middleware    Session management/Auto Cookie
+Package-level functions    Client instance              Domain client
+httpc.Get()         →  client, _ := httpc.New()  →  dc, _ := httpc.NewDomain(url)
+One-off requests       Custom config/middleware    Session management/Auto Cookie maintenance
 ```
 
 ### Configuration Presets
 
 | Preset | Use Case |
 |--------|----------|
-| `DefaultConfig()` | General use, secure defaults |
+| `DefaultConfig()` | General purpose, secure defaults |
 | `SecureConfig()` | Security-sensitive scenarios, strict timeouts |
 | `PerformanceConfig()` | High throughput, large connection pool |
 | `TestingConfig()` | Test environments, security checks disabled |

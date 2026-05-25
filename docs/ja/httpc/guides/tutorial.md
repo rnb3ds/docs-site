@@ -1,24 +1,24 @@
 ---
 title: "チュートリアル - HTTPC"
-description: "30分の実践チュートリアル：httpc.Getから段階的にGitHub REST APIクライアントを構築し、JSON解析、NewDomainドメインクライアント、WithJSONデータ送信、ミドルウェアチェーン、ClientErrorエラー処理、ファイルダウンロードをカバーします。"
+description: "30 分の実践チュートリアル：httpc.Get から段階的に GitHub REST API クライアントを構築し、JSON レスポンス解析、NewDomain ドメインクライアント、WithJSON データ送信、ミドルウェアチェーン組み合わせ、ClientError エラー処理、ファイルダウンロード機能をカバーします。"
 ---
 
-# チュートリアル：GitHub APIクライアントの構築
+# チュートリアル：GitHub API クライアントの構築
 
-GitHub APIクライアントを構築しながら、HTTPCのコア概念を学びます。約30分で完了します。
+GitHub API クライアントを構築しながら HTTPC のコアコンセプトを学びます。約 30 分で完了します。
 
-**学べる内容：**
+**学ぶこと：**
 
 - クライアントの作成と設定プリセット
-- GET/POSTリクエストの送信とJSONレスポンスの処理
-- ドメインクライアントによるAPIベースURLの管理
-- ミドルウェアによるログとメトリクスの追加
+- GET/POST リクエストの送信と JSON レスポンスの処理
+- ドメインクライアントで API ベース URL を管理
+- ミドルウェアでログとメトリクスを追加
 - エラー処理とリトライ
-- オブジェクトプール再利用によるパフォーマンス最適化
+- 内蔵オブジェクトプールの自動管理でパフォーマンスを最適化
 
-## ステップ1：基本的なリクエスト
+## ステップ 1：基本的なリクエスト
 
-依存関係をインストールし、`main.go`を作成：
+依存関係をインストールして `main.go` を作成します：
 
 ```bash
 go get github.com/cybergodev/httpc
@@ -39,18 +39,17 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
-    fmt.Println(result.Body())       // JSONレスポンス
+    fmt.Println(result.Body())       // JSON レスポンス
 }
 ```
 
 ポイント：
-- パッケージ関数`httpc.Get`はクライアントの作成不要。素早い検証に適しています
-- `defer httpc.ReleaseResult(result)`で結果をオブジェクトプールに返却
+- パッケージ関数 `httpc.Get` はクライアントの作成が不要で、素早く確認するのに適しています
+- Result オブジェクトは内蔵オブジェクトプールで自動管理され、GC が自動的にクリーンアップします
 
-## ステップ2：JSONレスポンスの解析
+## ステップ 2：JSON レスポンスの解析
 
 ```go
 type Repo struct {
@@ -64,7 +63,6 @@ result, err := httpc.Get("https://api.github.com/repos/golang/go")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 var repo Repo
 if err := result.Unmarshal(&repo); err != nil {
@@ -77,12 +75,12 @@ fmt.Printf("説明: %s\n", repo.Description)
 ```
 
 ポイント：
-- `result.Unmarshal(&v)`でJSONレスポンスを直接構造体に解析
-- APIレスポンスに対応するGo構造体を定義
+- `result.Unmarshal(&v)` で JSON レスポンスを構造体に直接解析
+- API レスポンスに対応する Go 構造体を定義
 
-## ステップ3：ドメインクライアントの作成
+## ステップ 3：ドメインクライアントの作成
 
-GitHub APIのすべてのエンドポイントは`https://api.github.com`以下にあるため、ドメインクライアントを使えばURLの重複記述を避けられます：
+GitHub API のすべてのエンドポイントは `https://api.github.com` にあるため、ドメインクライアントを使うと URL の重複を避けられます：
 
 ```go
 client, err := httpc.NewDomain("https://api.github.com")
@@ -95,23 +93,22 @@ if err := client.SetHeader("Authorization", "Bearer "+os.Getenv("GITHUB_TOKEN"))
     log.Fatal(err)
 }
 
-// パスはbaseURLからの相対パス
+// パスは baseURL からの相対パス
 result, err := client.Get("/repos/golang/go",
     httpc.WithHeader("Accept", "application/vnd.github+json"),
 )
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 ```
 
 ポイント：
-- `NewDomain`でスコープ付きクライアントを作成。パスはbaseURLからの相対パス
-- `SetHeader`で永続ヘッダーを設定。毎回のリクエストに自動的に付与
-- `WithHeader`はリクエストオプションとして渡し、そのリクエストのみに適用
-- ドメインクライアントはCookieを自動的に管理
+- `NewDomain` はスコープ付きクライアントを作成し、パスは baseURL からの相対パス
+- `SetHeader` は永続的なヘッダーを設定し、毎回のリクエストに自動的に付与
+- `WithHeader` はリクエストオプションとして渡し、現在のリクエストのみに適用
+- ドメインクライアントは Cookie を自動管理
 
-## ステップ4：データの送信（Issueの作成）
+## ステップ 4：データの送信（Issue の作成）
 
 ```go
 type CreateIssueRequest struct {
@@ -130,10 +127,9 @@ result, err := client.Post("/repos/owner/repo/issues",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 if !result.IsSuccess() {
-    log.Fatalf("作成失敗: %d %s", result.StatusCode(), result.Body())
+    log.Fatalf("作成に失敗: %d %s", result.StatusCode(), result.Body())
 }
 
 var created struct {
@@ -141,19 +137,19 @@ var created struct {
     URL    string `json:"html_url"`
 }
 result.Unmarshal(&created)
-fmt.Printf("Issue #%d が作成されました: %s\n", created.Number, created.URL)
+fmt.Printf("Issue #%d を作成しました: %s\n", created.Number, created.URL)
 ```
 
 ポイント：
-- `WithJSON(data)`が自動的にシリアライズし、Content-Typeを設定
-- `result.IsSuccess()`で2xxステータスコードを確認
+- `WithJSON(data)` が自動的にシリアライズし、Content-Type を設定
+- `result.IsSuccess()` で 2xx ステータスコードを確認
 
-## ステップ5：ミドルウェアの追加
+## ステップ 5：ミドルウェアの追加
 
-クライアントにログとリクエストIDを追加：
+クライアントにログとリクエスト ID を追加します：
 
 ```go
-// ミドルウェアを設定
+// ミドルウェアの設定
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.LoggingMiddleware(func(format string, args ...any) {
@@ -163,7 +159,7 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RequestIDMiddleware("X-Request-ID", nil),
 }
 
-// 設定をNewDomainに渡し、ミドルウェア付きドメインクライアントを作成
+// 設定を NewDomain に渡して、ミドルウェア付きのドメインクライアントを作成
 client, err := httpc.NewDomain("https://api.github.com", cfg)
 if err != nil {
     log.Fatal(err)
@@ -180,7 +176,6 @@ result, err := client.Get("/repos/golang/go",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 var repo Repo
 result.Unmarshal(&repo)
@@ -188,12 +183,12 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 ```
 
 ポイント：
-- ミドルウェアは`Config.Middleware.Middlewares`で設定
-- `LoggingMiddleware`がリクエストログを記録
-- `RecoveryMiddleware`がpanicによるクラッシュを防止
-- `RequestIDMiddleware`が各リクエストにユニークIDを生成
+- ミドルウェアは `Config.Middleware.Middlewares` で設定
+- `LoggingMiddleware` はリクエストログを記録
+- `RecoveryMiddleware` は panic によるクラッシュを防止
+- `RequestIDMiddleware` は各リクエストにユニーク ID を生成
 
-## ステップ6：エラー処理とリトライ
+## ステップ 6：エラー処理とリトライ
 
 ```go
 result, err := client.Get("/repos/golang/go")
@@ -202,13 +197,13 @@ if err != nil {
     if errors.As(err, &clientErr) {
         switch clientErr.Type {
         case httpc.ErrorTypeTimeout:
-            log.Println("リクエストタイムアウト、後で再試行してください")
+            log.Println("リクエストタイムアウト、後でリトライしてください")
         case httpc.ErrorTypeNetwork:
             log.Println("ネットワークエラー")
         case httpc.ErrorTypeTLS:
-            log.Println("TLSエラー")
+            log.Println("TLS エラー")
         default:
-            log.Printf("HTTPエラー: %s", clientErr.Error())
+            log.Printf("HTTP エラー: %s", clientErr.Error())
         }
 
         if clientErr.IsRetryable() {
@@ -217,23 +212,22 @@ if err != nil {
     }
     return
 }
-defer httpc.ReleaseResult(result)
 
-// HTTPステータスコードの処理
+// HTTP ステータスコードの処理
 switch {
 case result.IsSuccess():
     // 2xx 成功
 case result.StatusCode() == 401:
-    log.Println("Tokenの有効期限切れまたは無効")
+    log.Println("Token が期限切れまたは無効")
 case result.IsClientError():
     log.Printf("クライアントエラー: %d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("サーバーエラー: %d (%d 回自動リトライ済み)",
+    log.Printf("サーバーエラー: %d (自動リトライ %d 回)",
         result.StatusCode(), result.Meta.Attempts)
 }
 ```
 
-リトライ戦略の設定：
+リトライポリシーの設定：
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -244,11 +238,11 @@ cfg.Retry.EnableJitter = true
 ```
 
 ポイント：
-- HTTPCはネットワークエラーとHTTPステータスコードを分離して処理
-- `ClientError`がエラー分類とリトライ可否の判定を提供
-- デフォルトで408, 429, 500, 502, 503, 504を自動リトライ
+- HTTPC はネットワークエラーと HTTP ステータスコードを分離して処理
+- `ClientError` はエラー分類とリトライ可否の判定を提供
+- デフォルトで 408, 429, 500, 502, 503, 504 を自動リトライ
 
-## ステップ7：ファイルダウンロード（リリースパッケージのダウンロード）
+## ステップ 7：ファイルダウンロード（リリースパッケージのダウンロード）
 
 ```go
 dlCfg := httpc.DefaultDownloadConfig()
@@ -256,7 +250,7 @@ dlCfg.FilePath = "go1.22.0.linux-amd64.tar.gz"
 dlCfg.Overwrite = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rダウンロード進捗: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\rダウンロード進捗: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.DownloadWithOptions(
@@ -267,15 +261,15 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\nダウンロード完了: %s (%s)\n",
+fmt.Printf("\nダウンロード完了: %s (%d bytes)\n",
     result.FilePath,
-    httpc.FormatBytes(result.BytesWritten),
+    result.BytesWritten,
 )
 ```
 
-## ステップ8：並行リクエスト
+## ステップ 8：並列リクエスト
 
-複数のリポジトリ情報を同時に取得：
+複数のリポジトリ情報を同時に取得します：
 
 ```go
 func fetchRepos(ctx context.Context, repos []string) error {
@@ -305,14 +299,13 @@ func fetchRepos(ctx context.Context, repos []string) error {
         var repo Repo
         results[i].Unmarshal(&repo)
         fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
-        httpc.ReleaseResult(results[i])
     }
     return nil
 }
 ```
 
-:::tip ヒント
-`PerformanceConfig()`は大規模接続プール設定を提供し、高並行シナリオに適しています。並行処理で`ReleaseResult`を正しく使用してください。
+:::tip
+`PerformanceConfig()` は大規模コネクションプール設定を提供し、高並列シナリオに適しています。Result オブジェクトは内蔵オブジェクトプールで自動管理されます。
 :::
 
 ## 完全な例
@@ -369,7 +362,6 @@ func main() {
         }
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     if result.IsSuccess() {
         var repo Repo
@@ -387,6 +379,6 @@ func main() {
 
 - [リクエストとレスポンス](./request-response) — 完全なリクエストオプションリファレンス
 - [ミドルウェアチェーン](./middleware-chain) — カスタムミドルウェア開発
-- [リトライとフォールトトレランス](./retry-fault-tolerance) — 高度なリトライ戦略
+- [リトライとフォールトトレランス](./retry-fault-tolerance) — 高度なリトライポリシー
 - [パフォーマンス最適化](../advanced/performance) — 本番環境のチューニング
 - [本番チェックリスト](../security/production-checklist) — セキュリティベストプラクティス

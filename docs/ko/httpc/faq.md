@@ -1,13 +1,13 @@
 ---
 title: "자주 묻는 질문 - HTTPC"
-description: "HTTPC 자주 묻는 질문과 답변: 패키지 레벨 함수와 클라이언트 인스턴스 선택 기준, 다섯 가지 설정 프리셋 비교, HTTP/SOCKS5 프록시 및 DoH 설정, errors.Is/As 오류 매칭, ReleaseResult 객체 풀 관리와 4단계 타임아웃 튜닝."
+description: "HTTPC 자주 묻는 질문 답변: 패키지 함수와 클라이언트 인스턴스 선택 기준, 다섯 가지 설정 프리셋 비교 및 적용 시나리오, HTTP/SOCKS5 프록시 및 DoH 설정 방법, errors.Is/As 오류 매칭 패턴과 4단계 타임아웃 체계 튜닝 전략을 설명합니다."
 ---
 
 # 자주 묻는 질문
 
-## 언제 패키지 레벨 함수를 쓰고 언제 클라이언트를 생성하나요?
+## 언제 패키지 함수를 쓰고 언제 클라이언트를 생성해야 하나요?
 
-**패키지 레벨 함수**는 간단한 시나리오에 적합합니다: 일회성 요청, 스크립트, 도구.
+**패키지 함수**는 간단한 시나리오에 적합합니다: 일회성 요청, 스크립트, 도구.
 
 ```go
 result, _ := httpc.Get("https://api.example.com/data")
@@ -23,8 +23,8 @@ defer client.Close()
 ## 설정 프리셋은 어떻게 선택하나요?
 
 | 프리셋 | 적용 시나리오 |
-|--------|---------------|
-| `DefaultConfig()` | 일반 시나리오, 안전한 기본값 |
+|--------|--------------|
+| `DefaultConfig()` | 범용 시나리오, 보안 기본값 |
 | `SecureConfig()` | 사용자 제공 URL 처리, 금융/의료 시나리오 |
 | `PerformanceConfig()` | 내부 마이크로서비스 통신, 고동시성 API |
 | `TestingConfig()` | 단위 테스트, 로컬 개발 |
@@ -32,13 +32,13 @@ defer client.Close()
 
 ## 내부 서비스에 어떻게 접근하나요?
 
-기본적으로 SSRF 방어가 사설 IP 연결을 차단합니다. 내부 서비스에 접근하려면:
+기본 SSRF 방어가 사설 IP 연결을 차단합니다. 내부 서비스 접근이 필요한 경우:
 
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Security.AllowPrivateIPs = true // 모든 사설 IP 허용
 
-// 또는 정확한 면제 설정
+// 또는 정밀한 면제
 cfg.Security.SSRFExemptCIDRs = []string{"10.0.0.0/8"}
 ```
 
@@ -55,7 +55,7 @@ cfg.Connection.EnableSystemProxy = true
 
 ## HTTP 오류 코드는 어떻게 처리하나요?
 
-HTTPC는 4xx/5xx를 error로 처리하지 않으므로 수동으로 확인해야 합니다:
+HTTPC은 4xx/5xx를 error로 처리하지 않으므로 수동으로 확인해야 합니다:
 
 ```go
 result, err := client.Get(url)
@@ -76,17 +76,7 @@ case result.IsServerError():
 }
 ```
 
-## 왜 ReleaseResult를 호출해야 하나요?
-
-`ReleaseResult`는 Result를 객체 풀로 반환하여 GC 부하를 줄입니다. 반환 시 응답 본문 전체를 0으로 초기화하여 민감한 데이터가 객체 풀에 노출되지 않도록 합니다. 고동시성 시나리오에서 성능 향상이 뚜렷합니다.
-
-```go
-result, _ := client.Get(url)
-defer httpc.ReleaseResult(result)
-// 이후에는 result에 접근하지 마세요
-```
-
-## 재시도는 어떻게 비활성화하나요?
+## 재시도를 비활성화하려면 어떻게 하나요?
 
 ```go
 // 전역 비활성화
@@ -102,7 +92,7 @@ result, _ := client.Get(url, httpc.WithMaxRetries(0))
 
 ## 요청 타임아웃은 어떻게 설정하나요?
 
-네 가지 방법이 있으며, 우선순위가 높은 순서입니다:
+네 가지 방법이 있으며, 우선순위가 높은 것부터 낮은 것 순입니다:
 
 ```go
 // 1. 컨텍스트 타임아웃 (권장)
@@ -131,15 +121,15 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
 client, _ := httpc.New(cfg)
 ```
 
-## TestingConfig은 왜 경고를 출력하나요?
+## TestingConfig는 왜 경고를 출력하나요?
 
-`TestingConfig`은 보안 기능(TLS 검증, SSRF 방어)을 비활성화하므로, 비테스트 환경에서 사용하면 보안 위험이 있습니다. 비테스트 환경이 감지되면 경고가 출력됩니다.
+`TestingConfig`는 보안 기능(TLS 검증, SSRF 방어)을 비활성화하므로 테스트 환경 외부에서 사용하면 보안 위험이 있습니다. 테스트 환경이 아닌 것으로 감지되면 경고를 출력합니다.
 
-`*_test.go` 파일 또는 로컬 개발에서만 사용하세요.
+`*_test.go` 파일이나 로컬 개발에만 사용하세요.
 
-## DNS-over-HTTPS는 어떻게 활성화하나요?
+## DNS-over-HTTPS를 어떻게 활성화하나요?
 
-DoH는 DNS 리졸브 지연을 줄이고 DNS 하이재킹을 방지할 수 있습니다:
+DoH는 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지할 수 있습니다:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -147,15 +137,15 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-기본적으로 Cloudflare, Google, AliDNS 세 가지 제공자를 사용합니다(우선순위 순으로 대체). 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS로 자동 대체됩니다.
+기본적으로 Cloudflare, Google, AliDNS 세 가지 제공자를 사용합니다(우선순위에 따라 폴백). 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS로 자동 폴백합니다.
 
 :::tip
-DoH는 DNS 리졸브 보안이 요구되는 시나리오에 적합합니다. 일반적인 API 호출에서는 활성화할 필요가 없으며, 기본 DNS로 충분합니다.
+DoH는 DNS 해석 보안이 요구되는 시나리오에 적합합니다. 일반적인 API 호출에서는 활성화할 필요가 없으며, 기본 DNS로 충분합니다.
 :::
 
-## 더 많은 자료
+## 추가 리소스
 
 - [빠른 시작](./getting-started) - 5분 빠른 시작
-- [실전 튜토리얼](./guides/tutorial) - 단계별 완전 예제
-- [설정 API](./api-reference/config) - 전체 설정 참조
+- [실전 튜토리얼](./guides/tutorial) - 단계별 완전한 예제
+- [설정 API](./api-reference/config) - 완전한 설정 참조
 - [오류 처리](./advanced/error-handling) - 오류 처리 가이드

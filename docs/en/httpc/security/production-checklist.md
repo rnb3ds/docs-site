@@ -1,6 +1,6 @@
 ---
 title: "Production Checklist - HTTPC"
-description: "HTTPC production checklist: TLS verification, SSRF confirmation, timeout and size limits, retry strategies, resource cleanup, and audit middleware setup."
+description: "HTTPC production environment security checklist: TLS verification, SSRF AllowPrivateIPs confirmation and CIDR audit, Timeouts timeout configuration, MaxResponseBodySize size limits, MaxRetries retry strategy, resource cleanup, and AuditMiddleware monitoring and auditing."
 ---
 
 # Production Checklist
@@ -10,52 +10,51 @@ description: "HTTPC production checklist: TLS verification, SSRF confirmation, t
 ### TLS Configuration
 
 - [ ] `InsecureSkipVerify` set to `false` (default value)
-- [ ] `MinTLSVersion` is at least `tls.VersionTLS12`
+- [ ] `MinTLSVersion` at least `tls.VersionTLS12`
 - [ ] Not using `TestingConfig()`
 
 ### SSRF Protection
 
 - [ ] `AllowPrivateIPs` is `false` (default value)
-- [ ] If internal service access is needed, specify precisely with `SSRFExemptCIDRs`
+- [ ] If accessing internal services, use `SSRFExemptCIDRs` with precise specification
 - [ ] Use `SecureConfig()` when handling user-provided URLs
 
 ### Timeout Configuration
 
 - [ ] All timeout values are set and reasonable
-- [ ] `Timeouts.Request` is not 0 (prevents indefinite waiting)
+- [ ] `Timeouts.Request` is not 0 (prevents infinite waiting)
 - [ ] Consider using `WithContext` to set per-request timeouts
 
 ### Response Limits
 
-- [ ] `MaxResponseBodySize` is set to a reasonable upper limit
-- [ ] `MaxDecompressedBodySize` is set to a reasonable upper limit
+- [ ] `MaxResponseBodySize` has a reasonable upper limit
+- [ ] `MaxDecompressedBodySize` has a reasonable upper limit
 - [ ] Use streaming downloads for large responses
 
 ### Retry Configuration
 
 - [ ] `MaxRetries` does not exceed 5
-- [ ] Use retry cautiously for non-idempotent requests (POST/PUT/PATCH)
+- [ ] Use retries cautiously with non-idempotent requests (POST/PUT/PATCH)
 - [ ] Enable `EnableJitter` to prevent thundering herd
 
 ### Resource Management
 
-- [ ] Call `Close()` on clients after use
-- [ ] Call `ReleaseResult()` on Result objects after use
+- [ ] Call `Close()` after using the client
 - [ ] Use `defer` to ensure resource cleanup
 
-## Recommended Items
+## Recommended
 
 ### Middleware
 
 - [ ] Use `RecoveryMiddleware()` to prevent panic crashes
-- [ ] Use `LoggingMiddleware()` to log requests
+- [ ] Use `LoggingMiddleware()` to record request logs
 - [ ] Use `MetricsMiddleware()` to collect metrics
 - [ ] Use `AuditMiddleware()` in security-sensitive scenarios
 
-### Request Headers
+### Headers
 
 - [ ] Set a meaningful `User-Agent`
-- [ ] Do not store sensitive information in default request headers
+- [ ] Do not store sensitive information in default headers
 - [ ] Use `WithBearerToken` instead of manually setting Authorization
 
 ### Cookies
@@ -66,7 +65,7 @@ description: "HTTPC production checklist: TLS verification, SSRF confirmation, t
 ### Redirects
 
 - [ ] Disable redirects when handling user-input URLs
-- [ ] Use `RedirectWhitelist` to restrict redirect targets
+- [ ] Use `RedirectWhitelist` to limit redirect destinations
 
 ## Code Examples
 
@@ -118,7 +117,7 @@ func createSecureClient() (httpc.Client, error) {
 }
 ```
 
-## Audit Commands
+## Check Commands
 
 ```bash
 # Check for misuse of TestingConfig
@@ -134,5 +133,5 @@ grep -r "AllowPrivateIPs.*true" --include="*.go" | grep -v "_test.go"
 ## Next Steps
 
 - [Security Overview](./) - Security features overview
-- [SSRF Protection](./ssrf) - Detailed SSRF protection
-- [Config API](../api-reference/config) - Complete configuration reference
+- [SSRF Protection](./ssrf) - SSRF protection in depth
+- [Configuration API](../api-reference/config) - Complete configuration reference

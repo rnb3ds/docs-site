@@ -1,13 +1,13 @@
 ---
 title: "Testing Guide - HTTPC"
-description: "HTTPC testing guide: TestingConfig setup, httptest.Server mocks, table-driven tests, error/delay simulation, and ReleaseResult resource cleanup."
+description: "HTTPC testing guide: TestingConfig for test-specific configuration, net/http/httptest mock server integration, mock error responses/delays/redirects/file uploads, table-driven test patterns, and context timeout testing best practices."
 ---
 
 # Testing Guide
 
 ## TestingConfig
 
-`TestingConfig()` is designed for test environments, disabling security checks and shortening timeouts to speed up test execution:
+`TestingConfig()` is designed specifically for testing environments, disabling security checks and shortening timeouts to accelerate test execution:
 
 ```go
 func TestAPI(t *testing.T) {
@@ -23,12 +23,12 @@ func TestAPI(t *testing.T) {
 ```
 
 :::danger
-`TestingConfig` disables TLS verification, SSRF protection, and other security features. **Only use it in test environments.** A security warning is printed when used in non-test environments.
+`TestingConfig` disables TLS verification, SSRF protection, and other security features. **For testing environments only**. Using it outside test environments will print a security warning.
 :::
 
 ## httptest.Server Integration
 
-Use the standard library `net/http/httptest` to create a mock server for integration testing without a real backend:
+Use the standard library `net/http/httptest` to create mock servers for integration testing without a real backend:
 
 ```go
 package main
@@ -74,7 +74,6 @@ func TestGetUser(t *testing.T) {
     if err != nil {
         t.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     if !result.IsSuccess() {
         t.Fatalf("expected success, got %d", result.StatusCode())
@@ -94,9 +93,9 @@ func TestGetUser(t *testing.T) {
 }
 ```
 
-## Simulating Different Scenarios
+## Mocking Different Scenarios
 
-### Simulating Error Responses
+### Mock Error Responses
 
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -108,7 +107,7 @@ server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *htt
 defer server.Close()
 ```
 
-### Simulating Delays
+### Mock Delays
 
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +126,7 @@ if err == nil {
 }
 ```
 
-### Simulating Redirects
+### Mock Redirects
 
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +141,7 @@ server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *htt
 defer server.Close()
 ```
 
-### Simulating File Uploads
+### Mock File Upload
 
 ```go
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -197,7 +196,6 @@ func TestHTTPMethods(t *testing.T) {
             if err != nil {
                 t.Fatal(err)
             }
-            defer httpc.ReleaseResult(result)
 
             if result.Body() != tt.name {
                 t.Errorf("expected %s, got %s", tt.name, result.Body())
@@ -212,13 +210,12 @@ func TestHTTPMethods(t *testing.T) {
 | Practice | Description |
 |----------|-------------|
 | Use `httptest.Server` | Simulates real HTTP behavior without network dependencies |
-| Use `TestingConfig()` | Disables security checks, preventing local connections from being blocked |
-| Call `ReleaseResult()` | Returns to object pool, maintaining test performance |
+| Use `TestingConfig()` | Disables security checks to avoid blocking local connections |
 | Use `defer` | Ensures resource cleanup even if tests fail |
-| Table-driven tests | Covers multiple inputs with concise code |
+| Table-driven | Covers multiple inputs with concise code |
 
 ## Next Steps
 
-- [Config API](../api-reference/config) - TestingConfig detailed parameters
+- [Configuration API](../api-reference/config) - TestingConfig detailed parameters
 - [Error Types](../api-reference/errors) - Error assertion reference
 - [Middleware Chain](./middleware-chain) - Middleware testing patterns

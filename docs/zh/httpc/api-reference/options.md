@@ -1,6 +1,6 @@
 ---
 title: "请求选项 - HTTPC"
-description: "HTTPC 27 个请求选项函数 API 参考：WithHeader 请求头、WithBearerToken 认证、WithJSON/WithXML/WithForm/WithBinary 多种请求体、WithQuery 查询参数、五种 Cookie 选项与 WithOnRequest/WithOnResponse 回调。"
+description: "HTTPC 请求选项 API 参考：WithHeader 请求头、WithBearerToken 认证、WithJSON/WithXML/WithForm/WithBinary 请求体、WithQuery 查询参数、五种 Cookie 选项与 WithOnRequest/WithOnResponse 回调函数。"
 ---
 
 # 请求选项

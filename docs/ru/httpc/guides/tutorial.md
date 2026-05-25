@@ -1,20 +1,20 @@
 ---
-title: "Практическое руководство — HTTPC"
-description: "Тридцатиминутное практическое руководство: пошаговое создание клиента GitHub REST API с использованием httpc.Get, парсинг JSON, доменный клиент NewDomain, отправка данных WithJSON, цепочка промежуточного ПО, обработка ошибок ClientError и загрузка файлов."
+title: "Практическое руководство - HTTPC"
+description: "Тридцатиминутное практическое руководство: от httpc.Get до полноценного клиента GitHub REST API, охватывающее парсинг JSON-ответов, доменный клиент NewDomain, отправку данных через WithJSON, композицию цепочки промежуточного ПО, обработку ошибок ClientError и загрузку файлов."
 ---
 
 # Практическое руководство: создание клиента GitHub API
 
-Путём создания клиента GitHub API мы свяжем основные концепции HTTPC. Занимает около 30 минут.
+Путём создания клиента GitHub API вы освоите основные концепции HTTPC. Приблизительно 30 минут.
 
 **Вы научитесь:**
 
-- Создавать клиент и использовать предустановки конфигурации
+- Создавать клиент и выбирать предустановки конфигурации
 - Отправлять GET/POST запросы и обрабатывать JSON-ответы
 - Использовать доменный клиент для управления базовым URL API
 - Добавлять промежуточное ПО для логирования и метрик
 - Обрабатывать ошибки и повторные попытки
-- Оптимизировать производительность через повторное использование пула объектов
+- Оптимизировать производительность через автоматическое управление пулом объектов
 
 ## Шаг 1: Базовый запрос
 
@@ -39,7 +39,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())       // JSON-ответ
@@ -47,10 +46,10 @@ func main() {
 ```
 
 Ключевые моменты:
-- Функция уровня пакета `httpc.Get` не требует создания клиента, подходит для быстрой проверки
-- `defer httpc.ReleaseResult(result)` возвращает результат в пул объектов
+- Функция пакета `httpc.Get` не требует создания клиента, подходит для быстрой проверки
+- Объект Result управляется встроенным пулом объектов, GC автоматически утилизирует
 
-## Шаг 2: Парсинг JSON-ответа
+## Шаг 2: Парсинг JSON-ответов
 
 ```go
 type Repo struct {
@@ -64,7 +63,6 @@ result, err := httpc.Get("https://api.github.com/repos/golang/go")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 var repo Repo
 if err := result.Unmarshal(&repo); err != nil {
@@ -78,11 +76,11 @@ fmt.Printf("Описание: %s\n", repo.Description)
 
 Ключевые моменты:
 - `result.Unmarshal(&v)` напрямую разбирает JSON-ответ в структуру
-- Определите структуру Go, соответствующую ответу API
+- Определите Go-структуру, соответствующую ответу API
 
 ## Шаг 3: Создание доменного клиента
 
-Все эндпоинты GitHub API находятся под `https://api.github.com`, используйте доменный клиент, чтобы не писать URL повторно:
+Все эндпоинты GitHub API находятся под `https://api.github.com`, используйте доменный клиент, чтобы не повторять URL:
 
 ```go
 client, err := httpc.NewDomain("https://api.github.com")
@@ -95,20 +93,19 @@ if err := client.SetHeader("Authorization", "Bearer "+os.Getenv("GITHUB_TOKEN"))
     log.Fatal(err)
 }
 
-// Путь запроса相对于 baseURL
+// Путь запроса относителен к baseURL
 result, err := client.Get("/repos/golang/go",
     httpc.WithHeader("Accept", "application/vnd.github+json"),
 )
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 ```
 
 Ключевые моменты:
-- `NewDomain` создаёт клиент с областью действия, пути относительно baseURL
-- `SetHeader` устанавливает постоянные заголовки, автоматически добавляемые к каждому запросу
-- `WithHeader` передаётся как параметр запроса, действует только на текущий запрос
+- `NewDomain` создаёт клиент с областью действия, пути относительны к baseURL
+- `SetHeader` устанавливает постоянный заголовок, автоматически добавляемый к каждому запросу
+- `WithHeader` как параметр запроса действует только для текущего запроса
 - Доменный клиент автоматически управляет Cookie
 
 ## Шаг 4: Отправка данных (создание Issue)
@@ -130,7 +127,6 @@ result, err := client.Post("/repos/owner/repo/issues",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 if !result.IsSuccess() {
     log.Fatalf("Ошибка создания: %d %s", result.StatusCode(), result.Body())
@@ -150,7 +146,7 @@ fmt.Printf("Issue #%d создан: %s\n", created.Number, created.URL)
 
 ## Шаг 5: Добавление промежуточного ПО
 
-Добавьте логирование и ID запросов к клиенту:
+Добавьте логирование и Request ID к клиенту:
 
 ```go
 // Настройка промежуточного ПО
@@ -180,7 +176,6 @@ result, err := client.Get("/repos/golang/go",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 var repo Repo
 result.Unmarshal(&repo)
@@ -190,7 +185,7 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 Ключевые моменты:
 - Промежуточное ПО настраивается в `Config.Middleware.Middlewares`
 - `LoggingMiddleware` записывает логи запросов
-- `RecoveryMiddleware` предотвращает падение из-за panic
+- `RecoveryMiddleware` предотвращает падение процесса при panic
 - `RequestIDMiddleware` генерирует уникальный ID для каждого запроса
 
 ## Шаг 6: Обработка ошибок и повторные попытки
@@ -202,7 +197,7 @@ if err != nil {
     if errors.As(err, &clientErr) {
         switch clientErr.Type {
         case httpc.ErrorTypeTimeout:
-            log.Println("Таймаут запроса, повторите позже")
+            log.Println("Таймаут запроса, попробуйте позже")
         case httpc.ErrorTypeNetwork:
             log.Println("Сетевая ошибка")
         case httpc.ErrorTypeTLS:
@@ -217,18 +212,17 @@ if err != nil {
     }
     return
 }
-defer httpc.ReleaseResult(result)
 
 // Обработка HTTP-кодов состояния
 switch {
 case result.IsSuccess():
-    // 2xx — успех
+    // 2xx успешно
 case result.StatusCode() == 401:
-    log.Println("Token просрочен или недействителен")
+    log.Println("Token истёк или недействителен")
 case result.IsClientError():
     log.Printf("Ошибка клиента: %d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("Ошибка сервера: %d (автоматических повторов: %d)",
+    log.Printf("Ошибка сервера: %d (автоматически повторено %d раз)",
         result.StatusCode(), result.Meta.Attempts)
 }
 ```
@@ -245,8 +239,8 @@ cfg.Retry.EnableJitter = true
 
 Ключевые моменты:
 - HTTPC разделяет обработку сетевых ошибок и HTTP-кодов состояния
-- `ClientError` предоставляет классификацию ошибок и информацию о повторяемости
-- По умолчанию автоматически повторяются коды 408, 429, 500, 502, 503, 504
+- `ClientError` предоставляет классификацию ошибок и определение повторяемости
+- По умолчанию автоматически повторяются запросы при 408, 429, 500, 502, 503, 504
 
 ## Шаг 7: Загрузка файлов (скачивание релиза)
 
@@ -256,7 +250,7 @@ dlCfg.FilePath = "go1.22.0.linux-amd64.tar.gz"
 dlCfg.Overwrite = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rПрогресс загрузки: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\rПрогресс загрузки: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.DownloadWithOptions(
@@ -267,9 +261,9 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\nЗагрузка завершена: %s (%s)\n",
+fmt.Printf("\nЗагрузка завершена: %s (%d bytes)\n",
     result.FilePath,
-    httpc.FormatBytes(result.BytesWritten),
+    result.BytesWritten,
 )
 ```
 
@@ -305,14 +299,13 @@ func fetchRepos(ctx context.Context, repos []string) error {
         var repo Repo
         results[i].Unmarshal(&repo)
         fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
-        httpc.ReleaseResult(results[i])
     }
     return nil
 }
 ```
 
-:::tip Совет
-`PerformanceConfig()` предоставляет конфигурацию с большим пулом соединений, подходящую для высоконагруженных сценариев. Не забывайте правильно использовать `ReleaseResult` при параллельной работе.
+:::tip
+`PerformanceConfig()` предоставляет конфигурацию с большим пулом соединений, подходящую для высоконагруженных сценариев. Объекты Result управляются встроенным пулом объектов.
 :::
 
 ## Полный пример
@@ -365,11 +358,10 @@ func main() {
     if err != nil {
         var clientErr *httpc.ClientError
         if errors.As(err, &clientErr) && clientErr.IsRetryable() {
-            log.Fatal("Запрос не удался (после повторов):", err)
+            log.Fatal("Запрос не удался (после повторных попыток):", err)
         }
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     if result.IsSuccess() {
         var repo Repo
@@ -377,7 +369,7 @@ func main() {
         fmt.Printf("✅ %s\n", repo.FullName)
         fmt.Printf("   ⭐ %d | Язык: %s\n", repo.Stars, repo.Language)
         fmt.Printf("   %s\n", repo.Description)
-        fmt.Printf("   Время: %s (повторов: %d)\n",
+        fmt.Printf("   Время: %s (повторных попыток: %d)\n",
             result.Meta.Duration, result.Meta.Attempts)
     }
 }
@@ -385,8 +377,8 @@ func main() {
 
 ## Что дальше
 
-- [Запросы и ответы](./request-response) — полный справочник параметров запросов
-- [Цепочка промежуточного ПО](./middleware-chain) — разработка пользовательского промежуточного ПО
+- [Запросы и ответы](./request-response) — полный справочник параметров запроса
+- [Цепочки промежуточного ПО](./middleware-chain) — разработка пользовательского промежуточного ПО
 - [Повторные попытки и отказоустойчивость](./retry-fault-tolerance) — продвинутые стратегии повторов
-- [Оптимизация производительности](../advanced/performance) — настройка для production
-- [Контрольный список для production](../security/production-checklist) — лучшие практики безопасности
+- [Оптимизация производительности](../advanced/performance) — настройка для продакшена
+- [Контрольный список для продакшена](../security/production-checklist) — лучшие практики безопасности

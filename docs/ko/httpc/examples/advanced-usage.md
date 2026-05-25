@@ -1,22 +1,22 @@
 ---
 title: "고급 예제 - HTTPC"
-description: "HTTPC 고급 예제 모음: 사용자 정의 RetryPolicy 재시도 전략(502/503/504만), Recovery/Timeout/Logging/Metrics/Audit 포함 완전한 미들웨어 체인 설정, RESTful API 클라이언트 래핑, sync.WaitGroup 동시성 다운로드와 HMAC-SHA256 요청 서명 사용자 정의 미들웨어."
+description: "HTTPC 고급 예제 모음: 커스텀 RetryPolicy 재시도 전략(502/503/504만), Recovery/Timeout/Logging/Metrics/Audit 완전한 미들웨어 체인 구성, RESTful API 클라이언트 래핑, sync.WaitGroup 동시성 다운로드와 HMAC-SHA256 요청 서명 커스텀 미들웨어를 다룹니다."
 ---
 
 # 고급 예제
 
-## 사용자 정의 재시도 전략
+## 커스텀 재시도 전략
 
 502/503/504에만 재시도하고 고정 지연 사용:
 
-:::warning 주의 내부 유형
-`RetryPolicy.ShouldRetry`의 `resp` 매개변수 유형 `ResponseReader`는 내부 인터페이스(`internal/types` 패키지에 정의)이며, 외부 패키지에서 직접 참조할 수 없습니다. 사용자 정의 `RetryPolicy`는 `httpc`와 같은 모듈 내의 패키지에서 구현해야 합니다. 대부분의 시나리오는 `RetryConfig` 구성으로 충분합니다. 아래 예제는 구현 패턴을 보여주며, 실제 코드는 `httpc` 모듈 내부에서 컴파일해야 합니다.
+:::warning 내부 타입
+`RetryPolicy.ShouldRetry`의 `resp` 매개변수 타입 `ResponseReader`는 내부 인터페이스(`internal/types` 패키지에 정의)이므로 외부 패키지에서 직접 참조할 수 없습니다. 커스텀 `RetryPolicy`는 `httpc`와 같은 모듈 내 패키지에서 구현해야 합니다. 대부분의 시나리오는 `RetryConfig` 설정으로 충분합니다. 다음 예제는 구현 패턴을 보여주며, 실제 코드는 `httpc` 모듈 내부에서 컴파일해야 합니다.
 :::
 
 ```go
-// 참고: ResponseReader는 내부 유형(internal/types 패키지)입니다.
-// 이 코드는 github.com/cybergodev/httpc 모듈 내부에서만 컴파일할 수 있습니다.
-// 대부분의 사용자는 RetryConfig와 WithMaxRetries로 재시도를 구성해야 합니다.
+// 주의: ResponseReader는 내부 타입(internal/types 패키지)입니다.
+// 이 코드는 github.com/cybergodev/httpc 모듈 내부에서만 컴파일됩니다.
+// 대부분의 사용자는 RetryConfig와 WithMaxRetries로 재시도를 설정해야 합니다.
 
 type selectiveRetry struct {
     maxAttempts int
@@ -29,7 +29,7 @@ func (p *selectiveRetry) ShouldRetry(resp ResponseReader, err error, attempt int
         return false
     }
     if err != nil {
-        return true // 네트워크 오류 시 재시도
+        return true // 네트워크 오류 재시도
     }
     return resp.StatusCode() == 502 || resp.StatusCode() == 503 || resp.StatusCode() == 504
 }
@@ -42,12 +42,12 @@ func (p *selectiveRetry) MaxRetries() int {
     return p.maxAttempts
 }
 
-// 사용자 정의 전략 적용
+// 커스텀 전략 적용
 cfg := httpc.DefaultConfig()
 cfg.Retry.CustomPolicy = &selectiveRetry{maxAttempts: 5, baseDelay: time.Second}
 ```
 
-외부 프로젝트의 대안 -- `RetryConfig` 구성 사용:
+외부 프로젝트의 대안 -- `RetryConfig` 설정 사용:
 
 ```go
 package main
@@ -77,7 +77,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode())
 }
@@ -143,7 +142,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     log.Printf("총 요청 수: %d", atomic.LoadInt64(&requestCount))
 }
@@ -194,7 +192,6 @@ func (c *APIClient) GetUser(ctx context.Context, id int) (*User, error) {
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     if !result.IsSuccess() {
         return nil, fmt.Errorf("API error: %d", result.StatusCode())
@@ -214,7 +211,6 @@ func (c *APIClient) CreateUser(ctx context.Context, name string) (*User, error) 
     if err != nil {
         return nil, err
     }
-    defer httpc.ReleaseResult(result)
 
     var user User
     if err := result.Unmarshal(&user); err != nil {
@@ -292,7 +288,7 @@ func main() {
             cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
                 fmt.Printf("\r%s: %.1f%% (%s/s)", name,
                     float64(downloaded)/float64(total)*100,
-                    httpc.FormatSpeed(speed))
+                    float64(speed)/1024/1024)
             }
 
             result, err := client.DownloadWithOptions(u, cfg)
@@ -303,17 +299,17 @@ func main() {
 
             atomic.AddInt64(&successCount, 1)
             atomic.AddInt64(&totalBytes, result.BytesWritten)
-            fmt.Printf("\n%s 완료: %s\n", name, httpc.FormatBytes(result.BytesWritten))
+            fmt.Printf("\n%s 완료: %s\n", name, result.BytesWritten)
         }(filename, url)
     }
 
     wg.Wait()
     fmt.Printf("\n다운로드 완료: %d/%d, 총 %s\n",
-        successCount, len(urls), httpc.FormatBytes(totalBytes))
+        successCount, len(urls), totalBytes)
 }
 ```
 
-## 사용자 정의 미들웨어: 요청 서명
+## 커스텀 미들웨어: 요청 서명
 
 ```go
 package main
@@ -362,14 +358,12 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
-
     log.Println(result.StatusCode())
 }
 ```
 
 ## 다음 단계
 
-- [미들웨어 체인](../guides/middleware-chain) - 미들웨어 아키텍처 상세 설명
-- [재시도와 장애 허용](../guides/retry-fault-tolerance) - 사용자 정의 재시도 전략
+- [미들웨어 체인](../guides/middleware-chain) - 미들웨어 아키텍처 상세
+- [재시도와 장애 허용](../guides/retry-fault-tolerance) - 커스텀 재시도 전략
 - [성능 최적화](../advanced/performance) - 성능 튜닝 제안

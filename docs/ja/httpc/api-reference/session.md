@@ -1,11 +1,11 @@
 ---
 title: "セッション管理 - HTTPC"
-description: "HTTPC SessionManagerセッション管理APIリファレンス：NewSessionManager作成、SessionConfig設定、SetHeader/SetHeadersセッションヘッダーCRUD、SetCookie/SetCookies Cookieメソッド、SetCookieSecurityセキュリティ検証とUpdateFromResultレスポンス同期。"
+description: "HTTPC SessionManager API リファレンス：NewSessionManager 作成、SessionConfig 設定、SetHeader/SetHeaders ヘッダー管理、SetCookie/SetCookies メソッド、SetCookieSecurity 検証と UpdateFromResult レスポンス同期。"
 ---
 
 # セッション管理
 
-SessionManagerはスレッドセーフなCookieとヘッダーのストレージを提供し、DomainClientが内部で使用します。
+SessionManager はスレッドセーフな Cookie とリクエストヘッダーのストレージを提供し、DomainClient が内部的に使用します。
 
 ## NewSessionManager
 
@@ -33,14 +33,14 @@ type SessionConfig struct {
 ```
 
 | フィールド | タイプ | 説明 |
-|------------|--------|------|
-| `CookieSecurity` | `*CookieSecurityConfig` | Cookieセキュリティ検証設定。nilは検証なしを意味します |
+|-----------|--------|------|
+| `CookieSecurity` | `*CookieSecurityConfig` | Cookie セキュリティ検証設定。nil の場合は検証なし |
 
 ```go
 func DefaultSessionConfig() *SessionConfig
 ```
 
-デフォルト設定を返します（Cookieセキュリティ検証なし）。
+デフォルト設定を返します（Cookie セキュリティ検証なし）。
 
 ## ヘッダー管理
 
@@ -95,7 +95,7 @@ func (s *SessionManager) GetHeaders() map[string]string
 
 すべてのセッションヘッダーのコピーを返します。
 
-## Cookie管理
+## Cookie 管理
 
 ### SetCookie
 
@@ -103,7 +103,7 @@ func (s *SessionManager) GetHeaders() map[string]string
 func (s *SessionManager) SetCookie(cookie *http.Cookie) error
 ```
 
-セッションCookieを設定します。Cookieの有効性を検証し、CookieSecurityが設定されている場合はセキュリティ属性も検証します。
+セッション Cookie を設定します。Cookie の有効性を検証し、CookieSecurity が設定されている場合はセキュリティ属性も検証します。
 
 ```go
 err := sm.SetCookie(&http.Cookie{
@@ -120,7 +120,7 @@ err := sm.SetCookie(&http.Cookie{
 func (s *SessionManager) SetCookies(cookies []*http.Cookie) error
 ```
 
-Cookieを一括設定します。
+Cookie を一括設定します。
 
 ### DeleteCookie
 
@@ -128,7 +128,7 @@ Cookieを一括設定します。
 func (s *SessionManager) DeleteCookie(name string)
 ```
 
-名前でCookieを削除します。
+名前で Cookie を削除します。
 
 ### ClearCookies
 
@@ -136,7 +136,7 @@ func (s *SessionManager) DeleteCookie(name string)
 func (s *SessionManager) ClearCookies()
 ```
 
-すべてのCookieをクリアします。
+すべての Cookie をクリアします。
 
 ### GetCookies
 
@@ -144,7 +144,7 @@ func (s *SessionManager) ClearCookies()
 func (s *SessionManager) GetCookies() []*http.Cookie
 ```
 
-すべてのCookieのコピーを返します。
+すべての Cookie のコピーを返します。
 
 ### GetCookie
 
@@ -152,9 +152,9 @@ func (s *SessionManager) GetCookies() []*http.Cookie
 func (s *SessionManager) GetCookie(name string) *http.Cookie
 ```
 
-名前でCookieのコピーを取得します。存在しない場合はnilを返します。
+名前で Cookie のコピーを取得します。存在しない場合は nil を返します。
 
-## Cookieセキュリティ
+## Cookie セキュリティ
 
 ### SetCookieSecurity
 
@@ -162,7 +162,7 @@ func (s *SessionManager) GetCookie(name string) *http.Cookie
 func (s *SessionManager) SetCookieSecurity(config *CookieSecurityConfig)
 ```
 
-Cookieセキュリティ検証設定を更新します。以降のすべてのSetCookie呼び出しに影響します。
+Cookie セキュリティ検証設定を更新します。以降のすべての SetCookie 呼び出しに影響します。
 
 ```go
 sm.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
@@ -174,7 +174,7 @@ sm.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
 func (s *SessionManager) UpdateFromResult(result *Result)
 ```
 
-リクエスト結果からセッションCookieを更新します。安全でないCookieは通知なくスキップされます。
+リクエスト結果からセッション Cookie を更新します。安全でない Cookie は通知なくスキップされます。
 
 ### UpdateFromCookies
 
@@ -182,10 +182,10 @@ func (s *SessionManager) UpdateFromResult(result *Result)
 func (s *SessionManager) UpdateFromCookies(cookies []*http.Cookie)
 ```
 
-CookieスライスからセッションCookieを更新します。
+Cookie スライスからセッション Cookie を更新します。
 
 ## 関連項目
 
-- [ドメインクライアント](./domain-client) - DomainClientリファレンス
+- [ドメインクライアント](./domain-client) - DomainClient リファレンス
 - [ドメインクライアントとセッション](../guides/domain-session) - 使用ガイド
-- [インターフェース定義](./interfaces) - DomainClienterインターフェースリファレンス
+- [インターフェース定義](./interfaces) - DomainClienter インターフェースリファレンス

@@ -1,6 +1,6 @@
 ---
 title: "Basic Usage - HTTPC"
-description: "HTTPC basic examples: GET/POST with JSON, file uploads, custom config, proxy, middleware, download with progress, and domain client usage."
+description: "HTTPC basic usage examples: GET requests with query parameters and authentication, JSON/form/file upload POST requests, FormData multi-field forms, DefaultConfig custom configuration, ProxyURL proxy, Recovery/Logging middleware, RequestID/Metrics collection, and file download with progress callbacks."
 ---
 
 # Basic Usage
@@ -24,7 +24,6 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    defer httpc.ReleaseResult(result)
 
     fmt.Println(result.StatusCode()) // 200
     fmt.Println(result.Body())
@@ -68,7 +67,6 @@ result, err := httpc.Post("https://httpbin.org/post",
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 // Parse JSON response
 var response map[string]any
@@ -188,7 +186,7 @@ cfg.FilePath = "/tmp/file.zip"
 cfg.Overwrite = true
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rDownloading: %.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    fmt.Printf("\rDownloading: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.DownloadWithOptions("https://example.com/file.zip", cfg)
@@ -196,10 +194,10 @@ if err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("\nDownload complete: %s, duration %v, average speed %s\n",
-    httpc.FormatBytes(result.BytesWritten),
+fmt.Printf("\nDownload complete: %d bytes, duration %v, average speed %.2f MB/s\n",
+    result.BytesWritten,
     result.Duration,
-    httpc.FormatSpeed(result.AverageSpeed),
+    float64(result.AverageSpeed)/1024/1024,
 )
 ```
 
@@ -212,11 +210,11 @@ if err != nil {
 }
 defer dc.Close()
 
-// Set session info
+// Set session information
 dc.SetHeader("Authorization", "Bearer "+token)
 dc.SetHeader("Accept", "application/json")
 
-// Requests automatically carry session headers and cookies
+// Requests automatically include session headers and cookies
 users, _ := dc.Get("/users")
 user, _ := dc.Get("/users/1")
 

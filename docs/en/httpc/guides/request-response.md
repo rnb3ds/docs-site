@@ -1,6 +1,6 @@
 ---
 title: "Request and Response - HTTPC"
-description: "Guide to HTTPC request and response handling covering headers, multiple body formats, query parameters, authentication, cookies, and streaming responses."
+description: "HTTPC request and response handling guide: package-level functions and client requests, request options including WithHeader/WithJSON/WithForm, WithBearerToken authentication, WithQuery query parameters, cookie management, context control, streaming responses, and decompressed body size limits."
 ---
 
 # Request and Response
@@ -16,7 +16,6 @@ result, err := httpc.Get("https://api.example.com/data")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
 fmt.Println(result.StatusCode())
 fmt.Println(result.Body())
@@ -47,7 +46,7 @@ result, err := httpc.Request(ctx, "GET", "https://api.example.com/data")
 
 ## Request Options
 
-### Request Headers
+### Headers
 
 ```go
 result, err := client.Get(url,
@@ -85,11 +84,11 @@ result, err := client.Post(url, httpc.WithBinary(data, "image/png"))
 
 // Auto-detect type
 result, err := client.Post(url, httpc.WithBody(data))
-// string → text/plain; charset=utf-8, []byte → application/octet-stream,
-// map[string]string → application/x-www-form-urlencoded,
-// *FormData → multipart/form-data, io.Reader → passed through,
-// other → application/json
-// Optionally specify explicitly: httpc.WithBody(data, httpc.BodyJSON)
+// string -> text/plain; charset=utf-8, []byte -> application/octet-stream,
+// map[string]string -> application/x-www-form-urlencoded,
+// *FormData -> multipart/form-data, io.Reader -> passed through,
+// other -> application/json
+// Optional explicit specification: httpc.WithBody(data, httpc.BodyJSON)
 ```
 
 ### Query Parameters
@@ -100,7 +99,7 @@ result, err := client.Get(url,
     httpc.WithQuery("limit", 10),
 )
 
-// Or use a Map
+// Or use Map
 result, err := client.Get(url,
     httpc.WithQueryMap(map[string]any{
         "page":  1,
@@ -124,8 +123,8 @@ result, err := client.Get(url, httpc.WithBasicAuth("user", "pass"))
 ```go
 result, err := client.Get(url,
     httpc.WithCookie(http.Cookie{Name: "session", Value: "abc"}),
-    httpc.WithCookieMap(map[string]string{"session": "abc", "lang": "zh"}),
-    httpc.WithCookieString("session=abc; lang=zh"),
+    httpc.WithCookieMap(map[string]string{"session": "abc", "lang": "en"}),
+    httpc.WithCookieString("session=abc; lang=en"),
 )
 ```
 
@@ -138,7 +137,7 @@ result, err := client.Get(url, httpc.WithTimeout(10*time.Second))
 // Retry
 result, err := client.Get(url, httpc.WithMaxRetries(5))
 
-// Redirect
+// Redirects
 result, err := client.Get(url,
     httpc.WithFollowRedirects(false),    // Disable redirects
     httpc.WithMaxRedirects(3),           // Max 3 redirects
@@ -167,9 +166,8 @@ result, err := client.Get("https://api.example.com/users/1")
 if err != nil {
     log.Fatal(err)
 }
-defer httpc.ReleaseResult(result)
 
-// Status checks
+// Status check
 result.StatusCode()     // 200
 result.IsSuccess()      // true (2xx)
 result.IsRedirect()     // false (3xx)
@@ -218,13 +216,13 @@ result, err := httpc.Request(ctx, "GET", url)
 
 ## Streaming Responses
 
-`WithStreamBody(true)` is an internal mechanism used during file downloads to avoid buffering the complete response body in memory. When enabled, the response body is not read into the `Result` (both `Body()` and `RawBody()` return empty values).
+`WithStreamBody(true)` is an internal mechanism used during file downloads to avoid caching the entire response body in memory. When enabled, the response body is not read into `Result` (`Body()` and `RawBody()` return empty values).
 
 :::warning
-`WithStreamBody(true)` is used internally by the file download API (`DownloadFile`, `DownloadWithOptions`). To stream response content, use the [File Download API](./file-transfer).
+`WithStreamBody(true)` is used internally by the file download API (`DownloadFile`, `DownloadWithOptions`). For streaming response content, use the [File Download API](./file-transfer).
 :::
 
-To download large files, use the download API:
+For downloading large files, use the download API:
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -234,7 +232,7 @@ result, err := client.DownloadWithOptions(url, cfg)
 
 ## Response Decompression
 
-HTTPC automatically handles decompression of content encodings such as gzip and deflate. You can use security configuration to limit decompressed size and prevent decompression bomb attacks:
+HTTPC automatically handles decompression of gzip, deflate, and other content encodings. You can limit the decompressed body size through security configuration to prevent decompression bomb attacks:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -242,12 +240,12 @@ cfg.Security.MaxResponseBodySize = 10 * 1024 * 1024      // Max compressed body 
 cfg.Security.MaxDecompressedBodySize = 100 * 1024 * 1024  // Max decompressed body 100MB
 ```
 
-| Configuration | Default | Description |
-|---------------|---------|-------------|
-| `MaxResponseBodySize` | 10MB | Maximum raw response body size |
-| `MaxDecompressedBodySize` | 100MB | Maximum decompressed response body size |
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `MaxResponseBodySize` | 10MB | Raw response body size limit |
+| `MaxDecompressedBodySize` | 100MB | Decompressed response body size limit |
 
-When the limit is exceeded, an error containing `"exceeds limit"` is returned, which can be handled via the `ClientError` type check. `ErrResponseBodyTooLarge` is returned when `Result.Unmarshal()` parses JSON exceeding the 50MB size limit (independent of `MaxResponseBodySize`).
+When the limit is exceeded, an error containing `"exceeds limit"` is returned, which can be handled via the `ClientError` type. `ErrResponseBodyTooLarge` is returned when `Result.Unmarshal()` parses a response body exceeding the 50MB JSON size limit (independent of `MaxResponseBodySize`).
 
 ## Next Steps
 
