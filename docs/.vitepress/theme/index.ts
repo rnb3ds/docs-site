@@ -4,10 +4,10 @@ import { useData, useRouter } from 'vitepress'
 import './custom.css'
 import GitHubIcon from './components/GitHubIcon.vue'
 import NotFound from './components/NotFound.vue'
+import LanguagePrompt from './components/LanguagePrompt.vue'
 import SiteFooter from './components/SiteFooter.vue'
 import DocFeedback from './components/DocFeedback.vue'
 import { STORAGE_KEYS } from '../locales/languages'
-import { detectAndRedirectLanguage } from './composables/useLanguageDetect'
 import { PROJECTS } from '../shared'
 
 const GITHUB_ORG = 'https://github.com/cybergodev'
@@ -80,6 +80,7 @@ export default {
   Layout: () => {
     return h(DefaultTheme.Layout, null, {
       'not-found': () => h(NotFound),
+      'layout-top': () => h(LanguagePrompt),
       'doc-footer-before': () => h(DocFeedback),
       'layout-bottom': () => h(SiteFooter)
     })
@@ -89,7 +90,6 @@ export default {
     const router = useRouter()
 
     onMounted(() => {
-      detectAndRedirectLanguage()
       updateProjectGitHubLink()
       updateProjectSiteTitle()
 
