@@ -377,6 +377,25 @@ body.VPApp,
   background-color: rgba(30, 30, 30, 0.95);
 }
 
+/* ============================================
+   Unified Language Switcher
+   ============================================
+   LanguageMenu.vue renders the language switcher on EVERY page (root `/`
+   included), so the homepage and every /{lang}/ page share one identical
+   switcher. Hide VitePress's native instances to avoid duplicates:
+     - .VPNavBarTranslations               : dedicated switcher (desktop ≥1280px)
+     - .VPNavBarExtra .group.translations  : switcher group consolidated into
+                                             the "..." menu at 768–1280px
+     - .VPNavScreenTranslations            : mobile nav drawer switcher
+   The unified component uses a different class (.LanguageMenu / .LanguageMenuScreen),
+   so these rules never target it.
+*/
+.VPNavBarTranslations,
+.VPNavBarExtra .group.translations,
+.VPNavScreenTranslations {
+  display: none !important;
+}
+
 /* Content area spacing */
 .VPContent {
   padding-top: 0;

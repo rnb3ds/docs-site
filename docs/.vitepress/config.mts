@@ -1,9 +1,10 @@
 import { defineConfig } from 'vitepress'
-import { zhConfig } from './locales/zh'
+import { zhConfig, zhNav } from './locales/zh'
 import { enConfig } from './locales/en'
 import { koConfig } from './locales/ko'
 import { jaConfig } from './locales/ja'
 import { ruConfig } from './locales/ru'
+import { PROJECTS } from './shared'
 
 const HOST = 'https://www.cybergo.dev'
 
@@ -55,6 +56,60 @@ function isZhHomePath(path: string): boolean {
   return path === '/' || path === '/zh/'
 }
 
+// Dev-only redirect for bare project paths (e.g. /json → /{lang}/json).
+//
+// The build emits static "bridge" pages for these paths in production, but the
+// dev server (vitepress dev) serves straight from source — there is no /json
+// route, so it 404s. This middleware intercepts bare project paths during dev
+// and 302-redirects to the visitor's preferred language, mirroring the bridge
+// pages. Resolution: request cookie (explicit choice) → Accept-Language
+// (browser) → /zh/ (site default). localStorage is not readable server-side, so
+// it is intentionally not consulted here; the production bridge pages cover it.
+const SUPPORTED_LANGS = ['zh', 'en', 'ko', 'ja', 'ru']
+function codeToLang(code: string | undefined): string | null {
+  if (!code) return null
+  const base = code.toLowerCase().split('-')[0]
+  return SUPPORTED_LANGS.includes(base) ? base : null
+}
+function pickRequestLang(req: any): string {
+  const cookie = (req.headers?.cookie as string) || ''
+  const m = cookie.match(/(?:^|;)\s*vitepress-lang-preference=([^;]+)/)
+  if (m) {
+    const l = codeToLang(decodeURIComponent(m[1]))
+    if (l) return l
+  }
+  const al = (req.headers?.['accept-language'] as string) || ''
+  for (const part of al.split(',')) {
+    const l = codeToLang(part.split(';')[0].trim())
+    if (l) return l
+  }
+  return 'zh'
+}
+const bareProjectDevRedirect = {
+  name: 'cybergo:bare-project-redirect',
+  enforce: 'pre',
+  apply: 'serve' as const,
+  configureServer(server: any) {
+    server.middlewares.use((req: any, res: any, next: any) => {
+      const raw: string = req.url || '/'
+      const pathname = raw.split('?')[0].split('#')[0]
+      // Only intercept HTML navigations; skip any file/asset request.
+      if (pathname.includes('.')) return next()
+      const segs = pathname.replace(/^\/+/, '').split('/').filter(Boolean)
+      if (segs.length === 0) return next() // homepage — leave to VitePress
+      // Bare project path = first segment is a project, no language prefix.
+      if (!(PROJECTS as readonly string[]).includes(segs[0])) return next()
+      const lang = pickRequestLang(req)
+      const target = '/' + lang + '/' + segs.join('/') + '/'
+      const query = raw.indexOf('?') !== -1 ? raw.slice(raw.indexOf('?')) : ''
+      res.statusCode = 302
+      res.setHeader('Location', target + query)
+      res.setHeader('Cache-Control', 'no-store')
+      res.end()
+    })
+  }
+}
+
 export default defineConfig({
   title: 'CyberGo',
   description: 'CyberGo - Go Open Source Libraries',
@@ -66,6 +121,12 @@ export default defineConfig({
 
   lastUpdated: false,
   cleanUrls: true,
+
+  // Dev-only Vite plugin: redirect bare project paths (/json) to the visitor's
+  // language. See `bareProjectDevRedirect` above. No effect on production.
+  vite: {
+    plugins: [bareProjectDevRedirect]
+  },
 
   // Heading-anchor slugify — see `slugifyHeading` above for the full rationale.
   markdown: {
@@ -251,6 +312,18 @@ export default defineConfig({
   themeConfig: {
     logo: '/logo.svg',
     siteTitle: 'CyberGo',
+
+    // aria-label for the unified LanguageMenu switcher on the root `/` page
+    // (non-locale pages fall back to this top-level value; each /{lang}/ locale
+    // overrides it with its own translated label). See LanguageMenu.vue.
+    langMenuLabel: '多语言',
+
+    // Root-path nav: the `/` homepage isn't part of any locale (every locale
+    // carries a /{lang}/ prefix), so without this the 项目 / 关于 top nav is
+    // missing on `/` while every /{lang}/ page shows it. Reuses zhNav so the
+    // root page renders navigation identical to /zh/. Each /{lang}/ locale
+    // overrides this with its own translated nav.
+    nav: zhNav,
 
     search: {
       provider: 'algolia',

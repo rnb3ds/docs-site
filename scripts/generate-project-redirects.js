@@ -12,8 +12,12 @@
  *   - canonicalizes to the /zh/ version (so the bare URL is not seen as
  *     duplicate content),
  *   - declares hreflang alternates for every language that has the page,
- *   - redirects via <meta http-equiv="refresh"> (followed by all major
- *     crawlers, no JS required), and
+ *   - injects a synchronous <head> script that routes JS-enabled visitors to
+ *     their preferred language — explicit choice (cookie) → explicit choice
+ *     (localStorage) → browser language — only considering languages that
+ *     actually publish the page,
+ *   - falls back to <meta http-equiv="refresh"> → /zh/ (followed by all major
+ *     crawlers and by JS-disabled browsers), and
  *   - carries robots "noindex, follow" so the thin bridge is not indexed but
  *     still passes link equity to the canonical target.
  *
@@ -61,6 +65,31 @@ function escapeHtml(s) {
   )
 }
 
+// Inline, synchronous client-side language detection embedded in each bridge
+// page. It runs in <head> *before* the <meta refresh>, so a JS-enabled browser
+// hops straight to the visitor's preferred language instead of always landing
+// on /zh/. Resolution order: explicit choice via cookie → explicit choice via
+// localStorage → navigator language. Only languages in `availableLangs` (i.e.
+// those that actually publish this page) are accepted, so we never redirect to
+// a language version that does not exist. If nothing resolves (or JS is off)
+// the <meta refresh> below still sends the visitor to /zh/. `rel` is the page
+// path relative to the language prefix (e.g. "json" or "json/getting-started").
+function buildDetectScript(rel, availableLangs) {
+  const relLiteral = JSON.stringify(rel)
+  const availLiteral = JSON.stringify(availableLangs)
+  return `<script>(function(){
+var AVAIL=${availLiteral};
+function prefLang(v){if(!v)return null;var b=decodeURIComponent(v).toLowerCase().split('-')[0];return (AVAIL.indexOf(b)!==-1)?b:null;}
+var lang=null;
+var parts=document.cookie.split(';');
+for(var i=0;i<parts.length;i++){var kv=parts[i].trim();if(kv.indexOf('vitepress-lang-preference=')===0){lang=prefLang(kv.substring(26));break;}}
+if(!lang){try{lang=prefLang(localStorage.getItem('vitepress-lang-preference'));}catch(e){}}
+if(!lang){var nav=(navigator.languages&&navigator.languages.length)?navigator.languages:[navigator.language];for(var j=0;j<nav.length;j++){var b=((nav[j]||'').toLowerCase().split('-'))[0];if(AVAIL.indexOf(b)!==-1){lang=b;break;}}}
+lang=lang||'zh';
+if(lang!=='zh'){location.replace('/'+lang+'/'+${relLiteral}+'/');}
+})();</script>`
+}
+
 function buildBridgeHtml(rel, availableLangs) {
   const canonical = `${HOST}/zh/${rel}/`
   const refreshUrl = `/zh/${rel}/`
@@ -70,12 +99,14 @@ function buildBridgeHtml(rel, availableLangs) {
   const langLinks = availableLangs
     .map((l) => `<a href="/${l}/${rel}/">${l}</a>`)
     .join(' ')
+  const detectScript = buildDetectScript(rel, availableLangs)
 
   return `<!DOCTYPE html>
 <html lang="zh-CN"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>CyberGo - ${escapeHtml(rel)}</title>
+${detectScript}
 <link rel="canonical" href="${canonical}">
 ${hreflangLinks}
   <link rel="alternate" hreflang="x-default" href="${canonical}">

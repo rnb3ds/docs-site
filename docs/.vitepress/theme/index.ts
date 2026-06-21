@@ -5,7 +5,7 @@ import './custom.css'
 import GitHubIcon from './components/GitHubIcon.vue'
 import NotFound from './components/NotFound.vue'
 import LanguagePrompt from './components/LanguagePrompt.vue'
-import RootLanguageMenu from './components/RootLanguageMenu.vue'
+import LanguageMenu from './components/LanguageMenu.vue'
 import SiteFooter from './components/SiteFooter.vue'
 import DocFeedback from './components/DocFeedback.vue'
 import { STORAGE_KEYS } from '../locales/languages'
@@ -81,8 +81,8 @@ export default {
   Layout: () => {
     return h(DefaultTheme.Layout, null, {
       'not-found': () => h(NotFound),
-      'nav-bar-content-after': () => h(RootLanguageMenu, { variant: 'bar' }),
-      'nav-screen-content-after': () => h(RootLanguageMenu, { variant: 'screen' }),
+      'nav-bar-content-after': () => h(LanguageMenu, { variant: 'bar' }),
+      'nav-screen-content-after': () => h(LanguageMenu, { variant: 'screen' }),
       'layout-top': () => h(LanguagePrompt),
       'doc-footer-before': () => h(DocFeedback),
       'layout-bottom': () => h(SiteFooter)
