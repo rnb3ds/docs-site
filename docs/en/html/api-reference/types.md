@@ -1,6 +1,6 @@
 ---
 title: "Types - HTML"
-description: "CyberGo HTML data-type API reference, covering the field descriptions of core types: Result (with custom JSON serialization), ImageInfo, LinkInfo, VideoInfo, AudioInfo, LinkResource, Statistics, BatchResult, and NodeAttr."
+description: "CyberGo HTML data types API: field descriptions for Result (custom JSON), ImageInfo, LinkInfo, VideoInfo, AudioInfo, LinkResource, Statistics, and BatchResult."
 ---
 
 # Types

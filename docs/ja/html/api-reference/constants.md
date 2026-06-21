@@ -1,6 +1,6 @@
 ---
 title: "定数とエラー - HTML"
-description: "CyberGo HTML の定数とエラー型 API リファレンス。DefaultMaxInputSize などの既定値定数、ErrInputTooLarge などのセンチネルエラー、そして InputError・ConfigError・FileError の構造化エラーを含み、いずれも errors.Is/As をサポートし、実行時例外を正確に特定できます。"
+description: "CyberGo HTML の定数とエラー型 API リファレンス。DefaultMaxInputSize などの既定値、ErrInputTooLarge などのセンチネルエラー、InputError・ConfigError・FileError 構造化エラーを扱い、errors.Is/As をサポートします。"
 ---
 
 # 定数とエラー

@@ -1,6 +1,6 @@
 ---
 title: "ミドルウェア - HTTPC"
-description: "HTTPC ミドルウェアシステム API リファレンス：Chain オニオンモデル組み合わせ、Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit 8 つの内蔵ミドルウェア、AuditMiddlewareWithConfig 設定型監査と AuditEvent 監査イベント構造体の詳細。"
+description: "HTTPC ミドルウェア API リファレンス: Chain オニオンモデル組み合わせと Recovery、Logging、RequestID、Timeout、Metrics、Audit など 8 つの内蔵ミドルウェア、監査設定の完全な説明を提供します。"
 ---
 
 # ミドルウェア

@@ -1,6 +1,6 @@
 ---
 title: "Доменный клиент - HTTPC"
-description: "Справочник API доменного клиента HTTPC: функция создания NewDomain, семь HTTP-методов Get/Post и универсальный метод Request, четыре метода загрузки, правила автоматической сборки URL, интерфейс DomainClienter с управлением заголовками SetHeader/SetCookie через сессии и Close для жизненного цикла."
+description: "Справочник API доменного клиента HTTPC: NewDomain, семь HTTP-методов, метод Request, авто-сборка URL и управление сессиями SetHeader/SetCookie."
 ---
 
 # Доменный клиент

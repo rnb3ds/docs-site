@@ -1,6 +1,6 @@
 ---
 title: "Константы и ошибки - HTML"
-description: "Справочник API констант и типов ошибок CyberGo HTML: включает константы значений по умолчанию, такие как DefaultMaxInputSize, сторожевые ошибки вроде ErrInputTooLarge, а также структурированные ошибки InputError, ConfigError и FileError — все поддерживают errors.Is/As для точной обработки исключений во время выполнения."
+description: "Справочник API констант и ошибок CyberGo HTML: DefaultMaxInputSize, сторожевые ошибки и структурированные InputError, ConfigError, FileError с errors.Is/As."
 ---
 
 # Константы и ошибки

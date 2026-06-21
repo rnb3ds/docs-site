@@ -1,6 +1,6 @@
 ---
 title: "インターフェース定義 - HTTPC"
-description: "HTTPC コアインターフェース API リファレンス：Client 全機能インターフェース、Doer 最小実行インターフェース、DomainClienter ドメインクライアント、RetryPolicy リトライポリシー、RequestMutator/ResponseMutator ミドルウェアインターフェースと Handler/MiddlewareFunc 定義。"
+description: "HTTPC コアインターフェース API リファレンス: Client 全機能インターフェース、Doer 最小実行インターフェース、DomainClienter、RetryPolicy リトライポリシー、ミドルウェアインターフェース定義の完全な説明を提供します。"
 ---
 
 # インターフェース定義

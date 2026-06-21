@@ -92,7 +92,7 @@ func main() {
 | ジェネリック API | `GetTyped[T]` | 型安全なジェネリック取得 |
 | 事前解析 | `Processor.PreParse`, `Processor.GetFromParsed` | 一度解析して複数回クエリ |
 | 安全な取得 | `SafeGet` → `AccessResult` | チェーン式の型変換 |
-| ストリーミング処理 | `Processor.ForeachFile` | 大規模ファイルのメモリフレンドリー処理 |
+| ストリーミング処理 | `NDJSONProcessor` | 行単位のストリーミング、メモリ制御可能 |
 | JSONL 処理 | `StreamLinesInto[T]` | ログ/データパイプライン |
 | Schema 検証 | `ValidateSchema` | JSON Schema 検証 |
 

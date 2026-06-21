@@ -1,6 +1,6 @@
 ---
 title: "SSRF Protection - HTTPC"
-description: "HTTPC SSRF protection in depth: default blocking of IPv4/IPv6 private IPs, SSRFExemptCIDRs precise exemptions, DNS rebinding prevention, RedirectWhitelist redirect whitelisting, AWS/GCP/Azure cloud metadata protection, and AllowPrivateIPs usage notes."
+description: "HTTPC SSRF protection: default private-IP blocking, SSRFExemptCIDRs exemptions, DNS rebinding prevention, redirect whitelisting, and metadata protection."
 ---
 
 # SSRF Protection

@@ -1,6 +1,6 @@
 ---
 title: "Параметры запроса - HTTPC"
-description: "Справочник API параметров запроса HTTPC: WithHeader для заголовков, WithBearerToken для аутентификации, WithJSON/WithXML/WithForm/WithBinary для тела запроса, WithQuery для параметров запроса, пять опций Cookie и обратные вызовы WithOnRequest/WithOnResponse."
+description: "Справочник API параметров запроса HTTPC: заголовки WithHeader, аутентификация WithBearerToken, тело WithJSON/WithForm, параметры WithQuery и колбэки."
 ---
 
 # Параметры запроса

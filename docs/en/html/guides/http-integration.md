@@ -1,6 +1,6 @@
 ---
 title: "HTTP Integration - HTML"
-description: "Integrating CyberGo HTML with HTTP: single-page scraping via net/http, batch processing, context timeouts, web-service integration, Processor singletons, and deployment."
+description: "Integrate CyberGo HTML with HTTP: single-page scraping via net/http, batch processing, context timeouts, web services, and Processor singletons."
 ---
 
 # HTTP Integration

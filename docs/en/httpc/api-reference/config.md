@@ -1,6 +1,6 @@
 ---
 title: "Configuration - HTTPC"
-description: "HTTPC configuration system API reference: Config main struct and all fields for the five sub-config groups (Timeouts, Connection, Security, Retry, Middleware), five preset functions including DefaultConfig, ValidateConfig validation, and Cookie security configuration."
+description: "HTTPC configuration API reference: the Config struct with Timeouts, Connection, Security, Retry, and Middleware sub-configs, five presets, and ValidateConfig."
 ---
 
 # Configuration

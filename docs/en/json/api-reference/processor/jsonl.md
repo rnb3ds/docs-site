@@ -1,6 +1,6 @@
 ---
 title: "Processor JSONL Methods - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor JSONL methods: StreamJSONL/StreamJSONLParallel/StreamJSONLChunked stream processing, ForeachJSONL iteration, MapJSONL mapping, ReduceJSONL reduction, FilterJSONL filtering, CollectJSONL collecting, FirstJSONL finding."
+description: "CyberGo JSON Processor JSONL methods: StreamJSONL/StreamJSONLParallel/StreamJSONLChunked stream processing, ForeachJSONL iteration, MapJSONL mapping, ReduceJSONL reduction, FilterJSONL filtering, suitable for Go streaming data processing."
 ---
 
 # Processor JSONL Methods

@@ -1,6 +1,6 @@
 ---
 title: "오류 - JWT API 레퍼런스"
-description: "CyberGo JWT 오류 API 레퍼런스: 19개 센티넬 오류(ErrTokenExpired, ErrTokenRevoked 등), ValidationError 타입 및 errors.Is() 오류 매칭 패턴."
+description: "CyberGo JWT 오류 API 레퍼런스: 구성 검증·토큰 검증·서명 알고리즘·만료·발급자·청중·블랙리스트·속도 제한·수명주기를 다루는 19개 센티넬 오류, ValidationError 타입과 errors.Is() 매칭 패턴."
 ---
 
 # 오류

@@ -1,6 +1,6 @@
 ---
 title: "Advanced Examples - CyberGo JSON | Advanced Usage"
-description: "CyberGo JSON advanced feature practical example collection, including batch encoding EncodeBatch, field selection EncodeFields, pre-parsing PreParse, safe access SafeGet, cache warmup WarmupCache, and memory pool optimization techniques, demonstrating advanced usage and production-grade performance optimization strategies."
+description: "CyberGo JSON advanced feature practical example collection, including batch encoding EncodeBatch, field selection EncodeFields, pre-parsing PreParse, safe access SafeGet, cache warmup WarmupCache, and memory pool optimization techniques, demonstrating advanced usage and Go production-grade performance optimization strategies."
 ---
 
 # Advanced Examples

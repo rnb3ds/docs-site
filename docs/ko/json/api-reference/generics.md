@@ -418,4 +418,4 @@ func main() {
 
 - [패키지 함수](./functions) - 타입 특정 getter 함수
 - [타입 정의](./types) - AccessResult 자세한 정의
-- [설정](./config) - ProcessorOptions 설정 옵션
+- [설정](./config) - Config 설정 옵션

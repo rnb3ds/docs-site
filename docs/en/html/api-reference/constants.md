@@ -1,6 +1,6 @@
 ---
 title: "Constants & Errors - HTML"
-description: "CyberGo HTML constants and error types API reference, including default-value constants like DefaultMaxInputSize, sentinel errors like ErrInputTooLarge, and the structured errors InputError, ConfigError, and FileError — all supporting errors.Is/As for precise runtime error handling."
+description: "CyberGo HTML constants and errors: DefaultMaxInputSize and defaults, sentinel errors like ErrInputTooLarge, plus InputError, ConfigError, and FileError."
 ---
 
 # Constants & Errors

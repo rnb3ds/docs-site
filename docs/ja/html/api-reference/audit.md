@@ -1,6 +1,6 @@
 ---
 title: "監査システム - HTML"
-description: "CyberGo HTML のプラグイン可能な監査(audit)システム API リファレンス。AuditConfig、8 種の監査イベント、3 段階のレベル、AuditEntryを扱い、Logger・Channel・Writer・Multi・Filtered・LevelFiltered の 6 つの組み込み Sink を備え、セキュリティコンプライアンスと振る舞い監査の要件を満たします。"
+description: "CyberGo HTML の監査(audit)システム API リファレンス。AuditConfig、8 種の監査イベント、3 段階のレベル、AuditEntry、Logger・Channel・Writer・Multi・Filtered・LevelFiltered の 6 つの内蔵 Sink を扱います。"
 ---
 
 # 監査システム

@@ -1,6 +1,6 @@
 ---
 title: "상수와 타입 - HTTPC"
-description: "HTTPC 상수와 보조 타입 API 레퍼런스: BodyKind 여섯 가지 요청 본문 열거와 자동 감지 규칙, FormData와 FileData 파일 업로드 타입, AuditEvent 감사 이벤트 구조체, AuditMiddlewareConfig 감사 설정과 SourceIPKey 등 컨텍스트 키 정의를 다룹니다."
+description: "HTTPC 상수와 타입 API 레퍼런스: BodyKind 요청 본문 열거와 자동 감지, FormData와 FileData 업로드 타입, AuditEvent 감사 이벤트 구조와 컨텍스트 키 정의의 완전한 설명을 제공합니다."
 ---
 
 # 상수와 타입

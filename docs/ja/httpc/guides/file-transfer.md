@@ -1,6 +1,6 @@
 ---
 title: "ファイルアップロードとダウンロード - HTTPC"
-description: "HTTPC ファイルアップロードとダウンロードガイド：WithFile で簡単アップロード、WithFormData Multipart マルチファイルアップロード、Download 統合ダウンロード、プログレスコールバック付きダウンロード、レジューム ResumeDownload、SHA-256 チェックサムと UNC パスなどのセキュリティ防護。"
+description: "HTTPC ファイルアップロードとダウンロードガイド: WithFile 簡単アップロード、WithFormData マルチファイルアップロード、Download 統合ダウンロード、レジューム ResumeDownload、SHA-256 チェックサムなどのセキュリティ防護を解説します。"
 ---
 
 # ファイルアップロードとダウンロード

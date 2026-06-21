@@ -1,6 +1,6 @@
 ---
 title: "Processor - Запросы по пути - CyberGo JSON | Справочник API"
-description: "Справочник методов запросов по пути Processor: Get/GetString/GetInt, GetMultiple, SafeGet с AccessResult, GetTyped[T], CompilePath и GetCompiled с поддержкой JSONPath."
+description: "Справочник методов запросов по пути Processor: Get/GetString/GetInt, GetMultiple, SafeGet с AccessResult, GetTyped[T], CompilePath и GetCompiled с поддержкой JSONPath и оптимизацией кэша в Go."
 ---
 
 # Методы запросов по пути

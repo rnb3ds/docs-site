@@ -1,6 +1,6 @@
 ---
 title: "API リファレンス - JWT"
-description: "CyberGo JWT API リファレンス索引：パッケージ関数、Processor コアメソッド、Config 設定、Claims クレーム、インターフェース定義、型定数とエラー処理の完全なドキュメントナビゲーション。"
+description: "CyberGo JWT API リファレンス索引：パッケージ関数、Processor コアメソッド、Config と BlacklistConfig 設定構造、Claims と RegisteredClaims 宣言型、拡張インターフェース、型定数と 19 個のセンチネルエラーの完全なナビゲーション。"
 ---
 
 # API リファレンス

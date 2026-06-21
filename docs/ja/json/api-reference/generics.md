@@ -418,4 +418,4 @@ func main() {
 
 - [パッケージ関数](./functions) - 型固有の getter 関数
 - [型定義](./types) - AccessResult の詳細な定義
-- [設定](./config) - ProcessorOptions 設定オプション
+- [設定](./config) - Config 設定オプション

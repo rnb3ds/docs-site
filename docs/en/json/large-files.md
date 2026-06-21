@@ -1,6 +1,6 @@
 ---
 title: "Large File Processing - CyberGo JSON | Guide"
-description: "CyberGo JSON large file processing complete guide: detailed coverage of ForeachFile structured iteration, ForeachFileChunked batch processing, memory control configuration, buffer size optimization, JSONL batch processing, and NDJSONProcessor true streaming, suitable for log analysis, data export, and ETL scenarios."
+description: "CyberGo JSON large file processing complete guide: detailed coverage of ForeachFile structured iteration, ForeachFileChunked batch processing, memory control configuration, buffer size optimization, JSONL batch processing, and NDJSONProcessor true streaming, suitable for Go log analysis, data export, and ETL scenarios."
 ---
 
 # Large File Processing

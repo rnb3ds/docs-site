@@ -1,6 +1,6 @@
 ---
 title: "Функции пакета - HTML"
-description: "Справочник API функций уровня пакета CyberGo HTML: охватывает Extract, ExtractFromFile, ExtractText, ExtractFromFileWithContext и другие функции извлечения с контекстными версиями; внутри использует sync.Pool для повторного использования Processor — подходит для разовых вызовов и быстрой интеграции."
+description: "Справочник API функций пакета CyberGo HTML: Extract, ExtractFromFile, ExtractText с контекстом; sync.Pool для разовых вызовов и быстрой интеграции."
 ---
 
 # Функции пакета

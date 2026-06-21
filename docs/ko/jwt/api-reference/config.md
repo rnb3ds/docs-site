@@ -1,6 +1,6 @@
 ---
 title: "Config - JWT API 레퍼런스"
-description: "CyberGo JWT Config API 레퍼런스: Config 통합 설정 항목(서명 키, 알고리즘, TTL, Issuer)과 BlacklistConfig 블랙리스트 설정의 필드 설명, 기본값 및 검증 메서드."
+description: "CyberGo JWT Config API 레퍼런스: 서명 키·알고리즘·액세스/갱신 토큰 TTL·발급자·청중·클럭 스큐·블랙리스트·속도 제한 등 전체 필드, 기본값, 자동 채우기 규칙과 Validate 검증 로직 및 오류 반환."
 ---
 
 # Config

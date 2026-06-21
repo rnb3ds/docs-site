@@ -1,6 +1,6 @@
 ---
 title: "ミドルウェアチェーン - HTTPC"
-description: "HTTPC ミドルウェアチェーンガイド：オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit 8 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc の作成方法とサーキットブレーカーショートサーキットミドルウェアの実装例。"
+description: "HTTPC ミドルウェアチェーンガイド: オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、8 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc 作成、サーキットブレーカー短路の実装例を解説します。"
 ---
 
 # ミドルウェアチェーン

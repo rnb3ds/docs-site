@@ -1,6 +1,6 @@
 ---
 title: "Custom Claims - JWT"
-description: "CyberGo JWT custom Claims guide covering CustomClaims interface implementation, validation differences from built-in Claims, ValidateInto/RefreshInto usage, and RateLimitKeyer optional interface."
+description: "CyberGo JWT custom Claims guide: implement CustomClaims, validation differences, ValidateInto/RefreshInto usage, and the RateLimitKeyer interface."
 ---
 
 # Custom Claims

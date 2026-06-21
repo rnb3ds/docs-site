@@ -1,12 +1,12 @@
 ---
 title: "Print Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON print and format output reference: use Encode, EncodePretty, Prettify functions and the standard fmt package for JSON formatted output, replacing the now-private Print/PrintPretty series functions, supporting custom indentation and prefixes."
+description: "CyberGo JSON print and format output reference: use Encode, EncodePretty, Prettify functions and the standard fmt package for JSON formatted output, replacing the removed Print/PrintPretty series functions, supporting custom indentation and prefixes."
 ---
 
 # Print Functions
 
 ::: warning API Change Notice
-`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` have been converted to internal functions (lowercase naming) and are no longer exported as public APIs. Please use the following alternatives.
+`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` have been removed from the library and are no longer available. Please use the following alternatives.
 :::
 
 ## Alternatives

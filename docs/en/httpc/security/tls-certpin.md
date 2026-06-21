@@ -1,6 +1,6 @@
 ---
 title: "TLS and Certificate Pinning - HTTPC"
-description: "HTTPC TLS and certificate pinning guide: TLS 1.2-1.3 version control and cipher suites, custom CA certificate loading, mTLS mutual authentication, the CertificatePinner pinning API (SPKI hash/public key/chain), custom VerifyPeerCertificate validation, and HTTP/2 negotiation."
+description: "HTTPC TLS and certificate pinning guide: TLS 1.2-1.3 and cipher suites, custom CA loading, mTLS, the CertificatePinner API, and HTTP/2 negotiation."
 ---
 
 # TLS and Certificate Pinning

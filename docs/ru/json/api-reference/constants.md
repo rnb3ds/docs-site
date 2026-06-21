@@ -1,6 +1,6 @@
 ---
 title: "Константы и ошибки - CyberGo JSON | Справочник API"
-description: "Полный справочник констант и ошибок CyberGo JSON: включает константы ограничений по умолчанию DefaultMaxJSONSize/DefaultMaxNestingDepth, переменные ошибок ErrPathNotFound/ErrTypeMismatch и перечисление режимов слияния MergeMode для поддержки предустановок конфигурации и обработки ошибок."
+description: "Полный справочник констант и ошибок CyberGo JSON: включает константы ограничений по умолчанию DefaultMaxJSONSize/DefaultMaxNestingDepth, переменные ошибок ErrPathNotFound/ErrTypeMismatch и перечисление режимов слияния MergeMode для поддержки предустановок конфигурации и обработки ошибок в Go."
 ---
 
 # Константы и ошибки

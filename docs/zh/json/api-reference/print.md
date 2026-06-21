@@ -1,12 +1,12 @@
 ---
 title: "打印函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 打印与格式化输出参考：使用 Encode、EncodePretty、Prettify 函数和标准 fmt 包实现 JSON 格式化输出，替代已私有化的 Print/PrintPretty 系列函数，支持自定义缩进和前缀。"
+description: "CyberGo JSON 打印与格式化输出参考：使用 Encode、EncodePretty、Prettify 函数和标准 fmt 包实现 JSON 格式化输出，替代已移除的 Print/PrintPretty 系列函数，支持 Go 自定义缩进和前缀。"
 ---
 
 # 打印函数
 
 ::: warning API 变更说明
-`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` 已转为内部函数（小写命名），不再作为公开 API 导出。请使用以下替代方案。
+`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` 已从库中移除，不再提供。请使用以下替代方案。
 :::
 
 ## 替代方案

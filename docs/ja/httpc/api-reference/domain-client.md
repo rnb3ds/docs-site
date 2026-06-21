@@ -1,6 +1,6 @@
 ---
 title: "ドメインクライアント - HTTPC"
-description: "HTTPC ドメインクライアント API リファレンス：NewDomain 作成関数、Get/Post など 7 種類の HTTP メソッドと Request 汎用メソッド、4 種類のダウンロードメソッド、URL 自動結合ルール、DomainClienter インターフェースの SetHeader/SetCookie セッション管理と Close ライフサイクル。"
+description: "HTTPC ドメインクライアント API リファレンス: NewDomain 作成、7 種類の HTTP メソッドと Request メソッド、URL 自動結合、SetHeader/SetCookie セッション管理、Close ライフサイクルの完全な使い方を提供します。"
 ---
 
 # ドメインクライアント

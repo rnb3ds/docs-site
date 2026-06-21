@@ -1,6 +1,6 @@
 ---
 title: "Интерфейсы - HTTPC"
-description: "Справочник API основных интерфейсов HTTPC: полнофункциональный интерфейс Client с семью HTTP-методами, минимальный интерфейс выполнения Doer, доменный клиент DomainClienter, стратегия повторов RetryPolicy, интерфейсы промежуточного ПО RequestMutator/ResponseMutator и определения Handler/MiddlewareFunc."
+description: "Справочник API интерфейсов HTTPC: полнофункциональный Client, интерфейс выполнения Doer, DomainClienter, стратегия RetryPolicy и интерфейсы middleware."
 ---
 
 # Интерфейсы

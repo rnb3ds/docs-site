@@ -135,7 +135,7 @@ fmt.Println(string(jsonBytes))
     {"url": "gopher.png", "alt": "Gopher", "title": "", "width": "", "height": "", "is_decorative": false, "position": 1}
   ],
   "links": [
-    {"url": "https://go.dev", "text": "Go 공식 웹사이트", "title": "", "is_external": true, "is_no_follow": false, "position": 1}
+    {"url": "https://go.dev", "text": "Go 공식 웹사이트", "title": "", "is_external": true, "is_nofollow": false, "position": 1}
   ],
   "processing_time_ms": 2,
   "word_count": 6,

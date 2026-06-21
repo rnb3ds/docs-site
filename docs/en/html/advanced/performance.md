@@ -1,6 +1,6 @@
 ---
 title: "Performance - HTML"
-description: "CyberGo HTML performance optimization: Processor reuse, cache strategy (MaxCacheEntries, CacheTTL, CacheCleanup), batch concurrency (WorkerPoolSize), and input size and timeout control."
+description: "CyberGo HTML performance: Processor reuse, cache strategy (MaxCacheEntries, CacheTTL), batch concurrency (WorkerPoolSize), plus input size and timeout control."
 ---
 
 # Performance

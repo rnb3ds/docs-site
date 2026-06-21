@@ -1,6 +1,6 @@
 ---
 title: "SSRF 防護 - HTTPC"
-description: "HTTPC SSRF 防護の詳細：デフォルトで IPv4/IPv6 プライベート IP をブロック、SSRFExemptCIDRs 精密免除、DNS リバインディング防護、RedirectWhitelist リダイレクトホワイトリスト、AWS/GCP/Azure クラウドメタデータ保護と AllowPrivateIPs の注意事項。"
+description: "HTTPC SSRF 防護の詳細: デフォルトで IPv4/IPv6 プライベート IP をブロック、SSRFExemptCIDRs 精密免除、DNS リバインディング防止、リダイレクトホワイトリスト、AWS/GCP/Azure クラウドメタデータ保護を解説します。"
 ---
 
 # SSRF 防護

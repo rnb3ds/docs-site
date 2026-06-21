@@ -1,6 +1,6 @@
 ---
 title: "Basic Usage - HTTPC"
-description: "HTTPC basic usage examples: GET requests with query parameters and authentication, JSON/form/file upload POST requests, FormData multi-field forms, DefaultConfig custom configuration, ProxyURL proxy, Recovery/Logging middleware, RequestID/Metrics collection, and file download with progress callbacks."
+description: "HTTPC basic usage examples: authenticated GET requests, JSON/form/file POST, custom configuration, proxy, middleware, metrics, and file download code."
 ---
 
 # Basic Usage

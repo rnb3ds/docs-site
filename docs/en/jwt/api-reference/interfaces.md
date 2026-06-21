@@ -1,6 +1,6 @@
 ---
 title: "Interfaces - JWT API Reference"
-description: "CyberGo JWT interface definitions reference covering TokenManager, CustomClaims, BlacklistStore, RateLimitProvider, ClockProvider, and RateLimitKeyer interfaces."
+description: "CyberGo JWT interfaces: TokenManager, CustomClaims, BlacklistStore, RateLimitProvider, ClockProvider, and RateLimitKeyer with method signatures."
 ---
 
 # Interfaces

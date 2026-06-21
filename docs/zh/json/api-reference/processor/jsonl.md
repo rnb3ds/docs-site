@@ -1,6 +1,6 @@
 ---
 title: "Processor JSONL 方法 - CyberGo JSON | API 参考"
-description: "CyberGo JSON处理器JSONL方法：StreamJSONL/StreamJSONLParallel/StreamJSONLChunked流式处理、ForeachJSONL迭代、MapJSONL映射、ReduceJSONL归约、FilterJSONL过滤、CollectJSONL收集、FirstJSONL查找。"
+description: "CyberGo JSON 处理器 JSONL 方法：StreamJSONL/StreamJSONLParallel/StreamJSONLChunked 流式处理、ForeachJSONL 迭代、MapJSONL 映射、ReduceJSONL 归约、FilterJSONL 过滤，适合 Go 流式数据处理。"
 ---
 
 # Processor JSONL 方法

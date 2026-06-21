@@ -1,6 +1,6 @@
 ---
 title: "속도 제한 - JWT"
-description: "CyberGo JWT 속도 제한 가이드: 토큰 버킷 속도 제한 설정, 내장 RateLimiter, RateLimitProvider 커스텀 구현, 속도 제한 키 우선순위 및 모범 사례."
+description: "CyberGo JWT 속도 제한 가이드: 토큰 버킷 알고리즘으로 토큰 발급 인터페이스의 윈도우당 최대 요청 수 설정, Subject·UserID·RateLimitKeyer 우선순위 규칙, 내장 RateLimiter와 커스텀 RateLimitProvider 분산 구현."
 ---
 
 # 속도 제한

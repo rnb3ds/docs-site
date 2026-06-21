@@ -1,6 +1,6 @@
 ---
 title: "使用示例 - CyberGo JSON | 实战代码示例"
-description: "CyberGo JSON 实战代码示例集合，包括路径查询 GetString/GetTyped、结构体编解码 Marshal/Unmarshal、JSONL 流式处理、Hook 钩子函数、Schema 模式验证和错误处理等完整可运行示例，全面覆盖日常开发中最常见和实用的 JSON 操作场景。"
+description: "CyberGo JSON 实战代码示例集合，包括路径查询 GetString/GetTyped、结构体编解码 Marshal/Unmarshal、JSONL 流式处理、Hook 钩子函数、Schema 模式验证和错误处理等完整可运行示例，全面覆盖 Go 日常开发中最常见和实用的 JSON 操作场景。"
 ---
 
 # 使用示例

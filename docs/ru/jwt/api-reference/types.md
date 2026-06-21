@@ -1,6 +1,6 @@
 ---
 title: "Типы и константы - Справочник JWT API"
-description: "Справочник типов и констант CyberGo JWT: NumericDate, StringOrSlice, SigningMethod, ValidationError, RateLimiter, SystemClock, FixedClock и 12 констант алгоритмов подписи."
+description: "CyberGo JWT — типы и константы: NumericDate, StringOrSlice, SigningMethod, ValidationError, RateLimiter, SystemClock, FixedClock и 12 алгоритмов подписи."
 ---
 
 # Типы и константы

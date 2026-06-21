@@ -1,6 +1,6 @@
 ---
 title: "Config - CyberGo JSON | API Reference"
-description: "CyberGo JSON Config configuration options reference: detailed DefaultConfig default configuration, SecurityConfig security configuration, PrettyConfig formatting configuration, cache settings, size limits, security options, and encoding options to customize Processor and all JSON operation behavior."
+description: "CyberGo JSON Config configuration options reference: detailed DefaultConfig default configuration, SecurityConfig security configuration, PrettyConfig formatting configuration, cache settings, size limits, security options, and encoding options to customize all JSON operation behavior for Go applications."
 ---
 
 # Config
@@ -414,7 +414,7 @@ const (
 ```
 
 ::: info Internal Constants
-Path validation length limits (`maxPathLength`), cache key length limits (`maxCacheKeyLength`), and other constants have been converted to internal implementations and are no longer exported as public APIs. Related default values are reflected in the `Config` struct field defaults.
+Path validation length limits (`maxPathLength`) and other constants have been converted to internal implementations and are no longer exported as public APIs. Related default values are reflected in the `Config` struct field defaults.
 :::
 
 ---

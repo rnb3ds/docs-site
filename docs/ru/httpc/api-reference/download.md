@@ -1,6 +1,6 @@
 ---
 title: "Загрузка файлов - HTTPC"
-description: "Справочник API загрузки файлов HTTPC: единый вход загрузки Download, структура конфигурации DownloadConfig, обратный вызов прогресса DownloadProgressCallback, тип результата DownloadResult, проверка контрольной суммы SHA-256 и шестисторонняя защита от UNC-путей."
+description: "Справочник API загрузки файлов HTTPC: единый вход Download, конфигурация DownloadConfig, обратные вызовы прогресса, проверка SHA-256 и защита UNC."
 ---
 
 # Загрузка файлов

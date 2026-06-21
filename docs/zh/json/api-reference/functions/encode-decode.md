@@ -1,6 +1,6 @@
 ---
 title: "编码解码函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 编码解码函数参考：Marshal/Unmarshal 序列化、Compact/Indent/HTMLEscape 格式化、Encode/EncodePretty/EncodeWithConfig/Prettify 配置化编码，100% 兼容 encoding/json。"
+description: "CyberGo JSON 编码解码函数参考：Marshal/Unmarshal 序列化、Compact/Indent/HTMLEscape 格式化、Encode/EncodePretty/EncodeWithConfig/Prettify 配置化编码，100% 兼容 Go 标准 encoding/json。"
 ---
 
 # 编码解码函数
@@ -97,7 +97,7 @@ fmt.Println(buf.String())
 
 签名：`func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-HTML 转义 JSON 内容，将特殊字符（`<`、`>`、`&`）替换为 Unicode 转义序列（`<`、`>`、`&`），结果写入 `dst`。无返回值。
+HTML 转义 JSON 内容，将 `<`、`>`、`&` 等特殊字符（以及 U+2028、U+2029）替换为对应的 Unicode 转义序列，结果写入 `dst`。无返回值。
 
 ```go
 var buf bytes.Buffer

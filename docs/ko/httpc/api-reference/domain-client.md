@@ -1,6 +1,6 @@
 ---
 title: "도메인 클라이언트 - HTTPC"
-description: "HTTPC 도메인 클라이언트 API 레퍼런스: NewDomain 생성 함수, Get/Post 등 일곱 가지 HTTP 메서드와 Request 범용 메서드, 네 가지 다운로드 메서드, URL 자동 조합 규칙, DomainClienter 인터페이스의 SetHeader/SetCookie 세션 관리와 Close 수명 주기를 다룹니다."
+description: "HTTPC 도메인 클라이언트 API 레퍼런스: NewDomain 생성, 일곱 가지 HTTP 메서드와 Request 메서드, URL 자동 조합, SetHeader/SetCookie 세션 관리와 Close 수명 주기의 완전한 사용법을 제공합니다."
 ---
 
 # 도메인 클라이언트

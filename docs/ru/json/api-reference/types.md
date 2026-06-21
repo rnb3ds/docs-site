@@ -1,6 +1,6 @@
 ---
 title: "Определения типов - CyberGo JSON | Справочник API"
-description: "Полный справочник основных типов CyberGo JSON: включает Result[T] обобщённый результат, AccessResult результат динамического доступа, BatchOperation, BatchResult, Schema схема валидации, Stats, HealthStatus, IterableValue и типы ошибок кодирования."
+description: "Полный справочник основных типов CyberGo JSON: включает Result[T] обобщённый результат, AccessResult результат динамического доступа, BatchOperation, BatchResult, Schema схема валидации, Stats, HealthStatus, IterableValue и типы ошибок кодирования — полная поддержка системы типов в Go."
 ---
 
 # Определения типов

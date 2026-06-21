@@ -1,6 +1,6 @@
 ---
 title: "파일 다운로드 - HTTPC"
-description: "HTTPC 파일 다운로드 API 레퍼런스: Download 통합 다운로드 진입점 함수 서명, DownloadConfig 설정 구조체, DownloadProgressCallback 진행률 콜백, DownloadResult 결과 타입, SHA-256 체크섬 검증과 UNC 경로 방어 등 6계층 보안을 다룹니다."
+description: "HTTPC 파일 다운로드 API 레퍼런스: Download 통합 진입점, DownloadConfig 설정, 진행률 콜백, DownloadResult 타입, SHA-256 체크섬 검증과 UNC 경로 방어 등 6계층 보안을 제공합니다."
 ---
 
 # 파일 다운로드

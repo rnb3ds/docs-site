@@ -1,6 +1,6 @@
 ---
 title: "Processor 输出方法 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 输出方法参考：包括 Encode 编码、EncodePretty 格式化、EncodeWithConfig 自定义配置、EncodeBatch/EncodeFields 批量编码、Compact/Indent/HTMLEscape 格式化操作，满足多种 JSON 输出需求。"
+description: "CyberGo JSON Processor 输出方法参考：Encode 编码、EncodePretty 格式化、EncodeWithConfig 自定义配置、EncodeBatch/EncodeFields 批量编码、Compact/Indent/HTMLEscape 格式化，满足 Go 多种 JSON 输出需求。"
 ---
 
 # 输出方法
@@ -11,7 +11,7 @@ Processor 提供多种 JSON 编码输出方法。
 
 ### Encode
 
-签名：`func (p *Processor) Encode(value any, cfg ...Config) (string, error)`
+签名：`func (p *Processor) Encode(value any, config ...Config) (string, error)`
 
 将任意值编码为 JSON 字符串。
 
@@ -25,7 +25,7 @@ fmt.Println(result)
 
 ### EncodePretty
 
-签名：`func (p *Processor) EncodePretty(value any, cfg ...Config) (string, error)`
+签名：`func (p *Processor) EncodePretty(value any, config ...Config) (string, error)`
 
 将任意值编码为格式化 JSON 字符串。
 
@@ -169,10 +169,10 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 // }
 ```
 
-### Print (已私有化)
+### Print (已移除)
 
 ::: warning API 变更说明
-`Print`、`PrintE`、`PrintPretty`、`PrintPrettyE` 已转为内部方法（小写命名），不再作为公开 API 导出。请使用以下替代方案：
+`Print`、`PrintE`、`PrintPretty`、`PrintPrettyE` 已从库中移除，不再提供。请使用以下替代方案：
 
 ```go
 // 紧凑输出

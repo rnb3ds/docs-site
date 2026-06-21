@@ -1,6 +1,6 @@
 ---
 title: "ドメインクライアントとセッション - HTTPC"
-description: "HTTPC ドメインクライアントとセッション管理ガイド：NewDomain によるドメインスコープクライアントの作成、URL 自動結合ルール、SetHeader セッションヘッダー維持、Cookie 自動管理とレスポンスキャプチャ、CookieSecurity セキュリティ検証ポリシーと REST API クライアントラッパーの実践例。"
+description: "HTTPC ドメインクライアントとセッションガイド: NewDomain によるドメインスコープクライアント作成、URL 自動結合、SetHeader ヘッダー維持、Cookie セキュリティ検証、REST API クライアントラッパーの実践例を解説します。"
 ---
 
 # ドメインクライアントとセッション

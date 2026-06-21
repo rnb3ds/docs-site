@@ -1,6 +1,6 @@
 ---
 title: "Hook 钩子系统 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 钩子系统参考：详解 Hook 接口、LoggingHook 日志、TimingHook 计时、ValidationHook 验证、ErrorHook 错误处理和自定义钩子，支持在 JSON 操作前后插入自定义逻辑。"
+description: "CyberGo JSON 钩子系统参考：详解 Hook 接口、LoggingHook 日志、TimingHook 计时、ValidationHook 验证、ErrorHook 错误处理和自定义钩子，支持在 Go JSON 操作前后插入自定义逻辑。"
 ---
 
 # Hook 钩子系统

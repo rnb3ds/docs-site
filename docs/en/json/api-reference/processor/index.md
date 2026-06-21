@@ -1,6 +1,6 @@
 ---
 title: "Processor - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor complete reference: including New instance creation, GetString/Set/Delete data operations, Foreach iteration, Encode encoding, Close lifecycle management, Stats statistics and cache configuration, suitable for high-frequency JSON operations and data processing reuse scenarios."
+description: "CyberGo JSON Processor complete reference: including New instance creation, GetString/Set/Delete data operations, Foreach iteration, Encode encoding, Close lifecycle management, Stats statistics and cache configuration, suitable for high-frequency JSON operations and data processing reuse scenarios in Go."
 ---
 
 # Processor

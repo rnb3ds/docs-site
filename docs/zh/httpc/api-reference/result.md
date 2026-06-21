@@ -26,7 +26,7 @@ fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
 :::tip
-Result 使用内部对象池优化性能，GC 自动回收，无需手动释放。
+Result 每次请求新建，GC 自动回收，无需手动释放。
 :::
 
 ## 基础方法

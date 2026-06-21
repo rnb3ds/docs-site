@@ -1,6 +1,6 @@
 ---
 title: "도메인 클라이언트와 세션 - HTTPC"
-description: "HTTPC 도메인 클라이언트와 세션 관리 가이드: NewDomain으로 도메인 범위 클라이언트 생성, URL 자동 조합 규칙, SetHeader 세션 헤더 유지, Cookie 자동 관리와 응답 캡처, CookieSecurity 보안 검증 전략과 REST API 클라이언트 래핑 실전 예제를 다룹니다."
+description: "HTTPC 도메인 클라이언트와 세션 가이드: NewDomain으로 도메인 범위 클라이언트 생성, URL 자동 조합, SetHeader 헤더 유지, Cookie 보안 검증과 REST API 클라이언트 래핑 실전 예제를 다룹니다."
 ---
 
 # 도메인 클라이언트와 세션

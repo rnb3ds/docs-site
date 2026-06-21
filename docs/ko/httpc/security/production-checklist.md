@@ -1,6 +1,6 @@
 ---
 title: "프로덕션 체크리스트 - HTTPC"
-description: "HTTPC 프로덕션 환경 보안 체크리스트: TLS 인증서 확인, SSRF AllowPrivateIPs 점검과 CIDR 감사, Timeouts 타임아웃 설정, MaxResponseBodySize 크기 제한, 재시도 전략, 리소스 해제와 AuditMiddleware 모니터링 감사를 다룹니다."
+description: "HTTPC 프로덕션 환경 보안 체크리스트: TLS 확인, SSRF AllowPrivateIPs 점검과 CIDR 감사, 타임아웃 설정, 응답 크기 제한, 재시도 전략, 리소스 해제와 AuditMiddleware 감사 모니터링을 다룹니다."
 ---
 
 # 프로덕션 체크리스트
@@ -132,6 +132,6 @@ grep -r "AllowPrivateIPs.*true" --include="*.go" | grep -v "_test.go"
 
 ## 다음 단계
 
-- [보안 개요](./) - 보안 기능 총览
+- [보안 개요](./) - 보안 기능 개요
 - [SSRF 방어](./ssrf) - SSRF 방어 상세
 - [설정 API](../api-reference/config) - 완전한 설정 참조

@@ -1,6 +1,6 @@
 ---
 title: "File Download - HTTPC"
-description: "HTTPC file download API reference: the unified Download entry point, DownloadConfig configuration struct, DownloadProgressCallback progress callback, DownloadResult result type, SHA-256 checksum verification, UNC path prevention, and six-layer security protection."
+description: "HTTPC file download API reference: the unified Download entry, DownloadConfig, progress callbacks, DownloadResult, SHA-256 checksums, and UNC path protection."
 ---
 
 # File Download

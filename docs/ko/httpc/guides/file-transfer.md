@@ -1,6 +1,6 @@
 ---
 title: "파일 업로드와 다운로드 - HTTPC"
-description: "HTTPC 파일 업로드와 다운로드 가이드: WithFile 간단 업로드, WithFormData Multipart 다중 파일 업로드, Download 통합 다운로드, 진행률 콜백 포함, ResumeDownload 이어받기, SHA-256 체크섬과 UNC 경로 등 보안 방어를 다룹니다."
+description: "HTTPC 파일 업로드와 다운로드 가이드: WithFile 간단 업로드, WithFormData 다중 파일 업로드, Download 통합 다운로드, 이어받기 ResumeDownload와 SHA-256 체크섬 등 보안 방어를 다룹니다."
 ---
 
 # 파일 업로드와 다운로드

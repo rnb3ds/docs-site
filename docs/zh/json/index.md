@@ -92,7 +92,7 @@ func main() {
 | 泛型 API | `GetTyped[T]` | 类型安全的泛型获取 |
 | 预解析 | `Processor.PreParse`, `Processor.GetFromParsed` | 一次解析多次查询 |
 | 安全获取 | `SafeGet` → `AccessResult` | 链式类型转换 |
-| 流式处理 | `Processor.ForeachFile` | 大文件内存友好 |
+| 流式处理 | `NDJSONProcessor` | 逐行流式，内存可控 |
 | JSONL 处理 | `StreamLinesInto[T]` | 日志/数据管道 |
 | Schema 验证 | `ValidateSchema` | JSON Schema 验证 |
 

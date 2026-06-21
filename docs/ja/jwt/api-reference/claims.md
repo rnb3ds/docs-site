@@ -1,6 +1,6 @@
 ---
 title: "Claims - JWT API リファレンス"
-description: "CyberGo JWT Claims API リファレンス：Claims 内蔵ビジネスクレーム（UserID、Username、Role など）、RegisteredClaims RFC 7519 標準クレームおよび深い検証制約。"
+description: "CyberGo JWT Claims API リファレンス：UserID・Username・Role・権限・スコープ・拡張フィールドなどのビジネスクレームと、RFC 7519 標準 RegisteredClaims、フィールド長や配列サイズなどの深い検証制約。"
 ---
 
 # Claims

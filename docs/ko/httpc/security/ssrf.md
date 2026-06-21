@@ -1,6 +1,6 @@
 ---
 title: "SSRF 방어 - HTTPC"
-description: "HTTPC SSRF 방어 상세: 기본 IPv4/IPv6 사설 IP 차단, SSRFExemptCIDRs 정밀 면제, DNS 리바인딩 방어, RedirectWhitelist 리다이렉트 허용 목록, AWS/GCP/Azure 클라우드 메타데이터 보호와 AllowPrivateIPs 주의 사항을 다룹니다."
+description: "HTTPC SSRF 방어 상세: 기본 IPv4/IPv6 사설 IP 차단, SSRFExemptCIDRs 정밀 면제, DNS 리바인딩 방어, 리다이렉트 허용 목록과 AWS/GCP/Azure 클라우드 메타데이터 보호를 다룹니다."
 ---
 
 # SSRF 방어
@@ -143,5 +143,5 @@ cfg.Security.AllowPrivateIPs = true
 ## 다음 단계
 
 - [TLS와 인증서 고정](./tls-certpin) - TLS 보안 설정
-- [보안 개요](./) - 보안 기능 총览
+- [보안 개요](./) - 보안 기능 개요
 - [프로덕션 체크리스트](./production-checklist) - 릴리스 전 필수 확인 항목

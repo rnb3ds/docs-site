@@ -1,6 +1,6 @@
 ---
 title: "Hook 훅 시스템 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 훅 시스템 레퍼런스: Hook 인터페이스, LoggingHook 로그, TimingHook 타이밍, ValidationHook 검증, ErrorHook 오류 처리 및 커스텀 훅을 자세히 설명하며 JSON 작업 전후에 커스텀 로직을 삽입할 수 있습니다."
+description: "CyberGo JSON 훅 시스템 레퍼런스: Hook 인터페이스, LoggingHook 로그, TimingHook 타이밍, ValidationHook 검증, ErrorHook 오류 처리 및 커스텀 훅을 자세히 설명하며 Go JSON 작업 전후에 커스텀 로직을 삽입할 수 있습니다."
 ---
 
 # Hook 훅 시스템

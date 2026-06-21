@@ -1,6 +1,6 @@
 ---
 title: "定数とエラー - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON 定数とエラー定義完全リファレンス：DefaultMaxJSONSize/DefaultMaxNestingDepth デフォルト制限定数、ErrPathNotFound/ErrTypeMismatch エラー変数、MergeMode マージモード列挙型を含み、設定プリセットとエラー処理をサポート。"
+description: "CyberGo JSON 定数とエラー定義完全リファレンス：DefaultMaxJSONSize/DefaultMaxNestingDepth デフォルト制限定数、ErrPathNotFound/ErrTypeMismatch エラー変数、MergeMode マージモード列挙型を含み、Go の設定プリセットとエラー処理をサポート。"
 ---
 
 # 定数とエラー

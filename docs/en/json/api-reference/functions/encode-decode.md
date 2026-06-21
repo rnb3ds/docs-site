@@ -1,6 +1,6 @@
 ---
 title: "Encode and Decode Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON encode and decode functions reference: Marshal/Unmarshal serialization, Compact/Indent/HTMLEscape formatting, Encode/EncodePretty/EncodeWithConfig/Prettify configured encoding, 100% compatible with encoding/json."
+description: "CyberGo JSON encode and decode functions reference: Marshal/Unmarshal serialization, Compact/Indent/HTMLEscape formatting, Encode/EncodePretty/EncodeWithConfig/Prettify configured encoding, 100% compatible with Go's standard encoding/json."
 ---
 
 # Encode and Decode Functions
@@ -97,7 +97,7 @@ fmt.Println(buf.String())
 
 Signature: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-HTML-escapes JSON content, replacing special characters (`&`, `<`, `>`) with Unicode escape sequences, writing the result to `dst`. No return value.
+HTML-escapes JSON content, replacing special characters such as `<`, `>`, `&` (as well as U+2028 and U+2029) with the corresponding Unicode escape sequences, writing the result to `dst`. No return value.
 
 ```go
 var buf bytes.Buffer

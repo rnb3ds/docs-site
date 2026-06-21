@@ -1,12 +1,12 @@
 ---
 title: "出力関数 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON 出力とフォーマットリファレンス：Encode、EncodePretty、Prettify 関数と標準 fmt パッケージを使用して JSON フォーマット出力を実現。非公開化された Print/PrintPretty 系関数の代替。カスタムインデントとプレフィックスをサポート。"
+description: "CyberGo JSON 出力とフォーマットリファレンス：Encode、EncodePretty、Prettify 関数と標準 fmt パッケージを使用して JSON フォーマット出力を実現。削除された Print/PrintPretty 系関数の代替。Go のカスタムインデントとプレフィックスをサポート。"
 ---
 
 # 出力関数
 
 ::: warning API 変更のお知らせ
-`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` は内部関数（小文字命名）に移行し、公開 API としてエクスポートされなくなりました。以下の代替案を使用してください。
+`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` はライブラリから削除され、提供されなくなりました。以下の代替案を使用してください。
 :::
 
 ## 代替案

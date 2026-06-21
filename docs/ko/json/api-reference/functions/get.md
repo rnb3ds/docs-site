@@ -1,6 +1,6 @@
 ---
 title: "쿼리/가져오기 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 조회와 가져오기 함수 완전 레퍼런스: Get/GetString/GetInt/GetFloat/GetBool 등 타입 안전 가져오기, GetTyped[T] 제네릭 가져오기 및 Parse/ParseAny 파싱 함수를 포함하며, JSONPath 경로 표현식을 완전히 지원하고 기본값이 있는 제로 오류 가져오기 모드를 제공합니다."
+description: "CyberGo JSON 조회와 가져오기 함수 완전 레퍼런스: Get/GetString/GetInt/GetFloat/GetBool 등 타입 안전 가져오기, GetTyped[T] 제네릭 가져오기 및 Parse/ParseAny 파싱 함수를 포함하며, JSONPath 경로 표현식을 완전히 지원하고 Go 개발을 위한 제로 오류 가져오기 모드를 제공합니다."
 ---
 
 # 조회와 가져오기 함수
@@ -434,7 +434,7 @@ defer p.Close()
 data, err := p.ParseAny(`{"name": "test"}`)
 ```
 
-자세한 내용은 [Processor 파싱 메서드](../processor/parse.md#파싱-메서드)를 참조하세요.
+자세한 내용은 [Processor 파싱 메서드](../processor/parse#파싱-메서드)를 참조하세요.
 
 ## 검증 함수
 

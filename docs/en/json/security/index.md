@@ -1,6 +1,6 @@
 ---
 title: "Security Overview - CyberGo JSON | Security Best Practices"
-description: "CyberGo JSON security best practices guide: covering input validation and sanitization, MaxNestingDepthSecurity/MaxMemory resource limit protection, path traversal attack prevention, JSON injection prevention, sensitive data filtering, and audit logging configuration for secure JSON data processing in production."
+description: "CyberGo JSON security best practices guide: covering input validation and sanitization, MaxNestingDepthSecurity/MaxMemory resource limit protection, path traversal attack prevention, JSON injection prevention, sensitive data filtering, and audit logging configuration to help Go developers ensure secure JSON data processing in production."
 ---
 
 # Security Overview

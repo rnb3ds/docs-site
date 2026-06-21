@@ -1,6 +1,6 @@
 ---
 title: "Output Formats - HTML"
-description: "CyberGo HTML output-format API reference, covering the ExtractToMarkdown and ExtractToJSON package functions and Processor methods, with byte- or file-based extraction to Markdown/JSON, context variants, and Result custom MarshalJSON serialization."
+description: "CyberGo HTML output API: ExtractToMarkdown and ExtractToJSON package functions and Processor methods for Markdown/JSON output with Result MarshalJSON."
 ---
 
 # Output Formats

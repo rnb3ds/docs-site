@@ -1,13 +1,13 @@
 ---
 title: "보안 개요 - HTTPC"
-description: "HTTPC 보안 기능 개요: TLS 1.2+ 버전 제어, SSRF 사설 IP 차단과 CIDR 면제, CRLF 주입 방어, StrictCookieSecurityConfig Cookie 보안, RedirectWhitelist 리다이렉트 허용 목록과 응답 본문 크기 제한을 다룹니다."
+description: "HTTPC 보안 기능 개요: TLS 1.2+ 버전 제어, SSRF 사설 IP 차단과 CIDR 면제, CRLF 주입 방어, StrictCookieSecurityConfig Cookie 보안과 리다이렉트 허용 목록을 다룹니다."
 ---
 
 # 보안 개요
 
 HTTPC은 기본 보안(Secure by Default)이며, 모든 보안 기능이 즉시 사용 가능합니다.
 
-## 보안 기능 총览
+## 보안 기능 개요
 
 | 기능 | 기본값 | 설명 |
 |------|--------|------|

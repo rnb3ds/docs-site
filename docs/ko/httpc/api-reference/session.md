@@ -1,6 +1,6 @@
 ---
 title: "세션 관리 - HTTPC"
-description: "HTTPC SessionManager API 레퍼런스: NewSessionManager 생성, SessionConfig 설정, SetHeader/SetHeaders 헤더 관리, SetCookie/SetCookies 메서드, SetCookieSecurity 검증과 UpdateFromResult 응답 동기화를 다룹니다."
+description: "HTTPC SessionManager API 레퍼런스: NewSessionManager 생성, SessionConfig 설정, SetHeader 헤더 관리, SetCookie 메서드와 SetCookieSecurity 검증의 완전한 사용법을 제공합니다."
 ---
 
 # 세션 관리

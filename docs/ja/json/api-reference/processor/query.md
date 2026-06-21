@@ -1,6 +1,6 @@
 ---
 title: "Processor パスクエリ - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON Processor パスクエリメソッド完全リファレンス：Get/GetString/GetInt などの型安全な取得、GetMultiple バッチクエリ、SafeGet 安全な取得と AccessResult、GetTyped[T] ジェネリック取得、JSONPath 式とキャッシュ最適化をサポート。"
+description: "CyberGo JSON Processor パスクエリメソッド完全リファレンス：Get/GetString/GetInt などの型安全な取得、GetMultiple バッチクエリ、SafeGet 安全な取得と AccessResult、GetTyped[T] ジェネリック取得、JSONPath 式と Go のキャッシュ最適化をサポート。"
 ---
 
 # パスクエリメソッド

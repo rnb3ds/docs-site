@@ -1,6 +1,6 @@
 ---
 title: "상수와 오류 - HTML"
-description: "CyberGo HTML 상수와 오류 타입 API 참조. DefaultMaxInputSize 등 기본값 상수, ErrInputTooLarge 등 센티넬 오류, 그리고 InputError·ConfigError·FileError 구조화된 오류를 포함하며, 모두 errors.Is/As를 지원해 런타임 예외를 정확히 처리합니다."
+description: "CyberGo HTML 상수와 오류 타입 API 참조. DefaultMaxInputSize 등 기본값 상수, ErrInputTooLarge 등 센티넬 오류, InputError·ConfigError·FileError 구조화된 오류를 다루며 errors.Is/As를 지원합니다."
 ---
 
 # 상수와 오류

@@ -1,6 +1,6 @@
 ---
 title: "Cheat Sheet - HTTPC"
-description: "HTTPC cheat sheet: client creation with five configuration presets, seven HTTP request methods including Get/Post, 28 WithXxx request options, Result response handling, middleware chain composition, ClientError error classification, file download, resumable downloads, and domain client operations with complete code snippets."
+description: "HTTPC cheat sheet: client creation, seven request methods, WithXxx options, Result handling, middleware chains, and file download code snippets."
 ---
 
 # Cheat Sheet

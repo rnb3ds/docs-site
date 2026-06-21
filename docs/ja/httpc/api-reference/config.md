@@ -1,6 +1,6 @@
 ---
 title: "設定 - HTTPC"
-description: "HTTPC 設定システム API リファレンス：Config メイン構造体と Timeouts、Connection、Security、Retry、Middleware の 5 つのサブ設定グループの全フィールド説明、DefaultConfig など 5 種類のプリセット関数、ValidateConfig 検証と Cookie セキュリティ設定。"
+description: "HTTPC 設定システム API リファレンス: Config 構造体と Timeouts、Connection、Security、Retry、Middleware サブ設定、DefaultConfig など 5 種類のプリセット、ValidateConfig 検証の完全なフィールド説明を提供します。"
 ---
 
 # 設定

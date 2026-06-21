@@ -1,6 +1,6 @@
 ---
 title: "Large File Processing - CyberGo JSON | API Reference"
-description: "CyberGo JSON large file processing API complete reference: including ForeachFile stream processing, ForeachFileChunked batch processing, ForeachFileWithPath path-based processing, ForeachFileNested nested iteration, memory control configuration, and performance optimization best practices guide."
+description: "CyberGo JSON large file processing API complete reference: including ForeachFile stream processing, ForeachFileChunked batch processing, ForeachFileWithPath path-based processing, ForeachFileNested nested iteration, and best practices for Go memory control configuration."
 ---
 
 # Large File Processing

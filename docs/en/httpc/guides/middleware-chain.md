@@ -1,6 +1,6 @@
 ---
 title: "Middleware Chain - HTTPC"
-description: "HTTPC middleware chain guide: onion model execution principle with bidirectional request/response processing, eight built-in middleware including Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit configuration, Chain manual composition, custom MiddlewareFunc development, and circuit breaker short-circuit middleware example."
+description: "HTTPC middleware chain guide: onion-model execution, eight built-in middleware, Chain composition, custom MiddlewareFunc, and a circuit-breaker example."
 ---
 
 # Middleware Chain

@@ -1,6 +1,6 @@
 ---
 title: "パフォーマンス最適化 - HTTPC"
-description: "HTTPC パフォーマンス最適化ガイド：Default/Secure/Performance/Minimal 4 種類のプリセット比較とシナリオ選択、プリセットベースの接続プールとタイムアウト微調整、内蔵オブジェクトプール自動管理による GC 負荷軽減、高並列リクエストパターン、パフォーマンスベンチマーク手法とよくあるアンチパターン分析。"
+description: "HTTPC パフォーマンス最適化ガイド: Default/Secure/Performance/Minimal 4 種類のプリセット比較とシナリオ選択、接続プールとタイムアウト微調整、Result ライフサイクル管理、高並列リクエストパターンを解説します。"
 ---
 
 # パフォーマンス最適化
@@ -43,14 +43,14 @@ client, _ := httpc.New(cfg)
 
 ## オブジェクトプール再利用
 
-HTTPC は Result オブジェクトプールを内蔵し、オブジェクトのライフサイクルを自動管理します：
+HTTPC は内部でエンジンのレスポンスオブジェクトと文字列ビルダーを sync.Pool で再利用し、GC 負荷を軽減します。Result 自体はリクエストごとに新規作成され、GC が自動的に回収します：
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result オブジェクトは内蔵オブジェクトプールで自動管理、GC が自動的にクリーンアップ
+// Result はリクエストごとに新規作成、GC が自動回収、手動解放不要
 ```
 
 :::tip

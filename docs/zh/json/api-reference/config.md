@@ -1,6 +1,6 @@
 ---
 title: "Config 配置 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Config 配置选项完整参考：详解 DefaultConfig 默认配置、SecurityConfig 安全配置、PrettyConfig 格式化配置、缓存设置、大小限制、安全选项和编码选项，自定义 Processor 和所有 JSON 操作的行为。"
+description: "CyberGo JSON Config 配置选项完整参考：详解 DefaultConfig 默认配置、SecurityConfig 安全配置、PrettyConfig 格式化配置、缓存设置、大小限制、安全选项和编码选项，自定义 Go 应用所有 JSON 操作行为。"
 ---
 
 # Config
@@ -413,7 +413,7 @@ const (
 ```
 
 ::: info 内部常量
-路径验证长度限制（`maxPathLength`）、缓存键长度限制（`maxCacheKeyLength`）等常量已转为内部实现，不再作为公开 API 导出。相关默认值通过 `Config` 结构体的字段默认值体现。
+路径验证长度限制（`maxPathLength`）等常量已转为内部实现，不再作为公开 API 导出。相关默认值通过 `Config` 结构体的字段默认值体现。
 :::
 
 ---

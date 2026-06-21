@@ -1,6 +1,6 @@
 ---
 title: "エンコード・デコード関数 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON エンコード・デコード関数リファレンス：Marshal/Unmarshal シリアライズ、Compact/Indent/HTMLEscape フォーマット、Encode/EncodePretty/EncodeWithConfig/Prettify 設定可能エンコード、encoding/json と 100% 互換。"
+description: "CyberGo JSON エンコード・デコード関数リファレンス：Marshal/Unmarshal シリアライズ、Compact/Indent/HTMLEscape フォーマット、Encode/EncodePretty/EncodeWithConfig/Prettify 設定可能エンコード、Go 標準の encoding/json と 100% 互換。"
 ---
 
 # エンコード・デコード関数
@@ -97,7 +97,7 @@ fmt.Println(buf.String())
 
 シグネチャ：`func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-JSON コンテンツの HTML エスケープを行い、特殊文字（`&`、`<`、`>`）を Unicode エスケープシーケンスに置き換え、結果を `dst` に書き込みます。戻り値はありません。
+JSON コンテンツの HTML エスケープを行い、`<`、`>`、`&` などの特殊文字（および U+2028、U+2029）を対応する Unicode エスケープシーケンスに置き換え、結果を `dst` に書き込みます。戻り値はありません。
 
 ```go
 var buf bytes.Buffer

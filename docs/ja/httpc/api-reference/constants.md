@@ -1,6 +1,6 @@
 ---
 title: "定数とタイプ - HTTPC"
-description: "HTTPC 定数と補助タイプ API リファレンス：BodyKind 6 種類のリクエストボディ列挙と自動検出ルール、FormData と FileData ファイルアップロードタイプ、AuditEvent 監査イベント構造体、AuditMiddlewareConfig 監査設定と SourceIPKey などのコンテキストキー定義。"
+description: "HTTPC 定数とタイプ API リファレンス: BodyKind リクエストボディ列挙と自動検出、FormData と FileData アップロードタイプ、AuditEvent 監査イベント構造、コンテキストキー定義の完全な説明を提供します。"
 ---
 
 # 定数とタイプ

@@ -1,6 +1,6 @@
 ---
 title: "リクエストとレスポンス - HTTPC"
-description: "HTTPC リクエストとレスポンス処理ガイド：パッケージ関数とクライアントリクエスト、WithHeader/WithJSON/WithForm などのリクエストオプション、WithBearerToken 認証、WithQuery パラメータ、Cookie 管理、コンテキスト制御、ストリーミングレスポンスと解凍サイズ制限設定。"
+description: "HTTPC リクエストとレスポンスガイド: パッケージレベル関数とクライアントリクエスト、WithHeader/WithJSON などのリクエストオプション、Bearer 認証、クエリパラメータ、Cookie 管理、コンテキスト制御のベストプラクティスを解説します。"
 ---
 
 # リクエストとレスポンス

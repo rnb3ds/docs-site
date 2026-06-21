@@ -1,6 +1,6 @@
 ---
 title: "Processor - CyberGo JSON | Справочник API"
-description: "Полный справочник Processor CyberGo JSON: создание через New, GetString/Set/Delete для операций с данными, Foreach для итерации, Encode для кодирования, Close для управления жизненным циклом, Stats для статистики и конфигурация кэша."
+description: "Полный справочник Processor CyberGo JSON: создание через New, GetString/Set/Delete для операций с данными, Foreach для итерации, Encode для кодирования, Close для управления жизненным циклом, Stats для статистики и конфигурация кэша — для высокочастотных JSON-операций и повторного использования в обработке данных в Go."
 ---
 
 # Processor

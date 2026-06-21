@@ -418,4 +418,4 @@ func main() {
 
 - [Package Functions](./functions) - Type-specific getter functions
 - [Type Definitions](./types) - AccessResult detailed definition
-- [Configuration](./config) - ProcessorOptions configuration options
+- [Configuration](./config) - Config configuration options

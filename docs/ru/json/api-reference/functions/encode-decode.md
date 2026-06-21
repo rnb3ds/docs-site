@@ -1,6 +1,6 @@
 ---
 title: "Функции кодирования и декодирования - CyberGo JSON | Справочник API"
-description: "Справочник функций кодирования и декодирования CyberGo JSON: сериализация Marshal/Unmarshal, форматирование Compact/Indent/HTMLEscape, настраиваемое кодирование Encode/EncodePretty/EncodeWithConfig/Prettify, 100% совместимость с encoding/json."
+description: "Справочник функций кодирования и декодирования CyberGo JSON: сериализация Marshal/Unmarshal, форматирование Compact/Indent/HTMLEscape, настраиваемое кодирование Encode/EncodePretty/EncodeWithConfig/Prettify, 100% совместимость со стандартным Go encoding/json."
 ---
 
 # Функции кодирования и декодирования
@@ -97,7 +97,7 @@ fmt.Println(buf.String())
 
 Сигнатура: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-HTML-экранирование содержимого JSON, замена специальных символов (`&`, `<`, `>`) на Unicode-escape последовательности, результат записывается в `dst`. Возвращаемого значения нет.
+HTML-экранирование содержимого JSON, замена специальных символов `<`, `>`, `&` (а также U+2028, U+2029) на соответствующие Unicode-escape последовательности, результат записывается в `dst`. Возвращаемого значения нет.
 
 ```go
 var buf bytes.Buffer

@@ -1,6 +1,6 @@
 ---
 title: "Type Definitions - CyberGo JSON | API Reference"
-description: "CyberGo JSON core type definitions reference: including Result[T] generic result, AccessResult dynamic access result, BatchOperation, BatchResult, Schema validation schema, Stats, HealthStatus, IterableValue, and encoding error types, providing a complete type system foundation."
+description: "CyberGo JSON core type definitions reference: including Result[T] generic result, AccessResult dynamic access result, BatchOperation, BatchResult, Schema validation schema, Stats, HealthStatus, IterableValue, and encoding error types, providing a complete type system foundation for Go."
 ---
 
 # Type Definitions

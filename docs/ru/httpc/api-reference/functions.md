@@ -1,6 +1,6 @@
 ---
 title: "Функции пакета - HTTPC"
-description: "Справочник API функций пакета и методов клиента HTTPC: семь HTTP-методов Get/Post, создание клиента New, единый вход загрузки Download, SetSecurityWarnOutput для предупреждений безопасности, инструменты форматирования FormatBytes/FormatSpeed и NewDomain для создания доменного клиента."
+description: "Справочник API функций пакета HTTPC: семь HTTP-методов Get/Post, создание клиента New, вход загрузки Download, инструменты форматирования и NewDomain."
 ---
 
 # Функции пакета

@@ -1,6 +1,6 @@
 ---
 title: "Link Extraction & Grouping - HTML"
-description: "CyberGo HTML link extraction and grouping: ExtractAllLinks for CSS, JS, images, video, and audio; Include filters, relative-URL resolution, and crawler practices."
+description: "CyberGo HTML link extraction and grouping: ExtractAllLinks for CSS, JS, images, video, audio; Include filters, relative-URL resolution, and crawler practices."
 ---
 
 # Link Extraction & Grouping

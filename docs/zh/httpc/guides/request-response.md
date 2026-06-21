@@ -1,6 +1,6 @@
 ---
 title: "请求与响应 - HTTPC"
-description: "HTTPC 请求与响应处理指南：包级函数与客户端请求、WithHeader/WithJSON/WithForm 等请求选项、WithBearerToken 认证、WithQuery 查询参数、Cookie 管理、上下文控制、流式响应与解压大小限制配置。"
+description: "HTTPC 请求与响应处理指南：包级函数与客户端请求、WithHeader/WithJSON/WithForm 等请求选项、WithBearerToken 认证、WithQuery 查询参数、Cookie 管理、上下文控制与流式响应解压大小限制配置。"
 ---
 
 # 请求与响应

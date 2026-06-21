@@ -92,7 +92,7 @@ func main() {
 | Generic API | `GetTyped[T]` | Type-safe generic getter |
 | Pre-parse | `Processor.PreParse`, `Processor.GetFromParsed` | Parse once, query many times |
 | Safe access | `SafeGet` → `AccessResult` | Chained type conversions |
-| Stream processing | `Processor.ForeachFile` | Memory-friendly for large files |
+| Stream processing | `NDJSONProcessor` | Line-by-line streaming, controlled memory |
 | JSONL processing | `StreamLinesInto[T]` | Log/data pipeline support |
 | Schema validation | `ValidateSchema` | JSON Schema validation |
 

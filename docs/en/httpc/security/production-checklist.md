@@ -1,6 +1,6 @@
 ---
 title: "Production Checklist - HTTPC"
-description: "HTTPC production environment security checklist: TLS verification, SSRF AllowPrivateIPs confirmation and CIDR audit, Timeouts timeout configuration, MaxResponseBodySize size limits, MaxRetries retry strategy, resource cleanup, and AuditMiddleware monitoring and auditing."
+description: "HTTPC production security checklist: TLS verification, SSRF and CIDR audit, timeout configuration, response size limits, retry strategy, and audit monitoring."
 ---
 
 # Production Checklist

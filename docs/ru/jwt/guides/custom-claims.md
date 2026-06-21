@@ -1,6 +1,6 @@
 ---
 title: "Пользовательские Claims - JWT"
-description: "Руководство CyberGo JWT по пользовательским Claims: реализация интерфейса CustomClaims, различия между встроенной и пользовательской валидацией, использование ValidateInto/RefreshInto с примерами кода."
+description: "CyberGo JWT — кастомные Claims: реализация интерфейса CustomClaims, отличия валидации, ValidateInto и RefreshInto с примерами кода."
 ---
 
 # Пользовательские Claims

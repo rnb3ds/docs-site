@@ -1,6 +1,6 @@
 ---
 title: "Interface Definitions - HTTPC"
-description: "HTTPC core interfaces API reference: Client full-featured interface with seven HTTP methods, Doer minimal execution interface, DomainClienter domain client, RetryPolicy retry strategy, RequestMutator/ResponseMutator middleware interfaces, and Handler/MiddlewareFunc definitions."
+description: "HTTPC core interfaces API reference: the Client interface, Doer, DomainClienter, RetryPolicy, and middleware interface definitions."
 ---
 
 # Interface Definitions

@@ -1,6 +1,6 @@
 ---
 title: "API Reference - JWT"
-description: "CyberGo JWT API reference index covering package-level functions, Processor core methods, Config configuration, Claims types, interface definitions, types and constants, and error handling documentation."
+description: "CyberGo JWT API reference index: package functions, Processor methods, Config, Claims, interfaces, types and constants, and error handling."
 ---
 
 # API Reference

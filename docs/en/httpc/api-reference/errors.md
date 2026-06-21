@@ -1,6 +1,6 @@
 ---
 title: "Error Types - HTTPC"
-description: "HTTPC error types API reference: ClientError struct with eight fields and five methods including Code, IsRetryable, and Unwrap, twelve ErrorType enums including ErrorTypeNetwork, twelve sentinel error variables like ErrNilConfig, and errors.Is/As matching examples."
+description: "HTTPC error types API reference: ClientError struct fields and methods, twelve ErrorType classifications, sentinel errors, and errors.Is/As matching."
 ---
 
 # Error Types

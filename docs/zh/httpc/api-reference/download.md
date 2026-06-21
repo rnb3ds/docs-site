@@ -1,6 +1,6 @@
 ---
 title: "文件下载 - HTTPC"
-description: "HTTPC 文件下载 API 参考：Download 统一下载入口函数签名、DownloadConfig 配置结构体、DownloadProgressCallback 进度回调、DownloadResult 结果类型、SHA-256 校验和验证与 UNC 路径防护等六层安全保护。"
+description: "HTTPC 文件下载 API 参考：Download 统一下载入口函数、DownloadConfig 配置结构体、DownloadProgressCallback 进度回调、DownloadResult 结果类型、SHA-256 校验和验证与 UNC 路径防护等六层安全保护。"
 ---
 
 # 文件下载

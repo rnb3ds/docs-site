@@ -1,6 +1,6 @@
 ---
 title: "错误 - JWT API 参考"
-description: "CyberGo JWT 错误 API 参考：19 个哨兵错误（ErrTokenExpired、ErrTokenRevoked 等）、ValidationError 类型及 errors.Is() 错误匹配模式。"
+description: "错误参考：CyberGo JWT 定义 19 个哨兵错误，覆盖配置校验、令牌验证、签名算法、过期时间、签发者与受众、黑名单、速率限制与生命周期等场景，全部支持 errors.Is 匹配，并提供 ValidationError 字段级错误类型与处理模式。"
 ---
 
 # 错误

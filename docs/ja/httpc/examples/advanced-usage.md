@@ -1,6 +1,6 @@
 ---
 title: "高度な使用例 - HTTPC"
-description: "HTTPC 高度な使用例：カスタム RetryPolicy リトライ戦略（502/503/504 のみ）、Recovery/Timeout/Logging/Metrics/Audit を含む完全なミドルウェアチェーン、RESTful API クライアントラッパー、sync.WaitGroup 並列ダウンロードと HMAC-SHA256 リクエスト署名カスタムミドルウェア。"
+description: "HTTPC 高度な使用例集: カスタム RetryPolicy リトライ戦略、完全なミドルウェアチェーン構成、RESTful API クライアントラッパー、並列ダウンロード、HMAC-SHA256 署名ミドルウェアの完全なコードを提供します。"
 ---
 
 # 高度な使用例

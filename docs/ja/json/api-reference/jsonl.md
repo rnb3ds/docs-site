@@ -1,6 +1,6 @@
 ---
 title: "JSONL プロセッサ - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON JSONL/NDJSON プロセッサリファレンス：StreamJSONL ストリーム処理、JSONLWriter 書き込み、StreamLinesInto[T] ジェネリックストリーム、ParseJSONL 解析、ToJSONL 変換、設定オプションを含む、JSON Lines 形式の読み書きと高度な操作を完全サポート。"
+description: "CyberGo JSON JSONL/NDJSON プロセッサリファレンス：StreamJSONL ストリーム処理、JSONLWriter 書き込み、StreamLinesInto[T] ジェネリックストリーム、ParseJSONL 解析、ToJSONL 変換、設定オプションを含む、Go の JSON Lines 形式の読み書きと高度な操作を完全サポート。"
 ---
 
 # JSONL プロセッサ

@@ -1,6 +1,6 @@
 ---
 title: "Batch Processing - HTML"
-description: "CyberGo HTML concurrent batch extraction API reference, covering the ExtractBatch and ExtractBatchFiles families and their context variants, with WorkerPoolSize concurrency control, up to 10000 items per batch, and a BatchResult with success, failed, and cancelled counts — for large-scale concurrent HTML extraction."
+description: "CyberGo HTML batch API: ExtractBatch and ExtractBatchFiles families with context variants, WorkerPoolSize concurrency, 10000-item batches, and BatchResult."
 ---
 
 # Batch Processing

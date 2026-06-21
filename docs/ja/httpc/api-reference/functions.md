@@ -1,6 +1,6 @@
 ---
 title: "パッケージ関数 - HTTPC"
-description: "HTTPC パッケージレベル関数とクライアントメソッド API リファレンス：Get/Post など 7 種類の HTTP メソッド、New クライアント作成、Download 統合ダウンロードエントリ、SetSecurityWarnOutput セキュリティ警告、FormatBytes/FormatSpeed フォーマットツールと NewDomain ドメインクライアント作成。"
+description: "HTTPC パッケージレベル関数 API リファレンス: Get/Post など 7 種類の HTTP メソッド、New クライアント作成、Download エントリ、FormatBytes フォーマットツール、NewDomain ドメインクライアント作成の完全な使い方を提供します。"
 ---
 
 # パッケージ関数

@@ -1,6 +1,6 @@
 ---
 title: "クイックスタート - HTTPC"
-description: "5 分で HTTPC 安全 HTTP クライアントライブラリを始めましょう。go get インストールとプロジェクト初期化、GET/POST リクエスト送信とレスポンス処理、5 つの設定プリセットの選び方、JSON 解析と型バインディング、Bearer Token 認証、ClientError エラー分類処理を解説します。"
+description: "HTTPC クイックスタート: go get インストールと初期化、GET/POST リクエストとレスポンス処理、5 つの設定プリセット選択、JSON 解析、Bearer Token 認証で 5 分で安全な HTTP クライアントを始め、最初のリクエストを完成させます。"
 ---
 
 # クイックスタート

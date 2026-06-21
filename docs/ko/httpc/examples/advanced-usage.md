@@ -1,6 +1,6 @@
 ---
 title: "고급 예제 - HTTPC"
-description: "HTTPC 고급 예제 모음: 커스텀 RetryPolicy 재시도 전략(502/503/504만), Recovery/Timeout/Logging/Metrics/Audit 완전한 미들웨어 체인 구성, RESTful API 클라이언트 래핑, sync.WaitGroup 동시성 다운로드와 HMAC-SHA256 요청 서명 커스텀 미들웨어를 다룹니다."
+description: "HTTPC 고급 예제 모음: 커스텀 RetryPolicy 재시도 전략, 완전한 미들웨어 체인 구성, RESTful API 클라이언트 래핑, 동시성 다운로드와 HMAC-SHA256 서명 미들웨어의 완전한 코드를 제공합니다."
 ---
 
 # 고급 예제

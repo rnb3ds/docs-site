@@ -246,10 +246,10 @@ err := withRetry(func() error {
 
 ```go
 func getConfig(data string) Config {
-    cfg := DefaultConfig()
+    cfg := json.DefaultConfig()
 
     // Use type-safe getter functions with built-in default values
-    strict := json.GetBool(data, "config.strict", true)
+    cfg.StrictMode = json.GetBool(data, "config.strict", true)
 
     return cfg
 }

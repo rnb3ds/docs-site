@@ -39,7 +39,7 @@ cfg.Encoding = "gbk"
 По умолчанию максимум 50 МБ (`DefaultMaxInputSize = 52428800`). Можно изменить через конфигурацию:
 
 ```go
-cfg.MaxInputSize = 100 * 1024 * 1024 // 100 МБ
+cfg.MaxInputSize = 10 * 1024 * 1024 // 10 МБ
 ```
 
 ## Как получить вывод в формате Markdown?

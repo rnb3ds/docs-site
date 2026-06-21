@@ -92,7 +92,7 @@ func main() {
 | Обобщённый API | `GetTyped[T]` | Типобезопасное обобщённое получение |
 | Предпарсинг | `Processor.PreParse`, `Processor.GetFromParsed` | Один парсинг — множество запросов |
 | Безопасное получение | `SafeGet` → `AccessResult` | Цепочечные преобразования типов |
-| Потоковая обработка | `Processor.ForeachFile` | Экономия памяти при работе с большими файлами |
+| Потоковая обработка | `NDJSONProcessor` | Потоковая обработка построчно, контролируемая память |
 | Обработка JSONL | `StreamLinesInto[T]` | Конвейер логов/данных |
 | Валидация Schema | `ValidateSchema` | Валидация по JSON Schema |
 

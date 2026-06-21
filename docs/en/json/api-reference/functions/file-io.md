@@ -1,6 +1,6 @@
 ---
 title: "File Operation Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON file operation functions complete reference: including LoadFromReader stream reading, ParseJSONL/ToJSONL JSONL processing, StreamLinesInto[T] generic stream processing, NewJSONLWriter writer, and JSONL configuration details."
+description: "CyberGo JSON file operation functions complete reference: including LoadFromReader stream reading, ParseJSONL/ToJSONL JSONL processing, StreamLinesInto[T] generic stream processing, NewJSONLWriter writer, and JSONL configuration details for large-file streaming in Go."
 ---
 
 # File Operation Functions

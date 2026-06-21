@@ -1,6 +1,6 @@
 ---
 title: "Request and Response - HTTPC"
-description: "HTTPC request and response handling guide: package-level functions and client requests, request options including WithHeader/WithJSON/WithForm, WithBearerToken authentication, WithQuery query parameters, cookie management, context control, streaming responses, and decompressed body size limits."
+description: "HTTPC request and response guide: package functions and client requests, WithHeader/WithJSON options, Bearer auth, query parameters, and context control."
 ---
 
 # Request and Response

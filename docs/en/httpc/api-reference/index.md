@@ -1,6 +1,6 @@
 ---
 title: "API Reference - HTTPC"
-description: "HTTPC API reference index: categorized navigation across three groups -- core, request/response, and advanced features -- covering package-level HTTP functions, 28 WithXxx request options, Config configuration system with five presets, 8 built-in middleware factories, domain client with session management, file download with resumable support, and error types with constant enums."
+description: "HTTPC API reference index: navigate core, request/response, and advanced features — functions, options, presets, middleware, downloads, and error types."
 ---
 
 # API Reference

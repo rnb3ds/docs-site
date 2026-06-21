@@ -1,6 +1,6 @@
 ---
 title: "Конфигурация - HTTPC"
-description: "Справочник API системы конфигурации HTTPC: основная структура Config и описание всех полей пяти подконфигураций Timeouts, Connection, Security, Retry, Middleware, пять предустановок DefaultConfig и др., ValidateConfig и безопасность Cookie."
+description: "Справочник API конфигурации HTTPC: структура Config с подконфигурациями Timeouts, Connection, Security, Retry, Middleware, пять пресетов и ValidateConfig."
 ---
 
 # Конфигурация

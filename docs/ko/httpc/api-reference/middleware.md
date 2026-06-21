@@ -1,6 +1,6 @@
 ---
 title: "미들웨어 - HTTPC"
-description: "HTTPC 미들웨어 시스템 API 레퍼런스: Chain 양파 모델 조합, Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit 여덟 개 내장 미들웨어, AuditMiddlewareWithConfig 설정형 감사와 AuditEvent 감사 이벤트 구조를 다룹니다."
+description: "HTTPC 미들웨어 API 레퍼런스: Chain 양파 모델 조합과 Recovery, Logging, RequestID, Timeout, Metrics, Audit 등 여덟 개 내장 미들웨어 및 감사 설정의 완전한 설명을 제공합니다."
 ---
 
 # 미들웨어

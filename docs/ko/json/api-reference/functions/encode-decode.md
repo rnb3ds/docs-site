@@ -1,6 +1,6 @@
 ---
 title: "인코딩 디코딩 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 인코딩 디코딩 함수 참조: Marshal/Unmarshal 직렬화, Compact/Indent/HTMLEscape 포맷, Encode/EncodePretty/EncodeWithConfig/Prettify 설정형 인코딩을 포함하며, encoding/json과 100% 호환됩니다."
+description: "CyberGo JSON 인코딩 디코딩 함수 참조: Marshal/Unmarshal 직렬화, Compact/Indent/HTMLEscape 포맷, Encode/EncodePretty/EncodeWithConfig/Prettify 설정형 인코딩을 포함하며, Go 표준 encoding/json과 100% 호환됩니다."
 ---
 
 # 인코딩 디코딩 함수
@@ -97,7 +97,7 @@ fmt.Println(buf.String())
 
 시그니처: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-JSON 내용을 HTML 이스케이프하여 특수 문자(`&`, `<`, `>`)를 유니코드 이스케이프 시퀀스로 교체하고 결과를 `dst`에 씁니다. 반환값이 없습니다.
+JSON 내용을 HTML 이스케이프하여 `<`, `>`, `&` 등의 특수 문자(및 U+2028, U+2029)를 대응하는 유니코드 이스케이프 시퀀스로 교체하고 결과를 `dst`에 씁니다. 반환값이 없습니다.
 
 ```go
 var buf bytes.Buffer

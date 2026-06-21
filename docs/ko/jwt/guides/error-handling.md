@@ -1,6 +1,6 @@
 ---
 title: "오류 처리 - JWT"
-description: "CyberGo JWT 오류 처리 가이드: 17개 센티넬 오류 분류, errors.Is() 매칭 패턴, ValidationError 타입 및 웹 서비스 오류 처리 모범 사례."
+description: "CyberGo JWT 오류 처리 가이드: 구성·토큰 검증·속도 제한·수명주기 각 단계에서 19개 센티넬 오류가 트리거되는 조건을 분류하고 errors.Is() 매칭, ValidationError 필드 오류와 웹 서비스 표준 응답 모범 사례."
 ---
 
 # 오류 처리

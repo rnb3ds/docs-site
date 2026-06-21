@@ -1,6 +1,6 @@
 ---
 title: "고급 예제 - JWT"
-description: "CyberGo JWT 고급 예제: RSA/ECDSA 비대칭 서명, 커스텀 Claims, Redis 블랙리스트 백엔드, 클럭 인젝션 테스트, 미검증 파싱 및 웹 서비스 통합."
+description: "CyberGo JWT 고급 예제: RSA·ECDSA 비대칭 서명 검증, 커스텀 Claims 비즈니스 구조체, Redis 블랙리스트 백엔드, FixedClock 클럭 인젝션 테스트, 미검증 파싱과 완전한 웹 서비스 통합."
 ---
 
 # 고급 예제

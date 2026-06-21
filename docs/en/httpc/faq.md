@@ -1,6 +1,6 @@
 ---
 title: "FAQ - HTTPC"
-description: "HTTPC frequently asked questions: choosing between package-level functions and client instances, comparison of five configuration presets and their use cases, HTTP/SOCKS5 proxy and DoH configuration, Cookie session management and retry configuration, file download resume, errors.Is/As error matching patterns, and four-level timeout tuning strategies."
+description: "HTTPC FAQ: package functions vs clients, configuration presets, proxy and DoH, Cookie sessions, retry and timeout tuning, and errors.Is/As matching."
 ---
 
 # FAQ

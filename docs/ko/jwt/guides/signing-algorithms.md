@@ -1,6 +1,6 @@
 ---
 title: "서명 알고리즘 - JWT"
-description: "CyberGo JWT 서명 알고리즘 가이드: HMAC, RSA, RSA-PSS, ECDSA 4종류 12개 알고리즘의 사용법, 키 요구사항, 시나리오 선택 및 성능 비교."
+description: "CyberGo JWT 서명 알고리즘 가이드: HMAC·RSA·RSA-PSS·ECDSA 4종 12개 알고리즘의 키 타입·길이·생성·성능·서명 길이·아키텍처 결합도를 체계적 비교, 단일/마이크로서비스 선택 가이드와 키 관리 보안 실무."
 ---
 
 # 서명 알고리즘

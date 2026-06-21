@@ -1,6 +1,6 @@
 ---
 title: "Getting Started - JWT"
-description: "CyberGo JWT quick start guide covering installation and configuration, token issuance and validation, refresh and revocation, HMAC/RSA/ECDSA algorithm selection, custom Claims, and blacklist and rate limiting configuration."
+description: "CyberGo JWT quick start: install and issue/validate/refresh/revoke tokens; HMAC/RSA/RSA-PSS/ECDSA (12 algorithms); custom Claims, blacklist, rate limiting."
 ---
 
 # Getting Started

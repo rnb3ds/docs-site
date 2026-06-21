@@ -1,6 +1,6 @@
 ---
 title: "Package Functions - HTTPC"
-description: "HTTPC package-level functions and client methods API reference: seven HTTP methods including Get/Post, New client creation, the unified Download entry point, SetSecurityWarnOutput helper function, FormatBytes/FormatSpeed formatting tools, and NewDomain domain client creation."
+description: "HTTPC package functions API reference: seven HTTP methods like Get/Post, New client creation, the Download entry, helpers, and NewDomain creation."
 ---
 
 # Package Functions

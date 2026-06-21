@@ -1,6 +1,6 @@
 ---
 title: "リトライとフォールトトレランス - HTTPC"
-description: "HTTPC リトライとフォールトトレランスガイド：デフォルト指数バックオフリトライ戦略と RetryConfig 設定、408/429/5xx 自動リトライ条件、RetryPolicy カスタムインターフェース（内部タイプ制限の説明付き）、Retry-After レスポンスヘッダー自動解析、バックオフ戦略の選択とリクエストごとの WithMaxRetries 制御とベストプラクティス。"
+description: "HTTPC リトライとフォールトトレランスガイド: デフォルト指数バックオフ戦略と RetryConfig 設定、408/429/5xx 自動リトライ、カスタム RetryPolicy、Retry-After 解析、リクエストごとのリトライ制御を解説します。"
 ---
 
 # リトライとフォールトトレランス

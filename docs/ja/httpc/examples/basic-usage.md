@@ -1,6 +1,6 @@
 ---
 title: "基本的な使い方 - HTTPC"
-description: "HTTPC 基本的な使用例：クエリパラメータと認証付きの GET リクエスト、JSON/フォーム/ファイルアップロード POST リクエスト、FormData マルチフィールドフォーム、DefaultConfig カスタム設定、ProxyURL プロキシ、Recovery/Logging ミドルウェア、RequestID/Metrics メトリクス収集と進捗コールバック付きファイルダウンロードの完全なコード。"
+description: "HTTPC 基本的な使用例集: 認証付き GET リクエスト、JSON/フォーム/ファイルアップロード POST、カスタム設定、プロキシ、ミドルウェア、メトリクス収集、進捗コールバック付きファイルダウンロードの完全なコードを提供します。すべての例はすぐに実行できます。"
 ---
 
 # 基本的な使い方

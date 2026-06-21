@@ -1,6 +1,6 @@
 ---
 title: "Оптимизация производительности - CyberGo JSON | Руководство"
-description: "Руководство по оптимизации производительности CyberGo JSON: повторное использование Processor, управление памятью, обработка файлов, параллелизм, настройка кэша и бенчмарки."
+description: "Руководство по оптимизации производительности CyberGo JSON: повторное использование Processor, управление памятью, обработка файлов, параллелизм, настройка кэша и бенчмарки для высокочастотной обработки JSON в Go."
 ---
 
 # Оптимизация производительности
@@ -106,17 +106,28 @@ wg.Wait()
 ### Использование пула воркеров
 
 ```go
-pool := workerpool.New(10)
-
 items := json.GetArray(data, "items")
-for _, item := range items {
-    item := item
-    pool.Submit(func() {
-        processItem(item)
-    })
+jobs := make(chan any, len(items))
+
+// Запуск фиксированного количества воркеров, повторное использование горутин во избежание частого создания/уничтожения
+var wg sync.WaitGroup
+workers := runtime.NumCPU()
+for w := 0; w < workers; w++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        for item := range jobs {
+            processItem(item)
+        }
+    }()
 }
 
-pool.StopWait()
+// Закрыть канал после раздачи задач, чтобы уведомить воркеров о завершении
+for _, item := range items {
+    jobs <- item
+}
+close(jobs)
+wg.Wait()
 ```
 
 ## Оптимизация конфигурации

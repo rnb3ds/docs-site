@@ -1,6 +1,6 @@
 ---
 title: "설정 - HTTPC"
-description: "HTTPC 설정 시스템 API 레퍼런스: Config 메인 구조체와 Timeouts, Connection, Security, Retry, Middleware 다섯 가지 하위 설정 그룹의 전체 필드 설명, DefaultConfig 등 다섯 가지 프리셋 함수, ValidateConfig 검증과 Cookie 보안 설정을 다룹니다."
+description: "HTTPC 설정 시스템 API 레퍼런스: Config 구조체와 Timeouts, Connection, Security, Retry, Middleware 하위 설정, DefaultConfig 등 다섯 가지 프리셋, ValidateConfig 검증의 완전한 필드 설명을 제공합니다."
 ---
 
 # 설정

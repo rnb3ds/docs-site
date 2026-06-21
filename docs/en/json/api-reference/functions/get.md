@@ -1,6 +1,6 @@
 ---
 title: "Query and Get Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON query and get functions complete reference: including Get/GetString/GetInt/GetFloat/GetBool type-safe getters, GetTyped[T] generic getter, Parse/ParseAny parsing functions, with full JSONPath expression support, providing zero-error getter mode with default values."
+description: "CyberGo JSON query and get functions complete reference: including Get/GetString/GetInt/GetFloat/GetBool type-safe getters, GetTyped[T] generic getter, Parse/ParseAny parsing functions, with full JSONPath expression support, providing a zero-error getter mode for Go development with default values."
 ---
 
 # Query and Get Functions
@@ -435,7 +435,7 @@ defer p.Close()
 data, err := p.ParseAny(`{"name": "test"}`)
 ```
 
-See [Processor Parse Methods](../processor/parse.md#parse-methods).
+See [Processor Parse Methods](../processor/parse#parse-methods).
 
 ## Validation Functions
 

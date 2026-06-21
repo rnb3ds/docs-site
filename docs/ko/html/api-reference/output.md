@@ -1,6 +1,6 @@
 ---
 title: "출력 형식 - HTML"
-description: "CyberGo HTML 출력 형식 API 참조. ExtractToMarkdown, ExtractToJSON 패키지 함수와 Processor 메서드를 다루고, 바이트 또는 파일에서 Markdown/JSON 변환, 컨텍스트 버전, Result 사용자 정의 MarshalJSON 직렬화를 지원합니다."
+description: "CyberGo HTML 출력 형식 API 참조. ExtractToMarkdown, ExtractToJSON 패키지 함수와 Processor 메서드로 바이트/파일을 Markdown/JSON으로 변환하며 Result 사용자 정의 직렬화를 지원합니다."
 ---
 
 # 출력 형식

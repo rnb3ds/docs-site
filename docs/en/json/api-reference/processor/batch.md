@@ -1,6 +1,6 @@
 ---
 title: "Processor Batch Operations - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor batch operation methods complete reference: ProcessBatch batch processing, BatchOperation definitions, BatchResult type, error handling strategies and ContinueOnError configuration, supporting transactional batch operations and performance optimization."
+description: "CyberGo JSON Processor batch operation methods complete reference: ProcessBatch batch processing, BatchOperation definitions, BatchResult type, error handling strategies and ContinueOnError configuration, suitable for Go batch data processing."
 ---
 
 # Batch Operation Methods

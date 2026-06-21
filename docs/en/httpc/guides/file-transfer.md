@@ -1,6 +1,6 @@
 ---
 title: "File Upload and Download - HTTPC"
-description: "HTTPC file upload and download guide: WithFile simple upload, WithFormData multipart multi-file upload, the unified Download entry point, progress callbacks, resumable downloads with ResumeDownload, SHA-256 checksums, and UNC path security protection."
+description: "HTTPC file upload and download guide: WithFile upload, WithFormData multi-file upload, unified Download, resumable ResumeDownload, and SHA-256 checksums."
 ---
 
 # File Upload and Download

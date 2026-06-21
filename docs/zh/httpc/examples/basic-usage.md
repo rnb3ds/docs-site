@@ -1,6 +1,6 @@
 ---
 title: "基础用法 - HTTPC"
-description: "HTTPC 基础用法示例集：带查询参数和认证的 GET 请求、JSON/表单/文件上传 POST 请求、FormData 多字段表单、DefaultConfig 自定义配置、ProxyURL 代理、Recovery/Logging 中间件、RequestID/Metrics 指标收集与带进度回调的文件下载完整代码。"
+description: "HTTPC 基础用法示例集：带查询参数和认证的 GET 请求、JSON/表单/文件上传 POST 请求、FormData 多字段表单、DefaultConfig 自定义配置、ProxyURL 代理、Recovery/Logging 中间件与带进度回调的文件下载完整代码。"
 ---
 
 # 基础用法

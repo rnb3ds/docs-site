@@ -1,6 +1,6 @@
 ---
 title: "Processor - Жизненный цикл - CyberGo JSON | Справочник API"
-description: "Справочник управления жизненным циклом Processor: New, Close, IsClosed, ClearCache, WarmupCache, GetStats, GetHealthStatus, AddHook, SetLogger, GetConfig."
+description: "Справочник управления жизненным циклом Processor: New, Close, IsClosed, ClearCache, WarmupCache, GetStats, GetHealthStatus, AddHook, SetLogger, GetConfig — для стабильной работы в production на Go."
 ---
 
 # Жизненный цикл и статистика

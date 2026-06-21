@@ -1,6 +1,6 @@
 ---
 title: "Request Options - HTTPC"
-description: "HTTPC request options API reference: WithHeader request headers, WithBearerToken authentication, WithJSON/WithXML/WithForm/WithBinary request body, WithQuery query parameters, five cookie options, and WithOnRequest/WithOnResponse callback functions."
+description: "HTTPC request options API reference: WithHeader, WithBearerToken authentication, WithJSON/WithForm bodies, WithQuery parameters, and callback functions."
 ---
 
 # Request Options

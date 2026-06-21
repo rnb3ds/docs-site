@@ -1,6 +1,6 @@
 ---
 title: "Определения интерфейсов - CyberGo JSON | Справочник API"
-description: "Полный справочник расширяемых интерфейсов CyberGo JSON: включает CustomEncoder, TypeEncoder, Validator, Hook интерфейсы, PathParser и DangerousPattern для гибкого расширения функций кодирования, валидации и защиты безопасности библиотеки."
+description: "Полный справочник расширяемых интерфейсов CyberGo JSON: включает CustomEncoder, TypeEncoder, Validator, Hook интерфейсы, PathParser и DangerousPattern для гибкого расширения функций кодирования, валидации и защиты безопасности библиотеки под задачи пользовательской сериализации и политик безопасности в Go."
 ---
 
 # Определения интерфейсов

@@ -1,6 +1,6 @@
 ---
 title: "Config 設定 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON Config 設定オプション完全リファレンス：DefaultConfig デフォルト設定、SecurityConfig セキュリティ設定、PrettyConfig フォーマット設定、キャッシュ設定、サイズ制限、セキュリティオプション、エンコードオプションの詳細解説。Processor とすべての JSON 操作の動作をカスタマイズ。"
+description: "CyberGo JSON Config 設定オプション完全リファレンス：DefaultConfig デフォルト設定、SecurityConfig セキュリティ設定、PrettyConfig フォーマット設定、キャッシュ設定、サイズ制限、セキュリティオプション、エンコードオプションの詳細解説。Go アプリケーションのすべての JSON 操作の動作をカスタマイズ。"
 ---
 
 # Config
@@ -413,7 +413,7 @@ const (
 ```
 
 ::: info 内部定数
-パス検証の長さ制限（`maxPathLength`）、キャッシュキーの長さ制限（`maxCacheKeyLength`）などの定数は内部実装に移行し、公開 API としてエクスポートされなくなりました。関連するデフォルト値は `Config` 構造体のフィールドデフォルト値として反映されています。
+パス検証の長さ制限（`maxPathLength`）などの定数は内部実装に移行し、公開 API としてエクスポートされなくなりました。関連するデフォルト値は `Config` 構造体のフィールドデフォルト値として反映されています。
 :::
 
 ---

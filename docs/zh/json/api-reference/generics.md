@@ -418,4 +418,4 @@ func main() {
 
 - [包函数](./functions) - 类型特定的 getter 函数
 - [类型定义](./types) - AccessResult 详细定义
-- [配置](./config) - ProcessorOptions 配置选项
+- [配置](./config) - Config 配置选项

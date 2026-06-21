@@ -1,6 +1,6 @@
 ---
 title: "Processor 出力メソッド - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON Processor 出力メソッドリファレンス：Encode エンコード、EncodePretty フォーマット、EncodeWithConfig カスタム設定、EncodeBatch/EncodeFields バッチエンコード、Compact/Indent/HTMLEscape フォーマット操作など、多様な JSON 出力ニーズに対応。"
+description: "CyberGo JSON Processor 出力メソッドリファレンス：Encode エンコード、EncodePretty フォーマット、EncodeWithConfig カスタム設定、EncodeBatch/EncodeFields バッチエンコード、Compact/Indent/HTMLEscape フォーマット操作など、Go の多様な JSON 出力ニーズに対応。"
 ---
 
 # 出力メソッド
@@ -169,10 +169,10 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 // }
 ```
 
-### Print（非公開化）
+### Print（削除）
 
 ::: warning API 変更のお知らせ
-`Print`、`PrintE`、`PrintPretty`、`PrintPrettyE` は内部メソッド（小文字命名）に移行され、公開 API としてエクスポートされなくなりました。以下の代替手段を使用してください：
+`Print`、`PrintE`、`PrintPretty`、`PrintPrettyE` はライブラリから削除され、提供されなくなりました。以下の代替手段を使用してください：
 
 ```go
 // コンパクト出力

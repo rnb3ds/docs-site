@@ -1,6 +1,6 @@
 ---
 title: "Processor 批量操作 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 批量操作参考：ProcessBatch 处理多操作、BatchOperation 定义（get/set/delete）、BatchResult 结果类型、ContinueOnError 配置和性能优化策略。"
+description: "CyberGo JSON Processor 批量操作参考：ProcessBatch 处理多操作、BatchOperation 定义（get/set/delete）、BatchResult 结果类型、ContinueOnError 配置与性能优化策略，适合 Go 批量数据处理。"
 ---
 
 # 批量操作方法

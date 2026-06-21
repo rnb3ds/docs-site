@@ -1,6 +1,6 @@
 ---
 title: "Вспомогательные функции - CyberGo JSON | Справочник API"
-description: "Полный справочник вспомогательных функций CyberGo JSON: включает CompareJSON для сравнения и проверки эквивалентности двух JSON, ClearCache/GetStats для управления кэшем и статистики, управление глобальным процессором и вспомогательные функции безопасного режима, предоставляющие удобный набор инструментов для повседневной работы с JSON."
+description: "Полный справочник вспомогательных функций CyberGo JSON: включает CompareJSON для сравнения и проверки эквивалентности двух JSON, ClearCache/GetStats для управления кэшем и статистики, управление глобальным процессором и вспомогательные функции безопасного режима, предоставляющие удобный набор инструментов для повседневной разработки на Go."
 ---
 
 # Вспомогательные функции
@@ -220,7 +220,7 @@ func main() {
 ## Функции вывода
 
 ::: warning
-`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` стали внутренними функциями (имена с маленькой буквы) и больше не экспортируются как открытый API. Используйте [Encode](./functions/encode-decode#encode), [EncodePretty](./functions/encode-decode#encodepretty) или [Prettify](./functions/encode-decode#prettify) вместе с `fmt.Println`. Подробности в разделе [Функции печати](./print).
+`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` удалены из библиотеки и больше не предоставляются. Используйте [Encode](./functions/encode-decode#encode), [EncodePretty](./functions/encode-decode#encodepretty) или [Prettify](./functions/encode-decode#prettify) вместе с `fmt.Println`. Подробности в разделе [Функции печати](./print).
 :::
 
 ---

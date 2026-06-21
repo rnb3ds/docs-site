@@ -1,6 +1,6 @@
 ---
 title: "API Reference - HTML"
-description: "CyberGo HTML full API index: content/text extraction, format output, links, batch processing, configuration, audit, and types — via package functions and Processor."
+description: "CyberGo HTML full API index: content and text extraction, format output, links, batch processing, configuration, audit, and types overview."
 ---
 
 # API Reference

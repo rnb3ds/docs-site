@@ -1,6 +1,6 @@
 ---
-title: "Контрольный список для production - HTTPC"
-description: "Контрольный список безопасности для production-среды HTTPC: проверка конфигурации TLS, подтверждение AllowPrivateIPs и аудит CIDR при SSRF, настройка таймаутов Timeouts, ограничение размера MaxResponseBodySize, стратегия повторных попыток MaxRetries, освобождение ресурсов и мониторинг через AuditMiddleware."
+title: "Чек-лист для production - HTTPC"
+description: "Контрольный список безопасности production HTTPC: проверка TLS, аудит SSRF и CIDR, настройка таймаутов, лимиты размера ответов и аудит-мониторинг."
 ---
 
 # Контрольный список для production

@@ -1,6 +1,6 @@
 ---
 title: "Middleware - HTTPC"
-description: "HTTPC middleware system API reference: Chain onion-model composition, Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit eight built-in middleware, AuditMiddlewareWithConfig configurable audit, and AuditEvent audit event types."
+description: "HTTPC middleware API reference: Chain onion-model composition and eight built-in middleware (Recovery, Logging, Timeout, Metrics, Audit) plus audit config."
 ---
 
 # Middleware

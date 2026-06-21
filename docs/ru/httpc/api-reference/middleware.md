@@ -1,6 +1,6 @@
 ---
 title: "Промежуточное ПО - HTTPC"
-description: "Справочник API системы промежуточного ПО HTTPC: композиция Chain по луковой модели, восемь встроенных фабрик Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit, настраиваемый аудит через AuditMiddlewareWithConfig и структура события аудита AuditEvent."
+description: "Справочник API middleware HTTPC: композиция Chain по луковой модели и восемь встроенных middleware (Recovery, Logging, Timeout, Metrics, Audit)."
 ---
 
 # Промежуточное ПО

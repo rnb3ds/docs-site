@@ -1,6 +1,6 @@
 ---
 title: "Защита от SSRF - HTTPC"
-description: "Подробное описание защиты от SSRF в HTTPC: блокировка приватных IP IPv4/IPv6 по умолчанию, точные исключения через SSRFExemptCIDRs, защита от перепривязки DNS, белый список доменов перенаправлений RedirectWhitelist, защита метаданных AWS/GCP/Azure/Alibaba Cloud и важные замечания при использовании AllowPrivateIPs."
+description: "Подробно о защите от SSRF в HTTPC: блокировка приватных IP, исключения SSRFExemptCIDRs, защита от перепривязки DNS, белые списки и защита метаданных."
 ---
 
 # Защита от SSRF

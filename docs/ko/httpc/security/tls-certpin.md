@@ -1,6 +1,6 @@
 ---
 title: "TLS와 인증서 고정 - HTTPC"
-description: "HTTPC TLS와 인증서 고정 가이드: TLS 1.2-1.3 버전 제어와 암호 스위트, 커스텀 CA 인증서 로드, mTLS 상호 인증, CertificatePinner 인증서 고정 API(SPKI 해시/공개키/체인), VerifyPeerCertificate 커스텀 검증과 HTTP/2 협상을 다룹니다."
+description: "HTTPC TLS와 인증서 고정 가이드: TLS 1.2-1.3 버전 제어와 암호 스위트, 커스텀 CA 인증서 로드, mTLS 상호 인증, CertificatePinner 인증서 고정 API와 HTTP/2 협상을 다룹니다."
 ---
 
 # TLS와 인증서 고정
@@ -192,5 +192,5 @@ cfg.Connection.EnableHTTP2 = false // HTTP/2 비활성화
 ## 다음 단계
 
 - [SSRF 방어](./ssrf) - SSRF 보안 설정
-- [보안 개요](./) - 보안 기능 총览
+- [보안 개요](./) - 보안 기능 개요
 - [설정 API](../api-reference/config) - SecurityConfig 참조

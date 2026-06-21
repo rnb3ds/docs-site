@@ -1,6 +1,6 @@
 ---
 title: "エラータイプ - HTTPC"
-description: "HTTPC エラータイプ API リファレンス：ClientError 構造体の 8 フィールドと Code、IsRetryable、Unwrap などの 5 メソッド、ErrorTypeNetwork など 12 種類のエラー分類列挙、ErrNilConfig など 12 個のセンチネルエラー変数と errors.Is/As マッチング例。"
+description: "HTTPC エラータイプ API リファレンス: ClientError 構造体のフィールドとメソッド、ErrorType 12 種類のエラー分類列挙、センチネルエラー変数と errors.Is/As マッチング例の完全な説明を提供します。"
 ---
 
 # エラータイプ

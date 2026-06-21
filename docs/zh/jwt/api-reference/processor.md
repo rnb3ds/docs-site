@@ -1,6 +1,6 @@
 ---
 title: "Processor - JWT API 参考"
-description: "CyberGo JWT Processor 核心 API 参考：Create、Validate、Refresh、Revoke、ValidateInto、RefreshInto、ParseUnverified 等全部方法签名与用法。"
+description: "Processor 是 CyberGo JWT 核心类型：提供 Create、Validate、Refresh、ValidateInto、RefreshInto、Revoke、IsRevoked、ParseUnverified、Close 等全部令牌操作方法的签名、参数、返回值、错误与示例说明。"
 ---
 
 # Processor

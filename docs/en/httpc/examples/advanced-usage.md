@@ -1,6 +1,6 @@
 ---
 title: "Advanced Examples - HTTPC"
-description: "HTTPC advanced examples: custom RetryPolicy retry strategy (502/503/504 only), complete middleware chain with Recovery/Timeout/Logging/Metrics/Audit, RESTful API client wrapper, sync.WaitGroup concurrent downloads, and HMAC-SHA256 request signing custom middleware."
+description: "HTTPC advanced examples: a custom RetryPolicy, a complete middleware chain, a RESTful client wrapper, concurrent downloads, and HMAC-SHA256 signing."
 ---
 
 # Advanced Examples

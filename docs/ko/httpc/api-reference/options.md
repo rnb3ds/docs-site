@@ -1,6 +1,6 @@
 ---
 title: "요청 옵션 - HTTPC"
-description: "HTTPC 요청 옵션 API 레퍼런스: WithHeader 요청 헤더, WithBearerToken 인증, WithJSON/WithXML/WithForm/WithBinary 요청 본문, WithQuery 쿼리 매개변수, 다섯 가지 Cookie 옵션과 WithOnRequest/WithOnResponse 콜백 함수를 다룹니다."
+description: "HTTPC 요청 옵션 API 레퍼런스: WithHeader 헤더, WithBearerToken 인증, WithJSON/WithForm 요청 본문, WithQuery 매개변수와 콜백 함수의 완전한 사용법을 제공합니다."
 ---
 
 # 요청 옵션

@@ -1,6 +1,6 @@
 ---
 title: "Config 설정 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Config 설정 옵션 완전 참조: DefaultConfig 기본 설정, SecurityConfig 보안 설정, PrettyConfig 포맷 설정, 캐시 설정, 크기 제한, 보안 옵션, 인코딩 옵션을 자세히 설명하며 Processor 및 모든 JSON 작업의 동작을 커스터마이즈합니다."
+description: "CyberGo JSON Config 설정 옵션 완전 참조: DefaultConfig 기본 설정, SecurityConfig 보안 설정, PrettyConfig 포맷 설정, 캐시 설정, 크기 제한, 보안 옵션, 인코딩 옵션을 자세히 설명하며 Go 애플리케이션의 모든 JSON 작업 동작을 커스터마이즈합니다."
 ---
 
 # Config
@@ -413,7 +413,7 @@ const (
 ```
 
 :::info 내부 상수
-경로 검증 길이 제한(`maxPathLength`), 캐시 키 길이 제한(`maxCacheKeyLength`) 등의 상수는 내부 구현으로 전환되어 공개 API로 내보내지 않습니다. 관련 기본값은 `Config` 구조체의 필드 기본값으로 반영됩니다.
+경로 검증 길이 제한(`maxPathLength`) 등의 상수는 내부 구현으로 전환되어 공개 API로 내보내지 않습니다. 관련 기본값은 `Config` 구조체의 필드 기본값으로 반영됩니다.
 :::
 
 ---

@@ -1,6 +1,6 @@
 ---
 title: "パフォーマンス最適化 - CyberGo JSON | 高パフォーマンスガイド"
-description: "CyberGo JSON パフォーマンス最適化ガイド：キャッシュ戦略 EnableCache/CacheTTL、並列処理 ParallelThreshold/MaxConcurrency、PreParse 事前パース、WarmupCache ウォームアップ、オブジェクトプール再利用、ベンチマーク分析について詳しく解説し、高頻度 JSON 処理のパフォーマンスを全面的に向上させます。"
+description: "CyberGo JSON パフォーマンス最適化ガイド：キャッシュ戦略 EnableCache/CacheTTL、並列処理 ParallelThreshold/MaxConcurrency、PreParse 事前パース、WarmupCache ウォームアップ、オブジェクトプール再利用、ベンチマーク分析について詳しく解説し、Go の高頻度 JSON 処理のパフォーマンスを全面的に向上させます。"
 ---
 
 # パフォーマンス最適化
@@ -106,17 +106,28 @@ wg.Wait()
 ### Worker プールの使用
 
 ```go
-pool := workerpool.New(10)
-
 items := json.GetArray(data, "items")
-for _, item := range items {
-    item := item
-    pool.Submit(func() {
-        processItem(item)
-    })
+jobs := make(chan any, len(items))
+
+// 固定数の worker を起動し、goroutine を再利用して頻繁な生成/破棄を回避
+var wg sync.WaitGroup
+workers := runtime.NumCPU()
+for w := 0; w < workers; w++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        for item := range jobs {
+            processItem(item)
+        }
+    }()
 }
 
-pool.StopWait()
+// タスクを分散後にチャネルを閉じ、worker に終了を通知
+for _, item := range items {
+    jobs <- item
+}
+close(jobs)
+wg.Wait()
 ```
 
 ## 設定の最適化

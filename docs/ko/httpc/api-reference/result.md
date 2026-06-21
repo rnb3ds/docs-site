@@ -1,6 +1,6 @@
 ---
 title: "Result - HTTPC"
-description: "HTTPC Result 응답 타입 API 레퍼런스: StatusCode/Body/RawBody 기본 메서드, 상태 판단, Cookie 조작, Unmarshal JSON 파싱, SaveToFile 파일 저장과 RequestInfo/ResponseInfo/RequestMeta 하위 타입을 다룹니다."
+description: "HTTPC Result 응답 타입 API 레퍼런스: StatusCode/Body 기본 메서드, 상태 판단, Cookie 조작, Unmarshal JSON 파싱과 SaveToFile 파일 저장의 완전한 사용법을 제공합니다."
 ---
 
 # Result
@@ -26,7 +26,7 @@ fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
 :::tip
-Result는 내장 객체 풀로 성능을 최적화하며, GC가 자동 회수하므로 수동 해제가 필요 없습니다.
+Result는 매 요청마다 새로 생성되며, GC가 자동으로 회수하므로 수동 해제가 필요 없습니다.
 :::
 
 ## 기본 메서드

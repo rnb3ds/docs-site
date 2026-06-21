@@ -1,6 +1,6 @@
 ---
 title: "ファイルダウンロード - HTTPC"
-description: "HTTPC ファイルダウンロード API リファレンス：Download 統合ダウンロードエントリ関数、DownloadConfig 設定構造体、DownloadProgressCallback 進捗コールバック、DownloadResult 結果タイプ、SHA-256 チェックサム検証と UNC パス防護などの 6 層セキュリティ保護。"
+description: "HTTPC ファイルダウンロード API リファレンス: Download 統合エントリ、DownloadConfig 設定、進捗コールバック、DownloadResult タイプ、SHA-256 チェックサム検証、UNC パス防護など 6 層のセキュリティ保護を提供します。"
 ---
 
 # ファイルダウンロード

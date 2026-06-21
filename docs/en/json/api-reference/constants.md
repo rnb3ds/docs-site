@@ -1,6 +1,6 @@
 ---
 title: "Constants and Errors - CyberGo JSON | API Reference"
-description: "CyberGo JSON constants and error definitions complete reference: including DefaultMaxJSONSize/DefaultMaxNestingDepth default limit constants, ErrPathNotFound/ErrTypeMismatch error variables, and MergeMode merge mode enumeration, providing configuration presets and error handling support."
+description: "CyberGo JSON constants and error definitions complete reference: including DefaultMaxJSONSize/DefaultMaxNestingDepth default limit constants, ErrPathNotFound/ErrTypeMismatch error variables, and MergeMode merge mode enumeration, providing Go configuration presets and error handling support."
 ---
 
 # Constants and Errors

@@ -1,6 +1,6 @@
 ---
 title: "コネクションプールとプロキシ - HTTPC"
-description: "HTTPC コネクションプールとプロキシ設定ガイド：MaxIdleConns などコネクションプールパラメータのチューニングとシナリオ別推奨、ProxyURL 手動プロキシとシステムプロキシ検出、SOCKS5 と HTTP プロキシ、DoH 3 プロバイダーフェイルバック、HTTP/2 設定、接続再利用と内蔵オブジェクトプール自動管理の実践ポイント。"
+description: "HTTPC コネクションプールとプロキシガイド: MaxIdleConns チューニングとシナリオ推奨、ProxyURL 手動とシステムプロキシ、SOCKS5 と HTTP プロキシ、DoH フェイルバック、HTTP/2 設定の実践ポイントを解説します。"
 ---
 
 # コネクションプールとプロキシ
@@ -104,8 +104,8 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute
 | プロバイダー | アドレス | 説明 |
 |-------------|---------|------|
 | Cloudflare | `1.1.1.1/dns-query` | 最速、プライバシー重視 |
-| Google | `8.8.8.8/resolve` | グローバルカバレッジ |
-| AliDNS | `223.5.5.5/resolve` | 中国地域最適化 |
+| Google | `dns.google/resolve` | グローバルカバレッジ |
+| AliDNS | `dns.alidns.com/resolve` | 中国地域最適化 |
 
 :::tip
 DoH を有効にすると、DNS 解決結果が `DoHCacheTTL` の間キャッシュされます。すべての DoH プロバイダーが利用できない場合、システム DNS にフォールバックします。
@@ -127,15 +127,17 @@ HTTP/2 の特徴：
 
 ## オブジェクトプール再利用
 
+HTTPC は内部でエンジンのレスポンスオブジェクトと文字列ビルダーを sync.Pool で再利用し、GC 負荷を軽減します。Result 自体はリクエストごとに新規作成され、GC が自動的に回収します。
+
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result オブジェクトは内蔵オブジェクトプールで自動管理、GC が自動的にクリーンアップ
+// Result はリクエストごとに新規作成、GC が自動回収、手動解放不要
 ```
 
-高並列シナリオでは、オブジェクトプールの再利用により GC 負荷を大幅に軽減できます。
+高並列シナリオでは、内部オブジェクトプールの再利用により GC 負荷を大幅に軽減できます。
 
 ## 並列リクエストパターン
 
