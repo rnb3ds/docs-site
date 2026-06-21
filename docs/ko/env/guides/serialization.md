@@ -184,7 +184,7 @@ func main() {
 구조체를 `map[string]string`으로 변환:
 
 ```go
-func MarshalStruct(v interface{}) (map[string]string, error)
+func MarshalStruct(v any) (map[string]string, error)
 ```
 
 **매개변수:**

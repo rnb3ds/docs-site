@@ -364,6 +364,10 @@ func SetMemoryLockEnabled(enabled bool)
 - `enabled` - 활성화 여부
 
 ```go
+package main
+
+import "github.com/cybergodev/env"
+
 func main() {
     // 애플리케이션 시작 시 활성화
     env.SetMemoryLockEnabled(true)

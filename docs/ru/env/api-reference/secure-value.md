@@ -364,6 +364,10 @@ func SetMemoryLockEnabled(enabled bool)
 - `enabled` - Включить ли
 
 ```go
+package main
+
+import "github.com/cybergodev/env"
+
 func main() {
     // Включение при запуске приложения
     env.SetMemoryLockEnabled(true)

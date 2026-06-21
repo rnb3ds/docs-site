@@ -218,6 +218,14 @@ type Database struct {
 ポインタフィールドをサポートします：
 
 ```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
 type Config struct {
     Host    *string `env:"HOST"`
     Port    *int64  `env:"PORT"`
@@ -274,6 +282,15 @@ func (p *Port) UnmarshalEnv(data map[string]string) error {
 ### 構造体の検証
 
 ```go
+package main
+
+import (
+    "errors"
+    "log"
+
+    "github.com/cybergodev/env"
+)
+
 type ServerConfig struct {
     Host string `env:"SERVER_HOST" envDefault:"0.0.0.0"`
     Port int64  `env:"SERVER_PORT" envDefault:"8080"`

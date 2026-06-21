@@ -61,6 +61,15 @@ func main() {
     fmt.Println("Server started: :8080")
     http.ListenAndServe(":8080", loggingMiddleware(mux))
 }
+
+// handleUsers example handler
+func handleUsers(w http.ResponseWriter, r *http.Request) {
+    logger.InfoWith("Processing user request",
+        dd.String("path", r.URL.Path),
+        dd.String("method", r.Method),
+    )
+    fmt.Fprintf(w, `{"status":"ok"}`)
+}
 ```
 
 ## Microservice Logging

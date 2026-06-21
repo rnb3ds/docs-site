@@ -1,6 +1,6 @@
 ---
 title: "エラー処理 - CyberGo env | センチネルエラーと復旧戦略"
-description: "CyberGo env ライブラリのエラー処理とベストプラクティス完全ガイド。15個のセンチネルエラーの errors.Is 完全一致チェック、8種類の構造化エラー型の errors.As コンテキスト抽出、エラー復旧とグレードダウン戦略、カスタムエラーラッピングパターンとエラーチェーン Unwrap 追跡方法を詳解。"
+description: "CyberGo env ライブラリのエラー処理とベストプラクティス完全ガイド。16個のセンチネルエラーの errors.Is 完全一致チェック、8種類の構造化エラー型の errors.As コンテキスト抽出、エラー復旧とグレードダウン戦略、カスタムエラーラッピングパターンとエラーチェーン Unwrap 追跡方法を詳解。"
 ---
 
 # エラー処理
@@ -63,6 +63,12 @@ if errors.Is(err, env.ErrForbiddenKey) {
 
 ```go
 var ErrExpansionDepth = errors.New("variable expansion depth exceeded")
+```
+
+### 制限エラー
+
+```go
+var ErrMaxVariables = errors.New("maximum number of variables exceeded")
 ```
 
 ### ステータスエラー
@@ -230,10 +236,11 @@ if errors.As(err, &valErr) {
 
 ```go
 type ExpansionError struct {
-    Key   string  // キー名
-    Depth int     // 現在の深度
-    Limit int     // 制限
-    Chain string  // 展開チェーン
+    Key   string             // キー名
+    Depth int                // 現在の深度
+    Limit int                // 制限
+    Chain string             // 展開チェーン
+    Kind  ExpansionErrorKind // エラー原因の分類（ゼロ値 = 深度/循環）
 }
 ```
 

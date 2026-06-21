@@ -61,6 +61,15 @@ func main() {
     fmt.Println("服务启动: :8080")
     http.ListenAndServe(":8080", loggingMiddleware(mux))
 }
+
+// handleUsers 示例处理器
+func handleUsers(w http.ResponseWriter, r *http.Request) {
+    logger.InfoWith("处理用户请求",
+        dd.String("path", r.URL.Path),
+        dd.String("method", r.Method),
+    )
+    fmt.Fprintf(w, `{"status":"ok"}`)
+}
 ```
 
 ## 微服务日志

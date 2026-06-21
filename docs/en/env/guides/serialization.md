@@ -184,7 +184,7 @@ func main() {
 Convert a struct to `map[string]string`:
 
 ```go
-func MarshalStruct(v interface{}) (map[string]string, error)
+func MarshalStruct(v any) (map[string]string, error)
 ```
 
 **Parameters:**

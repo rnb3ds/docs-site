@@ -364,6 +364,10 @@ func SetMemoryLockEnabled(enabled bool)
 - `enabled` - 有効かどうか
 
 ```go
+package main
+
+import "github.com/cybergodev/env"
+
 func main() {
     // アプリ起動時に有効化
     env.SetMemoryLockEnabled(true)

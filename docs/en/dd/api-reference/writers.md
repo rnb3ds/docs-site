@@ -104,8 +104,9 @@ fw.Write([]byte("log content\n"))
 
 // Files generated after rotation:
 // logs/app.log      (current)
-// logs/app.log.1    (previous backup)
-// logs/app.log.2    (older backup)
+// logs/app_log_1.log (newest backup)
+// logs/app_log_2.log (older backup)
+// With Compress enabled, old backups are compressed to logs/app_log_1.log.gz
 ```
 
 :::tip Security Feature

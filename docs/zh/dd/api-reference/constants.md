@@ -27,10 +27,10 @@ type LogLevel int8 // 日志级别类型
 type LogFormat int8 // 输出格式类型
 ```
 
-| 常量 | 说明 |
-|------|------|
-| `FormatText` | 文本格式 |
-| `FormatJSON` | JSON 格式 |
+| 常量 | 值 | 说明 |
+|------|----|------|
+| `FormatText` | 0 | 文本格式 |
+| `FormatJSON` | 1 | JSON 格式 |
 
 ## 字段验证模式
 
@@ -64,9 +64,9 @@ type FieldNamingConvention int // 字段键命名约定
 type HashAlgorithm int // 完整性签名哈希算法
 ```
 
-| 常量 | 说明 |
-|------|------|
-| `HashAlgorithmSHA256` | SHA-256 算法 |
+| 常量 | 值 | 说明 |
+|------|----|------|
+| `HashAlgorithmSHA256` | 0 | SHA-256 算法（用于[完整性签名](./integrity)） |
 
 ## 默认值
 

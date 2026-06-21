@@ -184,7 +184,7 @@ func main() {
 構造体を `map[string]string` に変換します：
 
 ```go
-func MarshalStruct(v interface{}) (map[string]string, error)
+func MarshalStruct(v any) (map[string]string, error)
 ```
 
 **パラメータ：**

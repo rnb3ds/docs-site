@@ -528,6 +528,14 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - 팩토리 함수는 스레드 안전한 파서를 반환해야 함
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. 사용자 정의 형식 상수 정의
 const FormatTOML env.FileFormat = 100
 
@@ -545,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. 파서 등록
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. 사용 전 실행되도록 init()에서 파서 등록
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. 사용자 정의 형식 사용
 func main() {
-    // 등록은 New 전에 완료되어야 함
+    // 등록은 init()에서 완료됨 (main보다 먼저 실행)
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 

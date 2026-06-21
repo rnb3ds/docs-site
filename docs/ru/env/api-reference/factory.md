@@ -528,6 +528,14 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - Фабричная функция должна возвращать потокобезопасный парсер
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. Определение пользовательской константы формата
 const FormatTOML env.FileFormat = 100
 
@@ -545,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. Регистрация парсера
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. Регистрация парсера в init() для гарантии выполнения перед использованием
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. Использование пользовательского формата
 func main() {
-    // Регистрация должна быть завершена до New
+    // Регистрация завершена в init() (выполняется до main)
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 

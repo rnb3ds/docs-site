@@ -54,7 +54,12 @@ func DefaultFileWriterConfig() FileWriterConfig
 func (c FileWriterConfig) Validate() error
 ```
 
-验证文件写入器配置的合法性。
+验证文件写入器配置的合法性。返回错误的情况：
+
+- `MaxSizeMB` 超过 10240（返回 `ErrMaxSizeExceeded`）
+- `MaxBackups` 超过 1000（返回 `ErrMaxBackupsExceeded`）
+
+负数值被允许并会回退到默认值。
 
 ### 方法
 
@@ -104,8 +109,9 @@ fw.Write([]byte("日志内容\n"))
 
 // 轮换后生成文件：
 // logs/app.log      (当前)
-// logs/app.log.1    (上一个备份)
-// logs/app.log.2    (更早的备份)
+// logs/app_log_1.log (最新的备份)
+// logs/app_log_2.log (更早的备份)
+// 启用 Compress 后旧备份会被压缩为 logs/app_log_1.log.gz
 ```
 
 :::tip 安全特性
@@ -138,7 +144,7 @@ bw, _ := dd.NewBufferedWriter(os.Stdout, cfg)
 
 ```go
 type BufferedWriterConfig struct {
-    BufferSize int            // 缓冲区大小（字节，默认 1024 即 1KB）
+    BufferSize int            // 缓冲区大小（字节，默认 1024 即 1KB，上限 10MB）
     FlushTime  time.Duration  // 定时刷新间隔（默认 100ms）
 }
 ```
@@ -149,13 +155,19 @@ type BufferedWriterConfig struct {
 func DefaultBufferedWriterConfig() BufferedWriterConfig
 ```
 
+默认值：1KB 缓冲区、100ms 刷新间隔。
+
 ### Validate
 
 ```go
 func (c BufferedWriterConfig) Validate() error
 ```
 
-验证缓冲写入器配置的合法性。
+验证缓冲写入器配置的合法性。返回错误的情况：
+
+- `BufferSize` 为负数
+- `BufferSize` 超过 10MB（返回 `ErrBufferSizeTooLarge`）
+- `FlushTime` 为负数
 
 ### 方法
 

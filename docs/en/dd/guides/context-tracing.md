@@ -35,34 +35,23 @@ spanID := dd.GetSpanID(ctx)      // "span-def456"
 requestID := dd.GetRequestID(ctx) // "req-789"
 ```
 
-### Extraction via WithFields
+### Automatic Extraction to Logs
 
-Since DD's log methods do not accept a `context.Context` parameter, the recommended pattern is to pass tracing IDs via `WithFields()` on a request-scoped `LoggerEntry`:
+:::warning Current Limitation
+DD's log methods (`Info`, `InfoWith`, etc.) do not directly accept a `context.Context` parameter. Context extractors are invoked internally with `context.Background()`, so they cannot directly retrieve values such as TraceID from the request-scoped context. The recommended approach is to pass fields manually (see HTTP Middleware Integration below).
+:::
 
 ```go
-// Extract tracing IDs from context and add to LoggerEntry
+// Context extractors are used for static context fields preset in the configuration.
+// Note: since log methods do not accept a context, functions such as GetTraceID
+// inside the extractor cannot access request-scoped context values.
+
+// Recommended approach: pass tracing fields manually via WithFields
 reqLog := logger.WithFields(
-    dd.String("trace_id", dd.GetTraceID(ctx)),
-    dd.String("span_id", dd.GetSpanID(ctx)),
-    dd.String("request_id", dd.GetRequestID(ctx)),
+    dd.String("trace_id", traceID),
+    dd.String("request_id", requestID),
 )
-
-// All logs from this entry include the tracing fields
 reqLog.Info("Processing request")
-```
-
-### Using ContextExtractor
-
-`ContextExtractor` functions are called with `context.Background()` for each log entry. They are useful for extracting global or goroutine-local state, not per-request context:
-
-```go
-// Register context extractor for global/static fields
-logger.AddContextExtractor(func(ctx context.Context) []dd.Field {
-    return []dd.Field{
-        dd.String("hostname", getHostname()),
-        dd.String("service", "my-service"),
-    }
-})
 ```
 
 ## HTTP Middleware Integration
@@ -149,10 +138,15 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 ## ContextExtractor Custom Extractors
 
-`ContextExtractor` functions receive `context.Background()` and are called for every log entry. They are best suited for adding global metadata, not per-request context:
+`ContextExtractor` can be used to extract fields from the context. Note: since log methods do not accept a context parameter, the extractor is invoked internally with `context.Background()`, making it suitable for the following scenarios:
+
+- Extracting static fields from a global context or goroutine-local storage
+- Combining with HTTP middleware to manually pass tracing fields to `WithFields`
+
+### Custom Extractor Example
 
 ```go
-// Custom extractor: add static/goroutine-local metadata to every log
+// Custom extractor: attach static/global metadata to every log
 func tenantExtractor(ctx context.Context) []dd.Field {
     return []dd.Field{
         dd.String("service", "order-service"),

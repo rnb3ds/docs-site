@@ -528,6 +528,14 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - 工厂函数应返回线程安全的解析器
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. 定义自定义格式常量
 const FormatTOML env.FileFormat = 100
 
@@ -545,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. 注册解析器
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. 注册解析器（在 init() 中注册，确保在使用前完成）
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. 使用自定义格式
 func main() {
-    // 注册必须在 New 之前完成
+    // 注册已在 init() 中完成（先于 main 执行）
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 

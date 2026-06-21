@@ -528,6 +528,14 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - ファクトリー関数はスレッドセーフなパーサーを返すべき
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. カスタムフォーマット定数を定義
 const FormatTOML env.FileFormat = 100
 
@@ -545,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. パーサーの登録
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. 使用前に確実に実行されるよう init() でパーサーを登録
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. カスタムフォーマットを使用
 func main() {
-    // 登録は New の前に完了する必要がある
+    // 登録は init() で完了済み（mainより先に実行）
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 

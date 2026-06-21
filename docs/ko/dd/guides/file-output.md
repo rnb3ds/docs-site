@@ -79,8 +79,9 @@ logger, _ := dd.New(dd.Config{
 
 ```text
 logs/app.log           ← 현재 로그
-logs/app-001.log       ← 첫 번째 순환
-logs/app-002.log.gz    ← 압축된 이전 백업 (Compress 활성화 시)
+logs/app_log_1.log     ← 첫 번째 순환 (가장 최근 백업)
+logs/app_log_2.log     ← 더 오래된 백업
+logs/app_log_1.log.gz  ← Compress 활성화 시 이전 백업이 .gz로 압축됨
 ```
 
 ## BufferedWriter 버퍼 쓰기

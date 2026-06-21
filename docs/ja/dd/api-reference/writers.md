@@ -104,8 +104,9 @@ fw.Write([]byte("ログ内容\n"))
 
 // ローテーション後に生成されるファイル：
 // logs/app.log      (現在)
-// logs/app.log.1    (直前のバックアップ)
-// logs/app.log.2    (さらに古いバックアップ)
+// logs/app_log_1.log (最新のバックアップ)
+// logs/app_log_2.log (さらに古いバックアップ)
+// Compress 有効時に古いバックアップは logs/app_log_1.log.gz に圧縮される
 ```
 
 :::tip セキュリティ機能

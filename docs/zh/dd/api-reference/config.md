@@ -209,11 +209,16 @@ cfg.FieldNames = &dd.JSONFieldNames{
 func DefaultJSONOptions() *JSONOptions
 ```
 
-返回默认的 JSON 输出选项。
+返回默认的 JSON 输出选项：`PrettyPrint` 为 `false`，缩进为两个空格，字段名采用默认值。
 
 ```go
-cfg := dd.JSONConfig()
-// 包含默认 JSONOptions
+opts := dd.DefaultJSONOptions()
+opts.PrettyPrint = true
+
+logger, _ := dd.New(dd.Config{
+    Format: dd.FormatJSON,
+    JSON:   opts,
+})
 ```
 
 ## SamplingConfig

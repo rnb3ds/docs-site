@@ -364,6 +364,10 @@ Globally enables/disables memory locking. Affects all newly created SecureValues
 - `enabled` - Whether to enable
 
 ```go
+package main
+
+import "github.com/cybergodev/env"
+
 func main() {
     // Enable at application startup
     env.SetMemoryLockEnabled(true)

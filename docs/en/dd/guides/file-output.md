@@ -79,8 +79,9 @@ Rotated file naming convention:
 
 ```text
 logs/app.log           ← Current log
-logs/app-001.log       ← First rotation
-logs/app-002.log.gz    ← Compressed old backup (when Compress is enabled)
+logs/app_log_1.log     ← First rotation (newest backup)
+logs/app_log_2.log     ← Older backup
+logs/app_log_1.log.gz  ← Old backup compressed to .gz when Compress is enabled
 ```
 
 ## BufferedWriter

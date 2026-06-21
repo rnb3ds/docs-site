@@ -13,9 +13,9 @@ This example demonstrates how to integrate DD into an HTTP web service, implemen
 package main
 
 import (
+    "fmt"
     "log"
     "net/http"
-    "time"
 
     "github.com/cybergodev/dd"
 )
@@ -47,6 +47,18 @@ func main() {
     if err := server.ListenAndServe(); err != nil {
         logger.ErrorWith("Server exited abnormally", dd.Err(err))
     }
+}
+
+// usersHandler example handler
+func usersHandler(w http.ResponseWriter, r *http.Request) {
+    dd.Default().InfoWith("Processing user request", dd.String("path", r.URL.Path))
+    fmt.Fprintf(w, `{"status":"ok"}`)
+}
+
+// ordersHandler example handler
+func ordersHandler(w http.ResponseWriter, r *http.Request) {
+    dd.Default().InfoWith("Processing order request", dd.String("path", r.URL.Path))
+    fmt.Fprintf(w, `{"status":"ok"}`)
 }
 ```
 
@@ -139,6 +151,19 @@ func NewOrderService(logger *dd.Logger) *OrderService {
 ## Graceful Shutdown
 
 ```go
+package main
+
+import (
+    "context"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/cybergodev/dd"
+)
+
 func main() {
     logger, _ := dd.New(dd.Config{
         Format: dd.FormatJSON,
@@ -197,6 +222,25 @@ import (
 
     "github.com/cybergodev/dd"
 )
+
+// LoggingMiddleware request logging middleware
+func LoggingMiddleware(logger *dd.Logger) func(http.Handler) http.Handler {
+    return func(next http.Handler) http.Handler {
+        return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+            start := time.Now()
+            logger.InfoWith("Request started",
+                dd.String("method", r.Method),
+                dd.String("path", r.URL.Path),
+            )
+            next.ServeHTTP(w, r)
+            logger.InfoWith("Request completed",
+                dd.String("method", r.Method),
+                dd.String("path", r.URL.Path),
+                dd.Duration("elapsed", time.Since(start)),
+            )
+        })
+    }
+}
 
 func main() {
     logger, err := dd.New(dd.Config{

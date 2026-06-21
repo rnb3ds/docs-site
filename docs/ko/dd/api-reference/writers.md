@@ -104,8 +104,9 @@ fw.Write([]byte("로그 내용\n"))
 
 // 순환 후 생성된 파일:
 // logs/app.log      (현재)
-// logs/app.log.1    (이전 백업)
-// logs/app.log.2    (더 오래된 백업)
+// logs/app_log_1.log (가장 최근 백업)
+// logs/app_log_2.log (더 오래된 백업)
+// Compress 활성화 시 이전 백업은 logs/app_log_1.log.gz로 압축됨
 ```
 
 :::tip 보안 기능

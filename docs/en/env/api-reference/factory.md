@@ -528,6 +528,14 @@ Registers a custom format parser.
 - Factory function should return thread-safe parser
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. Define custom format constant
 const FormatTOML env.FileFormat = 100
 
@@ -545,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. Register parser
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. Register parser in init() to ensure it runs before use
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. Use custom format
 func main() {
-    // Registration must complete before New
+    // Registration completed in init() (runs before main)
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 
