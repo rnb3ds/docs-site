@@ -44,9 +44,9 @@ The documentation is available in 5 languages:
 
 ## Features
 
-- **Language Auto-Detection** — Automatically redirects visitors to their preferred language based on browser settings
+- **Unified Language Switching** — A language menu on every page, a one-time browser-language hint, and language-aware routing for bare paths; the homepage stays static for SEO
 - **Dynamic GitHub Links** — Project pages link directly to the corresponding source repository
-- **Project-Level Search** — Filter search results by specific library
+- **Full-Text Search** — Algolia DocSearch across all libraries, localized for 5 languages
 - **SEO Optimized** — Auto-generated canonical URLs, hreflang alternates, and Open Graph / Twitter meta tags
 - **Responsive Design** — Fully responsive with dark mode support
 - **Custom Components** — 404 page, footer, doc feedback widget, and project card grid
@@ -96,7 +96,7 @@ docs/
 │   └── theme/                  # Custom theme
 │       ├── index.ts            # Dynamic GitHub links, title, layout
 │       ├── custom.css          # Brand styles (#76B900 theme color)
-│       ├── components/         # Vue components (Search, Footer, 404)
+│       ├── components/         # Vue components (Footer, 404, feedback, language menu)
 │       └── composables/        # Composables (language detection, project path)
 ├── public/                     # Static assets (logo, favicon, robots.txt)
 ├── zh/                         # Chinese documentation

@@ -1,7 +1,7 @@
 ---
 layout: home
 title: "CyberGo"
-titleTemplate: 高性能 Go オープンソースライブラリコレクション
+titleTemplate: "高性能 Go オープンソースライブラリコレクション"
 description: "CyberGo は Go 言語向けの高性能オープンソースライブラリコレクションです。JSON 処理、JWT 認証、セキュア HTTP クライアント、HTML コンテンツ抽出、構造化ログ、環境変数管理の 6 つのコアライブラリを提供します。軽量設計、すぐに使える、最小限の依存関係で、高並行性の本番環境に信頼性の高い基盤コンポーネントを提供します。"
 
 hero:

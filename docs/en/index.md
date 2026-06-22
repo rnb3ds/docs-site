@@ -1,7 +1,7 @@
 ---
 layout: home
 title: "CyberGo"
-titleTemplate: High-Performance Go Open Source Libraries
+titleTemplate: "High-Performance Go Open Source Libraries"
 description: "Production-ready Go library collection: JSON processing, JWT authentication, HTTP client, HTML extraction, structured logging, and environment management."
 
 hero:

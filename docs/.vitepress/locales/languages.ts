@@ -60,9 +60,6 @@ export const supportedLanguages: LanguageConfig[] = [
   },
 ]
 
-/** Default language path (fallback when no match) */
-export const defaultLanguagePath = '/en/'
-
 /** Storage keys */
 export const STORAGE_KEYS = {
   preference: 'vitepress-lang-preference',
