@@ -1,6 +1,6 @@
 ---
-title: "성능 최적화 - HTTPC"
-description: "HTTPC 성능 최적화 가이드: Default/Secure/Performance/Minimal 네 가지 프리셋 비교와 시나리오별 선택, 프리셋 기반 미세 조정 연결 풀과 타임아웃 매개변수, 내장 객체 풀 자동 관리로 GC 부하 감소, 동시성 요청 패턴과 일반적인 성능 안티패턴 분석을 다룹니다."
+title: "성능 최적화 - CyberGo HTTPC | 프리셋과 동시성"
+description: "HTTPC 성능 최적화 가이드: Default/Secure/Performance/Minimal 네 가지 프리셋 비교와 시나리오 선택, 연결 풀과 타임아웃 미세 조정, Result 수명 주기 관리와 고동시성 요청 패턴을 다룹니다."
 ---
 
 # 성능 최적화
@@ -43,14 +43,14 @@ client, _ := httpc.New(cfg)
 
 ## 객체 풀 재사용
 
-HTTPC은 내장 Result 객체 풀로 객체 수명 주기를 자동 관리합니다:
+HTTPC는 내부적으로 엔진 응답 객체와 문자열 빌더를 sync.Pool로 재사용하여 GC 부하를 줄이며, Result는 매 요청마다 새로 생성되어 GC가 자동 회수합니다:
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result 객체는 내장 객체 풀로 자동 관리되며, GC가 자동 회수
+// Result는 매 요청마다 새로 생성, GC가 자동 회수, 수동 해제 불필요
 ```
 
 :::tip

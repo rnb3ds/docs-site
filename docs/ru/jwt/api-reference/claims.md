@@ -1,6 +1,6 @@
 ---
-title: "Claims - Справочник JWT API"
-description: "Справочник CyberGo JWT Claims API: встроенные бизнес-утверждения Claims (UserID, Username, Role и другие), стандартные утверждения RegisteredClaims RFC 7519 и ограничения глубокой валидации."
+title: "Claims - CyberGo JWT | Встроенные утверждения"
+description: "Claims — встроенная структура утверждений CyberGo JWT с UserID, Username, Role, правами, scope и RegisteredClaims RFC 7519 плюс ограничения длины и валидация."
 ---
 
 # Claims
@@ -74,6 +74,7 @@ type RegisteredClaims struct {
     NotBefore NumericDate   `json:"nbf"`
     IssuedAt  NumericDate   `json:"iat"`
     ID        string        `json:"jti,omitempty"`
+    TokenType string        `json:"token_type,omitempty"`
 }
 ```
 
@@ -92,3 +93,4 @@ type RegisteredClaims struct {
 | `NotBefore` | `NumericDate` | `nbf` | Время начала действия |
 | `IssuedAt` | `NumericDate` | `iat` | Время выдачи |
 | `ID` | `string` | `jti` | ID токена |
+| `TokenType` | `string` | `token_type` | Тип токена (`access` или `refresh`; см. [Константы типа токена](./types#константы-типа-токена)) |

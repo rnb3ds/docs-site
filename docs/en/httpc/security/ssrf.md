@@ -1,6 +1,6 @@
 ---
-title: "SSRF Protection - HTTPC"
-description: "HTTPC SSRF protection in depth: default blocking of IPv4/IPv6 private IPs, SSRFExemptCIDRs precise exemptions, DNS rebinding prevention, RedirectWhitelist redirect whitelisting, AWS/GCP/Azure cloud metadata protection, and AllowPrivateIPs usage notes."
+title: "SSRF Protection - CyberGo HTTPC | Private IP & Metadata"
+description: "HTTPC SSRF protection: default private-IP blocking, SSRFExemptCIDRs exemptions, DNS rebinding prevention, redirect whitelisting, and metadata protection."
 ---
 
 # SSRF Protection
@@ -42,6 +42,21 @@ cfg.Security.SSRFExemptCIDRs = []string{
 
 :::warning
 CIDR exemptions should be as precise as possible. Avoid using overly broad ranges (e.g. `0.0.0.0/0`) as this effectively disables SSRF protection.
+:::
+
+### Per-Request Private-IP Exemption
+
+If you only need to allow private IPs for individual requests (for example, calling a `localhost` health-check endpoint), there is no need to enable `AllowPrivateIPs` globally. Use the `WithAllowPrivateIPs` request option to allow it for that single request only:
+
+```go
+// Default client blocks private IPs; this call allows it per request
+result, err := httpc.Get("http://localhost:8080/health",
+    httpc.WithAllowPrivateIPs(true),
+)
+```
+
+:::warning
+Enable this option only for **trusted URLs that do not come from user input**. SSRF protection exists to stop attackers from tricking your process into reaching internal-network endpoints; disabling it per request reintroduces that risk for that call. If an entire client needs to reach internal services, set `Security.AllowPrivateIPs = true` on Config.
 :::
 
 ## DNS Rebinding Prevention

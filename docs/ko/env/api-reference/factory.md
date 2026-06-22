@@ -1,6 +1,6 @@
 ---
 title: "ComponentFactory API - CyberGo env | 컴포넌트 팩토리"
-description: "CyberGo env 라이브러리 ComponentFactory 컴포넌트 팩토리 API 전체 참조로, Loader와 Parser가 공유하는 컴포넌트 인스턴스를 생성하고 관리하며, 감사 핸들러, 검증기, 파일 시스템 어댑터 및 RegisterParser 사용자 정의 파서 등록을 포함하고, 컴포넌트 수명 주기 제어를 위한 Close 및 스레드 안전한 동시성 접근을 제공합니다."
+description: "CyberGo env ComponentFactory API 참조로 감사 핸들러·검증기·파일 시스템 어댑터를 생성하고 커스텀 파서를 등록하며 Close로 수명 주기를 관리합니다."
 ---
 
 # ComponentFactory API
@@ -211,7 +211,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 
 **출력 예:**
 ```json
-{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration":1234567}
+{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 ```
 
 ---
@@ -528,6 +528,14 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - 팩토리 함수는 스레드 안전한 파서를 반환해야 함
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. 사용자 정의 형식 상수 정의
 const FormatTOML env.FileFormat = 100
 
@@ -545,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. 파서 등록
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. 사용 전 실행되도록 init()에서 파서 등록
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. 사용자 정의 형식 사용
 func main() {
-    // 등록은 New 전에 완료되어야 함
+    // 등록은 init()에서 완료됨 (main보다 먼저 실행)
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 
@@ -779,6 +789,7 @@ func main() {
 package main
 
 import (
+    "errors"
     "fmt"
     "os"
     "strings"
@@ -860,9 +871,9 @@ type MemoryFile struct {
 }
 
 func (f *MemoryFile) Read(p []byte) (n int, err error)  { return f.reader.Read(p) }
-func (f *MemoryFile) Write(p []byte) (n int, err error) { return 0, os.ErrUnsupported }
+func (f *MemoryFile) Write(p []byte) (n int, err error) { return 0, errors.ErrUnsupported }
 func (f *MemoryFile) Close() error                      { return nil }
-func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, os.ErrUnsupported }
+func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, errors.ErrUnsupported }
 func (f *MemoryFile) Sync() error                       { return nil }
 
 // MemoryFileInfo는 os.FileInfo 구현

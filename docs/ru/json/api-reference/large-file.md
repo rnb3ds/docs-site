@@ -1,6 +1,6 @@
 ---
 title: "Обработка больших файлов - CyberGo JSON | Справочник API"
-description: "Справочник API обработки больших файлов CyberGo JSON: ForeachFile потоковая обработка, ForeachFileChunked пакетная обработка, ForeachFileWithPath обработка по пути, ForeachFileNested вложенная итерация и конфигурация управления памятью."
+description: "API больших файлов CyberGo JSON: ForeachFile, пакетная ForeachFileChunked, ForeachFileWithPath, ForeachNested и настройка управления памятью в Go."
 ---
 
 # Обработка больших файлов
@@ -255,6 +255,13 @@ import (
     "log"
     "github.com/cybergodev/json"
 )
+
+// User представляет запись пользователя (пример модели данных)
+type User struct {
+    ID    int
+    Name  string
+    Email string
+}
 
 func main() {
     p, err := json.New()

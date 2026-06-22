@@ -1,6 +1,6 @@
 ---
 title: "Modify Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON modify functions complete reference: including Set/SetMultiple value setting, Delete key deletion, MergeJSON/MergeMany JSON merging, supporting automatic path creation, atomic operations, and multiple MergeMode merge strategies for various JSON data modification needs."
+description: "CyberGo JSON modify functions: Set/SetMultiple, Delete, MergeJSON/MergeMany with auto path creation, atomic ops, and multiple MergeMode strategies."
 ---
 
 # Modify Functions
@@ -108,7 +108,7 @@ updates := map[string]any{"a": 1, "b": 2, "c": 3}
 result, err := json.SetMultiple(data, updates)
 
 // Not recommended: multiple calls
-result, err := json.Set(data, "a", 1)
+result, err = json.Set(data, "a", 1)
 result, err = json.Set(result, "b", 2)
 result, err = json.Set(result, "c", 3)
 ```
@@ -309,11 +309,11 @@ Batch operation descriptor structure.
 
 ```go
 type BatchOperation struct {
-    Type    string  // Operation type: "get", "set", "delete", "validate"
-    JSONStr string  // Target JSON string
-    Path    string  // Path expression
-    Value   any     // Operation value (used for set operations)
-    ID      string  // Operation identifier
+    Type    string `json:"type"`     // Operation type: "get", "set", "delete", "validate"
+    JSONStr string `json:"json_str"` // Target JSON string
+    Path    string `json:"path"`     // Path expression
+    Value   any    `json:"value"`    // Operation value (used for set operations)
+    ID      string `json:"id"`       // Operation identifier
 }
 ```
 
@@ -323,9 +323,9 @@ Batch operation result structure.
 
 ```go
 type BatchResult struct {
-    ID     string  // Operation identifier
-    Result any     // Operation result
-    Error  error   // Error information
+    ID     string `json:"id"`     // Operation identifier
+    Result any    `json:"result"` // Operation result
+    Error  error  `json:"error"`  // Error information
 }
 ```
 
@@ -337,8 +337,8 @@ Processor provides corresponding modify methods with signatures matching the pac
 p, err := json.New()
 
 result, err := p.Set(jsonStr, "user.name", "Alice")
-result, err := p.Delete(jsonStr, "user.temp")
-result, err := p.SetCreate(jsonStr, "user.email", "test@example.com")
+result, err = p.Delete(jsonStr, "user.temp")
+result, err = p.SetCreate(jsonStr, "user.email", "test@example.com")
 ```
 
 ## See Also

@@ -1,6 +1,6 @@
 ---
-title: "커스텀 Claims - JWT"
-description: "CyberGo JWT 커스텀 Claims 가이드: CustomClaims 인터페이스 구현, 내장과 커스텀 검증 차이, ValidateInto/RefreshInto 사용법과 코드 예제."
+title: "커스텀 Claims - CyberGo JWT | 비즈니스 선언 인터페이스"
+description: "커스텀 Claims 가이드: CustomClaims 인터페이스로 비즈니스 전용 선언 필드를 정의하고, 내장 Claims와 커스텀 타입의 검증 차이, ValidateInto와 RefreshInto 파싱·갱신 사용법을 안내합니다."
 ---
 
 # 커스텀 Claims

@@ -1,6 +1,6 @@
 ---
-title: "Tutorial - HTTPC"
-description: "Thirty-minute hands-on tutorial: build a complete GitHub REST API client step by step from httpc.Get, covering JSON response parsing, NewDomain domain client, WithJSON sending data, middleware chain composition, ClientError error handling, and file download functionality."
+title: "Tutorial - CyberGo HTTPC | GitHub API Tour"
+description: "HTTPC tutorial: build a GitHub REST API client step by step from httpc.Get, covering JSON parsing, domain client, middleware, and file downloads."
 ---
 
 # Tutorial: Build a GitHub API Client
@@ -14,7 +14,7 @@ Build a GitHub API client step by step, connecting HTTPC's core concepts. Approx
 - Using the domain client to manage API base URLs
 - Adding middleware for logging and metrics
 - Handling errors and retries
-- Leveraging automatic object pool management for performance
+- Result response objects and automatic management
 
 ## Step 1: Basic Request
 
@@ -47,7 +47,7 @@ func main() {
 
 Key points:
 - Package-level function `httpc.Get` requires no client creation, suitable for quick validation
-- Result objects are automatically managed by the built-in object pool, GC handles cleanup
+- Result is created fresh per request, reclaimed by GC, no manual release needed
 
 ## Step 2: Parsing JSON Responses
 
@@ -253,7 +253,8 @@ dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     fmt.Printf("\rDownload progress: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
-result, err := client.DownloadWithOptions(
+result, err := client.Download(
+    context.Background(),
     "https://go.dev/dl/go1.22.0.linux-amd64.tar.gz",
     dlCfg,
 )
@@ -305,7 +306,7 @@ func fetchRepos(ctx context.Context, repos []string) error {
 ```
 
 :::tip
-`PerformanceConfig()` provides a large connection pool configuration suitable for high-concurrency scenarios. Result objects are automatically managed by the built-in object pool.
+`PerformanceConfig()` provides a large connection pool configuration suitable for high-concurrency scenarios. Result is created fresh per request and reclaimed by GC.
 :::
 
 ## Complete Example

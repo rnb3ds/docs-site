@@ -1,6 +1,6 @@
 ---
 title: "보조 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 보조 도구 함수 완전 레퍼런스: CompareJSON으로 두 JSON이 동등한지 비교 검증, ClearCache/GetStats 캐시 관리와 통계, 전역 프로세서 관리 및 보안 패턴 보조 함수를 포함하여 일상 개발에서 편리한 JSON 도구 함수 모음을 제공합니다."
+description: "CyberGo JSON 보조 함수: CompareJSON 비교, ClearCache/GetStats 캐시 관리, 전역 프로세서, 보안 헬퍼로 일상적인 Go JSON 작업을 단순화합니다."
 ---
 
 # 보조 함수
@@ -21,11 +21,11 @@ equal, _ := json.CompareJSON(`{"a":1,"b":2}`, `{"b":2,"a":1}`)
 fmt.Println(equal) // true
 
 // 숫자 정밀도가 다르지만 값이 같음
-equal, _ := json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
+equal, _ = json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
 fmt.Println(equal) // true
 
 // 내용이 다름
-equal, _ := json.CompareJSON(`{"a":1}`, `{"a":2}`)
+equal, _ = json.CompareJSON(`{"a":1}`, `{"a":2}`)
 fmt.Println(equal) // false
 ```
 
@@ -195,6 +195,12 @@ val := json.GetString(data, "user.name")
 전역 프로세서를 종료하고 리소스를 해제합니다.
 
 ```go
+package main
+
+import (
+    "github.com/cybergodev/json"
+)
+
 func main() {
     cfg := json.DefaultConfig()
     p, err := json.New(cfg)
@@ -214,7 +220,7 @@ func main() {
 ## 출력 함수
 
 :::warning API 변경 안내
-`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE`는 내부 함수(소문자 명명)로 전환되어 공개 API로 내보내지지 않습니다. 대신 [Encode](./functions/encode-decode#encode), [EncodePretty](./functions/encode-decode#encodepretty) 또는 [Prettify](./functions/encode-decode#prettify)와 함께 `fmt.Println`을 사용하세요. 자세한 내용은 [출력 함수](./print)를 참조하세요.
+`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE`는 라이브러리에서 제거되어 더 이상 제공되지 않습니다. 대신 [Encode](./functions/encode-decode#encode), [EncodePretty](./functions/encode-decode#encodepretty) 또는 [Prettify](./functions/encode-decode#prettify)와 함께 `fmt.Println`을 사용하세요. 자세한 내용은 [출력 함수](./print)를 참조하세요.
 :::
 
 ---

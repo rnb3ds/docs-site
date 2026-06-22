@@ -1,6 +1,6 @@
 ---
-title: "성능 최적화 - HTML"
-description: "CyberGo HTML 라이브러리 성능 최적화 가이드, Processor 인스턴스 재사용(sync.Pool 오버헤드 방지), 캐시 전략 설정(MaxCacheEntries, CacheTTL, CacheCleanup), 배치 처리 동시성 제어(WorkerPoolSize), 입력 크기 제어와 타임아웃 설정 등 실용적인 팁을 포함합니다."
+title: "성능 최적화 - CyberGo HTML | 처리량 향상 가이드"
+description: "CyberGo HTML 성능 최적화: Processor 재사용, 캐시 전략, 배치 동시성 제어, 입력 크기와 타임아웃 설정 등 대규모 처리의 처리량을 높이는 팁입니다."
 ---
 
 # 성능 최적화

@@ -79,8 +79,9 @@ logger, _ := dd.New(dd.Config{
 
 ```text
 logs/app.log           ← 当前日志
-logs/app-001.log       ← 第一次轮换
-logs/app-002.log.gz    ← 压缩的旧备份（启用 Compress 后）
+logs/app_log_1.log     ← 第一次轮换（最新的备份）
+logs/app_log_2.log     ← 更早的备份
+logs/app_log_1.log.gz  ← 启用 Compress 后旧备份会被压缩为 .gz
 ```
 
 ## BufferedWriter 缓冲写入

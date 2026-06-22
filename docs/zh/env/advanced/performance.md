@@ -1,6 +1,6 @@
 ---
 title: "性能优化 - CyberGo env | 高并发读写调优"
-description: "CyberGo env 库性能优化与高并发调优指南，详解 sync.RWMutex 读写锁实现的并发安全访问、sync.Pool 对象池复用策略、mlock 内存锁定使用模式与性能影响、大文件流式解析处理技巧，附基准测试数据对比与 LimitsConfig 安全参数配置建议。"
+description: "CyberGo env 性能优化指南，详解 RWMutex 读写锁并发安全、sync.Pool 对象池复用、mlock 内存锁定使用与大文件流式解析，附基准测试对比与参数调优建议。"
 ---
 
 # 性能优化
@@ -100,8 +100,8 @@ wg.Wait()
 // 获取 SecureValue（可能从池中复用）
 secret := env.GetSecure("API_KEY")
 
-// 使用
-value := secret.String()
+// 使用（Reveal 返回明文，String/Masked 返回掩码）
+value := secret.Reveal()
 
 // 释放回池
 secret.Close()  // 或 secret.Release()
@@ -140,7 +140,7 @@ func later() {
 func getSecret() string {
     secret := env.GetSecure("KEY")
     defer secret.Close()
-    return secret.String()
+    return secret.Reveal()
 }
 ```
 
@@ -421,7 +421,7 @@ loader, _ := env.New(cfg)
 // 启动 goroutine
 go func() {
     time.Sleep(1 * time.Second)
-    loader.GetString("KEY")  // 可能返回 ErrClosed
+    loader.GetString("KEY")  // 返回空字符串（GetString 不返回 error）
 }()
 
 loader.Close()  // 主 goroutine 关闭

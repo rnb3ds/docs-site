@@ -1,24 +1,32 @@
 import type { DefaultTheme, LocaleSpecificConfig } from 'vitepress'
 import { zhSidebars } from './sidebars/zh'
 
+// Shared top-nav used by BOTH the root `/` homepage (via the top-level
+// themeConfig in config.mts) and the `/zh/` locale. The root path is not part
+// of any locale (every locale carries a /{lang}/ prefix), so it falls back to
+// the top-level themeConfig — keeping this in one place guarantees `/` and
+// `/zh/` render identical navigation. Each other locale carries its own
+// translated nav and overrides the top-level value there.
+export const zhNav: DefaultTheme.NavItem[] = [
+  {
+    text: '项目',
+    items: [
+      { text: 'JSON', link: '/zh/json/' },
+      { text: 'JWT', link: '/zh/jwt/' },
+      { text: 'HTTPC', link: '/zh/httpc/' },
+      { text: 'HTML', link: '/zh/html/' },
+      { text: 'DD', link: '/zh/dd/' },
+      { text: 'ENV', link: '/zh/env/' }
+    ]
+  },
+  { text: '关于', link: '/zh/about' }
+]
+
 export const zhConfig: LocaleSpecificConfig<DefaultTheme.Config> = {
   description: '高性能 Go 开源库文档',
 
   themeConfig: {
-    nav: [
-      {
-        text: '项目',
-        items: [
-          { text: 'JSON', link: '/zh/json/' },
-          { text: 'JWT', link: '/zh/jwt/' },
-          { text: 'HTTPC', link: '/zh/httpc/' },
-          { text: 'HTML', link: '/zh/html/' },
-          { text: 'DD', link: '/zh/dd/' },
-          { text: 'ENV', link: '/zh/env/' }
-        ]
-      },
-      { text: '关于', link: '/zh/about' }
-    ],
+    nav: zhNav,
 
     sidebar: zhSidebars,
 

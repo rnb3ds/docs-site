@@ -67,8 +67,15 @@ type Config struct {
     ContextExtractors []ContextExtractor // コンテキストエクストラクタリスト
     Hooks             *HookRegistry      // フックレジストリ
     Sampling          *SamplingConfig    // サンプリング設定
+
+    // 監査設定
+    Audit             *AuditConfig       // 監査ログ設定（セキュリティイベント）
 }
 ```
+
+:::tip Audit フィールド
+`Audit` を設定すると、機密データのマスキング、レート制限イベント、セキュリティ違反が [AuditLogger](./audit) 経由で監査イベントとして記録されます。[監査ログ](./audit) を参照してください。
+:::
 
 ### Clone
 
@@ -184,6 +191,8 @@ type JSONFieldNames struct {
     Fields    string  // フィールドコンテナ名（デフォルト "fields"）
 }
 ```
+
+ポインタレシーバメソッド `(*JSONFieldNames).IsComplete() bool` を実装しています。5つのフィールド名がすべて空でない場合に `true` を返し、すべてのフィールド名が完全にカスタマイズされているかを検証するために使用できます。
 
 使用例：
 
@@ -357,3 +366,4 @@ logger, _ := dd.New(dd.Config{
 - [出力先](./writers) -- FileWriter、BufferedWriter、MultiWriter
 - [セキュリティフィルタ](./security) -- SecurityConfig 詳解
 - [フックシステム](./hooks) -- HooksConfig 詳解
+- [監査ログ](./audit) -- AuditConfig 詳解

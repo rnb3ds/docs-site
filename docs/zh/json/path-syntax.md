@@ -1,6 +1,6 @@
 ---
 title: "路径表达式语法 - CyberGo JSON | JSONPath 查询指南"
-description: "CyberGo JSON 路径表达式语法完整参考指南，包括属性访问 user.name、数组索引 items[0]、切片 [start:end:step]、通配符 [*]、多字段提取 {name,email} 等语法，支持灵活精确地定位和操作 JSON 数据中的任意节点。"
+description: "CyberGo JSON 路径表达式语法指南：属性访问 user.name、数组索引 items[0]、切片、通配符、多字段提取，精确定位 Go JSON 数据中的任意节点。"
 ---
 
 # 路径表达式语法
@@ -409,8 +409,6 @@ name := json.GetString(data, "user\\.name")  // "Alice"
 | 数组索引 | `items[0]` | 访问数组元素 |
 | 数组切片 | `items[1:5]` | 切片范围访问 |
 | 通配符 | `items[*]` | 匹配所有元素 |
-| 递归下降 | `..name` | 递归搜索所有层级 |
-| 过滤器 | `[?active]` | 条件过滤 |
 | 字段提取 | `{name,email}` | 提取多个字段 |
 | 扁平化提取 | `{flat:tags}` | 提取并递归展开嵌套数组 |
 | 追加操作 | `items[+]` | 向数组追加元素 |

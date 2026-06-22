@@ -1,6 +1,6 @@
 ---
 title: "Processor 出力メソッド - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON Processor 出力メソッドリファレンス：Encode エンコード、EncodePretty フォーマット、EncodeWithConfig カスタム設定、EncodeBatch/EncodeFields バッチエンコード、Compact/Indent/HTMLEscape フォーマット操作など、多様な JSON 出力ニーズに対応。"
+description: "CyberGo JSON Processor 出力メソッド：Encode、EncodePretty、EncodeWithConfig、EncodeBatch/EncodeFields、Compact/Indent/HTMLEscape で多様な出力に対応します。"
 ---
 
 # 出力メソッド
@@ -56,14 +56,14 @@ if err != nil {
 result, err := p.EncodeWithConfig(data, json.PrettyConfig())
 
 // SecurityConfig を使用
-result, err := p.EncodeWithConfig(data, json.SecurityConfig())
+result, err = p.EncodeWithConfig(data, json.SecurityConfig())
 
 // カスタム設定を使用
 cfg := json.DefaultConfig()
 cfg.Pretty = true
 cfg.SortKeys = true
 cfg.EscapeHTML = true
-result, err := p.EncodeWithConfig(data, cfg)
+result, err = p.EncodeWithConfig(data, cfg)
 ```
 
 ### EncodeBatch
@@ -101,7 +101,7 @@ result, err := p.EncodeFields(user, []string{"name", "email"})
 
 シグネチャ：`func (p *Processor) EncodeStream(values any, cfg ...Config) (string, error)`
 
-任意の値を JSON 文字列にエンコードします。`EncodeWithConfig` の Processor メソッド形式と同等です。
+複数の値を JSON 配列ストリーム（array stream）としてエンコードします。`values` は通常スライスまたは列挙可能なコレクションで、`[v1,v2,...]` 形式の JSON 配列文字列を出力します。
 
 ```go
 values := []any{"item1", "item2", "item3"}
@@ -169,10 +169,10 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 // }
 ```
 
-### Print（非公開化）
+### Print（削除）
 
 ::: warning API 変更のお知らせ
-`Print`、`PrintE`、`PrintPretty`、`PrintPrettyE` は内部メソッド（小文字命名）に移行され、公開 API としてエクスポートされなくなりました。以下の代替手段を使用してください：
+`Print`、`PrintE`、`PrintPretty`、`PrintPrettyE` はライブラリから削除され、提供されなくなりました。以下の代替手段を使用してください：
 
 ```go
 // コンパクト出力

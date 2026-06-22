@@ -1,6 +1,6 @@
 ---
 title: "Шпаргалка - CyberGo env | Быстрый справочник API"
-description: "Шпаргалка по часто используемым API библиотеки CyberGo env для управления переменными окружения — одностаничная сводка фрагментов кода для загрузки конфигурации, типобезопасного чтения, валидации переменных, безопасного хранения SecureValue, сериализации и десериализации, маппинга структур и аудиторского лога."
+description: "Шпаргалка CyberGo env: загрузка файлов, типобезопасное чтение, валидация, SecureValue-хранилище, сериализация и аудит — сниппеты на одной странице."
 ---
 
 # Шпаргалка
@@ -50,7 +50,7 @@ count := env.Len()
 secret := env.GetSecure("PASSWORD")
 if secret != nil {
     defer secret.Release()  // или secret.Close()
-    value := secret.String()
+    value := secret.Reveal()
     masked := secret.Masked()
 }
 ```

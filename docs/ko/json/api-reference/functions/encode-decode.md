@@ -1,6 +1,6 @@
 ---
 title: "인코딩 디코딩 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 인코딩 디코딩 함수 참조: Marshal/Unmarshal 직렬화, Compact/Indent/HTMLEscape 포맷, Encode/EncodePretty/EncodeWithConfig/Prettify 설정형 인코딩을 포함하며, encoding/json과 100% 호환됩니다."
+description: "CyberGo JSON 인코딩/디코딩 함수: Marshal/Unmarshal, Compact/Indent/HTMLEscape, Encode/EncodePretty/Prettify로 표준 라이브러리 호환 인코딩을 제공합니다."
 ---
 
 # 인코딩 디코딩 함수
@@ -97,13 +97,13 @@ fmt.Println(buf.String())
 
 시그니처: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-JSON 내용을 HTML 이스케이프하여 특수 문자(`&`, `<`, `>`)를 유니코드 이스케이프 시퀀스로 교체하고 결과를 `dst`에 씁니다. 반환값이 없습니다.
+JSON 내용을 HTML 이스케이프하여 `<`, `>`, `&` 등의 특수 문자(및 U+2028, U+2029)를 대응하는 유니코드 이스케이프 시퀀스로 교체하고 결과를 `dst`에 씁니다. 반환값이 없습니다.
 
 ```go
 var buf bytes.Buffer
 json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
 fmt.Println(buf.String())
-// {"html":"<script>alert(1)</script>"}
+// {"html":"\u003cscript\u003ealert(1)\u003c/script\u003e"}
 ```
 
 ### Prettify
@@ -234,7 +234,7 @@ fmt.Println(result) // {"name":"Alice","email":"a@b.com"}
 
 시그니처: `func EncodeStream(values any, cfg ...Config) (string, error)`
 
-스트림 인코딩으로, 값을 JSON 문자열로 인코딩합니다. 통합된 인코딩 인터페이스가 필요한 시나리오에 적합합니다.
+여러 값을 JSON 배열 스트림(array stream)으로 인코딩합니다. `values`는 일반적으로 슬라이스나 열거 가능한 컬렉션이며, `[v1,v2,...]` 형태의 JSON 배열 문자열을 출력합니다.
 
 ```go
 values := []map[string]any{
@@ -265,7 +265,7 @@ defer p.Close()
 
 시그니처: `func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-JSON 바이트를 압축하여 `dst` 버퍼에 씁니다. 패키지 레벨 `Compact` 함수에 위임합니다.
+JSON 바이트를 압축하여 `dst` 버퍼에 씁니다. 패키지 레벨 `Compact` 함수가 이 메서드에 위임합니다.
 
 ```go
 var buf bytes.Buffer
@@ -308,10 +308,10 @@ p.HTMLEscape(&buf, []byte(`{"html":"<script>"}`))
 cfg := json.DefaultConfig()
 
 // 포맷 인쇄 설정
-cfg := json.PrettyConfig()
+cfg = json.PrettyConfig()
 
 // 보안 설정
-cfg := json.SecurityConfig()
+cfg = json.SecurityConfig()
 ```
 
 :::tip

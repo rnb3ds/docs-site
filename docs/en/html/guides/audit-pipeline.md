@@ -1,6 +1,6 @@
 ---
-title: "Audit Pipeline - HTML"
-description: "Practical guide to the CyberGo HTML audit system, covering event types, built-in Sinks, level filtering, custom Sink creation, and production monitoring."
+title: "Audit Pipeline - CyberGo HTML | Pipeline Guide"
+description: "CyberGo HTML audit in practice: from basic enablement to multi-layer pipelines — event types, built-in Sinks, LevelFilteredSink, FilteredSink, and custom Sinks."
 ---
 
 # Audit Pipeline

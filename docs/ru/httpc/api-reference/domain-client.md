@@ -1,6 +1,6 @@
 ---
-title: "Доменный клиент - HTTPC"
-description: "Справочник API доменного клиента HTTPC: функция создания NewDomain, семь HTTP-методов Get/Post и универсальный метод Request, четыре метода загрузки, правила автоматической сборки URL, интерфейс DomainClienter с управлением заголовками SetHeader/SetCookie через сессии и Close для жизненного цикла."
+title: "Доменный клиент - CyberGo HTTPC | NewDomain и сессии"
+description: "Справочник API доменного клиента HTTPC: NewDomain, семь HTTP-методов, метод Request, авто-сборка URL и управление сессиями SetHeader/SetCookie."
 ---
 
 # Доменный клиент
@@ -71,15 +71,17 @@ result, err := dc.Request(ctx, "GET", "/users", options...)
 ## Методы загрузки
 
 ```go
-// Базовая загрузка
-result, err := dc.DownloadFile("/files/report.pdf", "/tmp/report.pdf")
+func (dc *DomainClient) Download(ctx context.Context, path string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
+```
 
-// Загрузка с конфигурацией
-result, err := dc.DownloadWithOptions("/files/report.pdf", downloadOpts)
+Загружает файл в `cfg.FilePath`, при этом `path` присоединяется к `baseURL`. Сигнатура совпадает с пакетной `Download` и `Client.Download` — `Download` является единым каноническим входом для загрузки во всех трёх случаях. `cfg` не может быть nil, `cfg.FilePath` должен быть задан (иначе возвращается `ErrEmptyFilePath`).
 
-// С контекстом
-result, err := dc.DownloadFileWithContext(ctx, "/files/report.pdf", "/tmp/report.pdf")
-result, err := dc.DownloadWithOptionsWithContext(ctx, "/files/report.pdf", downloadOpts)
+```go
+cfg := httpc.DefaultDownloadConfig()
+cfg.FilePath = "/tmp/report.pdf"
+cfg.Overwrite = true
+
+result, err := dc.Download(ctx, "/files/report.pdf", cfg)
 ```
 
 Cookie ответа при загрузке автоматически фиксируются в сессии.

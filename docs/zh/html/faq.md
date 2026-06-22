@@ -1,6 +1,6 @@
 ---
-title: "常见问题 - HTML"
-description: "CyberGo HTML 库常见问题解答汇总，详细解答包函数与 Processor 的区别与选择、编码自动检测与手动指定、输入大小限制配置、Markdown 输出方法、批量处理上限、空文本排查步骤、统计监控使用、审计配置方式和自定义评分器实现等高频问题，帮助开发者快速解决实际使用中的常见疑惑。"
+title: "常见问题 - CyberGo HTML | 高频问题解答"
+description: "CyberGo HTML 常见问题解答：包函数与 Processor 选择、编码检测、输入限制、批量上限、空文本排查、统计监控、审计与自定义评分器。"
 ---
 
 # 常见问题
@@ -39,7 +39,7 @@ cfg.Encoding = "gbk"
 默认最大 50MB（`DefaultMaxInputSize = 52428800`）。可通过配置调整：
 
 ```go
-cfg.MaxInputSize = 100 * 1024 * 1024 // 100MB
+cfg.MaxInputSize = 10 * 1024 * 1024 // 10MB
 ```
 
 ## 如何获取 Markdown 格式的输出？
@@ -64,9 +64,13 @@ md, _ := p.ExtractToMarkdown(data)
 可能的原因：
 
 1. **HTML 结构问题** - 内容在 `<script>` 或 `<style>` 标签中
-2. **深度超出** - DOM 嵌套超过 `MaxDepth` 限制
-3. **输入为空** - 检查输入字节数组是否为空
+2. **清洗后内容为空** - 若正文仅存在于被清洗移除的标签（如 `<iframe>`、`<object>`）中，结果可能为空；可对可信输入临时设置 `EnableSanitization = false` 排查
+3. **输入为空** - 检查输入字节数组是否为空（空白内容会返回空 `Result`）
 4. **文章识别** - 尝试关闭 `ExtractArticle` 看是否能提取
+
+:::tip 注意区分错误与空结果
+DOM 嵌套超过 `MaxDepth` 不会产生空文本，而是返回 `ErrMaxDepthExceeded` 错误。若调用返回了 `error`，请优先用 `errors.Is` 判断错误类型，而非检查文本是否为空。
+:::
 
 ```go
 cfg := html.DefaultConfig()

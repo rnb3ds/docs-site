@@ -1,6 +1,6 @@
 ---
-title: "API 레퍼런스 - JWT"
-description: "CyberGo JWT API 레퍼런스 색인: 패키지 함수, Processor 핵심 메서드, Config 설정, Claims 선언, 인터페이스 정의, 타입 상수 및 오류 처리의 전체 문서 내비게이션."
+title: "API 레퍼런스 - CyberGo JWT | 전체 인터페이스 문서"
+description: "CyberGo JWT API 레퍼런스 색인: 패키지 함수, Processor 메서드, Config와 BlacklistConfig, Claims와 RegisteredClaims, 확장 인터페이스, 19 센티넬 오류의 전체 내비게이션."
 ---
 
 # API 레퍼런스
@@ -17,7 +17,7 @@ CyberGo JWT 라이브러리는 완전한 JWT 토큰 라이프사이클 관리 AP
 | [Claims](./claims) | `Claims`, `RegisteredClaims` 선언 타입 | 토큰 선언 |
 | [인터페이스 정의](./interfaces) | `TokenManager`, `CustomClaims`, `BlacklistStore` 등 | 확장 인터페이스 |
 | [타입과 상수](./types) | 서명 알고리즘 상수, `NumericDate`, `StringOrSlice` 등 | 보조 타입 |
-| [오류](./errors) | 17개 센티넬 오류, `ValidationError` | 오류 처리 |
+| [오류](./errors) | **19**개 센티넬 오류, `ValidationError` | 오류 처리 |
 
 ## 빠른 찾기
 

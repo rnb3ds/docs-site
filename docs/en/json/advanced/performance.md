@@ -1,6 +1,6 @@
 ---
-title: "Performance Optimization - CyberGo JSON | High Performance Guide"
-description: "CyberGo JSON performance optimization guide: detailed coverage of caching strategies EnableCache/CacheTTL, parallel processing ParallelThreshold/MaxConcurrency, PreParse pre-parsing, WarmupCache warm-up, object pool reuse, and benchmark analysis for comprehensively improving high-frequency JSON processing performance."
+title: "Performance - CyberGo JSON | High Performance Guide"
+description: "CyberGo JSON performance guide: EnableCache/CacheTTL caching, ParallelThreshold parallelism, PreParse, WarmupCache, and object-pool reuse for throughput."
 ---
 
 # Performance Optimization
@@ -106,17 +106,28 @@ wg.Wait()
 ### Using a Worker Pool
 
 ```go
-pool := workerpool.New(10)
-
 items := json.GetArray(data, "items")
-for _, item := range items {
-    item := item
-    pool.Submit(func() {
-        processItem(item)
-    })
+jobs := make(chan any, len(items))
+
+// Start a fixed number of workers, reusing goroutines to avoid frequent creation/destruction
+var wg sync.WaitGroup
+workers := runtime.NumCPU()
+for w := 0; w < workers; w++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        for item := range jobs {
+            processItem(item)
+        }
+    }()
 }
 
-pool.StopWait()
+// Close the channel after dispatching tasks to notify workers to exit
+for _, item := range items {
+    jobs <- item
+}
+close(jobs)
+wg.Wait()
 ```
 
 ## Configuration Optimization

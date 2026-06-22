@@ -1,6 +1,6 @@
 ---
 title: "빠른 시작 - CyberGo env | 5분 입문 가이드"
-description: "CyberGo env 환경 변수 관리 라이브러리 5분 빠른 시작 가이드로, go get 설치부터 첫 번째 프로그램 실행까지, .env 파일 로딩, 타입 안전 읽기, 구조체 매핑, 다중 환경 설정 및 변수 전개 등 핵심 기능의 사용 방법과 완전한 코드 예제를 제공하여 Go 환경 변수 관리를 빠르게 익힐 수 있습니다."
+description: "CyberGo env 5분 빠른 시작 가이드로, go get 설치부터 .env 로딩·타입 안전 읽기·구조체 매핑·변수 확장까지 핵심 기능과 실행 가능한 코드 예제를 제공합니다."
 ---
 
 # 빠른 시작
@@ -14,7 +14,7 @@ go get github.com/cybergodev/env
 ```
 
 :::tip 요구 사항
-Go 1.24+
+Go 1.25+
 :::
 
 ## .env 파일 생성
@@ -184,8 +184,8 @@ secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
 
-    // 원래 값 가져오기
-    value := secret.String()
+    // 원래 값 가져오기 (평문이 필요할 때만 호출, 예: 암호화, API 호출)
+    value := secret.Reveal()
 
     // 로그에 마스크 사용 (유출 방지)
     log.Printf("API Key: %s", secret.Masked())  // 출력: [SECURE:32 bytes]

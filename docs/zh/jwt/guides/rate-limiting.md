@@ -1,6 +1,6 @@
 ---
-title: "速率限制 - JWT"
-description: "CyberGo JWT 速率限制指南：令牌桶限流配置、内置 RateLimiter、RateLimitProvider 自定义实现、限流 Key 优先级与最佳实践。"
+title: "速率限制 - CyberGo JWT | 令牌桶限流"
+description: "速率限制指南：基于令牌桶配置签发接口每窗口最大请求数，讲解限流键的 Subject、UserID 与 RateLimitKeyer 优先级查找，支持内置与自定义分布式限流实现。"
 ---
 
 # 速率限制
@@ -83,11 +83,14 @@ defer limiter.Close()
 ```go
 type RateLimitProvider interface {
     Allow(key string) bool
-    AllowN(key string, n int) bool
     Reset(key string)
     Close()
 }
 ```
+
+:::tip 关于 AllowN
+接口本身只定义单次判断的 `Allow`。批量判断方法 `AllowN(key string, n int) bool` 是具体类型 [`*RateLimiter`](../api-reference/types#ratelimiter) 的扩展方法，不属于此接口。
+:::
 
 例如对接 Redis 实现分布式限流：
 

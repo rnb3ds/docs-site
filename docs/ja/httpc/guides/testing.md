@@ -1,6 +1,6 @@
 ---
-title: "テストガイド - HTTPC"
-description: "HTTPC テストガイド：TestingConfig テスト専用設定、net/http/httptest モックサーバー統合、エラー/遅延/リダイレクト/アップロードのシミュレーション、テーブル駆動テストパターン、コンテキストタイムアウトテストとベストプラクティス。"
+title: "テストガイド - CyberGo HTTPC | httptestとモック"
+description: "HTTPC テストガイド: TestingConfig テスト専用設定、net/http/httptest モックサーバー統合、エラー応答とリダイレクトのシミュレーション、テーブル駆動テスト、Cookie セッションアサーションのベストプラクティスを解説します。"
 ---
 
 # テストガイド

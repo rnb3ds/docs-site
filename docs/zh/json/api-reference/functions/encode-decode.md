@@ -1,6 +1,6 @@
 ---
 title: "编码解码函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 编码解码函数参考：Marshal/Unmarshal 序列化、Compact/Indent/HTMLEscape 格式化、Encode/EncodePretty/EncodeWithConfig/Prettify 配置化编码，100% 兼容 encoding/json。"
+description: "CyberGo JSON 编码解码函数：Marshal/Unmarshal 序列化、Compact/Indent/HTMLEscape 格式化与 Encode/EncodePretty/Prettify 配置化编码，100% 兼容标准库。"
 ---
 
 # 编码解码函数
@@ -97,13 +97,13 @@ fmt.Println(buf.String())
 
 签名：`func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-HTML 转义 JSON 内容，将特殊字符（`&`、`<`、`>`）替换为 Unicode 转义序列，结果写入 `dst`。无返回值。
+HTML 转义 JSON 内容，将 `<`、`>`、`&` 等特殊字符（以及 U+2028、U+2029）替换为对应的 Unicode 转义序列，结果写入 `dst`。无返回值。
 
 ```go
 var buf bytes.Buffer
 json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
 fmt.Println(buf.String())
-// {"html":"<script>alert(1)</script>"}
+// {"html":"\u003cscript\u003ealert(1)\u003c/script\u003e"}
 ```
 
 ### Prettify
@@ -234,7 +234,7 @@ fmt.Println(result) // {"name":"Alice","email":"a@b.com"}
 
 签名：`func EncodeStream(values any, cfg ...Config) (string, error)`
 
-流式编码，将值编码为 JSON 字符串。适用于需要统一编码接口的场景。
+将多个值编码为 JSON 数组流（array stream）。`values` 通常是切片或可枚举集合，输出形如 `[v1,v2,...]` 的 JSON 数组字符串。
 
 ```go
 values := []map[string]any{
@@ -265,7 +265,7 @@ defer p.Close()
 
 签名：`func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-压缩 JSON 字节并写入 `dst` 缓冲区。委托给包级 `Compact` 函数。
+压缩 JSON 字节并写入 `dst` 缓冲区。包级 `Compact` 函数委托给此方法。
 
 ```go
 var buf bytes.Buffer
@@ -308,10 +308,10 @@ p.HTMLEscape(&buf, []byte(`{"html":"<script>"}`))
 cfg := json.DefaultConfig()
 
 // 漂亮打印配置
-cfg := json.PrettyConfig()
+cfg = json.PrettyConfig()
 
 // 安全配置
-cfg := json.SecurityConfig()
+cfg = json.SecurityConfig()
 ```
 
 :::tip

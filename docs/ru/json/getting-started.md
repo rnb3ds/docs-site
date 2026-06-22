@@ -1,6 +1,6 @@
 ---
-title: "Быстрый старт - CyberGo JSON | Руководство для начинающих за 5 минут"
-description: "Руководство по быстрому старту CyberGo JSON: установка и настройка, запросы по пути GetString/GetInt, кодирование/декодирование Marshal/Unmarshal, файловые операции ввода-вывода. Освойте лучшие практики обработки JSON в Go за 5 минут с поддержкой запросов JSONPath и типобезопасного получения, 100% совместимость с encoding/json."
+title: "Быстрый старт - CyberGo JSON | За 5 минут"
+description: "Быстрый старт CyberGo JSON: установка, GetString/GetInt, Marshal/Unmarshal, файловый ввод-вывод за 5 минут, совместимый со стандартной библиотекой."
 ---
 
 # Быстрый старт
@@ -232,13 +232,13 @@ func main() {
 cfg := json.DefaultConfig()
 
 // Конфигурация с усиленной безопасностью (для недоверенного ввода)
-cfg = json.SecurityConfig()
+// cfg = json.SecurityConfig()
 
 // Конфигурация с форматированным выводом
-cfg = json.PrettyConfig()
+// cfg = json.PrettyConfig()
 
 // Пользовательская конфигурация
-cfg := json.DefaultConfig()
+cfg = json.DefaultConfig()
 cfg.MaxJSONSize = 50 * 1024 * 1024 // 50МБ
 cfg.EnableCache = true
 cfg.CacheTTL = 5 * time.Minute

@@ -1,6 +1,6 @@
 ---
-title: "Types - HTML"
-description: "Data type reference for CyberGo HTML, including Result, ImageInfo, LinkInfo, VideoInfo, AudioInfo, LinkResource, Statistics, BatchResult, and NodeAttr types."
+title: "Types - CyberGo HTML | Data Type Reference"
+description: "CyberGo HTML data types API: field descriptions for Result (custom JSON), ImageInfo, LinkInfo, VideoInfo, AudioInfo, LinkResource, Statistics, and BatchResult."
 ---
 
 # Types

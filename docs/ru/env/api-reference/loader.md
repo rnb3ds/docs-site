@@ -1,6 +1,6 @@
 ---
 title: "Loader API - CyberGo env | Подробно о загрузчике"
-description: "Полный справочник API загрузчика Loader библиотеки CyberGo env. Loader — основной тип, предоставляющий методы LoadFiles для загрузки файлов нескольких форматов, GetString для типобезопасного чтения, Set и Delete для операций с ключами и значениями, Validate для валидации, ParseInto для экспорта сериализации и Close для управления жизненным циклом. Все методы потокобезопасны."
+description: "Справочник API Loader в CyberGo env: загрузка файлов, типобезопасное чтение, операции с ключами, валидация, сериализация и Close — всё потокобезопасно."
 ---
 
 # Loader API
@@ -318,7 +318,7 @@ secret := loader.GetSecure("API_SECRET")
 if secret != nil {
     defer secret.Release()
 
-    value := secret.String()
+    value := secret.Reveal()
     masked := secret.Masked()  // [SECURE:32 bytes]
 }
 ```

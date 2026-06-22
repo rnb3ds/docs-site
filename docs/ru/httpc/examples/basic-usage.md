@@ -1,6 +1,6 @@
 ---
-title: "Базовые примеры - HTTPC"
-description: "Набор базовых примеров HTTPC: GET-запросы с параметрами и аутентификацией, POST-запросы JSON/форма/загрузка файлов, многополевая форма FormData, пользовательская конфигурация DefaultConfig, прокси ProxyURL, промежуточное ПО Recovery/Logging, сбор метрик RequestID/Metrics и загрузка файлов с обратным вызовом прогресса."
+title: "Базовые примеры - CyberGo HTTPC | Рабочие примеры"
+description: "Базовые примеры HTTPC: GET-запросы с аутентификацией, POST JSON/форма/файлы, пользовательская конфигурация, прокси, middleware, метрики и загрузка файлов."
 ---
 
 # Базовые примеры
@@ -189,7 +189,7 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     fmt.Printf("\rЗагрузка: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
-result, err := client.DownloadWithOptions("https://example.com/file.zip", cfg)
+result, err := client.Download(context.Background(), "https://example.com/file.zip", cfg)
 if err != nil {
     log.Fatal(err)
 }

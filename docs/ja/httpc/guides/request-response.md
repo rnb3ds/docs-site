@@ -1,6 +1,6 @@
 ---
-title: "リクエストとレスポンス - HTTPC"
-description: "HTTPC リクエストとレスポンス処理ガイド：パッケージ関数とクライアントリクエスト、WithHeader/WithJSON/WithForm などのリクエストオプション、WithBearerToken 認証、WithQuery パラメータ、Cookie 管理、コンテキスト制御、ストリーミングレスポンスと解凍サイズ制限設定。"
+title: "リクエストとレスポンス - CyberGo HTTPC | オプションと応答"
+description: "HTTPC リクエストとレスポンスガイド: パッケージレベル関数とクライアントリクエスト、WithHeader/WithJSON などのリクエストオプション、Bearer 認証、クエリパラメータ、Cookie 管理、コンテキスト制御のベストプラクティスを解説します。"
 ---
 
 # リクエストとレスポンス
@@ -219,7 +219,7 @@ result, err := httpc.Request(ctx, "GET", url)
 `WithStreamBody(true)` は内部機構であり、ファイルダウンロード時に完全なレスポンスボディがメモリにキャッシュされるのを防ぎます。有効にすると、レスポンスボディは `Result` に読み込まれません（`Body()` と `RawBody()` は空の値を返します）。
 
 :::warning
-`WithStreamBody(true)` はファイルダウンロード API（`DownloadFile`、`DownloadWithOptions`）が内部的に使用します。レスポンス内容をストリーミングで取得する必要がある場合は、[ファイルダウンロード API](./file-transfer) を使用してください。
+`WithStreamBody(true)` はファイルダウンロード API が内部的に使用します。レスポンス内容をストリーミングで取得する必要がある場合は、[ファイルダウンロード API](./file-transfer) を使用してください。
 :::
 
 大きなファイルをダウンロードする場合は、ダウンロード API を使用してください：
@@ -227,7 +227,7 @@ result, err := httpc.Request(ctx, "GET", url)
 ```go
 cfg := httpc.DefaultDownloadConfig()
 cfg.FilePath = "/path/to/file"
-result, err := client.DownloadWithOptions(url, cfg)
+result, err := client.Download(context.Background(), url, cfg)
 ```
 
 ## レスポンスの解凍

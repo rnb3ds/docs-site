@@ -1,6 +1,6 @@
 ---
-title: "Функции запросов и получения - CyberGo JSON | Справочник API"
-description: "Полный справочник функций запросов CyberGo JSON: Get/GetString/GetInt/GetFloat/GetBool типобезопасное получение, GetTyped[T] обобщённое получение и Parse/ParseAny парсинг, полная поддержка JSONPath."
+title: "Функции запросов и получения - CyberGo JSON | API"
+description: "Функции запросов CyberGo JSON: типобезопасные Get/GetString/GetInt/GetFloat/GetBool, обобщённые GetTyped[T] и Parse/ParseAny с полной поддержкой JSONPath."
 ---
 
 # Функции запросов и получения
@@ -434,7 +434,7 @@ defer p.Close()
 data, err := p.ParseAny(`{"name": "test"}`)
 ```
 
-Подробнее см. [Методы парсинга Processor](../processor/parse.md#методы-парсинга).
+Подробнее см. [Методы парсинга Processor](../processor/parse#методы-парсинга).
 
 ## Функции валидации
 

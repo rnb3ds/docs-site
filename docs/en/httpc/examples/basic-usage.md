@@ -1,6 +1,6 @@
 ---
-title: "Basic Usage - HTTPC"
-description: "HTTPC basic usage examples: GET requests with query parameters and authentication, JSON/form/file upload POST requests, FormData multi-field forms, DefaultConfig custom configuration, ProxyURL proxy, Recovery/Logging middleware, RequestID/Metrics collection, and file download with progress callbacks."
+title: "Basic Usage - CyberGo HTTPC | Runnable Examples"
+description: "HTTPC basic usage examples: authenticated GET requests, JSON/form/file POST, custom configuration, proxy, middleware, metrics, and file download code."
 ---
 
 # Basic Usage
@@ -189,7 +189,7 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     fmt.Printf("\rDownloading: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
-result, err := client.DownloadWithOptions("https://example.com/file.zip", cfg)
+result, err := client.Download(context.Background(), "https://example.com/file.zip", cfg)
 if err != nil {
     log.Fatal(err)
 }

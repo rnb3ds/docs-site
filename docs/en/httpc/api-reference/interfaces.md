@@ -1,6 +1,6 @@
 ---
-title: "Interface Definitions - HTTPC"
-description: "HTTPC core interfaces API reference: Client full-featured interface with seven HTTP methods, Doer minimal execution interface, DomainClienter domain client, RetryPolicy retry strategy, RequestMutator/ResponseMutator middleware interfaces, and Handler/MiddlewareFunc definitions."
+title: "Interface Definitions - CyberGo HTTPC | Core Interfaces"
+description: "HTTPC core interfaces API reference: the Client interface, Doer, DomainClienter, RetryPolicy, and middleware interface definitions."
 ---
 
 # Interface Definitions
@@ -21,10 +21,7 @@ type Client interface {
     Options(url string, options ...RequestOption) (*Result, error)
 
     // File downloads
-    DownloadFile(url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptions(url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
-    DownloadFileWithContext(ctx context.Context, url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptionsWithContext(ctx context.Context, url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
+    Download(ctx context.Context, url string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 
     // Lifecycle
     Close() error

@@ -79,8 +79,9 @@ logger, _ := dd.New(dd.Config{
 
 ```text
 logs/app.log           ← 現在のログ
-logs/app-001.log       ← 1 回目のローテーション
-logs/app-002.log.gz    ← 圧縮された古いバックアップ（Compress 有効時）
+logs/app_log_1.log     ← 1 回目のローテーション（最新のバックアップ）
+logs/app_log_2.log     ← さらに古いバックアップ
+logs/app_log_1.log.gz  ← Compress 有効時に古いバックアップが .gz に圧縮される
 ```
 
 ## BufferedWriter バッファ書き込み

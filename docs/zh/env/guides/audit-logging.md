@@ -1,6 +1,6 @@
 ---
 title: "审计日志 - CyberGo env | 安全审计配置"
-description: "CyberGo env 库审计日志完整配置指南，涵盖 JSON 文件处理器、标准日志处理器和 Channel 处理器的创建与配置方法，介绍如何自定义 AuditHandler 接口实现扩展审计逻辑，记录所有环境变量的加载、读取、修改和删除操作，满足安全合规检查与生产环境问题排查需求。"
+description: "CyberGo env 审计日志配置指南，涵盖 JSON 文件、标准日志与 Channel 处理器，及自定义 AuditHandler 记录变量加载、读取、修改与删除操作。"
 ---
 
 # 审计日志
@@ -50,7 +50,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 **输出示例：**
 
 ```json
-{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration":1234567}
+{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 {"timestamp":"2024-01-15T10:30:01Z","action":"get","key":"API_KEY","success":true,"masked":true}
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
@@ -75,9 +75,9 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 **输出示例：**
 
 ```text
-[AUDIT] 2024/01/15 10:30:00 load .env (1.23ms)
-[AUDIT] 2024/01/15 10:30:01 get API_KEY (masked)
-[AUDIT] 2024/01/15 10:30:02 set CUSTOM_VAR
+[AUDIT] 2024/01/15 10:30:00 action=load success=true reason="" file=.env duration=1.23ms
+[AUDIT] 2024/01/15 10:30:01 action=get key=API_KEY success=true reason=""
+[AUDIT] 2024/01/15 10:30:02 action=set key=CUSTOM_VAR success=true reason=""
 ```
 
 ---

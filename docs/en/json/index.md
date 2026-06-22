@@ -1,6 +1,6 @@
 ---
 title: "JSON Library - CyberGo JSON | High-Performance Go Library"
-description: "CyberGo JSON is a high-performance, thread-safe Go JSON library with JSONPath queries, streaming processing, generic APIs, and Schema validation. 100% compatible with encoding/json, providing security protection, smart caching, JSONL processing, and a Hook system for high-concurrency production environments."
+description: "CyberGo JSON: a fast, thread-safe Go JSON library with JSONPath queries, streaming, generic APIs, and Schema validation, compatible with encoding/json."
 ---
 
 # JSON Library
@@ -92,7 +92,7 @@ func main() {
 | Generic API | `GetTyped[T]` | Type-safe generic getter |
 | Pre-parse | `Processor.PreParse`, `Processor.GetFromParsed` | Parse once, query many times |
 | Safe access | `SafeGet` → `AccessResult` | Chained type conversions |
-| Stream processing | `Processor.ForeachFile` | Memory-friendly for large files |
+| Stream processing | `NDJSONProcessor` | Line-by-line streaming, controlled memory |
 | JSONL processing | `StreamLinesInto[T]` | Log/data pipeline support |
 | Schema validation | `ValidateSchema` | JSON Schema validation |
 

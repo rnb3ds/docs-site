@@ -1,6 +1,6 @@
 ---
 title: "Обработка больших файлов - CyberGo JSON | Руководство"
-description: "Полное руководство по обработке больших файлов CyberGo JSON: подробный обзор структурированной итерации ForeachFile, пакетной обработки ForeachFileChunked, настройки управления памятью, оптимизации размера буфера, массовой обработки JSONL и настоящей потоковой обработки NDJSONProcessor — для анализа логов, экспорта данных и сценариев ETL."
+description: "Большие файлы CyberGo JSON: итерация ForeachFile, пакетная ForeachFileChunked, управление памятью и потоковая NDJSONProcessor для Go-аналитики."
 ---
 
 # Обработка больших файлов
@@ -44,7 +44,6 @@ type Config struct {
 package main
 
 import (
-    "fmt"
     "log"
     "github.com/cybergodev/json"
 )
@@ -72,7 +71,8 @@ func main() {
         interests := item.GetArray("profile.interests")
 
         if count%10000 == 0 {
-            log.Printf("Обработано %d записей", count)
+            log.Printf("Обработано %d записей, пример: id=%d name=%s email=%s city=%s интересы=%d",
+                count, id, name, email, city, len(interests))
         }
         return nil
     })
@@ -212,7 +212,6 @@ _, err := json.StreamLinesInto[User](file, func(lineNum int, user User) error {
 package main
 
 import (
-    "fmt"
     "sync"
     "github.com/cybergodev/json"
 )
@@ -236,7 +235,7 @@ func main() {
             defer wg.Done()
             for item := range items {
                 // Обработка элемента
-                processItem(item)
+                _ = item
             }
         }(i)
     }

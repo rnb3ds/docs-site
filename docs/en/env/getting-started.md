@@ -1,6 +1,6 @@
 ---
 title: "Getting Started - CyberGo env | 5-Minute Guide"
-description: "Get started with CyberGo env environment variable management library in 5 minutes, from go get installation to your first program. Covers .env file loading, type-safe reading, struct mapping, multi-environment configuration, and variable expansion with complete code examples to help you quickly master Go environment variable management."
+description: "Start with CyberGo env in 5 minutes: install via go get, load .env, read type-safe values, map structs and expand variables, with complete Go code examples."
 ---
 
 # Getting Started
@@ -14,7 +14,7 @@ go get github.com/cybergodev/env
 ```
 
 ::: tip Requirements
-Go 1.24+
+Go 1.25+
 :::
 
 ## Create a .env File
@@ -184,8 +184,8 @@ secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
 
-    // Get the raw value
-    value := secret.String()
+    // Get the raw value (call only when plaintext is needed, e.g., crypto, API calls)
+    value := secret.Reveal()
 
     // Log with masking (prevent leakage)
     log.Printf("API Key: %s", secret.Masked())  // Output: [SECURE:32 bytes]

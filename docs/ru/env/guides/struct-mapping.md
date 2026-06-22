@@ -1,6 +1,6 @@
 ---
-title: "Маппинг структур - CyberGo env | Переменные окружения в структуры"
-description: "Полное руководство по маппингу структур библиотеки CyberGo env — автоматическое отображение переменных окружения в поля Go-структур через теги env, вложенные структуры, указатели, срезы, пользовательские конвертеры типов, значения по умолчанию envDefault, обязательные поля и хуки маппинга."
+title: "Маппинг структур - CyberGo env | Переменные в структуры"
+description: "Руководство по маппингу структур CyberGo env: переменные в поля через теги env, вложенность, указатели, срезы, конвертеры и обязательная валидация."
 ---
 
 # Маппинг структур
@@ -218,6 +218,14 @@ type Database struct {
 Поддерживаются поля-указатели:
 
 ```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
 type Config struct {
     Host    *string `env:"HOST"`
     Port    *int64  `env:"PORT"`
@@ -274,6 +282,15 @@ func (p *Port) UnmarshalEnv(data map[string]string) error {
 ### Валидация структуры
 
 ```go
+package main
+
+import (
+    "errors"
+    "log"
+
+    "github.com/cybergodev/env"
+)
+
 type ServerConfig struct {
     Host string `env:"SERVER_HOST" envDefault:"0.0.0.0"`
     Port int64  `env:"SERVER_PORT" envDefault:"8080"`

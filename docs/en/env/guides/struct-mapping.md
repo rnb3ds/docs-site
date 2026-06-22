@@ -1,6 +1,6 @@
 ---
-title: "Struct Mapping - CyberGo env | Environment Variables to Struct"
-description: "Complete guide for CyberGo env struct mapping, automatically mapping environment variables to Go struct fields via env tags, covering nested structs, pointer and slice types, custom type converters, envDefault defaults, required field validation rules, and mapping hook function extensions."
+title: "Struct Mapping - CyberGo env | Env Vars to Struct"
+description: "CyberGo env struct mapping guide: map env vars to Go struct fields via env tags, covering nesting, pointers, slices, converters, defaults and validation."
 ---
 
 # Struct Mapping
@@ -218,6 +218,14 @@ type Database struct {
 Pointer fields are supported:
 
 ```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
 type Config struct {
     Host    *string `env:"HOST"`
     Port    *int64  `env:"PORT"`
@@ -274,6 +282,15 @@ func (p *Port) UnmarshalEnv(data map[string]string) error {
 ### Struct Validation
 
 ```go
+package main
+
+import (
+    "errors"
+    "log"
+
+    "github.com/cybergodev/env"
+)
+
 type ServerConfig struct {
     Host string `env:"SERVER_HOST" envDefault:"0.0.0.0"`
     Port int64  `env:"SERVER_PORT" envDefault:"8080"`

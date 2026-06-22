@@ -1,6 +1,6 @@
 ---
 title: "大文件处理 - CyberGo JSON | 指南"
-description: "CyberGo JSON 大文件处理完整指南：详细介绍 ForeachFile 结构化迭代、ForeachFileChunked 批量处理、内存控制配置、缓冲区大小优化、JSONL 批量处理和 NDJSONProcessor 真正流式处理，适用于日志分析、数据导出和 ETL 场景。"
+description: "CyberGo JSON 大文件处理指南：ForeachFile 结构化迭代、ForeachFileChunked 批量处理、内存控制与 NDJSONProcessor 流式处理，适用于日志分析、数据导出与 ETL 场景。"
 ---
 
 # 大文件处理
@@ -19,7 +19,7 @@ description: "CyberGo JSON 大文件处理完整指南：详细介绍 ForeachFil
 | **Processor.ForeachFileChunked** | 批量分块迭代处理 | 加载完整文件，分块迭代 |
 | **NDJSONProcessor** | 逐行处理 JSONL 文件 | 内存可控，真正的流式处理 |
 
-## 统一 API： Processor
+## 统一 API：Processor
 
 ### 配置选项
 
@@ -44,7 +44,6 @@ type Config struct {
 package main
 
 import (
-    "fmt"
     "log"
     "github.com/cybergodev/json"
 )
@@ -72,7 +71,8 @@ func main() {
         interests := item.GetArray("profile.interests")
 
         if count%10000 == 0 {
-            log.Printf("已处理 %d 条记录", count)
+            log.Printf("已处理 %d 条记录，示例: id=%d name=%s email=%s city=%s 兴趣数=%d",
+                count, id, name, email, city, len(interests))
         }
         return nil
     })
@@ -212,7 +212,6 @@ _, err := json.StreamLinesInto[User](file, func(lineNum int, user User) error {
 package main
 
 import (
-    "fmt"
     "sync"
     "github.com/cybergodev/json"
 )
@@ -235,8 +234,8 @@ func main() {
         go func(id int) {
             defer wg.Done()
             for item := range items {
-                // 处理 item
-                processItem(item)
+                // 处理 item（替换为你的业务逻辑）
+                _ = item
             }
         }(i)
     }

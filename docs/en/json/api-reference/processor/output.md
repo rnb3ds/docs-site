@@ -1,6 +1,6 @@
 ---
 title: "Processor Output Methods - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor output methods reference: including Encode encoding, EncodePretty formatting, EncodeWithConfig custom configuration, EncodeBatch/EncodeFields batch encoding, Compact/Indent/HTMLEscape formatting operations for various JSON output needs."
+description: "CyberGo JSON Processor output: Encode, EncodePretty, EncodeWithConfig, EncodeBatch/EncodeFields, and Compact/Indent/HTMLEscape for varied output."
 ---
 
 # Output Methods
@@ -11,7 +11,7 @@ Processor provides multiple JSON encoding output methods.
 
 ### Encode
 
-Signature: `func (p *Processor) Encode(value any, cfg ...Config) (string, error)`
+Signature: `func (p *Processor) Encode(value any, config ...Config) (string, error)`
 
 Encodes any value to a JSON string.
 
@@ -25,7 +25,7 @@ fmt.Println(result)
 
 ### EncodePretty
 
-Signature: `func (p *Processor) EncodePretty(value any, cfg ...Config) (string, error)`
+Signature: `func (p *Processor) EncodePretty(value any, config ...Config) (string, error)`
 
 Encodes any value to a formatted JSON string.
 
@@ -56,14 +56,14 @@ Encodes a value to a JSON string using the specified configuration.
 result, err := p.EncodeWithConfig(data, json.PrettyConfig())
 
 // Using SecurityConfig
-result, err := p.EncodeWithConfig(data, json.SecurityConfig())
+result, err = p.EncodeWithConfig(data, json.SecurityConfig())
 
 // Using custom configuration
 cfg := json.DefaultConfig()
 cfg.Pretty = true
 cfg.SortKeys = true
 cfg.EscapeHTML = true
-result, err := p.EncodeWithConfig(data, cfg)
+result, err = p.EncodeWithConfig(data, cfg)
 ```
 
 ### EncodeBatch
@@ -101,7 +101,7 @@ result, err := p.EncodeFields(user, []string{"name", "email"})
 
 Signature: `func (p *Processor) EncodeStream(values any, cfg ...Config) (string, error)`
 
-Encodes any value to a JSON string. Equivalent to the Processor method form of `EncodeWithConfig`.
+Encodes multiple values into a JSON array stream. `values` is typically a slice or enumerable collection, outputting a JSON array string like `[v1,v2,...]`.
 
 ```go
 values := []any{"item1", "item2", "item3"}
@@ -169,10 +169,10 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 // }
 ```
 
-### Print (Now Private)
+### Print (Removed)
 
 ::: warning API Change Notice
-`Print`, `PrintE`, `PrintPretty`, `PrintPrettyE` have been converted to internal methods (lowercase naming) and are no longer exported as public APIs. Please use the following alternatives:
+`Print`, `PrintE`, `PrintPretty`, `PrintPrettyE` have been removed from the library and are no longer available. Please use the following alternatives:
 
 ```go
 // Compact output

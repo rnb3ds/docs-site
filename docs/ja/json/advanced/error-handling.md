@@ -1,6 +1,6 @@
 ---
 title: "エラー処理 - CyberGo JSON | ベストプラクティス"
-description: "CyberGo JSON エラー処理のベストプラクティス：JsonsError エラータイプ判定、errors.Is/As エラーマッチング、12 の標準エラー変数、リカバリ戦略、SafeError セーフ出力、ログ記録を網羅し、Go 開発者が堅牢な JSON 処理アプリケーションを構築できるよう支援します。"
+description: "CyberGo JSON エラー処理ベストプラクティス：JsonsError 判定、errors.Is/As、標準エラー変数、リカバリ戦略、SafeError、RedactedPath ログで堅牢な例外処理を構築します。"
 ---
 
 # エラー処理
@@ -246,10 +246,10 @@ err := withRetry(func() error {
 
 ```go
 func getConfig(data string) Config {
-    cfg := DefaultConfig()
+    cfg := json.DefaultConfig()
 
     // 型安全な取得関数を使用、デフォルト値を内蔵
-    strict := json.GetBool(data, "config.strict", true)
+    cfg.StrictMode = json.GetBool(data, "config.strict", true)
 
     return cfg
 }

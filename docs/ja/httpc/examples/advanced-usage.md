@@ -1,6 +1,6 @@
 ---
-title: "高度な使用例 - HTTPC"
-description: "HTTPC 高度な使用例：カスタム RetryPolicy リトライ戦略（502/503/504 のみ）、Recovery/Timeout/Logging/Metrics/Audit を含む完全なミドルウェアチェーン、RESTful API クライアントラッパー、sync.WaitGroup 並列ダウンロードと HMAC-SHA256 リクエスト署名カスタムミドルウェア。"
+title: "高度な使用例 - CyberGo HTTPC | 本番コード"
+description: "HTTPC 高度な使用例集: カスタム RetryPolicy リトライ戦略、完全なミドルウェアチェーン構成、RESTful API クライアントラッパー、並列ダウンロード、HMAC-SHA256 署名ミドルウェアの完全なコードを提供します。"
 ---
 
 # 高度な使用例
@@ -255,6 +255,7 @@ func main() {
 package main
 
 import (
+    "context"
     "fmt"
     "log"
     "sync"
@@ -291,7 +292,7 @@ func main() {
                     float64(speed)/1024/1024)
             }
 
-            result, err := client.DownloadWithOptions(u, cfg)
+            result, err := client.Download(context.Background(), u, cfg)
             if err != nil {
                 log.Printf("%s ダウンロード失敗: %v", name, err)
                 return
@@ -299,12 +300,12 @@ func main() {
 
             atomic.AddInt64(&successCount, 1)
             atomic.AddInt64(&totalBytes, result.BytesWritten)
-            fmt.Printf("\n%s 完了: %s\n", name, result.BytesWritten)
+            fmt.Printf("\n%s 完了: %d\n", name, result.BytesWritten)
         }(filename, url)
     }
 
     wg.Wait()
-    fmt.Printf("\nダウンロード完了: %d/%d, 合計 %s\n",
+    fmt.Printf("\nダウンロード完了: %d/%d, 合計 %d\n",
         successCount, len(urls), totalBytes)
 }
 ```

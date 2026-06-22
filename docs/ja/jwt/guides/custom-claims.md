@@ -1,6 +1,6 @@
 ---
-title: "カスタム Claims - JWT"
-description: "CyberGo JWT カスタム Claims ガイド：CustomClaims インターフェースの実装、内蔵とカスタム検証の違い、ValidateInto/RefreshInto の使用方法とコード例。"
+title: "カスタム Claims - CyberGo JWT | ビジネス宣言インターフェース"
+description: "カスタム Claims ガイド：CustomClaims インターフェースを実装してビジネス専用宣言項目を定義し、内蔵 Claims とカスタム型の検証差を比較、ValidateInto と RefreshInto の解析・更新用法を示す。"
 ---
 
 # カスタム Claims
@@ -114,7 +114,7 @@ if err != nil {
 | 登録クレームの文字列サニタイズ | ✅ | ✅ |
 
 :::warning 重要
-カスタム Claims のビジネスフィールドは深い検証の対象**になりません**。`Validate()` メソッドですべての必要な検証を自行実装してください。
+カスタム Claims のビジネスフィールドは深い検証の対象**になりません**。`Validate()` メソッドですべての必要な検証を自身で実装してください。
 :::
 
 ## オプションインターフェース：RateLimitKeyer

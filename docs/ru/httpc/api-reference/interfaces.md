@@ -1,6 +1,6 @@
 ---
-title: "Интерфейсы - HTTPC"
-description: "Справочник API основных интерфейсов HTTPC: полнофункциональный интерфейс Client с семью HTTP-методами, минимальный интерфейс выполнения Doer, доменный клиент DomainClienter, стратегия повторов RetryPolicy, интерфейсы промежуточного ПО RequestMutator/ResponseMutator и определения Handler/MiddlewareFunc."
+title: "Интерфейсы - CyberGo HTTPC | Основные интерфейсы"
+description: "Справочник API интерфейсов HTTPC: полнофункциональный Client, интерфейс выполнения Doer, DomainClienter, стратегия RetryPolicy и интерфейсы middleware."
 ---
 
 # Интерфейсы
@@ -21,10 +21,7 @@ type Client interface {
     Options(url string, options ...RequestOption) (*Result, error)
 
     // Загрузка файлов
-    DownloadFile(url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptions(url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
-    DownloadFileWithContext(ctx context.Context, url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptionsWithContext(ctx context.Context, url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
+    Download(ctx context.Context, url string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 
     // Жизненный цикл
     Close() error

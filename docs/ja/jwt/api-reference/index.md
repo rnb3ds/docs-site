@@ -1,6 +1,6 @@
 ---
-title: "API リファレンス - JWT"
-description: "CyberGo JWT API リファレンス索引：パッケージ関数、Processor コアメソッド、Config 設定、Claims クレーム、インターフェース定義、型定数とエラー処理の完全なドキュメントナビゲーション。"
+title: "API リファレンス - CyberGo JWT | 完全なインターフェース文書"
+description: "CyberGo JWT API リファレンス総覧：パッケージ関数・Processor 核心メソッド・Config と BlacklistConfig・Claims と RegisteredClaims・拡張インターフェース・補助型・19 個のセンチネルエラーへナビゲート。"
 ---
 
 # API リファレンス
@@ -17,7 +17,7 @@ CyberGo JWT ライブラリは完全な JWT トークンライフサイクル管
 | [Claims](./claims) | `Claims`、`RegisteredClaims` クレーム型 | トークンクレーム |
 | [インターフェース定義](./interfaces) | `TokenManager`、`CustomClaims`、`BlacklistStore` など | 拡張インターフェース |
 | [型と定数](./types) | 署名アルゴリズム定数、`NumericDate`、`StringOrSlice` など | 補助型 |
-| [エラー](./errors) | 17 個のセンチネルエラー、`ValidationError` | エラー処理 |
+| [エラー](./errors) | 19 個のセンチネルエラー、`ValidationError` | エラー処理 |
 
 ## クイック検索
 

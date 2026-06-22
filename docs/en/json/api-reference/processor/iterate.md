@@ -1,6 +1,6 @@
 ---
 title: "Processor Iteration Methods - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor iteration methods reference: including Foreach/ForeachWithPath/ForeachWithError/ForeachNested iteration functions, IterableValue data access, IteratorControl flow control and batch iteration best practices, supporting flexible traversal of JSON data structures."
+description: "CyberGo JSON Processor iteration: Foreach, ForeachWithPath, ForeachNested, IterableValue data access, and IteratorControl flow for batch iteration."
 ---
 
 # Iteration Methods
@@ -79,7 +79,7 @@ Key: tags, Value: []any{...}
 
 Signature: `func (p *Processor) ForeachReturn(jsonStr string, fn func(key any, item *IterableValue)) (string, error)`
 
-Iterates and returns the original JSON (read-only operation).
+Iterates the JSON data and returns the re-serialized JSON string. The callback is read-only.
 
 ```go
 result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {

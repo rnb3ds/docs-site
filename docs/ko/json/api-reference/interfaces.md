@@ -1,6 +1,6 @@
 ---
 title: "인터페이스 정의 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 확장 인터페이스 정의 완전 레퍼런스: CustomEncoder, TypeEncoder, Validator, Hook 인터페이스, PathParser 및 DangerousPattern을 포함하여 라이브러리의 인코딩, 검증 및 보안 방어 등 핵심 기능을 유연하게 확장할 수 있으며 커스텀 직렬화와 보안 전략 요구를 충족합니다."
+description: "CyberGo JSON 확장 인터페이스: CustomEncoder, TypeEncoder, Validator, Hook, PathParser, DangerousPattern으로 인코딩, 검증, 보안 기능을 유연하게 확장합니다."
 ---
 
 # 인터페이스 정의
@@ -149,7 +149,7 @@ type Hook interface {
 ```go
 type HookContext struct {
     Operation string        // 작업 타입: "get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string        // 입력 JSON 문자열 (marshal 시 비어있을 수 있음)
+    JSONStr   string        // 입력 JSON 문자열 (marshal 시 비어있을 수 있음). 보안 경고: 민감한 데이터가 포함될 수 있음
     Path      string        // 대상 경로 (marshal/unmarshal 시 비어있을 수 있음)
     Value     any           // set 작업의 값
     Config    *Config       // 활성 설정
@@ -530,7 +530,7 @@ func (r AccessResult) AsBool() (bool, error)              // 엄격한 변환
 | `AsStringConverted()` | 포맷팅 | fmt.Sprintf로 임의의 값을 문자열 표현으로 변환 |
 | `AsInt()` | 엄격 | bool을 int로 변환하지 않음, 정수와 파싱 가능한 숫자만 허용 |
 | `AsFloat64()` | 엄격 | bool을 float로 변환하지 않음, 부동소수점과 파싱 가능한 숫자만 허용 |
-| `AsBool()` | 엄격 | bool과 파싱 가능한 문자열만 허용 ("true"/"false"/"yes"/"no" 등) |
+| `AsBool()` | 엄격 | bool과 `strconv.ParseBool`이 허용하는 문자열만 허용 ("1"/"t"/"T"/"TRUE"/"true"/"True", "0"/"f"/"F"/"FALSE"/"false"/"False") |
 
 ```go
 result := p.SafeGet(data, "user.age")
@@ -627,7 +627,8 @@ type SchemaConfig struct {
 cfg := json.DefaultSchemaConfig()
 cfg.Type = "object"
 cfg.Required = []string{"name", "email"}
-cfg.AdditionalProperties = ptrBool(false)
+additionalProperties := false
+cfg.AdditionalProperties = &additionalProperties
 schema := json.NewSchemaWithConfig(cfg)
 ```
 
@@ -637,8 +638,8 @@ Schema 검증 오류입니다.
 
 ```go
 type ValidationError struct {
-    Path    string // 오류 경로
-    Message string // 오류 메시지
+    Path    string `json:"path"`    // 오류 경로
+    Message string `json:"message"` // 오류 메시지
 }
 
 func (ve *ValidationError) Error() string

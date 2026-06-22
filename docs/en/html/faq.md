@@ -1,5 +1,5 @@
 ---
-title: "FAQ - HTML"
+title: "FAQ - CyberGo HTML | Common Answers"
 description: "FAQ for the CyberGo HTML library, covering package functions vs Processor, encoding detection, size limits, batch processing, and audit setup."
 ---
 
@@ -39,7 +39,7 @@ cfg.Encoding = "gbk"
 Default maximum is 50MB (`DefaultMaxInputSize = 52428800`). Adjustable via config:
 
 ```go
-cfg.MaxInputSize = 100 * 1024 * 1024 // 100MB
+cfg.MaxInputSize = 10 * 1024 * 1024 // 10MB
 ```
 
 ## How to get Markdown output?
@@ -64,9 +64,13 @@ A single batch supports up to 10000 items. For larger datasets, process in multi
 Possible causes:
 
 1. **HTML structure issue** - Content is inside `<script>` or `<style>` tags
-2. **Depth exceeded** - DOM nesting exceeds `MaxDepth` limit
-3. **Empty input** - Check if the input byte array is empty
-4. **Article recognition** - Try disabling `ExtractArticle` to see if content is extracted
+2. **Content empty after sanitization** - If the body text only exists inside tags removed by sanitization (e.g., `<iframe>`, `<object>`), the result may be empty; for trusted input you can temporarily set `EnableSanitization = false` to investigate
+3. **Empty input** - Check whether the input byte array is empty (blank content returns an empty `Result`)
+4. **Article detection** - Try disabling `ExtractArticle` to see whether content can be extracted
+
+:::tip Distinguish errors from empty results
+DOM nesting that exceeds `MaxDepth` does not produce empty text — it returns the `ErrMaxDepthExceeded` error. If a call returns an `error`, prefer using `errors.Is` to determine the error type rather than checking whether the text is empty.
+:::
 
 ```go
 cfg := html.DefaultConfig()

@@ -1,6 +1,6 @@
 ---
-title: "Управление сессиями - HTTPC"
-description: "Справочник API SessionManager HTTPC: создание через NewSessionManager, конфигурация SessionConfig, управление заголовками SetHeader/SetHeaders, методы SetCookie/SetCookies, проверка безопасности SetCookieSecurity и синхронизация ответов UpdateFromResult."
+title: "Управление сессиями - CyberGo HTTPC | SessionManager"
+description: "Справочник API SessionManager HTTPC: создание NewSessionManager, конфигурация SessionConfig, заголовки SetHeader, методы SetCookie и проверка SetCookieSecurity."
 ---
 
 # Управление сессиями

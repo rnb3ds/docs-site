@@ -1,6 +1,6 @@
 ---
 title: "Processor 迭代方法 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 迭代方法参考：包括 Foreach/ForeachWithPath/ForeachNested 迭代、IterableValue 数据访问、IteratorControl 控制流和批量迭代实践。"
+description: "CyberGo JSON Processor 迭代方法：Foreach、ForeachWithPath、ForeachNested 迭代、IterableValue 数据访问与 IteratorControl 控制流，支持批量迭代实践。"
 ---
 
 # 迭代方法
@@ -79,7 +79,7 @@ p.ForeachNested(data, func(key any, item *json.IterableValue) {
 
 签名：`func (p *Processor) ForeachReturn(jsonStr string, fn func(key any, item *IterableValue)) (string, error)`
 
-迭代并返回原始 JSON（只读操作）。
+迭代 JSON 数据并返回重新序列化后的 JSON 字符串。回调为只读访问。
 
 ```go
 result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {

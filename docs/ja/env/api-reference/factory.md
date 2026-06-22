@@ -1,6 +1,6 @@
 ---
 title: "ComponentFactory API - CyberGo env | コンポーネントファクトリー"
-description: "CyberGo env ライブラリ ComponentFactory コンポーネントファクトリー API 完全リファレンス。Loader と Parser が共有するコンポーネントインスタンスの作成と管理、監査ハンドラー、検証器、ファイルシステムアダプター、RegisterParser カスタムパーサー登録を含む。コンポーネントライフサイクル制御 Close とスレッドセーフな並発アクセスを提供。"
+description: "CyberGo env の ComponentFactory API リファレンス。監査ハンドラー、検証器、ファイルシステムアダプターの生成とカスタムパーサー登録を Close ライフサイクル管理と共に提供します。"
 ---
 
 # ComponentFactory API
@@ -179,7 +179,7 @@ Validator  Auditor  Expander
             ↓
       Loader/Parser
             ↓
-      Close() 释放
+      Close() で解放
 ```
 
 ::: warning 注意
@@ -211,7 +211,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 
 **出力例：**
 ```json
-{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration":1234567}
+{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 ```
 
 ---
@@ -318,7 +318,7 @@ type OSFileSystem struct{}
 **実装インターフェース：** `FileSystem`
 
 ```go
-// 方法列表
+// メソッド一覧
 func (fs OSFileSystem) Open(name string) (File, error)
 func (fs OSFileSystem) OpenFile(name string, flag int, perm os.FileMode) (File, error)
 func (fs OSFileSystem) Stat(name string) (os.FileInfo, error)
@@ -509,7 +509,7 @@ fmt.Println(env.FileFormat(999).String())  // "unknown"
 func RegisterParser(format FileFormat, factory ParserFactory) error
 ```
 
-カスタムフォーマット解析器を登録します。
+カスタムフォーマットパーサーを登録します。
 
 **パラメータ：**
 - `format` - ファイルフォーマット定数
@@ -528,6 +528,14 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - ファクトリー関数はスレッドセーフなパーサーを返すべき
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. カスタムフォーマット定数を定義
 const FormatTOML env.FileFormat = 100
 
@@ -545,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. パーサーの登録
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. 使用前に確実に実行されるよう init() でパーサーを登録
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. カスタムフォーマットを使用
 func main() {
-    // 登録は New の前に完了する必要がある
+    // 登録は init() で完了済み（mainより先に実行）
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 
@@ -624,7 +634,7 @@ type ParserFactory func(cfg Config, factory *ComponentFactory) (EnvParser, error
 
 ---
 
-### EnvParser 接口
+### EnvParser インターフェース
 
 ```go
 type EnvParser interface {
@@ -653,9 +663,9 @@ type EnvParser interface {
 `.env` フォーマットパーサー、サポート：
 - `KEY=value` 構文
 - `export KEY=value` 構文
-- 单引号 `'value'` 和双引号 `"value"`
+- 単一引用符 `'value'` と二重引用符 `"value"`
 - 変数展開 `${VAR}` および `${VAR:-default}`
-- 注释 `#`
+- コメント `#`
 
 ### JSON Parser
 
@@ -668,7 +678,7 @@ JSON フォーマットパーサー、サポート：
 ### YAML Parser
 
 YAML フォーマットパーサー、サポート：
-- 键值对
+- キーと値のペア
 - ネストされた構造（フラット化処理）
 - 複数のスカラータイプ
 - リスト（インデックスキーにフラット化）
@@ -779,6 +789,7 @@ func main() {
 package main
 
 import (
+    "errors"
     "fmt"
     "os"
     "strings"
@@ -854,18 +865,18 @@ func (m *MemoryFileSystem) LookupEnv(key string) (string, bool) {
     return val, ok
 }
 
-// MemoryFile 实现 env.File
+// MemoryFile は env.File を実装
 type MemoryFile struct {
     reader *strings.Reader
 }
 
 func (f *MemoryFile) Read(p []byte) (n int, err error)  { return f.reader.Read(p) }
-func (f *MemoryFile) Write(p []byte) (n int, err error) { return 0, os.ErrUnsupported }
+func (f *MemoryFile) Write(p []byte) (n int, err error) { return 0, errors.ErrUnsupported }
 func (f *MemoryFile) Close() error                      { return nil }
-func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, os.ErrUnsupported }
+func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, errors.ErrUnsupported }
 func (f *MemoryFile) Sync() error                       { return nil }
 
-// MemoryFileInfo 实现 os.FileInfo
+// MemoryFileInfo は os.FileInfo を実装
 type MemoryFileInfo struct {
     name string
     size int64
@@ -878,7 +889,7 @@ func (i *MemoryFileInfo) ModTime() time.Time { return time.Time{} }
 func (i *MemoryFileInfo) IsDir() bool        { return false }
 func (i *MemoryFileInfo) Sys() interface{}   { return nil }
 
-// 使用示例
+// 使用例
 func main() {
     // メモリファイルシステムを作成
     fs := NewMemoryFileSystem()

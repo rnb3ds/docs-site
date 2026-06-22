@@ -1,6 +1,6 @@
 ---
 title: "치트시트 - CyberGo JSON | API 빠른 참조하세요"
-description: "CyberGo JSON API 치트시트: 경로 쿼리 GetString/GetInt, 수정 작업 Set/Delete, 직렬화 Marshal/Unmarshal, 설정 옵션, 반복자 및 보안 함수 등 자주 사용하는 API의 빠른 참조 매뉴얼로, 개발자가 필요한 함수 시그니처와 사용법을 효율적으로 찾을 수 있습니다."
+description: "CyberGo JSON API 치트시트: GetString/GetInt 쿼리, Set/Delete 수정, Marshal/Unmarshal 직렬화, 설정 옵션, 반복자, 보안 함수를 빠르게 조회하는 Go 개발용 참조입니다."
 ---
 
 # 치트시트
@@ -52,7 +52,7 @@ result, err = json.Set(data, "user.name", "Bob")
 result, err = json.Set(result, "user.age", 25)
 
 // 삭제
-result, err := json.Delete(data, "user.temporary")
+result, err = json.Delete(data, "user.temporary")
 ```
 
 ## 직렬화
@@ -82,7 +82,7 @@ err = json.Parse(`{"name": "test"}`, &result)
 parsed, err := json.ParseAny(`{"name": "test"}`)
 
 // JSON 문자열 포맷팅
-pretty, err := json.Prettify(`{"name":"Alice","age":30}`)
+pretty, err = json.Prettify(`{"name":"Alice","age":30}`)
 ```
 
 ## 유효성 검사
@@ -167,12 +167,12 @@ age, err := accessResult.AsInt()
 processor, err := json.New(json.DefaultConfig())
 
 // 보안 설정 (신뢰할 수 없는 입력 처리)
-processor, err := json.New(json.SecurityConfig())
+processor, err = json.New(json.SecurityConfig())
 
 // 커스텀 설정
 cfg := json.DefaultConfig()
 cfg.CreatePaths = true
-processor, err := json.New(cfg)
+processor, err = json.New(cfg)
 ```
 
 ## 스트림 처리
@@ -232,10 +232,10 @@ cfg.FullSecurityScan = true          // 전체 보안 스캔 활성화
 cfg := json.DefaultConfig()
 
 // 보안 설정 (신뢰할 수 없는 입력 처리)
-cfg := json.SecurityConfig()
+// cfg = json.SecurityConfig()
 
 // 포맷팅 설정
-cfg := json.PrettyConfig()
+// cfg = json.PrettyConfig()
 ```
 
 ## 경로 문법

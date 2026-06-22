@@ -1,6 +1,6 @@
 ---
-title: "HTTP Integration - HTML"
-description: "HTTP client integration guide for CyberGo HTML, covering fetch-and-extract with net/http, batch processing, timeout control, and production deployment."
+title: "HTTP Integration - CyberGo HTML | Web Service Guide"
+description: "Integrate CyberGo HTML with HTTP: single-page scraping via net/http, batch processing, context timeouts, web services, and Processor singletons."
 ---
 
 # HTTP Integration

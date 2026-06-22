@@ -1,6 +1,6 @@
 ---
-title: "Processor - Модификация данных - CyberGo JSON | Справочник API"
-description: "Справочник методов модификации данных Processor: Set, SetMultiple, SetCreate, SetMultipleCreate, Delete, DeleteClean. Все методы поддерживают цепочечные вызовы."
+title: "Processor Модификация данных - CyberGo JSON | API"
+description: "Методы изменения Processor CyberGo JSON: Set, SetMultiple, SetCreate, Delete и DeleteClean с поддержкой цепочечных вызовов в Go."
 ---
 
 # Методы модификации данных
@@ -24,19 +24,19 @@ result, err := p.Set(data, "user.name", "NewName")
 result, _ := p.Set(data, "user.name", "CyberGo")
 
 // Число
-result, _ := p.Set(data, "user.age", 25)
+result, _ = p.Set(data, "user.age", 25)
 
 // Логическое значение
-result, _ := p.Set(data, "user.active", true)
+result, _ = p.Set(data, "user.active", true)
 
 // Объект
-result, _ := p.Set(data, "user.profile", map[string]any{
+result, _ = p.Set(data, "user.profile", map[string]any{
     "bio": "Developer",
     "location": "China",
 })
 
 // Массив
-result, _ := p.Set(data, "items", []any{"a", "b", "c"})
+result, _ = p.Set(data, "items", []any{"a", "b", "c"})
 ```
 
 ## Delete
@@ -70,7 +70,7 @@ result, _ := p.Delete(data, "user.temp")
 
 // Если после удаления родительский объект пуст, DeleteClean продолжит очистку
 // {"user": {}} -> {}
-result, _ := p.DeleteClean(data, "user.temp")
+result, _ = p.DeleteClean(data, "user.temp")
 ```
 
 ## SetMultiple

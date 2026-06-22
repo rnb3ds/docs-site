@@ -1,6 +1,6 @@
 ---
-title: "Batch Processing - HTML"
-description: "Concurrent batch extraction API for CyberGo HTML, including ExtractBatch, ExtractBatchFiles, WorkerPoolSize concurrency control, and BatchResult statistics."
+title: "Batch Processing - CyberGo HTML | Concurrent Batch API"
+description: "CyberGo HTML batch API: ExtractBatch and ExtractBatchFiles families with context variants, WorkerPoolSize concurrency, 10000-item batches, and BatchResult."
 ---
 
 # Batch Processing
@@ -29,11 +29,11 @@ func (p *Processor) ExtractBatchFilesWithContext(ctx context.Context, filePaths 
 
 ```go
 type BatchResult struct {
-    Results   []*Result  // Successful extraction results
-    Errors    []error    // Failed errors
+    Results   []*Result  // result for each input item, indexed by input order; nil on failure or cancellation
+    Errors    []error    // error for each input item; index corresponds one-to-one with Results
     Success   int        // Success count
     Failed    int        // Failure count
-    Cancelled int        // Count cancelled due to context cancellation
+    Cancelled int        // number of items left unprocessed due to context cancellation
 }
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "エンコード・デコード関数 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON エンコード・デコード関数リファレンス：Marshal/Unmarshal シリアライズ、Compact/Indent/HTMLEscape フォーマット、Encode/EncodePretty/EncodeWithConfig/Prettify 設定可能エンコード、encoding/json と 100% 互換。"
+description: "CyberGo JSON エンコード・デコード関数：Marshal/Unmarshal、Compact/Indent/HTMLEscape、Encode/EncodePretty/Prettify で標準ライブラリ互換の柔軟なエンコードを実現します。"
 ---
 
 # エンコード・デコード関数
@@ -97,13 +97,13 @@ fmt.Println(buf.String())
 
 シグネチャ：`func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-JSON コンテンツの HTML エスケープを行い、特殊文字（`&`、`<`、`>`）を Unicode エスケープシーケンスに置き換え、結果を `dst` に書き込みます。戻り値はありません。
+JSON コンテンツの HTML エスケープを行い、`<`、`>`、`&` などの特殊文字（および U+2028、U+2029）を対応する Unicode エスケープシーケンスに置き換え、結果を `dst` に書き込みます。戻り値はありません。
 
 ```go
 var buf bytes.Buffer
 json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
 fmt.Println(buf.String())
-// {"html":"<script>alert(1)</script>"}
+// {"html":"\u003cscript\u003ealert(1)\u003c/script\u003e"}
 ```
 
 ### Prettify
@@ -234,7 +234,7 @@ fmt.Println(result) // {"name":"Alice","email":"a@b.com"}
 
 シグネチャ：`func EncodeStream(values any, cfg ...Config) (string, error)`
 
-ストリーミングエンコードで、値を JSON 文字列にエンコードします。統一されたエンコードインターフェースが必要な場面に適しています。
+複数の値を JSON 配列ストリーム（array stream）としてエンコードします。`values` は通常スライスまたは列挙可能なコレクションで、`[v1,v2,...]` 形式の JSON 配列文字列を出力します。
 
 ```go
 values := []map[string]any{
@@ -265,7 +265,7 @@ defer p.Close()
 
 シグネチャ：`func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-JSON バイトを圧縮し `dst` バッファに書き込みます。パッケージレベルの `Compact` 関数に委譲します。
+JSON バイトを圧縮し `dst` バッファに書き込みます。パッケージレベルの `Compact` 関数はこのメソッドに委譲します。
 
 ```go
 var buf bytes.Buffer
@@ -308,10 +308,10 @@ p.HTMLEscape(&buf, []byte(`{"html":"<script>"}`))
 cfg := json.DefaultConfig()
 
 // プリティプリント設定
-cfg := json.PrettyConfig()
+cfg = json.PrettyConfig()
 
 // セキュリティ設定
-cfg := json.SecurityConfig()
+cfg = json.SecurityConfig()
 ```
 
 ::: tip

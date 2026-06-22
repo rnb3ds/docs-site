@@ -1,6 +1,6 @@
 ---
-title: "接口定义 - JWT API 参考"
-description: "CyberGo JWT 接口定义参考：TokenManager、CustomClaims、BlacklistStore、RateLimitProvider、ClockProvider 和 RateLimitKeyer 接口。"
+title: "接口定义 - CyberGo JWT | 核心扩展接口"
+description: "接口定义参考：TokenManager 令牌操作核心接口、CustomClaims 自定义声明、BlacklistStore 黑名单后端、RateLimitProvider 限流器、ClockProvider 时钟注入与可选 RateLimitKeyer 限流键。"
 ---
 
 # 接口定义
@@ -126,13 +126,16 @@ type BlacklistStore interface {
 ```go
 type RateLimitProvider interface {
     Allow(key string) bool
-    AllowN(key string, n int) bool
     Reset(key string)
     Close()
 }
 ```
 
-限流接口。
+限流接口。Processor 在创建令牌时调用 `Allow(key)` 做单次判断。
+
+:::tip 关于 AllowN
+接口本身只定义单次判断的 `Allow`。批量判断方法 `AllowN(key string, n int) bool` 是具体类型 [`*RateLimiter`](./types#ratelimiter) 的扩展方法，不属于此接口。
+:::
 
 <Badge type="info" text="interface" />
 
@@ -141,7 +144,6 @@ type RateLimitProvider interface {
 | 方法 | 签名 | 说明 |
 |------|------|------|
 | `Allow` | `Allow(key string) bool` | 检查单次请求是否允许 |
-| `AllowN` | `AllowN(key string, n int) bool` | 检查 n 次请求是否允许 |
 | `Reset` | `Reset(key string)` | 重置指定 key 的限流状态 |
 | `Close` | `Close()` | 释放资源 |
 

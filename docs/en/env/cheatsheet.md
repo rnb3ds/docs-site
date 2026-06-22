@@ -1,6 +1,6 @@
 ---
 title: "Cheat Sheet - CyberGo env | Common API Quick Reference"
-description: "CyberGo env environment variable management library common API cheat sheet, a single-page summary of core code snippets for configuration file loading, type-safe reading, variable validation, secure value storage, serialization, struct mapping, and audit logging, designed for Go developers to quickly reference and copy during daily development."
+description: "One-page CyberGo env cheat sheet of common Go API snippets: file loading, type-safe reading, validation, SecureValue storage, serialization and audit logging."
 ---
 
 # Cheat Sheet
@@ -50,8 +50,8 @@ count := env.Len()
 secret := env.GetSecure("PASSWORD")
 if secret != nil {
     defer secret.Release()  // or secret.Close()
-    value := secret.String()
-    masked := secret.Masked()
+    value := secret.Reveal()   // plaintext (use only when needed)
+    masked := secret.Masked()  // masked (for logging)
 }
 ```
 

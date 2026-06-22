@@ -1,6 +1,6 @@
 ---
 title: "结构体映射 - CyberGo env | 环境变量到结构体"
-description: "CyberGo env 库结构体映射完整指南，通过 env 标签将环境变量自动映射到 Go 结构体字段，详解嵌套结构体、指针与切片类型处理、自定义类型转换器实现、默认值 envDefault 设置、必填字段验证规则和映射钩子函数的自定义扩展方法。"
+description: "CyberGo env 结构体映射指南，通过 env 标签将环境变量自动映射到 Go 结构体字段，涵盖嵌套结构体、指针与切片、自定义转换器、默认值设置与必填验证，实现类型安全的配置加载。"
 ---
 
 # 结构体映射
@@ -218,6 +218,14 @@ type Database struct {
 支持指针字段：
 
 ```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
 type Config struct {
     Host    *string `env:"HOST"`
     Port    *int64  `env:"PORT"`
@@ -274,6 +282,15 @@ func (p *Port) UnmarshalEnv(data map[string]string) error {
 ### 结构体验证
 
 ```go
+package main
+
+import (
+    "errors"
+    "log"
+
+    "github.com/cybergodev/env"
+)
+
 type ServerConfig struct {
     Host string `env:"SERVER_HOST" envDefault:"0.0.0.0"`
     Port int64  `env:"SERVER_PORT" envDefault:"8080"`

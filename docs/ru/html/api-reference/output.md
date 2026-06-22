@@ -1,6 +1,6 @@
 ---
-title: "Форматы вывода - HTML"
-description: "Справочник API форматов вывода библиотеки CyberGo HTML, включая ExtractToMarkdown и ExtractToJSON в виде функций пакета и методов Processor, поддержка извлечения из байтов или файлов с конвертацией в Markdown или JSON, версии с контекстом и пользовательская сериализация MarshalJSON для Result, для различных сценариев форматированного вывода."
+title: "Форматы вывода - CyberGo HTML | Markdown и JSON"
+description: "API вывода CyberGo HTML: ExtractToMarkdown и ExtractToJSON как функции и методы Processor — преобразование в Markdown/JSON и сериализация Result."
 ---
 
 # Форматы вывода

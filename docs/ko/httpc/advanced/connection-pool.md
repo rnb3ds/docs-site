@@ -1,6 +1,6 @@
 ---
-title: "연결 풀과 프록시 - HTTPC"
-description: "HTTPC 연결 풀과 프록시 설정 가이드: MaxIdleConns 등 매개변수 튜닝과 시나리오별 추천, ProxyURL 수동 프록시와 시스템 프록시 감지, SOCKS5 프록시, DoH 세 제공자 폴백, HTTP/2 설정, 내장 객체 풀 자동 관리와 동시성 요청 패턴을 다룹니다."
+title: "연결 풀과 프록시 - CyberGo HTTPC | 풀과 프록시"
+description: "HTTPC 연결 풀과 프록시 가이드: MaxIdleConns 튜닝과 시나리오 추천, ProxyURL 수동과 시스템 프록시, SOCKS5와 HTTP 프록시, DoH 폴백, HTTP/2 설정과 연결 재사용 실무 요점을 다룹니다."
 ---
 
 # 연결 풀과 프록시
@@ -104,8 +104,8 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute
 | 제공자 | 주소 | 설명 |
 |--------|------|------|
 | Cloudflare | `1.1.1.1/dns-query` | 가장 빠름, 프라이버시 우선 |
-| Google | `8.8.8.8/resolve` | 글로벌 커버리지 |
-| AliDNS | `223.5.5.5/resolve` | 중국 지역 최적화 |
+| Google | `dns.google/resolve` | 글로벌 커버리지 |
+| AliDNS | `dns.alidns.com/resolve` | 중국 지역 최적화 |
 
 :::tip
 DoH 활성화 시 DNS 해석 결과가 `DoHCacheTTL` 시간 동안 캐시됩니다. 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS로 폴백합니다.
@@ -127,15 +127,17 @@ HTTP/2 특징:
 
 ## 객체 풀 재사용
 
+HTTPC는 내부적으로 엔진 응답 객체와 문자열 빌더를 sync.Pool로 재사용하여 GC 부하를 줄이며, Result는 매 요청마다 새로 생성되어 GC가 자동 회수합니다.
+
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result 객체는 내장 객체 풀로 자동 관리되며, GC가 자동 회수
+// Result는 매 요청마다 새로 생성, GC가 자동 회수, 수동 해제 불필요
 ```
 
-고동시성 시나리오에서 객체 풀 재사용은 GC 부하를 크게 줄일 수 있습니다.
+고동시성 시나리오에서 내부 객체 풀 재사용은 GC 부하를 크게 줄일 수 있습니다.
 
 ## 동시성 요청 패턴
 

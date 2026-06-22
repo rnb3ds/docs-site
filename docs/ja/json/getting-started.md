@@ -1,6 +1,6 @@
 ---
 title: "クイックスタート - CyberGo JSON | 5分で始めるガイド"
-description: "CyberGo JSON クイックスタートガイド：インストール設定、パスクエリ GetString/GetInt、エンコード・デコード Marshal/Unmarshal、ファイル読み書き操作を5分で習得。JSONPath クエリと型安全な取得をサポートし、encoding/json 標準ライブラリと100%互換。"
+description: "CyberGo JSON クイックスタート：インストール、パスクエリ GetString/GetInt、Marshal/Unmarshal、ファイル読み書きを 5 分で習得。標準ライブラリと 100% 互換の Go JSON 処理を始めましょう。"
 ---
 
 # クイックスタート
@@ -232,13 +232,13 @@ func main() {
 cfg := json.DefaultConfig()
 
 // セキュリティ強化設定（信頼できない入力を処理する場合）
-cfg = json.SecurityConfig()
+// cfg = json.SecurityConfig()
 
 // フォーマット出力設定
-cfg = json.PrettyConfig()
+// cfg = json.PrettyConfig()
 
 // カスタム設定
-cfg := json.DefaultConfig()
+cfg = json.DefaultConfig()
 cfg.MaxJSONSize = 50 * 1024 * 1024 // 50MB
 cfg.EnableCache = true
 cfg.CacheTTL = 5 * time.Minute

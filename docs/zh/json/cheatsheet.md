@@ -1,6 +1,6 @@
 ---
 title: "速查表 - CyberGo JSON | API 快速参考"
-description: "CyberGo JSON API 速查表：涵盖路径查询 GetString/GetInt、修改操作 Set/Delete、序列化 Marshal/Unmarshal、配置选项、迭代器和安全函数等常用 API 的快速参考手册，便于开发者高效查找所需函数签名和用法。"
+description: "CyberGo JSON API 速查表：覆盖 GetString/GetInt 路径查询、Set/Delete 修改、Marshal/Unmarshal 序列化、配置选项、迭代器与安全函数，便于 Go 开发者快速查阅。"
 ---
 
 # 速查表
@@ -52,7 +52,7 @@ result, err = json.Set(data, "user.name", "Bob")
 result, err = json.Set(result, "user.age", 25)
 
 // 删除
-result, err := json.Delete(data, "user.temporary")
+result, err = json.Delete(data, "user.temporary")
 ```
 
 ## 序列化
@@ -82,7 +82,7 @@ err = json.Parse(`{"name": "test"}`, &result)
 parsed, err := json.ParseAny(`{"name": "test"}`)
 
 // 格式化 JSON 字符串
-pretty, err := json.Prettify(`{"name":"Alice","age":30}`)
+pretty, err = json.Prettify(`{"name":"Alice","age":30}`)
 ```
 
 ## 验证
@@ -167,12 +167,12 @@ age, err := accessResult.AsInt()
 processor, err := json.New(json.DefaultConfig())
 
 // 安全配置（处理不可信输入）
-processor, err := json.New(json.SecurityConfig())
+processor, err = json.New(json.SecurityConfig())
 
 // 自定义配置
 cfg := json.DefaultConfig()
 cfg.CreatePaths = true
-processor, err := json.New(cfg)
+processor, err = json.New(cfg)
 ```
 
 ## 流式处理
@@ -232,10 +232,10 @@ cfg.FullSecurityScan = true          // 启用完整安全扫描
 cfg := json.DefaultConfig()
 
 // 安全配置（处理不可信输入）
-cfg := json.SecurityConfig()
+// cfg = json.SecurityConfig()
 
 // 格式化配置
-cfg := json.PrettyConfig()
+// cfg = json.PrettyConfig()
 ```
 
 ## 路径语法

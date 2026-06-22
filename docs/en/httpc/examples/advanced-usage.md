@@ -1,6 +1,6 @@
 ---
-title: "Advanced Examples - HTTPC"
-description: "HTTPC advanced examples: custom RetryPolicy retry strategy (502/503/504 only), complete middleware chain with Recovery/Timeout/Logging/Metrics/Audit, RESTful API client wrapper, sync.WaitGroup concurrent downloads, and HMAC-SHA256 request signing custom middleware."
+title: "Advanced Examples - CyberGo HTTPC | Production Code"
+description: "HTTPC advanced examples: a custom RetryPolicy, a complete middleware chain, a RESTful client wrapper, concurrent downloads, and HMAC-SHA256 signing."
 ---
 
 # Advanced Examples
@@ -255,6 +255,7 @@ func main() {
 package main
 
 import (
+    "context"
     "fmt"
     "log"
     "sync"
@@ -291,7 +292,7 @@ func main() {
                     float64(speed)/1024/1024)
             }
 
-            result, err := client.DownloadWithOptions(u, cfg)
+            result, err := client.Download(context.Background(), u, cfg)
             if err != nil {
                 log.Printf("%s download failed: %v", name, err)
                 return
@@ -299,12 +300,12 @@ func main() {
 
             atomic.AddInt64(&successCount, 1)
             atomic.AddInt64(&totalBytes, result.BytesWritten)
-            fmt.Printf("\n%s complete: %s\n", name, result.BytesWritten)
+            fmt.Printf("\n%s complete: %d\n", name, result.BytesWritten)
         }(filename, url)
     }
 
     wg.Wait()
-    fmt.Printf("\nDownloads complete: %d/%d, total %s\n",
+    fmt.Printf("\nDownloads complete: %d/%d, total %d\n",
         successCount, len(urls), totalBytes)
 }
 ```

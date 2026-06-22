@@ -1,6 +1,6 @@
 ---
-title: "Выбор формата вывода - HTML"
-description: "Руководство по выбору формата вывода CyberGo HTML с подробным сравнением трёх форматов: простой текст, Markdown и JSON, их особенностей и применимых сценариев, включая настройку форматов (InlineImageFormat, InlineLinkFormat), поддержку контекста и чтение из файлов, помогает выбрать оптимальный формат вывода."
+title: "Выбор формата вывода - CyberGo HTML | сравнение"
+description: "Выбор формата вывода CyberGo HTML: сравнение текста, Markdown и JSON — особенности, сценарии, параметры форматов и чтение из файлов."
 ---
 
 # Выбор формата вывода
@@ -135,7 +135,7 @@ fmt.Println(string(jsonBytes))
     {"url": "gopher.png", "alt": "Gopher", "title": "", "width": "", "height": "", "is_decorative": false, "position": 1}
   ],
   "links": [
-    {"url": "https://go.dev", "text": "Официальный сайт Go", "title": "", "is_external": true, "is_no_follow": false, "position": 1}
+    {"url": "https://go.dev", "text": "Официальный сайт Go", "title": "", "is_external": true, "is_nofollow": false, "position": 1}
   ],
   "processing_time_ms": 2,
   "word_count": 6,

@@ -1,6 +1,6 @@
 ---
-title: "Request and Response - HTTPC"
-description: "HTTPC request and response handling guide: package-level functions and client requests, request options including WithHeader/WithJSON/WithForm, WithBearerToken authentication, WithQuery query parameters, cookie management, context control, streaming responses, and decompressed body size limits."
+title: "Request and Response - CyberGo HTTPC | Options & Responses"
+description: "HTTPC request and response guide: package functions and client requests, WithHeader/WithJSON options, Bearer auth, query parameters, and context control."
 ---
 
 # Request and Response
@@ -219,7 +219,7 @@ result, err := httpc.Request(ctx, "GET", url)
 `WithStreamBody(true)` is an internal mechanism used during file downloads to avoid caching the entire response body in memory. When enabled, the response body is not read into `Result` (`Body()` and `RawBody()` return empty values).
 
 :::warning
-`WithStreamBody(true)` is used internally by the file download API (`DownloadFile`, `DownloadWithOptions`). For streaming response content, use the [File Download API](./file-transfer).
+`WithStreamBody(true)` is used internally by the file download API. For streaming response content, use the [File Download API](./file-transfer).
 :::
 
 For downloading large files, use the download API:
@@ -227,7 +227,7 @@ For downloading large files, use the download API:
 ```go
 cfg := httpc.DefaultDownloadConfig()
 cfg.FilePath = "/path/to/file"
-result, err := client.DownloadWithOptions(url, cfg)
+result, err := client.Download(context.Background(), url, cfg)
 ```
 
 ## Response Decompression

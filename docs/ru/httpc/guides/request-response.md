@@ -1,6 +1,6 @@
 ---
-title: "Запросы и ответы - HTTPC"
-description: "Руководство по обработке запросов и ответов HTTPC: функции уровня пакета и запросы через клиент, параметры запросов WithHeader/WithJSON/WithForm, аутентификация WithBearerToken, параметры запроса WithQuery, управление Cookie, управление контекстом, потоковые ответы и настройка лимитов размера распаковки."
+title: "Запросы и ответы - CyberGo HTTPC | Опции и ответы"
+description: "Руководство по запросам и ответам HTTPC: функции пакета и клиентские запросы, параметры WithHeader/WithJSON, аутентификация Bearer, параметры и контекст."
 ---
 
 # Запросы и ответы
@@ -219,7 +219,7 @@ result, err := httpc.Request(ctx, "GET", url)
 `WithStreamBody(true)` — внутренний механизм, используемый при загрузке файлов, чтобы избежать кэширования полного тела ответа в памяти. При включении тело ответа не считывается в `Result` (`Body()` и `RawBody()` возвращают пустые значения).
 
 :::warning
-`WithStreamBody(true)` используется внутри API загрузки файлов (`DownloadFile`, `DownloadWithOptions`). Если нужно потоковое получение содержимого ответа, используйте [API загрузки файлов](./file-transfer).
+`WithStreamBody(true)` используется внутри API загрузки файлов. Если нужно потоковое получение содержимого ответа, используйте [API загрузки файлов](./file-transfer).
 :::
 
 Если нужно загрузить большой файл, используйте API загрузки:
@@ -227,7 +227,7 @@ result, err := httpc.Request(ctx, "GET", url)
 ```go
 cfg := httpc.DefaultDownloadConfig()
 cfg.FilePath = "/path/to/file"
-result, err := client.DownloadWithOptions(url, cfg)
+result, err := client.Download(context.Background(), url, cfg)
 ```
 
 ## Распаковка ответов

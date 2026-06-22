@@ -1,6 +1,6 @@
 ---
 title: "Audit Logging - CyberGo env | Security Audit Configuration"
-description: "Complete configuration guide for CyberGo env audit logging, covering JSON file handler, standard log handler, and Channel handler creation and configuration, custom AuditHandler interface implementation, recording all environment variable load, read, modify, and delete operations for security compliance checks and production troubleshooting."
+description: "CyberGo env audit logging guide for JSON-file, standard-log and Channel handlers, plus custom AuditHandler to record load, read, modify and delete operations."
 ---
 
 # Audit Logging
@@ -50,7 +50,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 **Output Example:**
 
 ```json
-{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration":1234567}
+{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 {"timestamp":"2024-01-15T10:30:01Z","action":"get","key":"API_KEY","success":true,"masked":true}
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
@@ -75,9 +75,9 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 **Output Example:**
 
 ```text
-[AUDIT] 2024/01/15 10:30:00 load .env (1.23ms)
-[AUDIT] 2024/01/15 10:30:01 get API_KEY (masked)
-[AUDIT] 2024/01/15 10:30:02 set CUSTOM_VAR
+[AUDIT] 2024/01/15 10:30:00 action=load success=true reason="" file=.env duration=1.23ms
+[AUDIT] 2024/01/15 10:30:01 action=get key=API_KEY success=true reason=""
+[AUDIT] 2024/01/15 10:30:02 action=set key=CUSTOM_VAR success=true reason=""
 ```
 
 ---

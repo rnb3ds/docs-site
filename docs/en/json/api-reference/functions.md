@@ -1,6 +1,6 @@
 ---
 title: "Package Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON package-level function reference: including Get/GetString/GetInt/GetTyped path queries, Set/Delete/MergeJSON modifications, Marshal/Unmarshal encoding/decoding, and LoadFromFile/SaveToFile file operations, callable directly without creating a Processor instance."
+description: "CyberGo JSON package functions: Get/GetString/GetInt queries, Set/Delete/MergeJSON, Marshal/Unmarshal, and file I/O callable without a Processor."
 ---
 
 # Package Functions
@@ -11,7 +11,7 @@ Top-level functions provided by the json package, callable directly without crea
 
 Path queries, type-safe getters, batch operations, parsing, and validation functions.
 
-**Key Functions**: [`Get`](./functions/get#get) · [`GetString`](./functions/get#getstring) · [`GetInt`](./functions/get#getint) · [`GetFloat`](./functions/get#getfloat) · [`GetBool`](./functions/get#getbool) · [`GetArray`](./functions/get#getarray) · [`GetObject`](./functions/get#getobject) · [`GetTyped[T]`](./functions/get#gettyped-t) · [`SafeGet`](./functions/get#safeget-package-level-function) · [`GetMultiple`](./functions/get#getmultiple-package-level-function) · [`ProcessBatch`](./functions/get#processorprocessbatch) · [`Parse`](./functions/get#parse) · [`ParseAny`](./functions/get#parseany) · [`Valid`](./functions/get#valid) · [`ValidWithConfig`](./functions/get#validwithconfig)
+**Key Functions**: [`Get`](./functions/get#get) · [`GetString`](./functions/get#getstring) · [`GetInt`](./functions/get#getint) · [`GetFloat`](./functions/get#getfloat) · [`GetBool`](./functions/get#getbool) · [`GetArray`](./functions/get#getarray) · [`GetObject`](./functions/get#getobject) · [`GetTyped[T]`](./functions/get#gettyped-t) · [`SafeGet`](./functions/get#safeget-package-level-function) · [`GetMultiple`](./functions/get#getmultiple-package-level-function) · [`ProcessBatch`](./functions/get#processor-processbatch) · [`Parse`](./functions/get#parse) · [`ParseAny`](./functions/get#parseany) · [`Valid`](./functions/get#valid) · [`ValidWithConfig`](./functions/get#validwithconfig)
 
 ## [Modify Operations](./functions/modify)
 

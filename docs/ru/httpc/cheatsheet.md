@@ -1,6 +1,6 @@
 ---
-title: "Шпаргалка - HTTPC"
-description: "Шпаргалка HTTPC: создание клиента и пять предустановок конфигурации, семь методов запроса Get/Post, 27 параметров запроса WithXxx, обработка ответов Result, композиция цепочки промежуточного ПО, классификация ошибок ClientError, загрузка файлов и операции доменного клиента."
+title: "Шпаргалка - CyberGo HTTPC | Краткая справка"
+description: "Шпаргалка HTTPC: создание клиента, семь методов запроса, параметры WithXxx, обработка Result, цепочки middleware и загрузка файлов с примерами кода."
 ---
 
 # Шпаргалка
@@ -220,9 +220,12 @@ if err != nil {
 ## Загрузка файлов
 
 ```go
-dlResult, err := client.DownloadFile(url, "/path/to/file")
+// Базовая загрузка (ctx — context.Context, например context.Background())
+dlCfg := httpc.DefaultDownloadConfig()
+dlCfg.FilePath = "/path/to/file"
+dlResult, err := client.Download(ctx, url, dlCfg)
 
-// С параметрами
+// С параметрами (перезапись, возобновление, прогресс)
 dlCfg := httpc.DefaultDownloadConfig()
 dlCfg.FilePath = "/path/to/file"
 dlCfg.Overwrite = true
@@ -230,7 +233,7 @@ dlCfg.ResumeDownload = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     fmt.Printf("\r%.1f%% (%.2f MB/s)", float64(downloaded)/float64(total)*100, float64(speed)/1024/1024)
 }
-dlResult, err := client.DownloadWithOptions(url, dlCfg)
+dlResult, err := client.Download(ctx, url, dlCfg)
 
 // Тип dlResult — *DownloadResult (не *Result)
 // Поля: FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum

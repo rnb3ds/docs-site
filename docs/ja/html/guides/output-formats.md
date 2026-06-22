@@ -1,6 +1,6 @@
 ---
-title: "出力フォーマットの選択 - HTML"
-description: "CyberGo HTML 出力フォーマット選択ガイド。プレーンテキスト、Markdown、JSON の 3 種類の出力フォーマットの特徴と適用シーンを詳細に比較。フォーマットオプションの設定（InlineImageFormat、InlineLinkFormat）、コンテキストサポート、ファイル読み込みを含み、最適な出力フォーマットの選択をサポートします。"
+title: "出力フォーマットの選択 - CyberGo HTML | 比較ガイド"
+description: "CyberGo HTML 出力フォーマット選択：テキスト・Markdown・JSON の三形式の特徴と適用シーンを比較し、フォーマットオプションとファイル読み込みを扱います。"
 ---
 
 # 出力フォーマットの選択
@@ -135,7 +135,7 @@ fmt.Println(string(jsonBytes))
     {"url": "gopher.png", "alt": "Gopher", "title": "", "width": "", "height": "", "is_decorative": false, "position": 1}
   ],
   "links": [
-    {"url": "https://go.dev", "text": "Go 公式サイト", "title": "", "is_external": true, "is_no_follow": false, "position": 1}
+    {"url": "https://go.dev", "text": "Go 公式サイト", "title": "", "is_external": true, "is_nofollow": false, "position": 1}
   ],
   "processing_time_ms": 2,
   "word_count": 6,

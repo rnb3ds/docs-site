@@ -1,6 +1,6 @@
 ---
-title: "HTTP 客户端 - HTTPC"
-description: "CyberGo HTTPC 是 Go 语言安全高性能 HTTP 客户端库，内置 TLS 1.2+ 强制加密、SSRF 防护机制、智能指数退避重试策略、洋葱模型中间件链与 Result 对象池复用，适用于微服务通信与高并发 API 调用场景。"
+title: "HTTP 客户端 - CyberGo HTTPC | 安全高性能客户端"
+description: "CyberGo HTTPC 是 Go 语言安全高性能 HTTP 客户端库，提供 TLS 1.2+ 强制加密、SSRF 防护、智能指数退避重试、洋葱模型中间件链、连接池管理与 Result 生命周期自动管理，适用于微服务通信与高并发 API 调用场景。"
 ---
 
 # HTTPC
@@ -16,7 +16,7 @@ description: "CyberGo HTTPC 是 Go 语言安全高性能 HTTP 客户端库，内
 - **中间件链** - 日志、审计、指标、恢复、请求 ID 等内置中间件
 - **文件下载** - 支持断点续传、进度回调、校验和验证
 - **DNS-over-HTTPS** - 内置 DoH 解析，减少 DNS 劫持风险
-- **对象池复用** - 内置 sync.Pool 自动管理 Result 对象，减少 GC 压力
+- **对象池复用** - 内部响应对象与字符串构建器通过 sync.Pool 复用，减少 GC 压力
 
 ## 安装
 

@@ -1,6 +1,6 @@
 ---
-title: "セッション管理 - HTTPC"
-description: "HTTPC SessionManager API リファレンス：NewSessionManager 作成、SessionConfig 設定、SetHeader/SetHeaders ヘッダー管理、SetCookie/SetCookies メソッド、SetCookieSecurity 検証と UpdateFromResult レスポンス同期。"
+title: "セッション管理 - CyberGo HTTPC | SessionManager"
+description: "HTTPC SessionManager API リファレンス: NewSessionManager 作成、SessionConfig 設定、SetHeader ヘッダー管理、SetCookie メソッド、SetCookieSecurity 検証の完全な使い方を提供します。"
 ---
 
 # セッション管理

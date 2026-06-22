@@ -1,6 +1,6 @@
 ---
-title: "Path Expression Syntax - CyberGo JSON | JSONPath Query Guide"
-description: "CyberGo JSON path expression syntax complete reference guide, including property access user.name, array indexing items[0], slicing [start:end:step], wildcards [*], multi-field extraction {name,email}, and more syntax for flexibly and precisely locating and manipulating any node in JSON data."
+title: "Path Expression Syntax - CyberGo JSON | JSONPath Guide"
+description: "CyberGo JSON path syntax guide: user.name, items[0], slicing, wildcards, and multi-field extraction to target any node in Go JSON data."
 ---
 
 # Path Expression Syntax
@@ -409,8 +409,6 @@ The library internally parses paths into different types of segments (these are 
 | Array index | `items[0]` | Access array elements |
 | Array slice | `items[1:5]` | Slice range access |
 | Wildcard | `items[*]` | Match all elements |
-| Recursive descent | `..name` | Recursively search all levels |
-| Filter | `[?active]` | Conditional filtering |
 | Field extraction | `{name,email}` | Extract multiple fields |
 | Flat extraction | `{flat:tags}` | Extract and recursively flatten nested arrays |
 | Append operation | `items[+]` | Append to array |

@@ -1,6 +1,6 @@
 ---
 title: "構造体マッピング - CyberGo env | 環境変数から構造体へ"
-description: "CyberGo env ライブラリの構造体マッピング完全ガイド。env タグを使用して環境変数を Go 構造体フィールドに自動マッピングします。ネストされた構造体、ポインタとスライス型の処理、カスタム型コンバーターの実装、envDefault によるデフォルト値の設定、必須フィールドの検証ルール、マッピングフック関数のカスタム拡張方法を詳しく解説します。"
+description: "CyberGo env 構造体マッピングガイド。env タグで変数を構造体にマッピングし、ネスト、ポインタ、スライス、カスタムコンバーター、デフォルト値、必須検証を説明します。"
 ---
 
 # 構造体マッピング
@@ -218,6 +218,14 @@ type Database struct {
 ポインタフィールドをサポートします：
 
 ```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
 type Config struct {
     Host    *string `env:"HOST"`
     Port    *int64  `env:"PORT"`
@@ -274,6 +282,15 @@ func (p *Port) UnmarshalEnv(data map[string]string) error {
 ### 構造体の検証
 
 ```go
+package main
+
+import (
+    "errors"
+    "log"
+
+    "github.com/cybergodev/env"
+)
+
 type ServerConfig struct {
     Host string `env:"SERVER_HOST" envDefault:"0.0.0.0"`
     Port int64  `env:"SERVER_PORT" envDefault:"8080"`

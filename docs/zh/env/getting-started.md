@@ -1,6 +1,6 @@
 ---
 title: "快速开始 - CyberGo env | 5分钟入门指南"
-description: "5 分钟快速上手 CyberGo env 环境变量管理库，从 go get 安装到第一个程序运行，涵盖 .env 文件加载、类型安全读取、结构体映射、多环境配置和变量展开等核心功能的使用方法与完整代码示例，助您快速掌握 Go 环境变量管理。"
+description: "5 分钟上手 CyberGo env 环境变量管理库，涵盖 go get 安装、.env 加载、类型安全读取、结构体映射与变量展开，附完整代码示例助您快速入门。"
 ---
 
 # 快速开始
@@ -14,7 +14,7 @@ go get github.com/cybergodev/env
 ```
 
 ::: tip 要求
-Go 1.24+
+Go 1.25+
 :::
 
 ## 创建 .env 文件
@@ -184,8 +184,8 @@ secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
 
-    // 获取原始值
-    value := secret.String()
+    // 获取原始值（仅在需要明文时调用，如加解密、API 调用）
+    value := secret.Reveal()
 
     // 日志使用掩码（防止泄露）
     log.Printf("API Key: %s", secret.Masked())  // 输出: [SECURE:32 bytes]

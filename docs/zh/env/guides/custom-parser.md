@@ -1,6 +1,6 @@
 ---
 title: "自定义解析器 - CyberGo env | 扩展文件格式"
-description: "CyberGo env 库自定义解析器开发完整指南，详解如何实现 EnvParser 接口创建自定义格式解析器，通过 RegisterParser 注册到 ComponentFactory 并集成到加载流程，包含 TOML 和 INI 解析器完整实现示例、错误处理模式与生产环境最佳实践。"
+description: "CyberGo env 自定义解析器指南，实现 EnvParser 接口并通过 RegisterParser 注册，附 TOML 与 INI 解析器完整示例与最佳实践。"
 ---
 
 # 自定义解析器
@@ -38,6 +38,8 @@ package myparser
 
 import (
     "io"
+    "strings"
+
     "github.com/cybergodev/env"
 )
 
@@ -59,7 +61,17 @@ func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, e
     }
 
     // 2. 解析内容为键值对
-    // ... 解析逻辑
+    for _, line := range strings.Split(string(content), "\n") {
+        line = strings.TrimSpace(line)
+        if line == "" || strings.HasPrefix(line, "#") {
+            continue
+        }
+        idx := strings.Index(line, "=")
+        if idx <= 0 {
+            continue
+        }
+        result[strings.TrimSpace(line[:idx])] = strings.TrimSpace(line[idx+1:])
+    }
 
     // 3. 验证结果
     for key := range result {

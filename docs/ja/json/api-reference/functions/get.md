@@ -1,6 +1,6 @@
 ---
 title: "クエリと取得関数 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON クエリと取得関数の完全リファレンス：Get/GetString/GetInt/GetFloat/GetBool などの型安全な取得、GetTyped[T] ジェネリック取得、Parse/ParseAny パース関数を含み、JSONPath パス式を全面的にサポートします。"
+description: "CyberGo JSON クエリと取得関数：Get/GetString/GetInt/GetFloat/GetBool の型安全取得、GetTyped[T]、Parse/ParseAny で JSONPath を全面的にサポートします。"
 ---
 
 # クエリと取得関数
@@ -434,7 +434,7 @@ defer p.Close()
 data, err := p.ParseAny(`{"name": "test"}`)
 ```
 
-詳しくは [Processor パースメソッド](../processor/parse.md#パースメソッド) を参照してください。
+詳しくは [Processor パースメソッド](../processor/parse#解析メソッド) を参照してください。
 
 ## 検証関数
 

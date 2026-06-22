@@ -1,6 +1,6 @@
 ---
-title: "Output Formats - HTML"
-description: "Output format selection guide for CyberGo HTML, comparing plain text, Markdown, and JSON formats with configuration options and use case recommendations."
+title: "Output Format Guide - CyberGo HTML | Format Comparison"
+description: "CyberGo HTML output format guide: comparing text, Markdown, and JSON — features, use cases, InlineImageFormat, InlineLinkFormat, context, and file input."
 ---
 
 # Output Formats
@@ -135,7 +135,7 @@ fmt.Println(string(jsonBytes))
     {"url": "gopher.png", "alt": "Gopher", "title": "", "width": "", "height": "", "is_decorative": false, "position": 1}
   ],
   "links": [
-    {"url": "https://go.dev", "text": "Go Official Site", "title": "", "is_external": true, "is_no_follow": false, "position": 1}
+    {"url": "https://go.dev", "text": "Go Official Site", "title": "", "is_external": true, "is_nofollow": false, "position": 1}
   ],
   "processing_time_ms": 2,
   "word_count": 12,

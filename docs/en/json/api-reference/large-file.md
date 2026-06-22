@@ -1,6 +1,6 @@
 ---
 title: "Large File Processing - CyberGo JSON | API Reference"
-description: "CyberGo JSON large file processing API complete reference: including ForeachFile stream processing, ForeachFileChunked batch processing, ForeachFileWithPath path-based processing, ForeachFileNested nested iteration, memory control configuration, and performance optimization best practices guide."
+description: "CyberGo JSON large-file API: ForeachFile streaming, ForeachFileChunked batching, ForeachFileWithPath, ForeachFileNested, and memory control config."
 ---
 
 # Large File Processing
@@ -255,6 +255,13 @@ import (
     "log"
     "github.com/cybergodev/json"
 )
+
+// User represents a user record (sample data model)
+type User struct {
+    ID    int
+    Name  string
+    Email string
+}
 
 func main() {
     p, err := json.New()

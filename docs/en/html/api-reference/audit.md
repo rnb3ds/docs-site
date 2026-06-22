@@ -1,6 +1,6 @@
 ---
-title: "Audit System - HTML"
-description: "Pluggable audit system API reference for CyberGo HTML, including AuditConfig, event types, audit levels, AuditEntry logs, and built-in Sink implementations."
+title: "Audit System - CyberGo HTML | Pluggable Audit API"
+description: "CyberGo HTML audit API: AuditConfig, 8 event types, 3 levels, AuditEntry, and six built-in sinks (Logger, Channel, Writer, Multi, Filtered, LevelFiltered)."
 ---
 
 # Audit System

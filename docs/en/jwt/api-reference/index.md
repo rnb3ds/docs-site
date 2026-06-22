@@ -1,6 +1,6 @@
 ---
-title: "API Reference - JWT"
-description: "CyberGo JWT API reference index covering package-level functions, Processor core methods, Config configuration, Claims types, interface definitions, types and constants, and error handling documentation."
+title: "API Reference - CyberGo JWT | Interface Docs"
+description: "CyberGo JWT API reference index linking to package factory functions, Processor methods, Config, Claims, RegisteredClaims, interfaces, types, and errors."
 ---
 
 # API Reference
@@ -17,7 +17,7 @@ CyberGo JWT provides a complete JWT token lifecycle management API.
 | [Claims](./claims) | `Claims`, `RegisteredClaims` claim types | Token Claims |
 | [Interfaces](./interfaces) | `TokenManager`, `CustomClaims`, `BlacklistStore`, etc. | Extension Interfaces |
 | [Types & Constants](./types) | Signing method constants, `NumericDate`, `StringOrSlice`, etc. | Auxiliary Types |
-| [Errors](./errors) | 17 sentinel errors, `ValidationError` | Error Handling |
+| [Errors](./errors) | **19** sentinel errors, `ValidationError` | Error Handling |
 
 ## Quick Lookup
 

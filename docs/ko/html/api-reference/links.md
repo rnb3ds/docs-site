@@ -1,11 +1,19 @@
 ---
-title: "링크 추출 - HTML"
-description: "CyberGo HTML 라이브러리 독립 링크 추출 API 레퍼런스, ExtractAllLinks 시리즈 함수와 GroupLinksByType 그룹화 도구를 포함하며, HTML에서 모든 링크 리소스(CSS, JS, 이미지, 비디오, 오디오)를 추출하고 유형별로 그룹화하는 것을 지원합니다."
+title: "링크 추출 - CyberGo HTML | 리소스 링크 API"
+description: "CyberGo HTML 링크 추출 API: ExtractAllLinks 계열과 GroupLinksByType으로 리소스 링크를 추출·그룹화하며 Config로 필터링을 제어합니다."
 ---
 
 # 링크 추출
 
 독립적인 링크 추출 API로, HTML에서 모든 링크 리소스를 추출하고 유형별로 그룹화할 수 있습니다.
+
+:::tip Extract와의 주요 차이
+`ExtractAllLinks`는 **HTML 정제(sanitization)를 적용하지 않습니다**(`EnableSanitization`이 여기서는 무효임). 따라서 `<script src>`, `<iframe>`, `<link>`, `<embed>` 같은 태그 안의 리소스 링크도 모두 추출됩니다. 이 리소스 링크를 열거할 수 있도록 하기 위함이며, `Extract` 경로에서는 보통 정제 과정에서 제거됩니다.
+:::
+
+:::info 결과 정렬과 중복 제거
+`ExtractAllLinks`는 결과를 **URL 오름차순으로 정렬**하고 URL로 중복을 제거합니다. 따라서 동일한 입력에 대해 여러 번 호출해도 완전히 동일한 결과가 나옵니다(v1.4.2부터). 결과 비교, 캐시 재사용, 재현 가능한 다운스트림 처리에 유리합니다. 동일한 URL이 여러 태그에 나타나면 한 건만 유지됩니다.
+:::
 
 ## 패키지 함수
 

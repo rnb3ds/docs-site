@@ -1,6 +1,6 @@
 ---
 title: "Определения интерфейсов - CyberGo JSON | Справочник API"
-description: "Полный справочник расширяемых интерфейсов CyberGo JSON: включает CustomEncoder, TypeEncoder, Validator, Hook интерфейсы, PathParser и DangerousPattern для гибкого расширения функций кодирования, валидации и защиты безопасности библиотеки."
+description: "Интерфейсы CyberGo JSON: CustomEncoder, TypeEncoder, Validator, Hook, PathParser и DangerousPattern для расширения кодирования, валидации и безопасности."
 ---
 
 # Определения интерфейсов
@@ -149,7 +149,7 @@ type Hook interface {
 ```go
 type HookContext struct {
     Operation string        // Тип операции: "get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string        // Входная JSON строка (может быть пустой при marshal)
+    JSONStr   string        // Входная JSON строка (может быть пустой при marshal). Предупреждение безопасности: может содержать конфиденциальные данные
     Path      string        // Целевой путь (может быть пустым при marshal/unmarshal)
     Value     any           // Значение операции set
     Config    *Config       // Активная конфигурация
@@ -530,7 +530,7 @@ func (r AccessResult) AsBool() (bool, error)              // Строгое пр
 | `AsStringConverted()` | Форматирование | Использует fmt.Sprintf для преобразования любого значения в строковое представление |
 | `AsInt()` | Строгое | Не преобразует bool в int, принимает только целые числа и разборчивые числа |
 | `AsFloat64()` | Строгое | Не преобразует bool в float, принимает только числа с плавающей точкой и разборчивые числа |
-| `AsBool()` | Строгое | Принимает только bool и разборчивые строки ("true"/"false"/"yes"/"no" и т.д.) |
+| `AsBool()` | Строгое | Принимает только bool и строки, допустимые `strconv.ParseBool` ("1"/"t"/"T"/"TRUE"/"true"/"True", "0"/"f"/"F"/"FALSE"/"false"/"False") |
 
 ```go
 result := p.SafeGet(data, "user.age")
@@ -627,7 +627,8 @@ type SchemaConfig struct {
 cfg := json.DefaultSchemaConfig()
 cfg.Type = "object"
 cfg.Required = []string{"name", "email"}
-cfg.AdditionalProperties = ptrBool(false)
+additionalProperties := false
+cfg.AdditionalProperties = &additionalProperties
 schema := json.NewSchemaWithConfig(cfg)
 ```
 
@@ -637,8 +638,8 @@ schema := json.NewSchemaWithConfig(cfg)
 
 ```go
 type ValidationError struct {
-    Path    string // Путь ошибки
-    Message string // Сообщение об ошибке
+    Path    string `json:"path"`    // Путь ошибки
+    Message string `json:"message"` // Сообщение об ошибке
 }
 
 func (ve *ValidationError) Error() string

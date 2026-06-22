@@ -1,6 +1,6 @@
 ---
-title: "Connection Pool and Proxy - HTTPC"
-description: "HTTPC connection pool and proxy configuration guide: MaxIdleConns parameter tuning with scenario recommendations, ProxyURL manual proxy and system proxy detection, SOCKS5 proxy, DoH three-provider fallback, HTTP/2 configuration, built-in object pool automatic management, and concurrent request patterns."
+title: "Connection Pool and Proxy - CyberGo HTTPC | Pool & Proxy"
+description: "HTTPC connection pool and proxy guide: MaxIdleConns tuning, ProxyURL manual and system proxy, SOCKS5/HTTP proxies, DoH fallback, and HTTP/2 configuration."
 ---
 
 # Connection Pool and Proxy
@@ -104,8 +104,8 @@ Default DoH providers (in priority order):
 | Provider | Address | Description |
 |----------|---------|-------------|
 | Cloudflare | `1.1.1.1/dns-query` | Fastest, privacy-first |
-| Google | `8.8.8.8/resolve` | Global coverage |
-| AliDNS | `223.5.5.5/resolve` | Optimized for China region |
+| Google | `dns.google/resolve` | Global coverage |
+| AliDNS | `dns.alidns.com/resolve` | Optimized for China region |
 
 :::tip
 When DoH is enabled, DNS resolution results are cached for `DoHCacheTTL` duration. If all DoH providers are unavailable, it falls back to system DNS.
@@ -127,15 +127,17 @@ HTTP/2 features:
 
 ## Object Pool Reuse
 
+Internally, HTTPC reuses engine response objects and string builders via sync.Pool to reduce GC pressure; Result itself is created fresh per request and reclaimed by GC.
+
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result objects are automatically managed by the built-in object pool, GC handles cleanup
+// Result is created fresh per request, reclaimed by GC, no manual release needed
 ```
 
-In high-concurrency scenarios, object pool reuse significantly reduces GC pressure.
+In high-concurrency scenarios, internal object pool reuse significantly reduces GC pressure.
 
 ## Concurrent Request Pattern
 

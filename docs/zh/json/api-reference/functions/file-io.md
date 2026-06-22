@@ -1,6 +1,6 @@
 ---
 title: "文件操作函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 文件操作函数完整参考：包括 LoadFromReader 从流读取、ParseJSONL/ToJSONL JSONL 处理、StreamLinesInto[T] 泛型流处理、NewJSONLWriter 写入器，以及 JSONL 配置详解，支持大文件流式处理场景。"
+description: "CyberGo JSON 文件操作函数：LoadFromReader 流读取、ParseJSONL/ToJSONL 处理、StreamLinesInto[T] 泛型流与 NewJSONLWriter，支持大文件流式场景。"
 ---
 
 # 文件操作函数
@@ -114,7 +114,7 @@ defer resp.Body.Close()
 data, err := json.LoadFromReader(resp.Body)
 
 // 从字符串读取
-data, err := json.LoadFromReader(strings.NewReader(`{"name":"test"}`))
+data, err = json.LoadFromReader(strings.NewReader(`{"name":"test"}`))
 ```
 
 ### SaveToWriter

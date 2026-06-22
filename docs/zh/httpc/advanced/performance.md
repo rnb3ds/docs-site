@@ -1,6 +1,6 @@
 ---
-title: "性能优化 - HTTPC"
-description: "HTTPC 性能优化指南：Default/Secure/Performance/Minimal 四种预设对比与场景选型、基于预设微调连接池与超时参数、内置对象池自动管理减少 GC 压力、并发请求模式与常见性能反模式分析。"
+title: "性能优化 - CyberGo HTTPC | 预设与并发"
+description: "HTTPC 性能优化指南：Default/Secure/Performance/Minimal 四种预设对比与场景选型、基于预设微调连接池与超时参数、Result 生命周期自动管理减少 GC 压力、高并发请求模式与性能反模式分析与优化建议。"
 ---
 
 # 性能优化
@@ -43,14 +43,14 @@ client, _ := httpc.New(cfg)
 
 ## 对象池复用
 
-HTTPC 内置 Result 对象池，自动管理对象生命周期：
+HTTPC 内部对引擎响应对象与字符串构建器复用 sync.Pool，减少 GC 压力；Result 则每次请求新建、由 GC 自动回收：
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result 对象由内置对象池自动管理，GC 自动回收
+// Result 每次请求新建，GC 自动回收，无需手动释放
 ```
 
 :::tip

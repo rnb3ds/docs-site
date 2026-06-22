@@ -1,6 +1,6 @@
 ---
-title: "기본 예제 - HTTPC"
-description: "HTTPC 기본 예제 모음: 쿼리 매개변수와 인증이 포함된 GET 요청, JSON/폼/파일 업로드 POST 요청, FormData 다중 필드 폼, DefaultConfig 커스텀 설정, ProxyURL 프록시, Recovery/Logging 미들웨어, RequestID/Metrics 메트릭 수집과 진행률 콜백이 포함된 파일 다운로드 완전한 코드를 제공합니다."
+title: "기본 예제 - CyberGo HTTPC | 실행 가능 예제"
+description: "HTTPC 기본 예제 모음: 인증이 포함된 GET 요청, JSON/폼/파일 업로드 POST, 커스텀 설정, 프록시, 미들웨어, 메트릭 수집과 진행률 콜백 파일 다운로드의 완전하고 컴파일 가능한 코드를 제공합니다. 모든 예제는 즉시 실행 가능합니다."
 ---
 
 # 기본 예제
@@ -189,7 +189,7 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     fmt.Printf("\r다운로드 중: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
-result, err := client.DownloadWithOptions("https://example.com/file.zip", cfg)
+result, err := client.Download(context.Background(), "https://example.com/file.zip", cfg)
 if err != nil {
     log.Fatal(err)
 }

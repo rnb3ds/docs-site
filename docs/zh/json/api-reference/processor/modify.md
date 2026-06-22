@@ -1,6 +1,6 @@
 ---
 title: "Processor 数据修改 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 数据修改方法完整参考：Set 路径设置值、SetMultiple 批量设置、SetCreate 自动创建中间路径、Delete 删除路径和 DeleteClean 清理删除，所有方法支持链式调用。"
+description: "CyberGo JSON Processor 修改方法：Set 设置、SetMultiple 批量、SetCreate 自动创建路径、Delete 删除与 DeleteClean 清理，所有方法支持链式调用。"
 ---
 
 # 数据修改方法
@@ -24,19 +24,19 @@ result, err := p.Set(data, "user.name", "NewName")
 result, _ := p.Set(data, "user.name", "CyberGo")
 
 // 数字
-result, _ := p.Set(data, "user.age", 25)
+result, _ = p.Set(data, "user.age", 25)
 
 // 布尔值
-result, _ := p.Set(data, "user.active", true)
+result, _ = p.Set(data, "user.active", true)
 
 // 对象
-result, _ := p.Set(data, "user.profile", map[string]any{
+result, _ = p.Set(data, "user.profile", map[string]any{
     "bio": "Developer",
     "location": "China",
 })
 
 // 数组
-result, _ := p.Set(data, "items", []any{"a", "b", "c"})
+result, _ = p.Set(data, "items", []any{"a", "b", "c"})
 ```
 
 ## Delete
@@ -70,7 +70,7 @@ result, _ := p.Delete(data, "user.temp")
 
 // 如果删除后父对象为空，DeleteClean 会继续清理
 // {"user": {}} -> {}
-result, _ := p.DeleteClean(data, "user.temp")
+result, _ = p.DeleteClean(data, "user.temp")
 ```
 
 ## SetMultiple

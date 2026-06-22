@@ -1,6 +1,6 @@
 ---
 title: "パス式構文 - CyberGo JSON | JSONPath クエリガイド"
-description: "CyberGo JSON パス式構文の完全リファレンスガイド。プロパティアクセス user.name、配列インデックス items[0]、スライス [start:end:step]、ワイルドカード [*]、複数フィールド抽出 {name,email} などの構文をサポートし、JSON データ内の任意のノードを柔軟かつ正確に特定・操作できます。"
+description: "CyberGo JSON パス式構文ガイド：プロパティアクセス user.name、配列インデックス items[0]、スライス、ワイルドカード、複数フィールド抽出で JSON の任意ノードを指定します。"
 ---
 
 # パス式構文
@@ -409,8 +409,6 @@ name := json.GetString(data, "user\\.name")  // "Alice"
 | 配列インデックス | `items[0]` | 配列要素にアクセス |
 | 配列スライス | `items[1:5]` | スライス範囲アクセス |
 | ワイルドカード | `items[*]` | すべての要素にマッチ |
-| 再帰下降 | `..name` | すべてのレベルを再帰検索 |
-| フィルタ | `[?active]` | 条件によるフィルタリング |
 | フィールド抽出 | `{name,email}` | 複数フィールドの抽出 |
 | フラット化抽出 | `{flat:tags}` | 抽出してネストされた配列を再帰的に展開 |
 | 追加操作 | `items[+]` | 配列に要素を追加 |

@@ -1,6 +1,6 @@
 ---
-title: "Domain Client and Sessions - HTTPC"
-description: "HTTPC domain client and session management guide: NewDomain creation of domain-scoped client, URL auto-concatenation rules, SetHeader session header maintenance, auto Cookie management with response capture, CookieSecurity security validation strategy, and REST API client wrapper practical example."
+title: "Domain Client and Sessions - CyberGo HTTPC | Cookie Mgmt"
+description: "HTTPC domain client and session guide: NewDomain domain-scoped client, URL auto-concatenation, SetHeader headers, Cookie validation, and a REST wrapper."
 ---
 
 # Domain Client and Sessions

@@ -1,6 +1,6 @@
 ---
-title: "Error Handling - HTTPC"
-description: "HTTPC error handling guide: twelve ErrorType classifications, ClientError fields and IsRetryable check, sentinel error matching with errors.Is/As, retry exhausted handling, context timeout and cancellation, middleware-based unified error handling, and layered timeout best practices."
+title: "Error Handling - CyberGo HTTPC | Types & Sentinels"
+description: "HTTPC error handling guide: twelve ErrorType classifications, ClientError and IsRetryable, errors.Is/As matching, retry exhaustion, and context timeouts."
 ---
 
 # Error Handling
@@ -59,10 +59,6 @@ if errors.Is(err, httpc.ErrClientClosed) {
 
 if errors.Is(err, httpc.ErrResponseBodyEmpty) {
     // Response body is empty
-}
-
-if errors.Is(err, httpc.ErrInvalidURL) {
-    // URL format is invalid
 }
 
 if errors.Is(err, httpc.ErrInvalidHeader) {

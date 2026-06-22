@@ -1,6 +1,6 @@
 ---
 title: "ComponentFactory API - CyberGo env | Фабрика компонентов"
-description: "Полный справочник API ComponentFactory библиотеки CyberGo env: создание и управление общими компонентами Loader и Parser, включая обработчики аудита, валидаторы, адаптеры файловой системы и регистрацию пользовательских парсеров через RegisterParser, управление жизненным циклом компонентов через Close и потокобезопасный параллельный доступ."
+description: "Справочник ComponentFactory в CyberGo env: создание обработчиков аудита, валидаторов, файловых адаптеров и регистрация парсеров с управлением Close."
 ---
 
 # ComponentFactory API
@@ -166,20 +166,19 @@ env.RegisterParser(FormatCustom, func(cfg env.Config, factory *env.ComponentFact
 
 ```text
 Создание Config
-     |
+     ↓
 env.New(cfg)
-     |
+     ↓
 Автоматическое создание ComponentFactory
-     |
-    +-------+-------+
-    |       |       |
-    v       v       v
+     ↓
+    ┌───────┼───────┐
+    ↓       ↓       ↓
 Validator  Auditor  Expander
-    |       |       |
-    +-------+-------+
-            |
+    ↓       ↓       ↓
+    └───────┼───────┘
+            ↓
       Loader/Parser
-            |
+            ↓
       Close() освобождает
 ```
 
@@ -212,7 +211,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 
 **Пример вывода:**
 ```json
-{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration":1234567}
+{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 ```
 
 ---
@@ -529,6 +528,14 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - Фабричная функция должна возвращать потокобезопасный парсер
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. Определение пользовательской константы формата
 const FormatTOML env.FileFormat = 100
 
@@ -546,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. Регистрация парсера
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. Регистрация парсера в init() для гарантии выполнения перед использованием
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. Использование пользовательского формата
 func main() {
-    // Регистрация должна быть завершена до New
+    // Регистрация завершена в init() (выполняется до main)
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 
@@ -780,6 +789,7 @@ func main() {
 package main
 
 import (
+    "errors"
     "fmt"
     "os"
     "strings"
@@ -861,9 +871,9 @@ type MemoryFile struct {
 }
 
 func (f *MemoryFile) Read(p []byte) (n int, err error)  { return f.reader.Read(p) }
-func (f *MemoryFile) Write(p []byte) (n int, err error) { return 0, os.ErrUnsupported }
+func (f *MemoryFile) Write(p []byte) (n int, err error) { return 0, errors.ErrUnsupported }
 func (f *MemoryFile) Close() error                      { return nil }
-func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, os.ErrUnsupported }
+func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, errors.ErrUnsupported }
 func (f *MemoryFile) Sync() error                       { return nil }
 
 // MemoryFileInfo реализует os.FileInfo

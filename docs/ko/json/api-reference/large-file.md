@@ -1,6 +1,6 @@
 ---
 title: "대용량 파일 처리 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 대용량 파일 처리 API 레퍼런스: ForeachFile 스트리밍 처리, ForeachFileChunked 배치, ForeachFileWithPath 경로 처리, ForeachFileNested 중첩 반복 및 메모리 제어 설정의 모범 사례를 포함합니다."
+description: "CyberGo JSON 대용량 파일 API: ForeachFile 스트리밍, ForeachFileChunked 배치, ForeachFileWithPath, ForeachFileNested 중첩 반복, 메모리 제어 설정을 제공합니다."
 ---
 
 # 대용량 파일 처리
@@ -255,6 +255,13 @@ import (
     "log"
     "github.com/cybergodev/json"
 )
+
+// User는 사용자 레코드를 나타냅니다 (샘플 데이터 모델)
+type User struct {
+    ID    int
+    Name  string
+    Email string
+}
 
 func main() {
     p, err := json.New()

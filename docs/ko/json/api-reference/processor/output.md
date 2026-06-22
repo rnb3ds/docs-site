@@ -1,6 +1,6 @@
 ---
 title: "Processor 출력 메서드 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor 출력 메서드 레퍼런스: Encode 인코딩, EncodePretty 포맷팅, EncodeWithConfig 커스텀 설정, EncodeBatch/EncodeFields 배치 인코딩, Compact/Indent/HTMLEscape 포맷팅 작업을 포함하여 다양한 JSON 출력 요구를 충족합니다."
+description: "CyberGo JSON Processor 출력 메서드: Encode, EncodePretty, EncodeWithConfig, EncodeBatch/EncodeFields, Compact/Indent/HTMLEscape로 다양한 출력을 지원합니다."
 ---
 
 # 출력 메서드
@@ -11,7 +11,7 @@ Processor는 다양한 JSON 인코딩 출력 메서드를 제공합니다.
 
 ### Encode
 
-시그니처: `func (p *Processor) Encode(value any, cfg ...Config) (string, error)`
+시그니처: `func (p *Processor) Encode(value any, config ...Config) (string, error)`
 
 임의의 값을 JSON 문자열로 인코딩합니다.
 
@@ -25,7 +25,7 @@ fmt.Println(result)
 
 ### EncodePretty
 
-시그니처: `func (p *Processor) EncodePretty(value any, cfg ...Config) (string, error)`
+시그니처: `func (p *Processor) EncodePretty(value any, config ...Config) (string, error)`
 
 임의의 값을 포맷팅된 JSON 문자열로 인코딩합니다.
 
@@ -56,14 +56,14 @@ if err != nil {
 result, err := p.EncodeWithConfig(data, json.PrettyConfig())
 
 // SecurityConfig 사용
-result, err := p.EncodeWithConfig(data, json.SecurityConfig())
+result, err = p.EncodeWithConfig(data, json.SecurityConfig())
 
 // 커스텀 설정 사용
 cfg := json.DefaultConfig()
 cfg.Pretty = true
 cfg.SortKeys = true
 cfg.EscapeHTML = true
-result, err := p.EncodeWithConfig(data, cfg)
+result, err = p.EncodeWithConfig(data, cfg)
 ```
 
 ### EncodeBatch
@@ -101,7 +101,7 @@ result, err := p.EncodeFields(user, []string{"name", "email"})
 
 시그니처: `func (p *Processor) EncodeStream(values any, cfg ...Config) (string, error)`
 
-임의의 값을 JSON 문자열로 인코딩합니다. `EncodeWithConfig`의 Processor 메서드 형태와 동일합니다.
+여러 값을 JSON 배열 스트림(array stream)으로 인코딩합니다. `values`는 일반적으로 슬라이스나 열거 가능한 컬렉션이며, `[v1,v2,...]` 형태의 JSON 배열 문자열을 출력합니다.
 
 ```go
 values := []any{"item1", "item2", "item3"}
@@ -169,10 +169,10 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 // }
 ```
 
-### Print (비공개 전환)
+### Print (제거됨)
 
 :::warning API 변경 안내
-`Print`, `PrintE`, `PrintPretty`, `PrintPrettyE`는 내부 메서드(소문자 이름)로 전환되어 공개 API로 내보내지 않습니다. 다음 대안을 사용하세요:
+`Print`, `PrintE`, `PrintPretty`, `PrintPrettyE`는 라이브러리에서 제거되어 더 이상 제공되지 않습니다. 다음 대안을 사용하세요:
 
 ```go
 // 컴팩트 출력

@@ -1,6 +1,6 @@
 ---
-title: "Claims - JWT API 레퍼런스"
-description: "CyberGo JWT Claims API 레퍼런스: Claims 내장 비즈니스 선언(UserID, Username, Role 등), RegisteredClaims RFC 7519 표준 선언 및 심층 검증 제약사항."
+title: "Claims - CyberGo JWT | 내장 선언 구조"
+description: "CyberGo JWT Claims는 UserID·Username·Role·권한·스코프 등 비즈니스 필드와 RFC 7519 RegisteredClaims를 포함하며 필드 길이, 배열 크기, 주입 모드 검증 제약을 제공합니다."
 ---
 
 # Claims
@@ -74,6 +74,7 @@ type RegisteredClaims struct {
     NotBefore NumericDate   `json:"nbf"`
     IssuedAt  NumericDate   `json:"iat"`
     ID        string        `json:"jti,omitempty"`
+    TokenType string        `json:"token_type,omitempty"`
 }
 ```
 
@@ -92,3 +93,4 @@ type RegisteredClaims struct {
 | `NotBefore` | `NumericDate` | `nbf` | 활성화 시간 |
 | `IssuedAt` | `NumericDate` | `iat` | 발급 시간 |
 | `ID` | `string` | `jti` | 토큰 ID |
+| `TokenType` | `string` | `token_type` | 토큰 타입 (`access` 또는 `refresh`; [토큰 타입 상수](./types#토큰-타입-상수) 참조) |

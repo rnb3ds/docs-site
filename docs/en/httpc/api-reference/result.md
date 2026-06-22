@@ -1,6 +1,6 @@
 ---
-title: "Result - HTTPC"
-description: "HTTPC Result response type API reference: StatusCode/Body/RawBody basic methods, status checks, cookie operations, Unmarshal JSON parsing, SaveToFile file saving, automatic object pooling, and RequestInfo/ResponseInfo/RequestMeta sub-types."
+title: "Result - CyberGo HTTPC | Result Response Type"
+description: "HTTPC Result response type API reference: StatusCode/Body basic methods, status checks, cookie operations, Unmarshal JSON parsing, and SaveToFile file saving."
 ---
 
 # Result
@@ -26,7 +26,7 @@ fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
 :::tip
-Result uses an internal object pool for performance optimization. GC handles cleanup automatically -- no manual release needed.
+Result is created fresh for each request and automatically reclaimed by GC -- no manual release needed.
 :::
 
 ## Basic Methods

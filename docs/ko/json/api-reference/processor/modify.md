@@ -1,6 +1,6 @@
 ---
 title: "Processor 데이터 수정 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor 데이터 수정 메서드 완전 레퍼런스: Set 경로 설정, SetMultiple 배치 설정, SetCreate 중간 경로 자동 생성, Delete 경로 삭제 및 DeleteClean 정리 삭제, 모든 메서드는 체인 호출을 지원합니다."
+description: "CyberGo JSON Processor 수정 메서드: Set, SetMultiple, SetCreate 자동 경로 생성, Delete, DeleteClean으로 메서드 체이닝을 지원합니다."
 ---
 
 # 데이터 수정 메서드
@@ -24,19 +24,19 @@ result, err := p.Set(data, "user.name", "NewName")
 result, _ := p.Set(data, "user.name", "CyberGo")
 
 // 숫자
-result, _ := p.Set(data, "user.age", 25)
+result, _ = p.Set(data, "user.age", 25)
 
 // 불리언
-result, _ := p.Set(data, "user.active", true)
+result, _ = p.Set(data, "user.active", true)
 
 // 객체
-result, _ := p.Set(data, "user.profile", map[string]any{
+result, _ = p.Set(data, "user.profile", map[string]any{
     "bio": "Developer",
     "location": "China",
 })
 
 // 배열
-result, _ := p.Set(data, "items", []any{"a", "b", "c"})
+result, _ = p.Set(data, "items", []any{"a", "b", "c"})
 ```
 
 ## Delete
@@ -70,7 +70,7 @@ result, _ := p.Delete(data, "user.temp")
 
 // 삭제 후 부모 객체가 비어있으면 DeleteClean은 계속 정리
 // {"user": {}} -> {}
-result, _ := p.DeleteClean(data, "user.temp")
+result, _ = p.DeleteClean(data, "user.temp")
 ```
 
 ## SetMultiple

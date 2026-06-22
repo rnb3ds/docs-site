@@ -1,6 +1,6 @@
 ---
-title: "Processor Cache & Reuse - HTML"
-description: "Processor reuse and cache optimization for CyberGo HTML, covering sync.Pool internals, cache configuration, hit rate monitoring, and web service patterns."
+title: "Processor Cache & Reuse - CyberGo HTML | Reuse Guide"
+description: "CyberGo HTML Processor reuse and cache: package-function vs Processor, sync.Pool, cache strategy (TTL, capacity, cleanup), hit-rate stats, web-service patterns."
 ---
 
 # Processor Cache & Reuse

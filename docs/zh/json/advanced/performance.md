@@ -1,6 +1,6 @@
 ---
 title: "性能优化 - CyberGo JSON | 高性能指南"
-description: "CyberGo JSON 性能优化指南：详解缓存策略 EnableCache/CacheTTL、并行处理 ParallelThreshold、PreParse 预解析优化、WarmupCache 预热和对象池复用，提升高频 JSON 处理性能。"
+description: "CyberGo JSON 性能优化指南：EnableCache/CacheTTL 缓存、ParallelThreshold 并行、PreParse 预解析、WarmupCache 预热与对象池复用，提升高频 JSON 处理性能。"
 ---
 
 # 性能优化
@@ -106,17 +106,28 @@ wg.Wait()
 ### 使用 Worker Pool
 
 ```go
-pool := workerpool.New(10)
-
 items := json.GetArray(data, "items")
-for _, item := range items {
-    item := item
-    pool.Submit(func() {
-        processItem(item)
-    })
+jobs := make(chan any, len(items))
+
+// 启动固定数量的 worker，复用 goroutine 避免频繁创建/销毁
+var wg sync.WaitGroup
+workers := runtime.NumCPU()
+for w := 0; w < workers; w++ {
+    wg.Add(1)
+    go func() {
+        defer wg.Done()
+        for item := range jobs {
+            processItem(item)
+        }
+    }()
 }
 
-pool.StopWait()
+// 分发任务后关闭通道，通知 worker 退出
+for _, item := range items {
+    jobs <- item
+}
+close(jobs)
+wg.Wait()
 ```
 
 ## 配置优化

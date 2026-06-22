@@ -1,6 +1,6 @@
 ---
-title: "Advanced Usage - HTML"
-description: "Advanced usage examples for CyberGo HTML, demonstrating custom Scorer, multi-Sink audit pipelines, batch processing, and Processor pooling patterns."
+title: "Advanced Usage - CyberGo HTML | Advanced Scenarios"
+description: "CyberGo HTML advanced examples: custom Scorer, multi-Sink audit pipeline, batch file processing, Processor pooling, and ChannelAuditSink monitoring."
 ---
 
 # Advanced Usage

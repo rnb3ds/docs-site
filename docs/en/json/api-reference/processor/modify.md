@@ -1,6 +1,6 @@
 ---
 title: "Processor Data Modification - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor data modification methods complete reference: Set path values, SetMultiple batch setting, Delete path removal, CreatePaths automatic intermediate path creation, all methods return modified JSON strings, supporting chained calls and CreatePaths configuration for automatic path creation."
+description: "CyberGo JSON Processor modify methods: Set, SetMultiple batching, SetCreate auto-path creation, Delete, and DeleteClean cleanup, all supporting chained calls."
 ---
 
 # Data Modification Methods
@@ -24,19 +24,19 @@ Supports setting values of various types:
 result, _ := p.Set(data, "user.name", "CyberGo")
 
 // Number
-result, _ := p.Set(data, "user.age", 25)
+result, _ = p.Set(data, "user.age", 25)
 
 // Boolean
-result, _ := p.Set(data, "user.active", true)
+result, _ = p.Set(data, "user.active", true)
 
 // Object
-result, _ := p.Set(data, "user.profile", map[string]any{
+result, _ = p.Set(data, "user.profile", map[string]any{
     "bio": "Developer",
     "location": "China",
 })
 
 // Array
-result, _ := p.Set(data, "items", []any{"a", "b", "c"})
+result, _ = p.Set(data, "items", []any{"a", "b", "c"})
 ```
 
 ## Delete
@@ -70,7 +70,7 @@ result, _ := p.Delete(data, "user.temp")
 
 // If the parent object becomes empty after deletion, DeleteClean continues cleanup
 // {"user": {}} -> {}
-result, _ := p.DeleteClean(data, "user.temp")
+result, _ = p.DeleteClean(data, "user.temp")
 ```
 
 ## SetMultiple

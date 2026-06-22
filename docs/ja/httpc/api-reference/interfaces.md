@@ -1,6 +1,6 @@
 ---
-title: "インターフェース定義 - HTTPC"
-description: "HTTPC コアインターフェース API リファレンス：Client 全機能インターフェース、Doer 最小実行インターフェース、DomainClienter ドメインクライアント、RetryPolicy リトライポリシー、RequestMutator/ResponseMutator ミドルウェアインターフェースと Handler/MiddlewareFunc 定義。"
+title: "インターフェース定義 - CyberGo HTTPC | コアインターフェース"
+description: "HTTPC コアインターフェース API リファレンス: Client 全機能インターフェース、Doer 最小実行インターフェース、DomainClienter、RetryPolicy リトライポリシー、ミドルウェアインターフェース定義の完全な説明を提供します。"
 ---
 
 # インターフェース定義
@@ -21,10 +21,7 @@ type Client interface {
     Options(url string, options ...RequestOption) (*Result, error)
 
     // ファイルダウンロード
-    DownloadFile(url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptions(url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
-    DownloadFileWithContext(ctx context.Context, url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptionsWithContext(ctx context.Context, url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
+    Download(ctx context.Context, url string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 
     // ライフサイクル
     Close() error

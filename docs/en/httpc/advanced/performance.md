@@ -1,6 +1,6 @@
 ---
-title: "Performance Optimization - HTTPC"
-description: "HTTPC performance optimization guide: four preset comparison (Default/Secure/Performance/Minimal) and scenario selection, fine-tuning connection pool and timeout parameters based on presets, automatic Result object pooling to reduce GC pressure, concurrent request patterns, and common performance anti-pattern analysis."
+title: "Performance Optimization - CyberGo HTTPC | Tuning Presets"
+description: "HTTPC performance guide: comparing Default/Secure/Performance/Minimal presets, tuning pool and timeouts, Result lifecycle, and high-concurrency patterns."
 ---
 
 # Performance Optimization
@@ -43,14 +43,14 @@ client, _ := httpc.New(cfg)
 
 ## Object Pool Reuse
 
-HTTPC has a built-in Result object pool that automatically manages object lifecycle:
+Internally, HTTPC reuses engine response objects and string builders via sync.Pool to reduce GC pressure; Result itself is created fresh per request and reclaimed by GC:
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result objects are automatically managed by the built-in object pool, GC handles cleanup
+// Result is created fresh per request, reclaimed by GC, no manual release needed
 ```
 
 :::tip

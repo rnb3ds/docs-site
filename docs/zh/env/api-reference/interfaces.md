@@ -1,6 +1,6 @@
 ---
 title: "接口定义 - CyberGo env | 核心接口层次"
-description: "CyberGo env 库接口类型定义完整参考文档，采用细粒度接口设计支持依赖注入和灵活组合，包括 Validator 验证器、FullAuditLogger 审计处理器、EnvParser 解析器、EnvStorage 安全存储和 FileSystem 文件系统适配器等核心接口的详细说明与用法。"
+description: "CyberGo env 核心接口定义参考，采用细粒度设计支持依赖注入，含 Validator、FullAuditLogger、EnvParser、EnvStorage、FileSystem 等接口。"
 ---
 
 # 接口定义
@@ -69,7 +69,7 @@ func readConfig(getter env.EnvGetter) {
 ```
 
 ::: warning 注意
-`GetInt`、`GetBool`、`GetDuration`、`GetSecure`、`Len` **不是** `EnvGetter` 接口的一部分。
+`GetInt`、`GetBool`、`GetUint64`、`GetFloat64`、`GetDuration`、`GetSecure`、`Len` **不是** `EnvGetter` 接口的一部分。
 这些方法在 `*Loader` 类型上实现，但不在最小接口中。
 
 如需完整读取能力，请直接使用 `*Loader` 类型：
@@ -444,9 +444,9 @@ type MockFile struct {
 }
 
 func (f *MockFile) Read(p []byte) (n int, err error)   { return f.reader.Read(p) }
-func (f *MockFile) Write(p []byte) (n int, err error)  { return 0, os.ErrUnsupported }
+func (f *MockFile) Write(p []byte) (n int, err error)  { return 0, errors.ErrUnsupported }
 func (f *MockFile) Close() error                       { return nil }
-func (f *MockFile) Stat() (os.FileInfo, error)         { return nil, os.ErrUnsupported }
+func (f *MockFile) Stat() (os.FileInfo, error)         { return nil, errors.ErrUnsupported }
 func (f *MockFile) Sync() error                        { return nil }
 
 func (m *MockFileSystem) Open(name string) (env.File, error) {
@@ -704,7 +704,6 @@ package main
 
 import (
     "fmt"
-    "time"
 
     "github.com/cybergodev/env"
 )

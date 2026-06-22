@@ -1,6 +1,6 @@
 ---
 title: "경로 표현식 문법 - CyberGo JSON | JSONPath 가이드"
-description: "CyberGo JSON 경로 표현식 문법 완전 참조 가이드입니다. 속성 접근 user.name, 배열 인덱스 items[0], 슬라이스 [start:end:step], 와일드카드 [*], 다중 필드 추출 {name,email} 등의 문법을 지원하여 JSON 데이터의 모든 노드를 유연하고 정확하게 찾고 조작할 수 있습니다."
+description: "CyberGo JSON 경로 표현식 문법 가이드: 속성 접근 user.name, 배열 인덱스 items[0], 슬라이스, 와일드카드, 다중 필드 추출로 JSON 노드를 정확히 지정합니다."
 ---
 
 # 경로 표현식 문법
@@ -409,8 +409,6 @@ name := json.GetString(data, "user\\.name")  // "Alice"
 | 배열 인덱스 | `items[0]` | 배열 요소에 접근 |
 | 배열 슬라이스 | `items[1:5]` | 슬라이스 범위 접근 |
 | 와일드카드 | `items[*]` | 모든 요소 매칭 |
-| 재귀 하강 | `..name` | 모든 레벨 재귀 검색 |
-| 필터 | `[?active]` | 조건 필터링 |
 | 필드 추출 | `{name,email}` | 여러 필드 추출 |
 | 평탄화 추출 | `{flat:tags}` | 추출 후 중첩 배열 재귀 펼치기 |
 | 추가 작업 | `items[+]` | 배열에 요소 추가 |

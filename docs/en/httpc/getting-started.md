@@ -1,6 +1,6 @@
 ---
-title: "Quick Start - HTTPC"
-description: "Get started with the HTTPC secure HTTP client library in five minutes, covering go get installation and project initialization, GET/POST request sending and response handling, five configuration presets, JSON parsing and type binding, Bearer Token authentication, and ClientError error classification."
+title: "Quick Start - CyberGo HTTPC | 5-Minute Guide"
+description: "HTTPC quick start: install, send GET/POST requests, handle responses, pick a preset, parse JSON, and authenticate with Bearer Token in five minutes."
 ---
 
 # Quick Start

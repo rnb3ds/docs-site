@@ -1,6 +1,6 @@
 ---
 title: "ComponentFactory API - CyberGo env | 组件工厂"
-description: "CyberGo env 库 ComponentFactory 组件工厂 API 完整参考，创建和管理 Loader 与 Parser 共享的组件实例，包括审计处理器、验证器、文件系统适配器和 RegisterParser 自定义解析器注册，提供组件生命周期控制 Close 和线程安全并发访问。"
+description: "CyberGo env 的 ComponentFactory 组件工厂 API 参考，统一创建审计处理器、验证器、文件系统适配器并注册自定义解析器，提供生命周期 Close 管理。"
 ---
 
 # ComponentFactory API
@@ -211,7 +211,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 
 **输出示例：**
 ```json
-{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration":1234567}
+{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 ```
 
 ---
@@ -528,6 +528,14 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - 工厂函数应返回线程安全的解析器
 
 ```go
+package main
+
+import (
+    "io"
+
+    "github.com/cybergodev/env"
+)
+
 // 1. 定义自定义格式常量
 const FormatTOML env.FileFormat = 100
 
@@ -545,21 +553,23 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. 注册解析器
-err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
-    return &TOMLParser{
-        cfg:       cfg,
-        validator: f.Validator(),
-        auditor:   f.Auditor(),
-    }, nil
-})
-if err != nil {
-    panic(err)
+// 3. 注册解析器（在 init() 中注册，确保在使用前完成）
+func init() {
+    err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
+        return &TOMLParser{
+            cfg:       cfg,
+            validator: f.Validator(),
+            auditor:   f.Auditor(),
+        }, nil
+    })
+    if err != nil {
+        panic(err)
+    }
 }
 
 // 4. 使用自定义格式
 func main() {
-    // 注册必须在 New 之前完成
+    // 注册已在 init() 中完成（先于 main 执行）
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 
@@ -779,6 +789,7 @@ func main() {
 package main
 
 import (
+    "errors"
     "fmt"
     "os"
     "strings"
@@ -860,9 +871,9 @@ type MemoryFile struct {
 }
 
 func (f *MemoryFile) Read(p []byte) (n int, err error)  { return f.reader.Read(p) }
-func (f *MemoryFile) Write(p []byte) (n int, err error) { return 0, os.ErrUnsupported }
+func (f *MemoryFile) Write(p []byte) (n int, err error) { return 0, errors.ErrUnsupported }
 func (f *MemoryFile) Close() error                      { return nil }
-func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, os.ErrUnsupported }
+func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, errors.ErrUnsupported }
 func (f *MemoryFile) Sync() error                       { return nil }
 
 // MemoryFileInfo 实现 os.FileInfo

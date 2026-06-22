@@ -1,6 +1,6 @@
 ---
 title: "SecureValue API - CyberGo env | Secure Value Storage"
-description: "CyberGo env library SecureValue API complete reference, covering NewSecureValueStrict for secure creation, mlock memory locking, Release for zeroing and destruction, Masked for mask processing, IsSensitiveKey for sensitive key detection, and ClearBytes utility functions for securely storing passwords, tokens, and other sensitive data."
+description: "CyberGo env SecureValue API reference for storing secrets: mlock memory locking, Release zeroing, Masked display, IsSensitiveKey detection and ClearBytes."
 ---
 
 # SecureValue API
@@ -364,6 +364,10 @@ Globally enables/disables memory locking. Affects all newly created SecureValues
 - `enabled` - Whether to enable
 
 ```go
+package main
+
+import "github.com/cybergodev/env"
+
 func main() {
     // Enable at application startup
     env.SetMemoryLockEnabled(true)

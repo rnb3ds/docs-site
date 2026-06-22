@@ -1,6 +1,6 @@
 ---
-title: "签名算法 - JWT"
-description: "CyberGo JWT 签名算法指南：HMAC、RSA、RSA-PSS、ECDSA 四类 12 种算法的使用方法、密钥要求、场景选择与性能对比。"
+title: "签名算法 - CyberGo JWT | 算法对比与选型"
+description: "签名算法指南：对比 HMAC、RSA、RSA-PSS 与 ECDSA 四类 12 种算法的密钥类型、生成方式、签名验证性能、签名长度与架构耦合度，给出选型决策与密钥管理安全实践。"
 ---
 
 # 签名算法

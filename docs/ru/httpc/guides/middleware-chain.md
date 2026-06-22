@@ -1,6 +1,6 @@
 ---
-title: "Цепочки промежуточного ПО - HTTPC"
-description: "Руководство по цепочке промежуточного ПО HTTPC: принцип выполнения луковой модели и двусторонняя обработка запроса/ответа, конфигурация восьми встроенных промежуточных ПО Recovery/Logging/RequestID/Timeout/Header/Metrics/Audit, паттерн ручной композиции Chain, метод написания пользовательского MiddlewareFunc и пример промежуточного ПО с размыкателем цепи."
+title: "Цепочки промежуточного ПО - CyberGo HTTPC | Луковые цепочки"
+description: "Руководство по цепочке middleware HTTPC: выполнение луковой модели, восемь встроенных middleware, композиция Chain, написание MiddlewareFunc и размыкатель цепи."
 ---
 
 # Цепочки промежуточного ПО
@@ -199,7 +199,7 @@ func CircuitBreakerMiddleware(threshold int) httpc.MiddlewareFunc {
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Middleware = httpc.MiddlewareConfig{
+cfg.Middleware = &httpc.MiddlewareConfig{
     Middlewares: []httpc.MiddlewareFunc{
         httpc.RecoveryMiddleware(),
         httpc.LoggingMiddleware(log.Printf),

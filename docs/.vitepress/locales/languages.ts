@@ -60,11 +60,10 @@ export const supportedLanguages: LanguageConfig[] = [
   },
 ]
 
-/** Default language path (fallback when no match) */
-export const defaultLanguagePath = '/en/'
-
 /** Storage keys */
 export const STORAGE_KEYS = {
   preference: 'vitepress-lang-preference',
-  detected: 'vitepress-lang-auto-detected'
+  detected: 'vitepress-lang-auto-detected',
+  /** Set when the user dismisses the browser-language prompt; stops re-prompting. */
+  langPromptDismissed: 'vitepress-lang-prompt-dismissed'
 } as const

@@ -1,6 +1,6 @@
 ---
 title: "Вспомогательные функции - CyberGo JSON | Справочник API"
-description: "Полный справочник вспомогательных функций CyberGo JSON: включает CompareJSON для сравнения и проверки эквивалентности двух JSON, ClearCache/GetStats для управления кэшем и статистики, управление глобальным процессором и вспомогательные функции безопасного режима, предоставляющие удобный набор инструментов для повседневной работы с JSON."
+description: "Вспомогательные функции CyberGo JSON: CompareJSON, ClearCache/GetStats, управление глобальным Processor и помощники безопасности для работы с JSON в Go."
 ---
 
 # Вспомогательные функции
@@ -21,11 +21,11 @@ equal, _ := json.CompareJSON(`{"a":1,"b":2}`, `{"b":2,"a":1}`)
 fmt.Println(equal) // true
 
 // Разная точность числа, но одинаковое значение
-equal, _ := json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
+equal, _ = json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
 fmt.Println(equal) // true
 
 // Разное содержимое
-equal, _ := json.CompareJSON(`{"a":1}`, `{"a":2}`)
+equal, _ = json.CompareJSON(`{"a":1}`, `{"a":2}`)
 fmt.Println(equal) // false
 ```
 
@@ -195,6 +195,12 @@ val := json.GetString(data, "user.name")
 Завершает работу глобального процессора и освобождает ресурсы.
 
 ```go
+package main
+
+import (
+    "github.com/cybergodev/json"
+)
+
 func main() {
     cfg := json.DefaultConfig()
     p, err := json.New(cfg)
@@ -214,7 +220,7 @@ func main() {
 ## Функции вывода
 
 ::: warning
-`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` стали внутренними функциями (имена с маленькой буквы) и больше не экспортируются как открытый API. Используйте [Encode](./functions/encode-decode#encode), [EncodePretty](./functions/encode-decode#encodepretty) или [Prettify](./functions/encode-decode#prettify) вместе с `fmt.Println`. Подробности в разделе [Функции печати](./print).
+`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` удалены из библиотеки и больше не предоставляются. Используйте [Encode](./functions/encode-decode#encode), [EncodePretty](./functions/encode-decode#encodepretty) или [Prettify](./functions/encode-decode#prettify) вместе с `fmt.Println`. Подробности в разделе [Функции печати](./print).
 :::
 
 ---

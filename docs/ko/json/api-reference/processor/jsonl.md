@@ -1,6 +1,6 @@
 ---
 title: "Processor JSONL 메서드 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor JSONL 메서드: StreamJSONL/StreamJSONLParallel/StreamJSONLChunked 스트림 처리, ForeachJSONL 반복, MapJSONL 매핑, ReduceJSONL 리덕션, FilterJSONL 필터링, CollectJSONL 수집, FirstJSONL 검색을 지원합니다."
+description: "CyberGo JSON Processor JSONL 메서드: StreamJSONL, ForeachJSONL, MapJSONL, ReduceJSONL, FilterJSONL로 스트림 데이터 처리에 적합합니다."
 ---
 
 # Processor JSONL 메서드
@@ -383,6 +383,7 @@ func main() {
 package main
 
 import (
+    "fmt"
     "os"
     "sync/atomic"
     "github.com/cybergodev/json"
@@ -402,7 +403,7 @@ func main() {
 
     err := processor.StreamJSONLParallel(file, 16, func(lineNum int, item *json.IterableValue) error {
         // CPU 집약적 처리
-        processItem(item)
+        _ = item
         atomic.AddInt64(&processed, 1)
         return nil
     })

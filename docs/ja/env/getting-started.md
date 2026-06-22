@@ -1,6 +1,6 @@
 ---
 title: "クイックスタート - CyberGo env | 5分で始める入門ガイド"
-description: "5 分で CyberGo env 環境変数管理ライブラリを素早く使い始めるための完全な入門ガイド。go get インストールから最初のプログラム実行まで、.env ファイル読み込み、型安全な読み取り、構造体マッピング、マルチ環境設定、変数展開などコア機能の使用メソッドと完全なコード例を含みます。"
+description: "CyberGo env の5分クイックスタート。go get インストールから .env 読み込み、型安全読み取り、構造体マッピング、変数展開まで、実行可能なコード例付きで素早く習得できます。"
 ---
 
 # クイックスタート
@@ -14,7 +14,7 @@ go get github.com/cybergodev/env
 ```
 
 ::: tip 要件
-Go 1.24+
+Go 1.25+
 :::
 
 ## .env ファイルの作成
@@ -184,8 +184,8 @@ secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
 
-    // 元の値を取得
-    value := secret.String()
+    // 元の値を取得（平文が必要な場合のみ呼び出し、例: 暗号化、API呼び出し）
+    value := secret.Reveal()
 
     // ログ用マスク（漏洩防止）
     log.Printf("API Key: %s", secret.Masked())  // 出力: [SECURE:32 bytes]

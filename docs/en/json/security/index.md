@@ -1,6 +1,6 @@
 ---
 title: "Security Overview - CyberGo JSON | Security Best Practices"
-description: "CyberGo JSON security best practices guide: covering input validation and sanitization, MaxNestingDepthSecurity/MaxMemory resource limit protection, path traversal attack prevention, JSON injection prevention, sensitive data filtering, and audit logging configuration for secure JSON data processing in production."
+description: "CyberGo JSON security best practices: input validation, MaxNestingDepthSecurity/MaxMemory limits, injection defense, data filtering, and audit logging."
 ---
 
 # Security Overview
@@ -87,6 +87,8 @@ cfg.AddHook(&FilterFieldsHook{fields: map[string]bool{
 ```
 
 
+## Security Configuration Recommendations
+
 ### Dangerous Pattern Management
 
 The library includes built-in default dangerous pattern detection and supports custom pattern registration, unregistration, and querying.
@@ -152,8 +154,6 @@ cfg.DisableDefaultPatterns = true // Disable default warning-level patterns
 ::: warning Note
 `DisableDefaultPatterns` only disables default warning-level (`PatternLevelWarning`) patterns. Default critical-level (`PatternLevelCritical`) patterns are not affected.
 :::
-
-## Security Configuration Recommendations
 
 ### Production Configuration
 

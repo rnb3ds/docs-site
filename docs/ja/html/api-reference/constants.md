@@ -1,6 +1,6 @@
 ---
-title: "定数とエラー - HTML"
-description: "CyberGo HTML ライブラリの定数とエラータイプ API リファレンス。DefaultMaxInputSize（50MB）などのデフォルト値定数、ErrInputTooLarge などのセンチネルエラー、InputError、ConfigError、FileError の構造化エラータイプを含み、すべて errors.Is/As による判定に対応し、ランタイム異常の正確な特定と処理に役立ちます。"
+title: "定数とエラー - CyberGo HTML | 既定値とエラー型"
+description: "CyberGo HTML 定数とエラー型：既定値、センチネルエラー、InputError・ConfigError・FileError の構造化エラーで errors.Is/As 判定をサポートします。"
 ---
 
 # 定数とエラー
@@ -106,6 +106,7 @@ type FileError struct {
 func (e *FileError) Error() string        // 安全な出力（パスを切り詰め）
 func (e *FileError) SafePath() string     // ファイル名のみ返す
 func (e *FileError) Unwrap() error        // → ErrFileNotFound | 元のエラー | ErrInvalidFilePath
+func (e *FileError) MarshalJSON() ([]byte, error) // JSON シリアライズ時にもパスを切り詰める(API レスポンスでの漏洩を防止)
 ```
 
 :::tip 安全なパス

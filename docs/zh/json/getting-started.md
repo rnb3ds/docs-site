@@ -1,6 +1,6 @@
 ---
 title: "快速开始 - CyberGo JSON | 5分钟上手指南"
-description: "CyberGo JSON 快速入门指南：安装配置、路径查询 GetString/GetInt、编解码 Marshal/Unmarshal、文件读写操作，5 分钟掌握 Go JSON 处理最佳实践，支持 JSONPath 查询和类型安全获取，100% 兼容 encoding/json 标准库。"
+description: "CyberGo JSON 快速入门：安装配置、路径查询 GetString/GetInt、编解码 Marshal/Unmarshal、文件读写，5 分钟上手 Go JSON 处理，100% 兼容标准库。"
 ---
 
 # 快速开始
@@ -232,13 +232,13 @@ func main() {
 cfg := json.DefaultConfig()
 
 // 安全增强配置（处理不可信输入）
-cfg = json.SecurityConfig()
+// cfg = json.SecurityConfig()
 
 // 格式化输出配置
-cfg = json.PrettyConfig()
+// cfg = json.PrettyConfig()
 
 // 自定义配置
-cfg := json.DefaultConfig()
+cfg = json.DefaultConfig()
 cfg.MaxJSONSize = 50 * 1024 * 1024 // 50MB
 cfg.EnableCache = true
 cfg.CacheTTL = 5 * time.Minute

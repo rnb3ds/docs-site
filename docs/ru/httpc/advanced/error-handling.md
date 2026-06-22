@@ -1,6 +1,6 @@
 ---
-title: "Обработка ошибок - HTTPC"
-description: "Руководство по обработке ошибок HTTPC: двенадцать типов ошибок ErrorType, поля ClientError и определение повторяемости IsRetryable, сопоставление переменных-сигналов через errors.Is/As, обработка исчерпания повторных попыток, таймауты и отмена context, единая обработка ошибок через промежуточное ПО и лучшие практики разделения таймаутов."
+title: "Обработка ошибок - CyberGo HTTPC | Типы и сигналы"
+description: "Руководство по обработке ошибок HTTPC: классы ErrorType, ClientError и IsRetryable, сопоставление сигналов errors.Is/As, исчерпание повторов и таймауты."
 ---
 
 # Обработка ошибок
@@ -59,10 +59,6 @@ if errors.Is(err, httpc.ErrClientClosed) {
 
 if errors.Is(err, httpc.ErrResponseBodyEmpty) {
     // Тело ответа пустое
-}
-
-if errors.Is(err, httpc.ErrInvalidURL) {
-    // Некорректный формат URL
 }
 
 if errors.Is(err, httpc.ErrInvalidHeader) {

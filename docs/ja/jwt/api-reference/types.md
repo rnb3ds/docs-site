@@ -1,6 +1,6 @@
 ---
-title: "型と定数 - JWT API リファレンス"
-description: "CyberGo JWT 型と定数リファレンス：NumericDate、StringOrSlice、SigningMethod、ValidationError、RateLimiter、SystemClock、FixedClock および 12 種の署名アルゴリズム定数。"
+title: "型と定数 - CyberGo JWT | 直列化と時計型"
+description: "型と定数参考：NumericDate と StringOrSlice 直列化型、SigningMethod アルゴリズム型、ValidationError 項目級エラー、RateLimiter・SystemClock・FixedClock 時計と 12 種アルゴリズム定数。"
 ---
 
 # 型と定数
@@ -32,7 +32,7 @@ JWT 数値日付値（Unix タイムスタンプ）。有効範囲は 0 から 2
 type StringOrSlice []string
 ```
 
-JSON 文字列または文字列配列からデシリアライズ可能な型。RFC 7519 §4.1.3 に準拠。
+JSON 文字列または JSON 配列のいずれかからデシリアライズ可能な `[]string` を保持する型。要素数 1 のスライスは JSON 文字列として、複数要素のスライスは配列としてマーシャルされ、RFC 7519 §4.1.3 に準拠する。
 
 <Badge type="info" text="type" />
 
@@ -40,7 +40,8 @@ JSON 文字列または文字列配列からデシリアライズ可能な型。
 
 | メソッド | シグネチャ | 説明 |
 |---------|-----------|------|
-| `UnmarshalJSON` | `func (s *StringOrSlice) UnmarshalJSON(b []byte) error` | 文字列または配列からパース |
+| `MarshalJSON` | `func (s StringOrSlice) MarshalJSON() ([]byte, error)` | 要素数 1 のスライスは JSON 文字列として、複数要素は配列としてマーシャル（RFC 7519 §4.1.3） |
+| `UnmarshalJSON` | `func (s *StringOrSlice) UnmarshalJSON(b []byte) error` | JSON 文字列または配列からパース |
 
 ---
 
@@ -180,3 +181,25 @@ const (
 | `SigningMethodES256` | `"ES256"` | ECDSA-SHA256 | 非対称 |
 | `SigningMethodES384` | `"ES384"` | ECDSA-SHA384 | 非対称 |
 | `SigningMethodES512` | `"ES512"` | ECDSA-SHA512 | 非対称 |
+
+---
+
+## トークンタイプ定数
+
+```go
+const (
+    TokenTypeAccess  = "access"
+    TokenTypeRefresh = "refresh"
+)
+```
+
+[`RegisteredClaims.TokenType`](./claims#registeredclaims) フィールドに書き込まれるトークンタイプ定数。
+
+- アクセストークンは [`Processor.Create`](./processor#create) が生成する
+- リフレッシュトークンは [`Processor.CreateRefresh`](./processor#createrefresh) が生成する
+- [`Processor.Refresh`](./processor#refresh) と [`Processor.RefreshInto`](./processor#refreshinto) は `TokenTypeAccess` のトークンを拒否する
+
+| 定数 | 値 | 説明 |
+|------|-----|------|
+| `TokenTypeAccess` | `"access"` | アクセストークン |
+| `TokenTypeRefresh` | `"refresh"` | リフレッシュトークン |

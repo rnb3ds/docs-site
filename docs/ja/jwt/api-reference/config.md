@@ -1,6 +1,6 @@
 ---
-title: "Config - JWT API リファレンス"
-description: "CyberGo JWT Config API リファレンス：Config 統一設定項目（署名鍵、アルゴリズム、TTL、Issuer）と BlacklistConfig ブラックリスト設定のフィールド説明、デフォルト値および検証メソッド。"
+title: "Config - CyberGo JWT | 統一設定の説明"
+description: "Config は CyberGo JWT の統一設定で、署名鍵・アルゴリズム・アクセス/リフレッシュ TTL・発行者・期待 Audience・時計ずれ・ブラックリスト・レート制限の全項目、デフォルト値、自動補充ルールと Validate 検証ロジック。"
 ---
 
 # Config
@@ -18,6 +18,8 @@ type Config struct {
     RefreshTokenTTL   time.Duration
     Issuer            string
     ExpectedAudience  string
+    RequireExpiration bool
+    ClockSkew         time.Duration
 
     Blacklist BlacklistConfig
 
@@ -52,6 +54,8 @@ JWT Processor の統一設定。ゼロ値フィールドは `New()` で自動的
 | `RefreshTokenTTL` | `time.Duration` | `168h` | リフレッシュトークンの有効期間 |
 | `Issuer` | `string` | `"jwt-service"` | 発行者 |
 | `ExpectedAudience` | `string` | — | 期待されるオーディエンス（省略可） |
+| `RequireExpiration` | `bool` | `false` | `true` の場合、検証時に `exp` クレームを持たないトークンを拒否（[`ErrExpirationRequired`](./errors#センチネルエラー) を返す） |
+| `ClockSkew` | `time.Duration` | `0` | 検証時の exp/nbf に適用されるクロックスキューの許容範囲（発行者と検証者間の時計のずれを許容）。負の値は `Validate()` で拒否される |
 | `Blacklist` | `BlacklistConfig` | — | ブラックリスト設定 |
 | `EnableRateLimit` | `bool` | `false` | レート制限を有効化 |
 | `RateLimitRate` | `int` | `100` | ウィンドウあたりの最大リクエスト数 |
@@ -72,6 +76,7 @@ JWT Processor の統一設定。ゼロ値フィールドは `New()` で自動的
 | 署名鍵 | HMAC は SecretKey ≥32 バイトかつ弱鍵でないこと。RSA/ECDSA は正しい型の SigningKey が必要。ECDSA は曲線が一致すること。VerificationKey はアルゴリズムの公開鍵型と一致すること |
 | TTL の有効性 | `AccessTokenTTL` と `RefreshTokenTTL` は正の数であること |
 | TTL の順序 | `AccessTokenTTL` は `RefreshTokenTTL` より小さいこと |
+| ClockSkew | `ClockSkew` は負の値でないこと |
 | 署名アルゴリズム | 内蔵サポートの 12 種のアルゴリズムのいずれかであること |
 | ブラックリスト | 内蔵ストア使用時、MaxSize と CleanupInterval は正の数であること |
 

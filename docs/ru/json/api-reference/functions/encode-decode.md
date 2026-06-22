@@ -1,6 +1,6 @@
 ---
-title: "Функции кодирования и декодирования - CyberGo JSON | Справочник API"
-description: "Справочник функций кодирования и декодирования CyberGo JSON: сериализация Marshal/Unmarshal, форматирование Compact/Indent/HTMLEscape, настраиваемое кодирование Encode/EncodePretty/EncodeWithConfig/Prettify, 100% совместимость с encoding/json."
+title: "Кодирование и декодирование - CyberGo JSON | API"
+description: "Кодирование/декодирование CyberGo JSON: Marshal/Unmarshal, Compact/Indent/HTMLEscape и Encode/EncodePretty/Prettify, совместимые со стандартной библиотекой."
 ---
 
 # Функции кодирования и декодирования
@@ -97,13 +97,13 @@ fmt.Println(buf.String())
 
 Сигнатура: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-HTML-экранирование содержимого JSON, замена специальных символов (`&`, `<`, `>`) на Unicode-escape последовательности, результат записывается в `dst`. Возвращаемого значения нет.
+HTML-экранирование содержимого JSON, замена специальных символов `<`, `>`, `&` (а также U+2028, U+2029) на соответствующие Unicode-escape последовательности, результат записывается в `dst`. Возвращаемого значения нет.
 
 ```go
 var buf bytes.Buffer
 json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
 fmt.Println(buf.String())
-// {"html":"<script>alert(1)</script>"}
+// {"html":"\u003cscript\u003ealert(1)\u003c/script\u003e"}
 ```
 
 ### Prettify
@@ -234,7 +234,7 @@ fmt.Println(result) // {"name":"Alice","email":"a@b.com"}
 
 Сигнатура: `func EncodeStream(values any, cfg ...Config) (string, error)`
 
-Потоковое кодирование значения в JSON-строку. Подходит для сценариев, требующих унифицированного интерфейса кодирования.
+Кодирует несколько значений в поток JSON-массива (array stream). `values` обычно представляет собой срез или перечислимую коллекцию, выводя строку JSON-массива вида `[v1,v2,...]`.
 
 ```go
 values := []map[string]any{
@@ -265,7 +265,7 @@ defer p.Close()
 
 Сигнатура: `func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-Сжатие байт JSON и запись в буфер `dst`. Делегирует функции `Compact` уровня пакета.
+Сжатие байт JSON и запись в буфер `dst`. Функция `Compact` уровня пакета делегирует этому методу.
 
 ```go
 var buf bytes.Buffer
@@ -308,10 +308,10 @@ p.HTMLEscape(&buf, []byte(`{"html":"<script>"}`))
 cfg := json.DefaultConfig()
 
 // Конфигурация красивой печати
-cfg := json.PrettyConfig()
+cfg = json.PrettyConfig()
 
 // Конфигурация безопасности
-cfg := json.SecurityConfig()
+cfg = json.SecurityConfig()
 ```
 
 :::tip

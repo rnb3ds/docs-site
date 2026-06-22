@@ -1,6 +1,6 @@
 ---
-title: "요청과 응답 - HTTPC"
-description: "HTTPC 요청과 응답 처리 가이드: 패키지 함수와 클라이언트 요청, WithHeader/WithJSON/WithForm 등 요청 옵션, WithBearerToken 인증, WithQuery 쿼리 매개변수, Cookie 관리, 컨텍스트 제어, 스트리밍 응답과 압축 해제 크기 제한 설정을 다룹니다."
+title: "요청과 응답 - CyberGo HTTPC | 옵션과 응답"
+description: "HTTPC 요청과 응답 가이드: 패키지 함수와 클라이언트 요청, WithHeader/WithJSON 요청 옵션, Bearer 인증, 쿼리 매개변수, Cookie 관리, 컨텍스트 제어와 스트리밍 응답 모범 사례를 다룹니다."
 ---
 
 # 요청과 응답
@@ -219,7 +219,7 @@ result, err := httpc.Request(ctx, "GET", url)
 `WithStreamBody(true)`는 내부 메커니즘으로, 파일 다운로드 시 전체 응답 본문을 메모리에 캐시하지 않기 위해 사용됩니다. 활성화하면 응답 본문이 `Result`에 읽히지 않습니다(`Body()`와 `RawBody()`가 빈 값을 반환).
 
 :::warning
-`WithStreamBody(true)`는 파일 다운로드 API(`DownloadFile`, `DownloadWithOptions`)에서 내부적으로 사용됩니다. 응답 내용을 스트리밍으로 가져오려면 [파일 다운로드 API](./file-transfer)를 사용하세요.
+`WithStreamBody(true)`는 파일 다운로드 API에서 내부적으로 사용됩니다. 응답 내용을 스트리밍으로 가져오려면 [파일 다운로드 API](./file-transfer)를 사용하세요.
 :::
 
 대용량 파일을 다운로드하려면 다운로드 API를 사용하세요:
@@ -227,7 +227,7 @@ result, err := httpc.Request(ctx, "GET", url)
 ```go
 cfg := httpc.DefaultDownloadConfig()
 cfg.FilePath = "/path/to/file"
-result, err := client.DownloadWithOptions(url, cfg)
+result, err := client.Download(context.Background(), url, cfg)
 ```
 
 ## 응답 압축 해제

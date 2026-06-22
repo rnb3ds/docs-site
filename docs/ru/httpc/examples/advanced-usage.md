@@ -1,6 +1,6 @@
 ---
-title: "Расширенные примеры - HTTPC"
-description: "Набор расширенных примеров HTTPC: пользовательская стратегия RetryPolicy с повторами только для 502/503/504, полная цепочка промежуточного ПО с Recovery/Timeout/Logging/Metrics/Audit, обёртка клиента RESTful API, параллельная загрузка через sync.WaitGroup и пользовательское промежуточное ПО подписи запросов HMAC-SHA256."
+title: "Расширенные примеры - CyberGo HTTPC | Production-код"
+description: "Расширенные примеры HTTPC: пользовательский RetryPolicy, полная цепочка middleware, обёртка RESTful-клиента, параллельные загрузки и подпись HMAC-SHA256."
 ---
 
 # Расширенные примеры
@@ -255,6 +255,7 @@ func main() {
 package main
 
 import (
+    "context"
     "fmt"
     "log"
     "sync"
@@ -291,7 +292,7 @@ func main() {
                     float64(speed)/1024/1024)
             }
 
-            result, err := client.DownloadWithOptions(u, cfg)
+            result, err := client.Download(context.Background(), u, cfg)
             if err != nil {
                 log.Printf("%s ошибка загрузки: %v", name, err)
                 return
@@ -299,12 +300,12 @@ func main() {
 
             atomic.AddInt64(&successCount, 1)
             atomic.AddInt64(&totalBytes, result.BytesWritten)
-            fmt.Printf("\n%s завершён: %s\n", name, result.BytesWritten)
+            fmt.Printf("\n%s завершён: %d\n", name, result.BytesWritten)
         }(filename, url)
     }
 
     wg.Wait()
-    fmt.Printf("\nЗагрузка завершена: %d/%d, всего %s\n",
+    fmt.Printf("\nЗагрузка завершена: %d/%d, всего %d\n",
         successCount, len(urls), totalBytes)
 }
 ```

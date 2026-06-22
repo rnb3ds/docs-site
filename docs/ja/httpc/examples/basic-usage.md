@@ -1,6 +1,6 @@
 ---
-title: "基本的な使い方 - HTTPC"
-description: "HTTPC 基本的な使用例：クエリパラメータと認証付きの GET リクエスト、JSON/フォーム/ファイルアップロード POST リクエスト、FormData マルチフィールドフォーム、DefaultConfig カスタム設定、ProxyURL プロキシ、Recovery/Logging ミドルウェア、RequestID/Metrics メトリクス収集と進捗コールバック付きファイルダウンロードの完全なコード。"
+title: "基本的な使い方 - CyberGo HTTPC | 実行可能な例"
+description: "HTTPC 基本的な使用例集: 認証付き GET リクエスト、JSON/フォーム/ファイルアップロード POST、カスタム設定、プロキシ、ミドルウェア、メトリクス収集、進捗コールバック付きファイルダウンロードの完全なコードを提供します。すべての例はすぐに実行できます。"
 ---
 
 # 基本的な使い方
@@ -189,7 +189,7 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     fmt.Printf("\rダウンロード中: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
-result, err := client.DownloadWithOptions("https://example.com/file.zip", cfg)
+result, err := client.Download(context.Background(), "https://example.com/file.zip", cfg)
 if err != nil {
     log.Fatal(err)
 }

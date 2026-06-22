@@ -1,6 +1,6 @@
 ---
-title: "출력 형식 선택 - HTML"
-description: "CyberGo HTML 출력 형식 선택 가이드, 순수 텍스트, Markdown, JSON 세 가지 출력 형식의 특징과 적용 시나리오를 상세히 비교하고, 형식 옵션 설정(InlineImageFormat, InlineLinkFormat), 컨텍스트 지원과 파일 읽기를 포함합니다."
+title: "출력 형식 선택 - CyberGo HTML | 형식 비교 가이드"
+description: "CyberGo HTML 출력 형식 선택: 순수 텍스트, Markdown, JSON 세 형식의 특징과 적용 시나리오를 비교하고 형식 옵션과 파일 읽기를 다룹니다."
 ---
 
 # 출력 형식 선택
@@ -135,7 +135,7 @@ fmt.Println(string(jsonBytes))
     {"url": "gopher.png", "alt": "Gopher", "title": "", "width": "", "height": "", "is_decorative": false, "position": 1}
   ],
   "links": [
-    {"url": "https://go.dev", "text": "Go 공식 웹사이트", "title": "", "is_external": true, "is_no_follow": false, "position": 1}
+    {"url": "https://go.dev", "text": "Go 공식 웹사이트", "title": "", "is_external": true, "is_nofollow": false, "position": 1}
   ],
   "processing_time_ms": 2,
   "word_count": 6,

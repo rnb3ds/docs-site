@@ -1,6 +1,6 @@
 ---
 title: "감사 로그 - CyberGo env | 보안 감사 구성"
-description: "CyberGo env 라이브러리 감사 로그 완전 구성 가이드, JSON 파일 핸들러, 표준 로그 핸들러 및 채널 핸들러의 생성과 구성 방법을 다루며, 커스텀 AuditHandler 인터페이스를 구현하여 감사 로직을 확장하는 방법을 소개하고, 모든 환경 변수의 로딩, 읽기, 수정, 삭제 작업을 기록하여 보안 규정 준수 검사 및 프로덕션 환경 문제 해결 요구를 충족합니다."
+description: "CyberGo env 감사 로그 설정 가이드로 JSON 파일·표준 로그·채널 핸들러와 커스텀 AuditHandler로 변수 로딩·읽기·수정·삭제 작업을 기록해 규정 준수를 충족합니다."
 ---
 
 # 감사 로그
@@ -50,7 +50,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 **출력 예시:**
 
 ```json
-{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration":1234567}
+{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 {"timestamp":"2024-01-15T10:30:01Z","action":"get","key":"API_KEY","success":true,"masked":true}
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
@@ -75,9 +75,9 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 **출력 예시:**
 
 ```text
-[AUDIT] 2024/01/15 10:30:00 load .env (1.23ms)
-[AUDIT] 2024/01/15 10:30:01 get API_KEY (masked)
-[AUDIT] 2024/01/15 10:30:02 set CUSTOM_VAR
+[AUDIT] 2024/01/15 10:30:00 action=load success=true reason="" file=.env duration=1.23ms
+[AUDIT] 2024/01/15 10:30:01 action=get key=API_KEY success=true reason=""
+[AUDIT] 2024/01/15 10:30:02 action=set key=CUSTOM_VAR success=true reason=""
 ```
 
 ---

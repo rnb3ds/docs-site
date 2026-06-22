@@ -1,6 +1,6 @@
 ---
-title: "连接池与代理 - HTTPC"
-description: "HTTPC 连接池与代理配置指南：MaxIdleConns 等参数调优与场景推荐、ProxyURL 手动代理与系统代理检测、SOCKS5 代理、DoH 三提供商回退、HTTP/2 配置、内置对象池自动管理与并发请求模式。"
+title: "连接池与代理 - CyberGo HTTPC | 池调优与代理"
+description: "HTTPC 连接池与代理配置指南：MaxIdleConns 等连接池参数调优与场景推荐、ProxyURL 手动代理与系统代理检测、SOCKS5 与 HTTP 代理、DoH 三提供商回退、HTTP/2 配置与连接复用实践要点与最佳实践建议示例。"
 ---
 
 # 连接池与代理
@@ -104,8 +104,8 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute
 | 提供商 | 地址 | 说明 |
 |--------|------|------|
 | Cloudflare | `1.1.1.1/dns-query` | 最快，隐私优先 |
-| Google | `8.8.8.8/resolve` | 全球覆盖 |
-| AliDNS | `223.5.5.5/resolve` | 中国区域优化 |
+| Google | `dns.google/resolve` | 全球覆盖 |
+| AliDNS | `dns.alidns.com/resolve` | 中国区域优化 |
 
 :::tip
 DoH 启用后，DNS 解析结果会缓存 `DoHCacheTTL` 时间。如果所有 DoH 提供商不可用，会回退到系统 DNS。
@@ -127,15 +127,17 @@ HTTP/2 特性：
 
 ## 对象池复用
 
+HTTPC 内部对引擎响应对象与字符串构建器复用 sync.Pool，减少 GC 压力；Result 则每次请求新建、由 GC 自动回收。
+
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result 对象由内置对象池自动管理，GC 自动回收
+// Result 每次请求新建，GC 自动回收，无需手动释放
 ```
 
-高并发场景中，对象池复用可显著减少 GC 压力。
+高并发场景中，内部对象池复用可显著减少 GC 压力。
 
 ## 并发请求模式
 

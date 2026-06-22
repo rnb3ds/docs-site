@@ -1,6 +1,6 @@
 ---
-title: "Константы и ошибки - HTML"
-description: "Справочник API констант и типов ошибок библиотеки CyberGo HTML, включая константы значений по умолчанию, такие как DefaultMaxInputSize (50 МБ), сигнатурные ошибки, такие как ErrInputTooLarge, и структурированные типы ошибок InputError, ConfigError, FileError, все поддерживают проверку через errors.Is/As для точного определения и обработки различных аномалий во время выполнения."
+title: "Константы и ошибки - CyberGo HTML | значения и ошибки"
+description: "Константы и ошибки CyberGo HTML: значения по умолчанию, сторожевые ошибки и структурированные InputError, ConfigError, FileError с поддержкой errors.Is/As."
 ---
 
 # Константы и ошибки
@@ -106,6 +106,7 @@ type FileError struct {
 func (e *FileError) Error() string        // Безопасный вывод (усечённый путь)
 func (e *FileError) SafePath() string     // Возвращает только имя файла
 func (e *FileError) Unwrap() error        // → ErrFileNotFound | исходная ошибка | ErrInvalidFilePath
+func (e *FileError) MarshalJSON() ([]byte, error) // также усекает путь при JSON-сериализации (предотвращает утечку в ответах API)
 ```
 
 :::tip Безопасный путь

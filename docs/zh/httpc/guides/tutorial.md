@@ -1,5 +1,5 @@
 ---
-title: "实战教程 - HTTPC"
+title: "实战教程 - CyberGo HTTPC | GitHub API 实战"
 description: "三十分钟实战教程：从 httpc.Get 逐步构建完整的 GitHub REST API 客户端，涵盖 JSON 响应解析、NewDomain 域名客户端、WithJSON 发送数据、中间件链组合、ClientError 错误处理与文件下载功能。"
 ---
 
@@ -14,7 +14,7 @@ description: "三十分钟实战教程：从 httpc.Get 逐步构建完整的 Git
 - 使用域名客户端管理 API 基础 URL
 - 添加中间件实现日志和指标
 - 处理错误与重试
-- 使用对象池自动管理优化性能
+- Result 响应对象与自动管理
 
 ## 第 1 步：基本请求
 
@@ -47,7 +47,7 @@ func main() {
 
 要点：
 - 包级函数 `httpc.Get` 无需创建客户端，适合快速验证
-- Result 对象由内置对象池自动管理，GC 自动回收
+- Result 每次请求新建，GC 自动回收，无需手动释放
 
 ## 第 2 步：解析 JSON 响应
 
@@ -253,7 +253,8 @@ dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     fmt.Printf("\r下载进度: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
-result, err := client.DownloadWithOptions(
+result, err := client.Download(
+    context.Background(),
     "https://go.dev/dl/go1.22.0.linux-amd64.tar.gz",
     dlCfg,
 )
@@ -305,7 +306,7 @@ func fetchRepos(ctx context.Context, repos []string) error {
 ```
 
 :::tip
-`PerformanceConfig()` 提供大连接池配置，适合高并发场景。Result 对象由内置对象池自动管理。
+`PerformanceConfig()` 提供大连接池配置，适合高并发场景。Result 每次请求新建，由 GC 自动回收。
 :::
 
 ## 完整示例

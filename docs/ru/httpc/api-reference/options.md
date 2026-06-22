@@ -1,6 +1,6 @@
 ---
-title: "Параметры запроса - HTTPC"
-description: "Справочник API параметров запроса HTTPC: WithHeader для заголовков, WithBearerToken для аутентификации, WithJSON/WithXML/WithForm/WithBinary для тела запроса, WithQuery для параметров запроса, пять опций Cookie и обратные вызовы WithOnRequest/WithOnResponse."
+title: "Параметры запроса - CyberGo HTTPC | Опции WithXxx"
+description: "Справочник API параметров запроса HTTPC: заголовки WithHeader, аутентификация WithBearerToken, тело WithJSON/WithForm, параметры WithQuery и колбэки."
 ---
 
 # Параметры запроса
@@ -396,6 +396,27 @@ func WithMaxRedirects(maxRedirects int) RequestOption
 ```
 
 Устанавливает максимальное число перенаправлений для отдельного запроса. Диапазон: 0-50.
+
+### WithAllowPrivateIPs
+
+```go
+func WithAllowPrivateIPs(allow bool) RequestOption
+```
+
+Переопределяет SSRF-политику клиента для отдельного запроса. Если `allow` равно `true`, запрос может обращаться к localhost и частным/зарезервированным диапазонам IP (127.0.0.0/8, 10.0.0.0/8, 192.168.0.0/16, 169.254.0.0/16 и др.) и следовать перенаправлениям на такие адреса; если `false`, то даже при настроенном в клиенте `Security.AllowPrivateIPs=true` для данного запроса защита SSRF включается принудительно.
+
+:::warning Замечание о безопасности
+Это **построчный (per-request) аварийный люк** политики SSRF, предназначенный для безопасных по умолчанию клиентов (`AllowPrivateIPs=false`), которым изредка требуется обращаться к внутренним службам, адресам loopback или локальным dev-серверам.
+
+Включайте только если URL запроса надёжен и **не** поступает от недоверенного пользовательского ввода. Если весь клиент должен обращаться к внутренним службам, задайте `Security.AllowPrivateIPs=true` непосредственно в `Config`.
+:::
+
+```go
+// Клиент по умолчанию блокирует частные IP; этот вызов освобождает их по запросу
+result, err := httpc.Get("http://localhost:8080/health",
+    httpc.WithAllowPrivateIPs(true),
+)
+```
 
 ### WithStreamBody
 

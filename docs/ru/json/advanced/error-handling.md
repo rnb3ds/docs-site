@@ -1,6 +1,6 @@
 ---
 title: "Обработка ошибок - CyberGo JSON | Лучшие практики"
-description: "Лучшие практики обработки ошибок CyberGo JSON: JsonsError, errors.Is/As, стандартные ошибки, значения по умолчанию, SafeError, RedactedPath и стратегии восстановления."
+description: "Лучшие практики обработки ошибок CyberGo JSON: проверки JsonsError, errors.Is/As, стандартные ошибки, восстановление, SafeError и логирование RedactedPath."
 ---
 
 # Обработка ошибок
@@ -246,10 +246,10 @@ err := withRetry(func() error {
 
 ```go
 func getConfig(data string) Config {
-    cfg := DefaultConfig()
+    cfg := json.DefaultConfig()
 
     // Использование типобезопасной функции получения со встроенным значением по умолчанию
-    strict := json.GetBool(data, "config.strict", true)
+    cfg.StrictMode = json.GetBool(data, "config.strict", true)
 
     return cfg
 }

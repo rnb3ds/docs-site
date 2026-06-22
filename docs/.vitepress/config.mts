@@ -1,67 +1,112 @@
 import { defineConfig } from 'vitepress'
-import { zhConfig } from './locales/zh'
+import { zhConfig, zhNav } from './locales/zh'
 import { enConfig } from './locales/en'
 import { koConfig } from './locales/ko'
 import { jaConfig } from './locales/ja'
 import { ruConfig } from './locales/ru'
 import { PROJECTS } from './shared'
 
-const COOKIE_NAME = 'vitepress-lang-preference'
+const HOST = 'https://www.cybergo.dev'
 
-function parseCookies(cookieHeader: string | undefined): Record<string, string> {
-  if (!cookieHeader) return {}
-  return cookieHeader.split(';').reduce((acc, c) => {
-    const [k, ...v] = c.trim().split('=')
-    if (k) acc[k] = v.join('=')
-    return acc
-  }, {} as Record<string, string>)
+// All supported language codes; the root path `/` serves Chinese (the primary
+// language), the others live under their `/{lang}/` prefix.
+const ALL_LANGS = ['zh', 'en', 'ko', 'ja', 'ru'] as const
+
+// VitePress emits locale hreflang as full locale codes (e.g. en-US); shorten to
+// the two-letter code we use in URLs.
+const LOCALE_TO_SHORT: Record<string, string> = {
+  'zh-CN': 'zh', 'en-US': 'en', 'ko-KR': 'ko', 'ja-JP': 'ja', 'ru-RU': 'ru'
 }
 
-function localeRedirectPlugin() {
-  return {
-    name: 'vitepress-locale-redirect',
-    configureServer(server: any) {
-      const redirectMiddleware = (req: any, res: any, next: () => void) => {
-        const url = (req.url || '/').split('?')[0].split('#')[0]
+// og:locale values per language.
+const OGC_LOCALE: Record<string, string> = {
+  zh: 'zh_CN', en: 'en_US', ko: 'ko_KR', ja: 'ja_JP', ru: 'ru_RU'
+}
 
-        // Bare project path redirect: /httpc, /json/getting-started, etc.
-        const projectPattern = new RegExp(`^\\/(${PROJECTS.join('|')})(\\/.*)?$`)
-        const match = url.match(projectPattern)
-        if (match) {
-          const cookies = parseCookies(req.headers.cookie)
-          const savedPref = cookies[COOKIE_NAME]
-          const acceptLang = req.headers['accept-language'] || ''
+// Heading-anchor slugify.
+//
+// VitePress's default slugify normalizes with NFKD, which *decomposes*
+// composed scripts — Hangul syllables into conjoining jamo (확장 → 확장),
+// voiced kana into base+kana-combining-mark (ジェ → シ+゙), and accented letters
+// into base+combining-mark (ё → е+◌̈, й → и+◌̆) — then strips the combining
+// marks. The resulting decomposed heading IDs never match internal
+// `[text](#anchor)` links, which carry the source's composed (NFC) form
+// verbatim, so every Korean / voiced-Japanese / ё / й in-page anchor is dead.
+//
+// Normalizing to NFC instead keeps those scripts composed (so IDs match the
+// links). We treat any run of non-letter/non-number code points as a
+// separator — that composes the above scripts while producing identical slugs
+// to the default for ASCII, CJK, and fullwidth punctuation (so existing zh/en
+// anchors are unaffected; fullwidth （） → - just like the NFKD default would).
+//
+// Applied to `markdown.slugify` (TOC), `markdown.anchor.slugify` (the actual
+// heading id="..." via markdown-it-anchor) and `markdown.headers.slugify`
+// (the right-side outline) so all three stay consistent.
+const slugifyHeading = (s: string): string =>
+  s.normalize('NFC')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/^(\d)/, '_$1')
+    .toLowerCase()
 
-          let langPrefix = 'en'
-          if (savedPref) {
-            if (savedPref.startsWith('zh')) langPrefix = 'zh'
-            else if (savedPref.startsWith('ko')) langPrefix = 'ko'
-            else if (savedPref.startsWith('ja')) langPrefix = 'ja'
-            else if (savedPref.startsWith('ru')) langPrefix = 'ru'
-          } else {
-            if (/zh/i.test(acceptLang)) langPrefix = 'zh'
-            else if (/ko/i.test(acceptLang)) langPrefix = 'ko'
-            else if (/ja/i.test(acceptLang)) langPrefix = 'ja'
-            else if (/ru/i.test(acceptLang)) langPrefix = 'ru'
-          }
+// Chinese homepage is served at two URLs: the root `/` (the canonical one) and
+// `/zh/` (kept for VitePress locale structure / nav). Both must collapse onto
+// `/` so search engines do not see duplicate content.
+function isZhHomePath(path: string): boolean {
+  return path === '/' || path === '/zh/'
+}
 
-          const prefix = `/${langPrefix}`
-          const subPath = match[2] || ''
-          res.writeHead(302, { Location: `${prefix}/${match[1]}${subPath}` })
-          res.end()
-          return
-        }
-
-        next()
-      }
-
-      return () => {
-        server.middlewares.stack.unshift({
-          route: '',
-          handle: redirectMiddleware
-        })
-      }
-    }
+// Dev-only redirect for bare project paths (e.g. /json → /{lang}/json).
+//
+// The build emits static "bridge" pages for these paths in production, but the
+// dev server (vitepress dev) serves straight from source — there is no /json
+// route, so it 404s. This middleware intercepts bare project paths during dev
+// and 302-redirects to the visitor's preferred language, mirroring the bridge
+// pages. Resolution: request cookie (explicit choice) → Accept-Language
+// (browser) → /zh/ (site default). localStorage is not readable server-side, so
+// it is intentionally not consulted here; the production bridge pages cover it.
+const SUPPORTED_LANGS = ['zh', 'en', 'ko', 'ja', 'ru']
+function codeToLang(code: string | undefined): string | null {
+  if (!code) return null
+  const base = code.toLowerCase().split('-')[0]
+  return SUPPORTED_LANGS.includes(base) ? base : null
+}
+function pickRequestLang(req: any): string {
+  const cookie = (req.headers?.cookie as string) || ''
+  const m = cookie.match(/(?:^|;)\s*vitepress-lang-preference=([^;]+)/)
+  if (m) {
+    const l = codeToLang(decodeURIComponent(m[1]))
+    if (l) return l
+  }
+  const al = (req.headers?.['accept-language'] as string) || ''
+  for (const part of al.split(',')) {
+    const l = codeToLang(part.split(';')[0].trim())
+    if (l) return l
+  }
+  return 'zh'
+}
+const bareProjectDevRedirect = {
+  name: 'cybergo:bare-project-redirect',
+  enforce: 'pre',
+  apply: 'serve' as const,
+  configureServer(server: any) {
+    server.middlewares.use((req: any, res: any, next: any) => {
+      const raw: string = req.url || '/'
+      const pathname = raw.split('?')[0].split('#')[0]
+      // Only intercept HTML navigations; skip any file/asset request.
+      if (pathname.includes('.')) return next()
+      const segs = pathname.replace(/^\/+/, '').split('/').filter(Boolean)
+      if (segs.length === 0) return next() // homepage — leave to VitePress
+      // Bare project path = first segment is a project, no language prefix.
+      if (!(PROJECTS as readonly string[]).includes(segs[0])) return next()
+      const lang = pickRequestLang(req)
+      const target = '/' + lang + '/' + segs.join('/') + '/'
+      const query = raw.indexOf('?') !== -1 ? raw.slice(raw.indexOf('?')) : ''
+      res.statusCode = 302
+      res.setHeader('Location', target + query)
+      res.setHeader('Cache-Control', 'no-store')
+      res.end()
+    })
   }
 }
 
@@ -69,43 +114,62 @@ export default defineConfig({
   title: 'CyberGo',
   description: 'CyberGo - Go Open Source Libraries',
 
+  // Default <html lang> for the root page (the static Chinese homepage) and
+  // any other non-locale page. Each locale's own `lang` overrides this under
+  // its /{lang}/ prefix, so only the root `/` is affected.
+  lang: 'zh-CN',
+
   lastUpdated: false,
   cleanUrls: true,
 
+  // Dev-only Vite plugin: redirect bare project paths (/json) to the visitor's
+  // language. See `bareProjectDevRedirect` above. No effect on production.
+  vite: {
+    plugins: [bareProjectDevRedirect]
+  },
+
+  // Heading-anchor slugify — see `slugifyHeading` above for the full rationale.
+  markdown: {
+    slugify: slugifyHeading,
+    anchor: { slugify: slugifyHeading },
+    headers: { slugify: slugifyHeading }
+  },
+
   // Sitemap configuration for SEO
   sitemap: {
-    hostname: 'https://www.cybergo.dev',
+    hostname: HOST,
     transformItems(items) {
-      const localeToShort: Record<string, string> = {
-        'zh-CN': 'zh', 'en-US': 'en', 'ko-KR': 'ko', 'ja-JP': 'ja', 'ru-RU': 'ru'
-      }
-      const allLangs = ['zh', 'en', 'ko', 'ja', 'ru']
-      const hostname = 'https://www.cybergo.dev'
       return items
         .filter(item => !item.url.startsWith('404'))
         .map(item => {
-          const isRoot = item.url === '' || item.url === '/'
-          // Root page: override auto-generated links with correct hreflang set
-          if (isRoot) {
-            item.links = allLangs.map(lang => ({
-              lang, url: `${hostname}/${lang}/`
-            }))
-            item.links.push({ lang: 'x-default', url: `${hostname}/` })
+          // Any homepage (root `/` or `/{lang}/`): point hreflang `zh` and
+          // `x-default` at the canonical root `/`.
+          const trimmed = item.url.replace(/^\/+|\/+$/g, '')
+          const isHome = trimmed === '' || /^(zh|en|ko|ja|ru)$/.test(trimmed)
+          if (isHome) {
+            item.links = [
+              { lang: 'zh', url: `${HOST}/` },
+              { lang: 'en', url: `${HOST}/en/` },
+              { lang: 'ko', url: `${HOST}/ko/` },
+              { lang: 'ja', url: `${HOST}/ja/` },
+              { lang: 'ru', url: `${HOST}/ru/` },
+              { lang: 'x-default', url: `${HOST}/` }
+            ]
           } else if (item.links) {
             // VitePress auto-generates locale hreflang (e.g. en-US); shorten to en
             item.links = item.links.map((link: any) => ({
               ...link,
-              url: link.url?.replace(hostname, '').startsWith('/')
-                ? `${hostname}${link.url}`
+              url: link.url?.replace(HOST, '').startsWith('/')
+                ? `${HOST}${link.url}`
                 : link.url,
-              lang: localeToShort[link.lang] || link.lang
+              lang: LOCALE_TO_SHORT[link.lang] || link.lang
             }))
-            // Add x-default pointing to English version
+            // x-default points to the Chinese version (site default is Chinese)
             const urlMatch = item.url.match(/^(zh|en|ko|ja|ru)(\/.*)?$/)
             if (urlMatch) {
               const subPath = urlMatch[2] || ''
               if (!item.links.some((l: any) => l.lang === 'x-default')) {
-                item.links.push({ lang: 'x-default', url: `${hostname}/en${subPath}` })
+                item.links.push({ lang: 'x-default', url: `${HOST}/zh${subPath}` })
               }
             }
           }
@@ -114,16 +178,10 @@ export default defineConfig({
     }
   },
 
-  // Build optimization
-  vite: {
-    plugins: [localeRedirectPlugin()]
-  },
-
   // Per-page SEO: canonical, hreflang, dynamic OG/Twitter
   transformHead({ pageData }) {
     const relativePath = pageData.relativePath
-    let path = '/' + relativePath.replace(/(?:index)?\.md$/, '')
-    const canonical = `https://www.cybergo.dev${path}`
+    const path = '/' + relativePath.replace(/(?:index)?\.md$/, '')
 
     const head: any[] = []
 
@@ -133,43 +191,45 @@ export default defineConfig({
       return head
     }
 
-    // Root page: serves English homepage as default.
-    // JS detects browser language and redirects non-English users.
-    // hreflang links enable search engines to discover all language versions.
-    const isRoot = path === '/'
+    // The root `/` is the static Chinese homepage (primary language). There is
+    // no client-side language redirect anymore — users switch languages via the
+    // nav language menu. hreflang tells search engines about every language
+    // version, and the `/zh/` mirror canonicalizes back to `/`.
+    const zhHome = isZhHomePath(path)
 
-    // Canonical URL for all pages including root
+    // Canonical — the Chinese homepage (both `/` and `/zh/`) canonicalizes to
+    // the root `/` so the two identical pages do not compete.
+    const canonical = zhHome ? `${HOST}/` : `${HOST}${path}`
     head.push(['link', { rel: 'canonical', href: canonical }])
 
-    // Root page: generate hreflang pointing to each language home
-    if (path === '/') {
-      const allLangs = ['zh', 'en', 'ko', 'ja', 'ru']
-      for (const lang of allLangs) {
-        head.push(['link', { rel: 'alternate', hreflang: lang, href: `https://www.cybergo.dev/${lang}/` }])
+    // Any homepage (root `/` or a `/{lang}/` landing page): the Chinese
+    // counterpart is the canonical root `/`, and x-default → `/`. Inner pages
+    // map each language at the same sub-path instead.
+    const isHome = path === '/' || /^\/(zh|en|ko|ja|ru)\/?$/.test(path)
+    if (isHome) {
+      head.push(['link', { rel: 'alternate', hreflang: 'zh', href: `${HOST}/` }])
+      for (const altLang of ['en', 'ko', 'ja', 'ru']) {
+        head.push(['link', { rel: 'alternate', hreflang: altLang, href: `${HOST}/${altLang}/` }])
       }
-      head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: 'https://www.cybergo.dev/' }])
+      head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: `${HOST}/` }])
     } else {
-      // Language sub-pages: generate hreflang for alternates
+      // Language sub-pages (incl. inner pages): generate alternates for every
+      // language; x-default points to the Chinese version (site default).
       const langMatch = path.match(/^\/(zh|en|ko|ja|ru)(\/.*)?$/)
-      let currentLang = 'en'
       if (langMatch) {
-        currentLang = langMatch[1]
         const subPath = langMatch[2] || ''
-        const allLangs = ['zh', 'en', 'ko', 'ja', 'ru']
-
-        for (const altLang of allLangs) {
-          head.push(['link', { rel: 'alternate', hreflang: altLang, href: `https://www.cybergo.dev/${altLang}${subPath}` }])
+        for (const altLang of ALL_LANGS) {
+          head.push(['link', { rel: 'alternate', hreflang: altLang, href: `${HOST}/${altLang}${subPath}` }])
         }
-        head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: `https://www.cybergo.dev/en${subPath}` }])
+        head.push(['link', { rel: 'alternate', hreflang: 'x-default', href: `${HOST}/zh${subPath}` }])
       }
     }
 
-    // Dynamic og:locale based on page language
-    const localeMap: Record<string, string> = { zh: 'zh_CN', en: 'en_US', ko: 'ko_KR', ja: 'ja_JP', ru: 'ru_RU' }
+    // Dynamic og:locale based on page language (root defaults to Chinese)
     const langFromPath = path.match(/^\/(zh|en|ko|ja|ru)/)
-    const currentLang = langFromPath ? langFromPath[1] : 'en'
-    const locale = localeMap[currentLang] || 'en_US'
-    const altLocales = Object.entries(localeMap)
+    const currentLang = langFromPath ? langFromPath[1] : 'zh'
+    const locale = OGC_LOCALE[currentLang] || 'zh_CN'
+    const altLocales = Object.entries(OGC_LOCALE)
       .filter(([lang]) => lang !== currentLang)
       .map(([, loc]) => loc)
     head.push(['meta', { property: 'og:locale', content: locale }])
@@ -181,8 +241,8 @@ export default defineConfig({
     const fmTitle = pageData.frontmatter?.title
     const fmDesc = pageData.frontmatter?.description
 
-    const ogTitle = fmTitle || 'CyberGo - High-Performance Go Libraries'
-    const ogDesc = fmDesc || 'Production-ready, high-performance Go open-source library collection.'
+    const ogTitle = fmTitle || 'CyberGo - 高性能 Go 开源库'
+    const ogDesc = fmDesc || 'CyberGo 是专为 Go 语言打造的高性能开源库集合，为高并发生产环境提供可靠的基础组件。'
 
     head.push(['meta', { property: 'og:title', content: ogTitle }])
     head.push(['meta', { property: 'og:description', content: ogDesc }])
@@ -194,28 +254,6 @@ export default defineConfig({
   },
 
   head: [
-    // Inline language redirect — runs before any rendering for zero-flash redirect.
-    // Only activates on root path (/). Non-English users are redirected instantly.
-    // Search engines (Googlebot) have en-US Accept-Language → no redirect → index English content.
-    // hreflang tags in <head> tell search engines about all language versions.
-    [
-      'script',
-      { id: 'lang-redirect' },
-      `(function(){` +
-        `var p=window.location.pathname;` +
-        `if(p!=='/'&&p!=='/index.html')return;` +
-        `var s;try{s=localStorage.getItem('vitepress-lang-preference')}catch(e){}` +
-        `if(s){var l=s.split('-')[0].toLowerCase();` +
-        `if(l!=='en'&&/^(zh|ko|ja|ru)$/.test(l)){window.location.replace('/'+l+'/');return}}` +
-        `var c=document.cookie.split(';');` +
-        `for(var i=0;i<c.length;i++){var m=c[i].trim().match(/^vitepress-lang-preference=(.+)/);` +
-        `if(m){l=m[1].split('-')[0].toLowerCase();` +
-        `if(l!=='en'&&/^(zh|ko|ja|ru)$/.test(l)){window.location.replace('/'+l+'/');return}}}` +
-        `var b=(navigator.language||'').toLowerCase().split('-')[0];` +
-        `if(/^(zh|ko|ja|ru)$/.test(b)){window.location.replace('/'+b+'/')}` +
-      `})()`
-    ],
-
     // Favicons
     ['link', { rel: 'icon', href: '/favicon.ico', sizes: 'any' }],
     ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' }],
@@ -274,6 +312,18 @@ export default defineConfig({
   themeConfig: {
     logo: '/logo.svg',
     siteTitle: 'CyberGo',
+
+    // aria-label for the unified LanguageMenu switcher on the root `/` page
+    // (non-locale pages fall back to this top-level value; each /{lang}/ locale
+    // overrides it with its own translated label). See LanguageMenu.vue.
+    langMenuLabel: '多语言',
+
+    // Root-path nav: the `/` homepage isn't part of any locale (every locale
+    // carries a /{lang}/ prefix), so without this the 项目 / 关于 top nav is
+    // missing on `/` while every /{lang}/ page shows it. Reuses zhNav so the
+    // root page renders navigation identical to /zh/. Each /{lang}/ locale
+    // overrides this with its own translated nav.
+    nav: zhNav,
 
     search: {
       provider: 'algolia',

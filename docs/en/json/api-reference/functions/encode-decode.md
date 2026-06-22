@@ -1,6 +1,6 @@
 ---
 title: "Encode and Decode Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON encode and decode functions reference: Marshal/Unmarshal serialization, Compact/Indent/HTMLEscape formatting, Encode/EncodePretty/EncodeWithConfig/Prettify configured encoding, 100% compatible with encoding/json."
+description: "CyberGo JSON encode/decode: Marshal/Unmarshal, Compact/Indent/HTMLEscape, and Encode/EncodePretty/Prettify configurable encoding, stdlib compatible."
 ---
 
 # Encode and Decode Functions
@@ -97,13 +97,13 @@ fmt.Println(buf.String())
 
 Signature: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-HTML-escapes JSON content, replacing special characters (`&`, `<`, `>`) with Unicode escape sequences, writing the result to `dst`. No return value.
+HTML-escapes JSON content, replacing special characters such as `<`, `>`, `&` (as well as U+2028 and U+2029) with the corresponding Unicode escape sequences, writing the result to `dst`. No return value.
 
 ```go
 var buf bytes.Buffer
 json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
 fmt.Println(buf.String())
-// {"html":"<script>alert(1)</script>"}
+// {"html":"\u003cscript\u003ealert(1)\u003c/script\u003e"}
 ```
 
 ### Prettify
@@ -234,7 +234,7 @@ fmt.Println(result) // {"name":"Alice","email":"a@b.com"}
 
 Signature: `func EncodeStream(values any, cfg ...Config) (string, error)`
 
-Stream encoding that encodes a value to a JSON string. Suitable for scenarios requiring a unified encoding interface.
+Encodes multiple values into a JSON array stream. `values` is typically a slice or enumerable collection, outputting a JSON array string like `[v1,v2,...]`.
 
 ```go
 values := []map[string]any{
@@ -265,7 +265,7 @@ defer p.Close()
 
 Signature: `func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-Compacts JSON bytes and writes to the `dst` buffer. Delegates to the package-level `Compact` function.
+Compacts JSON bytes and writes to the `dst` buffer. The package-level `Compact` function delegates to this method.
 
 ```go
 var buf bytes.Buffer
@@ -308,10 +308,10 @@ The following helper functions return pre-configured `Config` values that can be
 cfg := json.DefaultConfig()
 
 // Pretty-print configuration
-cfg := json.PrettyConfig()
+cfg = json.PrettyConfig()
 
 // Security configuration
-cfg := json.SecurityConfig()
+cfg = json.SecurityConfig()
 ```
 
 :::tip

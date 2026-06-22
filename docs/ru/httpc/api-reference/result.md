@@ -1,6 +1,6 @@
 ---
-title: "Result - HTTPC"
-description: "Справочник API типа ответа Result HTTPC: базовые методы StatusCode/Body/RawBody, проверка состояния, операции Cookie, парсинг JSON Unmarshal, сохранение файлов SaveToFile и подтипы RequestInfo/ResponseInfo/RequestMeta. Result автоматически пулируется и утилизируется GC."
+title: "Result - CyberGo HTTPC | Тип Result"
+description: "Справочник API типа ответа Result HTTPC: методы StatusCode/Body, проверка состояния, операции Cookie, парсинг JSON и сохранение файлов SaveToFile."
 ---
 
 # Result
@@ -26,7 +26,7 @@ fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
 :::tip
-Result использует внутренний пул объектов для оптимизации производительности, GC автоматически утилизирует, не требуется ручное освобождение.
+Result создаётся заново для каждого запроса и автоматически утилизируется GC, ручное освобождение не требуется.
 :::
 
 ## Базовые методы

@@ -1,6 +1,6 @@
 ---
-title: "接口定义 - HTTPC"
-description: "HTTPC 核心接口 API 参考：Client 全功能接口含七种 HTTP 方法、Doer 最小执行接口、DomainClienter 域名客户端、RetryPolicy 重试策略、RequestMutator/ResponseMutator 中间件接口与 Handler/MiddlewareFunc 定义。"
+title: "接口定义 - CyberGo HTTPC | 核心接口"
+description: "HTTPC 核心接口 API 参考：Client 全功能接口、Doer 最小执行接口、DomainClienter 域名客户端、RetryPolicy 重试策略与 RequestMutator/ResponseMutator 中间件接口定义。"
 ---
 
 # 接口定义
@@ -21,10 +21,7 @@ type Client interface {
     Options(url string, options ...RequestOption) (*Result, error)
 
     // 文件下载
-    DownloadFile(url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptions(url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
-    DownloadFileWithContext(ctx context.Context, url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptionsWithContext(ctx context.Context, url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
+    Download(ctx context.Context, url string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 
     // 生命周期
     Close() error

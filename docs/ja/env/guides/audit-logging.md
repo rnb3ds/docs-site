@@ -1,6 +1,6 @@
 ---
 title: "監査ログ - CyberGo env | セキュリティ監査設定"
-description: "CyberGo env ライブラリの監査ログ完全設定ガイド。JSON ファイルハンドラー、標準ログハンドラー、Channel ハンドラーの作成と設定方法を網羅。カスタム AuditHandler インターフェースの実装による監査ロジックの拡張方法を紹介。すべての環境変数の読み込み、読み取り、変更、削除操作を記録し、セキュリティコンプライアンスチェックと本番環境のトラブルシューティングに対応します。"
+description: "CyberGo env 監査ログ設定ガイド。JSON ファイル、標準ログ、チャネルハンドラーとカスタム AuditHandler で変数の読み込み・読み取り・変更・削除を記録し、コンプライアンスを満たします。"
 ---
 
 # 監査ログ
@@ -50,7 +50,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 **出力例：**
 
 ```json
-{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration":1234567}
+{"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 {"timestamp":"2024-01-15T10:30:01Z","action":"get","key":"API_KEY","success":true,"masked":true}
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
@@ -75,9 +75,9 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 **出力例：**
 
 ```text
-[AUDIT] 2024/01/15 10:30:00 load .env (1.23ms)
-[AUDIT] 2024/01/15 10:30:01 get API_KEY (masked)
-[AUDIT] 2024/01/15 10:30:02 set CUSTOM_VAR
+[AUDIT] 2024/01/15 10:30:00 action=load success=true reason="" file=.env duration=1.23ms
+[AUDIT] 2024/01/15 10:30:01 action=get key=API_KEY success=true reason=""
+[AUDIT] 2024/01/15 10:30:02 action=set key=CUSTOM_VAR success=true reason=""
 ```
 
 ---

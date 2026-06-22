@@ -1,6 +1,6 @@
 ---
 title: "Processor データ変更 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON Processor データ変更メソッド完全リファレンス：Set によるパス値の設定、SetMultiple バッチ設定、Delete パス削除、CreatePaths 自動中間パス作成。すべてのメソッドは変更後の JSON 文字列を返し、メソッドチェーンと CreatePaths 設定によるパス自動作成をサポート。"
+description: "CyberGo JSON Processor 変更メソッド：Set、SetMultiple、SetCreate 自動パス作成、Delete、DeleteClean でメソッドチェーンをサポートします。"
 ---
 
 # データ変更メソッド
@@ -24,19 +24,19 @@ result, err := p.Set(data, "user.name", "NewName")
 result, _ := p.Set(data, "user.name", "CyberGo")
 
 // 数値
-result, _ := p.Set(data, "user.age", 25)
+result, _ = p.Set(data, "user.age", 25)
 
 // ブール値
-result, _ := p.Set(data, "user.active", true)
+result, _ = p.Set(data, "user.active", true)
 
 // オブジェクト
-result, _ := p.Set(data, "user.profile", map[string]any{
+result, _ = p.Set(data, "user.profile", map[string]any{
     "bio": "Developer",
     "location": "China",
 })
 
 // 配列
-result, _ := p.Set(data, "items", []any{"a", "b", "c"})
+result, _ = p.Set(data, "items", []any{"a", "b", "c"})
 ```
 
 ## Delete
@@ -70,7 +70,7 @@ result, _ := p.Delete(data, "user.temp")
 
 // 削除後に親オブジェクトが空になった場合、DeleteClean はさらにクリーンアップ
 // {"user": {}} -> {}
-result, _ := p.DeleteClean(data, "user.temp")
+result, _ = p.DeleteClean(data, "user.temp")
 ```
 
 ## SetMultiple

@@ -1,6 +1,6 @@
 ---
 title: "大規模ファイル処理 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON 大規模ファイル処理 API 完全リファレンス：ForeachFile ストリーム処理、ForeachFileChunked バッチ処理、ForeachFileWithPath パス指定処理、ForeachFileNested ネストされたイテレーション、メモリ制御設定、パフォーマンス最適化のベストプラクティスガイドを含む。"
+description: "CyberGo JSON 大ファイル API：ForeachFile ストリーミング、ForeachFileChunked バッチ、ForeachFileWithPath、ForeachFileNested、メモリ制御設定を提供します。"
 ---
 
 # 大規模ファイル処理
@@ -255,6 +255,13 @@ import (
     "log"
     "github.com/cybergodev/json"
 )
+
+// User はユーザーレコードを表します（サンプルデータモデル）
+type User struct {
+    ID    int
+    Name  string
+    Email string
+}
 
 func main() {
     p, err := json.New()

@@ -1,6 +1,6 @@
 ---
 title: "ジェネリクス操作 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON ジェネリック API 完全リファレンス：GetTyped[T] ジェネリック取得関数、Result[T] ジェネリック結果型、AccessResult 動的型アクセス、型安全操作ガイドの詳細解説。Go 1.18+ のジェネリクス機能を活用してコンパイル時の型安全チェックを実現し、ランタイムの型エラーを削減。"
+description: "CyberGo JSON ジェネリック API：GetTyped[T]、Result[T]、AccessResult で Go 1.18+ のジェネリクスを活用し、コンパイル時の型安全性を実現します。"
 ---
 
 # ジェネリクス操作
@@ -418,4 +418,4 @@ func main() {
 
 - [パッケージ関数](./functions) - 型固有の getter 関数
 - [型定義](./types) - AccessResult の詳細な定義
-- [設定](./config) - ProcessorOptions 設定オプション
+- [設定](./config) - Config 設定オプション

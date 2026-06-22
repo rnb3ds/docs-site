@@ -1,6 +1,6 @@
 ---
-title: "请求与响应 - HTTPC"
-description: "HTTPC 请求与响应处理指南：包级函数与客户端请求、WithHeader/WithJSON/WithForm 等请求选项、WithBearerToken 认证、WithQuery 查询参数、Cookie 管理、上下文控制、流式响应与解压大小限制配置。"
+title: "请求与响应 - CyberGo HTTPC | 请求选项与响应"
+description: "HTTPC 请求与响应处理指南：包级函数与客户端请求、WithHeader/WithJSON/WithForm 等请求选项、WithBearerToken 认证、WithQuery 查询参数、Cookie 管理、上下文控制与流式响应解压大小限制配置。"
 ---
 
 # 请求与响应
@@ -219,7 +219,7 @@ result, err := httpc.Request(ctx, "GET", url)
 `WithStreamBody(true)` 是内部机制，用于文件下载时避免将完整响应体缓存到内存。启用后响应体不会被读取到 `Result` 中（`Body()` 和 `RawBody()` 返回空值）。
 
 :::warning
-`WithStreamBody(true)` 由文件下载 API 内部使用（`DownloadFile`、`DownloadWithOptions`）。如需流式获取响应内容，请使用[文件下载 API](./file-transfer)。
+`WithStreamBody(true)` 由文件下载 API 内部使用。如需流式获取响应内容，请使用[文件下载 API](./file-transfer)。
 :::
 
 如需下载大文件，请使用下载 API：
@@ -227,7 +227,7 @@ result, err := httpc.Request(ctx, "GET", url)
 ```go
 cfg := httpc.DefaultDownloadConfig()
 cfg.FilePath = "/path/to/file"
-result, err := client.DownloadWithOptions(url, cfg)
+result, err := client.Download(context.Background(), url, cfg)
 ```
 
 ## 响应解压

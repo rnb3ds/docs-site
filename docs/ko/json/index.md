@@ -1,6 +1,6 @@
 ---
 title: "CyberGo JSON | 고성능 Go JSON 라이브러리"
-description: "CyberGo JSON은 고성능, 스레드 안전한 Go 언어 JSON 처리 라이브러리로, JSONPath 경로 쿼리, 스트림 처리, 제네릭 API, Schema 검증을 지원합니다. encoding/json과 100% 호환되며 보안 방어, 스마트 캐시, JSONL 처리, Hook 시스템을 제공합니다."
+description: "CyberGo JSON은 고성능 스레드 안전 Go JSON 라이브러리로, JSONPath 쿼리, 스트림 처리, 제네릭 API, Schema 검증을 지원하며 encoding/json과 100% 호환되는 고동시성 프로덕션 환경용입니다."
 ---
 
 # JSON 처리 라이브러리
@@ -92,7 +92,7 @@ func main() {
 | 제네릭 API | `GetTyped[T]` | 타입 안전한 제네릭 가져오기 |
 | 사전 파싱 | `Processor.PreParse`, `Processor.GetFromParsed` | 한 번 파싱, 여러 번 쿼리 |
 | 안전 가져오기 | `SafeGet` → `AccessResult` | 체인 타입 변환 |
-| 스트림 처리 | `Processor.ForeachFile` | 대용량 파일 메모리 효율적 |
+| 스트림 처리 | `NDJSONProcessor` | 줄 단위 스트리밍, 메모리 제어 가능 |
 | JSONL 처리 | `StreamLinesInto[T]` | 로그/데이터 파이프라인 |
 | Schema 검증 | `ValidateSchema` | JSON Schema 검증 |
 

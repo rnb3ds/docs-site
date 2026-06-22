@@ -1,6 +1,6 @@
 ---
-title: "Result - HTTPC"
-description: "HTTPC Result レスポンスタイプ API リファレンス：StatusCode/Body/RawBody 基本メソッド、ステータス判定、Cookie 操作、Unmarshal JSON 解析、SaveToFile ファイル保存と RequestInfo/ResponseInfo/RequestMeta サブタイプ。Result は自動プール管理され、GC が自動的にクリーンアップします。"
+title: "Result - CyberGo HTTPC | Result応答タイプ"
+description: "HTTPC Result レスポンスタイプ API リファレンス: StatusCode/Body 基本メソッド、ステータス判定、Cookie 操作、Unmarshal JSON 解析、SaveToFile ファイル保存の完全な使い方を提供します。"
 ---
 
 # Result
@@ -26,7 +26,7 @@ fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
 :::tip
-Result は内部オブジェクトプールでパフォーマンスを最適化しており、GC が自動的にクリーンアップするため、手動での解放は不要です。
+Result はリクエストごとに新規作成され、GC が自動的に回収するため、手動での解放は不要です。
 :::
 
 ## 基本メソッド

@@ -1,6 +1,6 @@
 ---
-title: "API 参考 - JWT"
-description: "CyberGo JWT API 参考索引：包级函数、Processor 核心方法、Config 配置、Claims 声明、接口定义、类型常量与错误处理的完整文档导航。"
+title: "API 参考 - CyberGo JWT | 完整接口文档"
+description: "CyberGo JWT API 参考总览：导航至包级工厂函数、Processor 核心方法、Config 与 BlacklistConfig 配置、Claims 与 RegisteredClaims 声明、扩展接口、辅助类型与 19 个哨兵错误。"
 ---
 
 # API 参考
@@ -17,7 +17,7 @@ CyberGo JWT 库提供完整的 JWT 令牌生命周期管理 API。
 | [Claims](./claims) | `Claims`、`RegisteredClaims` 声明类型 | 令牌声明 |
 | [接口定义](./interfaces) | `TokenManager`、`CustomClaims`、`BlacklistStore` 等 | 扩展接口 |
 | [类型与常量](./types) | 签名算法常量、`NumericDate`、`StringOrSlice` 等 | 辅助类型 |
-| [错误](./errors) | 17 个哨兵错误、`ValidationError` | 错误处理 |
+| [错误](./errors) | 19 个哨兵错误、`ValidationError` | 错误处理 |
 
 ## 快速查找
 

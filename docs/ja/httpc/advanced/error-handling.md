@@ -1,6 +1,6 @@
 ---
-title: "エラー処理 - HTTPC"
-description: "HTTPC エラー処理ガイド：ErrorType 12 種類のエラー分類、ClientError フィールドと IsRetryable 判定、errors.Is/As センチネルエラーマッチング、リトライ枯渇処理、コンテキストタイムアウトとキャンセル、ミドルウェアによる統一エラー処理とタイムアウト階層化のベストプラクティス。"
+title: "エラー処理 - CyberGo HTTPC | 分類とセンチネル"
+description: "HTTPC エラー処理ガイド: ErrorType 12 種類のエラー分類、ClientError フィールドと IsRetryable、errors.Is/As センチネルマッチング、リトライ枯渇、コンテキストタイムアウト、ミドルウェア統合処理のベストプラクティスを解説します。"
 ---
 
 # エラー処理
@@ -59,10 +59,6 @@ if errors.Is(err, httpc.ErrClientClosed) {
 
 if errors.Is(err, httpc.ErrResponseBodyEmpty) {
     // レスポンスボディが空
-}
-
-if errors.Is(err, httpc.ErrInvalidURL) {
-    // URL 形式が無効
 }
 
 if errors.Is(err, httpc.ErrInvalidHeader) {

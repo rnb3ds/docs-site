@@ -1,6 +1,6 @@
 ---
 title: "接口定义 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 扩展接口定义完整参考：包括 CustomEncoder、TypeEncoder、Validator、Hook 接口、PathParser 和 DangerousPattern，支持灵活扩展库的编码、验证和安全防护等核心功能，满足自定义序列化和安全策略需求。"
+description: "CyberGo JSON 扩展接口：CustomEncoder、TypeEncoder、Validator、Hook、PathParser 与 DangerousPattern，灵活扩展编码、验证与安全防护能力。"
 ---
 
 # 接口定义
@@ -149,7 +149,7 @@ type Hook interface {
 ```go
 type HookContext struct {
     Operation string        // 操作类型: "get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string        // 输入 JSON 字符串（marshal 时可能为空）
+    JSONStr   string        // 输入 JSON 字符串（marshal 时可能为空）。安全警告：可能包含敏感数据
     Path      string        // 目标路径（marshal/unmarshal 时可能为空）
     Value     any           // set 操作的值
     Config    *Config       // 活动配置
@@ -530,7 +530,7 @@ func (r AccessResult) AsBool() (bool, error)              // 严格转换
 | `AsStringConverted()` | 格式化 | 使用 fmt.Sprintf 将任意值转为字符串表示 |
 | `AsInt()` | 严格 | 不转换 bool 到 int，仅接受整数和可解析的数字 |
 | `AsFloat64()` | 严格 | 不转换 bool 到 float，仅接受浮点数和可解析的数字 |
-| `AsBool()` | 严格 | 仅接受 bool 和可解析的字符串（"true"/"false"/"yes"/"no" 等） |
+| `AsBool()` | 严格 | 仅接受 bool 和可解析的字符串（`strconv.ParseBool` 规则：`1/t/true/True/TRUE`、`0/f/false/False/FALSE`） |
 
 ```go
 result := p.SafeGet(data, "user.age")
@@ -627,7 +627,8 @@ type SchemaConfig struct {
 cfg := json.DefaultSchemaConfig()
 cfg.Type = "object"
 cfg.Required = []string{"name", "email"}
-cfg.AdditionalProperties = ptrBool(false)
+additionalProperties := false
+cfg.AdditionalProperties = &additionalProperties
 schema := json.NewSchemaWithConfig(cfg)
 ```
 
@@ -637,8 +638,8 @@ Schema 验证错误。
 
 ```go
 type ValidationError struct {
-    Path    string // 错误路径
-    Message string // 错误消息
+    Path    string `json:"path"`    // 错误路径
+    Message string `json:"message"` // 错误消息
 }
 
 func (ve *ValidationError) Error() string

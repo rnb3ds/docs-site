@@ -1,6 +1,6 @@
 ---
 title: "Определения интерфейсов - CyberGo env | Иерархия интерфейсов"
-description: "Полный справочник определений интерфейсов библиотеки CyberGo env с детализированным дизайном интерфейсов, поддерживающим внедрение зависимостей и гибкую композицию. Включает подробное описание и использование основных интерфейсов: Validator, FullAuditLogger, EnvParser, EnvStorage и FileSystem."
+description: "Справочник интерфейсов CyberGo env для внедрения зависимостей: Validator, FullAuditLogger, EnvParser, EnvStorage и адаптер FileSystem."
 ---
 
 # Определения интерфейсов
@@ -69,7 +69,7 @@ func readConfig(getter env.EnvGetter) {
 ```
 
 :::warning Внимание
-`GetInt`, `GetBool`, `GetDuration`, `GetSecure`, `Len` **не являются** частью интерфейса `EnvGetter`.
+`GetInt`, `GetBool`, `GetUint64`, `GetFloat64`, `GetDuration`, `GetSecure`, `Len` **не являются** частью интерфейса `EnvGetter`.
 Эти методы реализованы на типе `*Loader`, но не входят в минимальный интерфейс.
 
 Для полного доступа на чтение используйте непосредственно тип `*Loader`:
@@ -444,9 +444,9 @@ type MockFile struct {
 }
 
 func (f *MockFile) Read(p []byte) (n int, err error)   { return f.reader.Read(p) }
-func (f *MockFile) Write(p []byte) (n int, err error)  { return 0, os.ErrUnsupported }
+func (f *MockFile) Write(p []byte) (n int, err error)  { return 0, errors.ErrUnsupported }
 func (f *MockFile) Close() error                       { return nil }
-func (f *MockFile) Stat() (os.FileInfo, error)         { return nil, os.ErrUnsupported }
+func (f *MockFile) Stat() (os.FileInfo, error)         { return nil, errors.ErrUnsupported }
 func (f *MockFile) Sync() error                        { return nil }
 
 func (m *MockFileSystem) Open(name string) (env.File, error) {
@@ -704,7 +704,6 @@ package main
 
 import (
     "fmt"
-    "time"
 
     "github.com/cybergodev/env"
 )

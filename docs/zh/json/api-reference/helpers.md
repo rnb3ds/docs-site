@@ -1,6 +1,6 @@
 ---
 title: "辅助函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 辅助工具函数完整参考：包括 CompareJSON 比较验证两个 JSON 是否等价、ClearCache/GetStats 缓存管理与统计、全局处理器管理和安全模式辅助函数，提供日常开发中便捷的 JSON 工具函数集合，有效简化常见操作。"
+description: "CyberGo JSON 辅助函数：CompareJSON 比较、ClearCache/GetStats 缓存管理、全局处理器管理与安全模式辅助，简化 Go 日常 JSON 操作。"
 ---
 
 # 辅助函数
@@ -21,11 +21,11 @@ equal, _ := json.CompareJSON(`{"a":1,"b":2}`, `{"b":2,"a":1}`)
 fmt.Println(equal) // true
 
 // 数字精度不同但值相同
-equal, _ := json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
+equal, _ = json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
 fmt.Println(equal) // true
 
 // 内容不同
-equal, _ := json.CompareJSON(`{"a":1}`, `{"a":2}`)
+equal, _ = json.CompareJSON(`{"a":1}`, `{"a":2}`)
 fmt.Println(equal) // false
 ```
 
@@ -195,6 +195,12 @@ val := json.GetString(data, "user.name")
 关闭全局处理器并释放资源。
 
 ```go
+package main
+
+import (
+    "github.com/cybergodev/json"
+)
+
 func main() {
     cfg := json.DefaultConfig()
     p, err := json.New(cfg)
@@ -214,7 +220,7 @@ func main() {
 ## 输出函数
 
 ::: warning API 变更说明
-`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` 已转为内部函数（小写命名），不再作为公开 API 导出。请使用 [Encode](./functions/encode-decode#encode)、[EncodePretty](./functions/encode-decode#encodepretty) 或 [Prettify](./functions/encode-decode#prettify) 配合 `fmt.Println` 代替。详见 [打印函数](./print)。
+`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` 已从库中移除，不再提供。请使用 [Encode](./functions/encode-decode#encode)、[EncodePretty](./functions/encode-decode#encodepretty) 或 [Prettify](./functions/encode-decode#prettify) 配合 `fmt.Println` 代替。详见 [打印函数](./print)。
 :::
 
 ---
@@ -340,7 +346,7 @@ if err != nil {
 
 ```go
 path := "users[0].ssn"
-fmt.Println(json.RedactedPath(path)) // 安全的路径表示
+fmt.Println(json.RedactedPath(path)) // 输出: ***（非空路径统一返回 ***，空路径返回空字符串）
 ```
 
 ---

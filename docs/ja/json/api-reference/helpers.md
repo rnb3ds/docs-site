@@ -1,6 +1,6 @@
 ---
 title: "ヘルパー関数 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON ヘルパーユーティリティ関数完全リファレンス：CompareJSON で 2 つの JSON の等価性比較検証、ClearCache/GetStats キャッシュ管理と統計、グローバルプロセッサ管理、セキュリティパターンヘルパーなど、日常的な開発で便利な JSON ツール関数セットを提供し、一般的な操作を効果的に簡素化。"
+description: "CyberGo JSON ヘルパー関数：CompareJSON 比較、ClearCache/GetStats キャッシュ管理、グローバルプロセッサ、セキュリティヘルパーで Go の日常的な JSON 操作を簡素化します。"
 ---
 
 # ヘルパー関数
@@ -21,11 +21,11 @@ equal, _ := json.CompareJSON(`{"a":1,"b":2}`, `{"b":2,"a":1}`)
 fmt.Println(equal) // true
 
 // 数値精度は異なるが値は同じ
-equal, _ := json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
+equal, _ = json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
 fmt.Println(equal) // true
 
 // 内容が異なる
-equal, _ := json.CompareJSON(`{"a":1}`, `{"a":2}`)
+equal, _ = json.CompareJSON(`{"a":1}`, `{"a":2}`)
 fmt.Println(equal) // false
 ```
 
@@ -195,6 +195,12 @@ val := json.GetString(data, "user.name")
 グローバルプロセッサをシャットダウンし、リソースを解放します。
 
 ```go
+package main
+
+import (
+    "github.com/cybergodev/json"
+)
+
 func main() {
     cfg := json.DefaultConfig()
     p, err := json.New(cfg)
@@ -214,7 +220,7 @@ func main() {
 ## 出力関数
 
 ::: warning API 変更のお知らせ
-`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` は内部関数（小文字命名）に移行し、公開 API としてエクスポートされなくなりました。[Encode](./functions/encode-decode#encode)、[EncodePretty](./functions/encode-decode#encodepretty)、または [Prettify](./functions/encode-decode#prettify) を `fmt.Println` と組み合わせて使用してください。詳細は [出力関数](./print) を参照。
+`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` はライブラリから削除され、提供されなくなりました。[Encode](./functions/encode-decode#encode)、[EncodePretty](./functions/encode-decode#encodepretty)、または [Prettify](./functions/encode-decode#prettify) を `fmt.Println` と組み合わせて使用してください。詳細は [出力関数](./print) を参照。
 :::
 
 ---

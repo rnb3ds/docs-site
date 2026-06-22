@@ -1,6 +1,6 @@
 ---
-title: "Error Handling - HTML"
-description: "Error handling guide for CyberGo HTML, covering error categories, errors.Is sentinel matching, errors.As structured extraction, and batch failure patterns."
+title: "Error Handling - CyberGo HTML | Robust Error Guide"
+description: "CyberGo HTML error handling: five error categories, errors.Is sentinel matching, errors.As structured errors, context cancellation, and batch partial failures."
 ---
 
 # Error Handling

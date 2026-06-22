@@ -1,6 +1,6 @@
 ---
-title: "Constants & Errors - HTML"
-description: "Constants and error types for CyberGo HTML, including default limits, sentinel errors, and structured error types with errors.Is/errors.As support."
+title: "Constants & Errors - CyberGo HTML | Defaults & Error Types"
+description: "CyberGo HTML constants and errors: DefaultMaxInputSize and defaults, sentinel errors like ErrInputTooLarge, plus InputError, ConfigError, and FileError."
 ---
 
 # Constants & Errors
@@ -106,6 +106,7 @@ type FileError struct {
 func (e *FileError) Error() string        // Safe output (truncated path)
 func (e *FileError) SafePath() string     // Returns filename only
 func (e *FileError) Unwrap() error        // → ErrFileNotFound | original error | ErrInvalidFilePath
+func (e *FileError) MarshalJSON() ([]byte, error) // also truncates the path during JSON marshalling (prevents leakage via API responses)
 ```
 
 :::tip Safe Paths

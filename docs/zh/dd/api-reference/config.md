@@ -67,8 +67,15 @@ type Config struct {
     ContextExtractors []ContextExtractor // 上下文提取器列表
     Hooks             *HookRegistry      // 钩子注册表
     Sampling          *SamplingConfig    // 采样配置
+
+    // 审计配置
+    Audit             *AuditConfig       // 审计日志配置（安全事件记录）
 }
 ```
+
+:::tip Audit 字段
+设置 `Audit` 后，敏感数据脱敏、速率限制和违规事件会通过 [AuditLogger](./audit) 记录为审计事件。详见 [审计日志](./audit)。
+:::
 
 ### Clone
 
@@ -185,6 +192,8 @@ type JSONFieldNames struct {
 }
 ```
 
+实现了指针接收者方法 `(*JSONFieldNames).IsComplete() bool`：当 5 个字段名均非空时返回 `true`，可用于校验是否已完整自定义全部字段名。
+
 使用示例：
 
 ```go
@@ -202,11 +211,16 @@ cfg.FieldNames = &dd.JSONFieldNames{
 func DefaultJSONOptions() *JSONOptions
 ```
 
-返回默认的 JSON 输出选项。
+返回默认的 JSON 输出选项：`PrettyPrint` 为 `false`，缩进为两个空格，字段名采用默认值。
 
 ```go
-cfg := dd.JSONConfig()
-// 包含默认 JSONOptions
+opts := dd.DefaultJSONOptions()
+opts.PrettyPrint = true
+
+logger, _ := dd.New(dd.Config{
+    Format: dd.FormatJSON,
+    JSON:   opts,
+})
 ```
 
 ## SamplingConfig
@@ -357,3 +371,4 @@ logger, _ := dd.New(dd.Config{
 - [输出目标](./writers) -- FileWriter、BufferedWriter、MultiWriter
 - [安全过滤](./security) -- SecurityConfig 详解
 - [钩子系统](./hooks) -- HooksConfig 详解
+- [审计日志](./audit) -- AuditConfig 详解

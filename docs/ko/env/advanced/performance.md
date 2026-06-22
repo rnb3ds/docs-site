@@ -1,6 +1,6 @@
 ---
 title: "성능 최적화 - CyberGo env | 고동시성 읽기/쓰기 튜닝"
-description: "CyberGo env 라이브러리 성능 최적화 및 고동시성 튜닝 가이드, sync.RWMutex 읽기/쓰기 잠금으로 구현된 동시성 안전 접근, sync.Pool 객체 풀 재사용 전략, mlock 메모리 잠금 사용 패턴과 성능 영향, 대용량 파일 스트리밍 파싱 처리 기법, 벤치마크 테스트 데이터 비교와 LimitsConfig 보안 매개변수 구성 권장 사항을 포함합니다."
+description: "CyberGo env 성능 최적화 가이드로 RWMutex 동시성, 객체 풀 재사용, mlock 메모리 잠금, 대용량 파일 스트리밍과 벤치마크 기반 매개변수 튜닝을 제안합니다."
 ---
 
 # 성능 최적화
@@ -100,8 +100,8 @@ wg.Wait()
 // SecureValue 가져오기 (풀에서 재사용될 수 있음)
 secret := env.GetSecure("API_KEY")
 
-// 사용
-value := secret.String()
+// 사용 (Reveal은 평문 반환, String/Masked는 마스크 반환)
+value := secret.Reveal()
 
 // 풀에 반납
 secret.Close()  // 또는 secret.Release()
@@ -140,7 +140,7 @@ func later() {
 func getSecret() string {
     secret := env.GetSecure("KEY")
     defer secret.Close()
-    return secret.String()
+    return secret.Reveal()
 }
 ```
 
@@ -187,7 +187,7 @@ if env.IsMemoryLockSupported() {
 | wasm | ❌ |
 
 ::: tip 자세히 보기
-[SecureValue API - 메모리 잠금 구성](/ko/env/api-reference/secure-value#memory-lock-configuration)에서 전체 구성 설명을 확인하세요.
+[SecureValue API - 메모리 잠금 구성](/ko/env/api-reference/secure-value)에서 전체 구성 설명을 확인하세요.
 :::
 
 ### 엄격 모드
@@ -421,7 +421,7 @@ loader, _ := env.New(cfg)
 // goroutine 시작
 go func() {
     time.Sleep(1 * time.Second)
-    loader.GetString("KEY")  // ErrClosed가 반환될 수 있음
+    loader.GetString("KEY")  // 빈 문자열 반환 (GetString은 error를 반환하지 않음)
 }()
 
 loader.Close()  // 주 goroutine에서 닫기

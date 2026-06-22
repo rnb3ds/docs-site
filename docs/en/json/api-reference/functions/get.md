@@ -1,6 +1,6 @@
 ---
 title: "Query and Get Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON query and get functions complete reference: including Get/GetString/GetInt/GetFloat/GetBool type-safe getters, GetTyped[T] generic getter, Parse/ParseAny parsing functions, with full JSONPath expression support, providing zero-error getter mode with default values."
+description: "CyberGo JSON query and get: Get/GetString/GetInt/GetFloat/GetBool type-safe getters, GetTyped[T] generics, and Parse/ParseAny with full JSONPath."
 ---
 
 # Query and Get Functions
@@ -435,7 +435,7 @@ defer p.Close()
 data, err := p.ParseAny(`{"name": "test"}`)
 ```
 
-See [Processor Parse Methods](../processor/parse.md#parse-methods).
+See [Processor Parse Methods](../processor/parse#parse-methods).
 
 ## Validation Functions
 
@@ -486,6 +486,45 @@ func main() {
     }
 }
 ```
+
+### ValidateSchema
+
+Signature: `func ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
+
+Validates JSON data against a JSON Schema. Returns a list of all validation errors.
+
+```go
+package main
+
+import (
+    "fmt"
+    "github.com/cybergodev/json"
+)
+
+func main() {
+    schema := &json.Schema{
+        Type:     "object",
+        Required: []string{"name", "email"},
+        Properties: map[string]*json.Schema{
+            "name":  {Type: "string", MinLength: 1},
+            "email": {Type: "string", Format: "email"},
+            "age":   {Type: "integer", Minimum: 0},
+        },
+    }
+
+    errors, err := json.ValidateSchema(`{"name":"Alice","email":"alice@example.com","age":25}`, schema)
+    if err != nil {
+        panic(err)
+    }
+    for _, e := range errors {
+        fmt.Printf("Path %s: %s\n", e.Path, e.Message)
+    }
+}
+```
+
+::: tip See Also
+For the full Schema type definition and validator usage, see [Validator](../validator).
+:::
 
 ## Safe Get Functions
 
@@ -635,7 +674,7 @@ for _, r := range results {
 
 **Methods**: `Ok()` · `Unwrap()` · `UnwrapOr()` · `AsString()` · `AsStringConverted()` · `AsInt()` · `AsFloat64()` · `AsBool()`
 
-See [AccessResult Type](../types#accessresult---property-access-result) for details.
+See [AccessResult Type](../types#accessresult-property-access-result) for details.
 
 ### Result[T]
 

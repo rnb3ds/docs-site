@@ -1,6 +1,6 @@
 ---
-title: "Claims - JWT API Reference"
-description: "CyberGo JWT Claims API reference covering Claims built-in business fields (UserID, Username, Role, etc.), RegisteredClaims RFC 7519 standard claims, and deep validation constraints."
+title: "Claims - CyberGo JWT | Claim Structs"
+description: "The built-in CyberGo JWT Claims struct holds UserID, Username, Role, permissions, and scope plus RFC 7519 RegisteredClaims with validation constraints."
 ---
 
 # Claims
@@ -74,6 +74,7 @@ type RegisteredClaims struct {
     NotBefore NumericDate   `json:"nbf"`
     IssuedAt  NumericDate   `json:"iat"`
     ID        string        `json:"jti,omitempty"`
+    TokenType string        `json:"token_type,omitempty"`
 }
 ```
 
@@ -92,3 +93,4 @@ Standard JWT registered claims (RFC 7519).
 | `NotBefore` | `NumericDate` | `nbf` | Not-before time |
 | `IssuedAt` | `NumericDate` | `iat` | Issued-at time |
 | `ID` | `string` | `jti` | Token ID |
+| `TokenType` | `string` | `token_type` | Token type (`access` or `refresh`; see [Token Type Constants](./types#token-type-constants)) |

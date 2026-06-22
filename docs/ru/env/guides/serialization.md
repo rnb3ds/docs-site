@@ -1,6 +1,6 @@
 ---
 title: "Сериализация - CyberGo env | Мультиформатное преобразование"
-description: "Полное руководство по сериализации и десериализации библиотеки CyberGo env — преобразование Map и Go-структур между форматами .env, JSON, YAML, семейство функций Marshal/Unmarshal, реализация пользовательских интерфейсов Marshaler/Unmarshaler, поддержка тегов env, маскирование чувствительных полей и примеры конвертации форматов."
+description: "Руководство по сериализации CyberGo env: преобразование Map и структур между .env, JSON и YAML, Marshal/Unmarshal, теги env и маскирование полей."
 ---
 
 # Сериализация
@@ -184,7 +184,7 @@ func main() {
 Преобразование структуры в `map[string]string`:
 
 ```go
-func MarshalStruct(v interface{}) (map[string]string, error)
+func MarshalStruct(v any) (map[string]string, error)
 ```
 
 **Параметры:**

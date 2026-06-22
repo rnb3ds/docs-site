@@ -1,6 +1,6 @@
 ---
 title: "查询与获取函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 查询与获取函数完整参考：包括 Get/GetString/GetInt/GetFloat/GetBool 等类型安全获取、GetTyped[T] 泛型获取和 Parse/ParseAny 解析函数，全面支持 JSONPath 路径表达式，提供带默认值的零错误获取模式。"
+description: "CyberGo JSON 查询与获取函数：Get/GetString/GetInt/GetFloat/GetBool 类型安全获取、GetTyped[T] 泛型与 Parse/ParseAny 解析，全面支持 JSONPath。"
 ---
 
 # 查询与获取函数
@@ -434,7 +434,7 @@ defer p.Close()
 data, err := p.ParseAny(`{"name": "test"}`)
 ```
 
-详见 [Processor 解析方法](../processor/parse.md#解析方法)。
+详见 [Processor 解析方法](../processor/parse#解析方法)。
 
 ## 验证函数
 

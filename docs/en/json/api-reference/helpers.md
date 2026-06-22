@@ -1,6 +1,6 @@
 ---
 title: "Helper Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON helper utility functions reference: including CompareJSON for comparing whether two JSON strings are equivalent, ClearCache/GetStats for cache management and statistics, global processor management and security pattern helper functions, providing a convenient JSON utility function collection for everyday development."
+description: "CyberGo JSON helper functions: CompareJSON, ClearCache/GetStats cache management, global processor control, and security helpers for everyday Go JSON."
 ---
 
 # Helper Functions
@@ -21,11 +21,11 @@ equal, _ := json.CompareJSON(`{"a":1,"b":2}`, `{"b":2,"a":1}`)
 fmt.Println(equal) // true
 
 // Different numeric precision but same value
-equal, _ := json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
+equal, _ = json.CompareJSON(`{"num":1}`, `{"num":1.0}`)
 fmt.Println(equal) // true
 
 // Different content
-equal, _ := json.CompareJSON(`{"a":1}`, `{"a":2}`)
+equal, _ = json.CompareJSON(`{"a":1}`, `{"a":2}`)
 fmt.Println(equal) // false
 ```
 
@@ -195,6 +195,12 @@ Signature: `func ShutdownGlobalProcessor()`
 Shuts down the global processor and releases resources.
 
 ```go
+package main
+
+import (
+    "github.com/cybergodev/json"
+)
+
 func main() {
     cfg := json.DefaultConfig()
     p, err := json.New(cfg)
@@ -214,7 +220,7 @@ func main() {
 ## Output Functions
 
 ::: warning API Change Notice
-`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` have been converted to internal functions (lowercase naming) and are no longer exported as public APIs. Please use [Encode](./functions/encode-decode#encode), [EncodePretty](./functions/encode-decode#encodepretty), or [Prettify](./functions/encode-decode#prettify) with `fmt.Println` instead. See [Print Functions](./print) for details.
+`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` have been removed from the library and are no longer available. Please use [Encode](./functions/encode-decode#encode), [EncodePretty](./functions/encode-decode#encodepretty), or [Prettify](./functions/encode-decode#prettify) with `fmt.Println` instead. See [Print Functions](./print) for details.
 :::
 
 ---

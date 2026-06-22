@@ -1,6 +1,6 @@
 ---
-title: "인터페이스 정의 - HTTPC"
-description: "HTTPC 핵심 인터페이스 API 레퍼런스: Client 전체 기능 인터페이스에 일곱 가지 HTTP 메서드 포함, Doer 최소 실행 인터페이스, DomainClienter 도메인 클라이언트, RetryPolicy 재시도 전략, RequestMutator/ResponseMutator 미들웨어 인터페이스와 Handler/MiddlewareFunc 정의를 다룹니다."
+title: "인터페이스 정의 - CyberGo HTTPC | 핵심 인터페이스"
+description: "HTTPC 핵심 인터페이스 API 레퍼런스: Client 전체 기능 인터페이스, Doer 최소 실행 인터페이스, DomainClienter, RetryPolicy 재시도 전략과 미들웨어 인터페이스 정의의 완전한 설명을 제공합니다."
 ---
 
 # 인터페이스 정의
@@ -21,10 +21,7 @@ type Client interface {
     Options(url string, options ...RequestOption) (*Result, error)
 
     // 파일 다운로드
-    DownloadFile(url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptions(url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
-    DownloadFileWithContext(ctx context.Context, url string, filePath string, options ...RequestOption) (*DownloadResult, error)
-    DownloadWithOptionsWithContext(ctx context.Context, url string, downloadOpts *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
+    Download(ctx context.Context, url string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 
     // 수명 주기
     Close() error

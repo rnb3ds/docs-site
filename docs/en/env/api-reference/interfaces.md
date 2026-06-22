@@ -1,6 +1,6 @@
 ---
 title: "Interfaces - CyberGo env | Core Interface Hierarchy"
-description: "CyberGo env library interface type definitions complete reference documentation, using fine-grained interface design supporting dependency injection and flexible composition, including Validator, FullAuditLogger, EnvParser, EnvStorage, and FileSystem adapter core interfaces with detailed descriptions and usage."
+description: "CyberGo env core interface reference with fine-grained design for dependency injection: Validator, FullAuditLogger, EnvParser, EnvStorage and FileSystem."
 ---
 
 # Interfaces
@@ -69,7 +69,7 @@ func readConfig(getter env.EnvGetter) {
 ```
 
 :::warning Note
-`GetInt`, `GetBool`, `GetDuration`, `GetSecure`, `Len` are **not** part of the `EnvGetter` interface.
+`GetInt`, `GetBool`, `GetUint64`, `GetFloat64`, `GetDuration`, `GetSecure`, `Len` are **not** part of the `EnvGetter` interface.
 These methods are implemented on the `*Loader` type but not in the minimal interface.
 
 For complete read capability, use the `*Loader` type directly:
@@ -444,9 +444,9 @@ type MockFile struct {
 }
 
 func (f *MockFile) Read(p []byte) (n int, err error)   { return f.reader.Read(p) }
-func (f *MockFile) Write(p []byte) (n int, err error)  { return 0, os.ErrUnsupported }
+func (f *MockFile) Write(p []byte) (n int, err error)  { return 0, errors.ErrUnsupported }
 func (f *MockFile) Close() error                       { return nil }
-func (f *MockFile) Stat() (os.FileInfo, error)         { return nil, os.ErrUnsupported }
+func (f *MockFile) Stat() (os.FileInfo, error)         { return nil, errors.ErrUnsupported }
 func (f *MockFile) Sync() error                        { return nil }
 
 func (m *MockFileSystem) Open(name string) (env.File, error) {
@@ -704,7 +704,6 @@ package main
 
 import (
     "fmt"
-    "time"
 
     "github.com/cybergodev/env"
 )

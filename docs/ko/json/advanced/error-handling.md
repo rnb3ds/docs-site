@@ -1,6 +1,6 @@
 ---
 title: "오류 처리 - CyberGo JSON | 모범 사례"
-description: "CyberGo JSON 오류 처리 모범 사례: JsonsError 구조화된 오류 타입 판단, errors.Is/As 오류 매칭, 표준 오류 변수, 복구 전략, SafeError 안전한 출력 및 RedactedPath 경로 마스킹 로그 기록을 다루며, 견고한 예외 처리 메커니즘을 구축합니다."
+description: "CyberGo JSON 오류 처리 모범 사례: JsonsError 판단, errors.Is/As, 표준 오류 변수, 복구 전략, SafeError, RedactedPath 로깅으로 견고한 예외 처리를 구축합니다."
 ---
 
 # 오류 처리
@@ -246,10 +246,10 @@ err := withRetry(func() error {
 
 ```go
 func getConfig(data string) Config {
-    cfg := DefaultConfig()
+    cfg := json.DefaultConfig()
 
     // 타입 안전 가져오기 함수 사용, 기본값 내장
-    strict := json.GetBool(data, "config.strict", true)
+    cfg.StrictMode = json.GetBool(data, "config.strict", true)
 
     return cfg
 }

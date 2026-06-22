@@ -67,8 +67,15 @@ type Config struct {
     ContextExtractors []ContextExtractor // Список экстракторов контекста
     Hooks             *HookRegistry      // Реестр хуков
     Sampling          *SamplingConfig    // Конфигурация сэмплирования
+
+    // Конфигурация аудита
+    Audit             *AuditConfig       // Конфигурация журнала аудита (события безопасности)
 }
 ```
+
+:::tip Поле Audit
+Если задано `Audit`, события маскирования конфиденциальных данных, ограничения скорости и нарушения безопасности записываются как события аудита через [AuditLogger](./audit). См. [Журнал аудита](./audit).
+:::
 
 ### Clone
 
@@ -184,6 +191,8 @@ type JSONFieldNames struct {
     Fields    string  // Имя контейнера полей (по умолчанию "fields")
 }
 ```
+
+Реализует метод с указателем-приёмником `(*JSONFieldNames).IsComplete() bool`: возвращает `true`, когда все 5 имён полей не пусты, что полезно для проверки полной настройки всех имён полей.
 
 Пример использования:
 
@@ -357,3 +366,4 @@ logger, _ := dd.New(dd.Config{
 - [Цели вывода](./writers) -- FileWriter, BufferedWriter, MultiWriter
 - [Фильтрация безопасности](./security) -- подробное описание SecurityConfig
 - [Система хуков](./hooks) -- подробное описание HooksConfig
+- [Журнал аудита](./audit) -- подробное описание AuditConfig

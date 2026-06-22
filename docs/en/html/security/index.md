@@ -1,6 +1,6 @@
 ---
-title: "Security Overview - HTML"
-description: "Security overview of CyberGo HTML, covering input size limits, DOM depth limits, path traversal prevention, panic recovery, and sanitization features."
+title: "Security Overview - CyberGo HTML | Protection Overview"
+description: "CyberGo HTML security overview: 50MB input limit, DOM depth (500), path traversal prevention, panic recovery, timeouts, content sanitization, and audit logging."
 ---
 
 # Security Overview

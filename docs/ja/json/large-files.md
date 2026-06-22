@@ -1,6 +1,6 @@
 ---
 title: "大ファイル処理 - CyberGo JSON | ガイド"
-description: "CyberGo JSON 大ファイル処理の完全ガイド：ForeachFile 構造化イテレーション、ForeachFileChunked バッチ処理、メモリ制御設定、バッファサイズ最適化、JSONL バッチ処理、NDJSONProcessor による真のストリーム処理について詳しく解説。ログ分析、データエクスポート、ETL シナリオに適しています。"
+description: "CyberGo JSON 大ファイル処理ガイド：ForeachFile 反復、ForeachFileChunked バッチ、メモリ制御、NDJSONProcessor ストリーミングで Go のログ分析やデータ抽出、ETL に対応します。"
 ---
 
 # 大ファイル処理
@@ -19,7 +19,7 @@ description: "CyberGo JSON 大ファイル処理の完全ガイド：ForeachFile
 | **Processor.ForeachFileChunked** | バッチチャンクイテレーション処理 | ファイル全体をロードし、チャンクでイテレーション |
 | **NDJSONProcessor** | JSONL ファイルの行単位処理 | メモリ制御可能、真のストリーム処理 |
 
-## 統一 API： Processor
+## 統一 API：Processor
 
 ### 設定オプション
 
@@ -44,7 +44,6 @@ type Config struct {
 package main
 
 import (
-    "fmt"
     "log"
     "github.com/cybergodev/json"
 )
@@ -72,7 +71,8 @@ func main() {
         interests := item.GetArray("profile.interests")
 
         if count%10000 == 0 {
-            log.Printf("処理済み %d 件", count)
+            log.Printf("処理済み %d件、サンプル: id=%d name=%s email=%s city=%s 興味数=%d",
+                count, id, name, email, city, len(interests))
         }
         return nil
     })
@@ -212,7 +212,6 @@ _, err := json.StreamLinesInto[User](file, func(lineNum int, user User) error {
 package main
 
 import (
-    "fmt"
     "sync"
     "github.com/cybergodev/json"
 )
@@ -236,7 +235,7 @@ func main() {
             defer wg.Done()
             for item := range items {
                 // item を処理
-                processItem(item)
+                _ = item
             }
         }(i)
     }

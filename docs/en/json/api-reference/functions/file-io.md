@@ -1,6 +1,6 @@
 ---
 title: "File Operation Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON file operation functions complete reference: including LoadFromReader stream reading, ParseJSONL/ToJSONL JSONL processing, StreamLinesInto[T] generic stream processing, NewJSONLWriter writer, and JSONL configuration details."
+description: "CyberGo JSON file I/O: LoadFromReader streaming, ParseJSONL/ToJSONL, StreamLinesInto[T] generic streams, and NewJSONLWriter for large-file scenarios."
 ---
 
 # File Operation Functions
@@ -114,7 +114,7 @@ defer resp.Body.Close()
 data, err := json.LoadFromReader(resp.Body)
 
 // Read from string
-data, err := json.LoadFromReader(strings.NewReader(`{"name":"test"}`))
+data, err = json.LoadFromReader(strings.NewReader(`{"name":"test"}`))
 ```
 
 ### SaveToWriter

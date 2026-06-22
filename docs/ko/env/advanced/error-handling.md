@@ -1,6 +1,6 @@
 ---
 title: "오류 처리 - CyberGo env | 센티넬 오류와 복구 전략"
-description: "CyberGo env 라이브러리 오류 처리와 모범 사례 완전 가이드, 15개 센티넬 오류의 errors.Is 정확한 일치 검사, 8가지 구조화된 오류 타입의 errors.As 컨텍스트 추출, 오류 복구 및 성능 저하 전략, 커스텀 오류 래핑 패턴과 오류 체인 Unwrap 추적 메서드를 상세히 설명하여 견고한 프로덕션급 Go 코드 작성을 지원합니다."
+description: "CyberGo env 오류 처리 가이드로 16개 센티넬 오류의 errors.Is 검사, 8가지 구조화 오류의 errors.As 추출, 복구·성능 저하 전략, 오류 체인 추적을 설명합니다."
 ---
 
 # 오류 처리
@@ -63,6 +63,12 @@ if errors.Is(err, env.ErrForbiddenKey) {
 
 ```go
 var ErrExpansionDepth = errors.New("variable expansion depth exceeded")
+```
+
+### 제한 오류
+
+```go
+var ErrMaxVariables = errors.New("maximum number of variables exceeded")
 ```
 
 ### 상태 오류
@@ -230,10 +236,11 @@ if errors.As(err, &valErr) {
 
 ```go
 type ExpansionError struct {
-    Key   string  // 키 이름
-    Depth int     // 현재 깊이
-    Limit int     // 제한
-    Chain string  // 확장 체인
+    Key   string             // 키 이름
+    Depth int                // 현재 깊이
+    Limit int                // 제한
+    Chain string             // 확장 체인
+    Kind  ExpansionErrorKind // 오류 원인 범주 (기본값 = 깊이/순환)
 }
 ```
 
@@ -486,7 +493,6 @@ package main
 
 import (
     "errors"
-    "fmt"
     "log"
 
     "github.com/cybergodev/env"

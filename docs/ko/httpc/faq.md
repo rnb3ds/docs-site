@@ -1,6 +1,6 @@
 ---
-title: "자주 묻는 질문 - HTTPC"
-description: "HTTPC 자주 묻는 질문 답변: 패키지 함수와 클라이언트 인스턴스 선택 기준, 다섯 가지 설정 프리셋 비교 및 적용 시나리오, HTTP/SOCKS5 프록시 및 DoH 설정 방법, errors.Is/As 오류 매칭 패턴과 4단계 타임아웃 체계 튜닝 전략을 설명합니다."
+title: "자주 묻는 질문 - CyberGo HTTPC | 질문과 답변"
+description: "HTTPC 자주 묻는 질문: 패키지 함수와 클라이언트 선택, 설정 프리셋 비교, 프록시와 DoH, Cookie 세션, 재시도와 타임아웃 튜닝, errors.Is/As 오류 매칭 패턴으로 실제 개발의 전형적인 의문을 해결합니다."
 ---
 
 # 자주 묻는 질문

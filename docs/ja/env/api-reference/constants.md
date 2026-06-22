@@ -1,9 +1,9 @@
 ---
 title: "定数とエラー - CyberGo env | センチネルエラーとセキュリティ定数"
-description: "CyberGo env ライブラリの定数とエラー完全リファレンス。DefaultMaxFileSize 安全制限、ErrFileNotFound センチネルエラー、ParseError 構造化エラー型、IsSensitiveKey や MaskValue ユーティリティ関数を網羅。errors.Is と errors.As と組み合わせて各種エラーシーンの処理に役立つ。"
+description: "CyberGo env の定数とエラーリファレンス。DefaultMaxFileSize 制限、ErrFileNotFound センチネルエラー、ParseError 型、IsSensitiveKey と MaskValue ユーティリティを提供します。"
 ---
 
-# 常量与错误
+# 定数とエラー
 
 ライブラリが定義する定数、エラー型、センチネルエラー、事前定義変数。
 
@@ -39,7 +39,7 @@ const (
 以下はライブラリ内部のハードリミット（未エクスポート）で、`Config.Validate()` の内部チェックに使用されます。ユーザーはこれらの定数を直接参照できませんが、`cfg.Validate()` が設定がこれらの制限を超えていないか自動的にチェックします。
 :::
 
-| 常量 | 值 | 说明 |
+| 定数 | 値 | 説明 |
 |------|-----|------|
 | HardMaxFileSize | 100 MB | ファイルサイズのハードリミット |
 | HardMaxLineLength | 64 KB | 行の長さのハードリミット |
@@ -52,10 +52,10 @@ const (
 
 ```go
 cfg := env.DefaultConfig()
-cfg.MaxFileSize = 200 * 1024 * 1024  // 超过 100MB 上限
+cfg.MaxFileSize = 200 * 1024 * 1024  // 100MB 上限を超過
 
 if err := cfg.Validate(); err != nil {
-    // 返回错误: MaxFileSize exceeds hard limit
+    // エラーを返します: MaxFileSize exceeds hard limit
 }
 ```
 
@@ -73,7 +73,7 @@ var ErrFileTooLarge = errors.New("file exceeds maximum size limit")
 ```go
 err := loader.LoadFiles(".env")
 if errors.Is(err, env.ErrFileNotFound) {
-    // 文件不存在
+    // ファイルが存在しません
 }
 if errors.Is(err, env.ErrFileTooLarge) {
     // ファイルが大きすぎます
@@ -88,7 +88,7 @@ var ErrInvalidKey = errors.New("invalid key format")
 var ErrDuplicateKey = errors.New("duplicate key encountered")
 ```
 
-### 安全错误
+### セキュリティエラー
 
 ```go
 var ErrForbiddenKey = errors.New("key is forbidden for security reasons")
@@ -96,7 +96,7 @@ var ErrSecurityViolation = errors.New("security policy violation")
 var ErrInvalidValue = errors.New("invalid value content")
 ```
 
-检查禁止键：
+禁止キーの確認：
 
 ```go
 err := loader.Set("PATH", "value")
@@ -105,19 +105,19 @@ if errors.Is(err, env.ErrForbiddenKey) {
 }
 ```
 
-### 展开错误
+### 展開エラー
 
 ```go
 var ErrExpansionDepth = errors.New("variable expansion depth exceeded")
 ```
 
-### 限制错误
+### 制限エラー
 
 ```go
 var ErrMaxVariables = errors.New("maximum number of variables exceeded")
 ```
 
-### 状态错误
+### ステータスエラー
 
 ```go
 var ErrClosed = errors.New("loader has been closed")
@@ -132,26 +132,26 @@ var ErrMissingRequired = errors.New("required key is missing")
 ```go
 // ローダーがクローズ済みか確認
 if errors.Is(err, env.ErrClosed) {
-    // 加载器クローズ済み
+    // ローダーはクローズ済み
 }
 
-// 检查默认加载器是否已初始化
+// デフォルトローダーが初期化済みか確認
 if errors.Is(err, env.ErrAlreadyInitialized) {
     // デフォルトローダーが既に存在し、Load を繰り返し呼び出せません
 }
 
-// 检查默认加载器是否未初始化
+// デフォルトローダーが未初期化か確認
 if errors.Is(err, env.ErrNotInitialized) {
-    // 需要先调用 env.Load() 或 env.LoadWithConfig()
+    // 先に env.Load() または env.LoadWithConfig() を呼び出す必要があります
 }
 
-// 检查必需键是否缺失
+// 必須キーが不足していないか確認
 if errors.Is(err, env.ErrMissingRequired) {
     // 必須キーが不足
 }
 ```
 
-### 适配器错误
+### アダプターエラー
 
 ```go
 var ErrValidateRequiredUnsupported = errors.New(
@@ -166,27 +166,27 @@ var ErrValidateRequiredUnsupported = errors.New(
 
 ```go
 if errors.Is(err, env.ErrValidateRequiredUnsupported) {
-    // カスタムバリデーター不支持必需键検証
-    // 需要实现完整的 Validator 接口
+    // カスタムバリデーターは必須キー検証をサポートしません
+    // 完全な Validator インターフェースの実装が必要
 }
 ```
 
-::: tip 解决方法
+::: tip 解決方法
 `KeyValidator` のみではなく、`Validator` インターフェース（`ValidateKey`、`ValidateValue`、`ValidateRequired` の3つのメソッドを含む）を実装してください。
 :::
 
-## 错误类型
+## エラー型
 
 ### ParseError
 
-解析エラー，包含位置信息：
+解析エラー、位置情報を含みます：
 
 ```go
 type ParseError struct {
-    File    string  // 文件名
-    Line    int     // 行号
-    Content string  // 错误内容（已掩码）
-    Err     error   // 原始错误
+    File    string  // ファイル名
+    Line    int     // 行番号
+    Content string  // エラー内容（マスク済み）
+    Err     error   // 元のエラー
 }
 ```
 
@@ -203,27 +203,27 @@ if errors.As(err, &parseErr) {
 
 ### ValidationError
 
-検証错误：
+検証エラー：
 
 ```go
 type ValidationError struct {
-    Field   string  // 字段名
-    Value   string  // 值（已掩码）
-    Rule    string  // 规则
-    Message string  // 消息
+    Field   string  // フィールド名
+    Value   string  // 値（マスク済み）
+    Rule    string  // ルール
+    Message string  // メッセージ
 }
 ```
 
 ### SecurityError
 
-安全错误：
+セキュリティエラー：
 
 ```go
 type SecurityError struct {
     Action  string  // 操作
     Reason  string  // 原因
-    Key     string  // 键名（已掩码）
-    Details string  // 额外详情
+    Key     string  // キー名（マスク済み）
+    Details string  // 追加詳細
 }
 ```
 
@@ -242,11 +242,11 @@ if errors.As(err, &secErr) {
 
 ```go
 type FileError struct {
-    Path  string  // 文件路径
+    Path  string  // ファイルパス
     Op    string  // 操作（open, stat, size_check）
-    Err   error   // 原始错误
-    Size  int64   // 文件大小（Size 检查时）
-    Limit int64   // 限制（Size 检查时）
+    Err   error   // 元のエラー
+    Size  int64   // ファイルサイズ（Size チェック時）
+    Limit int64   // 制限（Size チェック時）
 }
 ```
 
@@ -255,21 +255,57 @@ type FileError struct {
 ```go
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
-    fmt.Printf("文件 %s 大小 %d 超过限制 %d\n",
+    fmt.Printf("ファイル %s サイズ %d が制限 %d を超過\n",
         fileErr.Path, fileErr.Size, fileErr.Limit)
 }
 ```
 
 ### ExpansionError
 
-变量展开错误：
+変数展開エラー：
 
 ```go
 type ExpansionError struct {
-    Key   string  // 键名
-    Depth int     // 当前深度
-    Limit int     // 限制
-    Chain string  // 展开链
+    Key   string             // キー名
+    Depth int                // 現在の深度
+    Limit int                // 制限
+    Chain string             // 展開チェーン（サニタイズ済み）
+    Kind  ExpansionErrorKind // エラー原因の分類（ゼロ値 = 深度/循環）
+}
+```
+
+**エラー分類（`Kind` フィールド）:**
+
+```go
+type ExpansionErrorKind int
+
+const (
+    // ExpansionDepthKind は展開が再帰深度制限に達したか、変数の循環を検出したことを示します。
+    // これはゼロ値のため、一般的な深度/循環エラーに明示的な分類は不要です。
+    // errors.Is(err, ErrExpansionDepth) で一致します。
+    ExpansionDepthKind ExpansionErrorKind = iota
+
+    // ExpansionRequiredKind は必須変数（${VAR:?message}）が未設定または空であったことを示します。
+    // 深度オーバーフローではないため、ErrExpansionDepth には一致しません。
+    ExpansionRequiredKind
+)
+```
+
+**`errors.Is` の挙動:** `*ExpansionError` は `Kind != ExpansionRequiredKind` の場合のみ `ErrExpansionDepth` と一致します。必須変数エラーは別の失敗モードであり、`ErrExpansionDepth` には一致しません。
+
+使用例:
+
+```go
+var expErr *env.ExpansionError
+if errors.As(err, &expErr) {
+    switch expErr.Kind {
+    case env.ExpansionDepthKind:
+        // 深度オーバーフローまたは循環: errors.Is(err, env.ErrExpansionDepth) == true
+        fmt.Printf("深度 %d/%d、チェーン: %s\n", expErr.Depth, expErr.Limit, expErr.Chain)
+    case env.ExpansionRequiredKind:
+        // 必須変数未設定: errors.Is(err, env.ErrExpansionDepth) == false
+        fmt.Printf("必須変数 %s が未設定\n", expErr.Key)
+    }
 }
 ```
 
@@ -279,9 +315,9 @@ JSON 解析エラー：
 
 ```go
 type JSONError struct {
-    Path    string  // 文件路径
-    Message string  // 错误消息
-    Err     error   // 原始错误
+    Path    string  // ファイルパス
+    Message string  // エラーメッセージ
+    Err     error   // 元のエラー
 }
 ```
 
@@ -291,11 +327,11 @@ YAML 解析エラー：
 
 ```go
 type YAMLError struct {
-    Path    string  // 文件路径
-    Line    int     // 行号
-    Column  int     // 列号
-    Message string  // 错误消息
-    Err     error   // 原始错误
+    Path    string  // ファイルパス
+    Line    int     // 行番号
+    Column  int     // 列番号
+    Message string  // エラーメッセージ
+    Err     error   // 元のエラー
 }
 ```
 
@@ -305,57 +341,57 @@ type YAMLError struct {
 
 ```go
 type MarshalError struct {
-    Field   string  // 字段名
-    Message string  // 错误消息
+    Field   string  // フィールド名
+    Message string  // エラーメッセージ
 }
 
-func IsMarshalError(err error) bool  // 检查函数
+func IsMarshalError(err error) bool  // チェック関数
 ```
 
 ## 事前定義変数
 
 ### DefaultForbiddenKeys
 
-組み込み禁止キー列表，防止修改系统关键变量：
+組み込み禁止キーリスト、システム重要変数の変更を防止します：
 
 ::: warning 注意
 `defaultForbiddenKeys` はライブラリ内部変数（未エクスポート）であり、`env.DefaultForbiddenKeys` から直接アクセスすることはできません。以下は内部で使用されている完全なリストで、参考用です。
 :::
 
-| 类别 | 禁止键 |
+| カテゴリ | 禁止キー |
 |------|--------|
-| 系统路径 | `PATH` |
-| 动态链接器 (Linux) | `LD_PRELOAD`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64`, `LD_AUDIT`, `LD_DEBUG` |
+| システムパス | `PATH` |
+| 動的リンカー (Linux) | `LD_PRELOAD`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64`, `LD_AUDIT`, `LD_DEBUG` |
 | macOS | `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH` |
 | Windows | `COMSPEC`, `PATHEXT`, `SYSTEMROOT`, `WINDIR` |
 | Shell | `SHELL`, `ENV`, `BASH_ENV`, `IFS` |
-| 语言运行时 | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
+| 言語ランタイム | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
 
-**风险说明：**
+**リスク説明：**
 
-| 键 | 风险类型 | 说明 |
+| キー | リスクタイプ | 説明 |
 |----|----------|------|
-| `PATH` | 命令劫持 | 修改命令搜索路径 |
-| `LD_PRELOAD` | 库注入 | 预加载恶意动态库 |
-| `LD_LIBRARY_PATH` | 库劫持 | 修改库搜索路径 |
-| `DYLD_INSERT_LIBRARIES` | 库注入 | macOS 库注入 |
-| `COMSPEC` | 命令劫持 | Windows 命令解释器路径覆盖 |
-| `PATHEXT` | 命令劫持 | Windows 可执行文件扩展名篡改 |
-| `SYSTEMROOT` | 系统破坏 | Windows 系统根目录篡改 |
-| `WINDIR` | 系统破坏 | Windows 目录篡改 |
-| `PYTHONPATH` | 模块劫持 | Python 模块搜索路径 |
-| `IFS` | 解析攻击 | 修改字段分隔符 |
+| `PATH` | コマンド乗っ取り | コマンド検索パスの変更 |
+| `LD_PRELOAD` | ライブラリ注入 | 悪意のある動的ライブラリをプリロード |
+| `LD_LIBRARY_PATH` | ライブラリ乗っ取り | ライブラリ検索パスの変更 |
+| `DYLD_INSERT_LIBRARIES` | ライブラリ注入 | macOS ライブラリ注入 |
+| `COMSPEC` | コマンド乗っ取り | Windows コマンドインタプリタのパス上書き |
+| `PATHEXT` | コマンド乗っ取り | Windows 実行ファイル拡張子の改ざん |
+| `SYSTEMROOT` | システム破壊 | Windows システムルートの改ざん |
+| `WINDIR` | システム破壊 | Windows ディレクトリの改ざん |
+| `PYTHONPATH` | モジュール乗っ取り | Python モジュール検索パス |
+| `IFS` | パース攻撃 | フィールド区切りの変更 |
 
 **使用例：**
 
 ```go
-// 禁止キーの設定を試みました会返回 ErrForbiddenKey
+// 禁止キーを設定しようとすると ErrForbiddenKey が返されます
 err := loader.Set("PATH", "/malicious/path")
 if errors.Is(err, env.ErrForbiddenKey) {
     // キーが禁止されています
 }
 
-// 添加额外的禁止键
+// 追加の禁止キーを設定
 cfg := env.DefaultConfig()
 cfg.ForbiddenKeys = []string{"MY_SENSITIVE_VAR"}
 ```
@@ -370,15 +406,15 @@ cfg.ForbiddenKeys = []string{"MY_SENSITIVE_VAR"}
 
 **主要な機密パターンのカテゴリ：**
 
-| 类别 | 模式示例 |
+| カテゴリ | パターン例 |
 |------|----------|
-| 认证与授权 | `PASSWORD`, `SECRET`, `TOKEN`, `AUTH`, `CREDENTIAL`, `PASSPHRASE`, `SESSION`, `COOKIE` |
-| API 与密钥 | `API_KEY`, `APIKEY`, `ACCESS_KEY`, `SECRET_KEY`, `PRIVATE_KEY`, `PUBLIC_KEY` |
-| 加密与安全 | `PRIVATE`, `ENCRYPTION_KEY`, `ENCRYPT_KEY`, `DECRYPT_KEY`, `SIGNING_KEY`, `SIGN_KEY`, `VERIFY_KEY` |
-| 金融与 PII | `SSN`, `SOCIAL_SECURITY`, `CREDIT_CARD`, `CARD_NUMBER`, `CVV`, `CVC`, `CCV`, `PAN` |
-| 加密货币 | `MNEMONIC`, `SEED`, `RECOVERY`, `WALLET`, `PRIVATE_ADDRESS` |
-| 数据库 | `CONNECTION_STRING`, `CONN_STRING`, `DATABASE_URL`, `DB_PASSWORD` |
-| 云服务 | `AWS_SECRET`, `AZURE_KEY`, `GCP_KEY`, `SERVICE_ACCOUNT` |
+| 認証・認可 | `PASSWORD`, `SECRET`, `TOKEN`, `AUTH`, `CREDENTIAL`, `PASSPHRASE`, `SESSION`, `COOKIE` |
+| API とキー | `API_KEY`, `APIKEY`, `ACCESS_KEY`, `SECRET_KEY`, `PRIVATE_KEY`, `PUBLIC_KEY` |
+| 暗号化とセキュリティ | `PRIVATE`, `ENCRYPTION_KEY`, `ENCRYPT_KEY`, `DECRYPT_KEY`, `SIGNING_KEY`, `SIGN_KEY`, `VERIFY_KEY` |
+| 金融・PII | `SSN`, `SOCIAL_SECURITY`, `CREDIT_CARD`, `CARD_NUMBER`, `CVV`, `CVC`, `CCV`, `PAN` |
+| 暗号資産 | `MNEMONIC`, `SEED`, `RECOVERY`, `WALLET`, `PRIVATE_ADDRESS` |
+| データベース | `CONNECTION_STRING`, `CONN_STRING`, `DATABASE_URL`, `DB_PASSWORD` |
+| クラウドサービス | `AWS_SECRET`, `AZURE_KEY`, `GCP_KEY`, `SERVICE_ACCOUNT` |
 
 **マッチングルール：**
 - 大文字小文字を区別しない
@@ -389,7 +425,7 @@ cfg.ForbiddenKeys = []string{"MY_SENSITIVE_VAR"}
 ```go
 // キーが機密かどうかを確認
 if env.IsSensitiveKey("DB_PASSWORD") {
-    // 使用安全方式处理
+    // 安全な方法で処理
     secret := env.GetSecure("DB_PASSWORD")
     if secret != nil {
         defer secret.Release()
@@ -399,18 +435,18 @@ if env.IsSensitiveKey("DB_PASSWORD") {
 
 ### DefaultKeyPattern
 
-默认键名検証模式：
+デフォルトのキー名検証パターン：
 
 ```go
 var DefaultKeyPattern *regexp.Regexp = nil
 ```
 
-::: tip 性能优化
-`nil` 值启用快速字节级検証（约 10 倍性能提升）。
-默认検証规则：以字母开头，只包含字母、数字、下划线。
+::: tip パフォーマンス最適化
+`nil` 値は高速なバイトレベル検証を有効にします（約 10 倍の性能向上）。
+デフォルト検証ルール：英字で始まり、英字・数字・アンダースコアのみを含みます。
 :::
 
-**自定义模式：**
+**カスタムパターン：**
 
 ```go
 import "regexp"
@@ -428,11 +464,11 @@ cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,63}$`)
 func IsSensitiveKey(key string) bool
 ```
 
-检查键名是否匹配敏感模式。
+キー名が機密パターンに一致するか確認します。
 
 ```go
 if env.IsSensitiveKey("DB_PASSWORD") {
-    // 敏感键，使用安全方式处理
+    // 機密キー、安全な方法で処理
     secret := env.GetSecure("DB_PASSWORD")
     defer secret.Release()
 }
@@ -447,15 +483,15 @@ func MaskValue(key, value string) string
 キーの機密性に基づいてマスク値を返します。
 
 ```go
-// 敏感键 - 返回 [MASKED:N chars] 格式
+// 機密キー - [MASKED:N chars] 形式で返す
 masked := env.MaskValue("API_KEY", "secret123")
-// 返回: [MASKED:9 chars]
+// 戻り値: [MASKED:9 chars]
 
-// 非敏感键 - 返回原值（20 文字を超える場合は切り詰め）
+// 非機密キー - 元の値を返す（20 文字を超える場合は切り詰め）
 masked := env.MaskValue("APP_NAME", "myapp")
-// 返回: myapp
+// 戻り値: myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
-// 返回: this is a very lo...
+// 戻り値: this is a very lo...
 ```
 
 ### MaskKey
@@ -464,11 +500,11 @@ masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
 func MaskKey(key string) string
 ```
 
-掩码键名ログ用。
+ログ用にキー名をマスクします。
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
-// 返回: DB***
+// 戻り値: DB***
 ```
 
 ### MaskSensitiveInString
@@ -480,7 +516,7 @@ func MaskSensitiveInString(s string) string
 文字列内の潜在的な機密内容をマスクします。50文字を超える文字列は切り詰められます。
 
 **パラメータ：**
-- `s` - 原始字符串
+- `s` - 元の文字列
 
 **戻り値：**
 - `string` - マスクされた文字列
@@ -489,16 +525,16 @@ func MaskSensitiveInString(s string) string
 // 長い文字列は切り詰められます
 log := "This is a very long log message that exceeds 50 characters and will be truncated"
 clean := env.MaskSensitiveInString(log)
-// 返回: "This is a very long log message that exceeds 50..."
+// 戻り値: "This is a very long log message that exceeds 50..."
 
 // 短い文字列はそのまま保持
 short := "Short message"
 clean := env.MaskSensitiveInString(short)
-// 返回: "Short message"
+// 戻り値: "Short message"
 ```
 
 ::: warning 注意
-此函数主に長い文字列の切り詰めに使用。機密キーと値のペアを自動マスクする必要がある場合，请使用 `SanitizeForLog`。
+この関数は主に長い文字列の切り詰めに使用されます。機密キーと値のペアを自動マスクする必要がある場合は、`SanitizeForLog` を使用してください。
 :::
 
 ### SanitizeForLog
@@ -510,7 +546,7 @@ func SanitizeForLog(s string) string
 文字列内の機密キーと値のペア情報をクリーンアップします。`key=value` フォーマットの機密値を自動検出してマスクします。
 
 **パラメータ：**
-- `s` - 原始字符串
+- `s` - 元の文字列
 
 **戻り値：**
 - `string` - クリーンアップされた文字列
@@ -524,18 +560,18 @@ func SanitizeForLog(s string) string
 - `connection_string=`, `database_url=`, `db_password=`
 
 ```go
-// 自动掩码敏感键值对
+// 機密キーと値のペアを自動マスク
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
-// 返回: "Connected with password=[MASKED] api_key=[MASKED]"
+// 戻り値: "Connected with password=[MASKED] api_key=[MASKED]"
 
-// 非敏感键值对保持不变
+// 非機密キーと値のペアはそのまま
 msg := "Config loaded: app_name=myapp port=8080"
 clean := env.SanitizeForLog(msg)
-// 返回: "Config loaded: app_name=myapp port=8080"
+// 戻り値: "Config loaded: app_name=myapp port=8080"
 ```
 
-::: tip 使用场景
+::: tip ユースケース
 ログ出力、エラーメッセージ、デバッグ情報など、機密キーと値のペアを自動フィルタリングする必要がある場面に適しています。
 :::
 
@@ -545,7 +581,7 @@ clean := env.SanitizeForLog(msg)
 func ClearBytes(b []byte)
 ```
 
-安全なゼロクリア字节切片。
+バイトスライスを安全にゼロクリアします。
 
 ```go
 sensitive := []byte("secret-data")
@@ -554,70 +590,70 @@ env.ClearBytes(sensitive)
 // sensitive 現在はすべて 0
 ```
 
-## FileFormat 常量
+## FileFormat 定数
 
-文件格式类型：
+ファイルフォーマット型：
 
 ```go
 type FileFormat int
 
 const (
-    FormatAuto  FileFormat = iota  // 自动检测
-    FormatEnv                      // .env 格式
-    FormatJSON                     // JSON 格式
-    FormatYAML                     // YAML 格式
+    FormatAuto  FileFormat = iota  // 自動検出
+    FormatEnv                      // .env フォーマット
+    FormatJSON                     // JSON フォーマット
+    FormatYAML                     // YAML フォーマット
 )
 ```
 
 使用例：
 
 ```go
-// 检测格式
+// フォーマットを検出
 format := env.DetectFormat("config.json")  // FormatJSON
 
-// 指定格式序列化
+// フォーマットを指定してシリアライズ
 data, _ := env.Marshal(cfg, env.FormatJSON)
 
 // フォーマット文字列
 fmt.Println(format.String())  // "json"
 ```
 
-## 错误检查模式
+## エラーチェックパターン
 
-### errors.Is 模式
+### errors.Is パターン
 
-检查センチネルエラー：
+センチネルエラーの確認：
 
 ```go
 err := loader.LoadFiles(".env")
 
 switch {
 case errors.Is(err, env.ErrFileNotFound):
-    // 文件不存在
+    // ファイルが存在しません
 case errors.Is(err, env.ErrFileTooLarge):
     // ファイルが大きすぎます
 case errors.Is(err, env.ErrForbiddenKey):
-    // 禁止键
+    // 禁止キー
 case errors.Is(err, env.ErrClosed):
-    // 加载器クローズ済み
+    // ローダーはクローズ済み
 }
 ```
 
-### errors.As 模式
+### errors.As パターン
 
-提取详细错误信息：
+詳細なエラー情報を抽出：
 
 ```go
 err := loader.LoadFiles(".env")
 
 var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
-    fmt.Printf("解析エラー在 %s 第 %d 行\n", parseErr.File, parseErr.Line)
+    fmt.Printf("解析エラー %s の %d 行目\n", parseErr.File, parseErr.Line)
 }
 
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
-    fmt.Printf("文件 %s 大小 %d 超过限制 %d\n",
+    fmt.Printf("ファイル %s サイズ %d が制限 %d を超過\n",
         fileErr.Path, fileErr.Size, fileErr.Limit)
 }
 
@@ -627,16 +663,14 @@ if errors.As(err, &secErr) {
 }
 ```
 
-## 完整错误处理示例
+## 完全なエラー処理例
 
 ```go
 package main
 
 import (
     "errors"
-    "fmt"
     "log"
-    "os"
 
     "github.com/cybergodev/env"
 )
@@ -661,7 +695,7 @@ func main() {
             log.Fatal("設定ファイルが大きすぎます")
 
         case errors.Is(err, env.ErrClosed):
-            log.Fatal("加载器クローズ済み")
+            log.Fatal("ローダーはクローズ済み")
 
         default:
             var parseErr *env.ParseError
@@ -672,7 +706,7 @@ func main() {
 
             var fileErr *env.FileError
             if errors.As(err, &fileErr) {
-                log.Fatalf("文件错误 %s - %v", fileErr.Path, fileErr.Err)
+                log.Fatalf("ファイルエラー %s - %v", fileErr.Path, fileErr.Err)
             }
 
             var secErr *env.SecurityError
@@ -682,12 +716,12 @@ func main() {
 
             var jsonErr *env.JSONError
             if errors.As(err, &jsonErr) {
-                log.Fatalf("JSON 错误 %s: %s", jsonErr.Path, jsonErr.Message)
+                log.Fatalf("JSON エラー %s: %s", jsonErr.Path, jsonErr.Message)
             }
 
             var yamlErr *env.YAMLError
             if errors.As(err, &yamlErr) {
-                log.Fatalf("YAML 错误 %s:%d:%d - %s",
+                log.Fatalf("YAML エラー %s:%d:%d - %s",
                     yamlErr.Path, yamlErr.Line, yamlErr.Column, yamlErr.Message)
             }
 
@@ -695,11 +729,11 @@ func main() {
         }
     }
 
-    // 検証必需键
+    // 必須キーを検証
     if err := loader.Validate(); err != nil {
         var valErr *env.ValidationError
         if errors.As(err, &valErr) {
-            log.Fatalf("検証失败: %s - %s", valErr.Field, valErr.Message)
+            log.Fatalf("検証失敗: %s - %s", valErr.Field, valErr.Message)
         }
         log.Fatal(err)
     }

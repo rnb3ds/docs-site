@@ -1,6 +1,6 @@
 ---
-title: "HTTP Client - HTTPC"
-description: "CyberGo HTTPC is a secure, high-performance HTTP client library for Go, featuring built-in TLS 1.2+ enforcement, SSRF protection, smart exponential backoff retry strategy, onion-model middleware chain, and Result object pool reuse for microservice communication and high-concurrency API call scenarios."
+title: "HTTP Client - CyberGo HTTPC | Secure Go Client"
+description: "CyberGo HTTPC is a secure Go HTTP client with TLS 1.2+, SSRF protection, exponential backoff retry, middleware chains, and connection pooling for microservices."
 ---
 
 # HTTPC
@@ -16,7 +16,7 @@ A secure HTTP client library with secure defaults, built-in smart retries, middl
 - **Middleware Chain** - Logging, audit, metrics, recovery, request ID, and other built-in middleware
 - **File Download** - Resumable downloads, progress callbacks, checksum verification
 - **DNS-over-HTTPS** - Built-in DoH resolution, reducing DNS hijacking risk
-- **Object Pool Reuse** - Built-in sync.Pool for automatic Result object management, reducing GC pressure
+- **Object Pool Reuse** - Internal response objects and string builders are reused via sync.Pool, reducing GC pressure
 
 ## Installation
 
