@@ -1,0 +1,77 @@
+name: Setup CyberGo source
+description: |
+  Shared setup for CI jobs that need the 6 cybergodev Go source repos alongside
+  the docs repo: checks out json/jwt/httpc/html/dd/env into src/{project}-dev,
+  then sets up Go + Node and installs npm dependencies.
+  Used by the `audit-api` and `check-code-samples` jobs in ci.yml to avoid
+  duplicating ~10 identical steps. The docs repo must already be checked out
+  before this action runs (the calling job's first step), since this action is
+  referenced via `./.github/actions/setup-cybergo-src`.
+
+inputs:
+  go-version:
+    description: Go version to set up (scripts/apiscan/go.mod requires 1.25).
+    required: false
+    default: '1.25'
+  node-version:
+    description: Node.js version to set up.
+    required: false
+    default: '20'
+
+runs:
+  using: composite
+  steps:
+    - name: Checkout json source
+      uses: actions/checkout@v4
+      with:
+        repository: cybergodev/json
+        path: src/json-dev
+
+    - name: Checkout jwt source
+      uses: actions/checkout@v4
+      with:
+        repository: cybergodev/jwt
+        path: src/jwt-dev
+
+    - name: Checkout httpc source
+      uses: actions/checkout@v4
+      with:
+        repository: cybergodev/httpc
+        path: src/httpc-dev
+
+    - name: Checkout html source
+      uses: actions/checkout@v4
+      with:
+        repository: cybergodev/html
+        path: src/html-dev
+
+    - name: Checkout dd source
+      uses: actions/checkout@v4
+      with:
+        repository: cybergodev/dd
+        path: src/dd-dev
+
+    - name: Checkout env source
+      uses: actions/checkout@v4
+      with:
+        repository: cybergodev/env
+        path: src/env-dev
+
+    - name: Setup Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ inputs.go-version }}
+        # Caching is off for both consumers: scripts/apiscan/go.mod is
+        # stdlib-only (no go.sum to key on), and the check:code temp module
+        # regenerates its go.sum every run. No stable go.sum either way.
+        cache: false
+
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: npm
+
+    - name: Install dependencies
+      shell: bash
+      run: npm ci

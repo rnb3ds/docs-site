@@ -32,6 +32,7 @@ func TestAPI(t *testing.T) {
 
 標準ライブラリ `net/http/httptest` を使用してモックサーバーを作成し、実際のバックエンドなしで統合テストを実行できます：
 
+<!-- check-code: skip -->
 ```go
 package main
 

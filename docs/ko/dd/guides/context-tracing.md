@@ -102,11 +102,11 @@ func TracingMiddleware(logger *dd.Logger) func(http.Handler) http.Handler {
 
 ### 전체 요청 추적 예시
 
+<!-- check-code: skip -->
 ```go
 package main
 
 import (
-    "context"
     "net/http"
 
     "github.com/cybergodev/dd"

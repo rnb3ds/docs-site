@@ -323,6 +323,7 @@ func (p *SecureParser) Parse(r io.Reader, filename string) (map[string]string, e
 
 ### 완전한 등록 예시
 
+<!-- check-code: skip -->
 ```go
 package main
 

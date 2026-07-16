@@ -16,9 +16,7 @@
 
 <template>
   <span class="project-nav-title">
-    <template v-if="project">
-      <span class="org">cybergodev/</span>{{ project }}
-    </template>
+    <template v-if="project"> <span class="org">cybergodev/</span>{{ project }} </template>
     <template v-else>CyberGo</template>
   </span>
 </template>

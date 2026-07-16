@@ -81,6 +81,11 @@ export interface UiLabels {
   openInPlayground: string
   /** Toast shown when a snippet was copied as the share fallback. */
   codeCopied: string
+  // Breadcrumb
+  /** Home link label in the breadcrumb trail. */
+  breadcrumbHome: string
+  /** `aria-label` for the breadcrumb `<nav>` landmark. */
+  breadcrumbAriaLabel: string
 }
 
 export const UI_LABELS: Record<Lang, UiLabels> = {
@@ -105,7 +110,8 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     feedbackYes: '有帮助',
     feedbackNo: '没帮助',
     feedbackThanks: '感谢您的反馈！',
-    footerBrandDesc: '专为 Go 语言打造的高性能开源库集合，涵盖 JSON、JWT、HTTP 客户端、HTML 提取、日志和环境变量管理。',
+    footerBrandDesc:
+      '专为 Go 语言打造的高性能开源库集合，涵盖 JSON、JWT、HTTP 客户端、HTML 提取、日志和环境变量管理。',
     footerCommunity: '社区',
     footerAboutSite: '关于本站',
     footerEditDocs: '编辑文档',
@@ -121,7 +127,9 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     langPromptDismiss: '暂不',
     cliDocs: '文档',
     openInPlayground: '在 Go Playground 打开',
-    codeCopied: '代码已复制，请粘贴'
+    codeCopied: '代码已复制，请粘贴',
+    breadcrumbHome: '首页',
+    breadcrumbAriaLabel: '面包屑导航'
   },
   en: {
     description: 'High-Performance Go Open Source Library Documentation',
@@ -144,7 +152,8 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     feedbackYes: 'Yes',
     feedbackNo: 'No',
     feedbackThanks: 'Thanks for your feedback!',
-    footerBrandDesc: 'High-performance Go open-source library collection: JSON, JWT, HTTP client, HTML extraction, logging, and environment management.',
+    footerBrandDesc:
+      'High-performance Go open-source library collection: JSON, JWT, HTTP client, HTML extraction, logging, and environment management.',
     footerCommunity: 'Community',
     footerAboutSite: 'About This Site',
     footerEditDocs: 'Edit Docs',
@@ -160,7 +169,9 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     langPromptDismiss: 'Not now',
     cliDocs: 'Docs',
     openInPlayground: 'Open in Go Playground',
-    codeCopied: 'Code copied — paste it'
+    codeCopied: 'Code copied — paste it',
+    breadcrumbHome: 'Home',
+    breadcrumbAriaLabel: 'Breadcrumb'
   },
   ko: {
     description: '고성능 Go 오픈소스 라이브러리 문서',
@@ -183,7 +194,8 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     feedbackYes: '도움 됨',
     feedbackNo: '도움 안 됨',
     feedbackThanks: '피드백 감사합니다!',
-    footerBrandDesc: 'Go 언어를 위한 고성능 오픈소스 라이브러리 컬렉션: JSON, JWT, HTTP 클라이언트, HTML 추출, 로깅, 환경 변수 관리.',
+    footerBrandDesc:
+      'Go 언어를 위한 고성능 오픈소스 라이브러리 컬렉션: JSON, JWT, HTTP 클라이언트, HTML 추출, 로깅, 환경 변수 관리.',
     footerCommunity: '커뮤니티',
     footerAboutSite: '이 사이트에 대하여',
     footerEditDocs: '문서 편집',
@@ -199,7 +211,9 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     langPromptDismiss: '나중에',
     cliDocs: '문서',
     openInPlayground: 'Go Playground에서 열기',
-    codeCopied: '코드가 복사되었습니다 — 붙여넣으세요'
+    codeCopied: '코드가 복사되었습니다 — 붙여넣으세요',
+    breadcrumbHome: '홈',
+    breadcrumbAriaLabel: '브레드크럼'
   },
   ja: {
     description: '高性能 Go オープンソースライブラリドキュメント',
@@ -222,7 +236,8 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     feedbackYes: '役に立った',
     feedbackNo: '役に立たなかった',
     feedbackThanks: 'フィードバックありがとうございます！',
-    footerBrandDesc: 'Go 言語のための高性能オープンソースライブラリコレクション：JSON、JWT、HTTPクライアント、HTML抽出、ロギング、環境変数管理。',
+    footerBrandDesc:
+      'Go 言語のための高性能オープンソースライブラリコレクション：JSON、JWT、HTTPクライアント、HTML抽出、ロギング、環境変数管理。',
     footerCommunity: 'コミュニティ',
     footerAboutSite: 'このサイトについて',
     footerEditDocs: 'ドキュメントを編集',
@@ -238,7 +253,9 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     langPromptDismiss: '後で',
     cliDocs: 'ドキュメント',
     openInPlayground: 'Go Playground で開く',
-    codeCopied: 'コードをコピーしました — 貼り付けてください'
+    codeCopied: 'コードをコピーしました — 貼り付けてください',
+    breadcrumbHome: 'ホーム',
+    breadcrumbAriaLabel: 'パンくずリスト'
   },
   ru: {
     description: 'Документация высокопроизводительных библиотек Go с открытым исходным кодом',
@@ -261,7 +278,8 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     feedbackYes: 'Да',
     feedbackNo: 'Нет',
     feedbackThanks: 'Спасибо за отзыв!',
-    footerBrandDesc: 'Коллекция высокопроизводительных библиотек Go: JSON, JWT, HTTP-клиент, извлечение HTML, логирование и управление переменными окружения.',
+    footerBrandDesc:
+      'Коллекция высокопроизводительных библиотек Go: JSON, JWT, HTTP-клиент, извлечение HTML, логирование и управление переменными окружения.',
     footerCommunity: 'Сообщество',
     footerAboutSite: 'О сайте',
     footerEditDocs: 'Редактировать документацию',
@@ -277,7 +295,9 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     langPromptDismiss: 'Не сейчас',
     cliDocs: 'Документация',
     openInPlayground: 'Открыть в Go Playground',
-    codeCopied: 'Код скопирован — вставьте его'
+    codeCopied: 'Код скопирован — вставьте его',
+    breadcrumbHome: 'Главная',
+    breadcrumbAriaLabel: 'Хлебные крошки'
   }
 }
 

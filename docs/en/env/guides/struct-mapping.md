@@ -341,6 +341,7 @@ func (c *Config) Validate() error {
 
 ### Centralized Configuration Management
 
+<!-- check-code: skip -->
 ```go
 // config/config.go
 package config

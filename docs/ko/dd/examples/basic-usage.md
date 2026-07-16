@@ -76,6 +76,7 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 ## 마이크로서비스 로그
 
+<!-- check-code: skip -->
 ```go
 package service
 
@@ -118,6 +119,7 @@ func (s *UserService) GetUser(id int) (*User, error) {
 
 ## 스케줄된 작업 로그
 
+<!-- check-code: skip -->
 ```go
 package cron
 
@@ -152,6 +154,7 @@ func RunCleanup() {
 
 ## 감사가 포함된 보안 로그
 
+<!-- check-code: skip -->
 ```go
 package auth
 

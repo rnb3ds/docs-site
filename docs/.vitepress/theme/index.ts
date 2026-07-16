@@ -5,7 +5,6 @@ import type { EnhanceAppContext } from 'vitepress'
 import './style/index.css'
 import { STORAGE_KEYS } from '../shared'
 import {
-  GitHubIcon,
   NotFound,
   LanguageMenu,
   LanguagePrompt,
@@ -15,7 +14,8 @@ import {
   ProjectGitHubLink,
   ProjectGrid,
   CliCommand,
-  GoPlaygroundButton
+  GoPlaygroundButton,
+  Breadcrumb
 } from './components'
 
 /**
@@ -36,7 +36,6 @@ import {
 export default {
   extends: DefaultTheme,
   enhanceApp({ app }: EnhanceAppContext) {
-    app.component('GitHubIcon', GitHubIcon)
     // ProjectGrid is registered globally so the homepage markdown can use
     // `<ProjectGrid lang="zh" />` directly, data-driven from PROJECT_META.
     app.component('ProjectGrid', ProjectGrid)
@@ -54,6 +53,9 @@ export default {
       'nav-bar-content-after': () => [h(ProjectGitHubLink), h(LanguageMenu, { variant: 'bar' })],
       'nav-screen-content-after': () => h(LanguageMenu, { variant: 'screen' }),
       'layout-top': () => h(LanguagePrompt),
+      // Breadcrumb trail above the page <h1>. The composable hides it on
+      // home / project-root / frontmatter `breadcrumb: false`.
+      'doc-before': () => h(Breadcrumb),
       'doc-footer-before': () => h(DocFeedback),
       'layout-bottom': () => h(SiteFooter)
     })

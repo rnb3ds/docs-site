@@ -335,13 +335,17 @@ func main() {
 
 Files are loaded in order; later files override earlier ones:
 
-```go
-// Package-level function
-env.Load(".env", "config.json", "config.yaml")
+::: code-group
 
-// Loader instance
+```go [Package-level function]
+env.Load(".env", "config.json", "config.yaml")
+```
+
+```go [Loader instance]
 loader.LoadFiles(".env", ".env.local")
 ```
+
+:::
 
 ### Multi-format Support
 

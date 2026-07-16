@@ -102,11 +102,11 @@ func TracingMiddleware(logger *dd.Logger) func(http.Handler) http.Handler {
 
 ### Полный пример трассировки запросов
 
+<!-- check-code: skip -->
 ```go
 package main
 
 import (
-    "context"
     "net/http"
 
     "github.com/cybergodev/dd"

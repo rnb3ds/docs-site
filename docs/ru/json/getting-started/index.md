@@ -3,6 +3,7 @@ sidebar_label: "Быстрый старт"
 title: "Быстрый старт - CyberGo JSON | За 5 минут"
 description: "Быстрый старт CyberGo JSON: установка, GetString/GetInt, Marshal/Unmarshal, файловый ввод-вывод за 5 минут, совместимый со стандартной библиотекой."
 sidebar_position: 2
+sidebar_icon: "⚡"
 ---
 
 # Быстрый старт

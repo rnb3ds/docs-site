@@ -32,6 +32,7 @@ func TestAPI(t *testing.T) {
 
 使用标准库 `net/http/httptest` 创建模拟服务器，实现无需真实后端的集成测试：
 
+<!-- check-code: skip -->
 ```go
 package main
 

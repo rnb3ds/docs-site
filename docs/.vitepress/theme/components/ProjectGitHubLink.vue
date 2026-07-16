@@ -19,13 +19,7 @@
 </script>
 
 <template>
-  <a
-    class="ProjectGitHubLink"
-    :href="githubUrl"
-    target="_blank"
-    rel="noopener"
-    aria-label="GitHub"
-  >
+  <a class="ProjectGitHubLink" :href="githubUrl" target="_blank" rel="noopener" aria-label="GitHub">
     <GitHubIcon :size="20" />
   </a>
 </template>

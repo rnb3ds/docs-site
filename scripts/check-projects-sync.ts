@@ -49,11 +49,17 @@ const inMetaNotProjects = tsMeta.filter((p) => !tsProjects.includes(p))
 
 const issues: string[] = []
 if (inYamlNotTs.length)
-  issues.push(`projects.yaml 有、shared.ts PROJECTS 无 → ${inYamlNotTs.join(', ')}（主页卡片/nav 会静默失效）`)
+  issues.push(
+    `projects.yaml 有、shared.ts PROJECTS 无 → ${inYamlNotTs.join(', ')}（主页卡片/nav 会静默失效）`
+  )
 if (inTsNotYaml.length)
-  issues.push(`shared.ts PROJECTS 有、projects.yaml 无 → ${inTsNotYaml.join(', ')}（AI 任务变量系统无法识别）`)
+  issues.push(
+    `shared.ts PROJECTS 有、projects.yaml 无 → ${inTsNotYaml.join(', ')}（AI 任务变量系统无法识别）`
+  )
 if (inProjectsNotMeta.length)
-  issues.push(`PROJECTS 有、PROJECT_META 无 → ${inProjectsNotMeta.join(', ')}（typecheck 也会报错）`)
+  issues.push(
+    `PROJECTS 有、PROJECT_META 无 → ${inProjectsNotMeta.join(', ')}（typecheck 也会报错）`
+  )
 if (inMetaNotProjects.length)
   issues.push(`PROJECT_META 有、PROJECTS 无 → ${inMetaNotProjects.join(', ')}（孤儿元数据）`)
 

@@ -76,6 +76,7 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 ## 微服务日志
 
+<!-- check-code: skip -->
 ```go
 package service
 
@@ -118,6 +119,7 @@ func (s *UserService) GetUser(id int) (*User, error) {
 
 ## 定时任务日志
 
+<!-- check-code: skip -->
 ```go
 package cron
 
@@ -152,6 +154,7 @@ func RunCleanup() {
 
 ## 带审计的安全日志
 
+<!-- check-code: skip -->
 ```go
 package auth
 

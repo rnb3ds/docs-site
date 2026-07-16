@@ -335,13 +335,17 @@ func main() {
 
 순서대로 로드하며, 나중에 로드된 것이 먼저 로드된 것을 덮어씁니다:
 
-```go
-// 패키지 수준 함수
-env.Load(".env", "config.json", "config.yaml")
+:::code-group
 
-// Loader 인스턴스
+```go [패키지 수준 함수]
+env.Load(".env", "config.json", "config.yaml")
+```
+
+```go [Loader 인스턴스]
 loader.LoadFiles(".env", ".env.local")
 ```
+
+:::
 
 ### 다중 형식 지원
 

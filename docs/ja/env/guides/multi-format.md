@@ -460,21 +460,28 @@ data := map[string]string{
     "HOST": "localhost",
     "PORT": "8080",
 }
+```
 
-// .env フォーマット（デフォルト）
+::: code-group
+
+```go [.env（デフォルト）]
 envStr, _ := env.Marshal(data)
 // HOST=localhost
 // PORT=8080
+```
 
-// JSON フォーマット
+```go [JSON]
 jsonStr, _ := env.Marshal(data, env.FormatJSON)
 // {"HOST":"localhost","PORT":"8080"}
+```
 
-// YAML フォーマット
+```go [YAML]
 yamlStr, _ := env.Marshal(data, env.FormatYAML)
 // HOST: localhost
 // PORT: "8080"
 ```
+
+:::
 
 ### Marshal 構造体
 
@@ -485,37 +492,50 @@ type Config struct {
 }
 
 cfg := Config{Host: "localhost", Port: 8080}
+```
 
-// .env に変換
+::: code-group
+
+```go [.envに変換]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
+```
 
-// JSON に変換
+```go [JSONに変換]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
+```
 
-// YAML に変換
+```go [YAMLに変換]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
+
+:::
 
 ### UnmarshalMap
 
 map にデシリアライズ：
 
-```go
-// .env から
+::: code-group
+
+```go [.envから]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
+```
 
-// JSON から
+```go [JSONから]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
+```
 
-// YAML から
+```go [YAMLから]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
-
-// 自動フォーマット検出
-data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)
 ```
+
+:::
+
+::: tip フォーマット自動検出
+`env.FormatAuto` を渡すと、ライブラリが内容からフォーマットを自動判定します: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`。
+:::
 
 ### UnmarshalStruct
 
@@ -528,16 +548,23 @@ type Config struct {
 }
 
 var cfg Config
+```
 
-// .env から
+::: code-group
+
+```go [.envから]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
+```
 
-// JSON から
+```go [JSONから]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
+```
 
-// YAML から
+```go [YAMLから]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
+
+:::
 
 ## カスタムフォーマット
 

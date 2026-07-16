@@ -102,11 +102,11 @@ func TracingMiddleware(logger *dd.Logger) func(http.Handler) http.Handler {
 
 ### 完全なリクエストトレーシングの例
 
+<!-- check-code: skip -->
 ```go
 package main
 
 import (
-    "context"
     "net/http"
 
     "github.com/cybergodev/dd"

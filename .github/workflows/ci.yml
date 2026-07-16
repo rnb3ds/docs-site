@@ -31,6 +31,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Prettier format check
+        run: npm run format:check
+
       - name: Typecheck
         run: npm run typecheck
 
@@ -56,11 +59,39 @@ jobs:
   lint:
     name: Autocorrect
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # reviewdog's `github-pr-review` reporter needs PR-write to post comments.
+      pull-requests: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          # reviewdog needs full git history to compute PR diff context
+          # (which files/lines changed relative to the base branch).
+          fetch-depth: 0
 
-      - name: Autocorrect lint
+      # PR: post CJK typography issues as inline review comments via reviewdog
+      # (`github-pr-review` reporter), in addition to failing the job on
+      # error-level issues. The comments make the gate self-explanatory —
+      # contributors see exactly which line has the half-width/full-width
+      # problem without reading the raw autocorrect log.
+      - name: Autocorrect (PR review)
+        if: github.event_name == 'pull_request'
+        uses: huacnlee/autocorrect-action@main
+        with:
+          use_npm: true
+          reviewdog: true
+          reporter: github-pr-review
+          # `file` = report issues on any file touched by the PR (not just
+          # changed lines), since autocorrect lints whole files.
+          filter_mode: file
+
+      # Push to main: keep the simple fail-on-error gate. No inline comments
+      # (no PR to comment on); main is protected so any new typo is caught
+      # at the next PR anyway.
+      - name: Autocorrect (push gate)
+        if: github.event_name != 'pull_request'
         uses: huacnlee/autocorrect-action@main
         with:
           use_npm: true
@@ -78,53 +109,9 @@ jobs:
       - name: Checkout docs repo
         uses: actions/checkout@v4
 
-      - name: Checkout json source
-        uses: actions/checkout@v4
-        with:
-          repository: cybergodev/json
-          path: src/json-dev
-      - name: Checkout jwt source
-        uses: actions/checkout@v4
-        with:
-          repository: cybergodev/jwt
-          path: src/jwt-dev
-      - name: Checkout httpc source
-        uses: actions/checkout@v4
-        with:
-          repository: cybergodev/httpc
-          path: src/httpc-dev
-      - name: Checkout html source
-        uses: actions/checkout@v4
-        with:
-          repository: cybergodev/html
-          path: src/html-dev
-      - name: Checkout dd source
-        uses: actions/checkout@v4
-        with:
-          repository: cybergodev/dd
-          path: src/dd-dev
-      - name: Checkout env source
-        uses: actions/checkout@v4
-        with:
-          repository: cybergodev/env
-          path: src/env-dev
-
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          # scripts/apiscan/go.mod requires go 1.25; it is stdlib-only, so
-          # dependency caching is off (no go.sum to key on).
-          go-version: '1.25'
-          cache: false
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
+      # Shared setup: 6 cybergodev source checkouts (src/{project}-dev) + Go +
+      # Node + npm ci. See .github/actions/setup-cybergo-src/action.yml.
+      - uses: ./.github/actions/setup-cybergo-src
 
       - name: API drift audit
         env:
@@ -139,3 +126,31 @@ jobs:
         with:
           name: api-drift-report
           path: report/api-drift.md
+
+  # Go code-sample compile gate (roadmap #1). check-code-samples.ts extracts
+  # every ```go block from docs/zh/, writes the complete ones (with a `package`
+  # declaration) into a temp Go module — one subdir per block to avoid multiple
+  # `package main` clashing — and runs `go build ./...` + `gofmt -l` against
+  # the 6 cybergodev sources (replace'd to local checkouts). Compile errors fail
+  # the job; gofmt issues are warnings only.
+  #
+  # Source checkout mirrors the audit-api job (6 cybergodev repos → src/{p}-dev)
+  # so a missing/private repo fails the checkout step red rather than letting
+  # check:code silently skip those samples.
+  check-code-samples:
+    name: Code samples (check:code)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout docs repo
+        uses: actions/checkout@v4
+
+      # Shared setup: 6 cybergodev source checkouts (src/{project}-dev) + Go +
+      # Node + npm ci. See .github/actions/setup-cybergo-src/action.yml.
+      - uses: ./.github/actions/setup-cybergo-src
+
+      - name: Check Go code samples
+        env:
+          # check-code-samples.ts joins CYBERGO_SOURCE_ROOT + `{project}-dev`,
+          # matching the src/{project}-dev layout checked out above.
+          CYBERGO_SOURCE_ROOT: ${{ github.workspace }}/src
+        run: npm run check:code -- --all

@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { PROJECTS, PROJECT_META, type Lang } from '../../shared'
-import GitHubIcon from './GitHubIcon.vue'
+  import { computed } from 'vue'
+  import { PROJECTS, PROJECT_META, type Lang } from '../../shared'
+  import GitHubIcon from './GitHubIcon.vue'
 
-const props = defineProps<{ lang: Lang }>()
+  const props = defineProps<{ lang: Lang }>()
 
-/**
- * Homepage project grid, data-driven from `PROJECT_META` (shared.ts).
- * Reuses the `.home-projects` / `.project-card` / … classes already defined
- * in theme/style/home.css, and renders `.tags` chips when a language has
- * feature entries (zh only for now).
- */
-const cards = computed(() =>
-  PROJECTS.map((project) => {
-    const meta = PROJECT_META[project]
-    return {
-      project,
-      icon: meta.icon,
-      github: meta.github,
-      desc: meta.desc[props.lang],
-      features: meta.features[props.lang]
-    }
-  })
-)
+  /**
+   * Homepage project grid, data-driven from `PROJECT_META` (shared.ts).
+   * Reuses the `.home-projects` / `.project-card` / … classes already defined
+   * in theme/style/home.css, and renders `.tags` chips when a language has
+   * feature entries (zh only for now).
+   */
+  const cards = computed(() =>
+    PROJECTS.map((project) => {
+      const meta = PROJECT_META[project]
+      return {
+        project,
+        icon: meta.icon,
+        github: meta.github,
+        desc: meta.desc[props.lang],
+        features: meta.features[props.lang]
+      }
+    })
+  )
 </script>
 
 <template>

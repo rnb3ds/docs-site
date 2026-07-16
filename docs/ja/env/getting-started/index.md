@@ -335,13 +335,17 @@ func main() {
 
 順番に読み込み、後から読み込んだものが先のものを上書きします：
 
-```go
-// パッケージレベル関数
-env.Load(".env", "config.json", "config.yaml")
+::: code-group
 
-// Loader インスタンス
+```go [パッケージレベル関数]
+env.Load(".env", "config.json", "config.yaml")
+```
+
+```go [Loader インスタンス]
 loader.LoadFiles(".env", ".env.local")
 ```
+
+:::
 
 ### マルチフォーマットサポート
 

@@ -453,28 +453,35 @@ loader.LoadFiles(
 
 ### Marshal
 
-将配置序列化为指定格式：
+将配置序列化为指定格式。先准备数据，再按目标格式调用 `env.Marshal`：
 
 ```go
 data := map[string]string{
     "HOST": "localhost",
     "PORT": "8080",
 }
+```
 
-// .env 格式（默认）
+::: code-group
+
+```go [.env（默认）]
 envStr, _ := env.Marshal(data)
 // HOST=localhost
 // PORT=8080
+```
 
-// JSON 格式
+```go [JSON]
 jsonStr, _ := env.Marshal(data, env.FormatJSON)
 // {"HOST":"localhost","PORT":"8080"}
+```
 
-// YAML 格式
+```go [YAML]
 yamlStr, _ := env.Marshal(data, env.FormatYAML)
 // HOST: localhost
 // PORT: "8080"
 ```
+
+:::
 
 ### Marshal 结构体
 
@@ -485,37 +492,50 @@ type Config struct {
 }
 
 cfg := Config{Host: "localhost", Port: 8080}
+```
 
-// 转 .env
+::: code-group
+
+```go [转 .env]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
+```
 
-// 转 JSON
+```go [转 JSON]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
+```
 
-// 转 YAML
+```go [转 YAML]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
+
+:::
 
 ### UnmarshalMap
 
 反序列化为 map：
 
-```go
-// 从 .env
+::: code-group
+
+```go [从 .env]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
+```
 
-// 从 JSON
+```go [从 JSON]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
+```
 
-// 从 YAML
+```go [从 YAML]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
-
-// 自动检测格式
-data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)
 ```
+
+:::
+
+::: tip 自动检测格式
+传入 `env.FormatAuto` 可让库按内容自动判断格式：`data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`。
+:::
 
 ### UnmarshalStruct
 
@@ -528,16 +548,23 @@ type Config struct {
 }
 
 var cfg Config
+```
 
-// 从 .env
+::: code-group
+
+```go [从 .env]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
+```
 
-// 从 JSON
+```go [从 JSON]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
+```
 
-// 从 YAML
+```go [从 YAML]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
+
+:::
 
 ## 自定义格式
 

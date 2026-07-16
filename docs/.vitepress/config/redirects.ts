@@ -1,6 +1,6 @@
 import type { Plugin, ViteDevServer } from 'vite'
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { PROJECTS, LANGS } from '../shared'
+import { PROJECTS, LANGS, PRIMARY_LANG } from '../shared'
 
 // Dev-only redirect for bare project paths (e.g. /json → /{lang}/json).
 //
@@ -28,7 +28,7 @@ function pickRequestLang(req: IncomingMessage): string {
     const l = codeToLang(part.split(';')[0].trim())
     if (l) return l
   }
-  return 'zh'
+  return PRIMARY_LANG
 }
 export const bareProjectDevRedirect: Plugin = {
   name: 'cybergo:bare-project-redirect',

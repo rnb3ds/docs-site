@@ -3,6 +3,7 @@ sidebar_label: "빠른 시작"
 title: "빠른 시작 - CyberGo JSON | 5분 시작 가이드"
 description: "CyberGo JSON 빠른 시작: 설치, 경로 쿼리 GetString/GetInt, Marshal/Unmarshal, 파일 입출력으로 5분 안에 Go JSON 처리를 익히세요. 표준 라이브러리와 100% 호환됩니다."
 sidebar_position: 2
+sidebar_icon: "⚡"
 ---
 
 # 빠른 시작

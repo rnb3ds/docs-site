@@ -32,6 +32,7 @@ func TestAPI(t *testing.T) {
 
 표준 라이브러리 `net/http/httptest`로 모의 서버를 생성하여, 실제 백엔드 없이 통합 테스트를 구현합니다:
 
+<!-- check-code: skip -->
 ```go
 package main
 

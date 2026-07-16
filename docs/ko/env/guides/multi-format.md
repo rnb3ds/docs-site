@@ -460,21 +460,28 @@ data := map[string]string{
     "HOST": "localhost",
     "PORT": "8080",
 }
+```
 
-// .env 형식 (기본값)
+::: code-group
+
+```go [.env (기본)]
 envStr, _ := env.Marshal(data)
 // HOST=localhost
 // PORT=8080
+```
 
-// JSON 형식
+```go [JSON]
 jsonStr, _ := env.Marshal(data, env.FormatJSON)
 // {"HOST":"localhost","PORT":"8080"}
+```
 
-// YAML 형식
+```go [YAML]
 yamlStr, _ := env.Marshal(data, env.FormatYAML)
 // HOST: localhost
 // PORT: "8080"
 ```
+
+:::
 
 ### 구조체 Marshal
 
@@ -485,37 +492,50 @@ type Config struct {
 }
 
 cfg := Config{Host: "localhost", Port: 8080}
+```
 
-// .env로 변환
+::: code-group
+
+```go [.env로]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
+```
 
-// JSON으로 변환
+```go [JSON으로]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
+```
 
-// YAML로 변환
+```go [YAML로]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
+
+:::
 
 ### UnmarshalMap
 
 map으로 역직렬화:
 
-```go
-// .env에서
+::: code-group
+
+```go [.env에서]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
+```
 
-// JSON에서
+```go [JSON에서]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
+```
 
-// YAML에서
+```go [YAML에서]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
-
-// 자동 형식 감지
-data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)
 ```
+
+:::
+
+::: tip 형식 자동 감지
+`env.FormatAuto`를 전달하면 라이브러리가 내용을 기반으로 형식을 자동으로 판단합니다: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`.
+:::
 
 ### UnmarshalStruct
 
@@ -528,16 +548,23 @@ type Config struct {
 }
 
 var cfg Config
+```
 
-// .env에서
+::: code-group
+
+```go [.env에서]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
+```
 
-// JSON에서
+```go [JSON에서]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
+```
 
-// YAML에서
+```go [YAML에서]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
+
+:::
 
 ## 커스텀 형식
 

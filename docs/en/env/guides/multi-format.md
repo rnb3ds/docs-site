@@ -460,21 +460,28 @@ data := map[string]string{
     "HOST": "localhost",
     "PORT": "8080",
 }
+```
 
-// .env format (default)
+::: code-group
+
+```go [.env (default)]
 envStr, _ := env.Marshal(data)
 // HOST=localhost
 // PORT=8080
+```
 
-// JSON format
+```go [JSON]
 jsonStr, _ := env.Marshal(data, env.FormatJSON)
 // {"HOST":"localhost","PORT":"8080"}
+```
 
-// YAML format
+```go [YAML]
 yamlStr, _ := env.Marshal(data, env.FormatYAML)
 // HOST: localhost
 // PORT: "8080"
 ```
+
+:::
 
 ### Marshal Struct
 
@@ -485,37 +492,50 @@ type Config struct {
 }
 
 cfg := Config{Host: "localhost", Port: 8080}
+```
 
-// To .env
+::: code-group
+
+```go [to .env]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
+```
 
-// To JSON
+```go [to JSON]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
+```
 
-// To YAML
+```go [to YAML]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
+
+:::
 
 ### UnmarshalMap
 
 Deserialize to a map:
 
-```go
-// From .env
+::: code-group
+
+```go [from .env]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
+```
 
-// From JSON
+```go [from JSON]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
+```
 
-// From YAML
+```go [from YAML]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
-
-// Auto-detect format
-data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)
 ```
+
+:::
+
+::: tip Auto-detect format
+Pass `env.FormatAuto` to let the library determine the format from content: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`.
+:::
 
 ### UnmarshalStruct
 
@@ -528,16 +548,23 @@ type Config struct {
 }
 
 var cfg Config
+```
 
-// From .env
+::: code-group
+
+```go [from .env]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
+```
 
-// From JSON
+```go [from JSON]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
+```
 
-// From YAML
+```go [from YAML]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
+
+:::
 
 ## Custom Formats
 

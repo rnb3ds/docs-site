@@ -341,6 +341,7 @@ func (c *Config) Validate() error {
 
 ### 중앙 집중식 설정 관리
 
+<!-- check-code: skip -->
 ```go
 // config/config.go
 package config

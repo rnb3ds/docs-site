@@ -69,7 +69,7 @@ export function transformHead(ctx: TransformContext) {
   // map each language at the same sub-path instead.
   const isHome = path === '/' || LANG_HOME_RE.test(path)
   if (isHome) {
-    head.push(['link', { rel: 'alternate', hreflang: 'zh', href: `${HOST}/` }])
+    head.push(['link', { rel: 'alternate', hreflang: PRIMARY_LANG, href: `${HOST}/` }])
     for (const altLang of NON_PRIMARY_LANGS) {
       head.push(['link', { rel: 'alternate', hreflang: altLang, href: `${HOST}/${altLang}/` }])
     }

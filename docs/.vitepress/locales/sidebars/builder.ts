@@ -11,7 +11,10 @@ import { extractFrontmatter, parseFmField } from '../../utils/frontmatter'
  * group whose label / order / collapse come from its `_category_.json`; each
  * Markdown file is a leaf whose label comes from its frontmatter
  * `sidebar_label` (falling back to `title`) and whose order comes from
- * `sidebar_position`. There is no hand-written structure file.
+ * `sidebar_position`. An optional emoji icon is prefixed to the rendered text
+ * when present — from `_category_.json` `icon` (groups) or frontmatter
+ * `sidebar_icon` (leaves) — matching the `PROJECT_META.icon` emoji style.
+ * There is no hand-written structure file.
  *
  *   - Add a page     → create the `.md` (its frontmatter is the label/order).
  *   - Add a group    → make a directory + a one-line `_category_.json`.
@@ -41,6 +44,8 @@ interface CategoryMeta {
   label?: string
   position?: number
   collapsed?: boolean
+  /** Optional emoji icon prefixed to the group label (e.g. "🚀 进阶"). */
+  icon?: string
 }
 
 function readCategory(dirAbs: string): CategoryMeta | null {
@@ -64,18 +69,6 @@ function titleCase(slug: string): string {
     .split('-')
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
     .join(' ')
-}
-
-/** A leaf's sidebar label: frontmatter `sidebar_label` → `title` → pretty file name. */
-function leafLabel(fileAbs: string, fileName: string): string {
-  const fm = extractFrontmatter(readFileSync(fileAbs, 'utf8'))
-  return parseFmField(fm, 'sidebar_label') ?? parseFmField(fm, 'title') ?? titleCase(fileName)
-}
-
-function leafPosition(fileAbs: string): number {
-  const v = parseFmField(extractFrontmatter(readFileSync(fileAbs, 'utf8')), 'sidebar_position')
-  const n = v == null ? NaN : Number(v)
-  return Number.isFinite(n) ? n : Infinity
 }
 
 /** Does `dir` contain any `.md` file, at any depth? (Skips empty directories.) */
@@ -104,9 +97,10 @@ function buildChildren(lang: Lang, dirAbs: string, dirRel: string): DefaultTheme
     if (e.isDirectory()) {
       if (!hasMd(childAbs)) continue
       const meta = readCategory(childAbs)
+      const groupLabel = meta?.label ?? titleCase(e.name)
       raw.push({
         item: {
-          text: meta?.label ?? titleCase(e.name),
+          text: meta?.icon ? `${meta.icon} ${groupLabel}` : groupLabel,
           collapsed: meta?.collapsed ?? true,
           items: buildChildren(lang, childAbs, childRel)
         },
@@ -114,14 +108,21 @@ function buildChildren(lang: Lang, dirAbs: string, dirRel: string): DefaultTheme
       })
     } else if (e.name.endsWith('.md')) {
       const isIndex = e.name === 'index.md'
+      // Read this page's frontmatter once; derive label / position / icon.
+      const fm = extractFrontmatter(readFileSync(childAbs, 'utf8'))
+      const label =
+        parseFmField(fm, 'sidebar_label') ?? parseFmField(fm, 'title') ?? titleCase(e.name)
+      const icon = parseFmField(fm, 'sidebar_icon')
+      const posRaw = parseFmField(fm, 'sidebar_position')
+      const posNum = posRaw == null ? NaN : Number(posRaw)
       raw.push({
         item: {
-          text: leafLabel(childAbs, e.name),
+          text: icon ? `${icon} ${label}` : label,
           link: isIndex
             ? `/${lang}/${dirRel}/`
             : `/${lang}/${dirRel}/${e.name.replace(/\.md$/, '')}`
         },
-        position: leafPosition(childAbs)
+        position: Number.isFinite(posNum) ? posNum : Infinity
       })
     }
   }

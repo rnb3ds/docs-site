@@ -335,13 +335,17 @@ func main() {
 
 Загрузка по порядку, последующие перезаписывают предыдущие:
 
-```go
-// Функции уровня пакета
-env.Load(".env", "config.json", "config.yaml")
+::: code-group
 
-// Экземпляр Loader
+```go [Функции уровня пакета]
+env.Load(".env", "config.json", "config.yaml")
+```
+
+```go [Экземпляр Loader]
 loader.LoadFiles(".env", ".env.local")
 ```
+
+:::
 
 ### Многоформатная поддержка
 

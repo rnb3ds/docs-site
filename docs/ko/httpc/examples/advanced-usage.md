@@ -140,7 +140,7 @@ func main() {
     }
     defer client.Close()
 
-    result, err := client.Get("https://httpbin.org/get")
+    _, err = client.Get("https://httpbin.org/get")
     if err != nil {
         log.Fatal(err)
     }

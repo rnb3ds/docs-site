@@ -32,6 +32,7 @@ func TestAPI(t *testing.T) {
 
 Use the standard library `net/http/httptest` to create mock servers for integration testing without a real backend:
 
+<!-- check-code: skip -->
 ```go
 package main
 

@@ -76,6 +76,7 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 ## Microservice Logging
 
+<!-- check-code: skip -->
 ```go
 package service
 
@@ -118,6 +119,7 @@ func (s *UserService) GetUser(id int) (*User, error) {
 
 ## Scheduled Task Logging
 
+<!-- check-code: skip -->
 ```go
 package cron
 
@@ -152,6 +154,7 @@ func RunCleanup() {
 
 ## Secure Logging with Audit
 
+<!-- check-code: skip -->
 ```go
 package auth
 

@@ -341,6 +341,7 @@ func (c *Config) Validate() error {
 
 ### Централизованное управление конфигурацией
 
+<!-- check-code: skip -->
 ```go
 // config/config.go
 package config

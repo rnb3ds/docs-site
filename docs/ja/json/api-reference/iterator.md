@@ -912,7 +912,7 @@ func main() {
         // 要素ごとに処理、メモリフレンドリー
         count++
         if count%1000 == 0 {
-            fmt.Printf("%d 個の要素を処理済み\n", count)
+            fmt.Printf("%d 個の要素を処理済み、現在の値: %v\n", count, val)
         }
     }
 

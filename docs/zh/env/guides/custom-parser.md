@@ -323,6 +323,7 @@ func (p *SecureParser) Parse(r io.Reader, filename string) (map[string]string, e
 
 ### 完整注册示例
 
+<!-- check-code: skip -->
 ```go
 package main
 

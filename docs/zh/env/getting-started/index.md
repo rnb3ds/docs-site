@@ -335,13 +335,17 @@ func main() {
 
 按顺序加载，后加载的覆盖先加载的：
 
-```go
-// 包级函数
-env.Load(".env", "config.json", "config.yaml")
+::: code-group
 
-// Loader 实例
+```go [包级函数]
+env.Load(".env", "config.json", "config.yaml")
+```
+
+```go [Loader 实例]
 loader.LoadFiles(".env", ".env.local")
 ```
+
+:::
 
 ### 多格式支持
 

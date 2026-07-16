@@ -460,21 +460,28 @@ data := map[string]string{
     "HOST": "localhost",
     "PORT": "8080",
 }
+```
 
-// Формат .env (по умолчанию)
+::: code-group
+
+```go [.env (по умолчанию)]
 envStr, _ := env.Marshal(data)
 // HOST=localhost
 // PORT=8080
+```
 
-// Формат JSON
+```go [JSON]
 jsonStr, _ := env.Marshal(data, env.FormatJSON)
 // {"HOST":"localhost","PORT":"8080"}
+```
 
-// Формат YAML
+```go [YAML]
 yamlStr, _ := env.Marshal(data, env.FormatYAML)
 // HOST: localhost
 // PORT: "8080"
 ```
+
+:::
 
 ### Marshal структуры
 
@@ -485,37 +492,50 @@ type Config struct {
 }
 
 cfg := Config{Host: "localhost", Port: 8080}
+```
 
-// В .env
+::: code-group
+
+```go [в .env]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
+```
 
-// В JSON
+```go [в JSON]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
+```
 
-// В YAML
+```go [в YAML]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
+
+:::
 
 ### UnmarshalMap
 
 Десериализация в map:
 
-```go
-// Из .env
+::: code-group
+
+```go [из .env]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
+```
 
-// Из JSON
+```go [из JSON]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
+```
 
-// Из YAML
+```go [из YAML]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
-
-// Автоопределение формата
-data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)
 ```
+
+:::
+
+::: tip Автоопределение формата
+Передайте `env.FormatAuto`, чтобы библиотека определила формат по содержимому: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`.
+:::
 
 ### UnmarshalStruct
 
@@ -528,16 +548,23 @@ type Config struct {
 }
 
 var cfg Config
+```
 
-// Из .env
+::: code-group
+
+```go [из .env]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
+```
 
-// Из JSON
+```go [из JSON]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
+```
 
-// Из YAML
+```go [из YAML]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
+
+:::
 
 ## Пользовательский формат
 
