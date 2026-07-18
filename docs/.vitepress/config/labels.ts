@@ -86,6 +86,21 @@ export interface UiLabels {
   breadcrumbHome: string
   /** `aria-label` for the breadcrumb `<nav>` landmark. */
   breadcrumbAriaLabel: string
+  // ProjectSearch — local minisearch with per-project + per-language scope
+  /** Result list empty state. */
+  searchNoResults: string
+  /** Scope badge on a project page; `{project}` is replaced with the upper-case project key. */
+  searchScopeProject: string
+  /** Scope badge on a non-project page (home / about). */
+  searchScopeSite: string
+  /** "Scope" word prefixing the badge. */
+  searchScopeLabel: string
+  /** Loading state shown while the index JSON is being fetched. */
+  searchLoading: string
+  /** `aria-label` for the search trigger button. */
+  searchAriaLabel: string
+  /** Modal close button label + its `aria-label`. */
+  searchClose: string
 }
 
 export const UI_LABELS: Record<Lang, UiLabels> = {
@@ -129,7 +144,14 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     openInPlayground: '在 Go Playground 打开',
     codeCopied: '代码已复制，请粘贴',
     breadcrumbHome: '首页',
-    breadcrumbAriaLabel: '面包屑导航'
+    breadcrumbAriaLabel: '面包屑导航',
+    searchNoResults: '未找到相关文档',
+    searchScopeProject: '仅在 {project}',
+    searchScopeSite: '全站',
+    searchScopeLabel: '范围',
+    searchLoading: '正在加载索引…',
+    searchAriaLabel: '搜索',
+    searchClose: '关闭'
   },
   en: {
     description: 'High-Performance Go Open Source Library Documentation',
@@ -171,7 +193,14 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     openInPlayground: 'Open in Go Playground',
     codeCopied: 'Code copied — paste it',
     breadcrumbHome: 'Home',
-    breadcrumbAriaLabel: 'Breadcrumb'
+    breadcrumbAriaLabel: 'Breadcrumb',
+    searchNoResults: 'No results found',
+    searchScopeProject: 'In {project}',
+    searchScopeSite: 'All projects',
+    searchScopeLabel: 'Scope',
+    searchLoading: 'Loading index…',
+    searchAriaLabel: 'Search',
+    searchClose: 'Close'
   },
   ko: {
     description: '고성능 Go 오픈소스 라이브러리 문서',
@@ -213,7 +242,14 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     openInPlayground: 'Go Playground에서 열기',
     codeCopied: '코드가 복사되었습니다 — 붙여넣으세요',
     breadcrumbHome: '홈',
-    breadcrumbAriaLabel: '브레드크럼'
+    breadcrumbAriaLabel: '브레드크럼',
+    searchNoResults: '결과를 찾을 수 없음',
+    searchScopeProject: '{project} 내에서',
+    searchScopeSite: '전체 사이트',
+    searchScopeLabel: '범위',
+    searchLoading: '인덱스 로딩 중…',
+    searchAriaLabel: '검색',
+    searchClose: '닫기'
   },
   ja: {
     description: '高性能 Go オープンソースライブラリドキュメント',
@@ -255,7 +291,14 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     openInPlayground: 'Go Playground で開く',
     codeCopied: 'コードをコピーしました — 貼り付けてください',
     breadcrumbHome: 'ホーム',
-    breadcrumbAriaLabel: 'パンくずリスト'
+    breadcrumbAriaLabel: 'パンくずリスト',
+    searchNoResults: '結果が見つかりません',
+    searchScopeProject: '{project} 内で',
+    searchScopeSite: 'サイト全体',
+    searchScopeLabel: '範囲',
+    searchLoading: 'インデックスを読み込み中…',
+    searchAriaLabel: '検索',
+    searchClose: '閉じる'
   },
   ru: {
     description: 'Документация высокопроизводительных библиотек Go с открытым исходным кодом',
@@ -297,7 +340,14 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     openInPlayground: 'Открыть в Go Playground',
     codeCopied: 'Код скопирован — вставьте его',
     breadcrumbHome: 'Главная',
-    breadcrumbAriaLabel: 'Хлебные крошки'
+    breadcrumbAriaLabel: 'Хлебные крошки',
+    searchNoResults: 'Ничего не найдено',
+    searchScopeProject: 'В {project}',
+    searchScopeSite: 'Весь сайт',
+    searchScopeLabel: 'Область',
+    searchLoading: 'Загрузка индекса…',
+    searchAriaLabel: 'Поиск',
+    searchClose: 'Закрыть'
   }
 }
 

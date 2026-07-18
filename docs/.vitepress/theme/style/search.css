@@ -1,0 +1,327 @@
+/**
+ * ProjectSearch — local minisearch modal + mobile drawer styles.
+ *
+ * Lives here (global) rather than scoped inside ProjectSearch.vue because the
+ * modal markup is teleported to <body>; teleport preserves the SFC's data-v
+ * attribute, but a dedicated stylesheet avoids any specificity surprises
+ * once the markup leaves the component subtree.
+ *
+ * All colors / spacing / radius / z-index reference tokens (DESIGN.md §7):
+ * no hardcoded hex anywhere — `.dark` retunes apply automatically.
+ */
+
+/* ============ Trigger (bar variant) ============
+ * Hidden <768px — mobile uses the screen variant. Mirrors the visibility
+ * rule of LanguageMenu and ProjectGitHubLink.
+ */
+/* Search-box-style trigger: bordered, soft-filled, with a placeholder label
+ * so the search affordance reads at a glance (the old icon-only button was too
+ * subtle). Sits on the RIGHT of the navbar, flush against the nav menu (the
+ * "Projects" dropdown) on its right and the title on its left — see theme/index.ts
+ * (nav-bar-content-before slot). The VPNavBar `.content-body` is a flex
+ * container with `justify-content: flex-end`; `margin-left: auto` makes the
+ * trigger absorb all free space to its LEFT, packing it hard against the menu
+ * that follows. This only works because style/overrides.css hides the empty
+ * native `.VPNavBarSearch` wrapper (which carries `flex-grow: 1` on ≥768px and
+ * would otherwise swallow the free space first — see overrides.css for the
+ * Flexbox ordering rationale). `margin-right` keeps a small gap before the
+ * menu. Width is bounded; flex-shrink lets it compress on narrow viewports. */
+.ProjectSearchTrigger {
+  display: none;
+  align-items: center;
+  gap: var(--cg-sp-2);
+  height: 32px;
+  width: 220px;
+  min-width: 0;
+  flex: 0 1 auto;
+  margin-left: auto;
+  margin-right: var(--cg-sp-3);
+  padding: 0 var(--cg-sp-3);
+  border: 1px solid transparent;
+  border-radius: var(--cg-radius-md);
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  cursor: pointer;
+  font-size: 13px;
+  transition:
+    border-color 0.25s,
+    color 0.25s;
+}
+
+.ProjectSearchTrigger:hover {
+  color: var(--vp-c-text-1);
+  border-color: var(--vp-c-divider);
+}
+
+.ProjectSearchTrigger .icon {
+  font-size: 14px;
+  color: var(--vp-c-text-3);
+  flex: none;
+}
+
+.ProjectSearchTrigger .trigger-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  color: var(--vp-c-text-3);
+}
+
+.ProjectSearchTrigger .shortcut {
+  flex: none;
+  font-size: 11px;
+  line-height: 1;
+  padding: 2px 5px;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--cg-radius-sm);
+  color: var(--vp-c-text-3);
+}
+
+@media (min-width: 768px) {
+  .ProjectSearchTrigger {
+    display: flex;
+  }
+}
+
+/* ============ Modal overlay (bar variant) ============ */
+.ProjectSearchOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--cg-z-overlay);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh var(--cg-sp-4) var(--cg-sp-4);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+}
+
+.ProjectSearchModal {
+  width: 100%;
+  max-width: 560px;
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--cg-radius-lg);
+  background: var(--vp-c-bg);
+  border: 1px solid var(--vp-c-divider);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.ProjectSearchModal .modal-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--cg-sp-2);
+  padding: var(--cg-sp-3) var(--cg-sp-4);
+  border-bottom: 1px solid var(--vp-c-divider);
+}
+
+.ProjectSearchModal .modal-bar .leading {
+  color: var(--vp-c-text-3);
+  font-size: 18px;
+}
+
+.ProjectSearchModal .modal-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--vp-c-text-1);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.ProjectSearchModal .scope-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cg-sp-1);
+  padding: var(--cg-sp-1) var(--cg-sp-2);
+  border-radius: var(--cg-radius-pill);
+  background: var(--cg-brand-soft);
+  color: var(--vp-c-brand-1);
+  font-size: 12px;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.ProjectSearchModal .scope-badge .scope-label {
+  color: var(--vp-c-text-3);
+  font-weight: 400;
+}
+
+.ProjectSearchModal .scope-badge .scope-value {
+  font-weight: 600;
+}
+
+.ProjectSearchModal .close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--cg-radius-sm);
+  background: transparent;
+  color: var(--vp-c-text-3);
+  cursor: pointer;
+}
+
+.ProjectSearchModal .close-btn:hover {
+  color: var(--vp-c-text-1);
+  background: var(--vp-c-bg-soft);
+}
+
+.ProjectSearchModal .close-btn .close-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
+.ProjectSearchModal .modal-body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: var(--cg-sp-2);
+}
+
+.ProjectSearchModal .modal-results {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ============ Result row (shared by modal + screen) ============ */
+.ProjectSearchModal .result,
+.ProjectSearchScreen .result {
+  border-radius: var(--cg-radius-md);
+}
+
+.ProjectSearchModal .result.active,
+.ProjectSearchScreen .result.active {
+  background: var(--vp-c-bg-soft);
+}
+
+.ProjectSearchModal .result-link,
+.ProjectSearchScreen .result-link {
+  display: block;
+  padding: var(--cg-sp-3) var(--cg-sp-4);
+  text-decoration: none;
+  color: inherit;
+}
+
+.ProjectSearchModal .result-title,
+.ProjectSearchScreen .result-title {
+  display: block;
+  color: var(--vp-c-text-1);
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.ProjectSearchModal .result.active .result-title,
+.ProjectSearchScreen .result.active .result-title {
+  color: var(--vp-c-brand-1);
+}
+
+.ProjectSearchModal .result-crumb,
+.ProjectSearchScreen .result-crumb {
+  display: block;
+  margin-top: 2px;
+  color: var(--vp-c-text-3);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ProjectSearchModal .result-desc,
+.ProjectSearchScreen .result-desc {
+  display: block;
+  margin-top: 2px;
+  color: var(--vp-c-text-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ============ Empty / loading / error ============ */
+.ProjectSearchModal .empty,
+.ProjectSearchModal .loading,
+.ProjectSearchModal .error,
+.ProjectSearchScreen .empty,
+.ProjectSearchScreen .loading,
+.ProjectSearchScreen .error {
+  margin: 0;
+  padding: var(--cg-sp-5) var(--cg-sp-4);
+  text-align: center;
+  color: var(--vp-c-text-2);
+  font-size: 14px;
+}
+
+.ProjectSearchModal .hint {
+  margin: 0;
+  padding: 0;
+}
+
+/* ============ Screen variant (mobile drawer) ============ */
+.ProjectSearchScreen {
+  margin-top: var(--cg-sp-3);
+}
+
+.ProjectSearchScreen .screen-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cg-sp-2);
+  padding: var(--cg-sp-2) var(--cg-sp-3);
+  border: 1px solid var(--vp-c-divider);
+  border-radius: var(--cg-radius-md);
+}
+
+.ProjectSearchScreen .screen-row .icon {
+  color: var(--vp-c-text-3);
+  font-size: 16px;
+}
+
+.ProjectSearchScreen .screen-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: none;
+  color: var(--vp-c-text-1);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ProjectSearchScreen .screen-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--cg-sp-1);
+  padding: 0 var(--cg-sp-3);
+  color: var(--vp-c-text-3);
+  font-size: 12px;
+}
+
+.ProjectSearchScreen .screen-meta .scope {
+  color: var(--vp-c-brand-1);
+  font-weight: 600;
+}
+
+.ProjectSearchScreen .screen-results {
+  list-style: none;
+  margin: var(--cg-sp-2) 0 0;
+  padding: 0;
+}
+
+.ProjectSearchScreen .screen-results .result-link {
+  padding: var(--cg-sp-2) var(--cg-sp-3);
+}
+
+.ProjectSearchScreen .screen-results .result-title {
+  font-size: 13px;
+}
+
+.ProjectSearchScreen .screen-results .result-desc {
+  font-size: 12px;
+}

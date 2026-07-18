@@ -137,3 +137,26 @@
     display: none !important;
   }
 }
+
+/* ============================================
+   Native Search Wrapper (hidden — replaced by ProjectSearch)
+   ============================================
+   Native search is intentionally unset in config.mts (built-in `local`/`algolia`
+   are global-index only and conflict with ProjectSearch's per-project scope).
+   VitePress STILL renders an empty `<div class="VPNavBarSearch">` wrapper even
+   with no provider configured — only the inner `<template>` blocks (local /
+   algolia) are conditional, the outer div is not. That wrapper's CSS carries
+   `flex-grow: 1; padding-left: 24px` on ≥768px.
+
+   Per the CSS Flexbox spec, `flex-grow` is resolved BEFORE `auto` margins, so
+   an empty `flex-grow: 1` wrapper would absorb ALL free space in the navbar's
+   `.content-body` (a `justify-content: flex-end` flex container), leaving
+   nothing for ProjectSearch's `margin-left: auto` to consume — stranding the
+   trigger on the LEFT end of the cluster (right after the title) with a wide
+   empty gap before the menu. Hiding the wrapper makes the flex layout give our
+   trigger its intended right-end slot, flush against the nav menu. Safe because
+   `themeConfig.search` is permanently unset here (ProjectSearch is the sole
+   search surface), so the wrapper is always empty. */
+.VPNavBarSearch {
+  display: none !important;
+}

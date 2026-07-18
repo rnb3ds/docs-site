@@ -2,7 +2,7 @@
 layout: home
 title: "CyberGo"
 titleTemplate: "高性能 Go 开源库集合"
-description: "CyberGo 是专为 Go 语言打造的高性能开源库集合，涵盖 JSON 处理、JWT 认证、安全 HTTP 客户端、HTML 内容提取、结构化日志和环境变量管理六大核心库，轻量设计、开箱即用、最小依赖，为高并发生产环境提供可靠的基础组件。"
+description: "CyberGo 是专为 Go 打造的高性能开源库集合，涵盖 JSON 处理、JWT 认证、安全 HTTP 客户端、HTML 提取、结构化日志与环境变量管理，轻量设计、最小依赖，为高并发生产环境提供可靠基础组件。"
 
 hero:
   name: CyberGo

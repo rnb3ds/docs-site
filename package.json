@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vitepress dev docs",
-    "build": "node --max-old-space-size=8192 ./node_modules/vitepress/bin/vitepress.js build docs && tsx scripts/fix-clean-urls.ts && tsx scripts/generate-project-redirects.ts && tsx scripts/generate-moved-redirects.ts && tsx scripts/generate-llms.ts && tsx scripts/generate-md-mirror.ts",
+    "build": "tsx scripts/generate-search-index.ts && node --max-old-space-size=8192 ./node_modules/vitepress/bin/vitepress.js build docs && tsx scripts/fix-clean-urls.ts && tsx scripts/generate-project-redirects.ts && tsx scripts/generate-moved-redirects.ts && tsx scripts/generate-llms.ts && tsx scripts/generate-md-mirror.ts",
     "preview": "vitepress preview docs",
+    "search-index": "tsx scripts/generate-search-index.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "vue-tsc --noEmit",
@@ -29,6 +30,7 @@
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^26.1.1",
     "js-yaml": "^5.2.1",
+    "minisearch": "^7.2.0",
     "png-to-ico": "^3.0.1",
     "prettier": "^3.4.2",
     "sharp": "^0.34.5",

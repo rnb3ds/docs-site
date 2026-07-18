@@ -96,17 +96,19 @@
 }
 
 .project-card .tag {
-  background: var(--vp-c-brand-soft);
-  color: var(--vp-c-brand-1);
-  padding: 5px 14px;
-  border-radius: var(--cg-radius-2xl);
-  font-size: 0.82rem;
-  font-weight: 600;
+  background: var(--vp-c-bg-soft);
+  color: var(--vp-c-text-2);
+  border: 1px solid var(--vp-c-divider);
+  padding: 4px 12px;
+  border-radius: var(--cg-radius-md);
+  font-size: 0.8rem;
+  font-weight: 500;
   transition: all 0.2s ease;
 }
 
 .project-card:hover .tag {
-  background: rgba(118, 185, 0, 0.2);
+  border-color: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-2);
 }
 
 .project-card .actions {

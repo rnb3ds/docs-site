@@ -12,6 +12,7 @@ import {
   DocFeedback,
   ProjectNavBarTitle,
   ProjectGitHubLink,
+  ProjectSearch,
   ProjectGrid,
   CliCommand,
   GoPlaygroundButton,
@@ -48,10 +49,29 @@ export default {
       'not-found': () => h(NotFound),
       // Sole visible navbar title (native siteTitle span hidden via CSS).
       'nav-bar-title-after': () => h(ProjectNavBarTitle),
-      // Project-aware GitHub link + unified language switcher. The native
-      // social-links cluster (which only held GitHub) is hidden via CSS.
+      // Project-scoped search flush against the LEFT of the nav menu ("Projects"
+      // dropdown). The slot itself (`nav-bar-content-before`) is the FIRST child
+      // of `.content-body` — a flex container VitePress lays out as
+      // `justify-content: flex-end`. The trigger's `margin-left: auto`
+      // (style/search.css) then absorbs all remaining free space to its LEFT,
+      // packing the trigger hard against the menu that follows it.
+      //
+      // This only works because style/overrides.css hides VitePress's empty
+      // `.VPNavBarSearch` wrapper (always rendered even with no search provider
+      // configured, and carrying `flex-grow: 1` on ≥768px). Per the Flexbox spec
+      // flex-grow is resolved BEFORE auto margins, so that empty wrapper would
+      // otherwise swallow all free space and strand the trigger on the LEFT end
+      // of the cluster. Native search is intentionally unset in config.mts;
+      // ProjectSearch is the sole search surface.
+      'nav-bar-content-before': () => h(ProjectSearch, { variant: 'bar' }),
+      // Project-aware GitHub link + unified language switcher on the right.
+      // The native social-links cluster (which only held GitHub) is hidden
+      // via CSS.
       'nav-bar-content-after': () => [h(ProjectGitHubLink), h(LanguageMenu, { variant: 'bar' })],
-      'nav-screen-content-after': () => h(LanguageMenu, { variant: 'screen' }),
+      'nav-screen-content-after': () => [
+        h(ProjectSearch, { variant: 'screen' }),
+        h(LanguageMenu, { variant: 'screen' })
+      ],
       'layout-top': () => h(LanguagePrompt),
       // Breadcrumb trail above the page <h1>. The composable hides it on
       // home / project-root / frontmatter `breadcrumb: false`.

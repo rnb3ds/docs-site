@@ -23,10 +23,8 @@ export type ProjectName = (typeof PROJECTS)[number]
  * `index.md` files no longer each hand-write six cards (the old layout was
  * 6 languages × 6 projects = 36 duplicated HTML blocks).
  *
- * `desc` is localized; `features` is currently zh-only — other languages have
- * an empty array and the grid renders no tag chips for them (left as a
- * follow-up translation task rather than showing Chinese tags on localized
- * pages).
+ * `desc` and `features` are both localized across all five languages, so the
+ * grid renders translated tag chips on every locale.
  */
 export interface ProjectMeta {
   /** Emoji icon shown on the card. */
@@ -35,7 +33,7 @@ export interface ProjectMeta {
   github: string
   /** One-line description per language. */
   desc: Record<Lang, string>
-  /** Feature tag chips per language (zh populated; others empty for now). */
+  /** Feature tag chips per language (all five languages populated). */
   features: Record<Lang, string[]>
 }
 
@@ -52,10 +50,10 @@ export const PROJECT_META: Record<ProjectName, ProjectMeta> = {
     },
     features: {
       zh: ['JSONPath 路径查询', '流式处理', '类型安全转换', '零分配提取'],
-      en: [],
-      ko: [],
-      ja: [],
-      ru: []
+      en: ['JSONPath queries', 'Streaming', 'Type-safe conversion', 'Zero-allocation extraction'],
+      ko: ['JSONPath 경로 쿼리', '스트리밍 처리', '타입 안전 변환', '제로 할당 추출'],
+      ja: ['JSONPath パスクエリ', 'ストリーミング処理', '型安全変換', 'ゼロアロケーション抽出'],
+      ru: ['Запросы JSONPath', 'Потоковая обработка', 'Типобезопасное преобразование', 'Извлечение без аллокаций']
     }
   },
   jwt: {
@@ -70,10 +68,10 @@ export const PROJECT_META: Record<ProjectName, ProjectMeta> = {
     },
     features: {
       zh: ['多算法支持', '签名验证', '黑名单管理', 'Claims 解析'],
-      en: [],
-      ko: [],
-      ja: [],
-      ru: []
+      en: ['Multi-algorithm support', 'Signature verification', 'Blacklist management', 'Claims parsing'],
+      ko: ['다중 알고리즘 지원', '서명 검증', '블랙리스트 관리', 'Claims 파싱'],
+      ja: ['マルチアルゴリズムサポート', '署名検証', 'ブラックリスト管理', 'Claims パース'],
+      ru: ['Поддержка нескольких алгоритмов', 'Проверка подписи', 'Управление чёрным списком', 'Парсинг Claims']
     }
   },
   httpc: {
@@ -88,10 +86,10 @@ export const PROJECT_META: Record<ProjectName, ProjectMeta> = {
     },
     features: {
       zh: ['TLS 1.2+', 'SSRF 防护', '断路器', '连接池管理', '请求重试'],
-      en: [],
-      ko: [],
-      ja: [],
-      ru: []
+      en: ['TLS 1.2+', 'SSRF protection', 'Circuit breaker', 'Connection pool management', 'Request retry'],
+      ko: ['TLS 1.2+', 'SSRF 방어', '서킷 브레이커', '연결 풀 관리', '요청 재시도'],
+      ja: ['TLS 1.2+', 'SSRF 防御', 'サーキットブレイカー', 'コネクションプール管理', 'リクエストリトライ'],
+      ru: ['TLS 1.2+', 'Защита от SSRF', 'Автоматический выключатель', 'Управление пулом соединений', 'Повтор запросов']
     }
   },
   html: {
@@ -115,10 +113,46 @@ export const PROJECT_META: Record<ProjectName, ProjectMeta> = {
         '链接提取',
         '审计系统'
       ],
-      en: [],
-      ko: [],
-      ja: [],
-      ru: []
+      en: [
+        'Smart article recognition',
+        'Metadata extraction',
+        'Content cleaning',
+        'Auto encoding detection',
+        'Multi-format output',
+        'Batch processing',
+        'Link extraction',
+        'Audit system'
+      ],
+      ko: [
+        '스마트 문서 인식',
+        '메타데이터 추출',
+        '콘텐츠 정제',
+        '자동 인코딩 감지',
+        '다중 포맷 출력',
+        '배치 처리',
+        '링크 추출',
+        '감사 시스템'
+      ],
+      ja: [
+        'スマート記事認識',
+        'メタデータ抽出',
+        'コンテンツクレンジング',
+        '自動エンコーディング検出',
+        'マルチフォーマット出力',
+        'バッチ処理',
+        'リンク抽出',
+        '監査システム'
+      ],
+      ru: [
+        'Интеллектуальное распознавание статей',
+        'Извлечение метаданных',
+        'Очистка содержимого',
+        'Автоопределение кодировки',
+        'Мультиформатный вывод',
+        'Пакетная обработка',
+        'Извлечение ссылок',
+        'Система аудита'
+      ]
     }
   },
   dd: {
@@ -144,10 +178,54 @@ export const PROJECT_META: Record<ProjectName, ProjectMeta> = {
         '日志采样',
         '零分配优化'
       ],
-      en: [],
-      ko: [],
-      ja: [],
-      ru: []
+      en: [
+        'Structured logging',
+        'File rotation',
+        'Multiple output targets',
+        'Sensitive data filtering',
+        'Audit logging',
+        'Integrity signing',
+        'Hook system',
+        'Context integration',
+        'Log sampling',
+        'Zero-allocation optimization'
+      ],
+      ko: [
+        '구조화된 로깅',
+        '파일 로테이션',
+        '다중 출력 대상',
+        '민감 데이터 필터링',
+        '감사 로깅',
+        '무결성 서명',
+        '훅 시스템',
+        '컨텍스트 통합',
+        '로그 샘플링',
+        '제로 할당 최적화'
+      ],
+      ja: [
+        '構造化ログ',
+        'ファイルローテーション',
+        '複数出力ターゲット',
+        '機密データフィルタリング',
+        '監査ログ',
+        '完全性署名',
+        'フックシステム',
+        'コンテキスト統合',
+        'ログサンプリング',
+        'ゼロアロケーション最適化'
+      ],
+      ru: [
+        'Структурированное логирование',
+        'Ротация файлов',
+        'Несколько целей вывода',
+        'Фильтрация конфиденциальных данных',
+        'Журналирование аудита',
+        'Подпись целостности',
+        'Система хуков',
+        'Интеграция с контекстом',
+        'Сэмплирование логов',
+        'Оптимизация без аллокаций'
+      ]
     }
   },
   env: {
@@ -162,10 +240,10 @@ export const PROJECT_META: Record<ProjectName, ProjectMeta> = {
     },
     features: {
       zh: ['.env 文件支持', '类型转换', '安全存储', '审计日志'],
-      en: [],
-      ko: [],
-      ja: [],
-      ru: []
+      en: ['.env file support', 'Type conversion', 'Secure storage', 'Audit logging'],
+      ko: ['.env 파일 지원', '타입 변환', '안전한 저장', '감사 로깅'],
+      ja: ['.env ファイルサポート', '型変換', 'セキュアストレージ', '監査ログ'],
+      ru: ['Поддержка файлов .env', 'Преобразование типов', 'Безопасное хранение', 'Журналирование аудита']
     }
   }
 }
