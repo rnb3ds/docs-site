@@ -1,19 +1,18 @@
-name: Deploy Docs to Server (FTP, cold-standby)
+name: Deploy Docs to Server (FTP)
 
-# Disabled in favor of Cloudflare Pages (deploy-cloudflare.yml runs on push to
-# main). Kept runnable via the Actions UI (workflow_dispatch) as a cold-standby:
-# trigger manually if Cloudflare is ever down. To roll back to FTP, re-enable
-# the `push:` block below and disable deploy-cloudflare.yml's push trigger.
+# Production deploy: on push/merge to main, builds the site with VitePress and
+# uploads the built artifacts (docs/.vitepress/dist/) to the FTP server via
+# FTPS. Also runnable manually via the Actions UI (workflow_dispatch) to
+# re-deploy without a push. The previous Cloudflare Pages workflow was removed
+# in favor of this FTP path.
+#
+# Prerequisites: GitHub secrets FTP_SERVER, FTP_USERNAME, FTP_PASSWORD, and
+# FTP_REMOTE_DIR must be configured, or the FTP deploy step fails.
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
-  #   paths:
-  #     - 'docs/**'
-  #     - 'docs/.vitepress/**'
-  #     - 'package.json'
-  #     - 'package-lock.json'
+  push:
+    branches: [main]
 
 concurrency:
   group: deploy
