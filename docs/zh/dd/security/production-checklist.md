@@ -91,7 +91,7 @@ logger.Shutdown(ctx)
 ```go
 logger.SetWriteErrorHandler(func(w io.Writer, err error) {
     metrics.WriteErrors.Inc()
-    alert("日志写入失败: " + err.Error())
+    alert("日志写入失败：" + err.Error())
 })
 ```
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "감사 로그"
 title: "감사 로그 - CyberGo env | 보안 감사 구성"
-description: "CyberGo env 감사 로그 설정 가이드로 JSONAuditHandler·LogAuditHandler·ChannelAuditHandler 핸들러와 커스텀 AuditHandler로 변수 로딩·읽기·수정·삭제 작업을 기록해 보안 감사와 규정 준수에 활용합니다."
+description: "CyberGo env 감사 로그 설정 가이드로 JSONAuditHandler·LogAuditHandler·ChannelAuditHandler 핸들러와 커스텀 AuditHandler 로 변수 로딩·읽기·수정·삭제 작업을 기록해 보안 감사와 규정 준수에 활용합니다."
 sidebar_position: 5
 ---
 
@@ -57,7 +57,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
 
-민감한 키(예: `API_KEY`)는 감사 로그의 `key` 필드에서 자동으로 `[MASKED:N chars]`(N은 키 길이)로 마스킹되며, 민감하지 않은 키(예: `CUSTOM_VAR`)는 원래대로 표시됩니다.
+민감한 키 (예: `API_KEY`) 는 감사 로그의 `key` 필드에서 자동으로 `[MASKED:N chars]`(N 은 키 길이) 로 마스킹되며, 민감하지 않은 키 (예: `CUSTOM_VAR`) 는 원래대로 표시됩니다.
 
 ---
 
@@ -162,7 +162,7 @@ type AuditEvent struct {
 
 ### FullAuditLogger 인터페이스 구현
 
-`FullAuditLogger`는 최소 인터페이스 `AuditLogger`(LogError 메서드만 포함)를 확장한 완전한 감사 로그 인터페이스입니다:
+`FullAuditLogger`는 최소 인터페이스 `AuditLogger`(LogError 메서드만 포함) 를 확장한 완전한 감사 로그 인터페이스입니다:
 
 ```go
 type FullAuditLogger interface {
@@ -334,7 +334,7 @@ func processAuditEvents(ch chan env.AuditEvent) {
 
 ### 감사 기록과 마스킹
 
-감사 로그는 민감한 키의 `key` 필드를 자동으로 마스킹합니다 (기본적으로 `[MASKED:N chars]`로 표시, N은 키 이름의 문자 수. 민감하지 않은 키는 원래대로 표시). **쓰기 작업만 감사 이벤트를 기록합니다**: `Set` / `Delete` / `LoadFiles` 등은 `ActionSet` / `ActionDelete` / `ActionLoad` 등의 이벤트를 트리거하며, 이벤트에 마스킹된 키 이름을 기록합니다.
+감사 로그는 민감한 키의 `key` 필드를 자동으로 마스킹합니다 (기본적으로 `[MASKED:N chars]`로 표시, N 은 키 이름의 문자 수. 민감하지 않은 키는 원래대로 표시). **쓰기 작업만 감사 이벤트를 기록합니다**: `Set` / `Delete` / `LoadFiles` 등은 `ActionSet` / `ActionDelete` / `ActionLoad` 등의 이벤트를 트리거하며, 이벤트에 마스킹된 키 이름을 기록합니다.
 
 읽기 작업은 감사를 생성하지 않습니다: `Get` / `GetString` / `GetInt` / `GetSecure` 등의 **정상적인 읽기는 감사 로그를 기록하지 않습니다**. `ActionGet` 이벤트는 `GetInt` / `GetBool` / `GetFloat64` 등의 타입 변환 **파싱 실패** 오류 경로에서만 트리거됩니다 (`success=false`). 예:
 
@@ -361,7 +361,7 @@ chown app:app /var/log/app/env-audit.log
 
 ### 로그 순환
 
-logrotate를 사용하여 감사 로그를 관리하는 것이 좋습니다:
+logrotate 를 사용하여 감사 로그를 관리하는 것이 좋습니다:
 
 ```bash
 # /etc/logrotate.d/app-env-audit

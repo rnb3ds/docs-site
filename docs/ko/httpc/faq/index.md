@@ -38,7 +38,7 @@ defer client.Close()
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Security.AllowPrivateIPs = true // ⚠️ 모든 연결 수준 SSRF 다이얼 검증 완전히 비활성화 (사설 IP뿐 아님); 프로덕션은 SSRFExemptCIDRs로 정밀 면제 권장
+cfg.Security.AllowPrivateIPs = true // ⚠️ 모든 연결 수준 SSRF 다이얼 검증 완전히 비활성화 (사설 IP 뿐 아님); 프로덕션은 SSRFExemptCIDRs 로 정밀 면제 권장
 
 // 또는 정밀한 면제
 cfg.Security.SSRFExemptCIDRs = []string{"10.0.0.0/8"}
@@ -57,7 +57,7 @@ cfg.Connection.EnableSystemProxy = true
 
 ## HTTP 오류 코드는 어떻게 처리하나요?
 
-HTTPC은 4xx/5xx를 error로 처리하지 않으므로 수동으로 확인해야 합니다:
+HTTPC 은 4xx/5xx를 error 로 처리하지 않으므로 수동으로 확인해야 합니다:
 
 ```go
 result, err := client.Get(url)
@@ -123,15 +123,15 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
 client, _ := httpc.New(cfg)
 ```
 
-## TestingConfig는 왜 경고를 출력하나요?
+## TestingConfig 는 왜 경고를 출력하나요?
 
-`TestingConfig`는 보안 기능(TLS 검증, SSRF 방어)을 비활성화하므로 테스트 환경 외부에서 사용하면 보안 위험이 있습니다. 테스트 환경이 아닌 것으로 감지되면 경고를 출력합니다.
+`TestingConfig`는 보안 기능 (TLS 검증, SSRF 방어) 을 비활성화하므로 테스트 환경 외부에서 사용하면 보안 위험이 있습니다. 테스트 환경이 아닌 것으로 감지되면 경고를 출력합니다.
 
 `*_test.go` 파일이나 로컬 개발에만 사용하세요.
 
-## DNS-over-HTTPS를 어떻게 활성화하나요?
+## DNS-over-HTTPS 를 어떻게 활성화하나요?
 
-DoH는 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지할 수 있습니다:
+DoH 는 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지할 수 있습니다:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -139,15 +139,15 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-기본적으로 Cloudflare, Google, AliDNS 세 가지 제공자를 사용합니다(우선순위에 따라 폴백). 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS로 자동 폴백합니다.
+기본적으로 Cloudflare, Google, AliDNS 세 가지 제공자를 사용합니다 (우선순위에 따라 폴백). 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS 로 자동 폴백합니다.
 
 :::tip
-DoH는 DNS 해석 보안이 요구되는 시나리오에 적합합니다. 일반적인 API 호출에서는 활성화할 필요가 없으며, 기본 DNS로 충분합니다.
+DoH 는 DNS 해석 보안이 요구되는 시나리오에 적합합니다. 일반적인 API 호출에서는 활성화할 필요가 없으며, 기본 DNS 로 충분합니다.
 :::
 
 ## 추가 리소스
 
-- [빠른 시작](../getting-started/) - 5분 빠른 시작
+- [빠른 시작](../getting-started/) - 5 분 빠른 시작
 - [실전 튜토리얼](../guides/tutorial) - 단계별 완전한 예제
 - [설정 API](../api-reference/client-config/config) - 완전한 설정 참조
 - [오류 처리](../advanced/error-handling) - 오류 처리 가이드

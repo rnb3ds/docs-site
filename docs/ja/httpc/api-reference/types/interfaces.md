@@ -1,7 +1,7 @@
 ---
 sidebar_label: "インターフェース"
 title: "インターフェース定義 - CyberGo HTTPC | コアインターフェース"
-description: "HTTPC コアインターフェース API リファレンス: Client 全機能インターフェース、Doer 最小実行インターフェース、DomainClienter、RetryPolicy リトライポリシー、ミドルウェアインターフェース定義の完全な説明を提供します。"
+description: "HTTPC コアインターフェース API リファレンス：Client 全機能インターフェース、Doer 最小実行インターフェース、DomainClienter、RetryPolicy リトライポリシー、ミドルウェアインターフェース定義の完全な説明を提供します。"
 sidebar_position: 1
 ---
 
@@ -273,7 +273,7 @@ func NewSPKIHashPinner(hashes ...string) (CertificatePinner, error)
 
 複数のハッシュを渡すことで鍵のローテーションに対応できます——対向側の公開鍵が固定されたハッシュの**いずれか 1 つ**に一致すれば、ハンドシェイクは成功します。
 
-以下のコマンドで証明書からハッシュを生成します:
+以下のコマンドで証明書からハッシュを生成します：
 
 ```bash
 openssl x509 -in cert.pem -pubkey -noout | openssl pkey -pubin -outform der \

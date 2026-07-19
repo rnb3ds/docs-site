@@ -82,8 +82,8 @@ json.ClearCache()
 
 ```go
 stats := json.GetStats()
-fmt.Printf("缓存命中率: %.2f%%\n", stats.HitRatio * 100)
-fmt.Printf("缓存大小: %d\n", stats.CacheSize)
+fmt.Printf("缓存命中率：%.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("缓存大小：%d\n", stats.CacheSize)
 ```
 
 ---
@@ -133,8 +133,8 @@ if err != nil {
 defer p.Close()
 
 stats := p.GetStats()
-fmt.Printf("缓存命中率: %.2f%%\n", stats.HitRatio * 100)
-fmt.Printf("缓存大小: %d\n", stats.CacheSize)
+fmt.Printf("缓存命中率：%.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("缓存大小：%d\n", stats.CacheSize)
 ```
 
 ### Processor.GetHealthStatus
@@ -357,7 +357,7 @@ if err != nil {
 
 ```go
 path := "users[0].ssn"
-fmt.Println(json.RedactedPath(path)) // 输出: ***（非空路径统一返回 ***，空路径返回空字符串）
+fmt.Println(json.RedactedPath(path)) // 输出：***（非空路径统一返回 ***，空路径返回空字符串）
 ```
 
 ---

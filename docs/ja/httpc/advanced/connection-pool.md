@@ -1,7 +1,7 @@
 ---
 sidebar_label: "コネクションプールとプロキシ"
 title: "コネクションプールとプロキシ - CyberGo HTTPC | プールとプロキシ"
-description: "HTTPC コネクションプールとプロキシガイド: MaxIdleConns チューニングとシナリオ推奨、ProxyURL 手動とシステムプロキシ、SOCKS5 と HTTP プロキシ、DoH フェイルバック、HTTP/2 設定の実践ポイントを解説します。"
+description: "HTTPC コネクションプールとプロキシガイド：MaxIdleConns チューニングとシナリオ推奨、ProxyURL 手動とシステムプロキシ、SOCKS5 と HTTP プロキシ、DoH フェイルバック、HTTP/2 設定の実践ポイントを解説します。"
 sidebar_position: 3
 ---
 
@@ -25,7 +25,7 @@ cfg.Timeouts.IdleConn = 120 * time.Second // アイドル接続維持時間
 | パラメータ | デフォルト | 説明 |
 |-----------|-----------|------|
 | `MaxIdleConns` | 50 | グローバル最大アイドル接続数 |
-| `MaxConnsPerHost` | 10 | ホストあたりの最大接続数（アクティブ+アイドル含む） |
+| `MaxConnsPerHost` | 10 | ホストあたりの最大接続数（アクティブ + アイドル含む） |
 | `IdleConn` | 90s | アイドル接続タイムアウト。超過するとクローズ |
 | `Dial` | 10s | 接続確立タイムアウト |
 | `TLSHandshake` | 10s | TLS ハンドシェイクライムアウト |
@@ -79,7 +79,7 @@ cfg.Connection.ProxyURL = "socks5://proxy.example.com:1080"
 cfg := httpc.DefaultConfig()
 cfg.Connection.EnableSystemProxy = true
 
-// 自動検出:
+// 自動検出：
 // - Windows: レジストリ Internet Settings
 // - macOS: システム環境設定ネットワークプロキシ
 // - Linux: 環境変数 HTTP_PROXY / HTTPS_PROXY

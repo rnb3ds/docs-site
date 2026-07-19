@@ -122,7 +122,7 @@ func (p *Processor) GetStatistics() Statistics
 
 ```go
 stats := p.GetStatistics()
-fmt.Printf("処理済み: %d, キャッシュヒット: %d\n",
+fmt.Printf("処理済み：%d, キャッシュヒット：%d\n",
     stats.TotalProcessed, stats.CacheHits)
 ```
 

@@ -23,7 +23,7 @@ defer logger.Close()
 // password 字段自动脱敏
 logger.InfoWith("用户登录",
     dd.String("username", "alice"),
-    dd.String("password", "s3cr3t123"),    // 输出: password=[REDACTED]
+    dd.String("password", "s3cr3t123"),    // 输出：password=[REDACTED]
 )
 ```
 
@@ -170,9 +170,9 @@ logger.InfoWith("用户登录",
 filter := dd.NewSensitiveDataFilter()
 stats := filter.GetFilterStats()
 fmt.Printf("活跃 goroutines: %d\n", stats.ActiveGoroutines)
-fmt.Printf("过滤模式数: %d\n", stats.PatternCount)
-fmt.Printf("总脱敏次数: %d\n", stats.TotalRedactions)
-fmt.Printf("超时次数: %d\n", stats.TotalTimeouts)
+fmt.Printf("过滤模式数：%d\n", stats.PatternCount)
+fmt.Printf("总脱敏次数：%d\n", stats.TotalRedactions)
+fmt.Printf("超时次数：%d\n", stats.TotalTimeouts)
 ```
 
 ## 禁用过滤

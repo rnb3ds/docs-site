@@ -194,7 +194,7 @@ if err != nil {
 
 // 运行时检查
 if err := dd.DefaultInitError(); err != nil {
-    fmt.Println("全局日志记录器初始化有误:", err)
+    fmt.Println("全局日志记录器初始化有误：", err)
 }
 ```
 

@@ -39,19 +39,19 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("标题:", result.Title)
-    fmt.Println("正文:", result.Text)
-    fmt.Println("字数:", result.WordCount)
-    fmt.Println("阅读时间:", result.ReadingTime)
-    // 输出:
-    // 标题: Go 语言教程
-    // 正文: Go 入门指南
+    fmt.Println("标题：", result.Title)
+    fmt.Println("正文：", result.Text)
+    fmt.Println("字数：", result.WordCount)
+    fmt.Println("阅读时间：", result.ReadingTime)
+    // 输出：
+    // 标题：Go 语言教程
+    // 正文：Go 入门指南
     //
     //       Go 是一门由 Google 开发的开源编程语言。
     //
     //       Go 官网
-    // 字数: 8
-    // 阅读时间: 2.4s
+    // 字数：8
+    // 阅读时间：2.4s
 }
 ```
 
@@ -125,7 +125,7 @@ for _, page := range pages {
 
 // 查看统计
 stats := p.GetStatistics()
-fmt.Printf("已处理: %d, 缓存命中: %d\n",
+fmt.Printf("已处理：%d, 缓存命中：%d\n",
     stats.TotalProcessed, stats.CacheHits)
 ```
 
@@ -150,7 +150,7 @@ p, _ := html.New(html.DefaultConfig())
 defer p.Close()
 
 batch := p.ExtractBatch(pages)
-fmt.Printf("成功: %d, 失败: %d\n", batch.Success, batch.Failed)
+fmt.Printf("成功：%d, 失败：%d\n", batch.Success, batch.Failed)
 
 for i, result := range batch.Results {
     if result != nil {

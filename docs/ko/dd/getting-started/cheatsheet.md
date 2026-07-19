@@ -15,11 +15,11 @@ sidebar_position: 2
 | 개발 모드 | `dd.New(dd.DevelopmentConfig())` | DEBUG 레벨, caller 포함 |
 | 커스텀 | `dd.New(dd.Config{Targets: ...})` | 완전한 구성 |
 | 파일 | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.FileOutput("path")}})` | 파일 전용 출력 |
-| 이중 대상 | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | 콘솔+파일 |
+| 이중 대상 | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | 콘솔 + 파일 |
 | JSON 이중 대상 | `dd.New(dd.Config{Format: dd.FormatJSON, Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | JSON 형식 이중 대상 |
 
 :::tip 팁 구성 제로값
-표의 `dd.Config{...}` 리터럴에서 설정하지 않은 필드는 모두 제로값입니다(Level=Debug, IncludeTime/IncludeLevel/DynamicCaller=false, 출력에 타임스탬프/레벨/caller 없음). 프로덕션 환경에서는 `dd.DefaultConfig()`를 기반으로 필요한 필드만 덮어쓰기를 권장합니다.
+표의 `dd.Config{...}` 리터럴에서 설정하지 않은 필드는 모두 제로값입니다 (Level=Debug, IncludeTime/IncludeLevel/DynamicCaller=false, 출력에 타임스탬프/레벨/caller 없음). 프로덕션 환경에서는 `dd.DefaultConfig()`를 기반으로 필요한 필드만 덮어쓰기를 권장합니다.
 :::
 
 ## 사전 설정 구성
@@ -53,7 +53,7 @@ dd.JSONConfig()          // JSON 구성: DEBUG 레벨 + JSON 형식 출력
 | 시간 | `Time(key, val)` | `dd.Time("ts", time.Now())` |
 | 기간 | `Duration(key, val)` | `dd.Duration("took", 100*time.Millisecond)` |
 | 오류 | `Err(err)` | `dd.Err(err)` |
-| 오류+스택 | `ErrWithStack(err)` | `dd.ErrWithStack(err)` |
+| 오류 + 스택 | `ErrWithStack(err)` | `dd.ErrWithStack(err)` |
 
 ## 필드 체인
 
@@ -94,7 +94,7 @@ dd.GetRequestID(ctx)   // "req-456"
 ## 보안 구성
 
 ```go
-dd.DefaultSecurityConfig()   // 기본 필터(권장)
+dd.DefaultSecurityConfig()   // 기본 필터 (권장)
 dd.DefaultSecureConfig()     // 완전 필터
 dd.HealthcareConfig()        // HIPAA 규정 준수
 dd.FinancialConfig()         // PCI-DSS 규정 준수
@@ -106,7 +106,7 @@ dd.GovernmentConfig()        // 정부 표준
 ```go
 logger.Flush()                           // 버퍼 flush
 logger.Close()                           // 로거 종료
-logger.Shutdown(ctx)                     // 우아한 종료(타임아웃 포함)
+logger.Shutdown(ctx)                     // 우아한 종료 (타임아웃 포함)
 dd.SetDefault(logger)                    // 전역 로거 교체
 dd.InitDefault(cfg)                      // 전역 로거 초기화
 ```
@@ -114,11 +114,11 @@ dd.InitDefault(cfg)                      // 전역 로거 초기화
 ## 디버그 출력
 
 ```go
-// 전역 Logger 경유(보안 필터 적용)
+// 전역 Logger 경유 (보안 필터 적용)
 dd.Print("값:", val)       // 빠른 출력
 dd.Printf("형식: %v", val) // 포맷팅 출력
 
-// 직접 출력(보안 필터 없음, 디버그 전용)
+// 직접 출력 (보안 필터 없음, 디버그 전용)
 dd.JSON(data)              // JSON 형식 디버그 출력
 dd.Text(data)              // 텍스트 형식 디버그 출력
 dd.Exit(data)              // 출력 후 종료

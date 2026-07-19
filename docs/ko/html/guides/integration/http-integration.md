@@ -76,7 +76,7 @@ client := &http.Client{
 
 | 매개변수 | 추천값 | 설명 |
 |------|--------|------|
-| `Timeout` | 10-30s | 연결+TLS+읽기/쓰기 전체 프로세스 포함 |
+| `Timeout` | 10-30s | 연결+TLS+ 읽기/쓰기 전체 프로세스 포함 |
 | `MaxIdleConns` | 10-50 | 전역 최대 유휴 연결 수 |
 | `MaxIdleConnsPerHost` | 5-10 | 단일 호스트 최대 유휴 연결 수 |
 | `IdleConnTimeout` | 90s | 유휴 연결 유지 시간 |
@@ -148,7 +148,7 @@ func main() {
 
 ## 여러 URL 동시 스크래핑
 
-Processor의 동시성 안전성을 활용하여 여러 페이지를 효율적으로 처리합니다:
+Processor 의 동시성 안전성을 활용하여 여러 페이지를 효율적으로 처리합니다:
 
 ```go
 type URLResult struct {
@@ -251,15 +251,15 @@ func fetchWithRetry(client *http.Client, url string, maxRetries int) ([]byte, er
 ```
 
 :::tip 재시도 전략
-- 4xx 오류는 재시도하지 마세요(클라이언트 문제)
-- 5xx와 네트워크 오류는 재시도할 수 있습니다
-- 지수 백오프 사용: 1초, 2초, 4초
-- 최대 재시도 횟수 설정(보통 3회)
+- 4xx 오류는 재시도하지 마세요 (클라이언트 문제)
+- 5xx 와 네트워크 오류는 재시도할 수 있습니다
+- 지수 백오프 사용: 1 초, 2 초, 4 초
+- 최대 재시도 횟수 설정 (보통 3 회)
 :::
 
 ## 배치 + 컨텍스트 취소
 
-대량의 URL에 대해 컨텍스트가 포함된 배치 처리를 사용하며, 타임아웃 취소를 지원합니다:
+대량의 URL 에 대해 컨텍스트가 포함된 배치 처리를 사용하며, 타임아웃 취소를 지원합니다:
 
 ```go
 func batchProcessURLs(processor *html.Processor, urls []string) {
@@ -305,7 +305,7 @@ result, _ := html.Extract(body) // 자동 인코딩 감지
 `Content-Type` 헤더에서 인코딩 정보를 가져와 수동으로 지정할 수도 있습니다:
 
 ```go
-charset := "utf-8" // Content-Type에서 파싱
+charset := "utf-8" // Content-Type 에서 파싱
 if ct := resp.Header.Get("Content-Type"); ct != "" {
     if idx := strings.Index(ct, "charset="); idx != -1 {
         charset = ct[idx+8:]

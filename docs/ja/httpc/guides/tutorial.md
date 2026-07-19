@@ -1,7 +1,7 @@
 ---
 sidebar_label: "チュートリアル"
 title: "チュートリアル - CyberGo HTTPC | GitHub API 実戦"
-description: "HTTPC 実践チュートリアル: httpc.Get から段階的に完全な GitHub REST API クライアントを構築し、JSON 解析、ドメインクライアント、ミドルウェアチェーン組み合わせ、ClientError エラー処理、ファイルダウンロードをカバーします。"
+description: "HTTPC 実践チュートリアル：httpc.Get から段階的に完全な GitHub REST API クライアントを構築し、JSON 解析、ドメインクライアント、ミドルウェアチェーン組み合わせ、ClientError エラー処理、ファイルダウンロードをカバーします。"
 sidebar_position: 1
 ---
 
@@ -252,7 +252,7 @@ dlCfg.FilePath = "go1.22.0.linux-amd64.tar.gz"
 dlCfg.Overwrite = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rダウンロード進捗: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
+    fmt.Printf("\rダウンロード進捗：%.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.Download(

@@ -222,7 +222,7 @@ if err != nil {
 ## 파일 다운로드
 
 ```go
-// 기본 다운로드 (ctx는 context.Context, 예: context.Background())
+// 기본 다운로드 (ctx 는 context.Context, 예: context.Background())
 dlCfg := httpc.DefaultDownloadConfig()
 dlCfg.FilePath = "/path/to/file"
 dlResult, err := client.Download(ctx, url, dlCfg)
@@ -237,7 +237,7 @@ dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 }
 dlResult, err := client.Download(ctx, url, dlCfg)
 
-// dlResult 타입은 *DownloadResult (*Result가 아님)
+// dlResult 타입은 *DownloadResult (*Result 가 아님)
 // 필드: FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
 ```
 

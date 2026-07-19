@@ -1,7 +1,7 @@
 ---
 sidebar_label: "SSRF 防護"
-title: "SSRF 防護 - CyberGo HTTPC | プライベートIPとメタ"
-description: "HTTPC SSRF 防護の詳細: デフォルトで IPv4/IPv6 プライベート IP をブロック、SSRFExemptCIDRs 精密免除、DNS リバインディング防止、リダイレクトホワイトリスト、AWS/GCP/Azure クラウドメタデータ保護を解説します。"
+title: "SSRF 防護 - CyberGo HTTPC | プライベート IP とメタ"
+description: "HTTPC SSRF 防護の詳細：デフォルトで IPv4/IPv6 プライベート IP をブロック、SSRFExemptCIDRs 精密免除、DNS リバインディング防止、リダイレクトホワイトリスト、AWS/GCP/Azure クラウドメタデータ保護を解説します。"
 sidebar_position: 2
 ---
 
@@ -67,7 +67,7 @@ result, err := httpc.Get("http://localhost:8080/health",
 
 ## DNS リバインディング防護
 
-HTTPC は「解決-検証-直接接続」モードで DNS リバインディング攻撃を防止します：
+HTTPC は「解決 - 検証 - 直接接続」モードで DNS リバインディング攻撃を防止します：
 
 1. ドメイン名を IP アドレスに解決
 2. 解決されたすべての IP がプライベートアドレスでないか検証

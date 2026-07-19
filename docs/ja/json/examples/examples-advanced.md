@@ -124,7 +124,7 @@ func main() {
     }
     defer p.Close()
 
-    // 事前パース（1回だけパース）
+    // 事前パース（1 回だけパース）
     parsed, err := p.PreParse(largeJSON)
     if err != nil {
         panic(err)
@@ -250,9 +250,9 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("ウォームアップ完了: %d/%d 成功\n", result.Successful, result.TotalPaths)
+    fmt.Printf("ウォームアップ完了：%d/%d 成功\n", result.Successful, result.TotalPaths)
     if len(result.FailedPaths) > 0 {
-        fmt.Println("失敗したパス:", result.FailedPaths)
+        fmt.Println("失敗したパス：", result.FailedPaths)
     }
 
     // 後続のクエリはキャッシュを使用

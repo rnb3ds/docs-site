@@ -1,6 +1,6 @@
 ---
 sidebar_label: "クイックスタート"
-title: "クイックスタート - CyberGo html | 5分スタートガイド"
+title: "クイックスタート - CyberGo html | 5 分スタートガイド"
 description: "CyberGo html クイックスタート：インストール、基本コンテンツ抽出、4 種の Config プリセット、テキスト・Markdown・JSON 出力で、5 分で HTML コンテンツ抽出を始められます。"
 sidebar_position: 2
 ---
@@ -47,26 +47,26 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("タイトル:", result.Title)
-    fmt.Println("本文:", result.Text)
-    fmt.Println("画像数:", len(result.Images))
-    fmt.Println("リンク数:", len(result.Links))
-    fmt.Println("単語数:", result.WordCount)
+    fmt.Println("タイトル：", result.Title)
+    fmt.Println("本文：", result.Text)
+    fmt.Println("画像数：", len(result.Images))
+    fmt.Println("リンク数：", len(result.Links))
+    fmt.Println("単語数：", result.WordCount)
 }
 ```
 
 出力：
 
 ```text
-タイトル: Go 言語チュートリアル
-本文: Go 入門ガイド
+タイトル：Go 言語チュートリアル
+本文：Go 入門ガイド
 
 Go は静的型付けのコンパイル言語です。
 
 Go 公式サイト
-画像数: 1
-リンク数: 1
-単語数: 6
+画像数：1
+リンク数：1
+単語数：6
 ```
 
 ## ファイルから抽出

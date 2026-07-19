@@ -7,7 +7,7 @@ sidebar_position: 2
 
 # 보안 필터
 
-DD는 민감 데이터 필터링 기능을 내장하여 로그 내 비밀번호, 키, Token 등 민감 정보를 자동으로 감지하고 마스킹합니다.
+DD 는 민감 데이터 필터링 기능을 내장하여 로그 내 비밀번호, 키, Token 등 민감 정보를 자동으로 감지하고 마스킹합니다.
 
 ## SensitiveDataFilter
 
@@ -56,15 +56,15 @@ filter, _ := dd.NewCustomSensitiveDataFilter(
 
 ```go
 type SecurityConfig struct {
-    MaxMessageSize  int                       // 메시지 크기 상한(바이트, 0은 제한 없음, 사전 설정 구성 기본값 5MB)
-    MaxWriters      int                       // 최대 Writer 수(사전 설정 구성 기본값 100)
+    MaxMessageSize  int                       // 메시지 크기 상한 (바이트, 0 은 제한 없음, 사전 설정 구성 기본값 5MB)
+    MaxWriters      int                       // 최대 Writer 수 (사전 설정 구성 기본값 100)
     SensitiveFilter *SensitiveDataFilter      // 민감 데이터 필터
-    RateLimitConfig *internal.RateLimitConfig // 속도 제한 구성(내부 타입, nil이면 제한 비활성화; 사전 설정 구성은 이 필드를 채우지 않음)
+    RateLimitConfig *internal.RateLimitConfig // 속도 제한 구성 (내부 타입, nil 이면 제한 비활성화; 사전 설정 구성은 이 필드를 채우지 않음)
 }
 ```
 
-:::info 정보 RateLimitConfig에 대하여
-`RateLimitConfig`는 로그 속도 제한을 제어하여 로그 홍수(DoS)를 방지하고 고부하 상황에서 시스템 안정성을 유지하는 데 사용됩니다. 이 필드는 내부 타입(`*internal.RateLimitConfig`)으로 직접 생성할 수 없습니다. 모든 사전 설정 구성(`DefaultSecurityConfig`, `DefaultSecureConfig`, `SecurityConfigForLevel` 등)은 이 필드를 **채우지 않으며**, 즉 기본적으로 속도 제한이 활성화되지 않습니다. 명시적으로 설정한 경우에만 Logger가 이에 따라 속도 제한기를 초기화합니다. 속도 제한을 끄려면 `nil`로 설정하면 됩니다.
+:::info 정보 RateLimitConfig 에 대하여
+`RateLimitConfig`는 로그 속도 제한을 제어하여 로그 홍수 (DoS) 를 방지하고 고부하 상황에서 시스템 안정성을 유지하는 데 사용됩니다. 이 필드는 내부 타입 (`*internal.RateLimitConfig`) 으로 직접 생성할 수 없습니다. 모든 사전 설정 구성 (`DefaultSecurityConfig`, `DefaultSecureConfig`, `SecurityConfigForLevel` 등) 은 이 필드를 **채우지 않으며**, 즉 기본적으로 속도 제한이 활성화되지 않습니다. 명시적으로 설정한 경우에만 Logger 가 이에 따라 속도 제한기를 초기화합니다. 속도 제한을 끄려면 `nil`로 설정하면 됩니다.
 :::
 
 ### FilterStats
@@ -99,17 +99,17 @@ type SecurityLevel int
 
 | 상수 | 설명 |
 |------|------|
-| `SecurityLevelDevelopment` | 개발 환경(민감 필터 없음, 속도 제한 없음) |
-| `SecurityLevelBasic` | 기본 필터(비밀번호, 토큰, API Key, 신용카드, SSN, 전화번호, SWIFT/CVV 등 약 40종의 일반적인 민감 데이터) |
-| `SecurityLevelStandard` | 표준 필터(프로덕션 권장) |
-| `SecurityLevelStrict` | 엄격한 필터(PII/금융 데이터 환경) |
-| `SecurityLevelParanoid` | 극한 필터(고위험 환경) |
+| `SecurityLevelDevelopment` | 개발 환경 (민감 필터 없음, 속도 제한 없음) |
+| `SecurityLevelBasic` | 기본 필터 (비밀번호, 토큰, API Key, 신용카드, SSN, 전화번호, SWIFT/CVV 등 약 40 종의 일반적인 민감 데이터) |
+| `SecurityLevelStandard` | 표준 필터 (프로덕션 권장) |
+| `SecurityLevelStrict` | 엄격한 필터 (PII/금융 데이터 환경) |
+| `SecurityLevelParanoid` | 극한 필터 (고위험 환경) |
 
 ### 사전 설정 구성
 
 | 함수 | 설명 | 적용 시나리오 |
 |------|------|----------|
-| `DefaultSecurityConfig()` | 기본 민감 데이터 필터 | 프로덕션 환경(권장) |
+| `DefaultSecurityConfig()` | 기본 민감 데이터 필터 | 프로덕션 환경 (권장) |
 | `DefaultSecureConfig()` | 완전 민감 데이터 필터 | 고보안 요구 |
 | `HealthcareConfig()` | HIPAA 규정 준수 | 의료 산업 |
 | `FinancialConfig()` | PCI-DSS 규정 준수 | 금융 산업 |
@@ -139,10 +139,10 @@ func (c *SecurityConfig) Clone() *SecurityConfig
 
 ## 사용 방식
 
-### Config로 구성
+### Config 로 구성
 
 ```go
-// DefaultConfig에는 DefaultSecurityConfig()가 내장되어 있어, 보통 명시적 할당 불필요
+// DefaultConfig 에는 DefaultSecurityConfig() 가 내장되어 있어, 보통 명시적 할당 불필요
 cfg := dd.DefaultConfig()
 logger, _ := dd.New(cfg)
 
@@ -169,7 +169,7 @@ filter := dd.NewSensitiveDataFilter()
 filtered := filter.Filter("password=s3cr3t")
 // → "password=[REDACTED]"
 
-// 중첩 구조(자동 재귀, 순환 참조 감지 지원)
+// 중첩 구조 (자동 재귀, 순환 참조 감지 지원)
 data := map[string]any{
     "user": map[string]any{
         "name":     "admin",

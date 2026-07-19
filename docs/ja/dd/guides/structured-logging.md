@@ -105,7 +105,7 @@ queryLog.InfoWith("クエリ完了",
     dd.Int("rows", 42),
     dd.Duration("elapsed", 10*time.Millisecond),
 )
-// フィールド: service=order module=database operation=query rows=42 elapsed=10ms
+// フィールド：service=order module=database operation=query rows=42 elapsed=10ms
 ```
 
 ### パッケージレベル関数のチェーン呼び出し

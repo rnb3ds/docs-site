@@ -145,7 +145,7 @@ func main() {
         log.Fatal(err)
     }
 
-    log.Printf("总请求数: %d", atomic.LoadInt64(&requestCount))
+    log.Printf("总请求数：%d", atomic.LoadInt64(&requestCount))
 }
 ```
 
@@ -240,14 +240,14 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("创建: %+v\n", user)
+    fmt.Printf("创建：%+v\n", user)
 
     // 获取用户
     user, err = api.GetUser(ctx, user.ID)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("获取: %+v\n", user)
+    fmt.Printf("获取：%+v\n", user)
 }
 ```
 
@@ -307,7 +307,7 @@ func main() {
     }
 
     wg.Wait()
-    fmt.Printf("\n下载完成: %d/%d, 总计 %d\n",
+    fmt.Printf("\n下载完成：%d/%d, 总计 %d\n",
         successCount, len(urls), totalBytes)
 }
 ```

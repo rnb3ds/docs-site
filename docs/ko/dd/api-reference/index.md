@@ -7,7 +7,7 @@ sidebar_position: 1
 
 # API 레퍼런스
 
-DD 로그 라이브러리는 풍부한 API를 제공하며, 기능 모듈별로 다음과 같이 구성되어 있습니다.
+DD 로그 라이브러리는 풍부한 API 를 제공하며, 기능 모듈별로 다음과 같이 구성되어 있습니다.
 
 ## 핵심 컴포넌트
 
@@ -30,7 +30,7 @@ DD 로그 라이브러리는 풍부한 API를 제공하며, 기능 모듈별로 
 
 | 모듈 | 설명 | 문서 |
 |------|------|------|
-| **Fields** | 구조화 필드 생성자(20종) | [구조화 필드](./output-integration/fields) |
+| **Fields** | 구조화 필드 생성자 (20 종) | [구조화 필드](./output-integration/fields) |
 | **Hooks** | 라이프사이클 훅 시스템 | [훅 시스템](./security-audit/hooks) |
 | **Security** | 민감 데이터 필터와 보안 구성 | [보안 필터](./security-audit/security) |
 | **Audit** | 감사 로그와 감사 이벤트 | [감사 로그](./security-audit/audit) |

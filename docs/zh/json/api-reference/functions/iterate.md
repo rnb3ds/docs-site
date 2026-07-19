@@ -69,11 +69,11 @@ json.ForeachNested(data, func(key any, item *json.IterableValue) {
 输出：
 
 ```text
-键: user, 值: map[string]any{...}
-键: name, 值: test
-键: profile, 值: map[string]any{...}
-键: age, 值: 25
-键: tags, 值: []any{...}
+键：user, 值：map[string]any{...}
+键：name, 值：test
+键：profile, 值：map[string]any{...}
+键：age, 值：25
+键：tags, 值：[]any{...}
 ...
 ```
 
@@ -295,12 +295,12 @@ err := json.ForeachFileNested("config.json", func(key any, item *json.IterableVa
 **输出**：
 
 ```text
-路径: database, 类型: map[string]any
-路径: host, 类型: string
-路径: port, 类型: float64
-路径: pool, 类型: map[string]any
-路径: min, 类型: float64
-路径: max, 类型: float64
+路径：database, 类型：map[string]any
+路径：host, 类型：string
+路径：port, 类型：float64
+路径：pool, 类型：map[string]any
+路径：min, 类型：float64
+路径：max, 类型：float64
 ```
 
 ---

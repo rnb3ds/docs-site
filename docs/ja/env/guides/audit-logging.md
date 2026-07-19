@@ -1,7 +1,7 @@
 ---
 sidebar_label: "監査ログ"
 title: "監査ログ - CyberGo env | セキュリティ監査設定"
-description: "CyberGo env 監査ログ設定ガイド。JSONAuditHandler・LogAuditHandler・ChannelAuditHandler の3種ハンドラーとカスタム AuditHandler で変数の読み込み・読み取り・変更・削除を記録し、セキュリティ監査とコンプライアンスに活用します。"
+description: "CyberGo env 監査ログ設定ガイド。JSONAuditHandler・LogAuditHandler・ChannelAuditHandler の 3 種ハンドラーとカスタム AuditHandler で変数の読み込み・読み取り・変更・削除を記録し、セキュリティ監査とコンプライアンスに活用します。"
 sidebar_position: 5
 ---
 
@@ -341,7 +341,7 @@ func processAuditEvents(ch chan env.AuditEvent) {
 ```go
 // 書き込み操作：監査イベントを記録（機密キーはマスク後に記録）
 _ = loader.Set("API_KEY", "sk-1234567890")
-// 監査記録: {"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
+// 監査記録：{"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
 
 // 読み取り操作：正常な読み取りは監査を生成しない
 secret := loader.GetSecure("API_KEY") // 監査ログを生成しない

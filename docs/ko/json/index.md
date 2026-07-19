@@ -1,7 +1,7 @@
 ---
 sidebar_label: "개요"
 title: "JSON 라이브러리 - CyberGo JSON | 고성능 Go"
-description: "CyberGo JSON은 고성능 스레드 안전 Go 라이브러리로 JSONPath 쿼리, 스트림 처리, 제네릭 API, Schema 검증을 지원하며 encoding/json과 100% 호환됩니다."
+description: "CyberGo JSON 은 고성능 스레드 안전 Go 라이브러리로 JSONPath 쿼리, 스트림 처리, 제네릭 API, Schema 검증을 지원하며 encoding/json과 100% 호환됩니다."
 ---
 
 # JSON 처리 라이브러리
@@ -25,7 +25,7 @@ description: "CyberGo JSON은 고성능 스레드 안전 Go 라이브러리로 J
 go get github.com/cybergodev/json
 ```
 
-## 30초 빠른 체험
+## 30 초 빠른 체험
 
 ```go
 package main
@@ -142,6 +142,6 @@ func main() {
 
 ## 다음 단계
 
-- [빠른 시작](./getting-started/) — 5분 안에 시작하기
+- [빠른 시작](./getting-started/) — 5 분 안에 시작하기
 - [경로 표현식 문법](./getting-started/path-syntax) — 완전한 경로 문법
 - [사용 예제](./examples/) — 더 많은 실전 예제

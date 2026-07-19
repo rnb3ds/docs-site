@@ -1,13 +1,13 @@
 ---
 sidebar_label: "링크 추출과 그룹화"
 title: "링크 추출과 그룹화 - CyberGo html | 리소스 수집 가이드"
-description: "CyberGo html 링크 추출과 그룹화: ExtractAllLinks로 리소스 링크 추출, 유형별 그룹화, Include 필터, 상대 URL 해석, 크롤러 모범 사례를 설명합니다."
+description: "CyberGo html 링크 추출과 그룹화: ExtractAllLinks 로 리소스 링크 추출, 유형별 그룹화, Include 필터, 상대 URL 해석, 크롤러 모범 사례를 설명합니다."
 sidebar_position: 3
 ---
 
 # 링크 추출과 그룹화
 
-콘텐츠 추출과 독립적으로, 라이브러리는 전용 링크 추출 API를 제공하여 크롤러와 리소스 수집 시나리오에 적합합니다.
+콘텐츠 추출과 독립적으로, 라이브러리는 전용 링크 추출 API 를 제공하여 크롤러와 리소스 수집 시나리오에 적합합니다.
 
 ## 기본 사용법
 
@@ -39,10 +39,10 @@ for _, link := range links {
 |------|----------|------|
 | `link` | `<a>` | 페이지 링크 |
 | `image` | `<img>` | 이미지 리소스 |
-| `video` | `<video>` 및 `<iframe>`/`<embed>`/`<object>`(src가 비디오 URL일 때만 수집) | 비디오 리소스 |
+| `video` | `<video>` 및 `<iframe>`/`<embed>`/`<object>`(src 가 비디오 URL 일 때만 수집) | 비디오 리소스 |
 | `audio` | `<audio>` | 오디오 리소스 |
 | `css` | `<link rel="stylesheet">` | 스타일시트 |
-| `media` | `<source>` | 범용 미디어 리소스(비디오/오디오 구분 불가 시) |
+| `media` | `<source>` | 범용 미디어 리소스 (비디오/오디오 구분 불가 시) |
 | `js` | `<script>` | 스크립트 파일 |
 | `icon` | `<link rel="icon">` | 웹사이트 아이콘 |
 
@@ -79,7 +79,7 @@ for typ, items := range groups {
 ```
 
 :::tip 그룹 순서
-`GroupLinksByType`은 `map`을 반환하므로 **그룹 간 반복 순서는 불확정**입니다; 각 그룹 내 URL은 `ExtractAllLinks`의 오름차순을 유지합니다.
+`GroupLinksByType`은 `map`을 반환하므로 **그룹 간 반복 순서는 불확정**입니다; 각 그룹 내 URL 은 `ExtractAllLinks`의 오름차순을 유지합니다.
 :::
 
 ## 필터링 규칙 설정
@@ -89,7 +89,7 @@ for typ, items := range groups {
 ```go
 cfg := html.DefaultConfig()
 
-// 이미지와 CSS만 추출
+// 이미지와 CSS 만 추출
 cfg.IncludeImages = true
 cfg.IncludeVideos = false
 cfg.IncludeAudios = false
@@ -133,12 +133,12 @@ links, _ := html.ExtractAllLinks(data, cfg)
 
 ### Base URL 자동 감지
 
-`ResolveRelativeURLs = true`를 설정했지만 `BaseURL`을 설정하지 않은 경우, 라이브러리는 HTML에서 자동으로 감지합니다:
+`ResolveRelativeURLs = true`를 설정했지만 `BaseURL`을 설정하지 않은 경우, 라이브러리는 HTML 에서 자동으로 감지합니다:
 
 1. `<base href="...">` 태그
 2. `<meta property="og:url">` 또는 `canonical`
 3. `<link rel="canonical">`
-4. 페이지 내 첫 번째 절대 URL의 도메인
+4. 페이지 내 첫 번째 절대 URL 의 도메인
 
 ## 크롤러 시나리오 실전
 

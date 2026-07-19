@@ -228,7 +228,7 @@ func TestMemoryUsage(t *testing.T) {
     runtime.ReadMemStats(&m)
     after := m.Alloc
 
-    fmt.Printf("内存使用: %d bytes\n", after-before)
+    fmt.Printf("内存使用：%d bytes\n", after-before)
 }
 ```
 

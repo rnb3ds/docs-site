@@ -257,7 +257,7 @@ func main() {
     }
 
     fmt.Println(cfg.Level)
-    // 输出: info
+    // 输出：info
 }
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "삭제 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 삭제 함수: Delete로 노드를 삭제하고 DeleteClean으로 빈 부모 노드를 자동 정리합니다."
+description: "CyberGo JSON 삭제 함수: Delete 로 노드를 삭제하고 DeleteClean 으로 빈 부모 노드를 자동 정리합니다."
 sidebar_label: "삭제 작업"
 sidebar_position: 4
 ---
@@ -43,7 +43,7 @@ result, err := json.Delete(`{"user":{"name":"Alice","temp":"value"}}`, "user.tem
 **배열 요소 삭제**
 
 ```go
-// 배열의 요소 삭제 (인덱스는 0부터 시작)
+// 배열의 요소 삭제 (인덱스는 0 부터 시작)
 result, err := json.Delete(`{"items":["a","b","c"]}`, "items[1]")
 // {"items":["a","c"]}
 ```
@@ -51,13 +51,13 @@ result, err := json.Delete(`{"items":["a","b","c"]}`, "items[1]")
 **경로가 존재하지 않는 경우**
 
 ```go
-// 경로가 존재하지 않으면 원래 JSON과 오류 반환
+// 경로가 존재하지 않으면 원래 JSON 과 오류 반환
 result, err := json.Delete(`{"a":1}`, "nonexistent.path")
 if err != nil {
-    // err은 ErrPathNotFound를 래핑한 JsonsError를 포함
+    // err 은 ErrPathNotFound 를 래핑한 JsonsError 를 포함
     fmt.Println("삭제 실패:", err)
 }
-// result는 여전히 원래 JSON: {"a":1}
+// result 는 여전히 원래 JSON: {"a":1}
 ```
 
 ## DeleteClean

@@ -23,7 +23,7 @@ defer logger.Close()
 // password フィールドは自動マスキング
 logger.InfoWith("ユーザーログイン",
     dd.String("username", "alice"),
-    dd.String("password", "s3cr3t123"),    // 出力: password=[REDACTED]
+    dd.String("password", "s3cr3t123"),    // 出力：password=[REDACTED]
 )
 ```
 
@@ -170,9 +170,9 @@ logger.InfoWith("ユーザーログイン",
 filter := dd.NewSensitiveDataFilter()
 stats := filter.GetFilterStats()
 fmt.Printf("アクティブ goroutines: %d\n", stats.ActiveGoroutines)
-fmt.Printf("フィルタリングパターン数: %d\n", stats.PatternCount)
-fmt.Printf("総マスキング回数: %d\n", stats.TotalRedactions)
-fmt.Printf("タイムアウト回数: %d\n", stats.TotalTimeouts)
+fmt.Printf("フィルタリングパターン数：%d\n", stats.PatternCount)
+fmt.Printf("総マスキング回数：%d\n", stats.TotalRedactions)
+fmt.Printf("タイムアウト回数：%d\n", stats.TotalTimeouts)
 ```
 
 ## フィルタリングの無効化

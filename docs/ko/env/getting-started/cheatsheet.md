@@ -35,10 +35,10 @@ env.GetDuration("TIMEOUT", 30*time.Second)
 // 슬라이스 (KEY_0,KEY_1 인덱스 형식 또는 쉼표 구분 지원)
 env.GetSlice[string]("HOSTS", []string{"localhost"})
 env.GetSlice[int64]("PORTS", []int64{80})
-env.GetSlice[int]("PORTS", []int{80})          // int도 지원
+env.GetSlice[int]("PORTS", []int{80})          // int 도 지원
 env.GetSlice[float64]("RATES", []float64{0.1})
 
-// Loader에서 슬라이스 가져오기
+// Loader 에서 슬라이스 가져오기
 env.GetSliceFrom[string](loader, "HOSTS")
 env.GetSliceFrom[int64](loader, "PORTS")
 
@@ -121,7 +121,7 @@ loader.Delete("KEY")
 loader.Keys()
 loader.All()
 loader.Validate()
-loader.Apply()  // os.Environ에 적용
+loader.Apply()  // os.Environ 에 적용
 loader.Len()    // 변수 수
 loader.LoadTime() // 마지막 로드 시간
 loader.IsApplied() // 시스템 환경에 적용되었는지 여부

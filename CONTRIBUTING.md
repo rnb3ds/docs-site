@@ -47,14 +47,14 @@ npm run dev          # 启动本地预览（含 dev 重定向中间件）
 | `npm run typecheck` | 类型检查（`vue-tsc`） | 改了配置/脚本后必跑 |
 | `npm run audit` | 多语言 parity 自检 | **新增/移动/删除页面后必跑**（漏译会非零退出） |
 | `npm run check:projects` | `projects.yaml` ↔ `shared.ts` 双源一致性校验 | 改了项目元信息后跑 |
-| `npm run check:code` | Go 代码示例编译校验（提取 ```go 块跑 `go build`+`gofmt`） | 改了 ```go 示例后跑（CI 必跑；本地需 Go 工具链+源码，可选） |
+| `npm run check:code` | Go 代码示例编译校验（提取 ```go 块跑 `go build`+`gofmt`） | 改了 ```go 示例后跑（CI 必跑；本地需 Go 工具链 + 源码，可选） |
 | `npm run format` | Prettier 格式化 | 提交前 |
 | `npm run format:check` | 格式化检查（不写入） | CI 等价检查 |
 | `npm run lint:autocorrect` | CJK 排版校验 | 提交前（需系统装 [autocorrect](https://github.com/huacnlee/autocorrect)） |
 | `npm run fix:autocorrect` | CJK 排版自动修复 | 同上 |
 | `npm run build` | 全量构建 | 由维护者/CI 执行，**本地一般不需要** |
 
-> `audit`、`typecheck`、`check:projects`、`check:code`、`format:check`、`lint:autocorrect` 均在 CI 中运行，提交前本地跑一遍可避免反复来回。其中 `check:code` 与 `lint:autocorrect` 本地需额外工具（Go 工具链+源码 / 系统装 autocorrect），无此环境可交给 CI。
+> `audit`、`typecheck`、`check:projects`、`check:code`、`format:check`、`lint:autocorrect` 均在 CI 中运行，提交前本地跑一遍可避免反复来回。其中 `check:code` 与 `lint:autocorrect` 本地需额外工具（Go 工具链 + 源码 / 系统装 autocorrect），无此环境可交给 CI。
 
 ---
 
@@ -133,7 +133,7 @@ docs/{lang}/
 
 ```yaml
 ---
-title: "快速开始 - CyberGo JWT | 5分钟入门指南"
+title: "快速开始 - CyberGo JWT | 5 分钟入门指南"
 description: "5 分钟上手 CyberGo JWT，涵盖安装、签发、验证与黑名单，附完整可运行示例。"
 sidebar_label: "快速开始"
 sidebar_position: 2
@@ -155,7 +155,7 @@ sidebar_position: 2
 # 正确 — 双引号包裹
 description: "Полный справочник API библиотеки CyberGo env: создание и управление"
 
-# 错误 — 冒号+空格被误解析
+# 错误 — 冒号 + 空格被误解析
 description: Полный справочник API библиотеки CyberGo env: создание и управление
 ```
 
@@ -182,7 +182,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println(result) // 输出: test
+    fmt.Println(result) // 输出：test
 }
 ```
 
@@ -192,7 +192,7 @@ func main() {
 | `import` | 完整导入语句 |
 | `func main()` | 主函数 |
 | `if err != nil` | 错误处理 |
-| `// 输出: xxx` | 输出注释 |
+| `// 输出：xxx` | 输出注释 |
 
 ### Import 不加冗余别名
 
@@ -299,7 +299,7 @@ npm run typecheck           # 类型检查
 npm run audit               # 多语言 parity（新增/移动/删除页面后必跑）
 npm run check:projects      # 项目元信息一致性（改了 projects.yaml/shared.ts 后跑）
 npm run lint:autocorrect    # CJK 排版（需系统装 autocorrect）
-npm run check:code          # Go 代码示例编译（改了 ```go 示例后跑；需 Go+源码，可选）
+npm run check:code          # Go 代码示例编译（改了 ```go 示例后跑；需 Go+ 源码，可选）
 ```
 
 > 若本次改动包含 ```go 代码示例，且本地已具备 Go 工具链与 6 个源码 repo，建议跑 `npm run check:code`（或 `npm run check:code -- --all` 覆盖 5 语言）。**不可独立编译的教学片段**（渐进式披露、跨 package 多块演示、无 `func main()` 的方法/签名片段）用 go fence 紧前一行的 `<!-- check-code: skip -->` 标记豁免该块；整页都不参与校验则在 frontmatter 加 `check_code: false`。豁免仅用于这类合法场景，勿用以规避真实编译错误。

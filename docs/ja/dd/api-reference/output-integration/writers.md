@@ -96,7 +96,7 @@ fw, _ := dd.NewFileWriter("logs/app.log", dd.DefaultFileWriterConfig())
 
 // ローテーションコールバックを設定：ローテーション後に現在のファイルパスを出力
 fw.SetOnRotateCallback(func(path string) {
-    fmt.Println("ログがローテーションされました、現在のファイル:", path)
+    fmt.Println("ログがローテーションされました、現在のファイル：", path)
 })
 
 // MaxSizeMB を超えてローテーションがトリガーされるとコールバックが呼び出されます

@@ -11,7 +11,7 @@ sidebar_position: 2
 
 ## DangerousPattern 구조체
 
-DangerousPattern은 보안 위험 패턴을 나타냅니다. 구조체 타입입니다.
+DangerousPattern 은 보안 위험 패턴을 나타냅니다. 구조체 타입입니다.
 
 ```go
 type DangerousPattern struct {
@@ -33,7 +33,7 @@ type DangerousPattern struct {
 
 ## PatternLevel 타입
 
-PatternLevel은 위험 패턴의 심각도 수준을 나타냅니다.
+PatternLevel 은 위험 패턴의 심각도 수준을 나타냅니다.
 
 ```go
 type PatternLevel int
@@ -43,15 +43,15 @@ type PatternLevel int
 
 ```go
 const (
-    // PatternLevelCritical은 항상 작업을 차단합니다
+    // PatternLevelCritical 은 항상 작업을 차단합니다
     // 즉각적인 보안 위험을 구성하는 패턴에 사용 (예: 프로토타입 오염)
     PatternLevelCritical PatternLevel = iota
 
-    // PatternLevelWarning은 엄격 모드에서 차단, 완화 모드에서 경고 기록
+    // PatternLevelWarning 은 엄격 모드에서 차단, 완화 모드에서 경고 기록
     // 악의적인 의도를 나타낼 수 있지만 정당한 용도가 있는 패턴에 사용
     PatternLevelWarning
 
-    // PatternLevelInfo는 기록만 하고 차단하지 않음
+    // PatternLevelInfo 는 기록만 하고 차단하지 않음
     // 감사/추적 목적으로 사용하며 작업을 중단하지 않음
     PatternLevelInfo
 )
@@ -63,7 +63,7 @@ const (
 func (pl PatternLevel) String() string
 ```
 
-PatternLevel의 문자열 표현을 반환합니다.
+PatternLevel 의 문자열 표현을 반환합니다.
 
 ---
 
@@ -72,7 +72,7 @@ PatternLevel의 문자열 표현을 반환합니다.
 ### 기본 패턴
 
 :::warning 내부 API
-내장 패턴 목록은 내부 함수로 관리되며, 공개 API로 내보내지 않습니다. Config의 `AdditionalDangerousPatterns` 필드를 통해 커스텀 패턴을 관리할 수 있습니다.
+내장 패턴 목록은 내부 함수로 관리되며, 공개 API 로 내보내지 않습니다. Config 의 `AdditionalDangerousPatterns` 필드를 통해 커스텀 패턴을 관리할 수 있습니다.
 :::
 
 다음은 내장 위험 패턴 목록으로, 모두 Critical 수준입니다:
@@ -107,7 +107,7 @@ PatternLevel의 문자열 표현을 반환합니다.
 ### 핵심 패턴
 
 :::warning 내부 API
-GetCriticalPatterns는 내부 함수로 전환되어 공개 API로 내보내지지 않습니다. 핵심 패턴(`__proto__`, `constructor[`, `prototype.`)은 항상 강제 검사되며 비활성화할 수 없습니다.
+GetCriticalPatterns 는 내부 함수로 전환되어 공개 API 로 내보내지지 않습니다. 핵심 패턴 (`__proto__`, `constructor[`, `prototype.`) 은 항상 강제 검사되며 비활성화할 수 없습니다.
 :::
 
 다음 핵심 패턴은 JSON 크기에 관계없이 항상 전체 스캔합니다:
@@ -184,12 +184,12 @@ cfg.AddDangerousPattern(json.DangerousPattern{
 type Config struct {
     // ... 다른 필드 ...
 
-    // AdditionalDangerousPatterns는 기본 패턴 외에 추가할 보안 패턴
+    // AdditionalDangerousPatterns 는 기본 패턴 외에 추가할 보안 패턴
     AdditionalDangerousPatterns []DangerousPattern
 
-    // DisableDefaultPatterns는 내장 기본 보안 패턴을 비활성화 (핵심 패턴 제외)
-    // true로 설정하면 AdditionalDangerousPatterns만 사용
-    // 참고: 핵심 패턴(__proto__, constructor[, prototype.)은 항상 강제 실행되며 비활성화할 수 없음
+    // DisableDefaultPatterns 는 내장 기본 보안 패턴을 비활성화 (핵심 패턴 제외)
+    // true 로 설정하면 AdditionalDangerousPatterns 만 사용
+    // 참고: 핵심 패턴 (__proto__, constructor[, prototype.) 은 항상 강제 실행되며 비활성화할 수 없음
     DisableDefaultPatterns bool
 }
 ```
@@ -239,7 +239,7 @@ for _, p := range patterns {
 
 :::tip 전역 패턴 vs Config 패턴
 - **전역 패턴**(`RegisterDangerousPattern`): 모든 Processor 인스턴스가 공유, 애플리케이션 수준 보안 정책에 적합
-- **Config 패턴**(`Config.AddDangerousPattern`): 해당 Config를 사용하는 Processor에만 영향, 인스턴스 수준 커스텀에 적합
+- **Config 패턴**(`Config.AddDangerousPattern`): 해당 Config 를 사용하는 Processor 에만 영향, 인스턴스 수준 커스텀에 적합
 :::
 
 ---
@@ -292,8 +292,8 @@ func main() {
 ```go
 cfg := json.DefaultConfig()
 
-// 내장 기본 패턴 비활성화(핵심 패턴 제외), 커스텀 패턴만 사용
-// 참고: 핵심 패턴(__proto__, constructor[, prototype.)은 항상 강제 실행됨
+// 내장 기본 패턴 비활성화 (핵심 패턴 제외), 커스텀 패턴만 사용
+// 참고: 핵심 패턴 (__proto__, constructor[, prototype.) 은 항상 강제 실행됨
 cfg.DisableDefaultPatterns = true
 
 // 커스텀 패턴 추가
@@ -339,7 +339,7 @@ for _, p := range cfg.AdditionalDangerousPatterns {
 
 다계층 최적화 스캔을 사용하여 **100% 커버리지를 보장**합니다 (샘플링 사각지대 없음):
 
-- 핵심 패턴(`__proto__`, `constructor[`, `prototype.`)은 항상 전체 스캔
+- 핵심 패턴 (`__proto__`, `constructor[`, `prototype.`) 은 항상 전체 스캔
 - 먼저 지시자 문자를 검사: 위험 문자가 전혀 없으면 빠르게 건너뜀
 - 의심스러운 문자 밀도 감지: 밀도가 너무 높으면 전체 스캔으로 회귀하여, 공격자가 악의적 내용을 밀집 지역에 숨기는 것을 방지
 - 나머지 패턴은 32KB **슬라이딩 윈도우** 스캔 사용 (윈도우는 겹침), 경계를 가로지르는 패턴 누락 방지

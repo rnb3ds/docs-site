@@ -1,7 +1,7 @@
 ---
 sidebar_label: "リクエストとレスポンス"
 title: "リクエストとレスポンス - CyberGo HTTPC | オプションと応答"
-description: "HTTPC リクエストとレスポンスガイド: パッケージレベル関数とクライアントリクエスト、WithHeader/WithJSON などのリクエストオプション、Bearer 認証、クエリパラメータ、Cookie 管理、コンテキスト制御のベストプラクティスを解説します。"
+description: "HTTPC リクエストとレスポンスガイド：パッケージレベル関数とクライアントリクエスト、WithHeader/WithJSON などのリクエストオプション、Bearer 認証、クエリパラメータ、Cookie 管理、コンテキスト制御のベストプラクティスを解説します。"
 sidebar_position: 2
 ---
 
@@ -90,7 +90,7 @@ result, err := client.Post(url, httpc.WithBody(data))
 // map[string]string → application/x-www-form-urlencoded,
 // *FormData → multipart/form-data, io.Reader → passed through,
 // その他 → application/json
-// 明示的指定も可能: httpc.WithBody(data, httpc.BodyJSON)
+// 明示的指定も可能：httpc.WithBody(data, httpc.BodyJSON)
 ```
 
 ### クエリパラメータ
@@ -158,7 +158,7 @@ result, err := client.Get(url,
         return nil
     }),
     httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
-        log.Printf("レスポンス受信: %d", resp.StatusCode())
+        log.Printf("レスポンス受信：%d", resp.StatusCode())
         return nil
     }),
 )

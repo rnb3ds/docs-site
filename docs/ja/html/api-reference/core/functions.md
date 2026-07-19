@@ -7,7 +7,7 @@ sidebar_position: 1
 
 # パッケージ関数
 
-パッケージレベル関数は一回限りの呼び出しに適しており、内部で `sync.Pool` を使って Processor を再利用するため、ライフサイクルの手動管理が不要です。 注：プールされた Processor はキャッシュと監査保持を無効化します。キャッシュ/統計/監査が必要な場合は [html.New](./processor) で専用 Processor を生成してください。
+パッケージレベル関数は一回限りの呼び出しに適しており、内部で `sync.Pool` を使って Processor を再利用するため、ライフサイクルの手動管理が不要です。注：プールされた Processor はキャッシュと監査保持を無効化します。キャッシュ/統計/監査が必要な場合は [html.New](./processor) で専用 Processor を生成してください。
 
 ## コンテンツ抽出
 
@@ -87,11 +87,11 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractToMarkdown` | `(htmlBytes []byte, cfg ...Config) (string, error)` | HTML → Markdown |
 | `ExtractToMarkdownFromFile` | `(filePath string, cfg ...Config) (string, error)` | ファイル → Markdown |
 | `ExtractToMarkdownWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) (string, error)` | コンテキスト付き |
-| `ExtractToMarkdownFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) (string, error)` | ファイル+コンテキスト |
+| `ExtractToMarkdownFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) (string, error)` | ファイル + コンテキスト |
 | `ExtractToJSON` | `(htmlBytes []byte, cfg ...Config) ([]byte, error)` | HTML → JSON |
 | `ExtractToJSONFromFile` | `(filePath string, cfg ...Config) ([]byte, error)` | ファイル → JSON |
 | `ExtractToJSONWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]byte, error)` | コンテキスト付き |
-| `ExtractToJSONFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]byte, error)` | ファイル+コンテキスト |
+| `ExtractToJSONFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]byte, error)` | ファイル + コンテキスト |
 
 詳細な使い方と例は [出力フォーマット](../modules/output) を参照してください。
 
@@ -102,7 +102,7 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractAllLinks` | `(htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | すべてのリンクを抽出 |
 | `ExtractAllLinksFromFile` | `(filePath string, cfg ...Config) ([]LinkResource, error)` | ファイルからリンクを抽出 |
 | `ExtractAllLinksWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | コンテキスト付き |
-| `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | ファイル+コンテキスト |
+| `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | ファイル + コンテキスト |
 
 詳細な使い方と例は [リンク抽出](../modules/links) を参照してください。
 
@@ -113,6 +113,6 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractBatch` | `(htmlContents [][]byte, cfg ...Config) *BatchResult` | バッチ抽出 |
 | `ExtractBatchWithContext` | `(ctx context.Context, htmlContents [][]byte, cfg ...Config) *BatchResult` | コンテキスト付き |
 | `ExtractBatchFiles` | `(filePaths []string, cfg ...Config) *BatchResult` | バッチファイル抽出 |
-| `ExtractBatchFilesWithContext` | `(ctx context.Context, filePaths []string, cfg ...Config) *BatchResult` | ファイル+コンテキスト |
+| `ExtractBatchFilesWithContext` | `(ctx context.Context, filePaths []string, cfg ...Config) *BatchResult` | ファイル + コンテキスト |
 
 詳細な使い方と例は [バッチ処理](../modules/batch) を参照してください。

@@ -257,12 +257,12 @@ p.AddHook(json.TimingHook(myRecorder))
 - すべての Hook が実行される（前にエラーが返されても）
 
 ```go
-// 追加順序: A, B, C
+// 追加順序：A, B, C
 p.AddHook(hookA)
 p.AddHook(hookB)
 p.AddHook(hookC)
 
-// 実行順序:
+// 実行順序：
 // Before: A.Before → B.Before → C.Before
 // After:  C.After → B.After → A.After
 ```

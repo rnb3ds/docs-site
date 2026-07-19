@@ -235,7 +235,7 @@ func (sv *SecureValue) Masked() string
 secret := env.GetSecure("API_KEY")
 if secret != nil {
     log.Printf("API Key: %s", secret.Masked())
-    // 输出: API Key: [SECURE:32 bytes]
+    // 输出：API Key: [SECURE:32 bytes]
     // 注：仅当启用内存锁定（SetMemoryLockEnabled(true)）且锁定成功时，
     // 掩码才追加 " locked" 后缀（另有 " lock-failed" / " unlocked"）
 }
@@ -540,11 +540,11 @@ func MaskValue(key, value string) string
 ```go
 // 敏感键 - 返回 [MASKED:N chars] 格式
 masked := env.MaskValue("API_KEY", "secret123")
-// 返回: [MASKED:9 chars]
+// 返回：[MASKED:9 chars]
 
 // 非敏感键 - 返回原值（超过 20 字符则截断）
 masked := env.MaskValue("APP_NAME", "myapp")
-// 返回: myapp
+// 返回：myapp
 ```
 
 ---
@@ -565,7 +565,7 @@ func MaskKey(key string) string
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
-// 返回: DB***
+// 返回：DB***
 ```
 
 ---
@@ -588,7 +588,7 @@ func SanitizeForLog(s string) string
 // 自动掩码敏感键值对
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
-// 返回: "Connected with password=[MASKED] api_key=[MASKED]"
+// 返回："Connected with password=[MASKED] api_key=[MASKED]"
 ```
 
 ---
@@ -611,7 +611,7 @@ func MaskSensitiveInString(s string) string
 // 长字符串会被截断（保留前 47 个字符并追加 "..."）
 long := "This is a very long string that exceeds 50 characters"
 clean := env.MaskSensitiveInString(long)
-// 返回: "This is a very long string that exceeds 50 char..."
+// 返回："This is a very long string that exceeds 50 char..."
 ```
 
 ::: tip 使用场景

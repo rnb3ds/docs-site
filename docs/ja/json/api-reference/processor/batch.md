@@ -36,7 +36,7 @@ for _, result := range results {
 
 ```go
 type BatchOperation struct {
-    Type    string `json:"type"`     // 操作タイプ: "get", "set", "delete", "validate"
+    Type    string `json:"type"`     // 操作タイプ："get", "set", "delete", "validate"
     JSONStr string `json:"json_str"` // JSON 文字列
     Path    string `json:"path"`     // ターゲットパス
     Value   any    `json:"value"`    // Set 操作の値
@@ -120,7 +120,7 @@ for _, r := range results {
 
 ## 注意事項
 
-1. 各操作は独立して実行され、1つの失敗が他の操作に影響しません
+1. 各操作は独立して実行され、1 つの失敗が他の操作に影響しません
 2. 結果の順序は操作の順序と一致します
 3. ID を使用して操作と結果を照合します
 

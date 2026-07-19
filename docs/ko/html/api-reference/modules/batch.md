@@ -1,13 +1,13 @@
 ---
 sidebar_label: "배치 처리"
 title: "배치 처리 - CyberGo html | 동시성 배치 추출 API"
-description: "CyberGo html 동시성 배치 API: ExtractBatch, ExtractBatchFiles 계열과 컨텍스트 버전으로 동시 처리를 지원하며 배치당 최대 10000건입니다."
+description: "CyberGo html 동시성 배치 API: ExtractBatch, ExtractBatchFiles 계열과 컨텍스트 버전으로 동시 처리를 지원하며 배치당 최대 10000 건입니다."
 sidebar_position: 3
 ---
 
 # 배치 처리
 
-배치 추출은 여러 HTML 문서를 동시에 처리하는 것을 지원하며, 각 배치당 최대 10000개 항목까지 가능합니다.
+배치 추출은 여러 HTML 문서를 동시에 처리하는 것을 지원하며, 각 배치당 최대 10000 개 항목까지 가능합니다.
 
 ## 패키지 함수
 
@@ -32,7 +32,7 @@ func (p *Processor) ExtractBatchFilesWithContext(ctx context.Context, filePaths 
 ```go
 type BatchResult struct {
     Results   []*Result  // 각 입력 항목의 결과, 입력 순서대로 인덱싱됨; 실패 또는 취소 시 nil
-    Errors    []error    // 각 입력 항목의 오류, 인덱스가 Results와 일대일 대응
+    Errors    []error    // 각 입력 항목의 오류, 인덱스가 Results 와 일대일 대응
     Success   int        // 성공 수량
     Failed    int        // 실패 수량
     Cancelled int        // 컨텍스트 취소로 인해 처리되지 않은 항목 수
@@ -59,5 +59,5 @@ for i, err := range batch.Errors {
 ```
 
 :::warning 배치 제한
-단일 배치당 최대 10000개 항목이며, 초과 시 모든 항목이 실패한 `*BatchResult`를 반환합니다(각 `Errors` 항목은 `html: batch size N exceeds maximum 10000`로 채워집니다). panic은 발생하지 않습니다.
+단일 배치당 최대 10000 개 항목이며, 초과 시 모든 항목이 실패한 `*BatchResult`를 반환합니다 (각 `Errors` 항목은 `html: batch size N exceeds maximum 10000`로 채워집니다). panic 은 발생하지 않습니다.
 :::

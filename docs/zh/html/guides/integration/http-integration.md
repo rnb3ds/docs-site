@@ -46,8 +46,8 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("标题:", result.Title)
-    fmt.Println("字数:", result.WordCount)
+    fmt.Println("标题：", result.Title)
+    fmt.Println("字数：", result.WordCount)
 }
 ```
 
@@ -76,7 +76,7 @@ client := &http.Client{
 
 | 参数 | 建议值 | 说明 |
 |------|--------|------|
-| `Timeout` | 10-30s | 包含连接+TLS+读写全流程 |
+| `Timeout` | 10-30s | 包含连接+TLS+ 读写全流程 |
 | `MaxIdleConns` | 10-50 | 全局最大空闲连接 |
 | `MaxIdleConnsPerHost` | 5-10 | 单主机最大空闲连接 |
 | `IdleConnTimeout` | 90s | 空闲连接保持时间 |
@@ -227,7 +227,7 @@ func fetchWithRetry(client *http.Client, url string, maxRetries int) ([]byte, er
         }
 
         if resp.StatusCode >= 500 {
-            lastErr = fmt.Errorf("服务端错误: HTTP %d", resp.StatusCode)
+            lastErr = fmt.Errorf("服务端错误：HTTP %d", resp.StatusCode)
             resp.Body.Close()
             time.Sleep(time.Second * time.Duration(1<<uint(i)))
             continue
@@ -246,7 +246,7 @@ func fetchWithRetry(client *http.Client, url string, maxRetries int) ([]byte, er
         return body, nil
     }
 
-    return nil, fmt.Errorf("重试 %d 次后仍失败: %w", maxRetries, lastErr)
+    return nil, fmt.Errorf("重试 %d 次后仍失败：%w", maxRetries, lastErr)
 }
 ```
 
@@ -286,7 +286,7 @@ func batchProcessURLs(processor *html.Processor, urls []string) {
 
     // 批量提取
     batch := processor.ExtractBatchWithContext(ctx, pages)
-    fmt.Printf("成功: %d, 失败: %d, 取消: %d\n",
+    fmt.Printf("成功：%d, 失败：%d, 取消：%d\n",
         batch.Success, batch.Failed, batch.Cancelled)
 }
 ```

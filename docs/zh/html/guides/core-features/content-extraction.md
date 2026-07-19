@@ -14,8 +14,8 @@ sidebar_position: 1
 当你调用 `Extract` 时，库会执行以下步骤：
 
 ```text
-HTML 输入 → 输入校验 → 编码检测(自动转 UTF-8) → DOM 解析 → 深度验证
-    → 安全清洗(可选) → 文章识别(可选) → 内容提取 → 格式化 → 返回 Result
+HTML 输入 → 输入校验 → 编码检测 (自动转 UTF-8) → DOM 解析 → 深度验证
+    → 安全清洗 (可选) → 文章识别 (可选) → 内容提取 → 格式化 → 返回 Result
 ```
 
 深度验证在清洗**之前**执行：先以迭代方式校验 DOM 深度（避免递归遍历导致栈溢出），再对已解析的 DOM 树进行安全清洗。两者均针对解析后的节点树，因此 DOM 解析始终先于二者。
@@ -55,26 +55,26 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("标题:", result.Title)
-    // 标题: Go 语言教程
+    fmt.Println("标题：", result.Title)
+    // 标题：Go 语言教程
 
-    fmt.Println("正文:", result.Text)
-    // 正文: Go 入门指南
+    fmt.Println("正文：", result.Text)
+    // 正文：Go 入门指南
     //       Go 是一门静态类型的编译语言，内置并发支持。
     //       它编译速度快，部署简单，适合构建高性能服务。
     //       Go 官网
 
-    fmt.Println("字数:", result.WordCount)
-    // 字数: 7
+    fmt.Println("字数：", result.WordCount)
+    // 字数：7
 
-    fmt.Println("阅读时间:", result.ReadingTime)
-    // 阅读时间: 2.1s（按 200 词/分钟计算）
+    fmt.Println("阅读时间：", result.ReadingTime)
+    // 阅读时间：2.1s（按 200 词/分钟计算）
 
-    fmt.Println("图片:", len(result.Images))
-    // 图片: 1
+    fmt.Println("图片：", len(result.Images))
+    // 图片：1
 
-    fmt.Println("链接:", len(result.Links))
-    // 链接: 1
+    fmt.Println("链接：", len(result.Links))
+    // 链接：1
 }
 ```
 
@@ -103,7 +103,7 @@ result, err := html.ExtractFromFile("article.html")
 if err != nil {
     log.Fatal(err)
 }
-fmt.Println("标题:", result.Title)
+fmt.Println("标题：", result.Title)
 ```
 
 文件操作内置了安全检查：

@@ -27,7 +27,7 @@ type Scorer interface {
 
 ### 기본 동작
 
-`Scorer`를 설정하지 않으면 내장 기본 스코어러가 사용됩니다. 노드 특성(텍스트 밀도, 단락 비율, 태그 의미 등)에 따라 점수를 계산합니다.
+`Scorer`를 설정하지 않으면 내장 기본 스코어러가 사용됩니다. 노드 특성 (텍스트 밀도, 단락 비율, 태그 의미 등) 에 따라 점수를 계산합니다.
 
 ### 커스텀 Scorer 구현
 
@@ -179,7 +179,7 @@ cfg.MaxCacheEntries = 0 // 캐시 비활성화
 
 ### 정제 비활성화
 
-신뢰할 수 있는 입력에 대해서는 보안 정제를 비활성화하여 테스트 HTML이 수정되지 않도록 할 수 있습니다:
+신뢰할 수 있는 입력에 대해서는 보안 정제를 비활성화하여 테스트 HTML 이 수정되지 않도록 할 수 있습니다:
 
 ```go
 cfg := html.DefaultConfig()
@@ -320,6 +320,6 @@ func walk(node html.ContentNode, counts map[string]int) {
 
 ## 다음 단계
 
-- [API 레퍼런스: 인터페이스](../../api-reference/types/interfaces) - Scorer와 ContentNode 전체 정의
+- [API 레퍼런스: 인터페이스](../../api-reference/types/interfaces) - Scorer 와 ContentNode 전체 정의
 - [API 레퍼런스: 설정](../../api-reference/core/config) - Scorer 설정 필드
 - [FAQ](../../faq/) - 자주 묻는 질문

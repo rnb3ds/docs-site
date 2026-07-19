@@ -1,7 +1,7 @@
 ---
 sidebar_label: "ドメインクライアントとセッション"
 title: "ドメインクライアントとセッション - CyberGo HTTPC | セッションとドメイン"
-description: "HTTPC ドメインクライアントとセッションガイド: NewDomain によるドメインスコープクライアント作成、URL 自動結合、SetHeader ヘッダー維持、Cookie セキュリティ検証、REST API クライアントラッパーの実践例を解説します。"
+description: "HTTPC ドメインクライアントとセッションガイド：NewDomain によるドメインスコープクライアント作成、URL 自動結合、SetHeader ヘッダー維持、Cookie セキュリティ検証、REST API クライアントラッパーの実践例を解説します。"
 sidebar_position: 3
 ---
 
@@ -127,7 +127,7 @@ dc, _ := httpc.NewDomain("https://api.example.com")
 // 厳格な Cookie セキュリティを設定
 session := dc.Session()
 session.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
-// 要求: Secure=true, HttpOnly=true, SameSite=Strict
+// 要求：Secure=true, HttpOnly=true, SameSite=Strict
 
 // セキュリティ要件を満たさない Cookie は SetCookie でエラーを返す
 if err := dc.SetCookie(&http.Cookie{
@@ -135,7 +135,7 @@ if err := dc.SetCookie(&http.Cookie{
     Value: "test",
     // Secure, HttpOnly が不足 → 拒否される
 }); err != nil {
-    log.Println("Cookie が拒否されました:", err)
+    log.Println("Cookie が拒否されました：", err)
 }
 ```
 

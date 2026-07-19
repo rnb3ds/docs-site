@@ -14,11 +14,11 @@ sidebar_position: 1
 `Extract`를 호출하면 라이브러리는 다음 단계를 실행합니다:
 
 ```text
-HTML 입력 → 입력 검증 → 인코딩 감지(자동 UTF-8 변환) → DOM 파싱 → 깊이 검증
-    → 안전한 정제(선택) → 기사 감지(선택) → 콘텐츠 추출 → 포맷팅 → Result 반환
+HTML 입력 → 입력 검증 → 인코딩 감지 (자동 UTF-8 변환) → DOM 파싱 → 깊이 검증
+    → 안전한 정제 (선택) → 기사 감지 (선택) → 콘텐츠 추출 → 포맷팅 → Result 반환
 ```
 
-깊이 검증은 정제 **이전에** 실행됩니다. 먼저 DOM 깊이를 반복적으로(iterative) 검증해(재귀 순회로 인한 스택 오버플로 회피), 그 다음 파싱된 DOM 트리에 대해 안전한 정제를 수행합니다. 둘 모두 파싱된 노드 트리를 대상으로 하므로 DOM 파싱이 항상 그 둘보다 먼저 일어납니다.
+깊이 검증은 정제 **이전에** 실행됩니다. 먼저 DOM 깊이를 반복적으로 (iterative) 검증해 (재귀 순회로 인한 스택 오버플로 회피), 그 다음 파싱된 DOM 트리에 대해 안전한 정제를 수행합니다. 둘 모두 파싱된 노드 트리를 대상으로 하므로 DOM 파싱이 항상 그 둘보다 먼저 일어납니다.
 
 각 단계는 [설정](../../api-reference/core/config)을 통해 커스터마이즈할 수 있습니다.
 
@@ -42,7 +42,7 @@ func main() {
         <body>
             <article>
                 <h1>Go 입문 가이드</h1>
-                <p>Go는 정적 타입의 컴파일 언어로, 동시성을 내장 지원합니다.</p>
+                <p>Go 는 정적 타입의 컴파일 언어로, 동시성을 내장 지원합니다.</p>
                 <p>컴파일 속도가 빠르고 배포가 간단하여 고성능 서비스 구축에 적합합니다.</p>
                 <img src="gopher.png" alt="Gopher 마스코트" />
                 <a href="https://go.dev">Go 공식 웹사이트</a>
@@ -60,7 +60,7 @@ func main() {
 
     fmt.Println("본문:", result.Text)
     // 본문: Go 입문 가이드
-    //       Go는 정적 타입의 컴파일 언어로, 동시성을 내장 지원합니다.
+    //       Go 는 정적 타입의 컴파일 언어로, 동시성을 내장 지원합니다.
     //       컴파일 속도가 빠르고 배포가 간단하여 고성능 서비스 구축에 적합합니다.
     //       Go 공식 웹사이트
 
@@ -68,7 +68,7 @@ func main() {
     // 단어 수: 7
 
     fmt.Println("읽기 시간:", result.ReadingTime)
-    // 읽기 시간: 2.1s(200단어/분 기준)
+    // 읽기 시간: 2.1s(200 단어/분 기준)
 
     fmt.Println("이미지:", len(result.Images))
     // 이미지: 1
@@ -85,13 +85,13 @@ func main() {
 | 필드 | 타입 | 설명 |
 |------|------|------|
 | `Title` | `string` | 페이지 제목, `<title>`을 우선, 그 다음 `<h1>`, `<h2>` |
-| `Text` | `string` | 본문 콘텐츠(정제됨, 태그와 불필요한 공백 제거) |
+| `Text` | `string` | 본문 콘텐츠 (정제됨, 태그와 불필요한 공백 제거) |
 | `Images` | `[]ImageInfo` | 추출된 이미지 목록 |
 | `Links` | `[]LinkInfo` | 추출된 링크 목록 |
 | `Videos` | `[]VideoInfo` | 추출된 비디오 목록 |
 | `Audios` | `[]AudioInfo` | 추출된 오디오 목록 |
 | `WordCount` | `int` | 본문 단어 수 |
-| `ReadingTime` | `time.Duration` | 예상 읽기 시간(200단어/분) |
+| `ReadingTime` | `time.Duration` | 예상 읽기 시간 (200 단어/분) |
 | `ProcessingTime` | `time.Duration` | 처리 소요 시간 |
 
 ## 파일에서 추출
@@ -107,13 +107,13 @@ fmt.Println("제목:", result.Title)
 ```
 
 파일 작업에는 다음과 같은 보안 검사가 내장되어 있습니다:
-- 경로 순회 공격 자동 감지(예: `../../../etc/passwd`)
+- 경로 순회 공격 자동 감지 (예: `../../../etc/passwd`)
 - 파일 크기는 `MaxInputSize`로 제한
 - 오류 메시지에서 `SafePath()`로 전체 경로 숨김
 
 ## 문서 인식 알고리즘
 
-`ExtractArticle`이 `true`(기본값)인 경우, 라이브러리는 페이지의 "주요 콘텐츠 영역"을 자동으로 식별합니다.
+`ExtractArticle`이 `true`(기본값) 인 경우, 라이브러리는 페이지의 "주요 콘텐츠 영역"을 자동으로 식별합니다.
 
 ### 작동 원리
 
@@ -145,7 +145,7 @@ func (s myScorer) Score(node html.ContentNode) int {
 }
 
 func (s myScorer) ShouldRemove(node html.ContentNode) bool {
-    // true를 반환하면 해당 노드를 제거
+    // true 를 반환하면 해당 노드를 제거
     return node.Data() == "nav" || node.Data() == "footer"
 }
 ```
@@ -170,7 +170,7 @@ fmt.Println(text)
 
 ## 비 UTF-8 인코딩 처리
 
-라이브러리는 15+ 문자 인코딩(UTF-8, GBK, Shift_JIS, Windows-1252 등 포함)을 자동으로 감지하고 UTF-8로 자동 변환합니다.
+라이브러리는 15+ 문자 인코딩 (UTF-8, GBK, Shift_JIS, Windows-1252 등 포함) 을 자동으로 감지하고 UTF-8 로 자동 변환합니다.
 
 ```go
 // 자동 인코딩 감지
@@ -184,7 +184,7 @@ result, err = html.Extract(gbkEncodedData, cfg)
 
 ## 컨텍스트와 타임아웃
 
-대용량 파일이나 신뢰할 수 없는 출처의 HTML의 경우, 컨텍스트가 포함된 버전을 사용하는 것이 좋습니다:
+대용량 파일이나 신뢰할 수 없는 출처의 HTML 의 경우, 컨텍스트가 포함된 버전을 사용하는 것이 좋습니다:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

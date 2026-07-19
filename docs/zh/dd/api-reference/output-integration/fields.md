@@ -212,12 +212,12 @@ func main() {
         fmt.Println("user_id:", err)
     } else {
         fmt.Println("user_id OK")
-        // 输出: user_id OK
+        // 输出：user_id OK
     }
 
     if err := cfg.ValidateFieldKey("userId"); err != nil {
         fmt.Println("userId:", err)
-        // 输出: userId: field key "userId" does not match snake_case convention
+        // 输出：userId: field key "userId" does not match snake_case convention
     }
 
     // 常见缩写豁免：URL 不符合 snake_case，但命中缩写表故通过
@@ -225,7 +225,7 @@ func main() {
         fmt.Println("URL:", err)
     } else {
         fmt.Println("URL OK (缩写豁免)")
-        // 输出: URL OK (缩写豁免)
+        // 输出：URL OK (缩写豁免)
     }
 
     // 默认配置 Mode=None，不校验命名
@@ -234,7 +234,7 @@ func main() {
         fmt.Println("anyKey:", err)
     } else {
         fmt.Println("anyKey OK (Mode=None)")
-        // 输出: anyKey OK (Mode=None)
+        // 输出：anyKey OK (Mode=None)
     }
 }
 ```

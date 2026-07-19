@@ -142,7 +142,7 @@ type SizeValidator struct {
 func (v *SizeValidator) Validate(jsonStr string) error {
     // 检查 JSON 字符串大小
     if int64(len(jsonStr)) > v.MaxSize {
-        return fmt.Errorf("JSON 超过最大大小: %d 字节", v.MaxSize)
+        return fmt.Errorf("JSON 超过最大大小：%d 字节", v.MaxSize)
     }
     return nil
 }

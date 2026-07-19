@@ -7,7 +7,7 @@ sidebar_position: 1
 
 # 包函数
 
-包级函数适合一次性调用场景，内部使用 `sync.Pool` 复用 Processor，无需手动管理生命周期。 注意：池化 Processor 已禁用缓存与审计保留；需要缓存/统计/审计请用 [html.New](./processor) 创建独立 Processor。
+包级函数适合一次性调用场景，内部使用 `sync.Pool` 复用 Processor，无需手动管理生命周期。注意：池化 Processor 已禁用缓存与审计保留；需要缓存/统计/审计请用 [html.New](./processor) 创建独立 Processor。
 
 ## 内容提取
 
@@ -87,11 +87,11 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractToMarkdown` | `(htmlBytes []byte, cfg ...Config) (string, error)` | HTML → Markdown |
 | `ExtractToMarkdownFromFile` | `(filePath string, cfg ...Config) (string, error)` | 文件 → Markdown |
 | `ExtractToMarkdownWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) (string, error)` | 带上下文 |
-| `ExtractToMarkdownFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) (string, error)` | 文件+上下文 |
+| `ExtractToMarkdownFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) (string, error)` | 文件 + 上下文 |
 | `ExtractToJSON` | `(htmlBytes []byte, cfg ...Config) ([]byte, error)` | HTML → JSON |
 | `ExtractToJSONFromFile` | `(filePath string, cfg ...Config) ([]byte, error)` | 文件 → JSON |
 | `ExtractToJSONWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]byte, error)` | 带上下文 |
-| `ExtractToJSONFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]byte, error)` | 文件+上下文 |
+| `ExtractToJSONFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]byte, error)` | 文件 + 上下文 |
 
 详细用法和示例详见 [输出格式](../modules/output)。
 
@@ -102,7 +102,7 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractAllLinks` | `(htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | 提取所有链接 |
 | `ExtractAllLinksFromFile` | `(filePath string, cfg ...Config) ([]LinkResource, error)` | 从文件提取链接 |
 | `ExtractAllLinksWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | 带上下文 |
-| `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | 文件+上下文 |
+| `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | 文件 + 上下文 |
 
 详细用法和示例详见 [链接提取](../modules/links)。
 
@@ -113,6 +113,6 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractBatch` | `(htmlContents [][]byte, cfg ...Config) *BatchResult` | 批量提取 |
 | `ExtractBatchWithContext` | `(ctx context.Context, htmlContents [][]byte, cfg ...Config) *BatchResult` | 带上下文 |
 | `ExtractBatchFiles` | `(filePaths []string, cfg ...Config) *BatchResult` | 批量文件提取 |
-| `ExtractBatchFilesWithContext` | `(ctx context.Context, filePaths []string, cfg ...Config) *BatchResult` | 文件+上下文 |
+| `ExtractBatchFilesWithContext` | `(ctx context.Context, filePaths []string, cfg ...Config) *BatchResult` | 文件 + 上下文 |
 
 详细用法和示例详见 [批量处理](../modules/batch)。

@@ -13,7 +13,7 @@ JSON 데이터 처리 시 보안 고려 사항과 모범 사례입니다.
 
 ### 1. 리소스 고갈 공격
 
-악의적으로 구성된 JSON은 메모리 고갈이나 CPU 과부하를 유발할 수 있습니다.
+악의적으로 구성된 JSON 은 메모리 고갈이나 CPU 과부하를 유발할 수 있습니다.
 
 **방어 조치:**
 
@@ -21,7 +21,7 @@ JSON 데이터 처리 시 보안 고려 사항과 모범 사례입니다.
 cfg := json.DefaultConfig()
 cfg.MaxNestingDepthSecurity = 50                       // 중첩 깊이 제한
 cfg.MaxJSONSize = 10 * 1024 * 1024             // JSON 크기 제한 (10MB)
-cfg.MaxSecurityValidationSize = 100 * 1024 * 1024 // 보안 검증 제한을 100MB로 증가 (기본값 10MB)
+cfg.MaxSecurityValidationSize = 100 * 1024 * 1024 // 보안 검증 제한을 100MB 로 증가 (기본값 10MB)
 ```
 
 ### 2. 경로 순회 공격
@@ -62,7 +62,7 @@ bytes, _ := json.Marshal(data)
 **방어 조치:**
 
 ```go
-// 커스텀 Hook으로 민감 필드 필터링
+// 커스텀 Hook 으로 민감 필드 필터링
 type FilterFieldsHook struct {
     fields map[string]bool
 }
@@ -122,7 +122,7 @@ json.UnregisterDangerousPattern("eval(")
 
 시그니처: `func ListDangerousPatterns() []DangerousPattern`
 
-등록된 모든 위험 패턴(기본 패턴과 커스텀 패턴 포함)을 나열합니다.
+등록된 모든 위험 패턴 (기본 패턴과 커스텀 패턴 포함) 을 나열합니다.
 
 ```go
 patterns := json.ListDangerousPatterns()
@@ -140,7 +140,7 @@ for _, p := range patterns {
 | `PatternLevelInfo` | `int` | `2` | 정보 수준, 로그만 기록 |
 
 ::: tip
-`PatternLevel`의 `String()` 메서드는 해당 문자열 표현(`"critical"`, `"warning"`, `"info"`)을 반환하여 로그 출력에 편리합니다.
+`PatternLevel`의 `String()` 메서드는 해당 문자열 표현 (`"critical"`, `"warning"`, `"info"`) 을 반환하여 로그 출력에 편리합니다.
 :::
 
 #### 기본 패턴 비활성화
@@ -153,7 +153,7 @@ cfg.DisableDefaultPatterns = true // 내장 기본 패턴 비활성화
 ```
 
 :::warning 주의
-`DisableDefaultPatterns=true`이면, 항상 강제 스캔하는 3개의 핵심 패턴(`__proto__`, `constructor[`, `prototype.`)을 제외하고 나머지 내장 패턴이 모두 비활성화됩니다. 참고: 내장 패턴은 모두 Critical 수준입니다.
+`DisableDefaultPatterns=true`이면, 항상 강제 스캔하는 3 개의 핵심 패턴 (`__proto__`, `constructor[`, `prototype.`) 을 제외하고 나머지 내장 패턴이 모두 비활성화됩니다. 참고: 내장 패턴은 모두 Critical 수준입니다.
 :::
 
 ### 프로덕션 환경 설정
@@ -181,7 +181,7 @@ func DevelopmentConfig() json.Config {
 
 ### 커스텀 검증기
 
-`Validator` 인터페이스(`Validate(jsonStr string) error`)를 구현하여 입력 검증을 수행합니다:
+`Validator` 인터페이스 (`Validate(jsonStr string) error`) 를 구현하여 입력 검증을 수행합니다:
 
 ```go
 // 커스텀 검증기 구현
@@ -210,7 +210,7 @@ cfg.CustomValidators = []json.Validator{&EmailValidator{}}
 
 ### Schema 검증
 
-Schema는 구조체 타입으로, JSON 구조를 검증하는 데 사용할 수 있습니다:
+Schema 는 구조체 타입으로, JSON 구조를 검증하는 데 사용할 수 있습니다:
 
 ```go
 schema := &json.Schema{
@@ -241,7 +241,7 @@ if err != nil {
 
 ### 핵심 작업 기록
 
-`Hook` 인터페이스(`Before`는 `error` 반환, `After`는 `(HookContext, any, error)`를 받아 `(any, error)` 반환)를 사용하여 감사 로그를 기록합니다:
+`Hook` 인터페이스 (`Before`는 `error` 반환, `After`는 `(HookContext, any, error)`를 받아 `(any, error)` 반환) 를 사용하여 감사 로그를 기록합니다:
 
 ```go
 type AuditHook struct {

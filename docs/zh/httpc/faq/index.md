@@ -71,10 +71,10 @@ case result.IsSuccess():
     // 2xx 成功
 case result.IsClientError():
     // 4xx 客户端错误
-    log.Printf("请求参数错误: %d", result.StatusCode())
+    log.Printf("请求参数错误：%d", result.StatusCode())
 case result.IsServerError():
     // 5xx 服务端错误
-    log.Printf("服务端故障: %d", result.StatusCode())
+    log.Printf("服务端故障：%d", result.StatusCode())
 }
 ```
 

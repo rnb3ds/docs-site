@@ -48,7 +48,7 @@ dd.SetDefault(logger)
 
 ### Fatal 레벨 로그는 어떻게 동작하나요?
 
-`Fatal` / `Fatalf` / `FatalWith`는 로그 출력 후 `os.Exit(1)`을 호출합니다(**defer 문은 실행되지 않음**; 내부적으로 먼저 `Close()`로 대기 중인 로그를 flush하며 최대 5초 대기). `FatalHandler`로 종료 동작을 커스터마이징할 수 있습니다. 리소스 정리가 필요하다면 `ErrorWith` + 명시적 `Shutdown(ctx)`을 대신 사용하세요.
+`Fatal` / `Fatalf` / `FatalWith`는 로그 출력 후 `os.Exit(1)`을 호출합니다 (**defer 문은 실행되지 않음**; 내부적으로 먼저 `Close()`로 대기 중인 로그를 flush 하며 최대 5 초 대기). `FatalHandler`로 종료 동작을 커스터마이징할 수 있습니다. 리소스 정리가 필요하다면 `ErrorWith` + 명시적 `Shutdown(ctx)`을 대신 사용하세요.
 
 ## 구성
 
@@ -74,7 +74,7 @@ logger, _ := dd.New(dd.Config{
 ### 로그 레벨을 동적으로 수정하려면?
 
 ```go
-_ = logger.SetLevel(dd.LevelDebug)  // 런타임 수정(오류 반환)
+_ = logger.SetLevel(dd.LevelDebug)  // 런타임 수정 (오류 반환)
 _ = dd.SetLevel(dd.LevelDebug)      // 전역 로거 레벨 수정
 ```
 
@@ -84,7 +84,7 @@ _ = dd.SetLevel(dd.LevelDebug)      // 전역 로거 레벨 수정
 
 ```go
 fw, _ := dd.NewFileWriter("logs/app.log",
-    dd.DefaultFileWriterConfig(),  // 100MB, 30일, 10개 백업
+    dd.DefaultFileWriterConfig(),  // 100MB, 30 일, 10 개 백업
 )
 ```
 
@@ -92,10 +92,10 @@ fw, _ := dd.NewFileWriter("logs/app.log",
 
 ### 로그가 프로그램 성능에 영향을 주나요?
 
-DD는 설계 단계부터 고성능을 추구합니다.
+DD 는 설계 단계부터 고성능을 추구합니다.
 - 핫 패스 저할당 최적화
 - 원자 레벨 검사, 락 없음
-- 대용량 입력(≥10KB)의 민감 데이터 필터링은 독립 goroutine에서 실행되며 타임아웃 보호 포함; 소용량 입력은 동기 처리
+- 대용량 입력 (≥10KB) 의 민감 데이터 필터링은 독립 goroutine 에서 실행되며 타임아웃 보호 포함; 소용량 입력은 동기 처리
 - 선택적 버퍼 쓰기로 I/O 감소
 
 ### 고처리량 시나리오 최적화 방법은?
@@ -111,7 +111,7 @@ DD는 설계 단계부터 고성능을 추구합니다.
 
 ### 민감 데이터 필터링은 어떻게 동작하나요?
 
-`SensitiveDataFilter`는 정규식 패턴 매칭을 사용하여 로그 쓰기 전에 매칭된 민감 값을 자동으로 `[REDACTED]`로 교체합니다. 소용량 입력은 동기 처리, 대용량 입력은 독립 goroutine에서 실행되며 타임아웃 보호를 포함해 로그 쓰기를 차단하지 않습니다.
+`SensitiveDataFilter`는 정규식 패턴 매칭을 사용하여 로그 쓰기 전에 매칭된 민감 값을 자동으로 `[REDACTED]`로 교체합니다. 소용량 입력은 동기 처리, 대용량 입력은 독립 goroutine 에서 실행되며 타임아웃 보호를 포함해 로그 쓰기를 차단하지 않습니다.
 
 ### 커스텀 민감 데이터 패턴을 만들려면?
 
@@ -134,7 +134,7 @@ sig := signer.Sign(logMessage)
 
 ## 오류 처리
 
-### AddWriter가 오류를 반환하는 이유는?
+### AddWriter 가 오류를 반환하는 이유는?
 
 가능한 원인:
 - `ErrNilWriter` -- nil Writer 전달

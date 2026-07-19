@@ -192,13 +192,13 @@ func TestMiddleware_LogsRequestFields(t *testing.T) {
 
 ```go
 func TestSuite(t *testing.T) {
-    t.Run("シナリオA", func(t *testing.T) {
+    t.Run("シナリオ A", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 各テストで独立した recorder
         logger, _ := rec.NewLogger()
         // テストロジック...
     })
 
-    t.Run("シナリオB", func(t *testing.T) {
+    t.Run("シナリオ B", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 独立した recorder
         logger, _ := rec.NewLogger()
         // テストロジック...
@@ -217,19 +217,19 @@ func TestLogLevel_Behavior(t *testing.T) {
         expected string
     }{
         {
-            name:     "Debugレベル",
+            name:     "Debug レベル",
             level:    dd.LevelDebug,
             logFunc:  func(l *dd.Logger) { l.Debug("デバッグ情報") },
             expected: "デバッグ情報",
         },
         {
-            name:     "Infoレベル",
+            name:     "Info レベル",
             level:    dd.LevelInfo,
             logFunc:  func(l *dd.Logger) { l.Info("一般情報") },
             expected: "一般情報",
         },
         {
-            name:     "Errorレベル",
+            name:     "Error レベル",
             level:    dd.LevelError,
             logFunc:  func(l *dd.Logger) { l.Error("エラー情報") },
             expected: "エラー情報",

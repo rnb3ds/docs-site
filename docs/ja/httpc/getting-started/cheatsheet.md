@@ -1,7 +1,7 @@
 ---
 sidebar_label: "チートシート"
 title: "チートシート - CyberGo HTTPC | クイック参照"
-description: "HTTPC チートシート: クライアント作成と 5 つのプリセット、7 種類のリクエストメソッド、主要な WithXxx オプション、Result 処理、ミドルウェアチェーン、エラー分類、ファイルダウンロードの再利用可能なコードスニペットを素早く参照できます。"
+description: "HTTPC チートシート：クライアント作成と 5 つのプリセット、7 種類のリクエストメソッド、主要な WithXxx オプション、Result 処理、ミドルウェアチェーン、エラー分類、ファイルダウンロードの再利用可能なコードスニペットを素早く参照できます。"
 sidebar_position: 2
 ---
 
@@ -108,7 +108,7 @@ httpc.WithOnRequest(func(req httpc.RequestMutator) error {
     return nil
 })
 httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
-    log.Printf("レスポンス受信: %d", resp.StatusCode())
+    log.Printf("レスポンス受信：%d", resp.StatusCode())
     return nil
 })
 ```
@@ -209,7 +209,7 @@ if err != nil {
             // リクエスト検証エラー
         case httpc.ErrorTypeHTTP:
             // HTTP 層エラー
-        // その他: ErrorTypeUnknown, ErrorTypeResponseRead,
+        // その他：ErrorTypeUnknown, ErrorTypeResponseRead,
         //       ErrorTypeTransport, ErrorTypeCertificate
         }
         if clientErr.IsRetryable() {
@@ -238,7 +238,7 @@ dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 dlResult, err := client.Download(ctx, url, dlCfg)
 
 // dlResult の型は *DownloadResult（*Result ではない）
-// フィールド: FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
+// フィールド：FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
 ```
 
 ## ドメインクライアント

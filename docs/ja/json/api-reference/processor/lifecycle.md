@@ -96,8 +96,8 @@ type WarmupResult struct {
 
 ```go
 stats := processor.GetStats()
-fmt.Printf("キャッシュヒット率: %.2f%%\n", stats.HitRatio * 100)
-fmt.Printf("キャッシュサイズ: %d\n", stats.CacheSize)
+fmt.Printf("キャッシュヒット率：%.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("キャッシュサイズ：%d\n", stats.CacheSize)
 ```
 
 **Stats 構造体**：
@@ -220,7 +220,7 @@ defer processor.Close()
 
 cfg := processor.GetConfig()
 fmt.Printf("キャッシュ有効: %v\n", cfg.EnableCache)
-fmt.Printf("最大 JSON サイズ: %d\n", cfg.MaxJSONSize)
+fmt.Printf("最大 JSON サイズ：%d\n", cfg.MaxJSONSize)
 ```
 
 ## 使用のヒント

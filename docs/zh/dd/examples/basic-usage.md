@@ -60,7 +60,7 @@ func main() {
     mux := http.NewServeMux()
     mux.HandleFunc("/api/users", handleUsers)
 
-    fmt.Println("服务启动: :8080")
+    fmt.Println("服务启动：:8080")
     http.ListenAndServe(":8080", loggingMiddleware(mux))
 }
 

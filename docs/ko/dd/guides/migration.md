@@ -1,15 +1,15 @@
 ---
 sidebar_label: "마이그레이션 가이드"
 title: "마이그레이션 가이드 - CyberGo DD | 다른 로그 라이브러리에서 마이그레이션"
-description: "CyberGo DD를 표준 라이브러리 log/slog와 주류 서드파티 로그 라이브러리(zap, logrus, zerolog)에서 마이그레이션하는 완전한 대조 가이드입니다. 상세한 API 매핑 테이블, 구성 매개변수 대조, 일반적인 마이그레이션 패턴과 점진적 마이그레이션 전략을 제공하여 개발자가 저위험으로 기존 로그 시스템을 DD 로그 라이브러리로 원활하게 전환할 수 있도록 돕습니다."
+description: "CyberGo DD 를 표준 라이브러리 log/slog와 주류 서드파티 로그 라이브러리 (zap, logrus, zerolog) 에서 마이그레이션하는 완전한 대조 가이드입니다. 상세한 API 매핑 테이블, 구성 매개변수 대조, 일반적인 마이그레이션 패턴과 점진적 마이그레이션 전략을 제공하여 개발자가 저위험으로 기존 로그 시스템을 DD 로그 라이브러리로 원활하게 전환할 수 있도록 돕습니다."
 sidebar_position: 8
 ---
 
 # 마이그레이션 가이드
 
-다른 로그 라이브러리를 사용 중이라면, 이 가이드가 프로젝트를 DD로 빠르게 마이그레이션하도록 도와줍니다.
+다른 로그 라이브러리를 사용 중이라면, 이 가이드가 프로젝트를 DD 로 빠르게 마이그레이션하도록 도와줍니다.
 
-## 표준 라이브러리 log에서 마이그레이션
+## 표준 라이브러리 log 에서 마이그레이션
 
 ### API 대조
 
@@ -20,8 +20,8 @@ sidebar_position: 8
 | `log.Println(msg)` | `dd.Info(msg)` | Info 레벨 |
 | `log.Fatal(msg)` | `dd.Fatal(msg)` | Fatal(os.Exit 호출) |
 | `log.Fatalf(format, args)` | `dd.Fatalf(format, args)` | 포맷팅 Fatal |
-| `log.Panic(msg)` | `dd.Error(msg)` + `panic()` | DD는 내장 Panic 없음 |
-| — | `dd.InfoWith(msg, fields...)` | 구조화 로그(신규) |
+| `log.Panic(msg)` | `dd.Error(msg)` + `panic()` | DD 는 내장 Panic 없음 |
+| — | `dd.InfoWith(msg, fields...)` | 구조화 로그 (신규) |
 
 ### 기본 마이그레이션
 
@@ -60,7 +60,7 @@ if err != nil {
 dd.SetDefault(logger)
 ```
 
-## slog에서 마이그레이션
+## slog 에서 마이그레이션
 
 ### API 대조
 
@@ -94,10 +94,10 @@ dd.InfoWith("요청 완료",
 ```
 
 :::tip 팁 타입 안전
-slog는 `any` 키-값 쌍을 사용하고, DD는 타입이 명확한 필드 생성자를 사용합니다. 타입 오류는 컴파일 타임에 발견됩니다.
+slog 는 `any` 키 - 값 쌍을 사용하고, DD 는 타입이 명확한 필드 생성자를 사용합니다. 타입 오류는 컴파일 타임에 발견됩니다.
 :::
 
-## zap에서 마이그레이션
+## zap 에서 마이그레이션
 
 ### API 대조
 
@@ -157,7 +157,7 @@ dd.InfoWith("request",
 )
 ```
 
-## logrus에서 마이그레이션
+## logrus 에서 마이그레이션
 
 ### API 대조
 
@@ -191,7 +191,7 @@ dd.WithFields(
 
 ## DD 전유 기능
 
-마이그레이션 후 DD의 독특한 기능을 활용할 수 있습니다.
+마이그레이션 후 DD 의 독특한 기능을 활용할 수 있습니다.
 
 | 기능 | 설명 | 문서 |
 |------|------|------|
@@ -199,7 +199,7 @@ dd.WithFields(
 | 감사 로그 | 비동기 보안 이벤트 기록 | [감사 로그](./audit-logging) |
 | HMAC 서명 | 로그 변조 방지 | [HMAC 서명 실전](../advanced/integrity) |
 | 산업 규정 준수 | HIPAA/PCI-DSS 사전 설정 | [산업 규정 준수 구성](../security/compliance) |
-| 라이프사이클 훅 | 6가지 Hook 이벤트 | [훅 시스템](./hooks) |
+| 라이프사이클 훅 | 6 가지 Hook 이벤트 | [훅 시스템](./hooks) |
 | LoggerRecorder | 테스트 보조 | [테스트 패턴](../examples/testing-patterns) |
 
 ## 다음 단계

@@ -146,7 +146,7 @@ if err != nil {
     // 校验和不匹配时自动返回错误并删除已下载文件
     log.Fatal(err)
 }
-fmt.Println("校验和:", result.ActualChecksum)
+fmt.Println("校验和：", result.ActualChecksum)
 ```
 
 :::tip

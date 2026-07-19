@@ -1,7 +1,7 @@
 ---
 sidebar_label: "ミドルウェアチェーン"
 title: "ミドルウェアチェーン - CyberGo HTTPC | オニオンモデル連鎖"
-description: "HTTPC ミドルウェアチェーンガイド: オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、Recovery/Logging/RequestID など 8 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc 作成、サーキットブレーカー短路の実装例を通じて、可観測で回復力のあるリクエスト処理パイプラインの構築を支援します。"
+description: "HTTPC ミドルウェアチェーンガイド：オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、Recovery/Logging/RequestID など 8 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc 作成、サーキットブレーカー短路の実装例を通じて、可観測で回復力のあるリクエスト処理パイプラインの構築を支援します。"
 sidebar_position: 6
 ---
 
@@ -50,7 +50,7 @@ httpc.RecoveryMiddleware()
 httpc.LoggingMiddleware(func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
 })
-// 出力例: [HTTP] GET https://api.example.com/data -> 200 (150ms)（ステータスコードと所要時間は実測値、固定ではありません）
+// 出力例：[HTTP] GET https://api.example.com/data -> 200 (150ms)（ステータスコードと所要時間は実測値、固定ではありません）
 ```
 
 ### RequestIDMiddleware
@@ -129,7 +129,7 @@ auditCfg := &httpc.AuditMiddlewareConfig{
 httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
     data, err := json.Marshal(event)
     if err != nil {
-        log.Println("監査イベントのシリアライズ失敗:", err)
+        log.Println("監査イベントのシリアライズ失敗：", err)
         return
     }
     log.Println(string(data))
@@ -172,7 +172,7 @@ func CORSMiddleware(origin string) httpc.MiddlewareFunc {
 
             // レスポンスフェーズ：記録または変更
             if resp != nil {
-                log.Printf("レスポンスステータス: %d", resp.StatusCode())
+                log.Printf("レスポンスステータス：%d", resp.StatusCode())
             }
 
             return resp, err

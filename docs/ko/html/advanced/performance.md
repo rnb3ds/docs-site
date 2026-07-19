@@ -23,13 +23,13 @@ for _, page := range pages {
 
 // 비추천: 매번 새 Processor 생성
 for _, page := range pages {
-    result, _ := html.Extract(page) // 매번 Pool에서 가져옴
+    result, _ := html.Extract(page) // 매번 Pool 에서 가져옴
 }
 ```
 
 ## 캐시 전략
 
-Processor는 내장 캐시를 제공하여, 동일한 입력은 반복해서 처리되지 않습니다:
+Processor 는 내장 캐시를 제공하여, 동일한 입력은 반복해서 처리되지 않습니다:
 
 ```go
 cfg := html.DefaultConfig()
@@ -77,7 +77,7 @@ cfg.WorkerPoolSize = n
 - 필요 없는 `Preserve*` 옵션 비활성화
 
 ```go
-// TextOnlyConfig는 모든 미디어 보존을 비활성화하므로 추가 설정 불필요
+// TextOnlyConfig 는 모든 미디어 보존을 비활성화하므로 추가 설정 불필요
 cfg := html.TextOnlyConfig()
 
 // 성능 향상을 위해 문서 인식 비활성화 가능

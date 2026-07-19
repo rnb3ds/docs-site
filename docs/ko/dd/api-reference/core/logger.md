@@ -1,18 +1,18 @@
 ---
 sidebar_label: "Logger"
 title: "Logger - CyberGo DD | 핵심 로거"
-description: "CyberGo DD Logger 핵심 로거 API입니다. 로그 출력 메서드(Info/Warn/Error/Fatal), 레벨 동적 관리, Writer 추가/제거/교체, 라이프사이클 제어(Close/Flush), 체인 필드 설정을 다루며 로그 라이브러리 스레드 안전 고성능의 핵심 진입 타입입니다."
+description: "CyberGo DD Logger 핵심 로거 API 입니다. 로그 출력 메서드 (Info/Warn/Error/Fatal), 레벨 동적 관리, Writer 추가/제거/교체, 라이프사이클 제어 (Close/Flush), 체인 필드 설정을 다루며 로그 라이브러리 스레드 안전 고성능의 핵심 진입 타입입니다."
 sidebar_position: 2
 ---
 
 # Logger
 
-`Logger`는 DD의 핵심 타입으로, 스레드 안전한 로깅 기능을 제공합니다.
+`Logger`는 DD 의 핵심 타입으로, 스레드 안전한 로깅 기능을 제공합니다.
 
 ## 생성
 
 ```go
-// New로 생성
+// New 로 생성
 logger, _ := dd.New(dd.DefaultConfig())
 ```
 
@@ -37,7 +37,7 @@ logger, _ := dd.New(dd.Config{
 | `Info(args ...any)` | Info 레벨 로그 |
 | `Warn(args ...any)` | Warn 레벨 로그 |
 | `Error(args ...any)` | Error 레벨 로그 |
-| `Fatal(args ...any)` | Fatal 레벨 로그(기본적으로 os.Exit(1) 호출, **defer는 실행되지 않음**; FatalHandler로 사용자 정의 가능) |
+| `Fatal(args ...any)` | Fatal 레벨 로그 (기본적으로 os.Exit(1) 호출, **defer 는 실행되지 않음**; FatalHandler 로 사용자 정의 가능) |
 | `Log(level LogLevel, args ...any)` | 지정 레벨 로그 |
 
 ### 포맷팅 로그
@@ -48,7 +48,7 @@ logger, _ := dd.New(dd.Config{
 | `Infof(format string, args ...any)` | 포맷팅 Info |
 | `Warnf(format string, args ...any)` | 포맷팅 Warn |
 | `Errorf(format string, args ...any)` | 포맷팅 Error |
-| `Fatalf(format string, args ...any)` | 포맷팅 Fatal(기본적으로 os.Exit(1) 호출, **defer는 실행되지 않음**; FatalHandler로 사용자 정의 가능) |
+| `Fatalf(format string, args ...any)` | 포맷팅 Fatal(기본적으로 os.Exit(1) 호출, **defer 는 실행되지 않음**; FatalHandler 로 사용자 정의 가능) |
 | `Logf(level LogLevel, format string, args ...any)` | 지정 레벨 포맷팅 |
 
 ### 구조화 로그
@@ -59,7 +59,7 @@ logger, _ := dd.New(dd.Config{
 | `InfoWith(msg string, fields ...Field)` | 구조화 Info |
 | `WarnWith(msg string, fields ...Field)` | 구조화 Warn |
 | `ErrorWith(msg string, fields ...Field)` | 구조화 Error |
-| `FatalWith(msg string, fields ...Field)` | 구조화 Fatal(기본적으로 os.Exit(1) 호출, **defer는 실행되지 않음**; FatalHandler로 사용자 정의 가능) |
+| `FatalWith(msg string, fields ...Field)` | 구조화 Fatal(기본적으로 os.Exit(1) 호출, **defer 는 실행되지 않음**; FatalHandler 로 사용자 정의 가능) |
 | `LogWith(level LogLevel, msg string, fields ...Field)` | 구조화 지정 레벨 |
 
 ```go
@@ -199,7 +199,7 @@ _ = logger.Flush()
 // 로거 종료
 _ = logger.Close()
 
-// 우아한 종료(타임아웃 포함)
+// 우아한 종료 (타임아웃 포함)
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 defer cancel()
 _ = logger.Shutdown(ctx)
@@ -216,13 +216,13 @@ active := logger.ActiveFilterGoroutines()
 
 | 메서드 | 설명 |
 |------|------|
-| `Print(args ...any)` | 구성된 Writer로 출력(LevelInfo, 보안 필터 적용) |
-| `Println(args ...any)` | Print와 동일 동작(내부 Log()가 자동 줄바꿈) |
-| `Printf(format string, args ...any)` | 포맷팅 출력(LevelInfo, 보안 필터 적용) |
-| `JSON(data ...any)` | stdout으로 컴팩트 JSON 출력(caller 정보 포함, 보안 필터 미적용) |
-| `JSONF(format string, args ...any)` | stdout으로 포맷팅된 컴팩트 JSON 출력(caller 정보 포함, 보안 필터 미적용) |
-| `Text(data ...any)` | stdout으로 보기 좋게 출력(caller 정보 미포함, 보안 필터 미적용) |
-| `Textf(format string, args ...any)` | stdout으로 포맷팅된 텍스트 출력(caller 정보 미포함, 보안 필터 미적용) |
+| `Print(args ...any)` | 구성된 Writer 로 출력 (LevelInfo, 보안 필터 적용) |
+| `Println(args ...any)` | Print 와 동일 동작 (내부 Log() 가 자동 줄바꿈) |
+| `Printf(format string, args ...any)` | 포맷팅 출력 (LevelInfo, 보안 필터 적용) |
+| `JSON(data ...any)` | stdout 으로 컴팩트 JSON 출력 (caller 정보 포함, 보안 필터 미적용) |
+| `JSONF(format string, args ...any)` | stdout 으로 포맷팅된 컴팩트 JSON 출력 (caller 정보 포함, 보안 필터 미적용) |
+| `Text(data ...any)` | stdout 으로 보기 좋게 출력 (caller 정보 미포함, 보안 필터 미적용) |
+| `Textf(format string, args ...any)` | stdout 으로 포맷팅된 텍스트 출력 (caller 정보 미포함, 보안 필터 미적용) |
 
 ## 다음 단계
 

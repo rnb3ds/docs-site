@@ -120,10 +120,10 @@ type Config struct {
 ```
 
 지원 형식:
-- `30s` - 30초
-- `5m` - 5분
-- `1h30m` - 1시간 30분
-- `100ms` - 100밀리초
+- `30s` - 30 초
+- `5m` - 5 분
+- `1h30m` - 1 시간 30 분
+- `100ms` - 100 밀리초
 
 ### 슬라이스 타입
 
@@ -282,7 +282,7 @@ func (p *Port) UnmarshalText(text []byte) error {
 ```
 
 :::tip env.Marshaler / env.Unmarshaler 인터페이스에 대해
-`env.Marshaler`(`MarshalEnv()`)와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 **`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 전달된 최상위 값에서만 동작**하며, 구조체의 필드 단위 채우기 로직에서는 호출되지 않습니다. 구조체 필드에 커스텀 인코딩/디코딩을 적용하려면 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`를 구현하세요. 이들은 필드 수준에서 인식됩니다.
+`env.Marshaler`(`MarshalEnv()`) 와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 **`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 전달된 최상위 값에서만 동작**하며, 구조체의 필드 단위 채우기 로직에서는 호출되지 않습니다. 구조체 필드에 커스텀 인코딩/디코딩을 적용하려면 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`를 구현하세요. 이들은 필드 수준에서 인식됩니다.
 :::
 
 ## 설정 검증
@@ -434,7 +434,7 @@ if err := env.ParseInto(&cfg); err != nil {
 
 ```go
 type Config struct {
-    Port int64 `env:"PORT"`  // PORT가 유효한 정수가 아닌 경우
+    Port int64 `env:"PORT"`  // PORT 가 유효한 정수가 아닌 경우
 }
 
 cfg := Config{}

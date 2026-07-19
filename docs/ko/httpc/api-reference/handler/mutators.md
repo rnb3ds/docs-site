@@ -1,19 +1,19 @@
 ---
 sidebar_label: "요청과 응답 뮤테이터"
 title: "요청과 응답 뮤테이터 - CyberGo HTTPC | Mutator 인터페이스"
-description: "HTTPC 미들웨어 읽기/쓰기 계약 해설: RequestMutator와 ResponseMutator는 모든 읽기/쓰기 메서드를 노출하는 합성 인터페이스로, 헤더 설정과 상태 코드 읽기 예제를 컴파일 가능한 형태로 제공합니다."
+description: "HTTPC 미들웨어 읽기/쓰기 계약 해설: RequestMutator 와 ResponseMutator 는 모든 읽기/쓰기 메서드를 노출하는 합성 인터페이스로, 헤더 설정과 상태 코드 읽기 예제를 컴파일 가능한 형태로 제공합니다."
 sidebar_position: 2
 ---
 
 # 요청과 응답 뮤테이터
 
-미들웨어는 기저의 요청/응답 객체를 직접 다루지 않고 **뮤테이터** 인터페이스를 통해 읽고 씁니다. 미들웨어는 항상 완전한 읽기/쓰기 뮤테이터(`RequestMutator` / `ResponseMutator`)를 전달받으며, 아래의 읽기/쓰기 그룹화는 가독성을 위한 것일 뿐 별도로 내보낸 인터페이스는 아닙니다.
+미들웨어는 기저의 요청/응답 객체를 직접 다루지 않고 **뮤테이터** 인터페이스를 통해 읽고 씁니다. 미들웨어는 항상 완전한 읽기/쓰기 뮤테이터 (`RequestMutator` / `ResponseMutator`) 를 전달받으며, 아래의 읽기/쓰기 그룹화는 가독성을 위한 것일 뿐 별도로 내보낸 인터페이스는 아닙니다.
 
 ```text
 RequestMutator  = 읽기 메서드  + 쓰기 메서드
 ResponseMutator = 읽기 메서드 + 쓰기 메서드
         ↑                                    ↑
-  미들웨어가 RequestMutator로      미들웨어가 ResponseMutator로
+  미들웨어가 RequestMutator 로      미들웨어가 ResponseMutator 로
   요청을 다시 씀                    응답을 읽거나 다시 씀
 ```
 
@@ -62,7 +62,7 @@ ResponseMutator = 읽기 메서드 + 쓰기 메서드
 
 ### RequestMutator
 
-httpc가 노출하는 읽기/쓰기 겸용 요청 뮤테이터로, 위의 「읽기 메서드」와 「쓰기 메서드」 두 표의 모든 메서드를 포함합니다. 내부 읽기/쓰기 분할 인터페이스는 `internal/types` 패키지에 있으며 별도로 내보내지 않고, 외부에서는 `RequestMutator`로 통일되어 참조됩니다. 미들웨어가 요청이 전송되기 전에 이를 통해 요청 속성을 검사하고 다시 씁니다.
+httpc 가 노출하는 읽기/쓰기 겸용 요청 뮤테이터로, 위의「읽기 메서드」와「쓰기 메서드」두 표의 모든 메서드를 포함합니다. 내부 읽기/쓰기 분할 인터페이스는 `internal/types` 패키지에 있으며 별도로 내보내지 않고, 외부에서는 `RequestMutator`로 통일되어 참조됩니다. 미들웨어가 요청이 전송되기 전에 이를 통해 요청 속성을 검사하고 다시 씁니다.
 
 ## 응답 뮤테이터
 
@@ -113,7 +113,7 @@ httpc가 노출하는 읽기/쓰기 겸용 요청 뮤테이터로, 위의 「읽
 
 ### ResponseMutator
 
-httpc가 노출하는 읽기/쓰기 겸용 응답 뮤테이터로, 위의 「읽기 메서드」와 「쓰기 메서드」 두 표의 모든 메서드를 포함합니다. 내부 읽기/쓰기 분할 인터페이스는 `internal/types` 패키지에 있으며 별도로 내보내지 않고, 외부에서는 `ResponseMutator`로 통일되어 참조됩니다. 미들웨어가 요청 완료 후 이를 통해 응답을 읽거나 다시 씁니다. 응답 캐싱, 콘텐츠 변환(예: JSON pretty-print), 인코딩/디코딩, 응답 필터링에 유용합니다.
+httpc 가 노출하는 읽기/쓰기 겸용 응답 뮤테이터로, 위의「읽기 메서드」와「쓰기 메서드」두 표의 모든 메서드를 포함합니다. 내부 읽기/쓰기 분할 인터페이스는 `internal/types` 패키지에 있으며 별도로 내보내지 않고, 외부에서는 `ResponseMutator`로 통일되어 참조됩니다. 미들웨어가 요청 완료 후 이를 통해 응답을 읽거나 다시 씁니다. 응답 캐싱, 콘텐츠 변환 (예: JSON pretty-print), 인코딩/디코딩, 응답 필터링에 유용합니다.
 
 ## 예제: 뮤테이터로 읽고 쓰기
 
@@ -129,21 +129,21 @@ import (
 	"github.com/cybergodev/httpc"
 )
 
-// authMiddleware는 RequestMutator로 인증 헤더를 주입하고
-// ResponseMutator로 상태 코드를 읽습니다
+// authMiddleware 는 RequestMutator 로 인증 헤더를 주입하고
+// ResponseMutator 로 상태 코드를 읽습니다
 func authMiddleware(token string) httpc.MiddlewareFunc {
 	return func(next httpc.Handler) httpc.Handler {
 		return func(ctx context.Context, req httpc.RequestMutator) (httpc.ResponseMutator, error) {
-			// 쓰기: RequestMutator로 요청 헤더 설정
+			// 쓰기: RequestMutator 로 요청 헤더 설정
 			req.SetHeader("Authorization", "Bearer "+token)
-			// 읽기: RequestMutator로 요청 메서드 검사
+			// 읽기: RequestMutator 로 요청 메서드 검사
 			fmt.Printf("%s 요청 전송\n", req.Method())
 
 			resp, err := next(ctx, req)
 			if err != nil {
 				return nil, err
 			}
-			// 읽기: ResponseMutator로 상태 코드 획득
+			// 읽기: ResponseMutator 로 상태 코드 획득
 			fmt.Printf("상태 코드 %d 수신\n", resp.StatusCode())
 			return resp, nil
 		}
@@ -177,6 +177,6 @@ func main() {
 
 ## 참고
 
-- [Handler와 미들웨어 체인](./handler-chain) — 이중 계층 아키텍처와 양파 모델 개요
+- [Handler 와 미들웨어 체인](./handler-chain) — 이중 계층 아키텍처와 양파 모델 개요
 - [내장 미들웨어](../client-config/middleware) — HeaderMiddleware 등은 뮤테이터로 동작하는 완성된 예제입니다
 - [인터페이스](../types/interfaces) — 뮤테이터의 타입 별칭 정의

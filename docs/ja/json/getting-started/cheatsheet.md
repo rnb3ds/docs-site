@@ -134,7 +134,7 @@ override := `{"database":{"host":"prod-server","ssl":true},"monitoring":true}`
 
 // マージ
 merged, _ := json.MergeJSON(base, override)
-// 結果: {"database":{"host":"prod-server","port":5432,"ssl":true},"debug":false,"monitoring":true}
+// 結果：{"database":{"host":"prod-server","port":5432,"ssl":true},"debug":false,"monitoring":true}
 
 // 複数マージ
 result, _ := json.MergeMany([]string{
@@ -287,15 +287,15 @@ name := json.GetString(data, "user.nickname", "unknown")
 val, _ := json.Get(data, "value")
 switch v := val.(type) {
 case string:
-    fmt.Println("文字列:", v)
+    fmt.Println("文字列：", v)
 case float64:
-    fmt.Println("数値:", v)
+    fmt.Println("数値：", v)
 case bool:
-    fmt.Println("ブーリアン:", v)
+    fmt.Println("ブーリアン：", v)
 case []any:
-    fmt.Println("配列:", len(v), "個の要素")
+    fmt.Println("配列：", len(v), "個の要素")
 case map[string]any:
-    fmt.Println("オブジェクト:", len(v), "個のキー")
+    fmt.Println("オブジェクト：", len(v), "個のキー")
 }
 ```
 
@@ -332,14 +332,14 @@ if err != nil {
 // キャッシュのウォームアップ
 paths := []string{"user.name", "user.email", "items[*].id"}
 result, _ := json.WarmupCache(data, paths)
-fmt.Printf("ウォームアップ成功: %d/%d\n", result.Successful, result.TotalPaths)
+fmt.Printf("ウォームアップ成功：%d/%d\n", result.Successful, result.TotalPaths)
 
 // キャッシュをクリア
 json.ClearCache()
 
 // 統計を取得
 stats := json.GetStats()
-fmt.Printf("キャッシュヒット率: %.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("キャッシュヒット率：%.2f%%\n", stats.HitRatio * 100)
 ```
 
 ## グローバルプロセッサ

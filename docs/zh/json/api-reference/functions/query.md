@@ -40,7 +40,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println(val) // 输出: test
+    fmt.Println(val) // 输出：test
 }
 ```
 
@@ -72,7 +72,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println(val) // 输出: Alice
+    fmt.Println(val) // 输出：Alice
 }
 ```
 
@@ -98,11 +98,11 @@ func main() {
     jsonStr := `{"user": {"name": "CyberGo"}}`
 
     name := json.GetString(jsonStr, "user.name")
-    fmt.Println(name) // 输出: CyberGo
+    fmt.Println(name) // 输出：CyberGo
 
     // 不存在的路径返回零值（空字符串）或自定义默认值
     nickname := json.GetString(jsonStr, "user.nickname", "未知")
-    fmt.Println(nickname) // 输出: 未知
+    fmt.Println(nickname) // 输出：未知
 }
 ```
 
@@ -124,14 +124,14 @@ func main() {
     jsonStr := `{"pagination": {"count": 42}, "timeout": 30}`
 
     count := json.GetInt(jsonStr, "pagination.count")
-    fmt.Println(count) // 输出: 42
+    fmt.Println(count) // 输出：42
 
     timeout := json.GetInt(jsonStr, "timeout")
-    fmt.Println(timeout) // 输出: 30
+    fmt.Println(timeout) // 输出：30
 
     // 不存在的路径返回自定义默认值
     page := json.GetInt(jsonStr, "pagination.page", 1)
-    fmt.Println(page) // 输出: 1
+    fmt.Println(page) // 输出：1
 }
 ```
 
@@ -153,14 +153,14 @@ func main() {
     jsonStr := `{"item": {"price": 19.99}, "rate": 0.85}`
 
     price := json.GetFloat(jsonStr, "item.price")
-    fmt.Println(price) // 输出: 19.99
+    fmt.Println(price) // 输出：19.99
 
     rate := json.GetFloat(jsonStr, "rate")
-    fmt.Println(rate) // 输出: 0.85
+    fmt.Println(rate) // 输出：0.85
 
     // 不存在的路径返回自定义默认值
     discount := json.GetFloat(jsonStr, "item.discount", 0.0)
-    fmt.Println(discount) // 输出: 0
+    fmt.Println(discount) // 输出：0
 }
 ```
 
@@ -182,14 +182,14 @@ func main() {
     jsonStr := `{"feature": {"enabled": true}, "debug": false}`
 
     enabled := json.GetBool(jsonStr, "feature.enabled")
-    fmt.Println(enabled) // 输出: true
+    fmt.Println(enabled) // 输出：true
 
     debug := json.GetBool(jsonStr, "debug")
-    fmt.Println(debug) // 输出: false
+    fmt.Println(debug) // 输出：false
 
     // 不存在的路径返回自定义默认值
     verbose := json.GetBool(jsonStr, "feature.verbose", false)
-    fmt.Println(verbose) // 输出: false
+    fmt.Println(verbose) // 输出：false
 }
 ```
 
@@ -217,7 +217,7 @@ func main() {
 
     // 不存在的路径返回自定义默认值
     empty := json.GetArray(jsonStr, "tags", []any{"default"})
-    fmt.Println(empty) // 输出: [default]
+    fmt.Println(empty) // 输出：[default]
 }
 ```
 
@@ -243,7 +243,7 @@ func main() {
 
     // 不存在的路径返回自定义默认值
     settings := json.GetObject(jsonStr, "user.settings", map[string]any{"theme": "dark"})
-    fmt.Println(settings) // 输出: map[theme:dark]
+    fmt.Println(settings) // 输出：map[theme:dark]
 }
 ```
 
@@ -279,14 +279,14 @@ func main() {
 
     // 内置类型示例
     name := json.GetTyped[string](jsonStr, "user.name")
-    fmt.Println(name) // 输出: CyberGo
+    fmt.Println(name) // 输出：CyberGo
 
     age := json.GetTyped[int](jsonStr, "user.age")
-    fmt.Println(age) // 输出: 30
+    fmt.Println(age) // 输出：30
 
     // 不存在的路径返回自定义默认值
     email := json.GetTyped[string](jsonStr, "user.email", "unknown@example.com")
-    fmt.Println(email) // 输出: unknown@example.com
+    fmt.Println(email) // 输出：unknown@example.com
 }
 ```
 
@@ -312,12 +312,12 @@ func main() {
     result := json.SafeGet(jsonStr, "user.age")
     if result.Exists {
         age, _ := result.AsInt()
-        fmt.Println(age) // 输出: 30
+        fmt.Println(age) // 输出：30
     }
 
     nameResult := json.SafeGet(jsonStr, "user.name")
     name, _ := nameResult.AsString()
-    fmt.Println(name) // 输出: CyberGo
+    fmt.Println(name) // 输出：CyberGo
 }
 ```
 
@@ -339,7 +339,7 @@ jsonStr := `{"user": {"name": "CyberGo", "age": 30}}`
 result := p.SafeGet(jsonStr, "user.age")
 if result.Exists {
     age, _ := result.AsInt()
-    fmt.Println(age) // 输出: 30
+    fmt.Println(age) // 输出：30
 }
 ```
 
@@ -361,7 +361,7 @@ values, err := json.GetMultiple(jsonStr, paths)
 if err != nil {
     panic(err)
 }
-fmt.Println(values["user.name"]) // 输出: CyberGo
+fmt.Println(values["user.name"]) // 输出：CyberGo
 ```
 
 ### Processor.GetMultiple
@@ -384,7 +384,7 @@ values, err := p.GetMultiple(jsonStr, paths)
 if err != nil {
     panic(err)
 }
-fmt.Println(values["user.name"]) // 输出: CyberGo
+fmt.Println(values["user.name"]) // 输出：CyberGo
 ```
 
 ## 相关类型

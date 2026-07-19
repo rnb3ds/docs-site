@@ -1,6 +1,6 @@
 ---
 sidebar_label: "설정"
-title: "설정 - CyberGo HTTPC | Config와 프리셋"
+title: "설정 - CyberGo HTTPC | Config 와 프리셋"
 description: "HTTPC 설정 시스템 API 레퍼런스: Config 구조체와 Timeouts, Connection, Security, Retry, Middleware 하위 설정, 다섯 가지 프리셋, ValidateConfig 검증의 완전한 필드 설명을 제공합니다."
 sidebar_position: 1
 ---
@@ -22,7 +22,7 @@ type Config struct {
 메인 설정 구조체로, `DefaultConfig()`를 통해 보안 기본값을 얻을 수 있습니다.
 
 :::tip 하위 설정은 포인터
-v1.5.1부터 다섯 가지 하위 설정은 모두 **포인터 타입**입니다. `DefaultConfig()`와 모든 프리셋 함수(`SecureConfig`, `PerformanceConfig` 등)는 이 포인터들을 비어 있지 않은 구조체로 자동 초기화하므로, `cfg.Timeouts.Request`, `cfg.Security.AllowPrivateIPs` 등의 필드 접근을 직접 사용할 수 있습니다. `Config{}` 리터럴을 수동으로 구성할 때는 `&httpc.TimeoutConfig{...}` 형태로 할당해야 하며, 사용 전에 포인터가 nil이 아닌지 확인해야 합니다.
+v1.5.1 부터 다섯 가지 하위 설정은 모두 **포인터 타입**입니다. `DefaultConfig()`와 모든 프리셋 함수 (`SecureConfig`, `PerformanceConfig` 등) 는 이 포인터들을 비어 있지 않은 구조체로 자동 초기화하므로, `cfg.Timeouts.Request`, `cfg.Security.AllowPrivateIPs` 등의 필드 접근을 직접 사용할 수 있습니다. `Config{}` 리터럴을 수동으로 구성할 때는 `&httpc.TimeoutConfig{...}` 형태로 할당해야 하며, 사용 전에 포인터가 nil 이 아닌지 확인해야 합니다.
 :::
 
 ```go
@@ -52,10 +52,10 @@ type TimeoutConfig struct {
 | ResponseHeader | 0 | 30min |
 | IdleConn | 90s | 30min |
 
-0으로 설정하면 타임아웃 없음(프로덕션 환경에서는 권장하지 않음).
+0 으로 설정하면 타임아웃 없음 (프로덕션 환경에서는 권장하지 않음).
 
 :::tip ResponseHeader 설계
-`ResponseHeader`는 기본값이 0(비활성화)이며, 이때 `TimeoutConfig.Request` 또는 `WithTimeout()`이 유일한 타임아웃 메커니즘으로 작동하여 `WithTimeout()`이 요청 지속 시간을 완전히 제어합니다. 이 설계는 AI API와 롱 폴링 등 응답 시간 연장이 필요한 시나리오에 적합합니다. 전송 계층의 엄격한 상한(Slowloris 공격 방어 등)이 필요한 경우에만 양수로 설정하되, 이는 `WithTimeout`을 덮어쓴다는 점에 유의하세요.
+`ResponseHeader`는 기본값이 0(비활성화) 이며, 이때 `TimeoutConfig.Request` 또는 `WithTimeout()`이 유일한 타임아웃 메커니즘으로 작동하여 `WithTimeout()`이 요청 지속 시간을 완전히 제어합니다. 이 설계는 AI API 와 롱 폴링 등 응답 시간 연장이 필요한 시나리오에 적합합니다. 전송 계층의 엄격한 상한 (Slowloris 공격 방어 등) 이 필요한 경우에만 양수로 설정하되, 이는 `WithTimeout`을 덮어쓴다는 점에 유의하세요.
 :::
 
 ## ConnectionConfig
@@ -76,7 +76,7 @@ type ConnectionConfig struct {
 
 ### DNS-over-HTTPS
 
-DoH를 활성화하여 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지합니다:
+DoH 를 활성화하여 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지합니다:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -84,7 +84,7 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-기본 DoH 제공자(우선순위 순): Cloudflare → Google → AliDNS. 자세한 내용은 [연결 풀과 프록시](../../advanced/connection-pool)를 참조하세요.
+기본 DoH 제공자 (우선순위 순): Cloudflare → Google → AliDNS. 자세한 내용은 [연결 풀과 프록시](../../advanced/connection-pool)를 참조하세요.
 
 ## SecurityConfig
 
@@ -95,7 +95,7 @@ type SecurityConfig struct {
     MaxTLSVersion           uint16                // 최대 TLS 버전, 기본 TLS 1.3
     InsecureSkipVerify      bool                  // 인증서 검증 건너뛰기 (테스트만)
     MaxResponseBodySize     int64                 // 응답 본문 크기 제한, 기본 10MB
-    MaxRequestBodySize      int64                 // 요청 본문 크기 제한, 기본 0 (요청 본문 크기를 제한하지 않음; MaxResponseBodySize와 달리 자동 폴백 없음)
+    MaxRequestBodySize      int64                 // 요청 본문 크기 제한, 기본 0 (요청 본문 크기를 제한하지 않음; MaxResponseBodySize 와 달리 자동 폴백 없음)
     MaxDecompressedBodySize int64                 // 압축 해제 후 크기 제한, 기본 100MB
     AllowPrivateIPs         bool                  // 사설 IP 허용, 기본 false
     SSRFExemptCIDRs         []string              // SSRF 면제 CIDR
@@ -110,13 +110,13 @@ type SecurityConfig struct {
 
 ### 인증서 고정 (CertificatePinner)
 
-`CertificatePinner`는 인증서 고정을 활성화합니다: 서버가 고정된 키/인증서를 제공하지 않으면 TLS 핸드셰이크가 거부되므로, 신뢰할 수 있는 CA가 침해되더라도 중간자 공격을 방어할 수 있습니다. 기본값은 `nil`(비활성화)입니다. 다음 생성자로 만듭니다:
+`CertificatePinner`는 인증서 고정을 활성화합니다: 서버가 고정된 키/인증서를 제공하지 않으면 TLS 핸드셰이크가 거부되므로, 신뢰할 수 있는 CA 가 침해되더라도 중간자 공격을 방어할 수 있습니다. 기본값은 `nil`(비활성화) 입니다. 다음 생성자로 만듭니다:
 
 | 생성자 | 설명 |
 |----------|------|
 | `NewSPKIHashPinner(hashes ...string) (CertificatePinner, error)` | 하나 이상의 base64 인코딩된 SPKI SHA-256 해시로 생성 (가장 일반적으로 사용, 키 로테이션 지원) |
 | `NewPublicKeyPinner(publicKeys ...[]byte) (CertificatePinner, error)` | DER 인코딩된 PKIX 공개키로 생성 (내부적으로 SHA-256 계산) |
-| `NewCertificatePinnerChain(pinners ...CertificatePinner) CertificatePinner` | 여러 pinner를 조합, 어느 하나라도 통과하면 수락 |
+| `NewCertificatePinnerChain(pinners ...CertificatePinner) CertificatePinner` | 여러 pinner 를 조합, 어느 하나라도 통과하면 수락 |
 
 ```go
 pinner, err := httpc.NewSPKIHashPinner(
@@ -133,7 +133,7 @@ client, err := httpc.New(cfg)
 ```
 
 :::warning 유지보수 비용
-인증서 고정은 서버가 인증서를 교체할 때(예: Let's Encrypt 갱신) 고정 값도 함께 업데이트해야 합니다. 여러 해시(현재 + 백업)를 고정하고 업데이트 메커니즘을 구축하여 키 로테이션으로 인한 연결 중단을 방지하는 것을 권장합니다.
+인증서 고정은 서버가 인증서를 교체할 때 (예: Let's Encrypt 갱신) 고정 값도 함께 업데이트해야 합니다. 여러 해시 (현재 + 백업) 를 고정하고 업데이트 메커니즘을 구축하여 키 로테이션으로 인한 연결 중단을 방지하는 것을 권장합니다.
 :::
 
 :::warning SSRF 방어
@@ -226,7 +226,7 @@ func PerformanceConfig() *Config
 고처리량 설정. 더 큰 연결 풀, 더 긴 타임아웃, 보안 검증은 유지.
 
 :::tip
-PerformanceConfig은 보안을 위해 `ValidateURL`과 `ValidateHeaders`를 활성화 상태로 유지합니다. 신뢰할 수 있는 환경에서 최대 성능이 필요한 경우 `cfg.Security.ValidateURL = false`로 수동 비활성화할 수 있으나, 보안 위험(주입 공격, SSRF)에 주의하세요.
+PerformanceConfig 은 보안을 위해 `ValidateURL`과 `ValidateHeaders`를 활성화 상태로 유지합니다. 신뢰할 수 있는 환경에서 최대 성능이 필요한 경우 `cfg.Security.ValidateURL = false`로 수동 비활성화할 수 있으나, 보안 위험 (주입 공격, SSRF) 에 주의하세요.
 :::
 
 | 설정 항목 | 값 |
@@ -275,7 +275,7 @@ func TestingConfig() *Config
 | UserAgent | httpc-test/1.0 |
 
 :::danger
-이 설정은 TLS 검증과 SSRF 방어를 비활성화하므로 **테스트에만 사용**하세요. 테스트 환경 외부에서 사용하면 보안 경고가 출력됩니다(자세한 내용은 [보안 경고 출력](#setsecuritywarnoutput) 참조).
+이 설정은 TLS 검증과 SSRF 방어를 비활성화하므로 **테스트에만 사용**하세요. 테스트 환경 외부에서 사용하면 보안 경고가 출력됩니다 (자세한 내용은 [보안 경고 출력](#setsecuritywarnoutput) 참조).
 :::
 
 ### MinimalConfig
@@ -309,7 +309,7 @@ func MinimalConfig() *Config
 func SetSecurityWarnOutput(w io.Writer)
 ```
 
-보안 경고의 출력 대상을 설정합니다. `TestingConfig()`를 사용하거나 `SecurityConfig.InsecureSkipVerify`(`Config.Security`)를 `true`로 설정하면, httpc는 이 writer에 `[SECURITY WARNING]` 수준의 경고를 출력합니다(각 경고 유형별로 프로세스당 최대 한 번). 기본 출력은 `os.Stderr`이며, `io.Discard`를 전달하면 경고를 완전히 억제하여 테스트나 이미 알려진 안전한 내부 시나리오에서 조용히 실행할 수 있습니다.
+보안 경고의 출력 대상을 설정합니다. `TestingConfig()`를 사용하거나 `SecurityConfig.InsecureSkipVerify`(`Config.Security`) 를 `true`로 설정하면, httpc 는 이 writer 에 `[SECURITY WARNING]` 수준의 경고를 출력합니다 (각 경고 유형별로 프로세스당 최대 한 번). 기본 출력은 `os.Stderr`이며, `io.Discard`를 전달하면 경고를 완전히 억제하여 테스트나 이미 알려진 안전한 내부 시나리오에서 조용히 실행할 수 있습니다.
 
 ```go
 // 테스트에서 보안 경고 억제
@@ -318,7 +318,7 @@ cfg := httpc.TestingConfig()
 ```
 
 :::tip 영향 범위
-이 설정은 프로세스 수준의 전역 상태이며, 이후에 생성되는 모든 클라이언트에 영향을 줍니다. `TestingConfig`와 `InsecureSkipVerify` 두 가지 경고는 각각 독립적으로 카운트됩니다(서로의 트리거에 영향을 주지 않음), 하지만 동일한 출력 writer를 공유합니다.
+이 설정은 프로세스 수준의 전역 상태이며, 이후에 생성되는 모든 클라이언트에 영향을 줍니다. `TestingConfig`와 `InsecureSkipVerify` 두 가지 경고는 각각 독립적으로 카운트됩니다 (서로의 트리거에 영향을 주지 않음), 하지만 동일한 출력 writer 를 공유합니다.
 :::
 
 ## 검증
@@ -346,7 +346,7 @@ if err := httpc.ValidateConfig(cfg); err != nil {
 func (c *Config) String() string
 ```
 
-안전한 문자열 표현을 반환합니다. ProxyURL 자격 증명은 마스킹되고, TLSConfig는 `<configured>` 또는 `<default>`로 표시되며, Headers는 출력되지 않습니다.
+안전한 문자열 표현을 반환합니다. ProxyURL 자격 증명은 마스킹되고, TLSConfig 는 `<configured>` 또는 `<default>`로 표시되며, Headers 는 출력되지 않습니다.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -372,11 +372,11 @@ Cookie 보안 속성 검증 설정.
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| RequireSecure | `bool` | Cookie에 Secure 속성 설정 요구 |
-| RequireHttpOnly | `bool` | Cookie에 HttpOnly 속성 설정 요구 |
+| RequireSecure | `bool` | Cookie 에 Secure 속성 설정 요구 |
+| RequireHttpOnly | `bool` | Cookie 에 HttpOnly 속성 설정 요구 |
 | RequireSameSite | `string` | 요구되는 SameSite 값, 예: `"Strict"`, `"Lax"`, 빈 문자열은 검사하지 않음 |
 | AllowSameSiteNone | `bool` | SameSite=None 허용 여부 |
-| RequireSecureForSameSiteNone | `bool` | SameSite=None일 때 Secure 속성 요구 (기본 `true`) |
+| RequireSecureForSameSiteNone | `bool` | SameSite=None 일 때 Secure 속성 요구 (기본 `true`) |
 
 ### DefaultCookieSecurityConfig
 
@@ -384,7 +384,7 @@ Cookie 보안 속성 검증 설정.
 func DefaultCookieSecurityConfig() *CookieSecurityConfig
 ```
 
-기본 Cookie 보안 설정. Secure/HttpOnly/SameSite 속성을 요구하지 않지만, SameSite=None인 Cookie는 반드시 Secure를 설정해야 합니다.
+기본 Cookie 보안 설정. Secure/HttpOnly/SameSite 속성을 요구하지 않지만, SameSite=None 인 Cookie 는 반드시 Secure 를 설정해야 합니다.
 
 ### StrictCookieSecurityConfig
 
@@ -392,7 +392,7 @@ func DefaultCookieSecurityConfig() *CookieSecurityConfig
 func StrictCookieSecurityConfig() *CookieSecurityConfig
 ```
 
-엄격한 Cookie 보안 설정. Secure, HttpOnly 및 SameSite=Strict을 요구합니다.
+엄격한 Cookie 보안 설정. Secure, HttpOnly 및 SameSite=Strict 을 요구합니다.
 
 ```go
 cfg := httpc.DefaultConfig()

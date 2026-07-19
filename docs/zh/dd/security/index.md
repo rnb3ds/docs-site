@@ -31,7 +31,7 @@ logger, _ := dd.New(dd.Config{
 // password 字段自动脱敏
 logger.InfoWith("登录",
     dd.String("username", "admin"),
-    dd.String("password", "s3cr3t"),  // 输出: [REDACTED]
+    dd.String("password", "s3cr3t"),  // 输出：[REDACTED]
 )
 ```
 

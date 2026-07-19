@@ -279,11 +279,11 @@ func main() {
     // 测试危险模式检测
     _, err = p.Get(`{"data": "company_secret_info"}`, "data")
     if err != nil {
-        fmt.Println("检测到危险模式:", err)
+        fmt.Println("检测到危险模式：", err)
     }
 
     // 查看已注册的模式
-    fmt.Printf("自定义模式数量: %d\n", len(cfg.AdditionalDangerousPatterns))
+    fmt.Printf("自定义模式数量：%d\n", len(cfg.AdditionalDangerousPatterns))
 }
 ```
 

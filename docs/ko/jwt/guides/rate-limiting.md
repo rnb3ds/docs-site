@@ -7,7 +7,7 @@ sidebar_position: 40
 
 # 속도 제한
 
-속도 제한은 토큰 발급 인터페이스의 악용(예: 무차별 대입 공격)을 방지하는 데 사용됩니다.
+속도 제한은 토큰 발급 인터페이스의 악용 (예: 무차별 대입 공격) 을 방지하는 데 사용됩니다.
 
 ## 작동 방식
 
@@ -42,7 +42,7 @@ cfg.RateLimitWindow = time.Minute    // 시간 윈도우
 속도 제한은 키 기반으로 격리되며, 키의 조회 우선순위는 다음과 같습니다:
 
 1. `RegisteredClaims.Subject` — 비어있지 않은 경우
-2. `*Claims.UserID` — 내장 Claims에만 해당
+2. `*Claims.UserID` — 내장 Claims 에만 해당
 3. `RateLimitKey()` — `RateLimitKeyer` 인터페이스를 구현한 경우
 4. 빈 문자열 — 속도 제한 검사 건너뜀
 
@@ -90,11 +90,11 @@ type RateLimitProvider interface {
 }
 ```
 
-:::tip AllowN에 대하여
+:::tip AllowN 에 대하여
 인터페이스 자체는 단일 판단 `Allow`만 정의합니다. 배치 판단 메서드 `AllowN(key string, n int) bool`는 구체 타입 [`*RateLimiter`](../api-reference/types#ratelimiter)의 확장 메서드로, 이 인터페이스에 속하지 않습니다.
 :::
 
-예를 들어 Redis를 연동하여 분산 속도 제한을 구현:
+예를 들어 Redis 를 연동하여 분산 속도 제한을 구현:
 
 ```go
 cfg.RateLimiter = &RedisRateLimiter{client: rdb}
@@ -102,7 +102,7 @@ cfg.RateLimiter = &RedisRateLimiter{client: rdb}
 
 ## 속도 제한 초과
 
-요청이 속도 제한 임계값을 초과하면, 토큰 발급 메서드(`Create()`, `CreateRefresh()`, `Refresh()`, `RefreshInto()`)가 `ErrRateLimitExceeded`를 반환합니다:
+요청이 속도 제한 임계값을 초과하면, 토큰 발급 메서드 (`Create()`, `CreateRefresh()`, `Refresh()`, `RefreshInto()`) 가 `ErrRateLimitExceeded`를 반환합니다:
 
 ```go
 token, err := processor.Create(claims)

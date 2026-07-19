@@ -54,7 +54,7 @@ loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 后加载的文件覆盖先加载的：
 
 ```go
-// 顺序: base -> env -> json -> yaml
+// 顺序：base -> env -> json -> yaml
 loader.LoadFiles(
     ".env",           // 基础配置
     "config.json",    // 覆盖 .env
@@ -90,7 +90,7 @@ JSON/YAML 的嵌套结构会被扁平化存储。库支持多种键名访问方�
 loader.LoadFiles("config.json")
 
 // JSON: {"database": {"host": "localhost", "port": 5432}}
-// 存储为: DATABASE_HOST=localhost, DATABASE_PORT=5432
+// 存储为：DATABASE_HOST=localhost, DATABASE_PORT=5432
 
 // 方式一：扁平化键名（推荐）
 host := loader.GetString("DATABASE_HOST")   // localhost
@@ -328,12 +328,12 @@ cfg.ExpandVariables = true  // 默认启用
 loader, _ := env.New(cfg)
 loader.LoadFiles(".env")
 
-// .env 内容:
+// .env 内容：
 // BASE_URL=https://api.example.com
 // API_URL=${BASE_URL}/v1
 
 apiURL := loader.GetString("API_URL")
-// 输出: https://api.example.com/v1
+// 输出：https://api.example.com/v1
 ```
 
 ### 展开语法

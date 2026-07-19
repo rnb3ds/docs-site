@@ -739,7 +739,7 @@ if err := loader.LoadFiles(".env"); err != nil {
 }
 
 if err := loader.Validate(); err != nil {
-    log.Fatal("缺少必需配置:", err)
+    log.Fatal("缺少必需配置：", err)
 }
 ```
 

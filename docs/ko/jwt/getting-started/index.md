@@ -1,7 +1,7 @@
 ---
 sidebar_label: "빠른 시작"
-title: "빠른 시작 - CyberGo JWT | 5분 입문 가이드"
-description: "CyberGo JWT 빠른 시작 가이드: 라이브러리 설치와 Processor 생성, 접근·갱신 토큰 발급·검증·갱신·취소, 4종 알고리즘 선택, 커스텀 Claims, 블랙리스트와 토큰 버킷 속도 제한 설정 등 핵심 사용법."
+title: "빠른 시작 - CyberGo JWT | 5 분 입문 가이드"
+description: "CyberGo JWT 빠른 시작 가이드: 라이브러리 설치와 Processor 생성, 접근·갱신 토큰 발급·검증·갱신·취소, 4 종 알고리즘 선택, 커스텀 Claims, 블랙리스트와 토큰 버킷 속도 제한 설정 등 핵심 사용법."
 sidebar_position: 2
 ---
 
@@ -30,7 +30,7 @@ import (
 
 func main() {
     cfg := jwt.DefaultConfig()
-    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!" // HMAC 최소 32바이트
+    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!" // HMAC 최소 32 바이트
     cfg.AccessTokenTTL = 15 * time.Minute
     cfg.RefreshTokenTTL = 7 * 24 * time.Hour
 
@@ -272,7 +272,7 @@ if err != nil {
     case errors.Is(err, jwt.ErrInvalidToken):
         // 서명 무효 또는 형식 오류
     case errors.Is(err, jwt.ErrProcessorClosed):
-        // Processor가 종료됨
+        // Processor 가 종료됨
     default:
         // 기타 오류
     }

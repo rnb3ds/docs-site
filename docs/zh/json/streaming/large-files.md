@@ -7,7 +7,7 @@ sidebar_position: 1
 
 # 大文件处理
 
-对于大型 JSON 文件（如日志、配置、数据导出），直接加载到内存可能导致内存溢出。 json 库提供了多种高效的处理方式。
+对于大型 JSON 文件（如日志、配置、数据导出），直接加载到内存可能导致内存溢出。json 库提供了多种高效的处理方式。
 
 ::: warning
 `ForeachFile` 和 `ForeachFileChunked` 在迭代前会将整个文件加载到内存中。"分块"行为仅影响内存中数据的迭代方式，不影响文件的读取方式。对于真正需要控制内存的超大文件处理，请使用 `NDJSONProcessor` 配合 JSONL 格式，或使用 `StreamIterator`。
@@ -91,7 +91,7 @@ func main() {
 ```go
 // 方式 2：分批处理（适合批量写入数据库）
 err := processor.ForeachFileChunked("large-data.json", 1000, func(chunk []*json.IterableValue) error {
-    log.Printf("处理批次: %d 条记录", len(chunk))
+    log.Printf("处理批次：%d 条记录", len(chunk))
 
     // 批量写入数据库
     for _, item := range chunk {
@@ -123,7 +123,7 @@ err := processor.ForeachFile("large-data.json", func(key any, item *json.Iterabl
 ### 处理对象文件
 ```go
 // 方式 4：处理 JSON 对象文件（键值对结构）
-// 文件格式: {"user1": {...}, "user2": {...}, ...}
+// 文件格式：{"user1": {...}, "user2": {...}, ...}
 err := processor.ForeachFile("config-map.json", func(key any, item *json.IterableValue) error {
     fmt.Printf("Key: %s, Name: %s\n", key, item.GetString("name"))
     return nil

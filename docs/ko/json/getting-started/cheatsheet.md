@@ -7,7 +7,7 @@ sidebar_position: 3
 
 # 치트시트
 
-자주 사용하는 API와 코드 조각을 빠르게 찾아보세요.
+자주 사용하는 API 와 코드 조각을 빠르게 찾아보세요.
 
 ## 경로 쿼리
 
@@ -65,7 +65,7 @@ result, err = json.Delete(data, "user.temporary")
 | 포맷팅 인코딩 | `MarshalIndent` | `json.MarshalIndent(data, "", "  ")` |
 | 디코딩 | `Unmarshal` | `json.Unmarshal(bytes, &v)` |
 | 파싱 | `Parse` | `var v T; json.Parse(jsonStr, &v)` |
-| any로 파싱 | `ParseAny` | `json.ParseAny(jsonStr)` |
+| any 로 파싱 | `ParseAny` | `json.ParseAny(jsonStr)` |
 | 포맷팅 | `Prettify` | `json.Prettify(jsonStr)` |
 | 압축 | `Compact` | `json.Compact(&buf, []byte(data))` |
 
@@ -80,7 +80,7 @@ pretty, err := json.MarshalIndent(data, "", "  ")
 var result map[string]any
 err = json.Parse(`{"name": "test"}`, &result)
 
-// any로 파싱
+// any 로 파싱
 parsed, err := json.ParseAny(`{"name": "test"}`)
 
 // JSON 문자열 포맷팅

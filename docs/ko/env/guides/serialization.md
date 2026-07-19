@@ -58,7 +58,7 @@ func main() {
         "PORT": "8080",
     }
 
-    // JSON으로 직렬화
+    // JSON 으로 직렬화
     result, err := env.Marshal(data, env.FormatJSON)
     if err != nil {
         panic(err)
@@ -90,7 +90,7 @@ func main() {
         "DATABASE_NAME": "myapp",
     }
 
-    // YAML로 직렬화
+    // YAML 로 직렬화
     result, err := env.Marshal(data, env.FormatYAML)
     if err != nil {
         panic(err)
@@ -217,7 +217,7 @@ func main() {
         Debug: true,
     }
 
-    // map으로 변환
+    // map 으로 변환
     data, err := env.MarshalStruct(cfg)
     if err != nil {
         panic(err)
@@ -252,7 +252,7 @@ PORT=8080
 DEBUG=true
 `
 
-    // map으로 역직렬화
+    // map 으로 역직렬화
     result, err := env.UnmarshalMap(data, env.FormatEnv)
     if err != nil {
         panic(err)
@@ -317,7 +317,7 @@ DATABASE_USER: postgres
 
 ## 구조체 역직렬화
 
-### Map에서 역직렬화
+### Map 에서 역직렬화
 
 ```go
 package main
@@ -385,8 +385,8 @@ ENABLED=true
 ## 커스텀 직렬화
 
 ::: tip 두 가지 커스텀 인터페이스의 동작 범위
-- **필드 수준**: 구조체 필드의 커스텀 인코딩/디코딩은 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`(`MarshalText()` / `UnmarshalText([]byte)`)를 구현합니다. 구조체가 `env.Marshal`/`env.UnmarshalInto`로 처리될 때 필드 단위 로직이 이 두 인터페이스를 인식합니다.
-- **최상위**: `env.Marshaler`(`MarshalEnv()`)와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 **`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 직접 전달된 최상위 값에서만 동작**합니다. 해당 타입을 필드로 포함한 외부 구조체를 전달하면 호출되지 않습니다.
+- **필드 수준**: 구조체 필드의 커스텀 인코딩/디코딩은 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`(`MarshalText()` / `UnmarshalText([]byte)`) 를 구현합니다. 구조체가 `env.Marshal`/`env.UnmarshalInto`로 처리될 때 필드 단위 로직이 이 두 인터페이스를 인식합니다.
+- **최상위**: `env.Marshaler`(`MarshalEnv()`) 와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 **`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 직접 전달된 최상위 값에서만 동작**합니다. 해당 타입을 필드로 포함한 외부 구조체를 전달하면 호출되지 않습니다.
 :::
 
 ### 필드 수준: encoding.TextMarshaler 구현
@@ -484,7 +484,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// 최상위 타입이 env.Marshaler를 직접 구현
+// 최상위 타입이 env.Marshaler 를 직접 구현
 type EnvBlob string
 
 func (e EnvBlob) MarshalEnv() ([]byte, error) {
@@ -529,7 +529,7 @@ func main() {
     format = env.DetectFormat(".env")
     fmt.Println(format.String()) // dotenv
 
-    // FormatAuto로 자동 감지
+    // FormatAuto 로 자동 감지
     data := `{"KEY": "value"}`
     result, _ := env.UnmarshalMap(data, env.FormatAuto)
     fmt.Println(result)
@@ -585,7 +585,7 @@ func main() {
     // 모든 환경 변수 가져오기
     all := env.All()
 
-    // JSON으로 내보내기
+    // JSON 으로 내보내기
     content, err := env.Marshal(all, env.FormatJSON)
     if err != nil {
         panic(err)

@@ -11,7 +11,7 @@ sidebar_position: 4
 
 ## 구조체 정의
 
-Config는 중첩 구조체를 사용하여 설정을 구성하며, Go의 필드 승격을 통해 하위 호환성을 유지합니다:
+Config 는 중첩 구조체를 사용하여 설정을 구성하며, Go 의 필드 승격을 통해 하위 호환성을 유지합니다:
 
 ```go
 type Config struct {
@@ -45,7 +45,7 @@ type FileConfig struct {
     Filenames         []string // 로드할 파일 목록
     FailOnMissingFile bool     // 파일이 존재하지 않을 때 오류 발생 여부
     OverwriteExisting bool     // 이미 존재하는 환경 변수 덮어쓰기 여부
-    AutoApply         bool     // os.Environ에 자동 적용 여부
+    AutoApply         bool     // os.Environ 에 자동 적용 여부
 }
 
 // ValidationConfig 키 및 값 검증 제어
@@ -55,7 +55,7 @@ type ValidationConfig struct {
     ForbiddenKeys  []string       // 추가 금지 키 목록
     KeyPattern     *regexp.Regexp // 키 이름 일치 패턴
     ValidateValues bool           // 값의 안전성 검증 여부
-    ValidateUTF8   bool           // 값이 유효한 UTF-8인지 검증 여부
+    ValidateUTF8   bool           // 값이 유효한 UTF-8 인지 검증 여부
 }
 
 // LimitsConfig 크기 및 수량 제한 제어
@@ -70,7 +70,7 @@ type LimitsConfig struct {
 
 // JSONConfig JSON 파싱 동작 제어
 type JSONConfig struct {
-    JSONNullAsEmpty    bool // null을 빈 문자열로 변환
+    JSONNullAsEmpty    bool // null 을 빈 문자열로 변환
     JSONNumberAsString bool // 숫자를 문자열로 변환
     JSONBoolAsString   bool // 부울값을 문자열로 변환
     JSONMaxDepth       int  // 최대 중첩 깊이
@@ -141,14 +141,14 @@ cfg.OverwriteExisting = true  // 덮어쓰기 허용
 
 #### `AutoApply` bool
 
-로드 후 시스템 환경(`os.Environ`)에 자동으로 적용합니다. **기본값 `false`**.
+로드 후 시스템 환경 (`os.Environ`) 에 자동으로 적용합니다. **기본값 `false`**.
 
 ```go
 cfg.AutoApply = true  // 로드 후 자동 적용
 ```
 
 :::tip 참고
-패키지 수준 `Load()` 함수는 자동으로 `AutoApply = true`를 설정합니다. `New()`로 Loader를 생성할 때는 수동으로 설정해야 합니다.
+패키지 수준 `Load()` 함수는 자동으로 `AutoApply = true`를 설정합니다. `New()`로 Loader 를 생성할 때는 수동으로 설정해야 합니다.
 :::
 
 ### 변수 확장
@@ -261,7 +261,7 @@ cfg.MaxExpansionDepth = 10
 사용자 정의 키 이름 일치 패턴입니다. **기본값 `nil`** (빠른 바이트 수준 검증 사용).
 
 :::tip 성능 최적화
-`nil` 값은 빠른 바이트 수준 검증을 활성화합니다 (약 10배 성능 향상). 기본 검증 규칙: 문자로 시작, 문자, 숫자, 밑줄만 포함.
+`nil` 값은 빠른 바이트 수준 검증을 활성화합니다 (약 10 배 성능 향상). 기본 검증 규칙: 문자로 시작, 문자, 숫자, 밑줄만 포함.
 :::
 
 ```go
@@ -343,7 +343,7 @@ cfg.AllowExportPrefix = false  // export 접두사 금지
 
 #### `AllowYamlSyntax` bool
 
-YAML 스타일 구문(`KEY: value`)을 허용합니다. **기본값 `false`**.
+YAML 스타일 구문 (`KEY: value`) 을 허용합니다. **기본값 `false`**.
 
 ```go
 cfg.AllowYamlSyntax = true
@@ -663,7 +663,7 @@ if err := cfg.Validate(); err != nil {
 **검증 규칙:**
 - 모든 제한 값은 양수여야 함
 - 모든 제한 값은 하드 상한선을 초과할 수 없음
-- `KeyPattern`이 nil이 아닌 경우 유효한 키 이름(예: `TEST_KEY`)을 일치시킬 수 있어야 하고, 빈 문자열을 일치시키지 않아야 하며, 숫자로 시작하는 키 이름을 일치시키지 않아야 함
+- `KeyPattern`이 nil 이 아닌 경우 유효한 키 이름 (예: `TEST_KEY`) 을 일치시킬 수 있어야 하고, 빈 문자열을 일치시키지 않아야 하며, 숫자로 시작하는 키 이름을 일치시키지 않아야 함
 - `JSONMaxDepth` 및 `YAMLMaxDepth`는 1-100 사이여야 함
 
 ---
@@ -674,7 +674,7 @@ if err := cfg.Validate(); err != nil {
 func (c *Config) IsZero() bool
 ```
 
-Config가 초기화되지 않은 제로값인지 확인합니다. `DefaultConfig()`를 사용해야 하는지 판단하는 데 사용합니다.
+Config 가 초기화되지 않은 제로값인지 확인합니다. `DefaultConfig()`를 사용해야 하는지 판단하는 데 사용합니다.
 
 **반환값:**
 - `bool` - 제로값 설정인지 여부
@@ -686,7 +686,7 @@ Config가 초기화되지 않은 제로값인지 확인합니다. `DefaultConfig
 - 슬라이스 필드 (Filenames, RequiredKeys 등)
 
 :::warning 참고
-부분적으로 초기화된 Config는 제로값으로 감지되지 않을 수 있습니다. 항상 `DefaultConfig()`에서 시작하여 사용자 정의 설정을 구성하는 것을 권장합니다:
+부분적으로 초기화된 Config 는 제로값으로 감지되지 않을 수 있습니다. 항상 `DefaultConfig()`에서 시작하여 사용자 정의 설정을 구성하는 것을 권장합니다:
 
 ```go
 // 권장
@@ -747,7 +747,7 @@ cfg.Prefix = "MYAPP_"  // MYAPP_KEY1, MYAPP_KEY2 등만 로드
 cfg.Filenames = []string{".env"}
 
 loader, _ := env.New(cfg)
-// loader에는 MYAPP_로 시작하는 변수만 있음
+// loader 에는 MYAPP_로 시작하는 변수만 있음
 ```
 
 ### 사용자 정의 검증

@@ -116,10 +116,10 @@ if err != nil {
 
 if result.IsClientError() {
     // 4xx - 客户端请求有误
-    log.Printf("客户端错误: %d", result.StatusCode())
+    log.Printf("客户端错误：%d", result.StatusCode())
 } else if result.IsServerError() {
     // 5xx - 服务端故障
-    log.Printf("服务端错误: %d", result.StatusCode())
+    log.Printf("服务端错误：%d", result.StatusCode())
 }
 ```
 

@@ -57,7 +57,7 @@ cfg := env.DefaultConfig()
 cfg.MaxFileSize = 200 * 1024 * 1024  // 超过 100MB 上限
 
 if err := cfg.Validate(); err != nil {
-    // 返回错误: MaxFileSize exceeds hard limit
+    // 返回错误：MaxFileSize exceeds hard limit
 }
 ```
 
@@ -492,13 +492,13 @@ func MaskValue(key, value string) string
 ```go
 // 敏感键 - 返回 [MASKED:N chars] 格式
 masked := env.MaskValue("API_KEY", "secret123")
-// 返回: [MASKED:9 chars]
+// 返回：[MASKED:9 chars]
 
 // 非敏感键 - 返回原值（超过 20 字符则截断）
 masked := env.MaskValue("APP_NAME", "myapp")
-// 返回: myapp
+// 返回：myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
-// 返回: this is a very lo...
+// 返回：this is a very lo...
 ```
 
 ### MaskKey
@@ -511,7 +511,7 @@ func MaskKey(key string) string
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
-// 返回: DB***
+// 返回：DB***
 ```
 
 ### MaskSensitiveInString
@@ -532,12 +532,12 @@ func MaskSensitiveInString(s string) string
 // 长字符串会被截断
 log := "This is a very long log message that exceeds 50 characters and will be truncated"
 clean := env.MaskSensitiveInString(log)
-// 返回: "This is a very long log message that exceeds 50..."
+// 返回："This is a very long log message that exceeds 50..."
 
 // 短字符串保持不变
 short := "Short message"
 clean := env.MaskSensitiveInString(short)
-// 返回: "Short message"
+// 返回："Short message"
 ```
 
 ::: warning 注意
@@ -570,12 +570,12 @@ func SanitizeForLog(s string) string
 // 自动掩码敏感键值对
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
-// 返回: "Connected with password=[MASKED] api_key=[MASKED]"
+// 返回："Connected with password=[MASKED] api_key=[MASKED]"
 
 // 非敏感键值对保持不变
 msg := "Config loaded: app_name=myapp port=8080"
 clean := env.SanitizeForLog(msg)
-// 返回: "Config loaded: app_name=myapp port=8080"
+// 返回："Config loaded: app_name=myapp port=8080"
 ```
 
 ::: tip 使用场景

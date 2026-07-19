@@ -104,7 +104,7 @@ if err != nil {
 }
 ```
 
-### TypeEncoder를 사용한 타입 매핑
+### TypeEncoder 를 사용한 타입 매핑
 
 ```go
 type CustomTypeEncoder struct{}
@@ -121,7 +121,7 @@ func (e *CustomTypeEncoder) Encode(v reflect.Value) (string, error) {
 }
 ```
 
-## CustomEncoder와 TypeEncoder 비교
+## CustomEncoder 와 TypeEncoder 비교
 
 | 특성 | CustomEncoder | TypeEncoder |
 |------|---------------|-------------|
@@ -131,7 +131,7 @@ func (e *CustomTypeEncoder) Encode(v reflect.Value) (string, error) {
 | 반환값 | `string` (JSON 문자열) | `string` (JSON 문자열) |
 | 적합한 시나리오 | 통합 인코딩 동작 | 커스텀 타입의 직렬화 매핑 |
 
-## Config의 인코딩 관련 필드
+## Config 의 인코딩 관련 필드
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
@@ -140,5 +140,5 @@ func (e *CustomTypeEncoder) Encode(v reflect.Value) (string, error) {
 
 ## 관련 문서
 
-- [인터페이스 정의](../api-reference/interfaces) - CustomEncoder와 TypeEncoder 인터페이스
+- [인터페이스 정의](../api-reference/interfaces) - CustomEncoder 와 TypeEncoder 인터페이스
 - [설정 옵션](../api-reference/config) - Config 인코딩 관련 문서 필드

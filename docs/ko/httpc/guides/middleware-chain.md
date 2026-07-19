@@ -58,7 +58,7 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 각 요청에 고유 ID 추가, `crypto/rand`로 생성:
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // 기본 32자 hex
+httpc.RequestIDMiddleware("X-Request-ID", nil) // 기본 32 자 hex
 
 // 커스텀 생성기
 httpc.RequestIDMiddleware("X-Request-ID", func() string {
@@ -74,8 +74,8 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 httpc.TimeoutMiddleware(30 * time.Second)
 ```
 
-:::warning Download나 스트리밍 요청에는 사용 금지
-`TimeoutMiddleware`의 `defer cancel()`은 핸들러가 반환(응답 헤더 수신)된 직후에 실행되어, `Download`나 `WithStreamBody` 요청에서는 응답 본문을 읽기 전에 컨텍스트가 미리 취소되어 "context canceled" 오류가 발생합니다. 스트리밍/다운로드 시나리오에서는 [`WithTimeout`](../api-reference/core/options#withtimeout) 옵션을 대신 사용하세요.
+:::warning Download 나 스트리밍 요청에는 사용 금지
+`TimeoutMiddleware`의 `defer cancel()`은 핸들러가 반환 (응답 헤더 수신) 된 직후에 실행되어, `Download`나 `WithStreamBody` 요청에서는 응답 본문을 읽기 전에 컨텍스트가 미리 취소되어 "context canceled" 오류가 발생합니다. 스트리밍/다운로드 시나리오에서는 [`WithTimeout`](../api-reference/core/options#withtimeout) 옵션을 대신 사용하세요.
 :::
 
 ### HeaderMiddleware
@@ -136,7 +136,7 @@ httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
 }, auditCfg)
 ```
 
-감사 이벤트는 컨텍스트에서 SourceIP와 UserID 추출을 지원합니다:
+감사 이벤트는 컨텍스트에서 SourceIP 와 UserID 추출을 지원합니다:
 
 ```go
 ctx := context.WithValue(context.Background(), httpc.SourceIPKey, "192.168.1.1")

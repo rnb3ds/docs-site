@@ -47,8 +47,8 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println(result.Title) // 出力: サンプル
-    fmt.Println(result.Text)  // 出力: タイトル\n\n本文コンテンツ
+    fmt.Println(result.Title) // 出力：サンプル
+    fmt.Println(result.Text)  // 出力：タイトル\n\n本文コンテンツ
 }
 ```
 

@@ -1,6 +1,6 @@
 ---
 sidebar_label: "快速开始"
-title: "快速开始 - CyberGo html | 5分钟入门指南"
+title: "快速开始 - CyberGo html | 5 分钟入门指南"
 description: "CyberGo html 快速入门：安装、内容提取、四种 Config 预设、文本/Markdown/JSON 输出与并发安全，5 分钟上手 HTML 内容提取。"
 sidebar_position: 2
 ---
@@ -47,26 +47,26 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("标题:", result.Title)
-    fmt.Println("正文:", result.Text)
-    fmt.Println("图片数:", len(result.Images))
-    fmt.Println("链接数:", len(result.Links))
-    fmt.Println("字数:", result.WordCount)
+    fmt.Println("标题：", result.Title)
+    fmt.Println("正文：", result.Text)
+    fmt.Println("图片数：", len(result.Images))
+    fmt.Println("链接数：", len(result.Links))
+    fmt.Println("字数：", result.WordCount)
 }
 ```
 
 输出：
 
 ```text
-标题: Go 语言教程
-正文: Go 入门指南
+标题：Go 语言教程
+正文：Go 入门指南
 
 Go 是一门静态类型的编译语言。
 
 Go 官网
-图片数: 1
-链接数: 1
-字数: 6
+图片数：1
+链接数：1
+字数：6
 ```
 
 ## 从文件提取

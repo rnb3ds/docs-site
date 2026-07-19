@@ -166,8 +166,8 @@ func main() {
     }
     if valid {
         parsed := result.(*MyClaims)
-        fmt.Println("UserID:", parsed.UserID) // 输出: user123
-        fmt.Println("Email:", parsed.Email)   // 输出: alice@example.com
+        fmt.Println("UserID:", parsed.UserID) // 输出：user123
+        fmt.Println("Email:", parsed.Email)   // 输出：alice@example.com
     }
 
     // 刷新到自定义 Claims
@@ -286,8 +286,8 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // 输出: 2026-01-01 00:00:00 +0000 UTC
-    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // 输出: 2026-01-01 00:15:00 +0000 UTC
+    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // 输出：2026-01-01 00:00:00 +0000 UTC
+    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // 输出：2026-01-01 00:15:00 +0000 UTC
 }
 ```
 

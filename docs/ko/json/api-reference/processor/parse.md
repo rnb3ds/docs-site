@@ -1,13 +1,13 @@
 ---
 sidebar_label: "파싱 및 검증"
 title: "Processor 파싱/검증 - CyberGo JSON | API"
-description: "CyberGo JSON Processor 파싱 메서드: Valid 검증, Parse, ParseAny, PreParse 최적화, GetFromParsed로 설정 기반 파싱을 지원합니다."
+description: "CyberGo JSON Processor 파싱 메서드: Valid 검증, Parse, ParseAny, PreParse 최적화, GetFromParsed 로 설정 기반 파싱을 지원합니다."
 sidebar_position: 6
 ---
 
 # 파싱 및 검증 메서드
 
-Processor는 JSON 파싱과 유효성 검증 기능을 제공합니다. 파일 읽기/쓰기 및 스트리밍 로드는 [파일 I/O](./file-io)를 참고하세요.
+Processor 는 JSON 파싱과 유효성 검증 기능을 제공합니다. 파일 읽기/쓰기 및 스트리밍 로드는 [파일 I/O](./file-io)를 참고하세요.
 
 ## 검증 메서드
 
@@ -28,7 +28,7 @@ if valid && err == nil {
 
 시그니처: `func (p *Processor) ValidBytes(data []byte) bool`
 
-바이트 슬라이스가 유효한 JSON인지 검증합니다.
+바이트 슬라이스가 유효한 JSON 인지 검증합니다.
 
 ```go
 if p.ValidBytes([]byte(data)) {
@@ -45,7 +45,7 @@ if p.ValidBytes([]byte(data)) {
 JSON 문자열을 대상 변수로 파싱합니다. 표준 모드와 숫자 보존 모드를 지원합니다.
 
 ```go
-// map으로 파싱
+// map 으로 파싱
 var obj map[string]any
 err := p.Parse(`{"name":"Alice"}`, &obj)
 

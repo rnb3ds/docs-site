@@ -67,7 +67,7 @@ result, err := httpc.Get("http://localhost:8080/health",
 
 ## DNS 重绑定防护
 
-HTTPC 采用"解析-验证-直连"模式防止 DNS 重绑定攻击：
+HTTPC 采用"解析 - 验证 - 直连"模式防止 DNS 重绑定攻击：
 
 1. 解析域名为 IP 地址
 2. 验证所有解析出的 IP 是否为私有地址

@@ -1,13 +1,13 @@
 ---
 sidebar_label: "보안과 감사 실전"
 title: "보안과 감사 실전 - CyberGo DD | 보안 로그 예제"
-description: "CyberGo DD 보안 필터와 감사 로그의 완전한 실전 예제 모음입니다. 민감 데이터 필터 규칙 구성, HMAC 무결성 서명과 검증, 감사 이벤트 기록과 일괄 검증, 산업 규정 준수 구성 방안(HIPAA/PCI-DSS), 프로덕션 환경 보안 로그 아키텍처 설계와 배포의 모범 사례 권장 및 주의사항을 다룹니다."
+description: "CyberGo DD 보안 필터와 감사 로그의 완전한 실전 예제 모음입니다. 민감 데이터 필터 규칙 구성, HMAC 무결성 서명과 검증, 감사 이벤트 기록과 일괄 검증, 산업 규정 준수 구성 방안 (HIPAA/PCI-DSS), 프로덕션 환경 보안 로그 아키텍처 설계와 배포의 모범 사례 권장 및 주의사항을 다룹니다."
 sidebar_position: 3
 ---
 
 # 보안과 감사 실전
 
-이 예제는 DD의 보안 필터, 감사 로그, 무결성 서명을 구성하여 프로덕션급 보안 로그 방안을 구축하는 방법을 보여줍니다.
+이 예제는 DD 의 보안 필터, 감사 로그, 무결성 서명을 구성하여 프로덕션급 보안 로그 방안을 구축하는 방법을 보여줍니다.
 
 ## 민감 데이터 필터
 
@@ -33,7 +33,7 @@ func main() {
         dd.String("password", "s3cr3t123"),    // → password=[REDACTED]
     )
 
-    // API Key 자동 마스킹(주의: endpoint도 민감 키 이름에 해당하여 마스킹됨)
+    // API Key 자동 마스킹 (주의: endpoint 도 민감 키 이름에 해당하여 마스킹됨)
     logger.InfoWith("API 호출",
         dd.String("endpoint", "/api/data"),      // → endpoint=[REDACTED]("endpoint"도 민감 키 이름)
         dd.String("api_key", "sk-abc123xyz"),   // → api_key=[REDACTED]
@@ -87,7 +87,7 @@ func main() {
     auditFile, _ := os.Create("logs/audit.json")
     defer auditFile.Close()
 
-    // HMAC 서명자(변조 방지)
+    // HMAC 서명자 (변조 방지)
     integrityCfg, _ := dd.DefaultIntegrityConfigSafe()
     signer, _ := dd.NewIntegritySigner(integrityCfg)
 
@@ -107,13 +107,13 @@ func main() {
         Format:   dd.FormatJSON,
         Security: dd.DefaultSecureConfig(),
         Targets:  []dd.OutputTarget{dd.ConsoleOutput()},
-        // 주의: 여기에 Audit을 구성하지 않았으므로, 비즈니스 logger의 마스킹/보안 이벤트가 위 auditLogger에 자동으로 들어가지 않습니다.
-        // 보안 이벤트를 감사로 자동 들어가게 하려면 여기에 Audit 필드를 구성해야 합니다(예: 위 auditLogger에 해당하는
-        // AuditConfig를 Audit: &auditCfg로 전달), 또는 auditLogger.LogX(...)를 명시적으로 호출해 이벤트를 기록합니다.
+        // 주의: 여기에 Audit 을 구성하지 않았으므로, 비즈니스 logger 의 마스킹/보안 이벤트가 위 auditLogger 에 자동으로 들어가지 않습니다.
+        // 보안 이벤트를 감사로 자동 들어가게 하려면 여기에 Audit 필드를 구성해야 합니다 (예: 위 auditLogger 에 해당하는
+        // AuditConfig 를 Audit: &auditCfg 로 전달), 또는 auditLogger.LogX(...) 를 명시적으로 호출해 이벤트를 기록합니다.
     })
     defer logger.Close()
 
-    // 정상 비즈니스 작업(마스킹은 Security가 처리하지만 감사 로그에 자동으로 기록되지는 않음)
+    // 정상 비즈니스 작업 (마스킹은 Security 가 처리하지만 감사 로그에 자동으로 기록되지는 않음)
     logger.InfoWith("거래 처리",
         dd.String("transaction_id", "TXN-001"),
         dd.String("amount", "1500.00"),

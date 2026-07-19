@@ -35,7 +35,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
     // APP_NAME=my-app
     // APP_VERSION=1.0.0
     // DEBUG=true
@@ -65,7 +65,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
     // {
     //   "HOST": "localhost",
     //   "PORT": 8080
@@ -97,7 +97,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
     // DATABASE_HOST: localhost
     // DATABASE_NAME: myapp
     // DATABASE_PORT: 5432
@@ -136,7 +136,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
     // DEBUG=true
     // HOST=localhost
     // PORT=8080
@@ -224,7 +224,7 @@ func main() {
     }
 
     fmt.Printf("%+v\n", data)
-    // 输出: map[DEBUG:true HOST:localhost PORT:8080]
+    // 输出：map[DEBUG:true HOST:localhost PORT:8080]
 
     // 可用于导出到文件
     content, _ := env.Marshal(data, env.FormatEnv)
@@ -259,7 +259,7 @@ DEBUG=true
     }
 
     fmt.Printf("%+v\n", result)
-    // 输出: map[DEBUG:true HOST:localhost PORT:8080]
+    // 输出：map[DEBUG:true HOST:localhost PORT:8080]
 }
 ```
 
@@ -345,7 +345,7 @@ func main() {
     }
 
     fmt.Printf("%+v\n", cfg)
-    // 输出: {Host:example.com Port:443}
+    // 输出：{Host:example.com Port:443}
 }
 ```
 
@@ -423,7 +423,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出: LOG_LEVEL=DEBUG
+    // 输出：LOG_LEVEL=DEBUG
 }
 ```
 
@@ -467,7 +467,7 @@ func main() {
     }
 
     fmt.Printf("Level: %s\n", cfg.Level)
-    // 输出: Level: info
+    // 输出：Level: info
 }
 ```
 
@@ -500,7 +500,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
     // APP_NAME=custom
     // APP_VERSION=2.0.0
 }

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "ファイルダウンロード"
-title: "ファイルダウンロード - CyberGo HTTPC | Downloadと検証"
-description: "HTTPC ファイルダウンロード API リファレンス: Download 統合エントリ、DownloadConfig 設定、進捗コールバック、DownloadResult タイプ、SHA-256 チェックサム検証、UNC パス防護など 6 層のセキュリティ保護を提供します。"
+title: "ファイルダウンロード - CyberGo HTTPC | Download と検証"
+description: "HTTPC ファイルダウンロード API リファレンス：Download 統合エントリ、DownloadConfig 設定、進捗コールバック、DownloadResult タイプ、SHA-256 チェックサム検証、UNC パス防護など 6 層のセキュリティ保護を提供します。"
 sidebar_position: 4
 ---
 
@@ -146,7 +146,7 @@ if err != nil {
     // チェックサムが一致しない場合、自動的にエラーを返し、ダウンロード済みファイルを削除
     log.Fatal(err)
 }
-fmt.Println("チェックサム:", result.ActualChecksum)
+fmt.Println("チェックサム：", result.ActualChecksum)
 ```
 
 :::tip

@@ -1,13 +1,13 @@
 ---
 sidebar_label: "상수와 오류"
 title: "상수와 오류 - CyberGo DD | LogLevel, Format, SentinelErrors"
-description: "CyberGo DD 상수 정의와 오류 타입의 완전한 문서입니다. LogLevel 로그 레벨 상수(Debug/Info/Warn/Error/Fatal), Format 출력 형식 상수와 SentinelErrors 센티넬 오류 정의를 포함하여 정확한 로그 동작 제어와 오류 처리에 사용되며, DD 로그 라이브러리 구성 체계를 이해하는 핵심 기초입니다."
+description: "CyberGo DD 상수 정의와 오류 타입의 완전한 문서입니다. LogLevel 로그 레벨 상수 (Debug/Info/Warn/Error/Fatal), Format 출력 형식 상수와 SentinelErrors 센티넬 오류 정의를 포함하여 정확한 로그 동작 제어와 오류 처리에 사용되며, DD 로그 라이브러리 구성 체계를 이해하는 핵심 기초입니다."
 sidebar_position: 3
 ---
 
 # 상수와 오류
 
-DD는 로그 레벨 제어, 포맷팅, 오류 처리를 위한 풍부한 상수와 오류 타입을 정의합니다.
+DD 는 로그 레벨 제어, 포맷팅, 오류 처리를 위한 풍부한 상수와 오류 타입을 정의합니다.
 
 ## 로그 레벨
 
@@ -18,12 +18,12 @@ type LogLevel int8 // 로그 레벨 타입
 | 상수 | 값 | 설명 |
 |------|----|------|
 | `LevelDebug` | 0 | 디버그 레벨 |
-| `LevelInfo` | 1 | 정보 레벨(기본) |
+| `LevelInfo` | 1 | 정보 레벨 (기본) |
 | `LevelWarn` | 2 | 경고 레벨 |
 | `LevelError` | 3 | 오류 레벨 |
 | `LevelFatal` | 4 | 치명적 레벨 |
 
-`LogLevel`은 `String() string` 메서드(`"DEBUG"`/`"INFO"`/`"WARN"`/`"ERROR"`/`"FATAL"` 반환, 알 수 없는 값은 `"UNKNOWN"`)와 `IsValid() bool` 메서드(레벨이 `LevelDebug`~`LevelFatal` 유효 범위 내인지 판단)를 구현합니다.
+`LogLevel`은 `String() string` 메서드 (`"DEBUG"`/`"INFO"`/`"WARN"`/`"ERROR"`/`"FATAL"` 반환, 알 수 없는 값은 `"UNKNOWN"`) 와 `IsValid() bool` 메서드 (레벨이 `LevelDebug`~`LevelFatal` 유효 범위 내인지 판단) 를 구현합니다.
 
 ## 로그 형식
 
@@ -36,7 +36,7 @@ type LogFormat int8 // 출력 형식 타입
 | `FormatText` | 0 | 텍스트 형식 |
 | `FormatJSON` | 1 | JSON 형식 |
 
-`LogFormat`은 `String() string` 메서드(`"text"`/`"json"` 반환, 알 수 없는 값은 `"unknown"`)를 구현합니다.
+`LogFormat`은 `String() string` 메서드 (`"text"`/`"json"` 반환, 알 수 없는 값은 `"unknown"`) 를 구현합니다.
 
 ## 필드 검증 모드
 
@@ -46,7 +46,7 @@ type FieldValidationMode int // 필드 키 검증 모드
 
 | 상수 | 값 | 설명 |
 |------|----|------|
-| `FieldValidationNone` | 0 | 검증 비활성화(기본) |
+| `FieldValidationNone` | 0 | 검증 비활성화 (기본) |
 | `FieldValidationWarn` | 1 | 검증 실패 시 경고하되 여전히 수락 |
 | `FieldValidationStrict` | 2 | 엄격 모드, 검증 실패 시 오류 기록 |
 
@@ -58,7 +58,7 @@ type FieldNamingConvention int // 필드 키 명명 규칙
 
 | 상수 | 값 | 설명 |
 |------|----|------|
-| `NamingConventionAny` | 0 | 모든 형식 수락(기본) |
+| `NamingConventionAny` | 0 | 모든 형식 수락 (기본) |
 | `NamingConventionSnakeCase` | 1 | snake_case(예: user_id) |
 | `NamingConventionCamelCase` | 2 | camelCase(예: userId) |
 | `NamingConventionPascalCase` | 3 | PascalCase(예: UserId) |
@@ -72,7 +72,7 @@ type HashAlgorithm int // 무결성 서명 해시 알고리즘
 
 | 상수 | 값 | 설명 |
 |------|----|------|
-| `HashAlgorithmSHA256` | 0 | SHA-256 알고리즘([무결성 서명](../security-audit/integrity)에 사용) |
+| `HashAlgorithmSHA256` | 0 | SHA-256 알고리즘 ([무결성 서명](../security-audit/integrity)에 사용) |
 
 ## 기본값
 
@@ -80,9 +80,9 @@ type HashAlgorithm int // 무결성 서명 해시 알고리즘
 |------|----|------|
 | `DefaultTimeFormat` | `"2006-01-02T15:04:05Z07:00"` | ISO 8601 시간 형식 |
 | `DefaultLogPath` | `"logs/app.log"` | 기본 로그 파일 경로 |
-| `DefaultMaxSizeMB` | `100` | 기본 파일 크기 제한(MB) |
+| `DefaultMaxSizeMB` | `100` | 기본 파일 크기 제한 (MB) |
 | `DefaultMaxBackups` | `10` | 기본 백업 수 |
-| `DefaultMaxAge` | `30 * 24 * time.Hour` | 기본 보존 일수(30일) |
+| `DefaultMaxAge` | `30 * 24 * time.Hour` | 기본 보존 일수 (30 일) |
 
 ## 컨텍스트 키
 
@@ -163,8 +163,8 @@ type LoggerError struct {
 메서드: `Error()`, `Unwrap()`, `Is(target)`, `WithContext(key, value)`, `WithField(key, value)`
 
 ```go
-// LoggerError는 오류 코드, 메시지, 원인, 컨텍스트를 포함
-// errors.Is로 센티넬 오류 검사
+// LoggerError 는 오류 코드, 메시지, 원인, 컨텍스트를 포함
+// errors.Is 로 센티넬 오류 검사
 if errors.Is(err, dd.ErrLoggerClosed) {
     // 로거가 이미 종료됨
 }

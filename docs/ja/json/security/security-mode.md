@@ -257,13 +257,13 @@ import (
 )
 
 func main() {
-    // 方法1：設定フィールドで
+    // 方法 1：設定フィールドで
     cfg := json.DefaultConfig()
     cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
         {Pattern: "company_secret", Name: "会社の機密情報", Level: json.PatternLevelCritical},
     }
 
-    // 方法2：設定メソッドで
+    // 方法 2：設定メソッドで
     cfg.AddDangerousPattern(json.DangerousPattern{
         Pattern: "internal_api",
         Name:    "内部 API 参照",
@@ -279,11 +279,11 @@ func main() {
     // 危険パターン検出のテスト
     _, err = p.Get(`{"data": "company_secret_info"}`, "data")
     if err != nil {
-        fmt.Println("危険パターンを検出:", err)
+        fmt.Println("危険パターンを検出：", err)
     }
 
     // 登録済みパターンの確認
-    fmt.Printf("カスタムパターン数: %d\n", len(cfg.AdditionalDangerousPatterns))
+    fmt.Printf("カスタムパターン数：%d\n", len(cfg.AdditionalDangerousPatterns))
 }
 ```
 
@@ -340,7 +340,7 @@ for _, p := range cfg.AdditionalDangerousPatterns {
 多層最適化スキャンを採用し、**100% カバレッジを保証**します（サンプリングの盲域なし）：
 
 - 重要パターン（`__proto__`、`constructor[`、`prototype.`）は常に完全スキャン
-- まず指示文字のチェック：危険文字が1つもない場合は高速にスキップ
+- まず指示文字のチェック：危険文字が 1 つもない場合は高速にスキップ
 - 疑わしい文字密度を検出：密度が高すぎる場合は全量スキャンにフォールバックし、攻撃者が密集領域に悪意ある内容を隠すのを防止
 - その他のパターンは 32KB **スライディングウィンドウ**でスキャン（ウィンドウはオーバーラップ付き）、境界をまたぐパターンの見落としを防止
 

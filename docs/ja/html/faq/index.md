@@ -66,8 +66,8 @@ md, _ := p.ExtractToMarkdown(data)
 考えられる原因：
 
 1. **HTML 構造の問題** - コンテンツが `<script>` または `<style>` タグの中にある
-2. **サニタイズ後にコンテンツが空になる** - 本文がサニタイズで除去されるタグ(例: `<iframe>`、`<object>`)にしか存在しない場合、結果が空になることがあります。信頼できる入力であれば、一時的に `EnableSanitization = false` を設定して調査できます
-3. **入力が空** - 入力バイト配列が空でないか確認してください(空白のコンテンツは空の `Result` を返します)
+2. **サニタイズ後にコンテンツが空になる** - 本文がサニタイズで除去されるタグ (例：`<iframe>`、`<object>`) にしか存在しない場合、結果が空になることがあります。信頼できる入力であれば、一時的に `EnableSanitization = false` を設定して調査できます
+3. **入力が空** - 入力バイト配列が空でないか確認してください (空白のコンテンツは空の `Result` を返します)
 4. **記事検出** - `ExtractArticle` を無効にして抽出できるか試してください
 
 :::tip エラーと空の結果の区別
@@ -87,10 +87,10 @@ defer p.Close()
 
 // いくつかコンテンツを処理した後
 stats := p.GetStatistics()
-fmt.Printf("処理済み: %d\n", stats.TotalProcessed)
-fmt.Printf("キャッシュヒット: %d\n", stats.CacheHits)
+fmt.Printf("処理済み：%d\n", stats.TotalProcessed)
+fmt.Printf("キャッシュヒット：%d\n", stats.CacheHits)
 fmt.Printf("平均処理時間: %v\n", stats.AverageProcessTime)
-fmt.Printf("エラー数: %d\n", stats.ErrorCount)
+fmt.Printf("エラー数：%d\n", stats.ErrorCount)
 ```
 
 ## 監査を有効にするには？

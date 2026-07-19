@@ -7,7 +7,7 @@ sidebar_position: 2
 
 # 速查表
 
-在对该库有所了解的前提下, 快速参考高频使用的代码片段。
+在对该库有所了解的前提下，快速参考高频使用的代码片段。
 
 ## 加载配置
 
@@ -61,7 +61,7 @@ if secret != nil {
 
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 存储为: APP_NAME=myapp
+// 存储为：APP_NAME=myapp
 
 // 以下方式都能访问
 env.GetString("APP_NAME")      // 扁平化键名（推荐）
@@ -144,7 +144,7 @@ errors.Is(err, env.ErrAlreadyInitialized)
 // 键格式非法：实际返回 *ValidationError，Field=="key"
 var keyErr *env.ValidationError
 if errors.As(err, &keyErr) && keyErr.Field == "key" {
-    // 无效键格式: keyErr.Message
+    // 无效键格式：keyErr.Message
 }
 
 // 结构化错误

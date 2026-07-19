@@ -40,7 +40,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println(val) // 出力: test
+    fmt.Println(val) // 出力：test
 }
 ```
 
@@ -72,7 +72,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println(val) // 出力: Alice
+    fmt.Println(val) // 出力：Alice
 }
 ```
 
@@ -98,11 +98,11 @@ func main() {
     jsonStr := `{"user": {"name": "CyberGo"}}`
 
     name := json.GetString(jsonStr, "user.name")
-    fmt.Println(name) // 出力: CyberGo
+    fmt.Println(name) // 出力：CyberGo
 
     // 存在しないパスはゼロ値（空文字列）またはカスタムデフォルト値を返す
     nickname := json.GetString(jsonStr, "user.nickname", "不明")
-    fmt.Println(nickname) // 出力: 不明
+    fmt.Println(nickname) // 出力：不明
 }
 ```
 
@@ -124,14 +124,14 @@ func main() {
     jsonStr := `{"pagination": {"count": 42}, "timeout": 30}`
 
     count := json.GetInt(jsonStr, "pagination.count")
-    fmt.Println(count) // 出力: 42
+    fmt.Println(count) // 出力：42
 
     timeout := json.GetInt(jsonStr, "timeout")
-    fmt.Println(timeout) // 出力: 30
+    fmt.Println(timeout) // 出力：30
 
     // 存在しないパスはカスタムデフォルト値を返す
     page := json.GetInt(jsonStr, "pagination.page", 1)
-    fmt.Println(page) // 出力: 1
+    fmt.Println(page) // 出力：1
 }
 ```
 
@@ -153,14 +153,14 @@ func main() {
     jsonStr := `{"item": {"price": 19.99}, "rate": 0.85}`
 
     price := json.GetFloat(jsonStr, "item.price")
-    fmt.Println(price) // 出力: 19.99
+    fmt.Println(price) // 出力：19.99
 
     rate := json.GetFloat(jsonStr, "rate")
-    fmt.Println(rate) // 出力: 0.85
+    fmt.Println(rate) // 出力：0.85
 
     // 存在しないパスはカスタムデフォルト値を返す
     discount := json.GetFloat(jsonStr, "item.discount", 0.0)
-    fmt.Println(discount) // 出力: 0
+    fmt.Println(discount) // 出力：0
 }
 ```
 
@@ -182,14 +182,14 @@ func main() {
     jsonStr := `{"feature": {"enabled": true}, "debug": false}`
 
     enabled := json.GetBool(jsonStr, "feature.enabled")
-    fmt.Println(enabled) // 出力: true
+    fmt.Println(enabled) // 出力：true
 
     debug := json.GetBool(jsonStr, "debug")
-    fmt.Println(debug) // 出力: false
+    fmt.Println(debug) // 出力：false
 
     // 存在しないパスはカスタムデフォルト値を返す
     verbose := json.GetBool(jsonStr, "feature.verbose", false)
-    fmt.Println(verbose) // 出力: false
+    fmt.Println(verbose) // 出力：false
 }
 ```
 
@@ -217,7 +217,7 @@ func main() {
 
     // 存在しないパスはカスタムデフォルト値を返す
     empty := json.GetArray(jsonStr, "tags", []any{"default"})
-    fmt.Println(empty) // 出力: [default]
+    fmt.Println(empty) // 出力：[default]
 }
 ```
 
@@ -243,7 +243,7 @@ func main() {
 
     // 存在しないパスはカスタムデフォルト値を返す
     settings := json.GetObject(jsonStr, "user.settings", map[string]any{"theme": "dark"})
-    fmt.Println(settings) // 出力: map[theme:dark]
+    fmt.Println(settings) // 出力：map[theme:dark]
 }
 ```
 
@@ -279,14 +279,14 @@ func main() {
 
     // 組み込み型の例
     name := json.GetTyped[string](jsonStr, "user.name")
-    fmt.Println(name) // 出力: CyberGo
+    fmt.Println(name) // 出力：CyberGo
 
     age := json.GetTyped[int](jsonStr, "user.age")
-    fmt.Println(age) // 出力: 30
+    fmt.Println(age) // 出力：30
 
     // 存在しないパスはカスタムデフォルト値を返す
     email := json.GetTyped[string](jsonStr, "user.email", "unknown@example.com")
-    fmt.Println(email) // 出力: unknown@example.com
+    fmt.Println(email) // 出力：unknown@example.com
 }
 ```
 
@@ -312,12 +312,12 @@ func main() {
     result := json.SafeGet(jsonStr, "user.age")
     if result.Exists {
         age, _ := result.AsInt()
-        fmt.Println(age) // 出力: 30
+        fmt.Println(age) // 出力：30
     }
 
     nameResult := json.SafeGet(jsonStr, "user.name")
     name, _ := nameResult.AsString()
-    fmt.Println(name) // 出力: CyberGo
+    fmt.Println(name) // 出力：CyberGo
 }
 ```
 
@@ -339,7 +339,7 @@ jsonStr := `{"user": {"name": "CyberGo", "age": 30}}`
 result := p.SafeGet(jsonStr, "user.age")
 if result.Exists {
     age, _ := result.AsInt()
-    fmt.Println(age) // 出力: 30
+    fmt.Println(age) // 出力：30
 }
 ```
 
@@ -361,7 +361,7 @@ values, err := json.GetMultiple(jsonStr, paths)
 if err != nil {
     panic(err)
 }
-fmt.Println(values["user.name"]) // 出力: CyberGo
+fmt.Println(values["user.name"]) // 出力：CyberGo
 ```
 
 ### Processor.GetMultiple
@@ -384,7 +384,7 @@ values, err := p.GetMultiple(jsonStr, paths)
 if err != nil {
     panic(err)
 }
-fmt.Println(values["user.name"]) // 出力: CyberGo
+fmt.Println(values["user.name"]) // 出力：CyberGo
 ```
 
 ## 関連型

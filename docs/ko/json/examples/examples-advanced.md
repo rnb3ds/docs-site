@@ -13,7 +13,7 @@ sidebar_position: 2
 
 ### EncodeBatch
 
-여러 키-값 쌍을 JSON 객체로 빠르게 인코딩합니다:
+여러 키 - 값 쌍을 JSON 객체로 빠르게 인코딩합니다:
 
 ```go
 package main
@@ -34,14 +34,14 @@ func main() {
         "balance": 1250.50,
     }
 
-    // EncodeBatch로 JSON 객체에 배치 인코딩
+    // EncodeBatch 로 JSON 객체에 배치 인코딩
     result, err := json.EncodeBatch(pairs)
     if err != nil {
         panic(err)
     }
     fmt.Println(result)
 
-    // EncodeBatch와 PrettyConfig를 조합하여 포맷팅 출력
+    // EncodeBatch 와 PrettyConfig 를 조합하여 포맷팅 출력
     pretty, err := json.EncodeBatch(pairs, json.PrettyConfig())
     if err != nil {
         panic(err)
@@ -94,7 +94,7 @@ func main() {
 
 ## 사전 파싱 최적화
 ### PreParse
-JSON을 미리 파싱하여 반복 파싱을 피하고 여러 쿼리의 성능을 향상시킵니다:
+JSON 을 미리 파싱하여 반복 파싱을 피하고 여러 쿼리의 성능을 향상시킵니다:
 ```go
 package main
 
@@ -194,7 +194,7 @@ func main() {
         fmt.Println("활성:", active)
     }
 
-    // 존재하지 않는 경로는 panic을 발생시키지 않음
+    // 존재하지 않는 경로는 panic 을 발생시키지 않음
     emailResult := p.SafeGet(data, "user.email")
     fmt.Println("이메일 존재:", emailResult.Ok()) // false
 
@@ -278,7 +278,7 @@ import (
 func main() {
     data := `{"users": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]}`
 
-    // 배치 작업 정의 (ID는 결과에서 각 작업을 식별하는 데 사용)
+    // 배치 작업 정의 (ID 는 결과에서 각 작업을 식별하는 데 사용)
     operations := []json.BatchOperation{
         {ID: "get-name", Type: "get", Path: "users.0.name", JSONStr: data},
         {ID: "get-users", Type: "get", Path: "users", JSONStr: data},
@@ -304,9 +304,9 @@ func main() {
 }
 ```
 
-## 키-값 메모리 최적화
+## 키 - 값 메모리 최적화
 
-라이브러리는 내부적으로 문자열 메모리 풀(string interning)을 사용하여 중복 키-값의 메모리 사용을 자동으로 최적화합니다. 수동 관리가 필요하지 않습니다.
+라이브러리는 내부적으로 문자열 메모리 풀 (string interning) 을 사용하여 중복 키 - 값의 메모리 사용을 자동으로 최적화합니다. 수동 관리가 필요하지 않습니다.
 
 ```go
 package main
@@ -317,8 +317,8 @@ import (
 )
 
 func main() {
-    // 라이브러리는 내부적으로 중복 키-값에 메모리 풀을 자동 사용
-    // 대량의 데이터를 처리할 때 중복 문자열 키-값이 자동으로 메모리를 재사용
+    // 라이브러리는 내부적으로 중복 키 - 값에 메모리 풀을 자동 사용
+    // 대량의 데이터를 처리할 때 중복 문자열 키 - 값이 자동으로 메모리를 재사용
     records := make([]map[string]any, 10000)
     for i := range records {
         records[i] = map[string]any{

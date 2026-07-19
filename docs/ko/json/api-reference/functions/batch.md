@@ -1,13 +1,13 @@
 ---
 sidebar_label: "배치 작업"
 title: "배치 작업 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 배치 작업 함수: ProcessBatch로 여러 작업을 한 번에 처리하고 BatchOperation, BatchResult 구조체로 배치 처리를 제공합니다."
+description: "CyberGo JSON 배치 작업 함수: ProcessBatch 로 여러 작업을 한 번에 처리하고 BatchOperation, BatchResult 구조체로 배치 처리를 제공합니다."
 sidebar_position: 7
 ---
 
 # 배치 작업 함수
 
-json 패키지가 제공하는 배치 작업 함수로, 여러 JSON 작업(get/set/delete/validate)을 한 번에 처리하며 배치 데이터 처리 시나리오에 적합합니다.
+json 패키지가 제공하는 배치 작업 함수로, 여러 JSON 작업 (get/set/delete/validate) 을 한 번에 처리하며 배치 데이터 처리 시나리오에 적합합니다.
 
 ## 배치 작업
 
@@ -74,7 +74,7 @@ type BatchResult struct {
 ```
 
 :::tip Processor 배치 메서드
-Processor 인스턴스는 패키지 레벨 함수와 동일한 시그니처의 배치 메서드 `p.ProcessBatch(operations)`를 제공하여, Processor를 재사용하는 시나리오에 적합합니다. 자세한 내용은 [Processor 배치 작업](../processor/batch)을 참조하세요.
+Processor 인스턴스는 패키지 레벨 함수와 동일한 시그니처의 배치 메서드 `p.ProcessBatch(operations)`를 제공하여, Processor 를 재사용하는 시나리오에 적합합니다. 자세한 내용은 [Processor 배치 작업](../processor/batch)을 참조하세요.
 :::
 
 ## 관련 문서

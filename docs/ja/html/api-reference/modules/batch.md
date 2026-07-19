@@ -45,7 +45,7 @@ type BatchResult struct {
 pages := [][]byte{page1, page2, page3}
 batch := html.ExtractBatch(pages)
 
-fmt.Printf("成功: %d, 失敗: %d\n", batch.Success, batch.Failed)
+fmt.Printf("成功：%d, 失敗：%d\n", batch.Success, batch.Failed)
 
 for i, result := range batch.Results {
     fmt.Printf("ページ %d: %s\n", i, result.Title)

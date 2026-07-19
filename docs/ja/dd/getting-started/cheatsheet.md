@@ -15,7 +15,7 @@ sidebar_position: 2
 | 開発モード | `dd.New(dd.DevelopmentConfig())` | DEBUG レベル、caller 付き |
 | カスタム | `dd.New(dd.Config{Targets: ...})` | 完全設定 |
 | ファイル | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.FileOutput("path")}})` | ファイル出力のみ |
-| デュアル出力先 | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | コンソール+ファイル |
+| デュアル出力先 | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | コンソール + ファイル |
 | JSON デュアル出力先 | `dd.New(dd.Config{Format: dd.FormatJSON, Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | JSON フォーマット デュアル出力先 |
 
 :::tip ヒント 設定のゼロ値
@@ -115,7 +115,7 @@ dd.InitDefault(cfg)                      // グローバルロガーを初期化
 
 ```go
 // グローバル Logger 経由（セキュリティフィルタリング対象）
-dd.Print("値:", val)       // クイック出力
+dd.Print("値：", val)       // クイック出力
 dd.Printf("フォーマット: %v", val) // フォーマット出力
 
 // 直接出力（セキュリティフィルタリングなし、デバッグ専用）

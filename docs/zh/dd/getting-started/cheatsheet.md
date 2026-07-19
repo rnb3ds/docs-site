@@ -15,8 +15,8 @@ sidebar_position: 2
 | 开发模式 | `dd.New(dd.DevelopmentConfig())` | DEBUG 级别，带 caller |
 | 自定义 | `dd.New(dd.Config{Targets: ...})` | 完整配置 |
 | 文件 | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.FileOutput("path")}})` | 仅文件输出 |
-| 双目标 | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | 控制台+文件 |
-| JSON 双目标 | `dd.New(dd.Config{Format: dd.FormatJSON, Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | JSON格式双目标 |
+| 双目标 | `dd.New(dd.Config{Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | 控制台 + 文件 |
+| JSON 双目标 | `dd.New(dd.Config{Format: dd.FormatJSON, Targets: []dd.OutputTarget{dd.ConsoleOutput(), dd.FileOutput("path")}})` | JSON 格式双目标 |
 
 :::tip 配置零值
 表中 `dd.Config{...}` 字面量未设置的字段均为零值（Level=Debug、IncludeTime/IncludeLevel/DynamicCaller=false，输出无时间戳/级别/caller）。生产环境建议以 `dd.DefaultConfig()` 为基础再覆盖所需字段。
@@ -53,7 +53,7 @@ dd.JSONConfig()          // JSON 配置：DEBUG 级别 + JSON 格式输出
 | 时间 | `Time(key, val)` | `dd.Time("ts", time.Now())` |
 | 持续时间 | `Duration(key, val)` | `dd.Duration("took", 100*time.Millisecond)` |
 | 错误 | `Err(err)` | `dd.Err(err)` |
-| 错误+栈 | `ErrWithStack(err)` | `dd.ErrWithStack(err)` |
+| 错误 + 栈 | `ErrWithStack(err)` | `dd.ErrWithStack(err)` |
 
 ## 字段链
 
@@ -115,7 +115,7 @@ dd.InitDefault(cfg)                      // 初始化全局日志记录器
 
 ```go
 // 通过全局 Logger（受安全过滤）
-dd.Print("值:", val)       // 快速打印
+dd.Print("值：", val)       // 快速打印
 dd.Printf("格式: %v", val) // 格式化打印
 
 // 直接输出（无安全过滤，仅用于调试）

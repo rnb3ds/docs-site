@@ -108,7 +108,7 @@ type FileError struct {
 func (e *FileError) Error() string        // 安全な出力（パスを切り詰め）
 func (e *FileError) SafePath() string     // ファイル名のみ返す
 func (e *FileError) Unwrap() error        // → ErrFileNotFound | 元のエラー | ErrInvalidFilePath
-func (e *FileError) MarshalJSON() ([]byte, error) // JSON シリアライズ時にもパスを切り詰める(API レスポンスでの漏洩を防止)
+func (e *FileError) MarshalJSON() ([]byte, error) // JSON シリアライズ時にもパスを切り詰める (API レスポンスでの漏洩を防止)
 ```
 
 :::tip 安全なパス

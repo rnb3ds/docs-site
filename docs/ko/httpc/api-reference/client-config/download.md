@@ -1,7 +1,7 @@
 ---
 sidebar_label: "파일 다운로드"
-title: "파일 다운로드 - CyberGo HTTPC | Download과 검증"
-description: "HTTPC 파일 다운로드 API 레퍼런스: Download 통합 진입점, DownloadConfig 설정, 진행률 콜백, DownloadResult 타입, SHA-256 체크섬 검증과 UNC 경로 방어 등 6계층 보안을 제공합니다."
+title: "파일 다운로드 - CyberGo HTTPC | Download 과 검증"
+description: "HTTPC 파일 다운로드 API 레퍼런스: Download 통합 진입점, DownloadConfig 설정, 진행률 콜백, DownloadResult 타입, SHA-256 체크섬 검증과 UNC 경로 방어 등 6 계층 보안을 제공합니다."
 sidebar_position: 4
 ---
 
@@ -15,7 +15,7 @@ sidebar_position: 4
 func Download(ctx context.Context, url string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
 ```
 
-기본 클라이언트를 사용하여 파일을 다운로드합니다. `Download`는 패키지 수준 함수, `Client` 인터페이스, `DomainClient`에 걸친 **유일한 정규 다운로드 진입점**으로, 이전의 변형 매트릭스를 단일 시그니처로 대체합니다. `cfg`는 nil일 수 없으며, `cfg.FilePath`를 반드시 설정해야 합니다(그렇지 않으면 `ErrEmptyFilePath` 반환).
+기본 클라이언트를 사용하여 파일을 다운로드합니다. `Download`는 패키지 수준 함수, `Client` 인터페이스, `DomainClient`에 걸친 **유일한 정규 다운로드 진입점**으로, 이전의 변형 매트릭스를 단일 시그니처로 대체합니다. `cfg`는 nil 일 수 없으며, `cfg.FilePath`를 반드시 설정해야 합니다 (그렇지 않으면 `ErrEmptyFilePath` 반환).
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -59,7 +59,7 @@ type DownloadProgressCallback func(downloaded, total int64, speed float64)
 | 매개변수 | 타입 | 설명 |
 |-----------|------|------|
 | `downloaded` | `int64` | 다운로드된 바이트 수 |
-| `total` | `int64` | 전체 바이트 수 (-1은 알 수 없음) |
+| `total` | `int64` | 전체 바이트 수 (-1 은 알 수 없음) |
 | `speed` | `float64` | 현재 속도 (바이트/초) |
 
 ```go

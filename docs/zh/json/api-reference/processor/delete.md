@@ -33,13 +33,13 @@ result, err := p.DeleteClean(data, "user.temporary")
 **Delete 与 DeleteClean 区别**：
 
 ```go
-// 原始数据: {"user": {"temp": "value", "name": "test"}}
+// 原始数据：{"user": {"temp": "value", "name": "test"}}
 
-// Delete 后: {"user": {"name": "test"}}
+// Delete 后：{"user": {"name": "test"}}
 result, _ := p.Delete(data, "user.temp")
 
 // DeleteClean 同样会删除 user.temp；此处 user 仍含 name，不会变空
-// 结果: {"user": {"name": "test"}}
+// 结果：{"user": {"name": "test"}}
 result, _ = p.DeleteClean(data, "user.temp")
 ```
 

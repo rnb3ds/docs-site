@@ -78,7 +78,7 @@ cfg := logger.GetSampling()
 
 ```go
 fw, _ := dd.NewFileWriter("logs/app.log", dd.DefaultFileWriterConfig())
-// デフォルト: 100MB / 30日 / 10バックアップ
+// デフォルト：100MB / 30 日 / 10 バックアップ
 ```
 
 - ファイルが小さすぎると頻繁なローテーションで I/O が増加

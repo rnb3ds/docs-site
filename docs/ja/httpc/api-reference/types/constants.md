@@ -1,7 +1,7 @@
 ---
 sidebar_label: "定数とタイプ"
 title: "定数とタイプ - CyberGo HTTPC | 定数とタイプ"
-description: "HTTPC 定数とタイプ API リファレンス: BodyKind リクエストボディ列挙と自動検出、FormData と FileData アップロードタイプ、AuditEvent 監査イベント構造、コンテキストキー定義の完全な説明を提供します。"
+description: "HTTPC 定数とタイプ API リファレンス：BodyKind リクエストボディ列挙と自動検出、FormData と FileData アップロードタイプ、AuditEvent 監査イベント構造、コンテキストキー定義の完全な説明を提供します。"
 sidebar_position: 2
 ---
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "토큰 블랙리스트"
 title: "토큰 블랙리스트 - CyberGo JWT | 취소와 외부 저장소"
-description: "토큰 블랙리스트 가이드: 내장 메모리 저장소 설정과 만료 정리, Revoke와 IsRevoked로 토큰 취소, BlacklistStore 인터페이스로 Redis 등 외부 저장소 연동, 다중 인스턴스 배포 모범 사례를 안내합니다."
+description: "토큰 블랙리스트 가이드: 내장 메모리 저장소 설정과 만료 정리, Revoke 와 IsRevoked 로 토큰 취소, BlacklistStore 인터페이스로 Redis 등 외부 저장소 연동, 다중 인스턴스 배포 모범 사례를 안내합니다."
 sidebar_position: 30
 ---
 
@@ -12,7 +12,7 @@ sidebar_position: 30
 ## 작동 방식
 
 ```text
-Revoke(token) → jti + exp 추출 → BlacklistStore에 기록
+Revoke(token) → jti + exp 추출 → BlacklistStore 에 기록
 Validate(token) → 서명 검증 → 블랙리스트 확인 → 결과 반환
 ```
 
@@ -38,7 +38,7 @@ cfg.Blacklist.EnableAutoCleanup = true             // 자동 정리
 |------|--------|------|
 | `CleanupInterval` | `5m` | 만료 항목 정리 간격 |
 | `MaxSize` | `100000` | 최대 항목 수 |
-| `EnableAutoCleanup` | `true` | 자동 정리 (항상 true로 강제) |
+| `EnableAutoCleanup` | `true` | 자동 정리 (항상 true 로 강제) |
 
 :::tip 자동 정리
 내장 저장소의 `EnableAutoCleanup`은 항상 `true`로 강제되어 메모리 무한 증가를 방지합니다.
@@ -64,7 +64,7 @@ _, _, err = processor.Validate(accessToken)
 
 ## 커스텀 저장소 백엔드
 
-[`BlacklistStore`](../api-reference/interfaces#blackliststore) 인터페이스를 구현하여 외부 저장소(Redis, 데이터베이스 등)에 연결:
+[`BlacklistStore`](../api-reference/interfaces#blackliststore) 인터페이스를 구현하여 외부 저장소 (Redis, 데이터베이스 등) 에 연결:
 
 ```go
 type BlacklistStore interface {
@@ -106,7 +106,7 @@ cfg.Blacklist.Store = &RedisStore{client: rdb}
 ```
 
 :::tip TTL 최적화
-`time.Until(expiresAt)`를 Redis TTL로 사용하면 토큰이 만료된 후 블랙리스트에서 자동으로 제거되어 추가 정리가 필요 없습니다.
+`time.Until(expiresAt)`를 Redis TTL 로 사용하면 토큰이 만료된 후 블랙리스트에서 자동으로 제거되어 추가 정리가 필요 없습니다.
 :::
 
 ## 프로덕션 환경 권장 사항

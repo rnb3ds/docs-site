@@ -1,7 +1,7 @@
 ---
 sidebar_label: "인터페이스 정의"
 title: "인터페이스 정의 - CyberGo html | 핵심 인터페이스 참조"
-description: "CyberGo html 핵심 인터페이스: Extractor, StatsProvider, ContentNode, Scorer, AuditSink로 기능 확장과 통합 테스트를 지원합니다."
+description: "CyberGo html 핵심 인터페이스: Extractor, StatsProvider, ContentNode, Scorer, AuditSink 로 기능 확장과 통합 테스트를 지원합니다."
 sidebar_position: 1
 ---
 
@@ -94,9 +94,9 @@ type Scorer interface {
 ```
 
 :::warning 경고
-단일 `Processor`가 여러 동시 `Extract` 호출에서 공유될 때, `Score`/`ShouldRemove`가 **여러 goroutine에서 동시에** 호출될 수 있습니다. 따라서 모든 `Scorer` 구현은 **스스로 동시성 안전을 보장**해야 합니다.
+단일 `Processor`가 여러 동시 `Extract` 호출에서 공유될 때, `Score`/`ShouldRemove`가 **여러 goroutine 에서 동시에** 호출될 수 있습니다. 따라서 모든 `Scorer` 구현은 **스스로 동시성 안전을 보장**해야 합니다.
 
-라이브러리 내장 기본 스코어러는 읽기 전용이며 본질적으로 동시성 안전합니다. **가변 상태(예: 캐시, 카운터)를 가진 커스텀 `Scorer`는 자체적으로 잠금과 동기화를 수행**해야 합니다.
+라이브러리 내장 기본 스코어러는 읽기 전용이며 본질적으로 동시성 안전합니다. **가변 상태 (예: 캐시, 카운터) 를 가진 커스텀 `Scorer`는 자체적으로 잠금과 동기화를 수행**해야 합니다.
 :::
 
 `Config.Scorer` 필드를 통해 커스텀 스코어러를 주입합니다:

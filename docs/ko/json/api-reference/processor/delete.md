@@ -7,7 +7,7 @@ sidebar_position: 4
 
 # 삭제 메서드
 
-Processor는 지정된 경로의 값을 삭제하고 수정된 JSON 문자열을 반환하는 메서드를 제공합니다.
+Processor 는 지정된 경로의 값을 삭제하고 수정된 JSON 문자열을 반환하는 메서드를 제공합니다.
 
 ## Delete
 
@@ -27,10 +27,10 @@ result, err := p.Delete(data, "user.temporary")
 
 ```go
 result, err := p.DeleteClean(data, "user.temporary")
-// 삭제 후 생성된 null과 빈 배열을 정리
+// 삭제 후 생성된 null 과 빈 배열을 정리
 ```
 
-**Delete와 DeleteClean의 차이**:
+**Delete 와 DeleteClean 의 차이**:
 
 ```go
 // 원본 데이터: {"user": {"temp": "value", "name": "test"}}
@@ -38,7 +38,7 @@ result, err := p.DeleteClean(data, "user.temporary")
 // Delete 후: {"user": {"name": "test"}}
 result, _ := p.Delete(data, "user.temp")
 
-// DeleteClean도 user.temp를 동일하게 삭제; 이 예제에서는 user가 여전히 name을 포함하므로 비어있지 않음
+// DeleteClean 도 user.temp 를 동일하게 삭제; 이 예제에서는 user 가 여전히 name 을 포함하므로 비어있지 않음
 // 결과: {"user": {"name": "test"}}
 result, _ = p.DeleteClean(data, "user.temp")
 ```

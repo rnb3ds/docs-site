@@ -103,12 +103,12 @@ for _, page := range pages {
 
 // 統計を取得
 stats := p.GetStatistics()
-fmt.Printf("総処理: %d\n", stats.TotalProcessed)
-fmt.Printf("キャッシュヒット: %d\n", stats.CacheHits)
-fmt.Printf("キャッシュミス: %d\n", stats.CacheMisses)
+fmt.Printf("総処理：%d\n", stats.TotalProcessed)
+fmt.Printf("キャッシュヒット：%d\n", stats.CacheHits)
+fmt.Printf("キャッシュミス：%d\n", stats.CacheMisses)
 
 hitRate := float64(stats.CacheHits) / float64(stats.TotalProcessed) * 100
-fmt.Printf("ヒット率: %.1f%%\n", hitRate)
+fmt.Printf("ヒット率：%.1f%%\n", hitRate)
 ```
 
 ## 推奨パターン
@@ -154,7 +154,7 @@ urls := crawlURLs()
 pages := fetchPages(urls) // [][]byte
 
 batch := p.ExtractBatch(pages)
-fmt.Printf("成功: %d, 失敗: %d\n", batch.Success, batch.Failed)
+fmt.Printf("成功：%d, 失敗：%d\n", batch.Success, batch.Failed)
 ```
 
 ### 定期メンテナンス
@@ -175,7 +175,7 @@ go func() {
     ticker := time.NewTicker(time.Hour)
     for range ticker.C {
         stats := p.GetStatistics()
-        log.Printf("処理 %d 回, エラー %d 回",
+        log.Printf("処理 %d 回，エラー %d 回",
             stats.TotalProcessed, stats.ErrorCount)
         p.ResetStatistics()
     }

@@ -64,8 +64,8 @@ signer, _ := dd.NewIntegritySigner(cfg)
 
 ## 라이프사이클
 
-- [ ] **우아한 종료** -- `Close()` 대신 `Shutdown(ctx)` 사용(주의: `Shutdown`은 필터 goroutine을 내부적으로 대기하지 않으며, `Close`는 `WaitForFilterGoroutines`를 호출함. 전환 전에 명시적으로 `logger.WaitForFilterGoroutines(...)`를 호출해 writer가 닫힌 후에도 필터 goroutine이 접근하여 발생하는 경쟁을 회피해야 함)
-- [ ] **타임아웃 설정** -- 합리적인 종료 타임아웃 설정(권장 5-10초)
+- [ ] **우아한 종료** -- `Close()` 대신 `Shutdown(ctx)` 사용 (주의: `Shutdown`은 필터 goroutine 을 내부적으로 대기하지 않으며, `Close`는 `WaitForFilterGoroutines`를 호출함. 전환 전에 명시적으로 `logger.WaitForFilterGoroutines(...)`를 호출해 writer 가 닫힌 후에도 필터 goroutine 이 접근하여 발생하는 경쟁을 회피해야 함)
+- [ ] **타임아웃 설정** -- 합리적인 종료 타임아웃 설정 (권장 5-10 초)
 - [ ] **전역 로거** -- 반복 생성 대신 `SetDefault()`로 교체
 
 ```go
@@ -78,7 +78,7 @@ logger.Shutdown(ctx)
 
 - [ ] **HIPAA** -- 의료 산업은 `HealthcareConfig()` 사용
 - [ ] **PCI-DSS** -- 금융 산업은 `FinancialConfig()` 사용
-- [ ] **GDPR** -- 개인 식별 정보(PII)를 기록하지 않도록 보장
+- [ ] **GDPR** -- 개인 식별 정보 (PII) 를 기록하지 않도록 보장
 - [ ] **데이터 보존** -- 규정에 부합하는 로그 보존 기간 구성
 
 ## 모니터링 알림

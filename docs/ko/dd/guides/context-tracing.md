@@ -1,17 +1,17 @@
 ---
 sidebar_label: "분산 추적 통합"
-title: "분산 추적 통합 - CyberGo DD | Context와 추적 가이드"
+title: "분산 추적 통합 - CyberGo DD | Context 와 추적 가이드"
 description: "CyberGo DD 분산 추적 통합 가이드입니다. TraceID, SpanID, RequestID 컨텍스트 전파, ContextExtractor 커스텀 추출기, HTTP 미들웨어 통합, 요청 스코프 로깅과 OpenTelemetry 분산 추적 시스템 통합을 다룹니다."
 sidebar_position: 7
 ---
 
 # 분산 추적 통합
 
-DD는 `context.Context` 기반의 추적 식별자 도구 함수(`WithTraceID`/`GetTraceID` 등)를 제공하여 마이크로서비스 아키텍처에서 로그를 연관 짓기 편리합니다. 주의: **DD의 로그 메서드는 `context.Context` 매개변수를 받지 않으므로** 요청 스코프에서 TraceID를 자동으로 추출할 수 없습니다 - `WithFields()`로 추적 식별자를 필드로 수동 추가해야 합니다([HTTP 미들웨어 통합](#http-미들웨어-통합) 참조).
+DD 는 `context.Context` 기반의 추적 식별자 도구 함수 (`WithTraceID`/`GetTraceID` 등) 를 제공하여 마이크로서비스 아키텍처에서 로그를 연관 짓기 편리합니다. 주의: **DD 의 로그 메서드는 `context.Context` 매개변수를 받지 않으므로** 요청 스코프에서 TraceID 를 자동으로 추출할 수 없습니다 - `WithFields()`로 추적 식별자를 필드로 수동 추가해야 합니다 ([HTTP 미들웨어 통합](#http-미들웨어-통합) 참조).
 
 ## 컨텍스트 키
 
-DD는 세 가지 컨텍스트 키를 미리 정의합니다.
+DD 는 세 가지 컨텍스트 키를 미리 정의합니다.
 
 | 키 | 설명 | 용도 |
 |-----|------|------|
@@ -40,15 +40,15 @@ requestID := dd.GetRequestID(ctx) // "req-789"
 ### 로그에 '자동 추출'이 불가능한 이유
 
 :::warning 경고 현재 제한
-DD의 로그 메서드(`Info`, `InfoWith` 등)는 `context.Context` 매개변수를 직접 받지 않습니다. 컨텍스트 추출기는 내부적으로 `context.Background()`로 호출(`logger.go:1414`)되므로 요청 스코프의 context에서 TraceID 등의 값을 직접 가져올 수 없습니다. 수동으로 필드를 전달하는 방식을 권장합니다(아래 HTTP 미들웨어 통합 참조).
+DD 의 로그 메서드 (`Info`, `InfoWith` 등) 는 `context.Context` 매개변수를 직접 받지 않습니다. 컨텍스트 추출기는 내부적으로 `context.Background()`로 호출 (`logger.go:1414`) 되므로 요청 스코프의 context 에서 TraceID 등의 값을 직접 가져올 수 없습니다. 수동으로 필드를 전달하는 방식을 권장합니다 (아래 HTTP 미들웨어 통합 참조).
 :::
 
 ```go
 // 컨텍스트 추출기는 구성에 미리 설정된 정적 컨텍스트 필드에 사용됩니다
-// 주의: 로그 메서드가 context를 받지 않으므로 추출기의 GetTraceID 등 함수는
+// 주의: 로그 메서드가 context 를 받지 않으므로 추출기의 GetTraceID 등 함수는
 // 요청 스코프의 context 값을 가져올 수 없습니다
 
-// 권장 방식: WithFields로 추적 필드를 수동 전달
+// 권장 방식: WithFields 로 추적 필드를 수동 전달
 reqLog := logger.WithFields(
     dd.String("trace_id", traceID),
     dd.String("request_id", requestID),
@@ -75,7 +75,7 @@ func TracingMiddleware(logger *dd.Logger) func(http.Handler) http.Handler {
                 requestID = uuid.New().String()
             }
 
-            // context에 주입
+            // context 에 주입
             ctx := r.Context()
             ctx = dd.WithTraceID(ctx, traceID)
             ctx = dd.WithRequestID(ctx, requestID)
@@ -86,7 +86,7 @@ func TracingMiddleware(logger *dd.Logger) func(http.Handler) http.Handler {
                 dd.String("request_id", requestID),
             )
 
-            // Logger를 핸들러에 전달(충돌 회피용 커스텀 타입 키 사용)
+            // Logger 를 핸들러에 전달 (충돌 회피용 커스텀 타입 키 사용)
             type ctxKey struct{}
             ctx = context.WithValue(ctx, ctxKey{}, reqLog)
             next.ServeHTTP(w, r.WithContext(ctx))
@@ -119,7 +119,7 @@ type Handler struct {
 func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
     ctx := r.Context()
 
-    // context에서 추적 정보 가져오기
+    // context 에서 추적 정보 가져오기
     traceID := dd.GetTraceID(ctx)
     reqID := dd.GetRequestID(ctx)
 
@@ -140,7 +140,7 @@ func (h *Handler) GetUser(w http.ResponseWriter, r *http.Request) {
 
 ## ContextExtractor 커스텀 추출기
 
-`ContextExtractor`는 context에서 필드를 추출하는 데 사용됩니다. 주의: 로그 메서드가 context 매개변수를 받지 않으므로 추출기는 내부적으로 `context.Background()`로 호출되며 다음 시나리오에 적합합니다.
+`ContextExtractor`는 context 에서 필드를 추출하는 데 사용됩니다. 주의: 로그 메서드가 context 매개변수를 받지 않으므로 추출기는 내부적으로 `context.Background()`로 호출되며 다음 시나리오에 적합합니다.
 
 - 글로벌 context 또는 goroutine-local 저장소에서 정적 필드 추출
 - HTTP 미들웨어와 결합해 추적 필드를 수동으로 `WithFields`에 전달
@@ -161,7 +161,7 @@ logger.AddContextExtractor(tenantExtractor)
 ```
 
 :::warning 경고 컨텍스트 제한
-`ContextExtractor` 함수가 받는 것은 요청 스코프의 context가 아닌 `context.Background()`입니다. 매 요청의 추적 ID를 추가하려면 위의 `WithFields()` 패턴으로 요청 스코프의 `LoggerEntry`를 생성하세요.
+`ContextExtractor` 함수가 받는 것은 요청 스코프의 context 가 아닌 `context.Background()`입니다. 매 요청의 추적 ID 를 추가하려면 위의 `WithFields()` 패턴으로 요청 스코프의 `LoggerEntry`를 생성하세요.
 :::
 
 ### 여러 추출기 조합

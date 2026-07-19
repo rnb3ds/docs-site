@@ -170,19 +170,19 @@ override := `{"b": 3, "c": 4, "nested": {"y": 30, "z": 40}}`
 
 // 联合合并（默认）
 result, _ := json.MergeJSON(base, override)
-// 结果: {"a":1,"b":3,"c":4,"nested":{"x":10,"y":30,"z":40}}
+// 结果：{"a":1,"b":3,"c":4,"nested":{"x":10,"y":30,"z":40}}
 
 // 交集合并 - 仅保留共有键
 cfg := json.DefaultConfig()
 cfg.MergeMode = json.MergeIntersection
 result, _ = json.MergeJSON(base, override, cfg)
-// 结果: {"b":3,"nested":{"y":30}}
+// 结果：{"b":3,"nested":{"y":30}}
 
 // 差集合并 - 仅保留 base 独有的键
 cfg = json.DefaultConfig()
 cfg.MergeMode = json.MergeDifference
 result, _ = json.MergeJSON(base, override, cfg)
-// 结果: {"a":1,"nested":{"x":10}}
+// 结果：{"a":1,"nested":{"x":10}}
 ```
 
 ### MergeMany
@@ -205,7 +205,7 @@ config3 := `{"retries": 5, "debug": true}`
 
 // 默认联合合并
 result, err := json.MergeMany([]string{config1, config2, config3})
-// 结果: {"api":"v1","timeout":60,"retries":5,"debug":true}
+// 结果：{"api":"v1","timeout":60,"retries":5,"debug":true}
 ```
 
 ## Processor 方法

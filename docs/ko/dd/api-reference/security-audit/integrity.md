@@ -7,11 +7,11 @@ sidebar_position: 4
 
 # 무결성 서명
 
-DD는 HMAC 기반의 로그 무결성 서명 메커니즘을 제공하여 로그 항목이 변조되지 않았음을 검증할 수 있습니다.
+DD 는 HMAC 기반의 로그 무결성 서명 메커니즘을 제공하여 로그 항목이 변조되지 않았음을 검증할 수 있습니다.
 
 ## IntegritySigner
 
-로그 항목 서명자로, HMAC 서명과 단조 시퀀스 번호 추적을 지원합니다(사후에 항목 유실/재생을 감지하는 데 사용되며, 호출자가 직접 시퀀스 번호를 비교해야 함).
+로그 항목 서명자로, HMAC 서명과 단조 시퀀스 번호 추적을 지원합니다 (사후에 항목 유실/재생을 감지하는 데 사용되며, 호출자가 직접 시퀀스 번호를 비교해야 함).
 
 ### 생성
 
@@ -21,14 +21,14 @@ func NewIntegritySigner(cfg IntegrityConfig) (*IntegritySigner, error)
 
 전달된 `IntegrityConfig`로 서명자를 생성합니다. `DefaultIntegrityConfigSafe()`로 암호학적으로 안전한 랜덤 키를 생성할 수 있습니다.
 
-오류를 반환하는 경우: `SecretKey`가 32바이트 미만이거나 `HashAlgorithm`이 지원되지 않는 경우.
+오류를 반환하는 경우: `SecretKey`가 32 바이트 미만이거나 `HashAlgorithm`이 지원되지 않는 경우.
 
 :::warning 경고 키 보안
-`NewIntegritySigner`는 전달된 `SecretKey`를 **복사**하고 원본 `cfg.SecretKey`를 즉시 제로화(키 재료가 두 곳의 메모리에 남지 않도록 방지)합니다. 호출자는 여전히 원본 키를 로그나 직렬화에 노출하지 않도록 주의해야 합니다.
+`NewIntegritySigner`는 전달된 `SecretKey`를 **복사**하고 원본 `cfg.SecretKey`를 즉시 제로화 (키 재료가 두 곳의 메모리에 남지 않도록 방지) 합니다. 호출자는 여전히 원본 키를 로그나 직렬화에 노출하지 않도록 주의해야 합니다.
 :::
 
 ```go
-// 안전 생성(프로덕션 권장)
+// 안전 생성 (프로덕션 권장)
 cfg, err := dd.DefaultIntegrityConfigSafe()
 if err != nil {
     log.Fatal(err)
@@ -94,7 +94,7 @@ func (s *IntegritySigner) Verify(entry string) (*LogIntegrity, error)
 ```go
 integrity, err := signer.Verify(signedEntry)
 if err != nil {
-    // 검증 오류(예: signer가 nil)
+    // 검증 오류 (예: signer 가 nil)
 }
 if !integrity.Valid {
     // 서명 무효: 서명 불일치 또는 형식 오류
@@ -118,11 +118,11 @@ if integrity.Sequence != expectedSeq {
 
 ```go
 type IntegrityConfig struct {
-    SecretKey        []byte        // HMAC 키(SHA-256은 ≥ 32바이트 요구; 안전하게 보관하고 정기적으로 로테이션)
-    HashAlgorithm    HashAlgorithm // 해시 알고리즘(기본 SHA256)
+    SecretKey        []byte        // HMAC 키 (SHA-256 은 ≥ 32 바이트 요구; 안전하게 보관하고 정기적으로 로테이션)
+    HashAlgorithm    HashAlgorithm // 해시 알고리즘 (기본 SHA256)
     IncludeTimestamp bool          // 서명에 타임스탬프 포함
-    IncludeSequence  bool          // 서명에 단조 증가 시퀀스 번호 포함(Verify 결과가 해당 시퀀스 번호를 가져오며, 호출자가 재생/재정렬 감지를 위해 직접 추적해야 함)
-    SignaturePrefix  string        // 서명 접두사(기본 "[SIG:"; 비어 있을 때 NewIntegritySigner가 기본값으로 채움)
+    IncludeSequence  bool          // 서명에 단조 증가 시퀀스 번호 포함 (Verify 결과가 해당 시퀀스 번호를 가져오며, 호출자가 재생/재정렬 감지를 위해 직접 추적해야 함)
+    SignaturePrefix  string        // 서명 접두사 (기본 "[SIG:"; 비어 있을 때 NewIntegritySigner 가 기본값으로 채움)
 }
 ```
 
@@ -132,15 +132,15 @@ type IntegrityConfig struct {
 func DefaultIntegrityConfigSafe() (IntegrityConfig, error)
 ```
 
-기본 구성을 안전하게 생성(자동으로 키 생성). 프로덕션 사용 권장.
+기본 구성을 안전하게 생성 (자동으로 키 생성). 프로덕션 사용 권장.
 
 ### 메서드
 
 | 메서드 | 시그니처 | 설명 |
 |------|------|------|
-| `Validate` | `() error` | 구성 유효성 검증(`SecretKey`는 ≥ 32바이트, `HashAlgorithm`은 지원되는 알고리즘이어야 함) |
-| `Clone` | `() IntegrityConfig` | 딥 카피 구성(`SecretKey`는 새 슬라이스로 복사) |
-| `MarshalJSON` | `() ([]byte, error)` | JSON 직렬화(키 자체는 직렬화에 **참여하지 않고**, `secretKeyLength`만 출력) |
+| `Validate` | `() error` | 구성 유효성 검증 (`SecretKey`는 ≥ 32 바이트, `HashAlgorithm`은 지원되는 알고리즘이어야 함) |
+| `Clone` | `() IntegrityConfig` | 딥 카피 구성 (`SecretKey`는 새 슬라이스로 복사) |
+| `MarshalJSON` | `() ([]byte, error)` | JSON 직렬화 (키 자체는 직렬화에 **참여하지 않고**, `secretKeyLength`만 출력) |
 
 ```go
 cfg, err := dd.DefaultIntegrityConfigSafe()

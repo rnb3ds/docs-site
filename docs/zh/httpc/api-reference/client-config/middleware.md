@@ -83,7 +83,7 @@ client, _ := httpc.New(&httpc.Config{
         },
     },
 })
-// 输出示例: GET https://api.example.com/data -> 200 (125ms)
+// 输出示例：GET https://api.example.com/data -> 200 (125ms)
 ```
 
 ### RequestIDMiddleware

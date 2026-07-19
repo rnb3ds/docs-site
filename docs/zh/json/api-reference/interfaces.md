@@ -112,7 +112,7 @@ type SizeValidator struct {
 func (v *SizeValidator) Validate(jsonStr string) error {
     // 检查输入数据的大小
     if int64(len(jsonStr)) > v.MaxSize {
-        return fmt.Errorf("JSON 超过最大大小: %d", v.MaxSize)
+        return fmt.Errorf("JSON 超过最大大小：%d", v.MaxSize)
     }
     return nil
 }
@@ -150,7 +150,7 @@ type Hook interface {
 
 ```go
 type HookContext struct {
-    Operation string        // 操作类型: "get", "set", "delete", "marshal", "unmarshal"
+    Operation string        // 操作类型："get", "set", "delete", "marshal", "unmarshal"
     JSONStr   string        // 输入 JSON 字符串（marshal 时可能为空）。安全警告：可能包含敏感数据
     Path      string        // 目标路径（marshal/unmarshal 时可能为空）
     Value     any           // set 操作的值

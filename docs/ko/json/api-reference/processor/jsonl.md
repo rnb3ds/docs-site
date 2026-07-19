@@ -1,13 +1,13 @@
 ---
 sidebar_label: "JSONL"
 title: "Processor JSONL 메서드 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor JSONL 메서드: StreamJSONL, ForeachJSONL, MapJSONL, ReduceJSONL, FilterJSONL로 스트림 데이터 처리에 적합합니다."
+description: "CyberGo JSON Processor JSONL 메서드: StreamJSONL, ForeachJSONL, MapJSONL, ReduceJSONL, FilterJSONL 로 스트림 데이터 처리에 적합합니다."
 sidebar_position: 8
 ---
 
 # Processor JSONL 메서드
 
-Processor는 JSONL(JSON Lines) 스트림 처리 기능을 완벽하게 제공하며, 행 단위 처리, 병렬 처리, 배치 처리 및 함수형 작업을 지원합니다.
+Processor 는 JSONL(JSON Lines) 스트림 처리 기능을 완벽하게 제공하며, 행 단위 처리, 병렬 처리, 배치 처리 및 함수형 작업을 지원합니다.
 
 ## 스트림 읽기 메서드
 
@@ -329,7 +329,7 @@ JSONL 처리 동작은 `Config`의 다음 필드로 설정할 수 있습니다:
 cfg := json.DefaultConfig()
 cfg.JSONLSkipComments = true     // 주석 행 건너뛰기
 cfg.JSONLContinueOnErr = true    // 파싱 오류 시 계속 진행
-cfg.JSONLWorkers = 8             // 8개 병렬 워커
+cfg.JSONLWorkers = 8             // 8 개 병렬 워커
 
 processor, _ := json.New(cfg)
 defer processor.Close()
@@ -393,7 +393,7 @@ import (
 
 func main() {
     cfg := json.DefaultConfig()
-    cfg.JSONLWorkers = 16 // 16개 병렬 워커
+    cfg.JSONLWorkers = 16 // 16 개 병렬 워커
 
     processor, _ := json.New(cfg)
     defer processor.Close()

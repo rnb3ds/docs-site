@@ -62,7 +62,7 @@ first2 := json.GetString(data, "items[0]")   // "a"
 data := `{"items": ["a", "b", "c", "d", "e"]}`
 
 val := json.GetString(data, "items[-1]")  // "e"  (最後の要素)
-val = json.GetString(data, "items[-2]")   // "d"  (末尾から2番目)
+val = json.GetString(data, "items[-2]")   // "d"  (末尾から 2 番目)
 val = json.GetString(data, "items[-5]")   // "a"  ([0] と同等)
 ```
 
@@ -249,7 +249,7 @@ data := `{
 
 // id と name のみ抽出
 extracted, _ := json.Get(data, "user{id,name}")
-// 結果: {"id": 1001, "name": "Alice"}
+// 結果：{"id": 1001, "name": "Alice"}
 ```
 
 ### フラット化抽出 `{flat:field}`
@@ -331,10 +331,10 @@ json.GetArray(data, "orders{flat:items}[0:3]")
 data := `{"items": [1, 2, 3]}`
 
 updated, _ := json.Set(data, "items[+]", 4)
-// 結果: {"items": [1, 2, 3, 4]}
+// 結果：{"items": [1, 2, 3, 4]}
 
 updated, _ = json.Set(updated, "items[+]", 5)
-// 結果: {"items": [1, 2, 3, 4, 5]}
+// 結果：{"items": [1, 2, 3, 4, 5]}
 ```
 
 ### ワイルドカード `[*]`
@@ -343,7 +343,7 @@ updated, _ = json.Set(updated, "items[+]", 5)
 data := `{"items": [1, 2, 3]}`
 
 updated, _ := json.Set(data, "items[*]", 0)
-// 結果: {"items": [0, 0, 0]}
+// 結果：{"items": [0, 0, 0]}
 ```
 
 ---

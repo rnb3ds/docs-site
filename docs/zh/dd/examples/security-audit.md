@@ -91,7 +91,7 @@ func main() {
     integrityCfg, _ := dd.DefaultIntegrityConfigSafe()
     signer, _ := dd.NewIntegritySigner(integrityCfg)
 
-    // 审计Logger
+    // 审计 Logger
     auditLogger, _ := dd.NewAuditLogger(dd.AuditConfig{
         Enabled:          true,
         Output:           auditFile,
@@ -102,7 +102,7 @@ func main() {
     })
     defer auditLogger.Close()
 
-    // 业务Logger
+    // 业务 Logger
     logger, _ := dd.New(dd.Config{
         Format:   dd.FormatJSON,
         Security: dd.DefaultSecureConfig(),
@@ -159,7 +159,7 @@ func main() {
         fmt.Printf("验证通过 - 时间戳: %s, 序列号: %d\n",
             result.Timestamp, result.Sequence)
     } else {
-        fmt.Printf("验证失败: 日志可能被篡改\n")
+        fmt.Printf("验证失败：日志可能被篡改\n")
     }
 }
 ```
@@ -200,7 +200,7 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
     integrityCfg, _ := dd.DefaultIntegrityConfigSafe()
     signer, _ := dd.NewIntegritySigner(integrityCfg)
 
-    // 审计Logger
+    // 审计 Logger
     auditFile, _ := os.OpenFile("logs/audit.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
     auditLogger, _ := dd.NewAuditLogger(dd.AuditConfig{
         Enabled:          true,
@@ -211,7 +211,7 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
         IntegritySigner:  signer,
     })
 
-    // 业务Logger
+    // 业务 Logger
     fwCfg := dd.DefaultFileWriterConfig()
     fwCfg.MaxSizeMB = 50
     fwCfg.Compress = true

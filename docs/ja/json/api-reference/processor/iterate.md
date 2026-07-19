@@ -69,11 +69,11 @@ p.ForeachNested(data, func(key any, item *json.IterableValue) {
 出力：
 
 ```text
-キー: user, 値: map[string]any{...}
-キー: name, 値: test
-キー: profile, 値: map[string]any{...}
-キー: age, 値: 25
-キー: tags, 値: []any{...}
+キー: user, 値：map[string]any{...}
+キー: name, 値：test
+キー: profile, 値：map[string]any{...}
+キー: age, 値：25
+キー: tags, 値：[]any{...}
 ...
 ```
 
@@ -303,12 +303,12 @@ err := p.ForeachFileNested("config.json", func(key any, item *json.IterableValue
 **出力**：
 
 ```text
-パス: database, 型: map[string]any
-パス: host, 型: string
-パス: port, 型: float64
-パス: pool, 型: map[string]any
-パス: min, 型: float64
-パス: max, 型: float64
+パス：database, 型：map[string]any
+パス：host, 型：string
+パス：port, 型：float64
+パス：pool, 型：map[string]any
+パス：min, 型：float64
+パス：max, 型：float64
 ```
 
 ---

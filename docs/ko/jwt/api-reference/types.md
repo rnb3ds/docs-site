@@ -15,7 +15,7 @@ type NumericDate struct {
 }
 ```
 
-JWT 숫자 날짜 값 (Unix 타임스탬프). 유효 범위는 0부터 253402300799 (9999-12-31 23:59:59 UTC)까지.
+JWT 숫자 날짜 값 (Unix 타임스탬프). 유효 범위는 0 부터 253402300799 (9999-12-31 23:59:59 UTC) 까지.
 
 <Badge type="info" text="struct" />
 
@@ -97,7 +97,7 @@ type RateLimiter struct { ... }
 | 메서드 | 시그니처 | 설명 |
 |------|------|------|
 | `Allow` | `func (rl *RateLimiter) Allow(key string) bool` | 단일 요청 확인 |
-| `AllowN` | `func (rl *RateLimiter) AllowN(key string, n int) bool` | n회 요청 확인 |
+| `AllowN` | `func (rl *RateLimiter) AllowN(key string, n int) bool` | n 회 요청 확인 |
 | `Reset` | `func (rl *RateLimiter) Reset(key string)` | 지정된 키 초기화 |
 | `Close` | `func (rl *RateLimiter) Close()` | 리소스 해제 |
 

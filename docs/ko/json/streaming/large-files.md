@@ -1,13 +1,13 @@
 ---
 sidebar_label: "대용량 파일 가이드"
 title: "대용량 파일 처리 - CyberGo JSON | 가이드"
-description: "CyberGo JSON 대용량 파일 가이드: ForeachFile* 메서드와 패키지 함수 시그니처, 매개변수, 콜백 반환값, 메모리 제어로 스트리밍 로그 분석, ETL에 대응합니다."
+description: "CyberGo JSON 대용량 파일 가이드: ForeachFile* 메서드와 패키지 함수 시그니처, 매개변수, 콜백 반환값, 메모리 제어로 스트리밍 로그 분석, ETL 에 대응합니다."
 sidebar_position: 1
 ---
 
 # 대용량 파일 처리
 
-대형 JSON 파일(예: 로그, 설정, 데이터 내보내기)을 메모리에 직접 로드하면 메모리 부족이 발생할 수 있습니다. json 라이브러리는 다양한 효율적인 처리 방법을 제공합니다.
+대형 JSON 파일 (예: 로그, 설정, 데이터 내보내기) 을 메모리에 직접 로드하면 메모리 부족이 발생할 수 있습니다. json 라이브러리는 다양한 효율적인 처리 방법을 제공합니다.
 
 :::warning 경고
 `ForeachFile` 및 `ForeachFileChunked`는 반복 전에 전체 파일을 메모리에 로드합니다. "청크" 동작은 메모리 내 데이터의 반복 방식에만 영향을 미치며, 파일 읽기 방식에는 영향을 주지 않습니다. 메모리를 진정으로 제어해야 하는 초대용량 파일 처리의 경우 `NDJSONProcessor`를 JSONL 형식과 함께 사용하거나 `StreamIterator`를 사용하세요.
@@ -124,7 +124,7 @@ err := processor.ForeachFile("large-data.json", func(key any, item *json.Iterabl
 ### 객체 파일 처리
 
 ```go
-// 방법 4: JSON 객체 파일 처리 (키-값 쌍 구조)
+// 방법 4: JSON 객체 파일 처리 (키 - 값 쌍 구조)
 // 파일 형식: {"user1": {...}, "user2": {...}, ...}
 err := processor.ForeachFile("config-map.json", func(key any, item *json.IterableValue) error {
     fmt.Printf("Key: %s, Name: %s\n", key, item.GetString("name"))
@@ -212,7 +212,7 @@ _, err := json.StreamLinesInto[User](file, func(lineNum int, user User) error {
 
 ### 병렬 처리
 
-병렬 처리가 가능한 작업의 경우 멀티 goroutine을 사용할 수 있습니다:
+병렬 처리가 가능한 작업의 경우 멀티 goroutine 을 사용할 수 있습니다:
 
 ```go
 package main
@@ -292,7 +292,7 @@ defer processor.Close()
 
 ## API 레퍼런스
 
-이 섹션은 대용량 파일 처리 API의 함수 시그니처와 매개변수 표를 요약하여 빠르게 조회할 수 있도록 합니다.
+이 섹션은 대용량 파일 처리 API 의 함수 시그니처와 매개변수 표를 요약하여 빠르게 조회할 수 있도록 합니다.
 
 ### Processor 메서드
 
@@ -375,7 +375,7 @@ Processor 메서드 외에도, 다음 함수는 Processor 인스턴스를 생성
 
 시그니처: `func ForeachFile(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-파일에서 JSON을 로드하고 반복합니다.
+파일에서 JSON 을 로드하고 반복합니다.
 
 ```go
 err := json.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
@@ -388,7 +388,7 @@ err := json.ForeachFile("data.json", func(key any, item *json.IterableValue) err
 
 시그니처: `func ForeachFileWithPath(filePath, path string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-파일에서 JSON을 로드하고 경로로 반복합니다.
+파일에서 JSON 을 로드하고 경로로 반복합니다.
 
 ```go
 err := json.ForeachFileWithPath("data.json", "users", func(key any, item *json.IterableValue) error {
@@ -417,7 +417,7 @@ err := json.ForeachFileChunked("large_data.json", 100, func(chunk []*json.Iterab
 
 시그니처: `func ForeachFileNested(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-파일에서 JSON을 로드하고 모든 중첩 구조를 재귀적으로 반복합니다.
+파일에서 JSON 을 로드하고 모든 중첩 구조를 재귀적으로 반복합니다.
 
 ```go
 err := json.ForeachFileNested("config.json", func(key any, item *json.IterableValue) error {

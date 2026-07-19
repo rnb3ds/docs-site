@@ -19,12 +19,12 @@ sidebar_position: 4
 
 - [ ] `AllowPrivateIPs`가 `false` (기본값)
 - [ ] 내부 서비스 접근이 필요한 경우 `SSRFExemptCIDRs`로 정밀 지정
-- [ ] 사용자 제공 URL을 처리할 때 `SecureConfig()` 사용
+- [ ] 사용자 제공 URL 을 처리할 때 `SecureConfig()` 사용
 
 ### 타임아웃 설정
 
 - [ ] 모든 타임아웃 값이 설정되어 있고 적절함
-- [ ] `TimeoutConfig.Request`가 0이 아님 (무한 대기 방지)
+- [ ] `TimeoutConfig.Request`가 0 이 아님 (무한 대기 방지)
 - [ ] 각 요청에 `WithContext`로 타임아웃 설정 고려
 
 ### 응답 제한
@@ -35,8 +35,8 @@ sidebar_position: 4
 
 ### 재시도 설정
 
-- [ ] `MaxRetries`가 5를 초과하지 않음
-- [ ] 비멱등성 요청(POST/PUT/PATCH)에 재시도를 신중하게 사용
+- [ ] `MaxRetries`가 5 를 초과하지 않음
+- [ ] 비멱등성 요청 (POST/PUT/PATCH) 에 재시도를 신중하게 사용
 - [ ] 썬더링 허드 방지를 위해 `EnableJitter` 활성화
 
 ### 리소스 관리
@@ -81,7 +81,7 @@ func createProductionClient() (httpc.Client, error) {
     cfg.Timeouts.Request = 30 * time.Second
     cfg.Timeouts.Dial = 10 * time.Second
     cfg.Timeouts.TLSHandshake = 10 * time.Second
-    cfg.Timeouts.ResponseHeader = 30 * time.Second // transport 수준 하드 캡: 해당 client의 모든 요청에 적용, WithTimeout으로 요청별 재정의 불가; AI API/장기 응답 시나리오는 0으로 설정해 Request 타임아웃에 의존
+    cfg.Timeouts.ResponseHeader = 30 * time.Second // transport 수준 하드 캡: 해당 client 의 모든 요청에 적용, WithTimeout 으로 요청별 재정의 불가; AI API/장기 응답 시나리오는 0 으로 설정해 Request 타임아웃에 의존
 
     // 연결 풀
     cfg.Connection.MaxIdleConns = 50

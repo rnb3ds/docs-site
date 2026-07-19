@@ -93,7 +93,7 @@ go func() {
 }()
 
 // 破棄されたイベントを確認（チャネルが満杯時は自動的に破棄）
-fmt.Printf("破棄: %d\n", sink.DroppedCount())
+fmt.Printf("破棄：%d\n", sink.DroppedCount())
 ```
 
 ### MultiSink

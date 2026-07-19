@@ -11,26 +11,26 @@ sidebar_position: 1
 
 ## 두 가지 호출 모드
 
-### 패키지 함수(일회성 호출)
+### 패키지 함수 (일회성 호출)
 
 ```go
 result, err := html.Extract(data)
 ```
 
-내부적으로 `sync.Pool`로 임시 Processor를 관리하며, 매 호출 시 풀에서 가져오고 사용 후 반환합니다.
+내부적으로 `sync.Pool`로 임시 Processor 를 관리하며, 매 호출 시 풀에서 가져오고 사용 후 반환합니다.
 
-**적용 시나리오**: 저빈도 호출(예: CLI 도구, 일회성 스크립트)
+**적용 시나리오**: 저빈도 호출 (예: CLI 도구, 일회성 스크립트)
 
 **라이프사이클**:
 
 ```text
 Extract() 호출
-  → sync.Pool에서 Processor 획득(또는 새로 생성)
+  → sync.Pool 에서 Processor 획득 (또는 새로 생성)
   → 추출 실행
-  → sync.Pool로 반환
+  → sync.Pool 로 반환
 ```
 
-### Processor 인스턴스(재사용 모드)
+### Processor 인스턴스 (재사용 모드)
 
 ```go
 p, _ := html.New()
@@ -43,14 +43,14 @@ for _, page := range pages {
 
 독립적인 Processor 인스턴스를 생성하고, 라이프사이클을 수동으로 관리합니다.
 
-**적용 시나리오**: 고빈도 호출(예: 웹 서비스, 크롤러)
+**적용 시나리오**: 고빈도 호출 (예: 웹 서비스, 크롤러)
 
 **라이프사이클**:
 
 ```text
 html.New()
-  → Processor 생성(캐시, 감사, 통계)
-  → 루프에서 p.Extract() 호출(캐시 재사용)
+  → Processor 생성 (캐시, 감사, 통계)
+  → 루프에서 p.Extract() 호출 (캐시 재사용)
   → defer p.Close()
 ```
 
@@ -71,22 +71,22 @@ Processor 인스턴스는 콘텐츠 기반 캐시를 내장합니다. 동일한 
 
 ```go
 cfg := html.DefaultConfig()
-cfg.MaxCacheEntries = 2000     // 최대 캐시 항목 수(0=비활성화)
+cfg.MaxCacheEntries = 2000     // 최대 캐시 항목 수 (0=비활성화)
 cfg.CacheTTL = time.Hour       // 캐시 유효 기간
 cfg.CacheCleanup = 5 * time.Minute // 백그라운드 정리 간격
 ```
 
 | 매개변수 | 기본값 | 설명 |
 |------|--------|------|
-| `MaxCacheEntries` | 2000 | 캐시 용량 상한, 0으로 설정하면 캐시 비활성화 |
-| `CacheTTL` | 1시간 | 항목 만료 시간 |
-| `CacheCleanup` | 5분 | 백그라운드에서 만료된 항목을 정리하는 간격 |
+| `MaxCacheEntries` | 2000 | 캐시 용량 상한, 0 으로 설정하면 캐시 비활성화 |
+| `CacheTTL` | 1 시간 | 항목 만료 시간 |
+| `CacheCleanup` | 5 분 | 백그라운드에서 만료된 항목을 정리하는 간격 |
 
 ### 캐시 키 생성
 
 캐시 키는 인코딩 변환 후 UTF-8 콘텐츠를 기반으로 생성됩니다:
 - 64KB 미만의 콘텐츠: 전체 콘텐츠의 해시 계산
-- 64KB 이상의 콘텐츠: 5점 샘플링 알고리즘 사용(헤더 + 푸터 + 균등 샘플링)
+- 64KB 이상의 콘텐츠: 5 점 샘플링 알고리즘 사용 (헤더 + 푸터 + 균등 샘플링)
 
 동일한 HTML 콘텐츠는 반복 호출 시 캐시에 직접 적중하여 파싱과 추출 단계를 건너뜁니다.
 
@@ -159,10 +159,10 @@ fmt.Printf("성공: %d, 실패: %d\n", batch.Success, batch.Failed)
 
 ### 정기 유지보수
 
-장기 실행되는 Processor는 정기적인 유지보수가 필요합니다:
+장기 실행되는 Processor 는 정기적인 유지보수가 필요합니다:
 
 ```go
-// 정기 캐시 정리(메모리 증가 방지)
+// 정기 캐시 정리 (메모리 증가 방지)
 go func() {
     ticker := time.NewTicker(10 * time.Minute)
     for range ticker.C {
@@ -170,7 +170,7 @@ go func() {
     }
 }()
 
-// 정기 통계 초기화(캐시는 유지)
+// 정기 통계 초기화 (캐시는 유지)
 go func() {
     ticker := time.NewTicker(time.Hour)
     for range ticker.C {
@@ -184,7 +184,7 @@ go func() {
 
 ## 성능 비교
 
-동일한 HTML을 1000회 반복 처리(참고용):
+동일한 HTML 을 1000 회 반복 처리 (참고용):
 
 | 모드 | 첫 처리 | 캐시 적중 |
 |------|----------|----------|
@@ -193,7 +193,7 @@ go func() {
 | Processor(캐시 있음) | 약 기준 | 약 기준의 1/10 |
 
 :::tip 캐시 적용 조건
-캐시는 Processor 인스턴스에서만 적용됩니다. 패키지 함수는 `sync.Pool`로 Processor를 재사용하지만 풀 설정이 캐시를 비활성화하고(`MaxCacheEntries = 0`) 반환 시 캐시를 비우므로 캐시를 사용할 수 없습니다.
+캐시는 Processor 인스턴스에서만 적용됩니다. 패키지 함수는 `sync.Pool`로 Processor 를 재사용하지만 풀 설정이 캐시를 비활성화하고 (`MaxCacheEntries = 0`) 반환 시 캐시를 비우므로 캐시를 사용할 수 없습니다.
 :::
 
 ## 일반적인 오해

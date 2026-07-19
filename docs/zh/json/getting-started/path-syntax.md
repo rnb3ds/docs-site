@@ -252,7 +252,7 @@ extracted, err := json.Get(data, "user{id,name}")
 if err != nil {
     panic(err)
 }
-// 结果: {"id": 1001, "name": "Alice"}
+// 结果：{"id": 1001, "name": "Alice"}
 ```
 
 ### 扁平化提取 `{flat:field}`
@@ -337,13 +337,13 @@ updated, err := json.Set(data, "items[+]", 4)
 if err != nil {
     panic(err)
 }
-// 结果: {"items": [1, 2, 3, 4]}
+// 结果：{"items": [1, 2, 3, 4]}
 
 updated, err = json.Set(updated, "items[+]", 5)
 if err != nil {
     panic(err)
 }
-// 结果: {"items": [1, 2, 3, 4, 5]}
+// 结果：{"items": [1, 2, 3, 4, 5]}
 ```
 
 ### 通配符 `[*]`
@@ -355,7 +355,7 @@ updated, err := json.Set(data, "items[*]", 0)
 if err != nil {
     panic(err)
 }
-// 结果: {"items": [0, 0, 0]}
+// 结果：{"items": [0, 0, 0]}
 ```
 
 ---

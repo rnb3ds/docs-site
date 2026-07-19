@@ -1,6 +1,6 @@
 ---
 sidebar_label: "快速开始"
-title: "快速开始 - CyberGo HTTPC | 5分钟上手"
+title: "快速开始 - CyberGo HTTPC | 5 分钟上手"
 description: "HTTPC 快速开始指南：go get 安装与项目初始化、GET/POST 请求发送与响应处理、五种配置预设选型、JSON 解析与类型绑定、Bearer Token 认证与 ClientError 错误分类处理，五分钟上手安全 HTTP 客户端库。"
 sidebar_position: 1
 ---
@@ -134,9 +134,9 @@ switch {
 case result.IsSuccess():
     // 2xx 成功
 case result.IsClientError():
-    log.Printf("客户端错误: %d", result.StatusCode())
+    log.Printf("客户端错误：%d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("服务端错误: %d", result.StatusCode())
+    log.Printf("服务端错误：%d", result.StatusCode())
 }
 ```
 

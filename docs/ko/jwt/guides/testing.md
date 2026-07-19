@@ -1,7 +1,7 @@
 ---
 sidebar_label: "테스트와 클럭 인젝션"
 title: "테스트와 클럭 인젝션 - CyberGo JWT | 고정 클럭 반복 테스트"
-description: "테스트와 클럭 인젝션 가이드: ClockProvider로 FixedClock 고정 클럭을 주입해 단위 테스트에서 시간 흐름을 정밀 제어, 만료·갱신·커스텀 Claims·취소 로직을 반복 가능하게 검증합니다."
+description: "테스트와 클럭 인젝션 가이드: ClockProvider 로 FixedClock 고정 클럭을 주입해 단위 테스트에서 시간 흐름을 정밀 제어, 만료·갱신·커스텀 Claims·취소 로직을 반복 가능하게 검증합니다."
 sidebar_position: 60
 ---
 
@@ -158,7 +158,7 @@ func TestRevokeToken(t *testing.T) {
 
 :::tip 테스트 권장 사항
 - `FixedClock`을 사용하여 테스트의 재현성을 보장하세요
-- 각 테스트 케이스마다 독립적인 Processor를 생성하세요
+- 각 테스트 케이스마다 독립적인 Processor 를 생성하세요
 - `t.Cleanup()` 또는 `defer`를 사용하여 `Close()`가 호출되도록 보장하세요
 - 오류 검증 시 문자열 매칭 대신 `errors.Is()`를 사용하세요
 :::

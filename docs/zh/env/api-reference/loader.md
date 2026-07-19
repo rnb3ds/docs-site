@@ -610,7 +610,7 @@ func (l *Loader) Config() Config
 
 ```go
 cfg := loader.Config()
-fmt.Printf("最大文件大小: %d\n", cfg.MaxFileSize)
+fmt.Printf("最大文件大小：%d\n", cfg.MaxFileSize)
 ```
 
 ---
@@ -781,7 +781,7 @@ func main() {
 
     // 验证必需键
     if err := loader.Validate(); err != nil {
-        log.Fatal("缺少必需配置:", err)
+        log.Fatal("缺少必需配置：", err)
     }
 
     // 读取配置

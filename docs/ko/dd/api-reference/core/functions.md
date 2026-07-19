@@ -7,7 +7,7 @@ sidebar_position: 1
 
 # 패키지 함수
 
-DD는 풍부한 패키지 수준 함수를 제공하며, `dd.` 접두사로 직접 호출할 수 있습니다. 이 함수들은 모두 전역 로거(`Default()`)를 통해 실행됩니다.
+DD 는 풍부한 패키지 수준 함수를 제공하며, `dd.` 접두사로 직접 호출할 수 있습니다. 이 함수들은 모두 전역 로거 (`Default()`) 를 통해 실행됩니다.
 
 ## 로거 생성
 
@@ -26,7 +26,7 @@ logger, _ := dd.New()
 // 커스텀 구성
 logger, _ := dd.New(dd.DefaultConfig())
 
-// 주의: 0개 또는 1개의 구성만 허용, 여러 개 전달 시 오류 반환
+// 주의: 0 개 또는 1 개의 구성만 허용, 여러 개 전달 시 오류 반환
 // logger, _ := dd.New(cfg1, cfg2)  // 오류!
 ```
 
@@ -36,7 +36,7 @@ logger, _ := dd.New(dd.DefaultConfig())
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
-| `Default` | `func Default() *Logger` | 전역 로거 가져오기(지연 초기화) |
+| `Default` | `func Default() *Logger` | 전역 로거 가져오기 (지연 초기화) |
 | `SetDefault` | `func SetDefault(logger *Logger)` | 전역 로거 설정 |
 | `InitDefault` | `func InitDefault(cfg ...Config) error` | 구성으로 전역 로거 초기화 |
 | `DefaultWithErr` | `func DefaultWithErr() (*Logger, error)` | 전역 로거와 초기화 오류 가져오기 |
@@ -45,7 +45,7 @@ logger, _ := dd.New(dd.DefaultConfig())
 ### 전역 로거 초기화
 
 ```go
-// 방법 1: 자동 초기화(첫 호출 시 생성)
+// 방법 1: 자동 초기화 (첫 호출 시 생성)
 dd.Default().Info("전역 로거 자동 생성")
 
 // 방법 2: 명시적 초기화
@@ -73,8 +73,8 @@ if err != nil {
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
-| `DefaultConfig` | `func DefaultConfig() Config` | 기본 구성(Info 레벨, 텍스트 형식) |
-| `DevelopmentConfig` | `func DevelopmentConfig() Config` | 개발 구성(Debug 레벨) |
+| `DefaultConfig` | `func DefaultConfig() Config` | 기본 구성 (Info 레벨, 텍스트 형식) |
+| `DevelopmentConfig` | `func DevelopmentConfig() Config` | 개발 구성 (Debug 레벨) |
 | `JSONConfig` | `func JSONConfig() Config` | JSON 출력 구성 |
 
 ```go
@@ -88,7 +88,7 @@ logger, _ := dd.New(cfg)
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
 | `ConsoleOutput` | `func ConsoleOutput() OutputTarget` | 콘솔 출력 |
-| `FileOutput` | `func FileOutput(path string) OutputTarget` | 파일 출력(로테이션 지원) |
+| `FileOutput` | `func FileOutput(path string) OutputTarget` | 파일 출력 (로테이션 지원) |
 | `CustomOutput` | `func CustomOutput(w io.Writer) OutputTarget` | 사용자 정의 Writer 출력 |
 
 ```go
@@ -101,7 +101,7 @@ cfg.Targets = []dd.OutputTarget{
 logger, _ := dd.New(cfg)
 ```
 
-## 기본 로그(패키지 수준)
+## 기본 로그 (패키지 수준)
 
 다음 함수들은 전역 로거를 통해 로그를 출력합니다.
 
@@ -111,7 +111,7 @@ logger, _ := dd.New(cfg)
 | `Info` | `func Info(args ...any)` | Info 레벨 로그 |
 | `Warn` | `func Warn(args ...any)` | Warn 레벨 로그 |
 | `Error` | `func Error(args ...any)` | Error 레벨 로그 |
-| `Fatal` | `func Fatal(args ...any)` | Fatal 레벨 로그(기본적으로 os.Exit(1) 호출, **defer는 실행되지 않음**; FatalHandler로 사용자 정의 가능) |
+| `Fatal` | `func Fatal(args ...any)` | Fatal 레벨 로그 (기본적으로 os.Exit(1) 호출, **defer 는 실행되지 않음**; FatalHandler 로 사용자 정의 가능) |
 
 ```go
 dd.Info("애플리케이션 시작 완료")
@@ -119,7 +119,7 @@ dd.Errorf("사용자 %s 로그인 실패", username)
 dd.Warn("디스크 공간 부족")
 ```
 
-## 포맷팅 로그(패키지 수준)
+## 포맷팅 로그 (패키지 수준)
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
@@ -127,9 +127,9 @@ dd.Warn("디스크 공간 부족")
 | `Infof` | `func Infof(format string, args ...any)` | Info 레벨 포맷팅 로그 |
 | `Warnf` | `func Warnf(format string, args ...any)` | Warn 레벨 포맷팅 로그 |
 | `Errorf` | `func Errorf(format string, args ...any)` | Error 레벨 포맷팅 로그 |
-| `Fatalf` | `func Fatalf(format string, args ...any)` | Fatal 레벨 포맷팅 로그(기본적으로 os.Exit(1) 호출, **defer는 실행되지 않음**; FatalHandler로 사용자 정의 가능) |
+| `Fatalf` | `func Fatalf(format string, args ...any)` | Fatal 레벨 포맷팅 로그 (기본적으로 os.Exit(1) 호출, **defer 는 실행되지 않음**; FatalHandler 로 사용자 정의 가능) |
 
-## 범용 레벨 로그(패키지 수준)
+## 범용 레벨 로그 (패키지 수준)
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
@@ -146,7 +146,7 @@ dd.LogWith(dd.LevelError, "요청 실패",
 )
 ```
 
-## 구조화 로그(패키지 수준)
+## 구조화 로그 (패키지 수준)
 
 다음 함수들은 전역 로거를 통해 구조화 로그를 출력합니다.
 
@@ -156,7 +156,7 @@ dd.LogWith(dd.LevelError, "요청 실패",
 | `InfoWith` | `func InfoWith(msg string, fields ...Field)` | Info 레벨 구조화 로그 |
 | `WarnWith` | `func WarnWith(msg string, fields ...Field)` | Warn 레벨 구조화 로그 |
 | `ErrorWith` | `func ErrorWith(msg string, fields ...Field)` | Error 레벨 구조화 로그 |
-| `FatalWith` | `func FatalWith(msg string, fields ...Field)` | Fatal 레벨 구조화 로그(기본적으로 os.Exit(1) 호출, **defer는 실행되지 않음**; FatalHandler로 사용자 정의 가능) |
+| `FatalWith` | `func FatalWith(msg string, fields ...Field)` | Fatal 레벨 구조화 로그 (기본적으로 os.Exit(1) 호출, **defer 는 실행되지 않음**; FatalHandler 로 사용자 정의 가능) |
 
 ```go
 dd.InfoWith("요청 완료",
@@ -170,7 +170,7 @@ dd.ErrorWith("데이터베이스 오류",
 )
 ```
 
-## 레벨 관리(패키지 수준)
+## 레벨 관리 (패키지 수준)
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
@@ -187,13 +187,13 @@ dd.ErrorWith("데이터베이스 오류",
 // 동적으로 로그 레벨 조정
 dd.SetLevel(dd.LevelDebug)
 
-// 조건부 로그(불필요한 계산 회피)
+// 조건부 로그 (불필요한 계산 회피)
 if dd.IsDebugEnabled() {
     dd.Debug(computeExpensiveDebugInfo())
 }
 ```
 
-## 필드 체인(패키지 수준)
+## 필드 체인 (패키지 수준)
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
@@ -207,13 +207,13 @@ dd.WithFields(dd.String("service", "api"), dd.String("version", "1.0")).
 dd.WithField("request_id", "abc123").Info("요청 처리")
 ```
 
-## 라이프사이클(패키지 수준)
+## 라이프사이클 (패키지 수준)
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
 | `Flush` | `func Flush() error` | 전역 로그 버퍼 flush |
 
-## Writer 관리(패키지 수준)
+## Writer 관리 (패키지 수준)
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
@@ -221,7 +221,7 @@ dd.WithField("request_id", "abc123").Info("요청 처리")
 | `RemoveWriter` | `func RemoveWriter(writer io.Writer) error` | 출력 writer 제거 |
 | `WriterCount` | `func WriterCount() int` | writer 수 가져오기 |
 
-## 샘플링 제어(패키지 수준)
+## 샘플링 제어 (패키지 수준)
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
@@ -242,7 +242,7 @@ dd.WithField("request_id", "abc123").Info("요청 처리")
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
-| `DefaultSecurityConfig` | `func DefaultSecurityConfig() *SecurityConfig` | 기본 보안 구성(기본 필터) |
+| `DefaultSecurityConfig` | `func DefaultSecurityConfig() *SecurityConfig` | 기본 보안 구성 (기본 필터) |
 | `DefaultSecureConfig` | `func DefaultSecureConfig() *SecurityConfig` | 완전 보안 구성 |
 | `HealthcareConfig` | `func HealthcareConfig() *SecurityConfig` | HIPAA 규정 준수 구성 |
 | `FinancialConfig` | `func FinancialConfig() *SecurityConfig` | PCI-DSS 규정 준수 구성 |
@@ -283,7 +283,7 @@ dd.WithField("request_id", "abc123").Info("요청 처리")
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
-| `NewLoggerRecorder` | `func NewLoggerRecorder() *LoggerRecorder` | 로그 레코더 생성(테스트용) |
+| `NewLoggerRecorder` | `func NewLoggerRecorder() *LoggerRecorder` | 로그 레코더 생성 (테스트용) |
 
 ## 컨텍스트 함수
 
@@ -304,7 +304,7 @@ dd.WithField("request_id", "abc123").Info("요청 처리")
 
 ## 필드 생성자
 
-구조화 로그 필드(`Field`)를 생성하며, `*With` 시리즈 메서드나 `WithFields`와 함께 사용합니다.
+구조화 로그 필드 (`Field`) 를 생성하며, `*With` 시리즈 메서드나 `WithFields`와 함께 사용합니다.
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
@@ -325,8 +325,8 @@ dd.WithField("request_id", "abc123").Info("요청 처리")
 | `Float64` | `func Float64(key string, value float64) Field` | float64 필드 |
 | `Duration` | `func Duration(key string, value time.Duration) Field` | 기간 필드 |
 | `Time` | `func Time(key string, value time.Time) Field` | 시간 필드 |
-| `Err` | `func Err(err error) Field` | 오류 필드(key는 "error") |
-| `ErrWithKey` | `func ErrWithKey(key string, err error) Field` | 커스텀 key의 오류 필드 |
+| `Err` | `func Err(err error) Field` | 오류 필드 (key 는 "error") |
+| `ErrWithKey` | `func ErrWithKey(key string, err error) Field` | 커스텀 key 의 오류 필드 |
 | `ErrWithStack` | `func ErrWithStack(err error) Field` | 스택 트레이스 포함 오류 필드 |
 
 ```go
@@ -339,14 +339,14 @@ dd.InfoWith("요청 완료",
 ```
 
 :::tip 팁 타입 안전 권장
-`Any`보다 타입이 명확한 생성자(예: `Int`, `String`)를 우선 사용하면 컴파일 타임에 타입 오류를 잡아내어 런타임에 타입 불일치로 인한 문제를 방지할 수 있습니다.
+`Any`보다 타입이 명확한 생성자 (예: `Int`, `String`) 를 우선 사용하면 컴파일 타임에 타입 오류를 잡아내어 런타임에 타입 불일치로 인한 문제를 방지할 수 있습니다.
 :::
 
 ## 필드 검증 구성
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
-| `DefaultFieldValidationConfig` | `func DefaultFieldValidationConfig() *FieldValidationConfig` | 기본 필드 검증(검증 없음) |
+| `DefaultFieldValidationConfig` | `func DefaultFieldValidationConfig() *FieldValidationConfig` | 기본 필드 검증 (검증 없음) |
 | `StrictSnakeCaseConfig` | `func StrictSnakeCaseConfig() *FieldValidationConfig` | 엄격한 snake_case 검증 |
 | `StrictCamelCaseConfig` | `func StrictCamelCaseConfig() *FieldValidationConfig` | 엄격한 camelCase 검증 |
 
@@ -354,15 +354,15 @@ dd.InfoWith("요청 완료",
 
 | 함수 | 시그니처 | 설명 |
 |------|------|------|
-| `Print` | `func Print(args ...any)` | 전역 로그 Writer로 출력(LevelInfo, 보안 필터 적용) |
-| `Println` | `func Println(args ...any)` | Print와 동일(내부 Log()가 자동 줄바꿈, 보안 필터 적용) |
-| `Printf` | `func Printf(format string, args ...any)` | 포맷팅 출력(LevelInfo, 보안 필터 적용) |
-| `JSON` | `func JSON(data ...any)` | stdout으로 컴팩트 JSON 출력(caller 정보 포함, 보안 필터 미적용) |
-| `JSONF` | `func JSONF(format string, args ...any)` | 포맷팅 문자열을 컴팩트 JSON으로 stdout에 출력(caller 정보 포함, 보안 필터 미적용) |
-| `Text` | `func Text(data ...any)` | stdout으로 보기 좋게 출력(보안 필터 미적용) |
-| `Textf` | `func Textf(format string, args ...any)` | stdout으로 포맷팅된 텍스트 출력(보안 필터 미적용) |
-| `Exit` | `func Exit(data ...any)` | caller 정보 포함 텍스트 출력 후 종료(exit code 0), 복잡한 타입은 자동 보기 좋게 출력, 보안 필터 미적용 |
-| `Exitf` | `func Exitf(format string, args ...any)` | caller 정보 포함 포맷팅 출력 후 종료(exit code 0, 보안 필터 미적용) |
+| `Print` | `func Print(args ...any)` | 전역 로그 Writer 로 출력 (LevelInfo, 보안 필터 적용) |
+| `Println` | `func Println(args ...any)` | Print 와 동일 (내부 Log() 가 자동 줄바꿈, 보안 필터 적용) |
+| `Printf` | `func Printf(format string, args ...any)` | 포맷팅 출력 (LevelInfo, 보안 필터 적용) |
+| `JSON` | `func JSON(data ...any)` | stdout 으로 컴팩트 JSON 출력 (caller 정보 포함, 보안 필터 미적용) |
+| `JSONF` | `func JSONF(format string, args ...any)` | 포맷팅 문자열을 컴팩트 JSON 으로 stdout 에 출력 (caller 정보 포함, 보안 필터 미적용) |
+| `Text` | `func Text(data ...any)` | stdout 으로 보기 좋게 출력 (보안 필터 미적용) |
+| `Textf` | `func Textf(format string, args ...any)` | stdout 으로 포맷팅된 텍스트 출력 (보안 필터 미적용) |
+| `Exit` | `func Exit(data ...any)` | caller 정보 포함 텍스트 출력 후 종료 (exit code 0), 복잡한 타입은 자동 보기 좋게 출력, 보안 필터 미적용 |
+| `Exitf` | `func Exitf(format string, args ...any)` | caller 정보 포함 포맷팅 출력 후 종료 (exit code 0, 보안 필터 미적용) |
 
 :::warning 경고 디버그 함수 보안 알림
 `Print`/`Println`/`Printf`는 보안 필터를 거치지만, `JSON`/`JSONF`/`Text`/`Textf`/`Exit`/`Exitf`는 원본 데이터를 직접 출력하며 **보안 필터를 거치지 않습니다**.

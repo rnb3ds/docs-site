@@ -168,7 +168,7 @@ if err != nil {
 
 ```go
 pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
-// 输出:
+// 输出：
 // {
 //   "name": "Alice",
 //   "age": 30
@@ -232,7 +232,7 @@ for _, ve := range errors {
 
 ```go
 compact, err := p.Compact(`{"name": "CyberGo"}`)
-// 输出: {"name":"CyberGo"}
+// 输出：{"name":"CyberGo"}
 ```
 
 ### CompactBuffer

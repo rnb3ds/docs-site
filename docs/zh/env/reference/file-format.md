@@ -310,7 +310,7 @@ const (
 
 ```go
 format := env.FormatJSON
-fmt.Println(format.String())  // 输出: json
+fmt.Println(format.String())  // 输出：json
 ```
 
 ## 最佳实践

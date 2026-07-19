@@ -1,14 +1,14 @@
 ---
 sidebar_label: "ミドルウェア"
 title: "ミドルウェア - CyberGo HTTPC | 内蔵ミドルウェア"
-description: "HTTPC ミドルウェア API リファレンス: Chain オニオンモデル組み合わせと Recovery、Logging、RequestID、Timeout、Metrics、Audit など 8 つの内蔵ミドルウェア、監査設定の完全な説明を提供します。"
+description: "HTTPC ミドルウェア API リファレンス：Chain オニオンモデル組み合わせと Recovery、Logging、RequestID、Timeout、Metrics、Audit など 8 つの内蔵ミドルウェア、監査設定の完全な説明を提供します。"
 sidebar_position: 5
 ---
 
 # ミドルウェア
 
 :::tip アーキテクチャ概要
-このページは**内蔵ミドルウェアのリファレンス**です。Handler パイプラインの全体アーキテクチャ、オニオンモデルの原理、カスタムミドルウェアの作成については [ハンドラパイプライン / Handlerとミドルウェアチェーン](../handler/handler-chain) を参照してください。
+このページは**内蔵ミドルウェアのリファレンス**です。Handler パイプラインの全体アーキテクチャ、オニオンモデルの原理、カスタムミドルウェアの作成については [ハンドラパイプライン / Handler とミドルウェアチェーン](../handler/handler-chain) を参照してください。
 :::
 
 HTTPC はオニオンモデルのミドルウェアアーキテクチャを採用し、`MiddlewareFunc` を通じてリクエスト処理ロジックをラップします。
@@ -83,7 +83,7 @@ client, _ := httpc.New(&httpc.Config{
         },
     },
 })
-// 出力例: GET https://api.example.com/data -> 200 (125ms)
+// 出力例：GET https://api.example.com/data -> 200 (125ms)
 ```
 
 ### RequestIDMiddleware

@@ -84,7 +84,7 @@ _ = dd.SetLevel(dd.LevelDebug)      // 修改全局日志记录器级别
 
 ```go
 fw, _ := dd.NewFileWriter("logs/app.log",
-    dd.DefaultFileWriterConfig(),  // 100MB, 30天, 10个备份
+    dd.DefaultFileWriterConfig(),  // 100MB, 30 天，10 个备份
 )
 ```
 
@@ -129,7 +129,7 @@ filter, _ := dd.NewCustomSensitiveDataFilter(
 cfg, _ := dd.DefaultIntegrityConfigSafe()
 signer, _ := dd.NewIntegritySigner(cfg)
 sig := signer.Sign(logMessage)
-// 验证: signer.Verify(signedEntry)
+// 验证：signer.Verify(signedEntry)
 ```
 
 ## 错误处理

@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Processor"
 title: "Processor - CyberGo JWT | 핵심 토큰 조작 타입"
-description: "Processor는 CyberGo JWT 핵심 타입으로 Create·Validate·Refresh·Revoke·IsRevoked·ParseUnverified·Close 등 토큰 조작 메서드의 시그니처·매개변수·반환값·오류와 예시를 제공합니다."
+description: "Processor 는 CyberGo JWT 핵심 타입으로 Create·Validate·Refresh·Revoke·IsRevoked·ParseUnverified·Close 등 토큰 조작 메서드의 시그니처·매개변수·반환값·오류와 예시를 제공합니다."
 sidebar_position: 20
 ---
 
 # Processor
 
-Processor는 JWT 작업의 핵심 타입으로, [`TokenManager`](./interfaces#tokenmanager) 인터페이스를 구현합니다. 모든 메서드는 동시성에 안전합니다.
+Processor 는 JWT 작업의 핵심 타입으로, [`TokenManager`](./interfaces#tokenmanager) 인터페이스를 구현합니다. 모든 메서드는 동시성에 안전합니다.
 
 [`jwt.New(cfg)`](./functions#new)로 인스턴스를 생성합니다.
 
@@ -38,7 +38,7 @@ func (p *Processor) Create(claims CustomClaims) (string, error)
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrInvalidClaims` | Claims 검증 실패 |
 | `ErrRateLimitExceeded` | 속도 제한 임계값 초과 |
 
@@ -62,7 +62,7 @@ token, err := processor.Create(myClaims)
 func (p *Processor) Validate(tokenString string) (Claims, bool, error)
 ```
 
-JWT 액세스 토큰을 검증하고 파싱된 Claims를 반환합니다.
+JWT 액세스 토큰을 검증하고 파싱된 Claims 를 반환합니다.
 
 
 
@@ -84,7 +84,7 @@ JWT 액세스 토큰을 검증하고 파싱된 Claims를 반환합니다.
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrEmptyToken` | 토큰이 비어있음 |
 | `ErrInvalidToken` | 서명이 무효함 |
 | `ErrAlgorithmMismatch` | 토큰 알고리즘이 설정과 불일치 |
@@ -138,7 +138,7 @@ func (p *Processor) CreateRefresh(claims CustomClaims) (string, error)
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrInvalidClaims` | Claims 검증 실패 |
 | `ErrRateLimitExceeded` | 속도 제한 임계값 초과 |
 
@@ -158,7 +158,7 @@ func (p *Processor) Refresh(refreshTokenString string) (string, error)
 :::
 
 :::warning 보안 안내
-갱신 시 표준 JWT 필드(exp, nbf, iss, aud, 블랙리스트)와 기본 구조 유효성(UserID 또는 Username 필수)만 검증합니다. 심층 필드 제약(길이 제한, 인젝션 패턴)은 생성 시 이미 검증되었으므로 재검사하지 않습니다.
+갱신 시 표준 JWT 필드 (exp, nbf, iss, aud, 블랙리스트) 와 기본 구조 유효성 (UserID 또는 Username 필수) 만 검증합니다. 심층 필드 제약 (길이 제한, 인젝션 패턴) 은 생성 시 이미 검증되었으므로 재검사하지 않습니다.
 :::
 
 
@@ -180,7 +180,7 @@ func (p *Processor) Refresh(refreshTokenString string) (string, error)
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrEmptyToken` | 토큰이 비어있음 |
 | `ErrInvalidToken` | 서명이 무효함 |
 | `ErrAlgorithmMismatch` | 토큰 알고리즘이 설정과 불일치 |
@@ -191,7 +191,7 @@ func (p *Processor) Refresh(refreshTokenString string) (string, error)
 | `ErrTokenInvalidAudience` | 수신자가 불일치함 |
 | `ErrTokenRevoked` | 토큰이 취소됨 |
 | `ErrInvalidClaims` | Claims 검증 실패 |
-| `ErrTokenTypeMismatch` | 액세스 토큰(`token_type=access`)으로 갱신 시도 |
+| `ErrTokenTypeMismatch` | 액세스 토큰 (`token_type=access`) 으로 갱신 시도 |
 | `ErrRateLimitExceeded` | 속도 제한 임계값 초과 |
 
 ---
@@ -235,7 +235,7 @@ if valid {
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrEmptyToken` | 토큰이 비어있음 |
 | `ErrInvalidToken` | 서명이 무효함 |
 | `ErrAlgorithmMismatch` | 토큰 알고리즘이 설정과 불일치 |
@@ -255,7 +255,7 @@ if valid {
 func (p *Processor) RefreshInto(refreshTokenString string, claims CustomClaims) (string, error)
 ```
 
-커스텀 Claims로 토큰을 갱신합니다. Claims 객체의 시간 필드(`IssuedAt`, `ExpiresAt`, `ID`)는 작업 후 자동으로 복원되며, 오류나 panic이 발생해도 복원이 보장됩니다.
+커스텀 Claims 로 토큰을 갱신합니다. Claims 객체의 시간 필드 (`IssuedAt`, `ExpiresAt`, `ID`) 는 작업 후 자동으로 복원되며, 오류나 panic 이 발생해도 복원이 보장됩니다.
 
 :::info 토큰 타입 검사
 `token_type=access`인 토큰은 거부됩니다 ([`ErrTokenTypeMismatch`](./errors#센티넬-오류) 반환). 액세스 토큰이 새 토큰을 얻는 데 사용되는 것을 방지; 하위 호환성을 위해 `token_type`이 없는 구형 토큰은 여전히 허용됩니다.
@@ -285,7 +285,7 @@ func (p *Processor) RefreshInto(refreshTokenString string, claims CustomClaims) 
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrEmptyToken` | 토큰이 비어있음 |
 | `ErrInvalidToken` | 서명이 무효함 |
 | `ErrAlgorithmMismatch` | 토큰 알고리즘이 설정과 불일치 |
@@ -296,7 +296,7 @@ func (p *Processor) RefreshInto(refreshTokenString string, claims CustomClaims) 
 | `ErrTokenInvalidAudience` | 수신자가 불일치함 |
 | `ErrTokenRevoked` | 토큰이 취소됨 |
 | `ErrInvalidClaims` | Claims 검증 실패 |
-| `ErrTokenTypeMismatch` | 액세스 토큰(`token_type=access`)으로 갱신 시도 |
+| `ErrTokenTypeMismatch` | 액세스 토큰 (`token_type=access`) 으로 갱신 시도 |
 | `ErrRateLimitExceeded` | 속도 제한 임계값 초과 |
 
 ---
@@ -307,12 +307,12 @@ func (p *Processor) RefreshInto(refreshTokenString string, claims CustomClaims) 
 func (p *Processor) Revoke(tokenString string) error
 ```
 
-서명을 검증하고 토큰 ID (jti)를 추출하여 토큰을 블랙리스트에 추가합니다. 유효한 서명을 가진 토큰만 취소할 수 있으며, 악의적인 호출자가 임의의 토큰 ID를 블랙리스트에 추가하는 것을 방지합니다.
+서명을 검증하고 토큰 ID (jti) 를 추출하여 토큰을 블랙리스트에 추가합니다. 유효한 서명을 가진 토큰만 취소할 수 있으며, 악의적인 호출자가 임의의 토큰 ID 를 블랙리스트에 추가하는 것을 방지합니다.
 
 :::info TTL 동작
-- 토큰의 `exp`가 블랙리스트 항목의 TTL을 결정합니다
-- `exp`가 없는 토큰은 기본 7일 TTL을 사용합니다
-- TTL 상한은 30일이며, 위조된 과도하게 긴 `exp`가 메모리를 잠그는 것을 방지합니다 (DoS 방어)
+- 토큰의 `exp`가 블랙리스트 항목의 TTL 을 결정합니다
+- `exp`가 없는 토큰은 기본 7 일 TTL 을 사용합니다
+- TTL 상한은 30 일이며, 위조된 과도하게 긴 `exp`가 메모리를 잠그는 것을 방지합니다 (DoS 방어)
 - 만료된 토큰도 취소할 수 있으며, 항목은 블랙리스트에서 자동으로 정리됩니다
 :::
 
@@ -334,7 +334,7 @@ func (p *Processor) Revoke(tokenString string) error
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrEmptyToken` | 토큰이 비어있음 |
 | `ErrBlacklistNotConfigured` | 블랙리스트가 설정되지 않음 |
 | `ErrInvalidToken` | 서명이 무효하거나 토큰이 잘못됨 |
@@ -371,7 +371,7 @@ func (p *Processor) IsRevoked(tokenString string) (bool, error)
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrEmptyToken` | 토큰이 비어있음 |
 | `ErrInvalidToken` | 서명이 무효하거나 토큰이 잘못됨 |
 | `ErrTokenInvalidIssuer` | 발급자가 불일치함 |
@@ -389,7 +389,7 @@ func (p *Processor) ParseUnverified(tokenString string, claims any) error
 서명을 검증하지 않고 토큰을 파싱합니다. Claims 정보를 추출하지만 신뢰할 필요가 없는 시나리오에 적합합니다.
 
 :::danger 경고
-반환된 Claims는 검증되지 않았으므로 **신뢰할 수 없습니다**. 디버깅이나 로깅 시나리오에만 사용하세요.
+반환된 Claims 는 검증되지 않았으므로 **신뢰할 수 없습니다**. 디버깅이나 로깅 시나리오에만 사용하세요.
 :::
 
 
@@ -411,7 +411,7 @@ func (p *Processor) ParseUnverified(tokenString string, claims any) error
 
 | 오류 | 발생 조건 |
 |------|----------|
-| `ErrProcessorClosed` | Processor가 종료됨 |
+| `ErrProcessorClosed` | Processor 가 종료됨 |
 | `ErrEmptyToken` | 토큰이 비어있음 |
 | 래핑된 오류 | 잘못된 형식의 토큰에 대해 래핑된 파싱 오류 반환 (센티넬 오류가 아님; `errors.Is`로 매치할 수 없음) |
 
@@ -441,7 +441,7 @@ func (p *Processor) Close() error
 func (p *Processor) IsClosed() bool
 ```
 
-Processor가 종료되었는지 확인합니다.
+Processor 가 종료되었는지 확인합니다.
 
 
 

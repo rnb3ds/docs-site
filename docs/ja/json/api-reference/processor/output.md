@@ -168,7 +168,7 @@ JSON 文字列をインデント付きでフォーマットします。
 
 ```go
 pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
-// 出力:
+// 出力：
 // {
 //   "name": "Alice",
 //   "age": 30
@@ -232,7 +232,7 @@ JSON 文字列を圧縮し、すべての空白文字を削除します。
 
 ```go
 compact, err := p.Compact(`{"name": "CyberGo"}`)
-// 出力: {"name":"CyberGo"}
+// 出力：{"name":"CyberGo"}
 ```
 
 ### CompactBuffer

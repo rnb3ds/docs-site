@@ -1,7 +1,7 @@
 ---
 sidebar_label: "パッケージ関数とクライアントメソッド"
 title: "パッケージ関数とクライアントメソッド - CyberGo HTTPC | HTTP メソッド API"
-description: "HTTPC パッケージ関数とクライアントメソッド API リファレンス: Get/Post など 7 種類の HTTP メソッド、New クライアント作成、Download 統合ダウンロードエントリ、FormatBytes/FormatSpeed ツール、NewDomain ドメインクライアント作成の完全な使い方を提供し、リクエストオプションと組み合わせて柔軟な設定を実現します。"
+description: "HTTPC パッケージ関数とクライアントメソッド API リファレンス：Get/Post など 7 種類の HTTP メソッド、New クライアント作成、Download 統合ダウンロードエントリ、FormatBytes/FormatSpeed ツール、NewDomain ドメインクライアント作成の完全な使い方を提供し、リクエストオプションと組み合わせて柔軟な設定を実現します。"
 sidebar_position: 1
 ---
 

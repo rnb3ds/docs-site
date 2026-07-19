@@ -28,9 +28,9 @@ HTML 라이브러리는 다음 핵심 컴포넌트를 제공합니다:
 
 ```text
 ┌─────────────────────────────────────────┐
-│         패키지 함수(편의 모드)              │
+│         패키지 함수 (편의 모드)              │
 │  html.Extract(data) → *Result, error    │
-│  내부적으로 sync.Pool로 Processor 재사용   │
+│  내부적으로 sync.Pool 로 Processor 재사용   │
 └─────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
@@ -49,7 +49,7 @@ HTML 라이브러리는 다음 핵심 컴포넌트를 제공합니다:
 | 기본 | `Extract*` | `Extract`, `ExtractText` |
 | 파일에서 | `Extract*FromFile` | `ExtractFromFile` |
 | 컨텍스트 포함 | `Extract*WithContext` | `ExtractWithContext` |
-| 파일+컨텍스트 | `Extract*FromFileWithContext` | `ExtractFromFileWithContext` |
+| 파일 + 컨텍스트 | `Extract*FromFileWithContext` | `ExtractFromFileWithContext` |
 
 ### 모듈 정보
 

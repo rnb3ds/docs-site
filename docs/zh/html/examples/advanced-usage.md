@@ -71,8 +71,8 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("正文:", result.Text)
-    // 正文: 深入理解 Go 并发
+    fmt.Println("正文：", result.Text)
+    // 正文：深入理解 Go 并发
     //
     // goroutine 是 Go 的轻量级线程。
 }
@@ -134,7 +134,7 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("正文:", result.Text)
+    fmt.Println("正文：", result.Text)
     // 审计日志自动记录到文件和 stderr
 }
 ```
@@ -176,7 +176,7 @@ func main() {
     // 单批上限 10000；超出会整批失败，需调用方自行分批
     batch := p.ExtractBatchFiles(files)
 
-    fmt.Printf("成功: %d, 失败: %d, 取消: %d\n",
+    fmt.Printf("成功：%d, 失败：%d, 取消：%d\n",
         batch.Success, batch.Failed, batch.Cancelled)
 
     // 处理结果
@@ -250,7 +250,7 @@ func extractHandler(w http.ResponseWriter, r *http.Request) {
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
     stats := processor.GetStatistics()
-    fmt.Fprintf(w, "已处理: %d\n缓存命中: %d\n错误: %d\n",
+    fmt.Fprintf(w, "已处理：%d\n缓存命中：%d\n错误：%d\n",
         stats.TotalProcessed, stats.CacheHits, stats.ErrorCount)
 }
 

@@ -11,11 +11,11 @@ sidebar_position: 5
 
 ## 스레드 안전
 
-`SecureValue`의 모든 메서드는 스레드 안전하며, 여러 goroutine에서 동시에 사용할 수 있습니다:
+`SecureValue`의 모든 메서드는 스레드 안전하며, 여러 goroutine 에서 동시에 사용할 수 있습니다:
 
-- **읽기 메서드**(`String()`, `Bytes()`, `Length()`, `Masked()`)는 읽기 잠금을 사용하여 동시 읽기를 지원
-- **닫기 메서드**(`Close()`, `Release()`)는 쓰기 잠금을 사용하여 안전한 제로화 보장
-- **상태 확인**(`IsClosed()`, `IsMemoryLocked()`)은 원자 연산 사용
+- **읽기 메서드**(`String()`, `Bytes()`, `Length()`, `Masked()`) 는 읽기 잠금을 사용하여 동시 읽기를 지원
+- **닫기 메서드**(`Close()`, `Release()`) 는 쓰기 잠금을 사용하여 안전한 제로화 보장
+- **상태 확인**(`IsClosed()`, `IsMemoryLocked()`) 은 원자 연산 사용
 
 ```go
 secret := env.GetSecure("API_KEY")
@@ -114,7 +114,7 @@ if secret != nil {
 ```
 
 :::tip 방어적 복사본
-`GetSecure`는 원본 값의 복사본을 반환하며, 부모 Loader와 독립적입니다. 호출자가 `Release()` 또는 `Close()`를 호출하여 해제할 책임이 있습니다.
+`GetSecure`는 원본 값의 복사본을 반환하며, 부모 Loader 와 독립적입니다. 호출자가 `Release()` 또는 `Close()`를 호출하여 해제할 책임이 있습니다.
 :::
 
 ---
@@ -130,13 +130,13 @@ func (sv *SecureValue) String() string
 마스크 표현을 반환하며, 로깅 및 포맷팅에 안전합니다. `fmt.Stringer` 인터페이스를 구현하여 `fmt.Printf`, `log.Println` 또는 오류 래핑을 통한 비밀 키의 우발적 노출을 방지합니다.
 
 **반환값:**
-- `string` - 마스크 표현 (예: `[SECURE:32 bytes]`), nil인 경우 `[NIL]` 반환
+- `string` - 마스크 표현 (예: `[SECURE:32 bytes]`), nil 인 경우 `[NIL]` 반환
 
 ```go
 secret := env.GetSecure("PASSWORD")
 if secret != nil {
     log.Printf("Password: %s", secret)  // 안전함, 마스크 표현 출력
-    // log.Printf("Password: %s", secret.Masked())와 동일
+    // log.Printf("Password: %s", secret.Masked()) 와 동일
 }
 ```
 
@@ -155,14 +155,14 @@ func (sv *SecureValue) Reveal() string
 평문 값을 반환합니다. 호출자는 반환된 문자열을 안전하게 처리할 책임이 있습니다 -- 로깅, 직렬화 또는 영구 저장소에 저장하는 것을 피하세요. 암호화 작업, API 호출 또는 유사한 보안 처리를 위해 실제 값이 필요한 경우에만 사용하세요.
 
 **반환값:**
-- `string` - 평문 값, 닫혔거나 nil인 경우 빈 문자열 반환
+- `string` - 평문 값, 닫혔거나 nil 인 경우 빈 문자열 반환
 
 ```go
 secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
     plaintext := secret.Reveal()  // 평문 값 가져오기
-    // plaintext를 사용하여 API 호출 등의 보안 작업 수행
+    // plaintext 를 사용하여 API 호출 등의 보안 작업 수행
     _ = plaintext
 }
 ```
@@ -236,7 +236,7 @@ secret := env.GetSecure("API_KEY")
 if secret != nil {
     log.Printf("API Key: %s", secret.Masked())
     // 출력: API Key: [SECURE:32 bytes]
-    // 주: 메모리 잠금을 활성화(SetMemoryLockEnabled(true))하고 잠금에 성공한 경우에만
+    // 주: 메모리 잠금을 활성화 (SetMemoryLockEnabled(true)) 하고 잠금에 성공한 경우에만
     // 마스크에 " locked" 접미사가 추가됩니다 (" lock-failed" / " unlocked"도 있음)
 }
 ```
@@ -362,7 +362,7 @@ if err := secret.MemoryLockError(); err != nil {
 func SetMemoryLockEnabled(enabled bool)
 ```
 
-전역적으로 메모리 잠금을 활성화/비활성화합니다. 이후 생성되는 모든 SecureValue에 영향을 미칩니다.
+전역적으로 메모리 잠금을 활성화/비활성화합니다. 이후 생성되는 모든 SecureValue 에 영향을 미칩니다.
 
 **매개변수:**
 - `enabled` - 활성화 여부
@@ -376,7 +376,7 @@ func main() {
     // 애플리케이션 시작 시 활성화
     env.SetMemoryLockEnabled(true)
 
-    // 이후 모든 SecureValue가 잠금을 시도함
+    // 이후 모든 SecureValue 가 잠금을 시도함
 }
 ```
 
@@ -461,7 +461,7 @@ func IsMemoryLockSupported() bool
 | wasm | ❌ |
 
 :::warning 참고
-`true`를 반환하는 것은 플랫폼이 지원함을 의미할 뿐, 프로세스에 충분한 권한이 있음을 보장하지 않습니다. Linux에서는 `CAP_IPC_LOCK` 또는 root 권한이 필요합니다.
+`true`를 반환하는 것은 플랫폼이 지원함을 의미할 뿐, 프로세스에 충분한 권한이 있음을 보장하지 않습니다. Linux 에서는 `CAP_IPC_LOCK` 또는 root 권한이 필요합니다.
 :::
 
 ```go
@@ -489,7 +489,7 @@ func ClearBytes(b []byte)
 sensitive := []byte("secret-data")
 // 사용...
 env.ClearBytes(sensitive)
-// sensitive는 이제 모두 0
+// sensitive 는 이제 모두 0
 ```
 
 ---
@@ -542,7 +542,7 @@ func MaskValue(key, value string) string
 masked := env.MaskValue("API_KEY", "secret123")
 // 반환: [MASKED:9 chars]
 
-// 민감하지 않은 키 - 원래 값 반환 (20자 초과 시 잘림)
+// 민감하지 않은 키 - 원래 값 반환 (20 자 초과 시 잘림)
 masked := env.MaskValue("APP_NAME", "myapp")
 // 반환: myapp
 ```
@@ -576,7 +576,7 @@ masked := env.MaskKey("DB_PASSWORD")
 func SanitizeForLog(s string) string
 ```
 
-문자열에서 민감한 키-값 쌍 정보를 정리합니다. `key=value` 형식의 민감한 값을 자동으로 감지하고 마스킹합니다.
+문자열에서 민감한 키 - 값 쌍 정보를 정리합니다. `key=value` 형식의 민감한 값을 자동으로 감지하고 마스킹합니다.
 
 **매개변수:**
 - `s` - 원래 문자열
@@ -585,7 +585,7 @@ func SanitizeForLog(s string) string
 - `string` - 정리된 문자열
 
 ```go
-// 민감한 키-값 쌍 자동 마스킹
+// 민감한 키 - 값 쌍 자동 마스킹
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
 // 반환: "Connected with password=[MASKED] api_key=[MASKED]"
@@ -599,7 +599,7 @@ clean := env.SanitizeForLog(msg)
 func MaskSensitiveInString(s string) string
 ```
 
-문자열에서 잠재적으로 민감한 내용을 마스킹합니다. 50자를 초과하는 문자열은 잘립니다.
+문자열에서 잠재적으로 민감한 내용을 마스킹합니다. 50 자를 초과하는 문자열은 잘립니다.
 
 **매개변수:**
 - `s` - 원래 문자열
@@ -615,7 +615,7 @@ clean := env.MaskSensitiveInString(long)
 ```
 
 :::tip 사용 사례
-민감한 데이터가 포함될 수 있는 긴 문자열을 자르는 데 사용합니다. 민감한 키-값 쌍을 자동으로 마스킹하려면 `SanitizeForLog`를 사용하세요.
+민감한 데이터가 포함될 수 있는 긴 문자열을 자르는 데 사용합니다. 민감한 키 - 값 쌍을 자동으로 마스킹하려면 `SanitizeForLog`를 사용하세요.
 :::
 
 ---

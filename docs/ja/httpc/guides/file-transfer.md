@@ -1,7 +1,7 @@
 ---
 sidebar_label: "ファイルアップロードとダウンロード"
 title: "ファイルアップロードとダウンロード - CyberGo HTTPC | アップロードと取得"
-description: "HTTPC ファイルアップロードとダウンロードガイド: WithFile アップロード、WithFormData マルチファイル、Download 統合ダウンロード、レジューム ResumeDownload、SHA-256 チェックサムなどセキュリティ防護を解説します。"
+description: "HTTPC ファイルアップロードとダウンロードガイド：WithFile アップロード、WithFormData マルチファイル、Download 統合ダウンロード、レジューム ResumeDownload、SHA-256 チェックサムなどセキュリティ防護を解説します。"
 sidebar_position: 4
 ---
 
@@ -34,7 +34,7 @@ func main() {
         log.Fatal(err)
     }
 
-    log.Printf("アップロード完了: %d", result.StatusCode()) // 出力例：アップロード完了: 200（実際のステータスコードはサーバーに依存）
+    log.Printf("アップロード完了：%d", result.StatusCode()) // 出力例：アップロード完了：200（実際のステータスコードはサーバーに依存）
 }
 ```
 
@@ -147,7 +147,7 @@ if err != nil {
 }
 
 if result.Resumed {
-    fmt.Printf("レジューム完了: ブレイクポイントから再開\n")
+    fmt.Printf("レジューム完了：ブレイクポイントから再開\n")
 }
 ```
 

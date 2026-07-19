@@ -153,7 +153,7 @@ func newCustomParser(cfg env.Config, factory *env.ComponentFactory) *CustomParse
     }
 }
 
-// カスタムフォーマット定数の定義（100以上の値を使用して衝突を回避することを推奨）
+// カスタムフォーマット定数の定義（100 以上の値を使用して衝突を回避することを推奨）
 const FormatCustom env.FileFormat = 100
 
 // パーサーの登録
@@ -307,7 +307,7 @@ go func() {
 
 #### CloseableChannelHandler メソッド
 
-`CloseableChannelHandler` は `AuditHandler` インターフェース（`Log` / `Close`）を実装するほか、以下の固有のメソッドを提供します:
+`CloseableChannelHandler` は `AuditHandler` インターフェース（`Log` / `Close`）を実装するほか、以下の固有のメソッドを提供します：
 
 ```go
 func (h *CloseableChannelHandler) Channel() <-chan AuditEvent
@@ -509,7 +509,7 @@ const (
 **カスタムフォーマット：**
 
 ```go
-// カスタムフォーマット定数の定義（100以上の値を使用して衝突を回避することを推奨）
+// カスタムフォーマット定数の定義（100 以上の値を使用して衝突を回避することを推奨）
 const (
     FormatTOML  env.FileFormat = 100
     FormatINI   env.FileFormat = 101
@@ -560,7 +560,7 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 
 **注意事項：**
 - `env.New()` を呼び出す前に登録する必要がある
-- 組み込みフォーマットとの衝突を避けるため100以上の値を使用することを推奨
+- 組み込みフォーマットとの衝突を避けるため 100 以上の値を使用することを推奨
 - ファクトリー関数はスレッドセーフなパーサーを返すべき
 
 ```go
@@ -605,7 +605,7 @@ func init() {
 
 // 4. カスタムフォーマットを使用
 func main() {
-    // 登録は init() で完了済み（mainより先に実行）
+    // 登録は init() で完了済み（main より先に実行）
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 
@@ -692,7 +692,7 @@ type EnvParser interface {
 
 ## 組み込みパーサー
 
-ライブラリは3種類のフォーマットパーサーを組み込みで提供：
+ライブラリは 3 種類のフォーマットパーサーを組み込みで提供：
 
 ### DotEnv Parser
 

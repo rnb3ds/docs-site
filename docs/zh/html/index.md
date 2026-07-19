@@ -47,8 +47,8 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println(result.Title) // 输出: 示例
-    fmt.Println(result.Text)  // 输出: 标题\n\n正文内容
+    fmt.Println(result.Title) // 输出：示例
+    fmt.Println(result.Text)  // 输出：标题\n\n正文内容
 }
 ```
 

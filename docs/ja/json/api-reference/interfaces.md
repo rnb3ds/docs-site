@@ -112,7 +112,7 @@ type SizeValidator struct {
 func (v *SizeValidator) Validate(jsonStr string) error {
     // 入力データのサイズをチェック
     if int64(len(jsonStr)) > v.MaxSize {
-        return fmt.Errorf("JSON が最大サイズを超過: %d", v.MaxSize)
+        return fmt.Errorf("JSON が最大サイズを超過：%d", v.MaxSize)
     }
     return nil
 }
@@ -150,7 +150,7 @@ type Hook interface {
 
 ```go
 type HookContext struct {
-    Operation string        // 操作タイプ: "get", "set", "delete", "marshal", "unmarshal"
+    Operation string        // 操作タイプ："get", "set", "delete", "marshal", "unmarshal"
     JSONStr   string        // 入力 JSON 文字列（marshal 時は空の可能性あり）。セキュリティ警告：機密データが含まれる可能性があります
     Path      string        // 対象パス（marshal/unmarshal 時は空の可能性あり）
     Value     any           // set 操作の値
@@ -538,7 +538,7 @@ result := p.SafeGet(data, "user.age")
 age, err := result.AsInt()
 
 // フォーマット変換 - 任意の値を文字列に変換
-str, err := result.AsStringConverted() // 例: 30 -> "30"
+str, err := result.AsStringConverted() // 例：30 -> "30"
 ```
 
 ## Schema 型

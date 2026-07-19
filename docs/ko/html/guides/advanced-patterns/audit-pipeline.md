@@ -11,7 +11,7 @@ sidebar_position: 2
 
 ## 빠른 활성화
 
-3줄의 코드로 감사를 활성화하는 가장 간단한 설정:
+3 줄의 코드로 감사를 활성화하는 가장 간단한 설정:
 
 ```go
 cfg := html.DefaultConfig()
@@ -28,14 +28,14 @@ defer p.Close()
 
 | 이벤트 | 상수 | 레벨 | 트리거 조건 |
 |------|------|------|----------|
-| 태그 차단 | `blocked_tag` | warning | 위험한 태그가 제거됨(예: `<script>`) |
-| 속성 차단 | `blocked_attr` | warning | 위험한 속성이 제거됨(예: `onclick`) |
-| URL 차단 | `blocked_url` | warning | 위험한 URL이 차단됨 |
+| 태그 차단 | `blocked_tag` | warning | 위험한 태그가 제거됨 (예: `<script>`) |
+| 속성 차단 | `blocked_attr` | warning | 위험한 속성이 제거됨 (예: `onclick`) |
+| URL 차단 | `blocked_url` | warning | 위험한 URL 이 차단됨 |
 | 입력 위반 | `input_violation` | critical | 입력이 크기 제한을 초과함 |
 | 깊이 위반 | `depth_violation` | warning | DOM 중첩이 제한을 초과함 |
 | 처리 타임아웃 | `timeout` | warning | 단일 처리가 타임아웃됨 |
 | 인코딩 문제 | `encoding_issue` | info | 인코딩 감지 실패 |
-| 경로 순회 | `path_traversal` | critical | 파일 경로에 `..`가 포함되거나, `AllowedBaseDir` 모드에서 OS 핸들 해석 후 경로가 기준을 벗어나는 경우(symlink/junction 방지) |
+| 경로 순회 | `path_traversal` | critical | 파일 경로에 `..`가 포함되거나, `AllowedBaseDir` 모드에서 OS 핸들 해석 후 경로가 기준을 벗어나는 경우 (symlink/junction 방지) |
 
 ## 감사 레벨
 
@@ -43,9 +43,9 @@ defer p.Close()
 info < warning < critical
 ```
 
-- **info**: 정보성 이벤트(인코딩 문제), 알림 불필요
-- **warning**: 주의가 필요한 이상(타임아웃, 깊이 위반)
-- **critical**: 보안 위협(입력 위반, 경로 순회)
+- **info**: 정보성 이벤트 (인코딩 문제), 알림 불필요
+- **warning**: 주의가 필요한 이상 (타임아웃, 깊이 위반)
+- **critical**: 보안 위협 (입력 위반, 경로 순회)
 
 ## 내장 Sink 타입
 
@@ -54,16 +54,16 @@ info < warning < critical
 `[AUDIT]` 접두사와 함께 표준 오류로 출력:
 
 ```go
-// 기본적으로 stderr로 출력
+// 기본적으로 stderr 로 출력
 sink := html.NewLoggerAuditSink()
 
-// 커스텀 Writer로 출력
+// 커스텀 Writer 로 출력
 sink := html.NewLoggerAuditSinkWithWriter(os.Stdout)
 ```
 
 ### WriterAuditSink
 
-JSON Lines를 `io.Writer`에 쓰며, 파일 영구 저장에 적합:
+JSON Lines 를 `io.Writer`에 쓰며, 파일 영구 저장에 적합:
 
 ```go
 file, _ := os.Create("audit.jsonl")
@@ -72,7 +72,7 @@ defer file.Close()
 sink := html.NewWriterAuditSink(file)
 ```
 
-출력 형식(줄당 하나의 JSON):
+출력 형식 (줄당 하나의 JSON):
 
 ```json
 {"timestamp":"2026-04-30T10:00:00Z","event_type":"blocked_tag","level":"warning","message":"Blocked dangerous HTML tag: script","tag":"script"}
@@ -80,7 +80,7 @@ sink := html.NewWriterAuditSink(file)
 
 ### ChannelAuditSink
 
-버퍼링된 channel에 논블로킹으로 이벤트를 푸시하며, 소비자 goroutine이 비동기로 처리합니다 — 외부 시스템 통합에 적합:
+버퍼링된 channel 에 논블로킹으로 이벤트를 푸시하며, 소비자 goroutine 이 비동기로 처리합니다 — 외부 시스템 통합에 적합:
 
 ```go
 sink := html.NewChannelAuditSink(100)
@@ -92,13 +92,13 @@ go func() {
     }
 }()
 
-// 유실된 이벤트 확인(채널이 가득 차면 자동 폐기)
+// 유실된 이벤트 확인 (채널이 가득 차면 자동 폐기)
 fmt.Printf("폐기됨: %d\n", sink.DroppedCount())
 ```
 
 ### MultiSink
 
-여러 Sink로 팬아웃:
+여러 Sink 로 팬아웃:
 
 ```go
 sink := html.NewMultiSink(
@@ -186,8 +186,8 @@ p, _ := html.New(cfg)
 고보안 모드의 감사 특징:
 - 감사 자동 활성화
 - 모든 이벤트 유형 기록
-- 원시 값 포함(`IncludeRawValues = true`), 포렌식 분석에 편리
-- 원시 값 최대 길이 500자
+- 원시 값 포함 (`IncludeRawValues = true`), 포렌식 분석에 편리
+- 원시 값 최대 길이 500 자
 
 ## 감사 로그 조회
 
@@ -211,7 +211,7 @@ p.ClearAuditLog()
 ```
 
 :::tip 메모리 내 로그는 Processor 인스턴스에만 해당
-`GetAuditLog()`는 Processor 메모리에 수집된 이벤트를 반환합니다. 영구 저장이 필요하면 Sink를 설정하세요.
+`GetAuditLog()`는 Processor 메모리에 수집된 이벤트를 반환합니다. 영구 저장이 필요하면 Sink 를 설정하세요.
 :::
 
 ## 커스텀 Sink
@@ -225,7 +225,7 @@ type slackSink struct {
 
 func (s *slackSink) Write(entry html.AuditEntry) {
     if entry.Level != html.AuditLevelCritical {
-        return // critical만 전송
+        return // critical 만 전송
     }
     msg := fmt.Sprintf("[AUDIT] %s: %s", entry.EventType, entry.Message)
     http.Post(s.webhook, "text/plain", strings.NewReader(msg))

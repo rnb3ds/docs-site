@@ -1,7 +1,7 @@
 ---
 sidebar_label: "감사 시스템"
 title: "감사 시스템 - CyberGo html | 플러그형 감사 API"
-description: "CyberGo html 플러그형 감사 API: AuditConfig 설정, 8가지 감사 이벤트, 3개 수준, AuditEntry 구조와 6종 내장 Sink를 제공합니다."
+description: "CyberGo html 플러그형 감사 API: AuditConfig 설정, 8 가지 감사 이벤트, 3 개 수준, AuditEntry 구조와 6 종 내장 Sink 를 제공합니다."
 sidebar_position: 4
 ---
 
@@ -22,7 +22,7 @@ type AuditConfig struct {
     LogTimeouts        bool       `json:"log_timeouts"`        // 타임아웃 기록
     LogEncodingIssues  bool       `json:"log_encoding_issues"` // 인코딩 문제 기록
     LogPathTraversal   bool       `json:"log_path_traversal"`  // 경로 순회 시도 기록
-    Sink               AuditSink  `json:"-"`                   // 감사 출력 대상(JSON 직렬화에서 제외)
+    Sink               AuditSink  `json:"-"`                   // 감사 출력 대상 (JSON 직렬화에서 제외)
     IncludeRawValues   bool       `json:"include_raw_values"`  // 원시 값 포함
     MaxRawValueLength  int        `json:"max_raw_value_length"` // 원시 값 최대 길이
 }
@@ -32,7 +32,7 @@ type AuditConfig struct {
 
 ### DefaultAuditConfig
 
-기본 감사 설정(기본적으로 비활성화, 모든 로그 플래그는 true).
+기본 감사 설정 (기본적으로 비활성화, 모든 로그 플래그는 true).
 
 ```go
 func DefaultAuditConfig() AuditConfig
@@ -177,7 +177,7 @@ func NewWriterAuditSink(w io.Writer) *WriterAuditSink
 
 ### MultiSink
 
-여러 Sink로 팬아웃합니다.
+여러 Sink 로 팬아웃합니다.
 
 ```go
 func NewMultiSink(sinks ...AuditSink) *MultiSink

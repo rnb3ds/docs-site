@@ -127,7 +127,7 @@ dc, _ := httpc.NewDomain("https://api.example.com")
 // 设置严格 Cookie 安全
 session := dc.Session()
 session.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
-// 要求: Secure=true, HttpOnly=true, SameSite=Strict
+// 要求：Secure=true, HttpOnly=true, SameSite=Strict
 
 // 不符合安全要求的 Cookie 会导致 SetCookie 返回错误
 if err := dc.SetCookie(&http.Cookie{
@@ -135,7 +135,7 @@ if err := dc.SetCookie(&http.Cookie{
     Value: "test",
     // 缺少 Secure, HttpOnly → 被拒绝
 }); err != nil {
-    log.Println("Cookie 被拒绝:", err)
+    log.Println("Cookie 被拒绝：", err)
 }
 ```
 

@@ -11,7 +11,7 @@ sidebar_position: 5
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Retry.MaxRetries = 3           // 최대 3회
+cfg.Retry.MaxRetries = 3           // 최대 3 회
 cfg.Retry.Delay = 1 * time.Second  // 초기 지연 1s
 cfg.Retry.BackoffFactor = 2.0      // 지수 백오프 2x
 cfg.Retry.EnableJitter = true      // 지터 활성화
@@ -44,13 +44,13 @@ defer client.Close()
 `RetryPolicy` 인터페이스를 구현하여 재시도 동작을 완전히 제어합니다:
 
 :::warning 내부 타입
-RetryPolicy.ShouldRetry의 `resp` 매개변수 타입 ResponseReader는 내부 인터페이스(`internal/types` 패키지에 정의)이므로 외부 패키지에서 직접 참조할 수 없습니다. 커스텀 `RetryPolicy`는 `httpc`와 같은 모듈 내 패키지에서 구현해야 합니다. 대부분의 시나리오는 `RetryConfig` 필드 설정으로 충분합니다.
+RetryPolicy.ShouldRetry 의 `resp` 매개변수 타입 ResponseReader 는 내부 인터페이스 (`internal/types` 패키지에 정의) 이므로 외부 패키지에서 직접 참조할 수 없습니다. 커스텀 `RetryPolicy`는 `httpc`와 같은 모듈 내 패키지에서 구현해야 합니다. 대부분의 시나리오는 `RetryConfig` 필드 설정으로 충분합니다.
 :::
 
 ```go
-// 주의: ResponseReader는 내부 타입(internal/types 패키지)입니다.
+// 주의: ResponseReader 는 내부 타입 (internal/types 패키지) 입니다.
 // 이 코드는 github.com/cybergodev/httpc 모듈 내부에서만 컴파일됩니다.
-// 대부분의 사용자는 RetryConfig와 WithMaxRetries로 재시도를 설정해야 합니다.
+// 대부분의 사용자는 RetryConfig 와 WithMaxRetries 로 재시도를 설정해야 합니다.
 
 type MyRetryPolicy struct {
     maxAttempts int
@@ -65,7 +65,7 @@ func (p *MyRetryPolicy) ShouldRetry(resp ResponseReader, err error, attempt int)
     if err != nil {
         return true
     }
-    // 502, 503, 504만 재시도
+    // 502, 503, 504 만 재시도
     return resp.StatusCode() == 502 || resp.StatusCode() == 503 || resp.StatusCode() == 504
 }
 
@@ -87,7 +87,7 @@ cfg.Retry.CustomPolicy = &MyRetryPolicy{maxAttempts: 5}
 ## 요청별 제어
 
 ```go
-// 개별 요청 5회 재시도
+// 개별 요청 5 회 재시도
 result, err := client.Get(url, httpc.WithMaxRetries(5))
 
 // 재시도 비활성화
@@ -101,18 +101,18 @@ result, err := client.Request(ctx, "GET", url, httpc.WithMaxRetries(3))
 
 ## Retry-After 지원
 
-HTTPC은 서버가 반환한 `Retry-After` 응답 헤더를 자동으로 파싱합니다:
+HTTPC 은 서버가 반환한 `Retry-After` 응답 헤더를 자동으로 파싱합니다:
 
 ```go
 // 서버 반환: Retry-After: 120
-// HTTPC은 최대 60초까지만 대기 후 재시도 (서버가 지정한 120s는 안전 상한 60s로 잘림)
+// HTTPC 은 최대 60 초까지만 대기 후 재시도 (서버가 지정한 120s 는 안전 상한 60s 로 잘림)
 
 // 서버 반환: Retry-After: Fri, 25 Apr 2026 12:00:00 GMT
-// HTTPC은 지정된 시간까지 대기 후 재시도 (60s 이상 남은 경우 60s로 잘림)
+// HTTPC 은 지정된 시간까지 대기 후 재시도 (60s 이상 남은 경우 60s 로 잘림)
 ```
 
 :::tip
-`Retry-After`는 재시도 가능한 모든 응답(408, 429, 500, 502, 503, 504)에서 적용되며, 지수 백오프 지연보다 우선순위가 높습니다.
+`Retry-After`는 재시도 가능한 모든 응답 (408, 429, 500, 502, 503, 504) 에서 적용되며, 지수 백오프 지연보다 우선순위가 높습니다.
 :::
 
 ## 백오프 전략
@@ -141,7 +141,7 @@ cfg.Retry.BackoffFactor = 1.0
 
 ### 랜덤 지터
 
-지터를 활성화하여 "썬더링 허드(Thundering Herd)" 현상을 방지합니다:
+지터를 활성화하여 "썬더링 허드 (Thundering Herd)" 현상을 방지합니다:
 
 ```go
 cfg.Retry.EnableJitter = true
@@ -171,7 +171,7 @@ if err != nil {
 | 마이크로서비스 통신 | MaxRetries=2, Delay=500ms |
 | 파일 다운로드 | MaxRetries=5, Delay=2s, Backoff=2.0 |
 | 멱등성 작업 | 안심하고 재시도 가능 |
-| 비멱등성 작업(POST) | 네트워크 오류 시에만 재시도 권장 (기본값은 5xx/408/429도 재시도; 커스텀 RetryPolicy로 좁히기 필요) |
+| 비멱등성 작업 (POST) | 네트워크 오류 시에만 재시도 권장 (기본값은 5xx/408/429도 재시도; 커스텀 RetryPolicy 로 좁히기 필요) |
 
 :::warning
 비멱등성 POST 요청도 기본적으로 재시도됩니다. 정밀한 제어가 필요한 경우 커스텀 `RetryPolicy`를 구현하세요.

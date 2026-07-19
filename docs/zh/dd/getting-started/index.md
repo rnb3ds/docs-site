@@ -1,6 +1,6 @@
 ---
 sidebar_label: "快速开始"
-title: "快速开始 - CyberGo DD | 5分钟入门指南"
+title: "快速开始 - CyberGo DD | 5 分钟入门指南"
 description: "快速上手 CyberGo DD 高性能结构化日志库的完整入门教程，从安装依赖到首次输出日志，逐步学习创建日志记录器、配置输出目标与文件轮换策略、使用结构化字段记录请求上下文信息和钩子系统扩展功能，5 分钟即可掌握核心用法并应用到实际项目中。"
 sidebar_position: 1
 ---
@@ -101,7 +101,7 @@ dd.Fatal("致命错误")   // LevelFatal（调用 os.Exit）
 
 ```go
 dd.Debugf("用户 %s 登录，耗时 %dms", name, elapsed)
-dd.Infof("请求处理完成: status=%d", status)
+dd.Infof("请求处理完成：status=%d", status)
 dd.Warnf("连接池使用率 %d%%", usage)
 dd.Errorf("数据库查询失败: %v", err)
 ```
@@ -150,7 +150,7 @@ requestLogger.InfoWith("路由注册完成",
 通过 `FileWriter` 配置轮换策略：
 
 ```go
-// 默认 100MB, 30天, 10个备份
+// 默认 100MB, 30 天，10 个备份
 fwCfg := dd.DefaultFileWriterConfig()
 fwCfg.MaxBackups = 3
 fwCfg.MaxSizeMB = 1
@@ -187,7 +187,7 @@ defer logger.Close()
 // 密码字段自动脱敏
 logger.InfoWith("用户登录",
     dd.String("username", "admin"),
-    dd.String("password", "s3cr3t"),  // 输出: [REDACTED]
+    dd.String("password", "s3cr3t"),  // 输出：[REDACTED]
 )
 ```
 

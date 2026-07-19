@@ -222,7 +222,7 @@ ALLOWED_HOSTS:
 
 ### 키 이름 해석
 
-YAML의 중첩 구조는 JSON과 동일한 평탄화 규칙을 사용합니다:
+YAML 의 중첩 구조는 JSON 과 동일한 평탄화 규칙을 사용합니다:
 
 ```go
 loader.LoadFiles("config.yaml")
@@ -515,7 +515,7 @@ yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 
 ### UnmarshalMap
 
-map으로 역직렬화:
+map 으로 역직렬화:
 
 ::: code-group
 

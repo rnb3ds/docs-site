@@ -7,7 +7,7 @@ sidebar_position: 9
 
 # 파일 I/O 메서드
 
-Processor는 파일, `io.Reader`, `io.Writer` 세 가지 데이터 소스를 다루는 JSON 파일 읽기/쓰기 및 스트리밍 로드 메서드를 제공합니다.
+Processor 는 파일, `io.Reader`, `io.Writer` 세 가지 데이터 소스를 다루는 JSON 파일 읽기/쓰기 및 스트리밍 로드 메서드를 제공합니다.
 
 ## 파일 로드
 
@@ -28,7 +28,7 @@ fmt.Println(data) // 원시 JSON 문자열
 ### LoadFromFileAsData (비공개 전환)
 
 :::warning API 변경 안내
-LoadFromFileAsData는 내부 메서드(`loadFromFileAsData`)로 전환되어 공개 API로 내보내지 않습니다. `LoadFromFile` + `Parse` 조합을 대신 사용하세요:
+LoadFromFileAsData 는 내부 메서드 (`loadFromFileAsData`) 로 전환되어 공개 API 로 내보내지 않습니다. `LoadFromFile` + `Parse` 조합을 대신 사용하세요:
 
 ```go
 jsonStr, err := p.LoadFromFile("data.json")
@@ -50,7 +50,7 @@ if obj, ok := data.(map[string]any); ok {
 
 시그니처: `func (p *Processor) LoadFromReader(reader io.Reader, cfg ...Config) (string, error)`
 
-Reader에서 JSON 데이터를 로드하고 원시 문자열을 반환합니다.
+Reader 에서 JSON 데이터를 로드하고 원시 문자열을 반환합니다.
 
 ```go
 file, _ := os.Open("data.json")
@@ -65,7 +65,7 @@ if err != nil {
 ### LoadFromReaderAsData (비공개 전환)
 
 :::warning API 변경 안내
-LoadFromReaderAsData는 내부 메서드(`loadFromReaderAsData`)로 전환되어 공개 API로 내보내지 않습니다. `LoadFromReader` + `Parse` 조합을 대신 사용하세요:
+LoadFromReaderAsData 는 내부 메서드 (`loadFromReaderAsData`) 로 전환되어 공개 API 로 내보내지 않습니다. `LoadFromReader` + `Parse` 조합을 대신 사용하세요:
 
 ```go
 file, _ := os.Open("data.json")
@@ -91,7 +91,7 @@ err = p.Parse(jsonStr, &data)
 ```go
 err := p.SaveToFile("data.json", map[string]any{"name": "CyberGo"})
 
-// PrettyConfig로 포맷팅 출력 저장
+// PrettyConfig 로 포맷팅 출력 저장
 err = p.SaveToFile("data.json", data, json.PrettyConfig())
 ```
 
@@ -99,7 +99,7 @@ err = p.SaveToFile("data.json", data, json.PrettyConfig())
 
 시그니처: `func (p *Processor) MarshalToFile(path string, data any, cfg ...Config) error`
 
-데이터를 JSON으로 인코딩하고 파일에 씁니다. 상위 디렉토리를 자동으로 생성합니다.
+데이터를 JSON 으로 인코딩하고 파일에 씁니다. 상위 디렉토리를 자동으로 생성합니다.
 
 ```go
 err := p.MarshalToFile("output.json", data)
@@ -112,7 +112,7 @@ err = p.MarshalToFile("output.json", data, json.PrettyConfig())
 
 시그니처: `func (p *Processor) UnmarshalFromFile(path string, v any, cfg ...Config) error`
 
-파일에서 JSON을 읽고 대상 변수로 디코딩합니다.
+파일에서 JSON 을 읽고 대상 변수로 디코딩합니다.
 
 ```go
 var config Config
@@ -126,7 +126,7 @@ if err != nil {
 
 시그니처: `func (p *Processor) SaveToWriter(writer io.Writer, data any, cfg ...Config) error`
 
-데이터를 JSON으로 인코딩하고 io.Writer에 씁니다.
+데이터를 JSON 으로 인코딩하고 io.Writer 에 씁니다.
 
 ```go
 var buf bytes.Buffer
@@ -140,7 +140,7 @@ err := p.SaveToWriter(&buf, data, json.PrettyConfig())
 | 원시 문자열이 필요한 경우 | `LoadFromFile` / `LoadFromReader` |
 | 파싱된 데이터가 필요한 경우 | `LoadFromFile` + `Parse` / `LoadFromReader` + `Parse` |
 | 데이터를 파일에 저장 | `SaveToFile` / `MarshalToFile` |
-| Writer에 쓰기 | `SaveToWriter` |
+| Writer 에 쓰기 | `SaveToWriter` |
 | 파일에서 읽고 디코딩 | `UnmarshalFromFile` |
 
 ## 관련 문서

@@ -65,7 +65,7 @@ result, err = json.Delete(data, "user.temporary")
 | 格式化编码 | `MarshalIndent` | `json.MarshalIndent(data, "", "  ")` |
 | 解码 | `Unmarshal` | `json.Unmarshal(bytes, &v)` |
 | 解析 | `Parse` | `var v T; json.Parse(jsonStr, &v)` |
-| 解析到any | `ParseAny` | `json.ParseAny(jsonStr)` |
+| 解析到 any | `ParseAny` | `json.ParseAny(jsonStr)` |
 | 格式化 | `Prettify` | `json.Prettify(jsonStr)` |
 | 压缩 | `Compact` | `json.Compact(&buf, []byte(data))` |
 
@@ -134,7 +134,7 @@ override := `{"database":{"host":"prod-server","ssl":true},"monitoring":true}`
 
 // 合并
 merged, _ := json.MergeJSON(base, override)
-// 结果: {"database":{"host":"prod-server","port":5432,"ssl":true},"debug":false,"monitoring":true}
+// 结果：{"database":{"host":"prod-server","port":5432,"ssl":true},"debug":false,"monitoring":true}
 
 // 多个合并
 result, _ := json.MergeMany([]string{
@@ -287,15 +287,15 @@ name := json.GetString(data, "user.nickname", "unknown")
 val, _ := json.Get(data, "value")
 switch v := val.(type) {
 case string:
-    fmt.Println("字符串:", v)
+    fmt.Println("字符串：", v)
 case float64:
-    fmt.Println("数字:", v)
+    fmt.Println("数字：", v)
 case bool:
-    fmt.Println("布尔:", v)
+    fmt.Println("布尔：", v)
 case []any:
-    fmt.Println("数组:", len(v), "个元素")
+    fmt.Println("数组：", len(v), "个元素")
 case map[string]any:
-    fmt.Println("对象:", len(v), "个键")
+    fmt.Println("对象：", len(v), "个键")
 }
 ```
 
@@ -332,14 +332,14 @@ if err != nil {
 // 预热缓存
 paths := []string{"user.name", "user.email", "items[*].id"}
 result, _ := json.WarmupCache(data, paths)
-fmt.Printf("预热成功: %d/%d\n", result.Successful, result.TotalPaths)
+fmt.Printf("预热成功：%d/%d\n", result.Successful, result.TotalPaths)
 
 // 清除缓存
 json.ClearCache()
 
 // 获取统计
 stats := json.GetStats()
-fmt.Printf("缓存命中率: %.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("缓存命中率：%.2f%%\n", stats.HitRatio * 100)
 ```
 
 ## 全局处理器

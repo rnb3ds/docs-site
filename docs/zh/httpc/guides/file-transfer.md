@@ -34,7 +34,7 @@ func main() {
         log.Fatal(err)
     }
 
-    log.Printf("上传完成: %d", result.StatusCode()) // 输出示例：上传完成: 200（实际状态码取决于服务端）
+    log.Printf("上传完成：%d", result.StatusCode()) // 输出示例：上传完成：200（实际状态码取决于服务端）
 }
 ```
 
@@ -147,7 +147,7 @@ if err != nil {
 }
 
 if result.Resumed {
-    fmt.Printf("续传完成: 从断点恢复\n")
+    fmt.Printf("续传完成：从断点恢复\n")
 }
 ```
 

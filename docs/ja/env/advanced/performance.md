@@ -88,7 +88,7 @@ wg.Wait()
 
 ```text
 オブジェクトプールなし：
-オブジェクト作成 → 使用 → GC回収 → オブジェクト作成 → 使用 → GC回収 ...
+オブジェクト作成 → 使用 → GC 回収 → オブジェクト作成 → 使用 → GC 回収 ...
 
 オブジェクトプールあり：
 オブジェクト作成 → 使用 → プールに返却 → 取得 → 使用 → プールに返却 ...
@@ -102,7 +102,7 @@ wg.Wait()
 // SecureValue を取得（プールから再利用される場合がある）
 secret := env.GetSecure("API_KEY")
 
-// 使用（Revealは平文を返し、String/Maskedはマスクを返す）
+// 使用（Reveal は平文を返し、String/Masked はマスクを返す）
 value := secret.Reveal()
 
 // プールに返却
@@ -211,10 +211,10 @@ if err != nil {
 
 ```go
 secret := env.GetSecure("PASSWORD")
-// 内部状態: ['p', 'a', 's', 's', ...]
+// 内部状態：['p', 'a', 's', 's', ...]
 
 secret.Close()
-// 内部状態: [0, 0, 0, 0, ...]
+// 内部状態：[0, 0, 0, 0, ...]
 ```
 
 バイトスライスの手動ゼロクリア：
@@ -420,7 +420,7 @@ loader, _ := env.New(cfg)
 // goroutine を起動
 go func() {
     time.Sleep(1 * time.Second)
-    loader.GetString("KEY")  // 空文字列を返す（GetStringはerrorを返さない）
+    loader.GetString("KEY")  // 空文字列を返す（GetString は error を返さない）
 }()
 
 loader.Close()  // メイン goroutine がクローズ

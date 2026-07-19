@@ -8,10 +8,10 @@ sidebar_position: 5
 # 미들웨어
 
 :::tip 아키텍처 개요
-이 페이지는 **내장 미들웨어 참조**입니다. Handler 파이프라인의 전체 아키텍처, 양파 모델 원리와 커스텀 미들웨어 작성은 [핸들러 파이프라인 / Handler와 미들웨어 체인](../handler/handler-chain)을 참조하세요.
+이 페이지는 **내장 미들웨어 참조**입니다. Handler 파이프라인의 전체 아키텍처, 양파 모델 원리와 커스텀 미들웨어 작성은 [핸들러 파이프라인 / Handler 와 미들웨어 체인](../handler/handler-chain)을 참조하세요.
 :::
 
-HTTPC은 양파 모델 미들웨어 아키텍처를 채택하여, `MiddlewareFunc`로 요청 처리 로직을 래핑합니다.
+HTTPC 은 양파 모델 미들웨어 아키텍처를 채택하여, `MiddlewareFunc`로 요청 처리 로직을 래핑합니다.
 
 ```go
 type MiddlewareFunc func(Handler) Handler
@@ -38,7 +38,7 @@ client, _ := httpc.New(&httpc.Config{
 func Chain(middlewares ...MiddlewareFunc) MiddlewareFunc
 ```
 
-여러 미들웨어를 단일 미들웨어로 조합합니다. 전달된 순서대로 실행되며, 마지막 미들웨어가 처리를 완료한 후 최종 Handler를 호출합니다.
+여러 미들웨어를 단일 미들웨어로 조합합니다. 전달된 순서대로 실행되며, 마지막 미들웨어가 처리를 완료한 후 최종 Handler 를 호출합니다.
 
 ```go
 combined := httpc.Chain(
@@ -55,7 +55,7 @@ combined := httpc.Chain(
 func RecoveryMiddleware() MiddlewareFunc
 ```
 
-panic 복구 미들웨어. 처리 체인의 panic을 포착하여 스택 정보가 포함된 error로 변환합니다.
+panic 복구 미들웨어. 처리 체인의 panic 을 포착하여 스택 정보가 포함된 error 로 변환합니다.
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -73,7 +73,7 @@ client, _ := httpc.New(&httpc.Config{
 func LoggingMiddleware(log func(format string, args ...any)) MiddlewareFunc
 ```
 
-요청 로그 미들웨어. 메서드, URL, 상태 코드와 소요 시간을 기록합니다. URL은 자동 마스킹됩니다(자격 증명 제거).
+요청 로그 미들웨어. 메서드, URL, 상태 코드와 소요 시간을 기록합니다. URL 은 자동 마스킹됩니다 (자격 증명 제거).
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -92,7 +92,7 @@ client, _ := httpc.New(&httpc.Config{
 func RequestIDMiddleware(headerName string, generator func() string) MiddlewareFunc
 ```
 
-각 요청에 고유 ID를 추가합니다. 기본적으로 `crypto/rand`로 32자 16진수 ID를 생성합니다. 요청에 이미 동일한 이름의 헤더가 있으면 원래 값을 유지하고 덮어쓰지 않습니다.
+각 요청에 고유 ID 를 추가합니다. 기본적으로 `crypto/rand`로 32 자 16 진수 ID 를 생성합니다. 요청에 이미 동일한 이름의 헤더가 있으면 원래 값을 유지하고 덮어쓰지 않습니다.
 
 | 매개변수 | 설명 |
 |-----------|------|
@@ -110,7 +110,7 @@ middleware := httpc.RequestIDMiddleware("X-Request-ID", func() string {
 ```
 
 :::tip
-기본 생성기는 `crypto/rand`를 사용하여 예측 불가능한 ID를 생성하므로 보안 민감 시나리오에 적합합니다.
+기본 생성기는 `crypto/rand`를 사용하여 예측 불가능한 ID 를 생성하므로 보안 민감 시나리오에 적합합니다.
 :::
 
 ### TimeoutMiddleware
@@ -121,8 +121,8 @@ func TimeoutMiddleware(timeout time.Duration) MiddlewareFunc
 
 미들웨어 레벨의 타임아웃 제어. 클라이언트 내장 타임아웃 전에 적용되며, 타임아웃 시 컨텍스트를 취소하고 오류를 반환합니다.
 
-:::warning Download나 스트리밍 요청에는 사용 금지
-`TimeoutMiddleware`의 `defer cancel()`은 핸들러가 반환(응답 헤더 수신)된 직후에 실행되어, `Download`나 `WithStreamBody` 요청에서는 응답 본문을 읽기 전에 컨텍스트가 미리 취소되어 "context canceled" 오류가 발생합니다. 스트리밍/다운로드 시나리오에서는 [`WithTimeout`](../core/options#withtimeout)을 대신 사용하세요.
+:::warning Download 나 스트리밍 요청에는 사용 금지
+`TimeoutMiddleware`의 `defer cancel()`은 핸들러가 반환 (응답 헤더 수신) 된 직후에 실행되어, `Download`나 `WithStreamBody` 요청에서는 응답 본문을 읽기 전에 컨텍스트가 미리 취소되어 "context canceled" 오류가 발생합니다. 스트리밍/다운로드 시나리오에서는 [`WithTimeout`](../core/options#withtimeout)을 대신 사용하세요.
 :::
 
 ```go
@@ -141,7 +141,7 @@ client, _ := httpc.New(&httpc.Config{
 func HeaderMiddleware(headers map[string]string) MiddlewareFunc
 ```
 
-모든 요청에 정적 요청 헤더를 추가합니다. 생성 시 헤더 보안 검증을 수행합니다(CRLF 주입 방지). 요청에 이미 동일한 이름의 헤더가 있으면 충돌 시 덮어씁니다.
+모든 요청에 정적 요청 헤더를 추가합니다. 생성 시 헤더 보안 검증을 수행합니다 (CRLF 주입 방지). 요청에 이미 동일한 이름의 헤더가 있으면 충돌 시 덮어씁니다.
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -182,7 +182,7 @@ client, _ := httpc.New(&httpc.Config{
 func AuditMiddleware(onAudit func(event AuditEvent)) MiddlewareFunc
 ```
 
-보안 감사 미들웨어로, 금융, 의료, 정부 등 컴플라이언스 시나리오에 적합합니다. 기본적으로 요청/응답 메타데이터(메서드, URL, 상태 코드, 소요 시간, 재시도 등)를 기록하며, URL은 자동 마스킹됩니다. 완전한 헤더를 기록하려면 [`AuditMiddlewareWithConfig`](#auditmiddlewarewithconfig)에 `IncludeHeaders: true`를 설정하세요.
+보안 감사 미들웨어로, 금융, 의료, 정부 등 컴플라이언스 시나리오에 적합합니다. 기본적으로 요청/응답 메타데이터 (메서드, URL, 상태 코드, 소요 시간, 재시도 등) 를 기록하며, URL 은 자동 마스킹됩니다. 완전한 헤더를 기록하려면 [`AuditMiddlewareWithConfig`](#auditmiddlewarewithconfig)에 `IncludeHeaders: true`를 설정하세요.
 
 ```go
 client, _ := httpc.New(&httpc.Config{
@@ -259,8 +259,8 @@ func (e AuditEvent) MarshalJSON() ([]byte, error)
 
 | 필드 | 변환 규칙 |
 |------|-----------|
-| `Duration` | `durationMs`(밀리초 정수) 추가, 원본 `duration` 필드(나노초) 유지 |
-| `Error` | `error`(오류 메시지 문자열)로 변환, nil이면 생략 |
+| `Duration` | `durationMs`(밀리초 정수) 추가, 원본 `duration` 필드 (나노초) 유지 |
+| `Error` | `error`(오류 메시지 문자열) 로 변환, nil 이면 생략 |
 
 ```go
 event := httpc.AuditEvent{

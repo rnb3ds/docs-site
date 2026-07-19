@@ -61,7 +61,7 @@ async function main(): Promise<void> {
   const lines: string[] = [
     '# Locale Parity Audit',
     '',
-    `基准语言: \`${PRIMARY_LANG}\` (${base.size} 页)。其余语言与之比对。`,
+    `基准语言：\`${PRIMARY_LANG}\` (${base.size} 页)。其余语言与之比对。`,
     ''
   ]
 

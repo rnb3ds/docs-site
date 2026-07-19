@@ -78,7 +78,7 @@ cfg := logger.GetSampling()
 
 ```go
 fw, _ := dd.NewFileWriter("logs/app.log", dd.DefaultFileWriterConfig())
-// 默认: 100MB / 30天 / 10个备份
+// 默认：100MB / 30 天 / 10 个备份
 ```
 
 - 文件过小导致频繁轮换，增加 I/O

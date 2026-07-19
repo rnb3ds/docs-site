@@ -1,7 +1,7 @@
 ---
 sidebar_label: "오류 처리"
 title: "오류 처리 - CyberGo HTTPC | 분류와 센티널"
-description: "HTTPC 오류 처리 가이드: ErrorType 12가지 오류 분류, ClientError 필드와 IsRetryable, errors.Is/As 센티넬 매칭, 재시도 소진, 컨텍스트 타임아웃과 미들웨어 통합 처리 모범 사례를 다룹니다."
+description: "HTTPC 오류 처리 가이드: ErrorType 12 가지 오류 분류, ClientError 필드와 IsRetryable, errors.Is/As 센티넬 매칭, 재시도 소진, 컨텍스트 타임아웃과 미들웨어 통합 처리 모범 사례를 다룹니다."
 sidebar_position: 2
 ---
 
@@ -9,7 +9,7 @@ sidebar_position: 2
 
 ## 오류 분류
 
-HTTPC은 `ClientError`로 오류를 분류하며, `errors.As`와 `errors.Is`를 지원합니다.
+HTTPC 은 `ClientError`로 오류를 분류하며, `errors.As`와 `errors.Is`를 지원합니다.
 
 ### 오류 타입 판단
 

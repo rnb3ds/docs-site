@@ -341,7 +341,7 @@ func processAuditEvents(ch chan env.AuditEvent) {
 ```go
 // 写操作：会记录审计事件（敏感键掩码后记录）
 _ = loader.Set("API_KEY", "sk-1234567890")
-// 审计记录: {"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
+// 审计记录：{"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
 
 // 读操作：正常读取不产审计
 secret := loader.GetSecure("API_KEY") // 不产生审计日志

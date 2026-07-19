@@ -1,7 +1,7 @@
 ---
 sidebar_label: "エラータイプ"
-title: "エラータイプ - CyberGo HTTPC | ClientError詳細"
-description: "HTTPC エラータイプ API リファレンス: ClientError 構造体のフィールドとメソッド、ErrorType 12 種類のエラー分類列挙、センチネルエラー変数と errors.Is/As マッチング例の完全な説明を提供します。"
+title: "エラータイプ - CyberGo HTTPC | ClientError 詳細"
+description: "HTTPC エラータイプ API リファレンス：ClientError 構造体のフィールドとメソッド、ErrorType 12 種類のエラー分類列挙、センチネルエラー変数と errors.Is/As マッチング例の完全な説明を提供します。"
 sidebar_position: 3
 ---
 
@@ -54,10 +54,10 @@ type ClientError struct {
 ```go
 var clientErr *httpc.ClientError
 if errors.As(err, &clientErr) {
-    fmt.Println("エラータイプ:", clientErr.Code())
+    fmt.Println("エラータイプ：", clientErr.Code())
     fmt.Println("リクエスト URL:", clientErr.URL)
-    fmt.Println("リトライ回数:", clientErr.Attempts)
-    fmt.Println("リトライ可能:", clientErr.IsRetryable())
+    fmt.Println("リトライ回数：", clientErr.Attempts)
+    fmt.Println("リトライ可能：", clientErr.IsRetryable())
     fmt.Println("基底エラー:", clientErr.Unwrap())
 }
 ```

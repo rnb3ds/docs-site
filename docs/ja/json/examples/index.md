@@ -636,7 +636,7 @@ func main() {
     defer processor.Close()
 
     // JSON オブジェクトファイルの処理（キー・バリュー構造）
-    // ファイル形式: {"user1": {...}, "user2": {...}, ...}
+    // ファイル形式：{"user1": {...}, "user2": {...}, ...}
     err = processor.ForeachFile("config-map.json", func(key any, item *json.IterableValue) error {
         name := item.GetString("name")
         fmt.Printf("Key: %s, Name: %s\n", key, name)

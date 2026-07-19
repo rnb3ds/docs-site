@@ -108,7 +108,7 @@ httpc.WithOnRequest(func(req httpc.RequestMutator) error {
     return nil
 })
 httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
-    log.Printf("收到响应: %d", resp.StatusCode())
+    log.Printf("收到响应：%d", resp.StatusCode())
     return nil
 })
 ```
@@ -209,7 +209,7 @@ if err != nil {
             // 请求验证错误
         case httpc.ErrorTypeHTTP:
             // HTTP 层错误
-        // 其他: ErrorTypeUnknown, ErrorTypeResponseRead,
+        // 其他：ErrorTypeUnknown, ErrorTypeResponseRead,
         //       ErrorTypeTransport, ErrorTypeCertificate
         }
         if clientErr.IsRetryable() {
@@ -238,7 +238,7 @@ dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 dlResult, err := client.Download(ctx, url, dlCfg)
 
 // dlResult 类型为 *DownloadResult（非 *Result）
-// 字段: FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
+// 字段：FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
 ```
 
 ## 域名客户端

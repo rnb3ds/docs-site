@@ -33,7 +33,7 @@ JSON から指定された型の値を取得します。カスタム型をサポ
 
 - 基本型：`string`, `int`, `int64`, `float64`, `bool`
 - スライス型：`[]any`
-- マップ型: `map[string]any`
+- マップ型：`map[string]any`
 - カスタム構造体
 
 ```go
@@ -49,20 +49,20 @@ func main() {
 
     // 文字列の取得
     name := json.GetTyped[string](data, "user.name")
-    fmt.Println(name) // 出力: Alice
+    fmt.Println(name) // 出力：Alice
 
     // 整数の取得
     age := json.GetTyped[int](data, "user.age")
-    fmt.Println(age) // 出力: 30
+    fmt.Println(age) // 出力：30
 
     // 配列の取得
     arrData := `{"items": [1, 2, 3]}`
     items := json.GetTyped[[]any](arrData, "items")
-    fmt.Println(items) // 出力: [1 2 3]
+    fmt.Println(items) // 出力：[1 2 3]
 
     // デフォルト値の使用
     email := json.GetTyped[string](data, "user.email", "unknown@example.com")
-    fmt.Println(email) // 出力: unknown@example.com
+    fmt.Println(email) // 出力：unknown@example.com
 }
 ```
 
@@ -199,8 +199,8 @@ idStr, err := result.AsStringConverted()
 
 | 戻り値 | 型 | 説明 |
 |--------|------|------|
-| 1つ目 | `[]T` | 正常にパースされたすべての結果 |
-| 2つ目 | `error` | エラー情報 |
+| 1 つ目 | `[]T` | 正常にパースされたすべての結果 |
+| 2 つ目 | `error` | エラー情報 |
 
 ```go
 package main
@@ -319,15 +319,15 @@ func main() {
     config := `{"timeout": 30}`
 
     timeout := json.GetTyped[int](config, "timeout")
-    fmt.Printf("Timeout: %d\n", timeout) // 出力: 30
+    fmt.Printf("Timeout: %d\n", timeout) // 出力：30
 
     // パスが存在しない場合、ゼロ値を返す
     retries := json.GetTyped[int](config, "retries")
-    fmt.Printf("Retries: %d\n", retries) // 出力: 0（ゼロ値）
+    fmt.Printf("Retries: %d\n", retries) // 出力：0（ゼロ値）
 
     // パスが存在しない場合、デフォルト値を使用
     retries = json.GetTyped[int](config, "retries", 3)
-    fmt.Printf("Retries: %d\n", retries) // 出力: 3（デフォルト値）
+    fmt.Printf("Retries: %d\n", retries) // 出力：3（デフォルト値）
 }
 ```
 
@@ -382,15 +382,15 @@ func main() {
 
     // GetTyped は T を返す
     name := json.GetTyped[string](data, "user.name")
-    fmt.Println("名前:", name)
+    fmt.Println("名前：", name)
 
     // 存在しないパスはゼロ値を返す
     email := json.GetTyped[string](data, "user.email")
-    fmt.Println("メール:", email) // 出力: ""（ゼロ値）
+    fmt.Println("メール：", email) // 出力：""（ゼロ値）
 
     // デフォルト値の使用
     email = json.GetTyped[string](data, "user.email", "none@example.com")
-    fmt.Println("メール:", email) // 出力: none@example.com
+    fmt.Println("メール：", email) // 出力：none@example.com
 }
 ```
 

@@ -1,9 +1,9 @@
 /**
- * Page components: custom site footer + doc feedback widget.
+ * Page components: custom site footer.
  *
  * Hardcoded px migrated to design tokens where the value matches the scale.
- * Off-scale values (10/14/28/34px icon & widget sizes, the 1200px max-width,
- * 10px feedback radius) stay literal — they are intentionally bespoke.
+ * Off-scale values (10/14/28/34px icon sizes, the 1200px max-width)
+ * stay literal — they are intentionally bespoke.
  */
 
 /* ============================================
@@ -155,67 +155,3 @@
   }
 }
 
-/* ============================================
-   Doc Feedback Component
-   ============================================ */
-
-.doc-feedback {
-  margin: var(--cg-sp-6) 0 var(--cg-sp-4);
-  padding: 20px var(--cg-sp-5);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: 10px;
-  background: var(--vp-c-bg-soft);
-}
-
-.doc-feedback .feedback-prompt {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: var(--cg-sp-3);
-}
-
-.doc-feedback .feedback-text {
-  font-size: 0.92rem;
-  color: var(--vp-c-text-2);
-  font-weight: 500;
-}
-
-.doc-feedback .feedback-buttons {
-  display: flex;
-  gap: var(--cg-sp-2);
-}
-
-.doc-feedback .feedback-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px var(--cg-sp-4);
-  border: 1px solid var(--vp-c-divider);
-  border-radius: var(--cg-radius-md);
-  background: var(--vp-c-bg);
-  color: var(--vp-c-text-2);
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.doc-feedback .feedback-btn:hover {
-  border-color: var(--vp-c-brand-1);
-  color: var(--vp-c-brand-1);
-}
-
-.doc-feedback .feedback-btn.active {
-  border-color: var(--vp-c-brand-1);
-  color: var(--vp-c-brand-1);
-  background: var(--vp-c-brand-soft);
-}
-
-.doc-feedback .feedback-thanks {
-  display: flex;
-  align-items: center;
-  gap: var(--cg-sp-2);
-  color: var(--vp-c-brand-1);
-  font-size: 0.9rem;
-  font-weight: 500;
-}

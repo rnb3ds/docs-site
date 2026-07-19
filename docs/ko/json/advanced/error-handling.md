@@ -71,7 +71,7 @@ func (e *JsonsError) Is(target error) bool
 ```go
 val, err := json.Get(data, "user.name")
 if err != nil {
-    // errors.Is로 오류 타입 확인
+    // errors.Is 로 오류 타입 확인
     if errors.Is(err, json.ErrPathNotFound) {
         // 경로가 존재하지 않음
     }
@@ -79,7 +79,7 @@ if err != nil {
         // 타입 불일치
     }
 
-    // errors.As로 상세 컨텍스트 가져오기
+    // errors.As 로 상세 컨텍스트 가져오기
     var jsonErr *json.JsonsError
     if errors.As(err, &jsonErr) {
         fmt.Printf("작업: %s\n", jsonErr.Op)
@@ -165,7 +165,7 @@ func validateUser(data string) error {
         return &ValidationError{Field: "name", Message: "필수 항목"}
     }
     if len(name) < 2 {
-        return &ValidationError{Field: "name", Message: "최소 2자 이상"}
+        return &ValidationError{Field: "name", Message: "최소 2 자 이상"}
     }
     return nil
 }
@@ -217,7 +217,7 @@ func auditLog(op string, path string, err error) {
 
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
-    // SafeError는 경로와 작업 컨텍스트 등 내부 세부 정보를 제거합니다
+    // SafeError 는 경로와 작업 컨텍스트 등 내부 세부 정보를 제거합니다
     safeMsg := json.SafeError(err)
     http.Error(w, safeMsg, http.StatusBadRequest)
     return
@@ -343,7 +343,7 @@ if err != nil {
 func processJSON(data string) error {
     val, err := json.Get(data, "user.name")
     if err != nil {
-        // errors.Is로 오류 유형 구분
+        // errors.Is 로 오류 유형 구분
         switch {
         case errors.Is(err, json.ErrInvalidJSON),
             errors.Is(err, json.ErrPathNotFound),
@@ -370,7 +370,7 @@ func processJSON(data string) error {
 }
 ```
 
-### 2. errors.As로 컨텍스트 가져오기
+### 2. errors.As 로 컨텍스트 가져오기
 
 ```go
 func handleWithDetail(data string, path string) error {
@@ -399,7 +399,7 @@ func deepProcess(data string) error {
 
 func processLevel1(data string) error {
     if err := processLevel2(data); err != nil {
-        return fmt.Errorf("1단계 처리 실패 (경로 data.field): %w", err)
+        return fmt.Errorf("1 단계 처리 실패 (경로 data.field): %w", err)
     }
     return nil
 }
@@ -410,7 +410,7 @@ func processLevel2(data string) error {
 }
 
 // 오류 체인 예제:
-// 깊이 처리 실패: 1단계 처리 실패 (경로 data.field): path not found
+// 깊이 처리 실패: 1 단계 처리 실패 (경로 data.field): path not found
 ```
 
 ## 관련 문서

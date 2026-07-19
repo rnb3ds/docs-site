@@ -76,7 +76,7 @@ defer loader.Close()
 func (l *Loader) LoadFiles(filenames ...string) error
 ```
 
-1つ以上の設定ファイルを読み込み。
+1 つ以上の設定ファイルを読み込み。
 
 **パラメータ：**
 - `filenames` - ファイルパスのリスト、空の場合はデフォルトで `.env` を読み込み
@@ -108,7 +108,7 @@ err := loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 - `*ParseError` - 解析エラー
 - `*JSONError` - JSON 解析エラー
 - `*YAMLError` - YAML 解析エラー
-- `*SecurityError` - ファイルパスのセキュリティ検証失敗（例: パストラバーサル攻撃）
+- `*SecurityError` - ファイルパスのセキュリティ検証失敗（例：パストラバーサル攻撃）
 
 **フォーマット検出ルール：**
 
@@ -610,7 +610,7 @@ func (l *Loader) Config() Config
 
 ```go
 cfg := loader.Config()
-fmt.Printf("最大ファイルサイズ: %d\n", cfg.MaxFileSize)
+fmt.Printf("最大ファイルサイズ：%d\n", cfg.MaxFileSize)
 ```
 
 ---
@@ -781,7 +781,7 @@ func main() {
 
     // 必須キーを検証
     if err := loader.Validate(); err != nil {
-        log.Fatal("必須設定が不足:", err)
+        log.Fatal("必須設定が不足：", err)
     }
 
     // 設定の読み取り

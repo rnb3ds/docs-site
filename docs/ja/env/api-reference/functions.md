@@ -10,7 +10,7 @@ sidebar_position: 2
 パッケージレベル便利関数はシンプルな API を提供し、ほとんどのユースケースに適しています。これらの関数はグローバルデフォルトローダーを使用し、すべての関数はスレッドセーフです。
 
 :::info 初期化の必要性
-グローバルデフォルトローダーは `Load()` または `LoadWithConfig()` で明示的に初期化する必要があり、初回呼び出し時に自動生成され**ません**。未初期化時の関数の挙動は以下の通りです:
+グローバルデフォルトローダーは `Load()` または `LoadWithConfig()` で明示的に初期化する必要があり、初回呼び出し時に自動生成され**ません**。未初期化時の関数の挙動は以下の通りです：
 
 - `Get*` 関数（`GetString`、`GetInt`、`GetBool` など）: 指定されたデフォルト値（またはゼロ値）を返す
 - `Lookup`: `("", false)` を返す
@@ -82,7 +82,7 @@ name := env.GetString("app_name")  // app_name を検索 -> APP_NAME
 **3. ドットパス解決（ネストキー）**
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 保存: APP_NAME=myapp
+// 保存：APP_NAME=myapp
 
 // 以下のすべての方法でこの値にアクセス可能
 name := env.GetString("APP_NAME")   // フラット化キー名（推奨）
@@ -105,7 +105,7 @@ name := env.GetString("APP.NAME")   // 大文字ドットパス
 
 ```go
 // JSON: {"servers": [{"host": "a.com"}, {"host": "b.com"}]}
-// 格納結果: SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
+// 格納結果：SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
 
 host0 := env.GetString("servers.0.host")  // "a.com"
 host1 := env.GetString("servers.1.host")  // "b.com"
@@ -302,7 +302,7 @@ if secret != nil {
     defer secret.Release()
 
     value := secret.Reveal()   // 平文の値（必要な場合のみ呼び出し）
-    masked := secret.Masked()  // ログ用: [SECURE:32 bytes]
+    masked := secret.Masked()  // ログ用：[SECURE:32 bytes]
 }
 ```
 

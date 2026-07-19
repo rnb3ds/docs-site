@@ -152,7 +152,7 @@ if result.Resumed {
 ```
 
 :::tip
-이어받기는 서버가 Range 요청 헤더를 지원해야 합니다. 서버가 지원하지 않는 경우(206 대신 200 반환), 이미 다운로드된 부분 파일을 보호하기 위해 오류를 반환합니다.
+이어받기는 서버가 Range 요청 헤더를 지원해야 합니다. 서버가 지원하지 않는 경우 (206 대신 200 반환), 이미 다운로드된 부분 파일을 보호하기 위해 오류를 반환합니다.
 :::
 
 ### 컨텍스트 제어 포함
@@ -186,7 +186,7 @@ if err != nil {
 
 ## 도메인 클라이언트 다운로드
 
-도메인 클라이언트의 다운로드는 응답 Cookie를 세션에 자동으로 캡처합니다:
+도메인 클라이언트의 다운로드는 응답 Cookie 를 세션에 자동으로 캡처합니다:
 
 ```go
 dc, err := httpc.NewDomain("https://api.example.com")
@@ -200,7 +200,7 @@ dc.SetHeader("Authorization", "Bearer "+token)
 cfg := httpc.DefaultDownloadConfig()
 cfg.FilePath = "/tmp/report.pdf"
 
-// 다운로드 및 세션 자동 관리 (path는 baseURL에 상대적)
+// 다운로드 및 세션 자동 관리 (path 는 baseURL 에 상대적)
 result, err := dc.Download(context.Background(), "/files/report.pdf", cfg)
 if err != nil {
     log.Fatal(err)

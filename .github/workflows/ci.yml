@@ -71,30 +71,28 @@ jobs:
           # (which files/lines changed relative to the base branch).
           fetch-depth: 0
 
-      # PR: post CJK typography issues as inline review comments via reviewdog
-      # (`github-pr-review` reporter), in addition to failing the job on
-      # error-level issues. The comments make the gate self-explanatory —
-      # contributors see exactly which line has the half-width/full-width
-      # problem without reading the raw autocorrect log.
-      - name: Autocorrect (PR review)
-        if: github.event_name == 'pull_request'
-        uses: huacnlee/autocorrect-action@main
+      # Step 1 — autocorrect lint gate. Error-level CJK typography issues
+      # (half/full-width punctuation, CJK–Latin spacing) fail the step (exit 1).
+      # Identical on PR and push.
+      - name: Autocorrect lint
+        uses: huacnlee/autocorrect-action@v2
+        with:
+          use_npm: true
+
+      # Step 2 (PR only) — When lint fails, re-run with reviewdog to post the
+      # offending lines as inline PR review comments (github-pr-review reporter),
+      # so contributors see exactly which line has the problem. Mirrors the
+      # upstream README recipe.
+      # REVIEWDOG_GITHUB_API_TOKEN is MANDATORY — without it reviewdog aborts
+      # and autocorrect panics writing to the closed pipe.
+      - name: Report to PR via reviewdog
+        if: failure() && github.event_name == 'pull_request'
+        uses: huacnlee/autocorrect-action@v2
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           use_npm: true
           reviewdog: true
-          reporter: github-pr-review
-          # `file` = report issues on any file touched by the PR (not just
-          # changed lines), since autocorrect lints whole files.
-          filter_mode: file
-
-      # Push to main: keep the simple fail-on-error gate. No inline comments
-      # (no PR to comment on); main is protected so any new typo is caught
-      # at the next PR anyway.
-      - name: Autocorrect (push gate)
-        if: github.event_name != 'pull_request'
-        uses: huacnlee/autocorrect-action@main
-        with:
-          use_npm: true
 
   # API drift gate (specs/0002). audit-api.ts scans each library's Go source
   # (AST exports) and compares against the zh docs; DANGLING references — docs

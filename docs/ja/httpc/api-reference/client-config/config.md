@@ -1,7 +1,7 @@
 ---
 sidebar_label: "設定"
-title: "設定 - CyberGo HTTPC | Configとプリセット"
-description: "HTTPC 設定システム API リファレンス: Config 構造体と Timeouts、Connection、Security、Retry、Middleware サブ設定、5 種類のプリセット、ValidateConfig 検証の完全なフィールド説明を提供します。"
+title: "設定 - CyberGo HTTPC | Config とプリセット"
+description: "HTTPC 設定システム API リファレンス：Config 構造体と Timeouts、Connection、Security、Retry、Middleware サブ設定、5 種類のプリセット、ValidateConfig 検証の完全なフィールド説明を提供します。"
 sidebar_position: 1
 ---
 

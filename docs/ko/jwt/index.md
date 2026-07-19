@@ -1,12 +1,12 @@
 ---
 sidebar_label: "개요"
 title: "JWT 인증 라이브러리 - CyberGo JWT | 프로덕션급 토큰 발급·검증"
-description: "CyberGo JWT는 프로덕션급 Go JWT 인증 라이브러리로 HMAC·RSA·RSA-PSS·ECDSA 4종 12 알고리즘을 지원하며 토큰 발급·검증·갱신·취소, 블랙리스트와 속도 제한을 제공하고 모든 메서드가 동시성에 안전합니다."
+description: "CyberGo JWT 는 프로덕션급 Go JWT 인증 라이브러리로 HMAC·RSA·RSA-PSS·ECDSA 4 종 12 알고리즘을 지원하며 토큰 발급·검증·갱신·취소, 블랙리스트와 속도 제한을 제공하고 모든 메서드가 동시성에 안전합니다."
 ---
 
 # JWT - 프로덕션급 JWT 인증 라이브러리
 
-CyberGo JWT는 Go 언어를 위한 고성능 JWT 인증 라이브러리로, 토큰 생성, 검증, 갱신 및 취소의 완전한 솔루션을 제공합니다.
+CyberGo JWT 는 Go 언어를 위한 고성능 JWT 인증 라이브러리로, 토큰 생성, 검증, 갱신 및 취소의 완전한 솔루션을 제공합니다.
 
 ## 특징
 

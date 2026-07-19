@@ -14,7 +14,7 @@ JSON 처리 성능을 최적화하는 전략과 팁입니다.
 ### Processor 인스턴스 재사용
 
 ```go
-// ✅ 패키지 레벨 함수는 전역 Processor를 자동으로 재사용
+// ✅ 패키지 레벨 함수는 전역 Processor 를 자동으로 재사용
 for _, item := range dataList {
     val := json.GetString(item, "name")
 }
@@ -35,10 +35,10 @@ for _, item := range dataList {
 ### 할당 감소
 
 ```go
-// ✅ Marshal은 바이트 슬라이스 반환
+// ✅ Marshal 은 바이트 슬라이스 반환
 bytes, _ := json.Marshal(data)
 
-// ✅ EncodeWithConfig로 문자열 반환 (Encode는 사용 중단)
+// ✅ EncodeWithConfig 로 문자열 반환 (Encode 는 사용 중단)
 s, _ := json.EncodeWithConfig(data)
 ```
 
@@ -73,7 +73,7 @@ processor.ForeachFile("large.json", func(key any, item *json.IterableValue) erro
 ### NDJSON 처리
 
 ```go
-// StreamLinesInto로 스트리밍 처리
+// StreamLinesInto 로 스트리밍 처리
 file, _ := os.Open("data.jsonl")
 defer file.Close()
 entries, err := json.StreamLinesInto[LogEntry](file, func(lineNum int, entry LogEntry) error {
@@ -111,7 +111,7 @@ wg.Wait()
 items := json.GetArray(data, "items")
 jobs := make(chan any, len(items))
 
-// 고정된 수의 worker를 시작하여 goroutine을 재사용하고 잦은 생성/소멸을 방지
+// 고정된 수의 worker 를 시작하여 goroutine 을 재사용하고 잦은 생성/소멸을 방지
 var wg sync.WaitGroup
 workers := runtime.NumCPU()
 for w := 0; w < workers; w++ {
@@ -124,7 +124,7 @@ for w := 0; w < workers; w++ {
     }()
 }
 
-// 작업을 분배한 후 채널을 닫아 worker에게 종료를 알림
+// 작업을 분배한 후 채널을 닫아 worker 에게 종료를 알림
 for _, item := range items {
     jobs <- item
 }
@@ -149,7 +149,7 @@ safeCfg.MaxJSONSize = 1024 * 1024
 ### 불필요한 기능 비활성화
 
 ```go
-// Hook이 필요 없으면 설정하지 않음
+// Hook 이 필요 없으면 설정하지 않음
 cfg := json.DefaultConfig() // 최소 설정
 ```
 

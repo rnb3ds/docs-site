@@ -87,10 +87,10 @@ defer p.Close()
 
 // 处理一些内容后
 stats := p.GetStatistics()
-fmt.Printf("已处理: %d\n", stats.TotalProcessed)
-fmt.Printf("缓存命中: %d\n", stats.CacheHits)
+fmt.Printf("已处理：%d\n", stats.TotalProcessed)
+fmt.Printf("缓存命中：%d\n", stats.CacheHits)
 fmt.Printf("平均耗时: %v\n", stats.AverageProcessTime)
-fmt.Printf("错误数: %d\n", stats.ErrorCount)
+fmt.Printf("错误数：%d\n", stats.ErrorCount)
 ```
 
 ## 如何启用审计？

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "오류 타입"
 title: "오류 타입 - CyberGo HTTPC | ClientError 상세"
-description: "HTTPC 오류 타입 API 레퍼런스: ClientError 구조체 필드와 메서드, ErrorType 12가지 오류 분류 열거, 센티널 오류 변수와 errors.Is/As 매칭 예제의 완전한 설명과 사용법을 제공합니다."
+description: "HTTPC 오류 타입 API 레퍼런스: ClientError 구조체 필드와 메서드, ErrorType 12 가지 오류 분류 열거, 센티널 오류 변수와 errors.Is/As 매칭 예제의 완전한 설명과 사용법을 제공합니다."
 sidebar_position: 3
 ---
 
@@ -37,7 +37,7 @@ type ClientError struct {
 | Cause | `error` | 근본 오류, `Unwrap()`으로 접근 가능 |
 | `URL` | `string` | 요청 URL (자격 증명 마스킹됨) |
 | `Method` | `string` | HTTP 메서드 (GET, POST 등) |
-| `Attempts` | `int` | 시도한 횟수(첫 요청 포함) |
+| `Attempts` | `int` | 시도한 횟수 (첫 요청 포함) |
 | `StatusCode` | `int` | HTTP 상태 코드 (HTTP 오류가 아닌 경우 0) |
 | Host | `string` | 요청 호스트명 |
 
@@ -85,7 +85,7 @@ type ErrorType = engine.ErrorType
 | `ErrorTypeValidation` | 요청 검증 오류 | 아니요 |
 | `ErrorTypeHTTP` | HTTP 계층 오류 | 상황에 따라 |
 
-> ¹ 컨텍스트 데드라인(`WithTimeout`, `TimeoutConfig.Request`)으로 인한 타임아웃은 재시도**하지 않습니다**. 전송 계층 타임아웃(예: `net.OpError` 타임아웃)만 재시도됩니다.
+> ¹ 컨텍스트 데드라인 (`WithTimeout`, `TimeoutConfig.Request`) 으로 인한 타임아웃은 재시도**하지 않습니다**. 전송 계층 타임아웃 (예: `net.OpError` 타임아웃) 만 재시도됩니다.
 
 ### 타입 판단
 

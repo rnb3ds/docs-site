@@ -59,10 +59,10 @@ type FieldNamingConvention int // フィールドキー命名規則
 | 定数 | 値 | 説明 |
 |------|----|------|
 | `NamingConventionAny` | 0 | 任意のフォーマットを受け付け（デフォルト） |
-| `NamingConventionSnakeCase` | 1 | snake_case（例: user_id） |
-| `NamingConventionCamelCase` | 2 | camelCase（例: userId） |
-| `NamingConventionPascalCase` | 3 | PascalCase（例: UserId） |
-| `NamingConventionKebabCase` | 4 | kebab-case（例: user-id） |
+| `NamingConventionSnakeCase` | 1 | snake_case（例：user_id） |
+| `NamingConventionCamelCase` | 2 | camelCase（例：userId） |
+| `NamingConventionPascalCase` | 3 | PascalCase（例：UserId） |
+| `NamingConventionKebabCase` | 4 | kebab-case（例：user-id） |
 
 ## ハッシュアルゴリズム
 
@@ -82,7 +82,7 @@ type HashAlgorithm int // 整合性署名ハッシュアルゴリズム
 | `DefaultLogPath` | `"logs/app.log"` | デフォルトログファイルパス |
 | `DefaultMaxSizeMB` | `100` | デフォルトファイルサイズ制限（MB） |
 | `DefaultMaxBackups` | `10` | デフォルトバックアップ数 |
-| `DefaultMaxAge` | `30 * 24 * time.Hour` | デフォルト保持日数（30日） |
+| `DefaultMaxAge` | `30 * 24 * time.Hour` | デフォルト保持日数（30 日） |
 
 ## コンテキストキー
 

@@ -11,7 +11,7 @@ import { EDIT_LINK_BASE, DOC_ISSUE_URL } from '../shared'
  * and adding a language is one row here + one in shared.ts LANGS.
  *
  * The `UiLabels` table is ALSO the single source for client-side component
- * strings (DocFeedback / SiteFooter / NotFound / LanguagePrompt), consumed via
+ * strings (SiteFooter / NotFound / LanguagePrompt), consumed via
  * the `useUiLabels()` composable.
  */
 export interface UiLabels {
@@ -43,11 +43,6 @@ export interface UiLabels {
   darkModeSwitchTitle: string
 
   // --- Component-facing strings (consumed via useUiLabels) ---
-  // DocFeedback
-  feedbackQuestion: string
-  feedbackYes: string
-  feedbackNo: string
-  feedbackThanks: string
   // SiteFooter
   footerBrandDesc: string
   footerCommunity: string
@@ -114,10 +109,6 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     darkModeSwitchLabel: '主题',
     lightModeSwitchTitle: '切换到浅色模式',
     darkModeSwitchTitle: '切换到深色模式',
-    feedbackQuestion: '本文有帮助吗？',
-    feedbackYes: '有帮助',
-    feedbackNo: '没帮助',
-    feedbackThanks: '感谢您的反馈！',
     footerBrandDesc:
       '专为 Go 语言打造的高性能开源库集合，涵盖 JSON、JWT、HTTP 客户端、HTML 提取、日志和环境变量管理。',
     footerCommunity: '社区',
@@ -163,10 +154,6 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     darkModeSwitchLabel: 'Theme',
     lightModeSwitchTitle: 'Switch to light theme',
     darkModeSwitchTitle: 'Switch to dark theme',
-    feedbackQuestion: 'Was this page helpful?',
-    feedbackYes: 'Yes',
-    feedbackNo: 'No',
-    feedbackThanks: 'Thanks for your feedback!',
     footerBrandDesc:
       'High-performance Go open-source library collection: JSON, JWT, HTTP client, HTML extraction, logging, and environment management.',
     footerCommunity: 'Community',
@@ -212,10 +199,6 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     darkModeSwitchLabel: '테마',
     lightModeSwitchTitle: '라이트 테마로 전환',
     darkModeSwitchTitle: '다크 테마로 전환',
-    feedbackQuestion: '이 페이지가 도움이 되었나요?',
-    feedbackYes: '도움 됨',
-    feedbackNo: '도움 안 됨',
-    feedbackThanks: '피드백 감사합니다!',
     footerBrandDesc:
       'Go 언어를 위한 고성능 오픈소스 라이브러리 컬렉션: JSON, JWT, HTTP 클라이언트, HTML 추출, 로깅, 환경 변수 관리.',
     footerCommunity: '커뮤니티',
@@ -261,10 +244,6 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     darkModeSwitchLabel: 'テーマ',
     lightModeSwitchTitle: 'ライトモードに切り替え',
     darkModeSwitchTitle: 'ダークモードに切り替え',
-    feedbackQuestion: 'このページは役に立ちましたか？',
-    feedbackYes: '役に立った',
-    feedbackNo: '役に立たなかった',
-    feedbackThanks: 'フィードバックありがとうございます！',
     footerBrandDesc:
       'Go 言語のための高性能オープンソースライブラリコレクション：JSON、JWT、HTTPクライアント、HTML抽出、ロギング、環境変数管理。',
     footerCommunity: 'コミュニティ',
@@ -310,10 +289,6 @@ export const UI_LABELS: Record<Lang, UiLabels> = {
     darkModeSwitchLabel: 'Тема',
     lightModeSwitchTitle: 'Переключить на светлую тему',
     darkModeSwitchTitle: 'Переключить на тёмную тему',
-    feedbackQuestion: 'Была ли эта страница полезной?',
-    feedbackYes: 'Да',
-    feedbackNo: 'Нет',
-    feedbackThanks: 'Спасибо за отзыв!',
     footerBrandDesc:
       'Коллекция высокопроизводительных библиотек Go: JSON, JWT, HTTP-клиент, извлечение HTML, логирование и управление переменными окружения.',
     footerCommunity: 'Сообщество',

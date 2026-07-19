@@ -1,7 +1,7 @@
 ---
 sidebar_label: "상수와 타입"
 title: "상수와 타입 - CyberGo HTTPC | 상수와 타입"
-description: "HTTPC 상수와 타입 API 레퍼런스: BodyKind 요청 본문 열거와 자동 감지, FormData와 FileData 업로드 타입, AuditEvent 감사 이벤트 구조와 컨텍스트 키 정의의 완전한 설명을 제공합니다."
+description: "HTTPC 상수와 타입 API 레퍼런스: BodyKind 요청 본문 열거와 자동 감지, FormData 와 FileData 업로드 타입, AuditEvent 감사 이벤트 구조와 컨텍스트 키 정의의 완전한 설명을 제공합니다."
 sidebar_position: 2
 ---
 
@@ -117,11 +117,11 @@ type AuditMiddlewareConfig struct {
 | `UserIDKey` | `auditContextKey` | 감사 이벤트의 사용자 ID |
 
 ```go
-// context로 감사 정보 전달
+// context 로 감사 정보 전달
 ctx := context.WithValue(context.Background(), httpc.SourceIPKey, "192.168.1.1")
 ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 
-// Config에 감사 미들웨어 설정
+// Config 에 감사 미들웨어 설정
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.AuditMiddleware(func(event httpc.AuditEvent) {
@@ -131,12 +131,12 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
 }
 client, _ := httpc.New(cfg)
 
-// 요청 시 context의 값이 미들웨어에서 읽힘
+// 요청 시 context 의 값이 미들웨어에서 읽힘
 result, err := client.Request(ctx, "GET", url)
 ```
 
 ## 관련 항목
 
 - [오류 타입](./errors) - ClientError, ErrorType 및 오류 변수의 완전한 참조
-- [요청 옵션](../core/options) - BodyKind의 WithBody 사용
-- [미들웨어](../client-config/middleware) - AuditMiddleware와 감사 설정
+- [요청 옵션](../core/options) - BodyKind 의 WithBody 사용
+- [미들웨어](../client-config/middleware) - AuditMiddleware 와 감사 설정

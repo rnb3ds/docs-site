@@ -7,7 +7,7 @@ sidebar_position: 6
 
 # 파싱 및 검증 함수
 
-json 패키지가 제공하는 파싱 및 검증 함수로, JSON을 대상 객체로 파싱, Processor 인스턴스를 통한 파싱, JSON 유효성 검증 및 JSON Schema 검증을 지원합니다.
+json 패키지가 제공하는 파싱 및 검증 함수로, JSON 을 대상 객체로 파싱, Processor 인스턴스를 통한 파싱, JSON 유효성 검증 및 JSON Schema 검증을 지원합니다.
 
 ## 파싱 함수
 
@@ -123,7 +123,7 @@ func main() {
 
 **시그니처**: `func (p *Processor) Parse(jsonStr string, target any, cfg ...Config) error`
 
-Processor 인스턴스를 통해 JSON을 대상 포인터로 파싱합니다.
+Processor 인스턴스를 통해 JSON 을 대상 포인터로 파싱합니다.
 
 ```go
 p, err := json.New()
@@ -143,7 +143,7 @@ if err != nil {
 
 **시그니처**: `func (p *Processor) ParseAny(jsonStr string, cfg ...Config) (any, error)`
 
-Processor 인스턴스를 통해 JSON을 파싱하고 `any` 타입으로 반환합니다. 패키지 레벨 `ParseAny`와 동일한 동작입니다.
+Processor 인스턴스를 통해 JSON 을 파싱하고 `any` 타입으로 반환합니다. 패키지 레벨 `ParseAny`와 동일한 동작입니다.
 
 ```go
 p, err := json.New()
@@ -165,7 +165,7 @@ data, err := p.ParseAny(`{"name": "test"}`)
 
 JSON 바이트 슬라이스가 유효한지 검증합니다. `encoding/json.Valid`과 100% 호환됩니다: cfg 없이 `json.Valid(data)`를 호출하면 표준 라이브러리와 완전히 동일하며, 일반 `bool`을 반환합니다.
 
-선택적인 후행 `Config`로 보안 제한(크기, 중첩 깊이, 전체 보안 스캔 등)을 적용할 수 있습니다. cfg를 전달하면 `Valid`는 `Processor.Valid`에 위임하며, 모든 오류를 `false`로 축약합니다.
+선택적인 후행 `Config`로 보안 제한 (크기, 중첩 깊이, 전체 보안 스캔 등) 을 적용할 수 있습니다. cfg 를 전달하면 `Valid`는 `Processor.Valid`에 위임하며, 모든 오류를 `false`로 축약합니다.
 
 ```go
 package main
@@ -226,7 +226,7 @@ func main() {
 
 시그니처: `func ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
 
-JSON Schema를 사용하여 JSON 데이터를 검증합니다. 모든 검증 오류의 목록을 반환합니다.
+JSON Schema 를 사용하여 JSON 데이터를 검증합니다. 모든 검증 오류의 목록을 반환합니다.
 
 ```go
 package main

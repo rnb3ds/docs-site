@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Claims"
 title: "Claims - CyberGo JWT | 내장 선언 구조"
-description: "CyberGo JWT Claims는 UserID·Username·Role·권한·스코프 등 비즈니스 필드와 RFC 7519 RegisteredClaims를 포함하며 필드 길이, 배열 크기, 주입 모드 검증 제약을 제공합니다."
+description: "CyberGo JWT Claims 는 UserID·Username·Role·권한·스코프 등 비즈니스 필드와 RFC 7519 RegisteredClaims 를 포함하며 필드 길이, 배열 크기, 주입 모드 검증 제약을 제공합니다."
 sidebar_position: 40
 ---
 
@@ -45,13 +45,13 @@ type Claims struct {
 
 `Validate()` 메서드는 `UserID` 또는 `Username` 중 최소 하나가 비어있지 않은지 확인합니다.
 
-Processor는 토큰 생성 및 검증 시 추가 심층 검증을 수행합니다 (내부 `validateClaims` 함수를 통해):
+Processor 는 토큰 생성 및 검증 시 추가 심층 검증을 수행합니다 (내부 `validateClaims` 함수를 통해):
 
 | 규칙 | 제한 |
 |------|------|
-| 문자열 필드 길이 | 최대 256자 |
-| 배열 필드 크기 | 최대 100개 항목 |
-| `Extra` 필드 수 | 최대 50개 키 |
+| 문자열 필드 길이 | 최대 256 자 |
+| 배열 필드 크기 | 최대 100 개 항목 |
+| `Extra` 필드 수 | 최대 50 개 키 |
 | `Extra` 값 타입 | `string`, `[]string`만 허용, 중첩 map 및 기타 타입은 거부 |
 | 제어 문자 | 탭, 줄바꿈, 캐리지 리턴을 제외한 제어 문자 거부 |
 | 인젝션 패턴 감지 | HTML/SQL/경로 순회 등 위험 패턴 포함 시 거부 |

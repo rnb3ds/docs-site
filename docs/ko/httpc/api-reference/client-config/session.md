@@ -7,7 +7,7 @@ sidebar_position: 3
 
 # 세션 관리
 
-SessionManager는 스레드 안전한 Cookie와 요청 헤더 저장소를 제공하며, DomainClient에서 내부적으로 사용됩니다.
+SessionManager 는 스레드 안전한 Cookie 와 요청 헤더 저장소를 제공하며, DomainClient 에서 내부적으로 사용됩니다.
 
 ## NewSessionManager
 
@@ -36,13 +36,13 @@ type SessionConfig struct {
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `CookieSecurity` | `*CookieSecurityConfig` | Cookie 보안 검증 설정, nil이면 검증하지 않음 |
+| `CookieSecurity` | `*CookieSecurityConfig` | Cookie 보안 검증 설정, nil 이면 검증하지 않음 |
 
 ```go
 func DefaultSessionConfig() *SessionConfig
 ```
 
-기본 설정을 반환합니다(Cookie 보안 검증 수행하지 않음).
+기본 설정을 반환합니다 (Cookie 보안 검증 수행하지 않음).
 
 ## 헤더 관리
 
@@ -105,7 +105,7 @@ func (s *SessionManager) GetHeaders() map[string]string
 func (s *SessionManager) SetCookie(cookie *http.Cookie) error
 ```
 
-세션 Cookie를 설정합니다. Cookie의 유효성을 검증하며, CookieSecurity가 설정된 경우 보안 속성도 검증합니다.
+세션 Cookie 를 설정합니다. Cookie 의 유효성을 검증하며, CookieSecurity 가 설정된 경우 보안 속성도 검증합니다.
 
 ```go
 err := sm.SetCookie(&http.Cookie{
@@ -122,7 +122,7 @@ err := sm.SetCookie(&http.Cookie{
 func (s *SessionManager) SetCookies(cookies []*http.Cookie) error
 ```
 
-Cookie를 일괄 설정합니다.
+Cookie 를 일괄 설정합니다.
 
 ### DeleteCookie
 
@@ -130,7 +130,7 @@ Cookie를 일괄 설정합니다.
 func (s *SessionManager) DeleteCookie(name string)
 ```
 
-이름으로 Cookie를 삭제합니다.
+이름으로 Cookie 를 삭제합니다.
 
 ### ClearCookies
 
@@ -138,7 +138,7 @@ func (s *SessionManager) DeleteCookie(name string)
 func (s *SessionManager) ClearCookies()
 ```
 
-모든 Cookie를 초기화합니다.
+모든 Cookie 를 초기화합니다.
 
 ### GetCookies
 
@@ -146,7 +146,7 @@ func (s *SessionManager) ClearCookies()
 func (s *SessionManager) GetCookies() []*http.Cookie
 ```
 
-모든 Cookie의 복사본을 반환합니다.
+모든 Cookie 의 복사본을 반환합니다.
 
 ### GetCookie
 
@@ -154,7 +154,7 @@ func (s *SessionManager) GetCookies() []*http.Cookie
 func (s *SessionManager) GetCookie(name string) *http.Cookie
 ```
 
-이름으로 Cookie 복사본을 가져옵니다. 존재하지 않으면 nil을 반환합니다.
+이름으로 Cookie 복사본을 가져옵니다. 존재하지 않으면 nil 을 반환합니다.
 
 ## Cookie 보안
 
@@ -176,7 +176,7 @@ sm.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
 func (s *SessionManager) UpdateFromResult(result *Result)
 ```
 
-요청 결과에서 세션 Cookie를 업데이트합니다. 안전하지 않은 Cookie는 조용히 건너뜁니다.
+요청 결과에서 세션 Cookie 를 업데이트합니다. 안전하지 않은 Cookie 는 조용히 건너뜁니다.
 
 ### UpdateFromCookies
 
@@ -184,7 +184,7 @@ func (s *SessionManager) UpdateFromResult(result *Result)
 func (s *SessionManager) UpdateFromCookies(cookies []*http.Cookie)
 ```
 
-Cookie 슬라이스에서 세션 Cookie를 업데이트합니다.
+Cookie 슬라이스에서 세션 Cookie 를 업데이트합니다.
 
 ## 관련 항목
 

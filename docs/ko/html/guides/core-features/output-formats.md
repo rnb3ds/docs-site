@@ -13,7 +13,7 @@ sidebar_position: 2
 
 | 특징 | 순수 텍스트 | Markdown | JSON |
 |------|--------|----------|------|
-| 가독성 | 높음 | 높음 | 낮음(기계 친화적) |
+| 가독성 | 높음 | 높음 | 낮음 (기계 친화적) |
 | 구조 보존 | 없음 | 제목/목록/링크/이미지 | 전체 메타데이터 |
 | 이미지 처리 | 제거 | `![alt](url)` | ImageInfo 목록 |
 | 링크 처리 | 텍스트만 보존 | `[text](url)` | LinkInfo 목록 |
@@ -41,10 +41,10 @@ fmt.Println(text)
 
 ### 특징
 
-- 이미지의 alt 텍스트는 제거되고, 링크의 보이는 텍스트는 유지됩니다(URL과 Markdown 문법만 제거)
+- 이미지의 alt 텍스트는 제거되고, 링크의 보이는 텍스트는 유지됩니다 (URL 과 Markdown 문법만 제거)
 - 제목, 단락 사이에 줄바꿈 유지
 - 목록 콘텐츠는 순수 텍스트 형태로 표시
-- 표는 `TableFormat`에 따라 렌더링됩니다(기본 Markdown 표)
+- 표는 `TableFormat`에 따라 렌더링됩니다 (기본 Markdown 표)
 
 ## Markdown
 
@@ -67,7 +67,7 @@ md2, err := p.ExtractToMarkdown(data)
 ```html
 <article>
     <h1>Go 입문 가이드</h1>
-    <p>Go는 컴파일 언어입니다.</p>
+    <p>Go 는 컴파일 언어입니다.</p>
     <img src="gopher.png" alt="Gopher" />
     <a href="https://go.dev">Go 공식 웹사이트</a>
 </article>
@@ -78,7 +78,7 @@ md2, err := p.ExtractToMarkdown(data)
 ```markdown
 Go 입문 가이드
 
-Go는 컴파일 언어입니다.
+Go 는 컴파일 언어입니다.
 
 ![Gopher](gopher.png)
 [Go 공식 웹사이트](https://go.dev)
@@ -94,7 +94,7 @@ cfg.InlineImageFormat = "markdown"  // "none" | "markdown" | "html" | "placehold
 cfg.InlineLinkFormat = "markdown"   // "none" | "markdown" | "html"
 ```
 
-| 형식 값 | 이미지 출력(InlineImageFormat) | 링크 출력(InlineLinkFormat) |
+| 형식 값 | 이미지 출력 (InlineImageFormat) | 링크 출력 (InlineLinkFormat) |
 |--------|----------|----------|
 | `none` | 제거 | 텍스트만 보존 |
 | `markdown` | `![alt](url)` | `[text](url)` |
@@ -132,7 +132,7 @@ fmt.Println(string(jsonBytes))
 
 ```json
 {
-  "text": "Go 입문 가이드\n\nGo는 컴파일 언어입니다.\n\nGo 공식 웹사이트",
+  "text": "Go 입문 가이드\n\nGo 는 컴파일 언어입니다.\n\nGo 공식 웹사이트",
   "title": "Go 입문 가이드",
   "images": [
     {"url": "gopher.png", "alt": "Gopher", "title": "", "width": "", "height": "", "is_decorative": false, "position": 1}
@@ -147,7 +147,7 @@ fmt.Println(string(jsonBytes))
 ```
 
 :::tip 시간 필드
-JSON 출력에서 `ProcessingTime`과 `ReadingTime`은 밀리초(`processing_time_ms`, `reading_time_ms`)로 자동 변환되어 프론트엔드와 API 소비에 편리합니다.
+JSON 출력에서 `ProcessingTime`과 `ReadingTime`은 밀리초 (`processing_time_ms`, `reading_time_ms`) 로 자동 변환되어 프론트엔드와 API 소비에 편리합니다.
 :::
 
 ### 적용 시나리오

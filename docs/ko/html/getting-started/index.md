@@ -1,7 +1,7 @@
 ---
 sidebar_label: "빠른 시작"
-title: "빠른 시작 - CyberGo html | 5분 입문 가이드"
-description: "CyberGo html 빠른 시작 안내: 설치, 기본 콘텐츠 추출, 4종 Config 프리셋, 텍스트·Markdown·JSON 출력으로 5분 만에 HTML 콘텐츠 추출을 시작합니다."
+title: "빠른 시작 - CyberGo html | 5 분 입문 가이드"
+description: "CyberGo html 빠른 시작 안내: 설치, 기본 콘텐츠 추출, 4 종 Config 프리셋, 텍스트·Markdown·JSON 출력으로 5 분 만에 HTML 콘텐츠 추출을 시작합니다."
 sidebar_position: 2
 ---
 
@@ -35,7 +35,7 @@ func main() {
         <body>
             <article>
                 <h1>Go 입문 가이드</h1>
-                <p>Go는 정적 타입의 컴파일 언어입니다.</p>
+                <p>Go 는 정적 타입의 컴파일 언어입니다.</p>
                 <img src="gopher.png" alt="Gopher" />
                 <a href="https://go.dev">Go 공식 웹사이트</a>
             </article>
@@ -61,7 +61,7 @@ func main() {
 제목: Go 언어 튜토리얼
 본문: Go 입문 가이드
 
-Go는 정적 타입의 컴파일 언어입니다.
+Go 는 정적 타입의 컴파일 언어입니다.
 
 Go 공식 웹사이트
 이미지 수: 1
@@ -130,7 +130,7 @@ result, err := html.ExtractWithContext(ctx, data)
 
 ### 동시성 안전
 
-`Processor` 인스턴스는 동시성 안전하므로 여러 goroutine에서 공유하여 사용할 수 있습니다:
+`Processor` 인스턴스는 동시성 안전하므로 여러 goroutine 에서 공유하여 사용할 수 있습니다:
 
 ```go
 p, err := html.New(html.DefaultConfig())
@@ -139,7 +139,7 @@ if err != nil {
 }
 defer p.Close()
 
-// 여러 goroutine에서 안전하게 호출
+// 여러 goroutine 에서 안전하게 호출
 var wg sync.WaitGroup
 for _, url := range urls {
     wg.Add(1)
@@ -152,7 +152,7 @@ for _, url := range urls {
 wg.Wait()
 ```
 
-패키지 함수 역시 동시성 안전합니다(내부적으로 Processor 풀 사용).
+패키지 함수 역시 동시성 안전합니다 (내부적으로 Processor 풀 사용).
 
 ### 인코딩 감지
 
@@ -162,7 +162,7 @@ wg.Wait()
 // GBK 인코딩된 HTML, 자동 감지 및 올바른 추출
 result, err := html.Extract(gbkData)
 
-// Config.Encoding으로 수동 지정도 가능
+// Config.Encoding 으로 수동 지정도 가능
 cfg := html.DefaultConfig()
 cfg.Encoding = "gbk"
 ```

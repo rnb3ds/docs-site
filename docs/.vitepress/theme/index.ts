@@ -9,7 +9,6 @@ import {
   LanguageMenu,
   LanguagePrompt,
   SiteFooter,
-  DocFeedback,
   ProjectNavBarTitle,
   ProjectGitHubLink,
   ProjectSearch,
@@ -73,7 +72,6 @@ export default {
       // Breadcrumb trail above the page <h1>. The composable hides it on
       // home / project-root / frontmatter `breadcrumb: false`.
       'doc-before': () => h(Breadcrumb),
-      'doc-footer-before': () => h(DocFeedback),
       'layout-bottom': () => h(SiteFooter)
     })
   },

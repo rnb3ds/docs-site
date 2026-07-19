@@ -25,7 +25,7 @@ cfg.Timeouts.IdleConn = 120 * time.Second // 空闲连接保持时间
 | 参数 | 默认 | 说明 |
 |------|------|------|
 | `MaxIdleConns` | 50 | 全局最大空闲连接数 |
-| `MaxConnsPerHost` | 10 | 每主机最大连接数（含活跃+空闲） |
+| `MaxConnsPerHost` | 10 | 每主机最大连接数（含活跃 + 空闲） |
 | `IdleConn` | 90s | 空闲连接超时，超时后关闭 |
 | `Dial` | 10s | 建立连接超时 |
 | `TLSHandshake` | 10s | TLS 握手超时 |
@@ -79,7 +79,7 @@ cfg.Connection.ProxyURL = "socks5://proxy.example.com:1080"
 cfg := httpc.DefaultConfig()
 cfg.Connection.EnableSystemProxy = true
 
-// 自动检测:
+// 自动检测：
 // - Windows: 注册表 Internet Settings
 // - macOS: 系统偏好设置网络代理
 // - Linux: 环境变量 HTTP_PROXY / HTTPS_PROXY

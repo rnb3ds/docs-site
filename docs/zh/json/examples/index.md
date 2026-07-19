@@ -636,7 +636,7 @@ func main() {
     defer processor.Close()
 
     // 处理 JSON 对象文件（键值对结构）
-    // 文件格式: {"user1": {...}, "user2": {...}, ...}
+    // 文件格式：{"user1": {...}, "user2": {...}, ...}
     err = processor.ForeachFile("config-map.json", func(key any, item *json.IterableValue) error {
         name := item.GetString("name")
         fmt.Printf("Key: %s, Name: %s\n", key, name)

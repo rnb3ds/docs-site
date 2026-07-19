@@ -1,7 +1,7 @@
 ---
 sidebar_label: "빠른 시작"
-title: "빠른 시작 - CyberGo HTTPC | 5분 가이드"
-description: "HTTPC 빠른 시작: go get 설치와 초기화, GET/POST 요청 및 응답 처리, 다섯 가지 설정 프리셋 선택, JSON 파싱과 Bearer Token 인증으로 5분 만에 보안 HTTP 클라이언트를 시작하고 첫 요청을 완성합니다."
+title: "빠른 시작 - CyberGo HTTPC | 5 분 가이드"
+description: "HTTPC 빠른 시작: go get 설치와 초기화, GET/POST 요청 및 응답 처리, 다섯 가지 설정 프리셋 선택, JSON 파싱과 Bearer Token 인증으로 5 분 만에 보안 HTTP 클라이언트를 시작하고 첫 요청을 완성합니다."
 sidebar_position: 1
 ---
 
@@ -117,7 +117,7 @@ result, err := client.Get("https://api.example.com/data",
 
 ## 오류 처리
 
-HTTPC은 **네트워크 계층 오류**와 **HTTP 상태 코드**를 구분합니다:
+HTTPC 은 **네트워크 계층 오류**와 **HTTP 상태 코드**를 구분합니다:
 
 ```go
 result, err := client.Get("https://api.example.com/data")
@@ -146,7 +146,7 @@ case result.IsServerError():
 
 ## 다음 단계
 
-- **[실전 튜토리얼](../guides/tutorial)** - 30분 만에 GitHub API 클라이언트 구축
+- **[실전 튜토리얼](../guides/tutorial)** - 30 분 만에 GitHub API 클라이언트 구축
 - **[요청과 응답](../guides/request-response)** - 완전한 요청 옵션과 응답 처리
 - **[기본 예제](../examples/basic-usage)** - GET/POST/미들웨어 등 실제 예시
 - **[치트시트](./cheatsheet)** - 자주 사용하는 작업 빠른 참조

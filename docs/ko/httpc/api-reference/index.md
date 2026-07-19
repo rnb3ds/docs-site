@@ -7,11 +7,11 @@ sidebar_position: 1
 
 # API 레퍼런스
 
-HTTPC는 28개의 요청 옵션 함수, 5개의 설정 프리셋, 8개의 내장 미들웨어와 완전한 다운로드 지원을 제공합니다.
+HTTPC 는 28 개의 요청 옵션 함수, 5 개의 설정 프리셋, 8 개의 내장 미들웨어와 완전한 다운로드 지원을 제공합니다.
 
 ## 핵심 아키텍처
 
-HTTPC는 이중 계층 설계를 사용합니다. Layer 1의 메서드 API는 얇은 래퍼이며, 실제 요청을 처리하는 엔진은 Layer 2의 Handler 파이프라인입니다.
+HTTPC 는 이중 계층 설계를 사용합니다. Layer 1 의 메서드 API 는 얇은 래퍼이며, 실제 요청을 처리하는 엔진은 Layer 2 의 Handler 파이프라인입니다.
 
 ```text
 HTTPC 이중 계층 아키텍처
@@ -31,7 +31,7 @@ HTTPC 이중 계층 아키텍처
 | 모듈 | 설명 |
 |------|------|
 | [패키지 함수와 클라이언트 메서드](./core/functions) | Get/Post/Put/Patch/Delete 등 패키지 함수, 클라이언트 메서드와 보조 함수 |
-| [설정](./client-config/config) | Config 구조체, 5가지 프리셋 설정, 검증 함수와 Cookie 보안 |
+| [설정](./client-config/config) | Config 구조체, 5 가지 프리셋 설정, 검증 함수와 Cookie 보안 |
 | [인터페이스](./types/interfaces) | Client, Doer, DomainClienter, RetryPolicy 등 핵심 인터페이스 |
 | [Result](./core/result) | Result, RequestInfo, ResponseInfo, RequestMeta 타입과 모든 메서드 |
 | [핸들러 파이프라인](./handler/handler-chain) | Handler 파이프라인, MiddlewareFunc 양파 체인, Chain 결합기와 뮤테이터 계약 |
@@ -40,16 +40,16 @@ HTTPC 이중 계층 아키텍처
 
 | 모듈 | 설명 |
 |------|------|
-| [요청 옵션](./core/options) | 28개 WithXxx 요청 옵션 함수 (요청 헤더, 본문, 인증, Cookie, 콜백 등) |
-| [미들웨어](./client-config/middleware) | Chain 조합, 8개 내장 미들웨어 팩토리와 감사 이벤트 타입 |
-| [오류 타입](./types/errors) | ClientError, 12가지 ErrorType 열거와 12개 오류 변수 |
+| [요청 옵션](./core/options) | 28 개 WithXxx 요청 옵션 함수 (요청 헤더, 본문, 인증, Cookie, 콜백 등) |
+| [미들웨어](./client-config/middleware) | Chain 조합, 8 개 내장 미들웨어 팩토리와 감사 이벤트 타입 |
+| [오류 타입](./types/errors) | ClientError, 12 가지 ErrorType 열거와 12 개 오류 변수 |
 
 ### 고급 기능
 
 | 모듈 | 설명 |
 |------|------|
 | [도메인 클라이언트](./client-config/domain-client) | DomainClient 생성, HTTP 메서드, 다운로드 메서드와 URL 조합 규칙 |
-| [세션 관리](./client-config/session) | SessionManager의 Cookie/요청 헤더 관리와 보안 검증 |
+| [세션 관리](./client-config/session) | SessionManager 의 Cookie/요청 헤더 관리와 보안 검증 |
 | [파일 다운로드](./client-config/download) | 다운로드 함수, DownloadConfig, 이어받기와 보안 보호 |
 | [상수와 타입](./types/constants) | BodyKind 열거, FormData/FileData와 감사 컨텍스트 키 |
 

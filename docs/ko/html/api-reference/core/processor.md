@@ -7,7 +7,7 @@ sidebar_position: 2
 
 # Processor
 
-`Processor`는 HTML 라이브러리의 핵심 처리 엔진입니다. 패키지 함수에 비해 Processor는 내부 리소스(캐시, 인코딩 감지기)를 재사용하여 고빈도 호출 시나리오에 적합합니다.
+`Processor`는 HTML 라이브러리의 핵심 처리 엔진입니다. 패키지 함수에 비해 Processor 는 내부 리소스 (캐시, 인코딩 감지기) 를 재사용하여 고빈도 호출 시나리오에 적합합니다.
 
 ## 생성
 
@@ -19,7 +19,7 @@ Processor 인스턴스를 생성하며, 선택적으로 설정을 전달할 수 
 func New(cfg ...Config) (*Processor, error)
 ```
 
-**매개변수**: 최대 1개의 `Config`, 미제공 시 `DefaultConfig()`를 사용합니다.
+**매개변수**: 최대 1 개의 `Config`, 미제공 시 `DefaultConfig()`를 사용합니다.
 
 ```go
 p, err := html.New(html.DefaultConfig())
@@ -164,7 +164,7 @@ func (p *Processor) ClearAuditLog()
 
 ### Close
 
-Processor가 보유한 리소스를 해제합니다. 사용 완료 후 반드시 호출해야 합니다.
+Processor 가 보유한 리소스를 해제합니다. 사용 완료 후 반드시 호출해야 합니다.
 
 ```go
 func (p *Processor) Close() error
@@ -173,5 +173,5 @@ func (p *Processor) Close() error
 ```go
 p, _ := html.New(cfg)
 defer p.Close()
-// ... p를 사용하여 추출
+// ... p 를 사용하여 추출
 ```

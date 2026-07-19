@@ -222,7 +222,7 @@ total, err := processor.ReduceJSONL(file, 0.0, func(acc any, item *json.Iterable
     price := item.GetFloat64("price")
     return acc.(float64) + price
 })
-fmt.Printf("总销售额: %.2f\n", total.(float64))
+fmt.Printf("总销售额：%.2f\n", total.(float64))
 ```
 
 ---
@@ -375,7 +375,7 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("统计: %d 错误, %d 警告\n", errorCount, warningCount)
+    fmt.Printf("统计：%d 错误，%d 警告\n", errorCount, warningCount)
 }
 ```
 

@@ -50,7 +50,7 @@ httpc.RecoveryMiddleware()
 httpc.LoggingMiddleware(func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
 })
-// 输出示例: [HTTP] GET https://api.example.com/data -> 200 (150ms)（状态码与耗时为实际测量值，非固定）
+// 输出示例：[HTTP] GET https://api.example.com/data -> 200 (150ms)（状态码与耗时为实际测量值，非固定）
 ```
 
 ### RequestIDMiddleware
@@ -129,7 +129,7 @@ auditCfg := &httpc.AuditMiddlewareConfig{
 httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
     data, err := json.Marshal(event)
     if err != nil {
-        log.Println("序列化审计事件失败:", err)
+        log.Println("序列化审计事件失败：", err)
         return
     }
     log.Println(string(data))
@@ -172,7 +172,7 @@ func CORSMiddleware(origin string) httpc.MiddlewareFunc {
 
             // 响应阶段：记录或修改响应
             if resp != nil {
-                log.Printf("响应状态: %d", resp.StatusCode())
+                log.Printf("响应状态：%d", resp.StatusCode())
             }
 
             return resp, err

@@ -12,7 +12,7 @@ sidebar_position: 5
 ## 概要
 
 ```text
-業務ログ（Logger）          監査ログ（AuditLogger）
+業務ログ（Logger）監査ログ（AuditLogger）
     │                           │
     ├─ Info/Debug/Warn...       ├─ SensitiveDataRedacted
     ├─ 構造化フィールド               ├─ RateLimitExceeded
@@ -111,9 +111,9 @@ auditLogger, err := dd.NewAuditLogger(dd.AuditConfig{
 
 ```go
 stats := auditLogger.Stats()
-fmt.Printf("総イベント数: %d\n", stats.TotalEvents)
-fmt.Printf("破棄イベント: %d\n", stats.Dropped)
-fmt.Printf("バッファ使用率: %.1f%%\n",
+fmt.Printf("総イベント数：%d\n", stats.TotalEvents)
+fmt.Printf("破棄イベント：%d\n", stats.Dropped)
+fmt.Printf("バッファ使用率：%.1f%%\n",
     float64(stats.BufferUsage)/float64(stats.BufferSize)*100)
 
 // タイプ別統計

@@ -423,7 +423,7 @@ func main() {
 
     sum := 0
     p.ForeachWithPathAndControl(data, "numbers", func(key any, value any) json.IteratorControl {
-        // 5보다 큰 값을 만나면 중지
+        // 5 보다 큰 값을 만나면 중지
         if num, ok := value.(float64); ok {
             if num > 5 {
                 return json.IteratorBreak
@@ -601,7 +601,7 @@ func main() {
     }
     defer processor.Close()
 
-    // ForeachFile로 대용량 파일 스트림 처리
+    // ForeachFile 로 대용량 파일 스트림 처리
     count := 0
     err = processor.ForeachFile("large-array.json", func(key any, item *json.IterableValue) error {
         count++
@@ -635,7 +635,7 @@ func main() {
     }
     defer processor.Close()
 
-    // JSON 객체 파일 처리 (키-값 쌍 구조)
+    // JSON 객체 파일 처리 (키 - 값 쌍 구조)
     // 파일 형식: {"user1": {...}, "user2": {...}, ...}
     err = processor.ForeachFile("config-map.json", func(key any, item *json.IterableValue) error {
         name := item.GetString("name")
@@ -873,7 +873,7 @@ import (
 func main() {
     // 보안 설정 사용
     cfg := json.SecurityConfig()
-    // SecurityConfig는 기본적으로 10MB로 제한됨, 여기서 1MB로 추가 제한
+    // SecurityConfig 는 기본적으로 10MB 로 제한됨, 여기서 1MB 로 추가 제한
     cfg.MaxJSONSize = 1024 * 1024 // 1MB 제한
     p, err := json.New(cfg)
     if err != nil {
@@ -882,8 +882,8 @@ func main() {
     defer p.Close()
 
     // 신뢰할 수 없는 입력 시뮬레이션
-    // 참고: 실제 공격은 더 큰 payload(예: 100MB+)를 시도할 수 있습니다
-    // 보안 설정은 MaxJSONSize를 초과하는 입력을 차단합니다
+    // 참고: 실제 공격은 더 큰 payload(예: 100MB+) 를 시도할 수 있습니다
+    // 보안 설정은 MaxJSONSize 를 초과하는 입력을 차단합니다
     untrustedInputs := []string{
         `{"data": "normal"}`,
         `{"huge": "` + string(make([]byte, 2*1024*1024)) + `"}`, // 2MB 입력 (1MB 제한 초과)

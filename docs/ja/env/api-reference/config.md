@@ -735,7 +735,7 @@ if err := loader.LoadFiles(".env"); err != nil {
 }
 
 if err := loader.Validate(); err != nil {
-    log.Fatal("必須設定が不足:", err)
+    log.Fatal("必須設定が不足：", err)
 }
 ```
 

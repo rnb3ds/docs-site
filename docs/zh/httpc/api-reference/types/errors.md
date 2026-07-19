@@ -54,11 +54,11 @@ type ClientError struct {
 ```go
 var clientErr *httpc.ClientError
 if errors.As(err, &clientErr) {
-    fmt.Println("错误类型:", clientErr.Code())
+    fmt.Println("错误类型：", clientErr.Code())
     fmt.Println("请求 URL:", clientErr.URL)
-    fmt.Println("重试次数:", clientErr.Attempts)
-    fmt.Println("可重试:", clientErr.IsRetryable())
-    fmt.Println("底层错误:", clientErr.Unwrap())
+    fmt.Println("重试次数：", clientErr.Attempts)
+    fmt.Println("可重试：", clientErr.IsRetryable())
+    fmt.Println("底层错误：", clientErr.Unwrap())
 }
 ```
 

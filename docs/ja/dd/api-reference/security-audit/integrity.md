@@ -211,9 +211,9 @@ logEntry := message + signature
 // ログを検証
 result, err := signer.Verify(logEntry)
 if err != nil {
-    fmt.Println("整合性検証失敗:", err)
+    fmt.Println("整合性検証失敗：", err)
 } else if result.Valid {
-    fmt.Printf("検証成功 - シリアル番号: %d\n", result.Sequence)
+    fmt.Printf("検証成功 - シリアル番号：%d\n", result.Sequence)
 }
 ```
 

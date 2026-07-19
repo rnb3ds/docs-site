@@ -41,7 +41,7 @@ if err != nil {
     }
     if errors.Is(err, json.ErrTypeMismatch) {
         // 类型不匹配
-        return "", fmt.Errorf("字段类型错误: %w", err)
+        return "", fmt.Errorf("字段类型错误：%w", err)
     }
     return "", err
 }
@@ -55,7 +55,7 @@ if err != nil {
 
 ```go
 type JsonsError struct {
-    Op      string `json:"op"`      // 操作类型: "get", "set", "delete", "marshal" 等
+    Op      string `json:"op"`      // 操作类型："get", "set", "delete", "marshal" 等
     Path    string `json:"path"`    // JSON 路径（如有）
     Message string `json:"message"` // 人类可读的错误消息
     Err     error  `json:"err"`     // 底层错误
@@ -140,7 +140,7 @@ if multiErr.HasError() {
 ```go
 val, err := json.Get(data, "config.api_key")
 if err != nil {
-    return fmt.Errorf("读取 API 密钥失败: %w", err)
+    return fmt.Errorf("读取 API 密钥失败：%w", err)
 }
 ```
 
@@ -165,7 +165,7 @@ func validateUser(data string) error {
         return &ValidationError{Field: "name", Message: "必填"}
     }
     if len(name) < 2 {
-        return &ValidationError{Field: "name", Message: "长度至少2个字符"}
+        return &ValidationError{Field: "name", Message: "长度至少 2 个字符"}
     }
     return nil
 }
@@ -269,19 +269,19 @@ if err != nil {
     switch {
     case errors.Is(err, json.ErrInvalidJSON):
         // JSON 格式错误
-        return fmt.Errorf("数据格式错误: %w", err)
+        return fmt.Errorf("数据格式错误：%w", err)
     case errors.Is(err, json.ErrPathNotFound):
         // 路径不存在
-        return fmt.Errorf("字段不存在: %w", err)
+        return fmt.Errorf("字段不存在：%w", err)
     case errors.Is(err, json.ErrTypeMismatch):
         // 类型不匹配
-        return fmt.Errorf("类型错误: %w", err)
+        return fmt.Errorf("类型错误：%w", err)
     case errors.Is(err, json.ErrInvalidPath):
         // 路径语法错误
-        return fmt.Errorf("路径语法错误: %w", err)
+        return fmt.Errorf("路径语法错误：%w", err)
     case errors.Is(err, json.ErrUnsupportedPath):
         // 不支持的路径操作
-        return fmt.Errorf("不支持的操作: %w", err)
+        return fmt.Errorf("不支持的操作：%w", err)
     }
 }
 ```
@@ -299,10 +299,10 @@ if err != nil {
         return errors.New("输入不合法")
     }
     if errors.Is(err, json.ErrSizeLimit) {
-        return fmt.Errorf("数据超过大小限制: %w", err)
+        return fmt.Errorf("数据超过大小限制：%w", err)
     }
     if errors.Is(err, json.ErrDepthLimit) {
-        return fmt.Errorf("嵌套深度超限: %w", err)
+        return fmt.Errorf("嵌套深度超限：%w", err)
     }
     return err
 }
@@ -317,19 +317,19 @@ val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrOperationTimeout) {
         // 操作超时，可重试 <Badge type="danger" text="已废弃" />
-        return fmt.Errorf("暂时性错误，请重试: %w", err)
+        return fmt.Errorf("暂时性错误，请重试：%w", err)
     }
     if errors.Is(err, json.ErrConcurrencyLimit) {
         // 并发限制（达到 MaxConcurrency 时返回，可重试）
-        return fmt.Errorf("系统繁忙，请稍后: %w", err)
+        return fmt.Errorf("系统繁忙，请稍后：%w", err)
     }
     if errors.Is(err, json.ErrResourceExhausted) {
         // 资源耗尽 <Badge type="danger" text="已废弃" />
-        return fmt.Errorf("系统资源不足: %w", err)
+        return fmt.Errorf("系统资源不足：%w", err)
     }
     if errors.Is(err, json.ErrProcessorClosed) {
         // 处理器已关闭
-        return fmt.Errorf("处理器不可用: %w", err)
+        return fmt.Errorf("处理器不可用：%w", err)
     }
     return err
 }
@@ -350,16 +350,16 @@ func processJSON(data string) error {
             errors.Is(err, json.ErrTypeMismatch),
             errors.Is(err, json.ErrInvalidPath):
             // 用户输入错误，返回友好提示
-            return fmt.Errorf("数据格式错误: %w", err)
+            return fmt.Errorf("数据格式错误：%w", err)
         case errors.Is(err, json.ErrSecurityViolation):
             // 安全错误，记录并拒绝
             log.Warn("安全违规", "error", err)
             return errors.New("输入不合法")
         case errors.Is(err, json.ErrConcurrencyLimit):
             // 并发上限，可稍后重试
-            return fmt.Errorf("系统繁忙，请稍后重试: %w", err)
+            return fmt.Errorf("系统繁忙，请稍后重试：%w", err)
         case errors.Is(err, json.ErrOperationTimeout): // Deprecated（当前不会被返回，保留兼容）
-            return fmt.Errorf("暂时性错误，请重试: %w", err)
+            return fmt.Errorf("暂时性错误，请重试：%w", err)
         default:
             // 系统错误
             log.Error("系统错误", "error", err)
@@ -381,7 +381,7 @@ func handleWithDetail(data string, path string) error {
             return fmt.Errorf("操作 %s 失败 (路径: %s): %w",
                 jsonErr.Op, jsonErr.Path, jsonErr.Err)
         }
-        return fmt.Errorf("操作失败: %w", err)
+        return fmt.Errorf("操作失败：%w", err)
     }
     return nil
 }
@@ -392,7 +392,7 @@ func handleWithDetail(data string, path string) error {
 ```go
 func deepProcess(data string) error {
     if err := processLevel1(data); err != nil {
-        return fmt.Errorf("深度处理失败: %w", err)
+        return fmt.Errorf("深度处理失败：%w", err)
     }
     return nil
 }
@@ -409,8 +409,8 @@ func processLevel2(data string) error {
     return err
 }
 
-// 错误链示例:
-// 深度处理失败: 一级处理失败 (路径 data.field): path not found
+// 错误链示例：
+// 深度处理失败：一级处理失败 (路径 data.field): path not found
 ```
 
 ## 相关

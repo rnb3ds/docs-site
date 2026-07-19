@@ -1,13 +1,13 @@
 ---
 sidebar_label: "JSONL 프로세서"
 title: "JSONL 프로세서 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON JSONL 프로세서: StreamJSONL, JSONLWriter, StreamLinesInto[T], ParseJSONL, ToJSONL로 JSON Lines 읽기와 쓰기를 지원합니다."
+description: "CyberGo JSON JSONL 프로세서: StreamJSONL, JSONLWriter, StreamLinesInto[T], ParseJSONL, ToJSONL 로 JSON Lines 읽기와 쓰기를 지원합니다."
 sidebar_position: 3
 ---
 
 # JSONL 프로세서
 
-JSONL(JSON Lines) 또는 NDJSON(Newline Delimited JSON)은 줄당 하나의 JSON 객체 형식입니다. 이 라이브러리는 `Processor` 메서드와 패키지 레벨 함수를 통해 완전한 JSONL 처리 기능을 제공합니다.
+JSONL(JSON Lines) 또는 NDJSON(Newline Delimited JSON) 은 줄당 하나의 JSON 객체 형식입니다. 이 라이브러리는 `Processor` 메서드와 패키지 레벨 함수를 통해 완전한 JSONL 처리 기능을 제공합니다.
 
 ## 형식 사양
 
@@ -95,7 +95,7 @@ err = p.StreamJSONLParallel(file, 8, func(lineNum int, item *json.IterableValue)
 ```
 
 :::tip 성능 팁
-CPU 집약적 작업(데이터 변환, 계산 등)에는 병렬 처리를 사용하면 성능이 크게 향상됩니다. I/O 집약적 작업에는 단일 스레드 처리를 권장합니다.
+CPU 집약적 작업 (데이터 변환, 계산 등) 에는 병렬 처리를 사용하면 성능이 크게 향상됩니다. I/O 집약적 작업에는 단일 스레드 처리를 권장합니다.
 :::
 
 ### StreamJSONLParallelWithContext
@@ -142,7 +142,7 @@ if err != nil {
 }
 defer p.Close()
 
-// 배치당 1000건
+// 배치당 1000 건
 err = p.StreamJSONLChunked(file, 1000, func(chunk []*json.IterableValue) error {
     // 데이터베이스에 배치 쓰기
     for _, item := range chunk {
@@ -278,7 +278,7 @@ if found {
 
 시그니처: `func (p *Processor) ForeachJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error) error`
 
-JSONL 데이터를 반복합니다 (StreamJSONL의 별칭).
+JSONL 데이터를 반복합니다 (StreamJSONL 의 별칭).
 
 ---
 
@@ -307,7 +307,7 @@ if err != nil {
 
 ## JSONLWriter
 
-JSONLWriter는 데이터를 JSON Lines 형식으로 쓰는 데 사용됩니다.
+JSONLWriter 는 데이터를 JSON Lines 형식으로 쓰는 데 사용됩니다.
 
 ### NewJSONLWriter
 
@@ -438,7 +438,7 @@ err := np.ProcessFile("data.ndjson", func(lineNum int, obj map[string]any) error
 
 시그니처: `func (np *NDJSONProcessor) ProcessReader(reader io.Reader, fn func(lineNum int, obj map[string]any) error) error`
 
-Reader에서 NDJSON을 처리합니다.
+Reader 에서 NDJSON 을 처리합니다.
 
 ```go
 err := np.ProcessReader(file, func(lineNum int, obj map[string]any) error {
@@ -450,23 +450,23 @@ err := np.ProcessReader(file, func(lineNum int, obj map[string]any) error {
 
 ## 패키지 레벨 함수
 
-모든 JSONL 처리 함수는 해당 [Processor 메서드](../api-reference/processor/jsonl)와 동일한 시그니처의 패키지 레벨 편의 버전을 제공합니다. 내부적으로 기본 글로벌 Processor를 사용하므로 인스턴스를 수동으로 생성할 필요가 없습니다.
+모든 JSONL 처리 함수는 해당 [Processor 메서드](../api-reference/processor/jsonl)와 동일한 시그니처의 패키지 레벨 편의 버전을 제공합니다. 내부적으로 기본 글로벌 Processor 를 사용하므로 인스턴스를 수동으로 생성할 필요가 없습니다.
 
 ::: tip 팁
-패키지 레벨 함수는 일회성 처리에 적합합니다. 루프 내에서 여러 번 호출하거나 설정을 공유해야 하는 경우, 캐시를 재사용하기 위해 전용 `Processor`([`json.New()`](../api-reference/processor/))를 생성하는 것을 권장합니다.
+패키지 레벨 함수는 일회성 처리에 적합합니다. 루프 내에서 여러 번 호출하거나 설정을 공유해야 하는 경우, 캐시를 재사용하기 위해 전용 `Processor`([`json.New()`](../api-reference/processor/)) 를 생성하는 것을 권장합니다.
 :::
 
 ### StreamJSONL
 
 시그니처: `func StreamJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-JSONL을 행 단위로 스트리밍 처리하며, 각 행을 `IterableValue`로 파싱한 후 콜백을 호출합니다.
+JSONL 을 행 단위로 스트리밍 처리하며, 각 행을 `IterableValue`로 파싱한 후 콜백을 호출합니다.
 
 ### StreamJSONLParallel
 
 시그니처: `func StreamJSONLParallel(reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-`workers` 개의 병렬 goroutine으로 JSONL을 처리합니다.
+`workers` 개의 병렬 goroutine 으로 JSONL 을 처리합니다.
 
 ### StreamJSONLParallelWithContext
 
@@ -478,13 +478,13 @@ JSONL을 행 단위로 스트리밍 처리하며, 각 행을 `IterableValue`로 
 
 시그니처: `func StreamJSONLChunked(reader io.Reader, chunkSize int, fn func(chunk []*IterableValue) error, cfg ...Config) error`
 
-`chunkSize` 단위로 JSONL을 배치 처리하며, 각 배치를 `[]*IterableValue`로 콜백에 전달합니다.
+`chunkSize` 단위로 JSONL 을 배치 처리하며, 각 배치를 `[]*IterableValue`로 콜백에 전달합니다.
 
 ### ForeachJSONL
 
 시그니처: `func ForeachJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-JSONL을 순회하며 각 행마다 콜백을 호출합니다.
+JSONL 을 순회하며 각 행마다 콜백을 호출합니다.
 
 ### MapJSONL
 
@@ -496,13 +496,13 @@ JSONL을 순회하며 각 행마다 콜백을 호출합니다.
 
 시그니처: `func ReduceJSONL(reader io.Reader, initial any, fn func(acc any, item *IterableValue) any, cfg ...Config) (any, error)`
 
-JSONL을 리듀스합니다. `initial`은 누산기의 초기값입니다.
+JSONL 을 리듀스합니다. `initial`은 누산기의 초기값입니다.
 
 ### FilterJSONL
 
 시그니처: `func FilterJSONL(reader io.Reader, predicate func(item *IterableValue) bool, cfg ...Config) ([]*IterableValue, error)`
 
-조건부로 JSONL을 필터링하여 일치하는 항목을 반환합니다.
+조건부로 JSONL 을 필터링하여 일치하는 항목을 반환합니다.
 
 ### StreamJSONLFile
 
@@ -533,7 +533,7 @@ err := json.StreamJSONLFile("data.jsonl", func(lineNum int, item *json.IterableV
 
 시그니처: `func StreamLinesInto[T any](reader io.Reader, fn func(lineNum int, data T) error, cfg ...Config) ([]T, error)`
 
-JSONL을 스트리밍으로 읽고 줄 단위로 처리합니다.
+JSONL 을 스트리밍으로 읽고 줄 단위로 처리합니다.
 
 ```go
 type User struct {

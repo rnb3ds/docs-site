@@ -45,14 +45,14 @@ client, _ := httpc.New(cfg)
 
 ## 객체 풀 재사용
 
-HTTPC는 내부적으로 엔진 응답 객체와 문자열 빌더를 sync.Pool로 재사용하여 GC 부하를 줄이며, Result는 매 요청마다 새로 생성되어 GC가 자동 회수합니다:
+HTTPC 는 내부적으로 엔진 응답 객체와 문자열 빌더를 sync.Pool 로 재사용하여 GC 부하를 줄이며, Result 는 매 요청마다 새로 생성되어 GC 가 자동 회수합니다:
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result는 매 요청마다 새로 생성, GC가 자동 회수, 수동 해제 불필요
+// Result 는 매 요청마다 새로 생성, GC 가 자동 회수, 수동 해제 불필요
 ```
 
 :::tip

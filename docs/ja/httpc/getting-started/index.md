@@ -1,7 +1,7 @@
 ---
 sidebar_label: "クイックスタート"
-title: "クイックスタート - CyberGo HTTPC | 5分ガイド"
-description: "HTTPC クイックスタート: go get インストールと初期化、GET/POST リクエストとレスポンス処理、5 つの設定プリセット選択、JSON 解析、Bearer Token 認証で 5 分で安全な HTTP クライアントを始め、最初のリクエストを完成させます。"
+title: "クイックスタート - CyberGo HTTPC | 5 分ガイド"
+description: "HTTPC クイックスタート：go get インストールと初期化、GET/POST リクエストとレスポンス処理、5 つの設定プリセット選択、JSON 解析、Bearer Token 認証で 5 分で安全な HTTP クライアントを始め、最初のリクエストを完成させます。"
 sidebar_position: 1
 ---
 

@@ -35,7 +35,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
     // APP_NAME=my-app
     // APP_VERSION=1.0.0
     // DEBUG=true
@@ -65,7 +65,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
     // {
     //   "HOST": "localhost",
     //   "PORT": 8080
@@ -97,7 +97,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
     // DATABASE_HOST: localhost
     // DATABASE_NAME: myapp
     // DATABASE_PORT: 5432
@@ -136,7 +136,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
     // DEBUG=true
     // HOST=localhost
     // PORT=8080
@@ -224,7 +224,7 @@ func main() {
     }
 
     fmt.Printf("%+v\n", data)
-    // 出力: map[DEBUG:true HOST:localhost PORT:8080]
+    // 出力：map[DEBUG:true HOST:localhost PORT:8080]
 
     // ファイルへのエクスポートに使用可能
     content, _ := env.Marshal(data, env.FormatEnv)
@@ -259,7 +259,7 @@ DEBUG=true
     }
 
     fmt.Printf("%+v\n", result)
-    // 出力: map[DEBUG:true HOST:localhost PORT:8080]
+    // 出力：map[DEBUG:true HOST:localhost PORT:8080]
 }
 ```
 
@@ -345,7 +345,7 @@ func main() {
     }
 
     fmt.Printf("%+v\n", cfg)
-    // 出力: {Host:example.com Port:443}
+    // 出力：{Host:example.com Port:443}
 }
 ```
 
@@ -423,7 +423,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力: LOG_LEVEL=DEBUG
+    // 出力：LOG_LEVEL=DEBUG
 }
 ```
 
@@ -467,7 +467,7 @@ func main() {
     }
 
     fmt.Printf("Level: %s\n", cfg.Level)
-    // 出力: Level: info
+    // 出力：Level: info
 }
 ```
 
@@ -500,7 +500,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
     // APP_NAME=custom
     // APP_VERSION=2.0.0
 }

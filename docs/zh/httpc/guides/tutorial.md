@@ -222,9 +222,9 @@ case result.IsSuccess():
 case result.StatusCode() == 401:
     log.Println("Token 过期或无效")
 case result.IsClientError():
-    log.Printf("客户端错误: %d", result.StatusCode())
+    log.Printf("客户端错误：%d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("服务端错误: %d (共尝试 %d 次，含首次请求)",
+    log.Printf("服务端错误：%d (共尝试 %d 次，含首次请求)",
         result.StatusCode(), result.Meta.Attempts)
 }
 ```
@@ -252,7 +252,7 @@ dlCfg.FilePath = "go1.22.0.linux-amd64.tar.gz"
 dlCfg.Overwrite = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r下载进度: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
+    fmt.Printf("\r下载进度：%.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.Download(

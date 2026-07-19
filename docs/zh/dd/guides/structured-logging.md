@@ -105,7 +105,7 @@ queryLog.InfoWith("查询完成",
     dd.Int("rows", 42),
     dd.Duration("elapsed", 10*time.Millisecond),
 )
-// 字段: service=order module=database operation=query rows=42 elapsed=10ms
+// 字段：service=order module=database operation=query rows=42 elapsed=10ms
 ```
 
 ### 包级函数链式调用

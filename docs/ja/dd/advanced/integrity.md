@@ -65,14 +65,14 @@ signature := signer.Sign(logEntry)
 signedEntry := logEntry + signature
 
 fmt.Println(signedEntry)
-// 出力: {"level":"info","message":"ユーザーログイン","user":"admin"}[SIG:1713456789000000000:1:base64sig...]
+// 出力：{"level":"info","message":"ユーザーログイン","user":"admin"}[SIG:1713456789000000000:1:base64sig...]
 ```
 
 ### 署名統計
 
 ```go
 stats := signer.Stats()
-fmt.Printf("現在のシリアル番号: %d\n", stats.Sequence)
+fmt.Printf("現在のシリアル番号：%d\n", stats.Sequence)
 fmt.Printf("アルゴリズム: %s\n", stats.Algorithm)
 fmt.Printf("タイムスタンプを含む: %v\n", stats.IncludeTimestamp)
 fmt.Printf("シリアル番号を含む: %v\n", stats.IncludeSequence)

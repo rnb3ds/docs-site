@@ -93,7 +93,7 @@ go func() {
 }()
 
 // 检查丢失的事件（channel 满时自动丢弃）
-fmt.Printf("丢弃: %d\n", sink.DroppedCount())
+fmt.Printf("丢弃：%d\n", sink.DroppedCount())
 ```
 
 ### MultiSink

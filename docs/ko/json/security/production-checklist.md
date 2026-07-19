@@ -78,7 +78,7 @@ cfg.CustomValidators = append(cfg.CustomValidators, &EmailValidator{})
 - [ ] 배열 길이 검증
 
 ```go
-// Schema를 사용한 범위 검증
+// Schema 를 사용한 범위 검증
 schema := &json.Schema{
     Type: "object",
     Properties: map[string]*json.Schema{
@@ -97,7 +97,7 @@ schema := &json.Schema{
 - [ ] 기타 민감 데이터 필터링
 
 ```go
-// Hook으로 민감 필드 필터링
+// Hook 으로 민감 필드 필터링
 type SensitiveFilterHook struct {
     fields map[string]bool
 }
@@ -153,7 +153,7 @@ if err != nil {
 - [ ] 알림 임계값 설정
 
 ```go
-// Hook으로 성능 모니터링
+// Hook 으로 성능 모니터링
 type MetricsHook struct{}
 
 func (h *MetricsHook) Before(ctx json.HookContext) error {
@@ -210,7 +210,7 @@ go test -run Security ./...
 func ProductionConfig() json.Config {
     cfg := json.SecurityConfig()
 
-    // 리소스 제한 (SecurityConfig에 보안 기본값이 미리 설정됨)
+    // 리소스 제한 (SecurityConfig 에 보안 기본값이 미리 설정됨)
     cfg.MaxMemory = 100 * 1024 * 1024
 
     // 커스텀 검증기

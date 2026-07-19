@@ -12,10 +12,10 @@ DD 的 `IntegritySigner` 使用 HMAC-SHA256 对日志条目进行签名，确保
 ## 核心概念
 
 ```text
-签名流程:
+签名流程：
   原始日志 → HMAC-SHA256(密钥 + 时间戳 + 序列号) → 签名后日志
 
-验证流程:
+验证流程：
   签名后日志 → 提取签名 → 重新计算 HMAC → 对比签名 → 判断完整性
 ```
 
@@ -65,14 +65,14 @@ signature := signer.Sign(logEntry)
 signedEntry := logEntry + signature
 
 fmt.Println(signedEntry)
-// 输出: {"level":"info","message":"用户登录","user":"admin"}[SIG:1713456789000000000:1:base64sig...]
+// 输出：{"level":"info","message":"用户登录","user":"admin"}[SIG:1713456789000000000:1:base64sig...]
 ```
 
 ### 签名统计
 
 ```go
 stats := signer.Stats()
-fmt.Printf("当前序列号: %d\n", stats.Sequence)
+fmt.Printf("当前序列号：%d\n", stats.Sequence)
 fmt.Printf("算法: %s\n", stats.Algorithm)
 fmt.Printf("包含时间戳: %v\n", stats.IncludeTimestamp)
 fmt.Printf("包含序列号: %v\n", stats.IncludeSequence)
@@ -149,7 +149,7 @@ func NewSignedAuditSystem() (*dd.AuditLogger, *dd.IntegritySigner, error) {
         0600,
     )
 
-    // 审计Logger（带签名）
+    // 审计 Logger（带签名）
     auditLogger, _ := dd.NewAuditLogger(dd.AuditConfig{
         Enabled:          true,
         Output:           auditFile,

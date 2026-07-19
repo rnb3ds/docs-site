@@ -1,7 +1,7 @@
 ---
 sidebar_label: "오류 처리"
 title: "오류 처리 - CyberGo env | 센티넬 오류와 복구 전략"
-description: "CyberGo env 오류 처리 가이드로 16개 센티넬 오류의 errors.Is 검사, ParseError/FileError/SecurityError 구조화 오류의 errors.As 추출, 복구·성능 저하 전략과 오류 체인 추적을 프로덕션 관점에서 설명합니다."
+description: "CyberGo env 오류 처리 가이드로 16 개 센티넬 오류의 errors.Is 검사, ParseError/FileError/SecurityError 구조화 오류의 errors.As 추출, 복구·성능 저하 전략과 오류 체인 추적을 프로덕션 관점에서 설명합니다."
 sidebar_position: 2
 ---
 
@@ -95,18 +95,18 @@ if errors.Is(err, env.ErrClosed) {
 
 // 기본 로더 초기화 여부 확인
 if errors.Is(err, env.ErrAlreadyInitialized) {
-    // 기본 로더가 이미 존재함, Load()를 반복 호출할 수 없음
+    // 기본 로더가 이미 존재함, Load() 를 반복 호출할 수 없음
 }
 
 // 기본 로더 미초기화 여부 확인
 if errors.Is(err, env.ErrNotInitialized) {
-    // 먼저 env.Load() 또는 env.LoadWithConfig()를 호출해야 함
+    // 먼저 env.Load() 또는 env.LoadWithConfig() 를 호출해야 함
 }
 
 // 필수 키 누락 여부 확인 (실제로는 *ValidationError, Rule=="required" 반환)
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
-    // 필수 키 누락: valErr.Message에 누락된 키 목록 포함
+    // 필수 키 누락: valErr.Message 에 누락된 키 목록 포함
 }
 ```
 
@@ -131,7 +131,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 ::: tip 해결 방법
-`KeyValidator`만 구현하는 대신 `Validator` 인터페이스(ValidateKey, ValidateValue, ValidateRequired 세 가지 메서드 포함)를 구현하세요.
+`KeyValidator`만 구현하는 대신 `Validator` 인터페이스 (ValidateKey, ValidateValue, ValidateRequired 세 가지 메서드 포함) 를 구현하세요.
 :::
 
 ## 구조화된 오류 타입
@@ -560,7 +560,7 @@ func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
         if valErr.Rule == "required" {
-            // 필수 키 누락: valErr.Message에 누락된 키 목록 포함
+            // 필수 키 누락: valErr.Message 에 누락된 키 목록 포함
             log.Fatalf("필수 키 누락: %s", valErr.Message)
         }
         log.Fatalf("검증 실패: %s - %s", valErr.Field, valErr.Message)

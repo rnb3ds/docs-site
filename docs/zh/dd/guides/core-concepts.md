@@ -56,12 +56,12 @@ requestLog := logger.WithFields(
 
 // 每次调用自动携带预设字段
 requestLog.Info("服务启动")
-// 输出: ... 服务启动 service=user-api version=2.1.0
+// 输出：... 服务启动 service=user-api version=2.1.0
 
 requestLog.InfoWith("用户登录",
     dd.String("user", "alice"),
 )
-// 输出: ... 用户登录 service=user-api version=2.1.0 user=alice
+// 输出：... 用户登录 service=user-api version=2.1.0 user=alice
 ```
 
 :::tip 不可变设计
@@ -120,7 +120,7 @@ requestLog.InfoWith("处理完成",
     dd.Int("status", 200),
     dd.Duration("elapsed", 50*time.Millisecond),
 )
-// 输出包含: service=api-gateway request_id=req-001 path=/api/users status=200 elapsed=50ms
+// 输出包含：service=api-gateway request_id=req-001 path=/api/users status=200 elapsed=50ms
 ```
 
 ## 日志处理管道

@@ -106,7 +106,7 @@ if errors.Is(err, env.ErrNotInitialized) {
 // 检查必需键是否缺失（实际返回 *ValidationError，Rule=="required"）
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
-    // 缺少必需键: valErr.Message 含缺失键列表
+    // 缺少必需键：valErr.Message 含缺失键列表
 }
 ```
 
@@ -158,7 +158,7 @@ var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
     log.Printf("解析错误 %s:%d - %s\n",
         parseErr.File, parseErr.Line, parseErr.Err)
-    // 输出: 解析错误 .env:15 - invalid key format
+    // 输出：解析错误 .env:15 - invalid key format
 }
 ```
 
@@ -402,7 +402,7 @@ func handleLoadError(err error) {
     // 首先检查哨兵错误
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        log.Println("警告: 配置文件不存在")
+        log.Println("警告：配置文件不存在")
         return
 
     case errors.Is(err, env.ErrFileTooLarge):
@@ -560,7 +560,7 @@ func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
         if valErr.Rule == "required" {
-            // 缺少必需键: valErr.Message 含缺失键列表
+            // 缺少必需键：valErr.Message 含缺失键列表
             log.Fatalf("缺少必需键: %s", valErr.Message)
         }
         log.Fatalf("验证失败: %s - %s", valErr.Field, valErr.Message)

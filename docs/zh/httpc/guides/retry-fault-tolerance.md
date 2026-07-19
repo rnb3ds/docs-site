@@ -104,10 +104,10 @@ result, err := client.Request(ctx, "GET", url, httpc.WithMaxRetries(3))
 HTTPC 自动解析服务端返回的 `Retry-After` 响应头：
 
 ```go
-// 服务端返回: Retry-After: 120
+// 服务端返回：Retry-After: 120
 // HTTPC 最多等待 60 秒后重试（服务端指定的 120s 会被截断为安全上限 60s）
 
-// 服务端返回: Retry-After: Fri, 25 Apr 2026 12:00:00 GMT
+// 服务端返回：Retry-After: Fri, 25 Apr 2026 12:00:00 GMT
 // HTTPC 会等待到指定时间后重试（若距今超过 60s 则截断为 60s）
 ```
 
@@ -121,20 +121,20 @@ HTTPC 自动解析服务端返回的 `Retry-After` 响应头：
 
 ```go
 cfg.Retry.BackoffFactor = 2.0
-// 延迟序列: delay, delay*2, delay*4, delay*8...
+// 延迟序列：delay, delay*2, delay*4, delay*8...
 ```
 
 ### 固定延迟
 
 ```go
 cfg.Retry.BackoffFactor = 1.0
-// 延迟序列: delay, delay, delay...
+// 延迟序列：delay, delay, delay...
 ```
 
 ### 线性增长
 
 ```go
-// 需要自定义 RetryPolicy 实现:
+// 需要自定义 RetryPolicy 实现：
 // delay * (attempt + 1)
 // 详见高级示例中的自定义重试策略
 ```

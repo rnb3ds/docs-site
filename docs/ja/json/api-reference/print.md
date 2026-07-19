@@ -25,7 +25,7 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
-// 出力: {"age":30,"name":"Alice"}
+// 出力：{"age":30,"name":"Alice"}
 
 // または Marshal を使用（[]byte 出力）
 b, err := json.Marshal(data)
@@ -49,7 +49,7 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
-// 出力:
+// 出力：
 // {
 //   "age": 30,
 //   "name": "Alice"

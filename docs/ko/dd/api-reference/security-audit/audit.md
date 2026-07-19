@@ -1,13 +1,13 @@
 ---
 sidebar_label: "AuditLogger"
 title: "감사 로그 - CyberGo DD | AuditLogger"
-description: "CyberGo DD 감사 로그의 완전한 API 문서입니다. AuditLogger 비동기 감사 이벤트 레코더, AuditConfig 구성 옵션(출력 대상, 형식, 서명)과 감사 항목 구조화 포맷팅을 포함하여 보안 관련 이벤트 추적 기록을 지원하며, 기업급 규정 준수 감사와 데이터 보안 감독의 다양한 요구를 충족합니다."
+description: "CyberGo DD 감사 로그의 완전한 API 문서입니다. AuditLogger 비동기 감사 이벤트 레코더, AuditConfig 구성 옵션 (출력 대상, 형식, 서명) 과 감사 항목 구조화 포맷팅을 포함하여 보안 관련 이벤트 추적 기록을 지원하며, 기업급 규정 준수 감사와 데이터 보안 감독의 다양한 요구를 충족합니다."
 sidebar_position: 3
 ---
 
 # 감사 로그
 
-DD는 보안 관련 이벤트를 기록하는 비동기 감사 로그 기능을 제공하며, 무결성 서명과 항목 시퀀스 번호 추적을 지원합니다.
+DD 는 보안 관련 이벤트를 기록하는 비동기 감사 로그 기능을 제공하며, 무결성 서명과 항목 시퀀스 번호 추적을 지원합니다.
 
 ## AuditLogger
 
@@ -21,7 +21,7 @@ func NewAuditLogger(cfg AuditConfig) (*AuditLogger, error)
 
 전달된 `AuditConfig`로 비동기 감사 레코더를 생성합니다. `DefaultAuditConfig()`로 합리적인 기본값의 구성을 가져올 수 있습니다.
 
-오류를 반환하는 경우: 구성 검증 실패(예: `BufferSize`가 음수).
+오류를 반환하는 경우: 구성 검증 실패 (예: `BufferSize`가 음수).
 
 ```go
 // 기본 구성 사용
@@ -38,7 +38,7 @@ auditLogger, _ := dd.NewAuditLogger(cfg)
 
 | 메서드 | 시그니처 | 설명 |
 |------|------|------|
-| `Log` | `(event AuditEvent)` | 감사 이벤트 기록(비동기) |
+| `Log` | `(event AuditEvent)` | 감사 이벤트 기록 (비동기) |
 | `LogSensitiveDataRedaction` | `(pattern, field, message string)` | 민감 데이터 마스킹 이벤트 |
 | `LogRateLimitExceeded` | `(message string, metadata map[string]any)` | 속도 제한 이벤트 |
 | `LogSecurityViolation` | `(violationType, message string, metadata map[string]any)` | 보안 위반 이벤트 |
@@ -76,13 +76,13 @@ audit.LogSecurityViolation("sql_injection", "SQL 인젝션 시도", map[string]a
 
 ```go
 type AuditConfig struct {
-    Enabled          bool             // 감사 활성화 여부(기본 true)
-    Output           *os.File         // 출력 파일(기본 os.Stderr); nil이면 출력을 생성하지 않고 이벤트는 통계에만 집계
-    BufferSize       int              // 비동기 이벤트 버퍼 크기(기본 1000; 음수이면 검증 실패)
-    IncludeTimestamp bool             // 타임스탬프 포함 여부(기본 true)
-    JSONFormat       bool             // JSON 형식 출력(기본 true)
-    MinimumSeverity  AuditSeverity    // 최소 기록 심각도 레벨(기본 AuditSeverityInfo)
-    IntegritySigner  *IntegritySigner // 무결성 서명자(선택; 구성 시 매 감사 이벤트가 서명됨)
+    Enabled          bool             // 감사 활성화 여부 (기본 true)
+    Output           *os.File         // 출력 파일 (기본 os.Stderr); nil 이면 출력을 생성하지 않고 이벤트는 통계에만 집계
+    BufferSize       int              // 비동기 이벤트 버퍼 크기 (기본 1000; 음수이면 검증 실패)
+    IncludeTimestamp bool             // 타임스탬프 포함 여부 (기본 true)
+    JSONFormat       bool             // JSON 형식 출력 (기본 true)
+    MinimumSeverity  AuditSeverity    // 최소 기록 심각도 레벨 (기본 AuditSeverityInfo)
+    IntegritySigner  *IntegritySigner // 무결성 서명자 (선택; 구성 시 매 감사 이벤트가 서명됨)
 }
 ```
 
@@ -98,8 +98,8 @@ func DefaultAuditConfig() AuditConfig
 
 | 메서드 | 시그니처 | 설명 |
 |------|------|------|
-| `Validate` | `() error` | 구성 유효성 검증(`BufferSize`가 음수이면 오류 반환) |
-| `Clone` | `() AuditConfig` | 구성 복사(`IntegritySigner`는 공유 참조, 딥 카피 안 함) |
+| `Validate` | `() error` | 구성 유효성 검증 (`BufferSize`가 음수이면 오류 반환) |
+| `Clone` | `() AuditConfig` | 구성 복사 (`IntegritySigner`는 공유 참조, 딥 카피 안 함) |
 
 ## AuditEvent
 
@@ -124,7 +124,7 @@ type AuditEvent struct {
 ```go
 type AuditStats struct {
     TotalEvents int64                    // 총 이벤트 수
-    Dropped     int64                    // 버려진 이벤트 수(버퍼 가득 찰 때 누적)
+    Dropped     int64                    // 버려진 이벤트 수 (버퍼 가득 찰 때 누적)
     ByType      map[AuditEventType]int64 // 타입별 통계
     BufferSize  int                      // 버퍼 크기
     BufferUsage int                      // 현재 버퍼 사용량
@@ -183,7 +183,7 @@ event := dd.AuditEvent{
     Severity: dd.AuditSeverityCritical,
 }
 data, _ := json.Marshal(event)
-// Severity는 3이 아니라 "CRITICAL"로 직렬화됨
+// Severity 는 3 이 아니라 "CRITICAL"로 직렬화됨
 ```
 
 ## 감사 항목 검증

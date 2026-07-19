@@ -46,8 +46,8 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("タイトル:", result.Title)
-    fmt.Println("単語数:", result.WordCount)
+    fmt.Println("タイトル：", result.Title)
+    fmt.Println("単語数：", result.WordCount)
 }
 ```
 
@@ -76,7 +76,7 @@ client := &http.Client{
 
 | パラメータ | 推奨値 | 説明 |
 |------|--------|------|
-| `Timeout` | 10-30s | 接続+TLS+読み書きの全プロセスを含む |
+| `Timeout` | 10-30s | 接続+TLS+ 読み書きの全プロセスを含む |
 | `MaxIdleConns` | 10-50 | グローバルの最大アイドル接続数 |
 | `MaxIdleConnsPerHost` | 5-10 | ホストあたりの最大アイドル接続数 |
 | `IdleConnTimeout` | 90s | アイドル接続の保持時間 |
@@ -246,7 +246,7 @@ func fetchWithRetry(client *http.Client, url string, maxRetries int) ([]byte, er
         return body, nil
     }
 
-    return nil, fmt.Errorf("%d 回リトライ後も失敗: %w", maxRetries, lastErr)
+    return nil, fmt.Errorf("%d 回リトライ後も失敗：%w", maxRetries, lastErr)
 }
 ```
 
@@ -286,7 +286,7 @@ func batchProcessURLs(processor *html.Processor, urls []string) {
 
     // バッチ抽出
     batch := processor.ExtractBatchWithContext(ctx, pages)
-    fmt.Printf("成功: %d, 失敗: %d, キャンセル: %d\n",
+    fmt.Printf("成功：%d, 失敗：%d, キャンセル：%d\n",
         batch.Success, batch.Failed, batch.Cancelled)
 }
 ```

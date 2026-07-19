@@ -184,8 +184,8 @@ func init() {
 func HandleLogin(username, password, ip string) error {
     logger.InfoWith("로그인 시도",
         dd.String("username", username),
-        dd.String("ip", ip),  // FinancialConfig는 ip도 [REDACTED]로 마스킹
-        // password는 로그에 기록하지 않음(보안 실천: 원본 비밀번호는 절대 로그하지 말 것)
+        dd.String("ip", ip),  // FinancialConfig 는 ip 도 [REDACTED] 로 마스킹
+        // password 는 로그에 기록하지 않음 (보안 실천: 원본 비밀번호는 절대 로그하지 말 것)
     )
 
     if isBruteForce(ip) {
@@ -227,7 +227,7 @@ func TestUserCreation(t *testing.T) {
     }
 
     if rec.GetFieldValue("username") != "admin" {
-        t.Error("username은 admin이어야 함")
+        t.Error("username 은 admin 이어야 함")
     }
 }
 ```

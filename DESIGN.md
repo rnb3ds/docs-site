@@ -110,7 +110,6 @@
 | 组件 | 约定 |
 |------|------|
 | 自定义页脚（`.site-footer`） | 背景用 `--vp-c-bg-soft`，分隔线 `--vp-c-divider`，链接悬停转 `--vp-c-brand-1`；最大宽度 1200px，4 列网格（2fr 1fr 1fr 1fr），≤960px 降 2 列、≤640px 降 1 列 |
-| 文档反馈（`.doc-feedback`） | 圆角 10px（历史值，可迁移 `--cg-radius-md`=8px 或新增 token），激活态用 `--vp-c-brand-soft` 背景 + `--vp-c-brand-1` 文字 |
 | 容器（tip/warning/danger/info） | VitePress 内置，圆角已 bridge 到 `--cg-radius-md`；颜色自动跟随 `--vp-c-brand-*` |
 | 导航栏 | 毛玻璃效果（见 `nav.css`）；视觉色用于标题/GitHub 链接的交互态 |
 | 代码块 | VitePress 默认 Shiki 主题；代码块标题/分组见 `overrides.css` 的 `vp-code-group` / `vp-code-title` 覆盖 |

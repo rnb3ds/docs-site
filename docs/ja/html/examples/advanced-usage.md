@@ -71,8 +71,8 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("本文:", result.Text)
-    // 本文: Go 並行処理の深い理解
+    fmt.Println("本文：", result.Text)
+    // 本文：Go 並行処理の深い理解
     //
     // goroutine は Go の軽量スレッドです。
 }
@@ -134,7 +134,7 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("本文:", result.Text)
+    fmt.Println("本文：", result.Text)
     // 監査ログは自動的にファイルと stderr に記録される
 }
 ```
@@ -176,7 +176,7 @@ func main() {
     // 単一バッチの上限は 10000、超過するとバッチ全体が失敗し呼び出し側で分割が必要
     batch := p.ExtractBatchFiles(files)
 
-    fmt.Printf("成功: %d, 失敗: %d, キャンセル: %d\n",
+    fmt.Printf("成功：%d, 失敗：%d, キャンセル：%d\n",
         batch.Success, batch.Failed, batch.Cancelled)
 
     // 結果を処理
@@ -250,7 +250,7 @@ func extractHandler(w http.ResponseWriter, r *http.Request) {
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
     stats := processor.GetStatistics()
-    fmt.Fprintf(w, "処理済み: %d\nキャッシュヒット: %d\nエラー: %d\n",
+    fmt.Fprintf(w, "処理済み：%d\nキャッシュヒット：%d\nエラー: %d\n",
         stats.TotalProcessed, stats.CacheHits, stats.ErrorCount)
 }
 

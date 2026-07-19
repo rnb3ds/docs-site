@@ -147,7 +147,7 @@ func main() {
 
 ## 安全获取
 ### SafeGet
-返回结构化结果，支持链式调用和类型转换:
+返回结构化结果，支持链式调用和类型转换：
 ```go
 package main
 
@@ -206,7 +206,7 @@ func main() {
 
 ## 缓存预热
 ### WarmupCache
-预热常用路径缓存，提升后续查询性能:
+预热常用路径缓存，提升后续查询性能：
 ```go
 package main
 
@@ -250,9 +250,9 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("预热完成: %d/%d 成功\n", result.Successful, result.TotalPaths)
+    fmt.Printf("预热完成：%d/%d 成功\n", result.Successful, result.TotalPaths)
     if len(result.FailedPaths) > 0 {
-        fmt.Println("失败路径:", result.FailedPaths)
+        fmt.Println("失败路径：", result.FailedPaths)
     }
 
     // 后续查询将使用缓存
@@ -266,7 +266,7 @@ func main() {
 
 ## 批量操作
 ### ProcessBatch
-批量执行多个操作,提升效率:
+批量执行多个操作，提升效率：
 ```go
 package main
 

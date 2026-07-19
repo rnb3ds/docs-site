@@ -96,8 +96,8 @@ type WarmupResult struct {
 
 ```go
 stats := processor.GetStats()
-fmt.Printf("缓存命中率: %.2f%%\n", stats.HitRatio * 100)
-fmt.Printf("缓存大小: %d\n", stats.CacheSize)
+fmt.Printf("缓存命中率：%.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("缓存大小：%d\n", stats.CacheSize)
 ```
 
 **Stats 结构**：
@@ -220,7 +220,7 @@ defer processor.Close()
 
 cfg := processor.GetConfig()
 fmt.Printf("缓存启用: %v\n", cfg.EnableCache)
-fmt.Printf("最大 JSON 大小: %d\n", cfg.MaxJSONSize)
+fmt.Printf("最大 JSON 大小：%d\n", cfg.MaxJSONSize)
 ```
 
 ## 使用建议

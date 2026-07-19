@@ -27,7 +27,7 @@ func main() {
         <body>
             <article>
                 <h1>Go 입문 가이드</h1>
-                <p>Go는 Google이 개발한 오픈소스 프로그래밍 언어입니다.</p>
+                <p>Go 는 Google 이 개발한 오픈소스 프로그래밍 언어입니다.</p>
                 <img src="gopher.png" alt="Gopher 마스코트" />
                 <a href="https://go.dev">Go 공식 웹사이트</a>
             </article>
@@ -47,7 +47,7 @@ func main() {
     // 제목: Go 언어 튜토리얼
     // 본문: Go 입문 가이드
     //
-    //       Go는 Google이 개발한 오픈소스 프로그래밍 언어입니다.
+    //       Go 는 Google 이 개발한 오픈소스 프로그래밍 언어입니다.
     //
     //       Go 공식 웹사이트
     // 단어 수: 8

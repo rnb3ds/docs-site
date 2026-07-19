@@ -36,7 +36,7 @@ for _, result := range results {
 
 ```go
 type BatchOperation struct {
-    Type    string `json:"type"`     // 操作类型: "get", "set", "delete", "validate"
+    Type    string `json:"type"`     // 操作类型："get", "set", "delete", "validate"
     JSONStr string `json:"json_str"` // JSON 字符串
     Path    string `json:"path"`     // 目标路径
     Value   any    `json:"value"`    // Set 操作的值

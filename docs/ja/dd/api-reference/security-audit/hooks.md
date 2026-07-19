@@ -82,7 +82,7 @@ reg := dd.NewHookRegistry()
 
 // BeforeLog フック
 reg.Add(dd.HookBeforeLog, func(ctx context.Context, hc *dd.HookContext) error {
-    fmt.Println("ログ書き込み直前:", hc.Message)
+    fmt.Println("ログ書き込み直前：", hc.Message)
     return nil
 })
 

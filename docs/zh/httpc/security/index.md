@@ -88,7 +88,7 @@ httpc.WithHeader("X-Bad", "value\x00null")                // 控制字符
 // 严格 Cookie 安全
 cfg := httpc.DefaultConfig()
 cfg.Security.CookieSecurity = httpc.StrictCookieSecurityConfig()
-// 要求: Secure, HttpOnly, SameSite=Strict
+// 要求：Secure, HttpOnly, SameSite=Strict
 ```
 
 ## 重定向安全

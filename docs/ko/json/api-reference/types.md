@@ -1,7 +1,7 @@
 ---
 sidebar_label: "타입 정의"
 title: "타입 정의 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 핵심 타입: Result[T], AccessResult, BatchOperation, BatchResult, Schema, Stats, HealthStatus, IterableValue로 전체 타입 시스템을 구성합니다."
+description: "CyberGo JSON 핵심 타입: Result[T], AccessResult, BatchOperation, BatchResult, Schema, Stats, HealthStatus, IterableValue 로 전체 타입 시스템을 구성합니다."
 sidebar_position: 5
 ---
 
@@ -44,7 +44,7 @@ import (
 func main() {
     data := `{"user": {"name": "Alice", "age": 30}}`
 
-    // GetTyped로 타입화된 값 가져오기
+    // GetTyped 로 타입화된 값 가져오기
     name := json.GetTyped[string](data, "user.name")
     fmt.Printf("이름: %s\n", name)
 
@@ -84,7 +84,7 @@ type CompiledPath = internal.CompiledPath
 
 시그니처: `func (p *Processor) CompilePath(path string) (*CompiledPath, error)`
 
-Processor를 통해 JSON 경로를 미리 컴파일하고, 이후 작업에서 재사용할 수 있는 `*CompiledPath` 인스턴스를 반환합니다.
+Processor 를 통해 JSON 경로를 미리 컴파일하고, 이후 작업에서 재사용할 수 있는 `*CompiledPath` 인스턴스를 반환합니다.
 
 ```go
 processor, err := json.New()
@@ -97,7 +97,7 @@ compiled, err := processor.CompilePath("user.profile.name")
 if err != nil {
     panic(err)
 }
-// 이후 작업에서 compiled를 반복 사용 가능
+// 이후 작업에서 compiled 를 반복 사용 가능
 val, err := processor.GetCompiled(data, compiled)
 ```
 
@@ -159,8 +159,8 @@ fmt.Println("타입:", result.Type)
 | `UnwrapOr(defaultValue)` | `any` | 반환값 또는 기본값 |
 | `AsString()` | `(string, error)` | 문자열로 변환 (엄격한 타입 검사) |
 | `AsStringConverted()` | `(string, error)` | 포맷팅하여 문자열로 변환 |
-| `AsInt()` | `(int, error)` | 정수로 변환 (bool은 변환 안 함) |
-| `AsFloat64()` | `(float64, error)` | float64로 변환 (bool은 변환 안 함) |
+| `AsInt()` | `(int, error)` | 정수로 변환 (bool 은 변환 안 함) |
+| `AsFloat64()` | `(float64, error)` | float64 로 변환 (bool 은 변환 안 함) |
 | `AsBool()` | `(bool, error)` | 불리언으로 변환 |
 | `Ok()` | `bool` | 값 존재 여부 확인 (`Exists` 반환) |
 
@@ -224,7 +224,7 @@ func main() {
 
 ## Schema - JSON Schema 타입
 
-`Schema`는 JSON 데이터의 구조 검증 규칙을 정의하는 데 사용되며, JSON Schema Draft 7의 하위 집합을 지원합니다.
+`Schema`는 JSON 데이터의 구조 검증 규칙을 정의하는 데 사용되며, JSON Schema Draft 7 의 하위 집합을 지원합니다.
 
 ### 구조 정의
 
@@ -431,7 +431,7 @@ type BatchOperation struct {
 
 ```go
 type BatchResult struct {
-    ID     string `json:"id"`     // 작업 식별자 (BatchOperation.ID에 해당)
+    ID     string `json:"id"`     // 작업 식별자 (BatchOperation.ID 에 해당)
     Result any    `json:"result"` // 작업 결과
     Error  error  `json:"error"`  // 오류 (있는 경우)
 }
@@ -506,7 +506,7 @@ age, _ := processor.GetFromParsed(parsed, "user.age")
 
 | 시나리오 | 설명 |
 |------|------|
-| 고빈도 쿼리 | 동일 JSON을 여러 번 쿼리할 때 반복 파싱 방지 |
+| 고빈도 쿼리 | 동일 JSON 을 여러 번 쿼리할 때 반복 파싱 방지 |
 | 배치 경로 가져오기 | `GetMultiple`로 여러 경로를 한 번에 가져오기 |
 | 성능 최적화 | 사전 파싱 후 쿼리 성능이 크게 향상 |
 
@@ -599,8 +599,8 @@ type CheckResult struct {
 | 메서드 | 설명 |
 |------|------|
 | `Exists(path)` | 필드 존재 여부 확인 |
-| `IsNull(path)` | 지정된 경로가 null인지 확인 |
-| `IsNullData()` | 기저 값이 null인지 확인 |
+| `IsNull(path)` | 지정된 경로가 null 인지 확인 |
+| `IsNullData()` | 기저 값이 null 인지 확인 |
 | `IsEmpty(path)` | 지정된 경로가 비어있는지 확인 |
 | `IsEmptyData()` | 기저 값이 비어있는지 확인 |
 | `GetData()` | 기저 원시 데이터 가져오기 |
@@ -684,7 +684,7 @@ if typeErr, ok := err.(*json.UnmarshalTypeError); ok {
 
 ### UnsupportedTypeError - 지원하지 않는 타입 오류
 
-Go에서 지원하지 않는 타입을 인코딩하려고 할 때 이 오류가 반환됩니다.
+Go 에서 지원하지 않는 타입을 인코딩하려고 할 때 이 오류가 반환됩니다.
 
 #### 구조 정의
 
@@ -742,7 +742,7 @@ if valErr, ok := err.(*json.UnsupportedValueError); ok {
 
 ### InvalidUnmarshalError - 유효하지 않은 역직렬화 대상 오류
 
-`Unmarshal`의 대상 매개변수가 포인터나 nil이 아닐 때 이 오류가 반환됩니다.
+`Unmarshal`의 대상 매개변수가 포인터나 nil 이 아닐 때 이 오류가 반환됩니다.
 
 #### 구조 정의
 
@@ -776,8 +776,8 @@ if invalidErr, ok := err.(*json.InvalidUnmarshalError); ok {
 
 ```go
 type MarshalerError struct {
-    Type reflect.Type // MarshalJSON 또는 MarshalText를 구현한 타입
-    Err  error        // MarshalJSON 또는 MarshalText가 반환한 오류
+    Type reflect.Type // MarshalJSON 또는 MarshalText 를 구현한 타입
+    Err  error        // MarshalJSON 또는 MarshalText 가 반환한 오류
     // 다른 비내보내기 필드 포함
 }
 ```
@@ -826,7 +826,7 @@ err := encoder.Encode(map[string]any{"name": "Alice"})
 
 | 메서드 | 시그니처 | 설명 |
 |------|------|------|
-| `Encode` | `func (enc *Encoder) Encode(v any) error` | Go 값을 JSON으로 인코딩하여 스트림에 씀 |
+| `Encode` | `func (enc *Encoder) Encode(v any) error` | Go 값을 JSON 으로 인코딩하여 스트림에 씀 |
 | `SetEscapeHTML` | `func (enc *Encoder) SetEscapeHTML(on bool)` | HTML 특수 문자 이스케이프 여부 설정 |
 | `SetIndent` | `func (enc *Encoder) SetIndent(prefix, indent string)` | 들여쓰기 형식 설정 |
 
@@ -982,7 +982,7 @@ for {
 - `float64`, JSON 숫자를 나타냄
 - `Number`, `UseNumber` 활성화 시 JSON 숫자를 나타냄
 - `string`, JSON 문자열을 나타냄
-- `nil`, JSON null을 나타냄
+- `nil`, JSON null 을 나타냄
 
 ```go
 type Token any
@@ -994,7 +994,7 @@ type Token any
 
 ## Number - JSON 숫자
 
-`Number`는 JSON 숫자 문자열을 나타내며, `UseNumber` 모드가 활성화된 경우 Decoder에서 사용됩니다.
+`Number`는 JSON 숫자 문자열을 나타내며, `UseNumber` 모드가 활성화된 경우 Decoder 에서 사용됩니다.
 
 ```go
 type Number string
@@ -1005,8 +1005,8 @@ type Number string
 | 메서드 | 시그니처 | 설명 |
 |------|------|------|
 | `String` | `func (n Number) String() string` | 숫자의 문자열 표현 반환 |
-| `Float64` | `func (n Number) Float64() (float64, error)` | float64로 변환 |
-| `Int64` | `func (n Number) Int64() (int64, error)` | int64로 변환 |
+| `Float64` | `func (n Number) Float64() (float64, error)` | float64 로 변환 |
+| `Int64` | `func (n Number) Int64() (int64, error)` | int64 로 변환 |
 
 ```go
 decoder := json.NewDecoder(strings.NewReader(`{"price": 19.99}`))

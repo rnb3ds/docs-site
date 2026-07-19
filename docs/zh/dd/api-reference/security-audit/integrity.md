@@ -211,9 +211,9 @@ logEntry := message + signature
 // 验证日志
 result, err := signer.Verify(logEntry)
 if err != nil {
-    fmt.Println("完整性验证失败:", err)
+    fmt.Println("完整性验证失败：", err)
 } else if result.Valid {
-    fmt.Printf("验证通过 - 序列号: %d\n", result.Sequence)
+    fmt.Printf("验证通过 - 序列号：%d\n", result.Sequence)
 }
 ```
 

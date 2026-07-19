@@ -1,6 +1,6 @@
 ---
 sidebar_label: "快速开始"
-title: "快速开始 - CyberGo env | 5分钟入门指南"
+title: "快速开始 - CyberGo env | 5 分钟入门指南"
 description: "5 分钟上手 CyberGo env 环境变量管理库，涵盖 go get 安装、.env 加载、类型安全读取、GetSecure 安全值、结构体映射、变量展开与 errors.Is 错误处理，并讲解四种配置预设与多环境多文件加载，附完整可运行代码示例助您快速入门。"
 sidebar_position: 1
 ---
@@ -103,7 +103,7 @@ timeout := env.GetDuration("TIMEOUT")
 
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 存储为: APP_NAME=myapp
+// 存储为：APP_NAME=myapp
 
 // 以下方式都能访问到该值
 name := env.GetString("APP_NAME")      // 扁平化键名（推荐）
@@ -190,7 +190,7 @@ if secret != nil {
     value := secret.Reveal()
 
     // 日志使用掩码（防止泄露）
-    log.Printf("API Key: %s", secret.Masked())  // 输出: [SECURE:32 bytes]
+    log.Printf("API Key: %s", secret.Masked())  // 输出：[SECURE:32 bytes]
 }
 ```
 

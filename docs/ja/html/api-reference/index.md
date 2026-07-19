@@ -49,7 +49,7 @@ HTML ライブラリは以下のコアコンポーネントを提供します：
 | 基本 | `Extract*` | `Extract`, `ExtractText` |
 | ファイルから | `Extract*FromFile` | `ExtractFromFile` |
 | コンテキスト付き | `Extract*WithContext` | `ExtractWithContext` |
-| ファイル+コンテキスト | `Extract*FromFileWithContext` | `ExtractFromFileWithContext` |
+| ファイル + コンテキスト | `Extract*FromFileWithContext` | `ExtractFromFileWithContext` |
 
 ### モジュール情報
 

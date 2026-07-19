@@ -1,7 +1,7 @@
 ---
 sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo env | センチネルエラーと復旧戦略"
-description: "CyberGo env エラー処理ガイド。16個のセンチネルエラーの errors.Is 検査、ParseError/FileError/SecurityError 構造化エラーの errors.As 抽出、復旧・グレードダウン戦略、エラーチェーン追跡をプロダクション観点で解説します。"
+description: "CyberGo env エラー処理ガイド。16 個のセンチネルエラーの errors.Is 検査、ParseError/FileError/SecurityError 構造化エラーの errors.As 抽出、復旧・グレードダウン戦略、エラーチェーン追跡をプロダクション観点で解説します。"
 sidebar_position: 2
 ---
 
@@ -106,7 +106,7 @@ if errors.Is(err, env.ErrNotInitialized) {
 // 必須キーが不足していないか確認（実際は *ValidationError、Rule=="required"）
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
-    // 必須キーが不足: valErr.Message に不足キーのリストを含む
+    // 必須キーが不足：valErr.Message に不足キーのリストを含む
 }
 ```
 
@@ -131,7 +131,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 ::: tip 解決方法
-`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の3つのメソッドを含む）を実装してください。
+`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の 3 つのメソッドを含む）を実装してください。
 :::
 
 ## 構造化エラー型
@@ -158,7 +158,7 @@ var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
     log.Printf("解析エラー %s:%d - %s\n",
         parseErr.File, parseErr.Line, parseErr.Err)
-    // 出力: 解析エラー .env:15 - invalid key format
+    // 出力：解析エラー .env:15 - invalid key format
 }
 ```
 
@@ -402,7 +402,7 @@ func handleLoadError(err error) {
     // まずセンチネルエラーをチェック
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        log.Println("警告: 設定ファイルが存在しません")
+        log.Println("警告：設定ファイルが存在しません")
         return
 
     case errors.Is(err, env.ErrFileTooLarge):
@@ -560,7 +560,7 @@ func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
         if valErr.Rule == "required" {
-            // 必須キーが不足: valErr.Message に不足キーのリストを含む
+            // 必須キーが不足：valErr.Message に不足キーのリストを含む
             log.Fatalf("必須キーが不足: %s", valErr.Message)
         }
         log.Fatalf("検証失敗: %s - %s", valErr.Field, valErr.Message)

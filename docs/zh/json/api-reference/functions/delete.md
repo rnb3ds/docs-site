@@ -55,7 +55,7 @@ result, err := json.Delete(`{"items":["a","b","c"]}`, "items[1]")
 result, err := json.Delete(`{"a":1}`, "nonexistent.path")
 if err != nil {
     // err 包含 JsonsError，包装了 ErrPathNotFound
-    fmt.Println("删除失败:", err)
+    fmt.Println("删除失败：", err)
 }
 // result 仍为原始 JSON: {"a":1}
 ```
@@ -67,7 +67,7 @@ if err != nil {
 删除指定路径并自动清理产生的空值和空数组。
 
 ```go
-// 原始数据: {"user": {"temp": "value", "name": "test"}}
+// 原始数据：{"user": {"temp": "value", "name": "test"}}
 result, err := json.DeleteClean(data, "user.temp")
 // {"user":{"name":"test"}}
 

@@ -22,7 +22,7 @@ import (
     "github.com/cybergodev/html"
 )
 
-// 커스텀 Scorer 구현(전체 예시는 guides/testing-custom 참조)
+// 커스텀 Scorer 구현 (전체 예시는 guides/testing-custom 참조)
 type myScorer struct{}
 
 func (s myScorer) Score(node html.ContentNode) int {
@@ -61,7 +61,7 @@ func main() {
         <nav><a href="/">홈</a></nav>
         <article class="post-content">
             <h1>Go 동시성 이해하기</h1>
-            <p>고루틴은 Go의 경량 스레드입니다.</p>
+            <p>고루틴은 Go 의 경량 스레드입니다.</p>
         </article>
         <aside class="sidebar">추천 읽기</aside>
     </body></html>`)
@@ -74,7 +74,7 @@ func main() {
     fmt.Println("본문:", result.Text)
     // 본문: Go 동시성 이해하기
     //
-    // 고루틴은 Go의 경량 스레드입니다.
+    // 고루틴은 Go 의 경량 스레드입니다.
 }
 ```
 
@@ -135,7 +135,7 @@ func main() {
     }
 
     fmt.Println("본문:", result.Text)
-    // 감사 로그가 파일과 stderr에 자동으로 기록됨
+    // 감사 로그가 파일과 stderr 에 자동으로 기록됨
 }
 ```
 

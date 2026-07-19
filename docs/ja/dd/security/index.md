@@ -31,7 +31,7 @@ logger, _ := dd.New(dd.Config{
 // password フィールドは自動マスキング
 logger.InfoWith("ログイン",
     dd.String("username", "admin"),
-    dd.String("password", "s3cr3t"),  // 出力: [REDACTED]
+    dd.String("password", "s3cr3t"),  // 出力：[REDACTED]
 )
 ```
 
@@ -106,7 +106,7 @@ HMAC 署名でログの改ざんを防止：
 cfg, _ := dd.DefaultIntegrityConfigSafe()
 signer, _ := dd.NewIntegritySigner(cfg)
 signature := signer.Sign(logMessage)
-// 検証時: signer.Verify(signedEntry)
+// 検証時：signer.Verify(signedEntry)
 ```
 
 詳細は [整合性署名 API](../api-reference/security-audit/integrity) を参照。

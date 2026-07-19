@@ -1,7 +1,7 @@
 ---
 sidebar_label: "リクエストオプション"
-title: "リクエストオプション - CyberGo HTTPC | WithXxxオプション"
-description: "HTTPC リクエストオプション API リファレンス: WithHeader ヘッダー、WithBearerToken 認証、WithJSON/WithForm リクエストボディ、WithQuery パラメータ、コールバック関数の完全な使い方を提供します。"
+title: "リクエストオプション - CyberGo HTTPC | WithXxx オプション"
+description: "HTTPC リクエストオプション API リファレンス：WithHeader ヘッダー、WithBearerToken 認証、WithJSON/WithForm リクエストボディ、WithQuery パラメータ、コールバック関数の完全な使い方を提供します。"
 sidebar_position: 2
 ---
 

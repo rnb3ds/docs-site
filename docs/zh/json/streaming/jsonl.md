@@ -270,7 +270,7 @@ user, found, err := p.FirstJSONL(file, func(item *json.IterableValue) bool {
     return item.GetString("name") == "Alice"
 })
 if found {
-    fmt.Println("找到:", user.GetString("name"))
+    fmt.Println("找到：", user.GetString("name"))
 }
 ```
 
@@ -387,7 +387,7 @@ if err := writer.Err(); err != nil {
 
 ```go
 stats := writer.Stats()
-fmt.Printf("写入 %d 行, %d 字节\n", stats.LinesProcessed, stats.BytesWritten)
+fmt.Printf("写入 %d 行，%d 字节\n", stats.LinesProcessed, stats.BytesWritten)
 ```
 
 **JSONLStats 结构**：

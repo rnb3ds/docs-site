@@ -167,7 +167,7 @@ func main() {
     cfg := jwt.DefaultConfig()
     cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
     cfg.EnableRateLimit = true
-    cfg.RateLimitRate = 5              // 분당 최대 5회
+    cfg.RateLimitRate = 5              // 분당 최대 5 회
     cfg.RateLimitWindow = time.Minute
 
     processor, err := jwt.New(cfg)
@@ -188,7 +188,7 @@ func main() {
         }
     }
 
-    // 6번째 요청은 속도 제한 적용
+    // 6 번째 요청은 속도 제한 적용
     _, err = processor.Create(claims)
     fmt.Println("Request 6:", err) // rate limit exceeded
 }

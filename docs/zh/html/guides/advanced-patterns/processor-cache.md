@@ -103,12 +103,12 @@ for _, page := range pages {
 
 // 获取统计
 stats := p.GetStatistics()
-fmt.Printf("总处理: %d\n", stats.TotalProcessed)
-fmt.Printf("缓存命中: %d\n", stats.CacheHits)
-fmt.Printf("缓存未命中: %d\n", stats.CacheMisses)
+fmt.Printf("总处理：%d\n", stats.TotalProcessed)
+fmt.Printf("缓存命中：%d\n", stats.CacheHits)
+fmt.Printf("缓存未命中：%d\n", stats.CacheMisses)
 
 hitRate := float64(stats.CacheHits) / float64(stats.TotalProcessed) * 100
-fmt.Printf("命中率: %.1f%%\n", hitRate)
+fmt.Printf("命中率：%.1f%%\n", hitRate)
 ```
 
 ## 推荐模式
@@ -154,7 +154,7 @@ urls := crawlURLs()
 pages := fetchPages(urls) // [][]byte
 
 batch := p.ExtractBatch(pages)
-fmt.Printf("成功: %d, 失败: %d\n", batch.Success, batch.Failed)
+fmt.Printf("成功：%d, 失败：%d\n", batch.Success, batch.Failed)
 ```
 
 ### 定期维护
@@ -175,7 +175,7 @@ go func() {
     ticker := time.NewTicker(time.Hour)
     for range ticker.C {
         stats := p.GetStatistics()
-        log.Printf("处理 %d 次, 错误 %d 次",
+        log.Printf("处理 %d 次，错误 %d 次",
             stats.TotalProcessed, stats.ErrorCount)
         p.ResetStatistics()
     }

@@ -192,13 +192,13 @@ func TestMiddleware_LogsRequestFields(t *testing.T) {
 
 ```go
 func TestSuite(t *testing.T) {
-    t.Run("场景A", func(t *testing.T) {
+    t.Run("场景 A", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 每个测试独立 recorder
         logger, _ := rec.NewLogger()
         // 测试逻辑...
     })
 
-    t.Run("场景B", func(t *testing.T) {
+    t.Run("场景 B", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 独立 recorder
         logger, _ := rec.NewLogger()
         // 测试逻辑...
@@ -217,19 +217,19 @@ func TestLogLevel_Behavior(t *testing.T) {
         expected string
     }{
         {
-            name:     "Debug级别",
+            name:     "Debug 级别",
             level:    dd.LevelDebug,
             logFunc:  func(l *dd.Logger) { l.Debug("调试信息") },
             expected: "调试信息",
         },
         {
-            name:     "Info级别",
+            name:     "Info 级别",
             level:    dd.LevelInfo,
             logFunc:  func(l *dd.Logger) { l.Info("一般信息") },
             expected: "一般信息",
         },
         {
-            name:     "Error级别",
+            name:     "Error 级别",
             level:    dd.LevelError,
             logFunc:  func(l *dd.Logger) { l.Error("错误信息") },
             expected: "错误信息",

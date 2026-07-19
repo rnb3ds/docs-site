@@ -43,7 +43,7 @@ cfg.CacheCleanup = time.Minute   // より頻繁にクリーンアップ
 ```go
 stats := p.GetStatistics()
 hitRate := float64(stats.CacheHits) / float64(stats.CacheHits+stats.CacheMisses)
-fmt.Printf("キャッシュヒット率: %.2f%%\n", hitRate*100)
+fmt.Printf("キャッシュヒット率：%.2f%%\n", hitRate*100)
 ```
 
 ## バッチ処理

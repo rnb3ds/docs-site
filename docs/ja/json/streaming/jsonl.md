@@ -7,7 +7,7 @@ sidebar_position: 3
 
 # JSONL プロセッサ
 
-JSONL（JSON Lines）または NDJSON（Newline Delimited JSON）は、1行に1つの JSON オブジェクトを格納する形式です。本ライブラリは `Processor` メソッドとパッケージレベル関数により、完全な JSONL 処理機能を提供します。
+JSONL（JSON Lines）または NDJSON（Newline Delimited JSON）は、1 行に 1 つの JSON オブジェクトを格納する形式です。本ライブラリは `Processor` メソッドとパッケージレベル関数により、完全な JSONL 処理機能を提供します。
 
 ## 形式仕様
 
@@ -142,7 +142,7 @@ if err != nil {
 }
 defer p.Close()
 
-// 1バッチあたり 1000 件
+// 1 バッチあたり 1000 件
 err = p.StreamJSONLChunked(file, 1000, func(chunk []*json.IterableValue) error {
     // データベースへのバッチ書き込み
     for _, item := range chunk {
@@ -270,7 +270,7 @@ user, found, err := p.FirstJSONL(file, func(item *json.IterableValue) bool {
     return item.GetString("name") == "Alice"
 })
 if found {
-    fmt.Println("発見:", user.GetString("name"))
+    fmt.Println("発見：", user.GetString("name"))
 }
 ```
 
@@ -332,7 +332,7 @@ writer = json.NewJSONLWriter(file, cfg)
 
 シグネチャ：`func (w *JSONLWriter) Write(data any) error`
 
-単一の JSON 値を1行として書き込みます。
+単一の JSON 値を 1 行として書き込みます。
 
 ```go
 err := writer.Write(map[string]any{
@@ -345,7 +345,7 @@ err := writer.Write(map[string]any{
 
 シグネチャ：`func (w *JSONLWriter) WriteAll(data []any) error`
 
-複数の JSON 値を、それぞれ1行として書き込みます。
+複数の JSON 値を、それぞれ 1 行として書き込みます。
 
 ```go
 items := []any{
@@ -387,7 +387,7 @@ if err := writer.Err(); err != nil {
 
 ```go
 stats := writer.Stats()
-fmt.Printf("書き込み %d 行, %d バイト\n", stats.LinesProcessed, stats.BytesWritten)
+fmt.Printf("書き込み %d 行，%d バイト\n", stats.LinesProcessed, stats.BytesWritten)
 ```
 
 **JSONLStats 構体体**：

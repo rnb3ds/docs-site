@@ -51,7 +51,7 @@ func main() {
 컨텍스트가 있는 경로 가져오기입니다. 시간 초과 및 취소 작업을 지원합니다. `Get`의 컨텍스트 인식 버전입니다.
 
 :::info 주의
-Context는 작업 전후에 확인되며, 파싱/탐색 과정에서는 확인되지 않습니다. 대용량 JSON 문서의 경우 작업 중 취소에 응답하지 않을 수 있습니다.
+Context 는 작업 전후에 확인되며, 파싱/탐색 과정에서는 확인되지 않습니다. 대용량 JSON 문서의 경우 작업 중 취소에 응답하지 않을 수 있습니다.
 :::
 
 ```go
@@ -78,7 +78,7 @@ func main() {
 
 ## 타입 안전 가져오기 함수
 
-타입 안전 가져오기 함수는 `defaultValue` 가변 매개변수를 통해 제로값 대체를 제공합니다. 경로가 존재하지 않거나, 값이 null이거나, 타입 변환에 실패하면 `defaultValue`를 반환합니다 (제공되지 않으면 해당 타입의 제로값 반환).
+타입 안전 가져오기 함수는 `defaultValue` 가변 매개변수를 통해 제로값 대체를 제공합니다. 경로가 존재하지 않거나, 값이 null 이거나, 타입 변환에 실패하면 `defaultValue`를 반환합니다 (제공되지 않으면 해당 타입의 제로값 반환).
 
 ### GetString
 
@@ -253,7 +253,7 @@ func main() {
 
 시그니처: `func GetTyped[T any](jsonStr, path string, defaultValue ...T) T`
 
-제네릭 가져오기 함수로, 커스텀 타입을 지원합니다. 경로가 존재하지 않거나, 값이 null이거나, 타입 변환에 실패하면 `defaultValue`를 반환합니다 (제공되지 않으면 `T`의 제로값 반환).
+제네릭 가져오기 함수로, 커스텀 타입을 지원합니다. 경로가 존재하지 않거나, 값이 null 이거나, 타입 변환에 실패하면 `defaultValue`를 반환합니다 (제공되지 않으면 `T`의 제로값 반환).
 
 **명명 규칙 설명**: `GetTyped[T]`는 `GetAs[T]`와 동일한 의미로, JSON 값을 가져와 지정된 타입 `T`로 변환함을 나타냅니다.
 
@@ -296,7 +296,7 @@ func main() {
 
 시그니처: `func SafeGet(jsonStr, path string, cfg ...Config) AccessResult`
 
-타입 안전한 가져오기 작업을 수행하고 `AccessResult`를 반환합니다. 타입 변환 메서드(`AsString`, `AsInt`, `AsFloat64`, `AsBool`)를 제공합니다.
+타입 안전한 가져오기 작업을 수행하고 `AccessResult`를 반환합니다. 타입 변환 메서드 (`AsString`, `AsInt`, `AsFloat64`, `AsBool`) 를 제공합니다.
 
 ```go
 package main

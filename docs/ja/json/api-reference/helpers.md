@@ -82,8 +82,8 @@ json.ClearCache()
 
 ```go
 stats := json.GetStats()
-fmt.Printf("キャッシュヒット率: %.2f%%\n", stats.HitRatio * 100)
-fmt.Printf("キャッシュサイズ: %d\n", stats.CacheSize)
+fmt.Printf("キャッシュヒット率：%.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("キャッシュサイズ：%d\n", stats.CacheSize)
 ```
 
 ---
@@ -133,8 +133,8 @@ if err != nil {
 defer p.Close()
 
 stats := p.GetStats()
-fmt.Printf("キャッシュヒット率: %.2f%%\n", stats.HitRatio * 100)
-fmt.Printf("キャッシュサイズ: %d\n", stats.CacheSize)
+fmt.Printf("キャッシュヒット率：%.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("キャッシュサイズ：%d\n", stats.CacheSize)
 ```
 
 ### Processor.GetHealthStatus

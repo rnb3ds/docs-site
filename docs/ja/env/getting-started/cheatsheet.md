@@ -1,7 +1,7 @@
 ---
 sidebar_label: "チートシート"
 title: "チートシート - CyberGo env | よく使う API 速査"
-description: "CyberGo env のよく使う API チートシート。ファイル読み込み、型読み取り、構造体マッピング、変数展開、SecureValue、Marshal シリアライズ、センチネルエラー errors.Is、監査ログなど高頻度操作のコアコードを1ページにまとめました。"
+description: "CyberGo env のよく使う API チートシート。ファイル読み込み、型読み取り、構造体マッピング、変数展開、SecureValue、Marshal シリアライズ、センチネルエラー errors.Is、監査ログなど高頻度操作のコアコードを 1 ページにまとめました。"
 sidebar_position: 2
 ---
 
@@ -61,7 +61,7 @@ if secret != nil {
 
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 格納形式: APP_NAME=myapp
+// 格納形式：APP_NAME=myapp
 
 // 以下のメソッドでアクセス可能
 env.GetString("APP_NAME")      // フラット化キー名（推奨）
@@ -141,10 +141,10 @@ errors.Is(err, env.ErrSecurityViolation)  // 禁止キー（実際は *SecurityE
 errors.Is(err, env.ErrClosed)
 errors.Is(err, env.ErrAlreadyInitialized)
 
-// キー形式が不正: 実際は *ValidationError、Field=="key"
+// キー形式が不正：実際は *ValidationError、Field=="key"
 var keyErr *env.ValidationError
 if errors.As(err, &keyErr) && keyErr.Field == "key" {
-    // 無効なキー形式: keyErr.Message
+    // 無効なキー形式：keyErr.Message
 }
 
 // 構造化エラー

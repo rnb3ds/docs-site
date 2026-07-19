@@ -1,7 +1,7 @@
 ---
 sidebar_label: "빠른 시작"
-title: "빠른 시작 - CyberGo DD | 5분 입문 가이드"
-description: "고성능 구조화 로그 라이브러리 CyberGo DD의 완전한 입문 튜토리얼입니다. 의존성 설치부터 첫 로그 출력까지, 로거 생성, 출력 대상 및 파일 로테이션 정책 구성, 구조화 필드로 요청 컨텍스트 정보 기록, 훅 시스템 확장까지 단계별로 학습합니다. 5분이면 핵심 사용법을 익혀 실제 프로젝트에 적용할 수 있습니다."
+title: "빠른 시작 - CyberGo DD | 5 분 입문 가이드"
+description: "고성능 구조화 로그 라이브러리 CyberGo DD 의 완전한 입문 튜토리얼입니다. 의존성 설치부터 첫 로그 출력까지, 로거 생성, 출력 대상 및 파일 로테이션 정책 구성, 구조화 필드로 요청 컨텍스트 정보 기록, 훅 시스템 확장까지 단계별로 학습합니다. 5 분이면 핵심 사용법을 익혀 실제 프로젝트에 적용할 수 있습니다."
 sidebar_position: 1
 ---
 
@@ -9,7 +9,7 @@ sidebar_position: 1
 
 ## 1. 로거 생성
 
-DD는 다양한 시나리오 요구를 충족하는 여러 편의 생성자를 제공합니다.
+DD 는 다양한 시나리오 요구를 충족하는 여러 편의 생성자를 제공합니다.
 
 ```go
 package main
@@ -21,10 +21,10 @@ import (
 )
 
 func main() {
-    // 방법 1: 기본 전역 로거(제로 구성)
+    // 방법 1: 기본 전역 로거 (제로 구성)
     dd.Info("전역 로거 사용")
 
-    // 방법 2: 개발 모드(DEBUG 레벨, caller 포함)
+    // 방법 2: 개발 모드 (DEBUG 레벨, caller 포함)
     dev, err := dd.New(dd.DevelopmentConfig())
     if err != nil {
         log.Fatal(err)
@@ -72,7 +72,7 @@ func main() {
 ```
 
 :::warning 경고 제로값 Config 함정
-위 방법 3/4/5는 `dd.Config{...}` 리터럴을 직접 사용해 `Targets`/`Format`만 명시적으로 설정했을 뿐, 나머지 필드는 제로값을 유지합니다. `Level=Debug`(필터링 없음), `IncludeTime=false`(타임스탬프 없음), `IncludeLevel=false`(레벨 없음), `DynamicCaller=false`(caller 없음), `Security=nil`(`DefaultSecurityConfig()` 기본 필터로 폴백, 약 36종의 마스킹은 여전히 활성화됨; 완전히 끄려면 `&dd.SecurityConfig{}` 또는 `SecurityLevelDevelopment` 명시 필요). 출력에 타임스탬프와 레벨 같은 핵심 정보가 누락됩니다.
+위 방법 3/4/5 는 `dd.Config{...}` 리터럴을 직접 사용해 `Targets`/`Format`만 명시적으로 설정했을 뿐, 나머지 필드는 제로값을 유지합니다. `Level=Debug`(필터링 없음), `IncludeTime=false`(타임스탬프 없음), `IncludeLevel=false`(레벨 없음), `DynamicCaller=false`(caller 없음), `Security=nil`(`DefaultSecurityConfig()` 기본 필터로 폴백, 약 36 종의 마스킹은 여전히 활성화됨; 완전히 끄려면 `&dd.SecurityConfig{}` 또는 `SecurityLevelDevelopment` 명시 필요). 출력에 타임스탬프와 레벨 같은 핵심 정보가 누락됩니다.
 
 **프로덕션 권장**: `dd.DefaultConfig()`를 기반으로 필드를 수정하면 타임스탬프, 레벨, caller, 기본 보안 필터를 한 번에 얻을 수 있습니다.
 
@@ -82,12 +82,12 @@ cfg.Targets = []dd.OutputTarget{dd.FileOutput("logs/app.log")}
 logger, err := dd.New(cfg)
 ```
 
-마찬가지로 `dd.DevelopmentConfig()`(DEBUG+caller)와 `dd.JSONConfig()`(DEBUG+JSON+RFC3339)도 완전한 필드 집합이 사전 설정된 편의 시작점입니다.
+마찬가지로 `dd.DevelopmentConfig()`(DEBUG+caller) 와 `dd.JSONConfig()`(DEBUG+JSON+RFC3339) 도 완전한 필드 집합이 사전 설정된 편의 시작점입니다.
 :::
 
 ## 2. 로그 레벨
 
-DD는 낮은 것부터 높은 순으로 5개의 로그 레벨을 지원합니다.
+DD 는 낮은 것부터 높은 순으로 5 개의 로그 레벨을 지원합니다.
 
 ```go
 dd.Debug("디버그 정보")   // LevelDebug
@@ -119,7 +119,7 @@ dd.InfoWith("요청 처리 완료",
 )
 ```
 
-출력 예(기본 텍스트 형식):
+출력 예 (기본 텍스트 형식):
 
 ```text
 [2026-04-16T21:16:48+08:00   INFO] main.go:13 요청 처리 완료 method=GET path=/api/users status=200 elapsed=150ms
@@ -150,7 +150,7 @@ requestLogger.InfoWith("라우트 등록 완료",
 `FileWriter`로 로테이션 정책을 구성합니다.
 
 ```go
-// 기본값 100MB, 30일, 10개 백업
+// 기본값 100MB, 30 일, 10 개 백업
 fwCfg := dd.DefaultFileWriterConfig()
 fwCfg.MaxBackups = 3
 fwCfg.MaxSizeMB = 1
@@ -174,7 +174,7 @@ logger.Info("hello world")
 
 ## 6. 민감 데이터 필터링
 
-DD는 기본적으로 기본 민감 데이터 필터링이 활성화됩니다(비밀번호, API Key, 신용카드 번호 등 자동 마스킹).
+DD 는 기본적으로 기본 민감 데이터 필터링이 활성화됩니다 (비밀번호, API Key, 신용카드 번호 등 자동 마스킹).
 
 ```go
 // 기본 구성에는 기본 보안 필터가 포함되어 있습니다

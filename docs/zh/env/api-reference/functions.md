@@ -82,7 +82,7 @@ name := env.GetString("app_name")  // 查找 app_name -> APP_NAME
 **3. 点号路径解析（嵌套键）**
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 存储为: APP_NAME=myapp
+// 存储为：APP_NAME=myapp
 
 // 以下方式都能访问到该值
 name := env.GetString("APP_NAME")   // 扁平化键名（推荐）
@@ -105,7 +105,7 @@ name := env.GetString("APP.NAME")   // 大写点号路径
 
 ```go
 // JSON: {"servers": [{"host": "a.com"}, {"host": "b.com"}]}
-// 存储为: SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
+// 存储为：SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
 
 host0 := env.GetString("servers.0.host")  // "a.com"
 host1 := env.GetString("servers.1.host")  // "b.com"
@@ -302,7 +302,7 @@ if secret != nil {
     defer secret.Release()
 
     value := secret.Reveal()   // 明文值（仅在需要时调用）
-    masked := secret.Masked()  // 用于日志: [SECURE:32 bytes]
+    masked := secret.Masked()  // 用于日志：[SECURE:32 bytes]
 }
 ```
 

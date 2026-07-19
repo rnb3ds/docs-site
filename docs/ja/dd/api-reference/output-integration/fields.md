@@ -212,12 +212,12 @@ func main() {
         fmt.Println("user_id:", err)
     } else {
         fmt.Println("user_id OK")
-        // 出力: user_id OK
+        // 出力：user_id OK
     }
 
     if err := cfg.ValidateFieldKey("userId"); err != nil {
         fmt.Println("userId:", err)
-        // 出力: userId: field key "userId" does not match snake_case convention
+        // 出力：userId: field key "userId" does not match snake_case convention
     }
 
     // 一般略語の除外：URL は snake_case に適合しないが、略語表にヒットするため通過
@@ -225,7 +225,7 @@ func main() {
         fmt.Println("URL:", err)
     } else {
         fmt.Println("URL OK (略語除外)")
-        // 出力: URL OK (略語除外)
+        // 出力：URL OK (略語除外)
     }
 
     // デフォルト設定 Mode=None、命名を検証しない
@@ -234,7 +234,7 @@ func main() {
         fmt.Println("anyKey:", err)
     } else {
         fmt.Println("anyKey OK (Mode=None)")
-        // 出力: anyKey OK (Mode=None)
+        // 出力：anyKey OK (Mode=None)
     }
 }
 ```

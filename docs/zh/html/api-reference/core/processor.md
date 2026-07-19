@@ -122,7 +122,7 @@ func (p *Processor) GetStatistics() Statistics
 
 ```go
 stats := p.GetStatistics()
-fmt.Printf("已处理: %d, 缓存命中: %d\n",
+fmt.Printf("已处理：%d, 缓存命中：%d\n",
     stats.TotalProcessed, stats.CacheHits)
 ```
 

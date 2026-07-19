@@ -88,7 +88,7 @@ console.log(`  shared.ts PROJECTS  : ${tsProjects.length} 项 [${tsProjects.join
 console.log(`  shared.ts PROJECT_META: ${tsMeta.length} 项`)
 
 if (issues.length) {
-  console.error('\n❌ 发现不一致:')
+  console.error('\n❌ 发现不一致：')
   for (const i of issues) console.error(`  - ${i}`)
   process.exit(1)
 }

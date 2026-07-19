@@ -1,18 +1,18 @@
 ---
 sidebar_label: "감사 로그"
 title: "감사 로그 - CyberGo DD | 보안 감사 실전 가이드"
-description: "CyberGo DD 감사 로그 실전 가이드입니다. AuditLogger 비동기 이벤트 기록 메커니즘, 11종의 내장 감사 이벤트 타입, 심각도 레벨 필터링과 등급별 분류, HMAC 무결성 서명 통합 방안, 감사 통계와 실시간 모니터링, 로그 검증과 변조 방지 전략을 다루어 개발자가 규정 준수 요구를 충족하는 기업급 보안 감사 시스템을 구축할 수 있도록 돕습니다."
+description: "CyberGo DD 감사 로그 실전 가이드입니다. AuditLogger 비동기 이벤트 기록 메커니즘, 11 종의 내장 감사 이벤트 타입, 심각도 레벨 필터링과 등급별 분류, HMAC 무결성 서명 통합 방안, 감사 통계와 실시간 모니터링, 로그 검증과 변조 방지 전략을 다루어 개발자가 규정 준수 요구를 충족하는 기업급 보안 감사 시스템을 구축할 수 있도록 돕습니다."
 sidebar_position: 5
 ---
 
 # 감사 로그
 
-감사 로그는 비즈니스 로그와 독립적으로 보안 관련 이벤트(예: 민감 데이터 마스킹, ReDoS 공격 시도 등)를 전담하여 기록하며, 규정 준수 감사와 보안 분석에 적합합니다.
+감사 로그는 비즈니스 로그와 독립적으로 보안 관련 이벤트 (예: 민감 데이터 마스킹, ReDoS 공격 시도 등) 를 전담하여 기록하며, 규정 준수 감사와 보안 분석에 적합합니다.
 
 ## 개요
 
 ```text
-비즈니스 로그(Logger)          감사 로그(AuditLogger)
+비즈니스 로그 (Logger)          감사 로그 (AuditLogger)
     │                           │
     ├─ Info/Debug/Warn...       ├─ SensitiveDataRedacted
     ├─ 구조화 필드              ├─ RateLimitExceeded
@@ -34,8 +34,8 @@ if err != nil {
 }
 defer auditLogger.Close()
 
-// AuditLogger는 독립 생성(본 예)또는 Config.Audit로 Logger와 자동 통합 가능
-// 여기서는 독립 사용법 시연: 별도 logger를 만들고 Config.Audit 미설정
+// AuditLogger 는 독립 생성 (본 예) 또는 Config.Audit 로 Logger 와 자동 통합 가능
+// 여기서는 독립 사용법 시연: 별도 logger 를 만들고 Config.Audit 미설정
 logger, err := dd.New(dd.Config{
     Security: dd.DefaultSecurityConfig(),
     Targets:  []dd.OutputTarget{dd.ConsoleOutput()},
@@ -65,7 +65,7 @@ defer auditLogger.Close()
 
 ## 감사 이벤트 타입
 
-AuditLogger는 11가지 보안 이벤트를 기록합니다.
+AuditLogger 는 11 가지 보안 이벤트를 기록합니다.
 
 | 이벤트 타입 | 설명 | 기본 심각도 레벨 |
 |----------|------|-------------|
@@ -160,7 +160,7 @@ defer auditLogger.Close()
 
 | 레벨 | 수치 | 적용 시나리오 |
 |------|------|----------|
-| `AuditSeverityInfo` | 0 | 모든 이벤트 기록(개발/디버그) |
+| `AuditSeverityInfo` | 0 | 모든 이벤트 기록 (개발/디버그) |
 | `AuditSeverityWarning` | 1 | 프로덕션 환경 권장 |
 | `AuditSeverityError` | 2 | 고보안 요구 |
 | `AuditSeverityCritical` | 3 | 심각한 이벤트만 기록 |
@@ -209,7 +209,7 @@ func main() {
     }
     defer auditLogger.Close()
 
-    // 비즈니스 Logger 생성(보안 필터 포함)
+    // 비즈니스 Logger 생성 (보안 필터 포함)
     logger, err := dd.New(dd.Config{
         Format:   dd.FormatJSON,
         Security: dd.DefaultSecureConfig(),
@@ -220,20 +220,20 @@ func main() {
     }
     defer logger.Close()
 
-    // 정상 비즈니스 로그(민감 데이터 자동 마스킹)
+    // 정상 비즈니스 로그 (민감 데이터 자동 마스킹)
     logger.InfoWith("사용자 작업",
         dd.String("username", "alice"),
         dd.String("password", "secret123"), // → [REDACTED]
     )
 
-    // 참고: 본 예에서는 Logger에 Config.Audit를 설정하지 않았으므로, 마스킹 등 보안 이벤트가 자동으로 감사에 들어가지 않습니다.
-    // 비즈니스 logger의 보안 이벤트를 AuditLogger로 자동 전달하려면 해당 logger의
-    // Config.Audit에서 구성해야 합니다(활성화하면 마스킹, 속도 제한 등 이벤트가 자동으로 감사 스트림에 들어감).
+    // 참고: 본 예에서는 Logger 에 Config.Audit 를 설정하지 않았으므로, 마스킹 등 보안 이벤트가 자동으로 감사에 들어가지 않습니다.
+    // 비즈니스 logger 의 보안 이벤트를 AuditLogger 로 자동 전달하려면 해당 logger 의
+    // Config.Audit 에서 구성해야 합니다 (활성화하면 마스킹, 속도 제한 등 이벤트가 자동으로 감사 스트림에 들어감).
 }
 ```
 
 :::info 정보 자동 통합 vs 독립 사용
-AuditLogger는 **독립 생성**(`dd.NewAuditLogger`, 본 절 예시의 사용법)도 가능하고, **`Config.Audit`로 Logger와 자동 통합**도 가능합니다. 후자는 `Config.Audit`(타입 `AuditConfig`)의 `Enabled` 필드가 true일 때 민감 데이터 마스킹 이벤트, 속도 제한 이벤트 등을 AuditLogger로 자동 전달하며, 수동으로 훅을 연결할 필요가 없습니다.
+AuditLogger 는 **독립 생성**(`dd.NewAuditLogger`, 본 절 예시의 사용법) 도 가능하고, **`Config.Audit`로 Logger 와 자동 통합**도 가능합니다. 후자는 `Config.Audit`(타입 `AuditConfig`) 의 `Enabled` 필드가 true 일 때 민감 데이터 마스킹 이벤트, 속도 제한 이벤트 등을 AuditLogger 로 자동 전달하며, 수동으로 훅을 연결할 필요가 없습니다.
 :::
 
 ## 다음 단계

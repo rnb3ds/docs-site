@@ -1,13 +1,13 @@
 ---
 sidebar_label: "컴포넌트 팩토리"
 title: "ComponentFactory API - CyberGo env | 컴포넌트 팩토리"
-description: "CyberGo env ComponentFactory API 참조로 Validator 검증기, Auditor 감사기, FileSystem 파일 시스템 어댑터와 변수 확장기를 생성하고 RegisterParser로 커스텀 파서를 등록하며 Close로 수명 주기를 관리합니다."
+description: "CyberGo env ComponentFactory API 참조로 Validator 검증기, Auditor 감사기, FileSystem 파일 시스템 어댑터와 변수 확장기를 생성하고 RegisterParser 로 커스텀 파서를 등록하며 Close 로 수명 주기를 관리합니다."
 sidebar_position: 8
 ---
 
 # ComponentFactory API
 
-`ComponentFactory`는 Loader와 Parser가 공유하는 컴포넌트를 생성하고 관리하며, 명확한 수명 주기 관리를 제공합니다.
+`ComponentFactory`는 Loader 와 Parser 가 공유하는 컴포넌트를 생성하고 관리하며, 명확한 수명 주기 관리를 제공합니다.
 
 ## 유형 정의
 
@@ -22,7 +22,7 @@ type ComponentFactory struct {
 - 컴포넌트 수명 주기 관리
 - 사용자 정의 파서의 내부 컴포넌트 접근 지원
 
-**스레드 안전:** ComponentFactory의 모든 메서드는 스레드 안전합니다.
+**스레드 안전:** ComponentFactory 의 모든 메서드는 스레드 안전합니다.
 
 ---
 
@@ -98,9 +98,9 @@ func (f *ComponentFactory) Close() error
 - 원자 연산을 사용하여 스레드 안전 보장
 
 ```go
-// 일반적으로 Loader가 자동 관리
+// 일반적으로 Loader 가 자동 관리
 loader, _ := env.New(cfg)
-defer loader.Close()  // ComponentFactory도 자동으로 닫힘
+defer loader.Close()  // ComponentFactory 도 자동으로 닫힘
 ```
 
 ---
@@ -125,7 +125,7 @@ if factory.IsClosed() {
 
 ### 자동 생성 (권장)
 
-Loader 생성 시 ComponentFactory가 자동으로 생성되고 관리됩니다:
+Loader 생성 시 ComponentFactory 가 자동으로 생성되고 관리됩니다:
 
 ```go
 cfg := env.DefaultConfig()
@@ -136,7 +136,7 @@ defer loader.Close()  // 팩토리도 자동으로 닫힘
 
 ### 사용자 정의 파서에서 사용
 
-사용자 정의 파서를 등록할 때, ComponentFactory를 통해 검증기와 감사기를 가져올 수 있습니다:
+사용자 정의 파서를 등록할 때, ComponentFactory 를 통해 검증기와 감사기를 가져올 수 있습니다:
 
 ```go
 type CustomParser struct {
@@ -185,8 +185,8 @@ Validator  Auditor  Expander
 ```
 
 :::warning 참고
-- 각 Loader는 일반적으로 자체 ComponentFactory를 소유
-- Close()를 호출한 후 해당 팩토리를 통해 생성된 모든 컴포넌트를 더 이상 사용해서는 안 됨
+- 각 Loader 는 일반적으로 자체 ComponentFactory 를 소유
+- Close() 를 호출한 후 해당 팩토리를 통해 생성된 모든 컴포넌트를 더 이상 사용해서는 안 됨
 - 팩토리는 스레드 안전하며, 동시 접근 가능
 :::
 
@@ -292,7 +292,7 @@ func NewCloseableChannelHandler(bufferSize int) *CloseableChannelHandler
 자체 버퍼 채널을 가진 닫기 가능한 감사 핸들러를 생성합니다. `ChannelAuditHandler`가 외부 채널을 받는 것과 달리, `CloseableChannelHandler`는 자체 버퍼 채널을 생성하고 소유합니다. `Close()`를 호출하면 핸들러를 닫고 채널을 닫습니다. `Channel()`을 사용하여 이벤트를 수신합니다.
 
 **매개변수:**
-- `bufferSize` - 버퍼 채널 크기 (음수는 0으로 간주됨)
+- `bufferSize` - 버퍼 채널 크기 (음수는 0 으로 간주됨)
 
 ```go
 handler := env.NewCloseableChannelHandler(64)
@@ -307,7 +307,7 @@ go func() {
 
 #### CloseableChannelHandler 메서드
 
-`CloseableChannelHandler`는 `AuditHandler` 인터페이스(`Log` / `Close`)를 구현하는 것 외에도 다음과 같은 특유의 메서드를 제공합니다:
+`CloseableChannelHandler`는 `AuditHandler` 인터페이스 (`Log` / `Close`) 를 구현하는 것 외에도 다음과 같은 특유의 메서드를 제공합니다:
 
 ```go
 func (h *CloseableChannelHandler) Channel() <-chan AuditEvent
@@ -482,11 +482,11 @@ format := env.DetectFormat("config.json")   // FormatJSON
 format := env.DetectFormat("settings.yaml") // FormatYAML
 format := env.DetectFormat("app.yml")       // FormatYAML
 format := env.DetectFormat(".env")          // FormatEnv
-format := env.DetectFormat(".env.local")    // FormatAuto (실제로는 .env로 처리)
+format := env.DetectFormat(".env.local")    // FormatAuto (실제로는 .env 로 처리)
 format := env.DetectFormat("unknown.txt")   // FormatAuto
 ```
 
-**LoadFiles에서의 적용:**
+**LoadFiles 에서의 적용:**
 
 ```go
 loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
@@ -555,7 +555,7 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 - `error` - 등록 실패 시 오류 반환
 
 **오류 발생 경우:**
-- 내장 형식(FormatEnv, FormatJSON, FormatYAML)은 덮어쓸 수 없음
+- 내장 형식 (FormatEnv, FormatJSON, FormatYAML) 은 덮어쓸 수 없음
 - 형식이 이미 등록된 경우
 
 **주의 사항:**
@@ -589,7 +589,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. 사용 전 실행되도록 init()에서 파서 등록
+// 3. 사용 전 실행되도록 init() 에서 파서 등록
 func init() {
     err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &TOMLParser{
@@ -605,7 +605,7 @@ func init() {
 
 // 4. 사용자 정의 형식 사용
 func main() {
-    // 등록은 init()에서 완료됨 (main보다 먼저 실행)
+    // 등록은 init() 에서 완료됨 (main 보다 먼저 실행)
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 
@@ -629,10 +629,10 @@ func ForceRegisterParser(format FileFormat, factory ParserFactory) error
 - `factory` - 파서 팩토리 함수
 
 **반환값:**
-- `error` - 등록 실패 시 오류 반환 (`factory`가 nil인 경우)
+- `error` - 등록 실패 시 오류 반환 (`factory`가 nil 인 경우)
 
 :::danger 경고
-신중하게 사용하세요. 내장 파서를 덮어쓰면 대체 파서가 동일한 보안 검사(키 검증, 값 검증, 크기 제한 등)를 구현하지 않은 경우 보안 취약점이 발생할 수 있습니다.
+신중하게 사용하세요. 내장 파서를 덮어쓰면 대체 파서가 동일한 보안 검사 (키 검증, 값 검증, 크기 제한 등) 를 구현하지 않은 경우 보안 취약점이 발생할 수 있습니다.
 
 다음과 같은 고급 시나리오에 적합합니다:
 - 내장 파서에 사용자 정의 보안 검사 추가
@@ -685,7 +685,7 @@ type EnvParser interface {
 - `filename` - 파일 이름 (오류 메시지용)
 
 **반환값:**
-- `map[string]string` - 파싱된 키-값 쌍
+- `map[string]string` - 파싱된 키 - 값 쌍
 - `error` - 파싱 오류
 
 ---
@@ -706,7 +706,7 @@ type EnvParser interface {
 ### JSON 파서
 
 JSON 형식 파서, 지원 기능:
-- 키-값 쌍 객체
+- 키 - 값 쌍 객체
 - 중첩 구조 (평면화 처리)
 - 숫자, 문자열, 부울값 변환
 - 배열 (`KEY_0`, `KEY_1`...으로 평면화)
@@ -714,7 +714,7 @@ JSON 형식 파서, 지원 기능:
 ### YAML 파서
 
 YAML 형식 파서, 지원 기능:
-- 키-값 쌍
+- 키 - 값 쌍
 - 중첩 구조 (평면화 처리)
 - 다양한 스칼라 유형
 - 리스트 (인덱스 키로 평면화)
@@ -901,7 +901,7 @@ func (m *MemoryFileSystem) LookupEnv(key string) (string, bool) {
     return val, ok
 }
 
-// MemoryFile은 env.File 구현
+// MemoryFile 은 env.File 구현
 type MemoryFile struct {
     reader *strings.Reader
 }
@@ -912,7 +912,7 @@ func (f *MemoryFile) Close() error                      { return nil }
 func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, errors.ErrUnsupported }
 func (f *MemoryFile) Sync() error                       { return nil }
 
-// MemoryFileInfo는 os.FileInfo 구현
+// MemoryFileInfo 는 os.FileInfo 구현
 type MemoryFileInfo struct {
     name string
     size int64

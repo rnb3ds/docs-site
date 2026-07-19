@@ -443,7 +443,7 @@ result, err := json.MergeJSON(
     `{"b": 3, "c": 4}`,
     cfg,
 )
-// 结果: {"a": 1, "b": 3, "c": 4}
+// 结果：{"a": 1, "b": 3, "c": 4}
 ```
 
 ### MergeIntersection
@@ -458,7 +458,7 @@ result, err := json.MergeJSON(
     `{"b": 3, "c": 4}`,
     cfg,
 )
-// 结果: {"b": 3}
+// 结果：{"b": 3}
 ```
 
 ### MergeDifference
@@ -473,7 +473,7 @@ result, err := json.MergeJSON(
     `{"b": 3, "c": 4}`,
     cfg,
 )
-// 结果: {"a": 1}
+// 结果：{"a": 1}
 ```
 
 ---

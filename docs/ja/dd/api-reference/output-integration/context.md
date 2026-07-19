@@ -58,7 +58,7 @@ func handleRequest(ctx context.Context) {
 ```
 
 :::tip 一括抽出
-手動 `Get*` は単発の場面に適しています。**グローバル/静的**フィールド（サービス名やホスト名など）を毎ログに自動付与するには、`ContextExtractor` を Logger に登録します。抽出器は毎回 `*With` 呼び出し時に実行されます。注意: 抽出器が受け取るのは `context.Background()` であり、リクエストスコープの TraceID を**自動取得できません**（下記の制限事項を参照）。
+手動 `Get*` は単発の場面に適しています。**グローバル/静的**フィールド（サービス名やホスト名など）を毎ログに自動付与するには、`ContextExtractor` を Logger に登録します。抽出器は毎回 `*With` 呼び出し時に実行されます。注意：抽出器が受け取るのは `context.Background()` であり、リクエストスコープの TraceID を**自動取得できません**（下記の制限事項を参照）。
 :::
 
 ## ContextExtractor

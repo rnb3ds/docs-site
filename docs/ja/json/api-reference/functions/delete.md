@@ -43,7 +43,7 @@ result, err := json.Delete(`{"user":{"name":"Alice","temp":"value"}}`, "user.tem
 **配列要素の削除**
 
 ```go
-// 配列内の要素を削除（インデックスは0から開始）
+// 配列内の要素を削除（インデックスは 0 から開始）
 result, err := json.Delete(`{"items":["a","b","c"]}`, "items[1]")
 // {"items":["a","c"]}
 ```
@@ -55,9 +55,9 @@ result, err := json.Delete(`{"items":["a","b","c"]}`, "items[1]")
 result, err := json.Delete(`{"a":1}`, "nonexistent.path")
 if err != nil {
     // err には JsonsError が含まれ、ErrPathNotFound をラップしている
-    fmt.Println("削除に失敗:", err)
+    fmt.Println("削除に失敗：", err)
 }
-// result は元の JSON のまま: {"a":1}
+// result は元の JSON のまま：{"a":1}
 ```
 
 ## DeleteClean
@@ -67,7 +67,7 @@ if err != nil {
 指定されたパスを削除し、結果として生じる空値や空配列を自動的にクリーンアップします。
 
 ```go
-// 元のデータ: {"user": {"temp": "value", "name": "test"}}
+// 元のデータ：{"user": {"temp": "value", "name": "test"}}
 result, err := json.DeleteClean(data, "user.temp")
 // {"user":{"name":"test"}}
 

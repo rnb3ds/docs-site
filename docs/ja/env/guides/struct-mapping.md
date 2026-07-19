@@ -257,7 +257,7 @@ func main() {
     }
 
     fmt.Println(cfg.Level)
-    // 出力: info
+    // 出力：info
 }
 ```
 

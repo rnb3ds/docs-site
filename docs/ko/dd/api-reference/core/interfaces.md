@@ -7,7 +7,7 @@ sidebar_position: 5
 
 # 인터페이스 정의
 
-DD는 계층화된 로그 인터페이스를 정의하여 다양한 수준의 추상화 요구를 지원합니다.
+DD 는 계층화된 로그 인터페이스를 정의하여 다양한 수준의 추상화 요구를 지원합니다.
 
 ## 인터페이스 계층
 
@@ -223,7 +223,7 @@ type LogProvider interface {
 
 ## Flusher
 
-Writer flush 인터페이스. 이 인터페이스를 구현한 Writer는 `Logger.Flush()` 시 호출됩니다.
+Writer flush 인터페이스. 이 인터페이스를 구현한 Writer 는 `Logger.Flush()` 시 호출됩니다.
 
 ```go
 type Flusher interface {
@@ -265,7 +265,7 @@ svc.logger.Info("서비스 시작")
 ### 인터페이스 적응
 
 ```go
-// CoreLogger를 구현하는 모든 타입 수용
+// CoreLogger 를 구현하는 모든 타입 수용
 func process(logger dd.CoreLogger) {
     logger.InfoWith("처리 시작", dd.String("item", "data"))
 }
@@ -273,6 +273,6 @@ func process(logger dd.CoreLogger) {
 
 ## 다음 단계
 
-- [Logger](./logger) -- LogProvider를 구현하는 구체 타입
-- [LoggerEntry](./entry) -- CoreLogger를 구현하는 Entry 타입
+- [Logger](./logger) -- LogProvider 를 구현하는 구체 타입
+- [LoggerEntry](./entry) -- CoreLogger 를 구현하는 Entry 타입
 - [패키지 함수](./functions) -- 전역 함수

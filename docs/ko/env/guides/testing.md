@@ -1,7 +1,7 @@
 ---
 sidebar_label: "테스트 시나리오"
 title: "테스트 시나리오 - CyberGo env | 단위 테스트 모범 사례"
-description: "CyberGo env 테스트 모범 사례 가이드로 TestingConfig와 OverwriteExisting 격리, FileSystem 인터페이스 모킹, 테스트별 독립 로더, 테이블 기반·벤치마크, ResetDefaultLoader 정리로 안정적 결과를 보장합니다."
+description: "CyberGo env 테스트 모범 사례 가이드로 TestingConfig 와 OverwriteExisting 격리, FileSystem 인터페이스 모킹, 테스트별 독립 로더, 테이블 기반·벤치마크, ResetDefaultLoader 정리로 안정적 결과를 보장합니다."
 sidebar_position: 6
 ---
 
@@ -13,7 +13,7 @@ sidebar_position: 6
 
 ### TestingConfig 사용
 
-TestingConfig는 기존 환경 변수를 덮어쓰므로 테스트 격리에 적합합니다:
+TestingConfig 는 기존 환경 변수를 덮어쓰므로 테스트 격리에 적합합니다:
 
 ```go
 func TestWithTestingConfig(t *testing.T) {
@@ -30,7 +30,7 @@ func TestWithTestingConfig(t *testing.T) {
 ```
 
 ::: tip 참고
-TestingConfig는 `OverwriteExisting: true`를 설정하여 테스트 격리를 보장합니다. 기존 변수를 유지해야 하는 경우 `cfg.OverwriteExisting = false`로 수동 설정할 수 있습니다.
+TestingConfig 는 `OverwriteExisting: true`를 설정하여 테스트 격리를 보장합니다. 기존 변수를 유지해야 하는 경우 `cfg.OverwriteExisting = false`로 수동 설정할 수 있습니다.
 :::
 
 ### 각 테스트마다 독립적인 로더

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "오류 처리"
 title: "오류 처리 - CyberGo html | 견고한 오류 처리 가이드"
-description: "CyberGo html 오류 처리 가이드: 5가지 오류 분류, errors.Is/As 판별, context 취소와 배치 부분 실패 처리로 견고한 로직을 구축합니다."
+description: "CyberGo html 오류 처리 가이드: 5 가지 오류 분류, errors.Is/As 판별, context 취소와 배치 부분 실패 처리로 견고한 로직을 구축합니다."
 sidebar_position: 2
 ---
 
@@ -30,7 +30,7 @@ if err != nil {
     case errors.Is(err, html.ErrInputTooLarge):
         slog.Warn("입력이 너무 큽니다. 문서 크기를 줄이세요")
     case errors.Is(err, html.ErrInvalidHTML):
-        slog.Warn("유효하지 않은 HTML입니다. 입력을 확인하세요")
+        slog.Warn("유효하지 않은 HTML 입니다. 입력을 확인하세요")
     case errors.Is(err, html.ErrProcessingTimeout):
         slog.Warn("처리 타임아웃. 문서가 너무 복잡할 수 있습니다")
     case errors.Is(err, html.ErrFileNotFound):
@@ -79,13 +79,13 @@ result, err := html.ExtractWithContext(ctx, data)
 if err != nil {
     switch {
     case errors.Is(err, html.ErrProcessingTimeout):
-        // 타임아웃 처리(라이브러리 내 ProcessingTimeout 트리거, 이때 ctx.Err()는 nil일 수 있음)
+        // 타임아웃 처리 (라이브러리 내 ProcessingTimeout 트리거, 이때 ctx.Err() 는 nil 일 수 있음)
     case ctx.Err() == context.DeadlineExceeded:
         // 사용자 컨텍스트 마감 시간 도달
     case ctx.Err() == context.Canceled:
         // 수동 취소
     default:
-        // 기타 오류(ErrInvalidHTML, ErrInputTooLarge 등)
+        // 기타 오류 (ErrInvalidHTML, ErrInputTooLarge 등)
         slog.Error("추출 실패", "err", err)
     }
 }

@@ -75,14 +75,14 @@ sidebar_position: 1
 | 함수 | 설명 |
 |------|------|
 | `LoadFromFile`, `SaveToFile` | 파일 읽기/쓰기 |
-| `LoadFromReader` | Reader에서 읽기 |
+| `LoadFromReader` | Reader 에서 읽기 |
 | `MarshalToFile`, `UnmarshalFromFile` | 파일 인코딩/디코딩 |
 
 #### 스트림 처리
 
 | 타입/메서드 | 설명 |
 |------|------|
-| `StreamLinesInto[T]` | Reader에서 JSONL을 스트림으로 읽어 `[]T`로 변환 |
+| `StreamLinesInto[T]` | Reader 에서 JSONL 을 스트림으로 읽어 `[]T`로 변환 |
 | `ParseJSONL` | JSONL 바이트를 `[]any`로 파싱 |
 | `ToJSONL`, `ToJSONLString` | `[]any`를 JSONL 형식으로 변환 |
 | `JSONLWriter` | JSONL 쓰기 (Write/WriteAll/WriteRaw) |

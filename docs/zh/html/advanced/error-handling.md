@@ -104,6 +104,6 @@ for i, err := range batch.Errors {
     }
 }
 
-fmt.Printf("成功: %d, 失败: %d, 取消: %d\n",
+fmt.Printf("成功：%d, 失败：%d, 取消：%d\n",
     batch.Success, batch.Failed, batch.Cancelled)
 ```

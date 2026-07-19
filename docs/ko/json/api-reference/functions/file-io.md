@@ -7,7 +7,7 @@ sidebar_position: 9
 
 # 파일 작업 함수
 
-json 패키지가 제공하는 파일 작업 함수로, 파일 읽기/쓰기 및 스트리밍 I/O를 지원합니다.
+json 패키지가 제공하는 파일 작업 함수로, 파일 읽기/쓰기 및 스트리밍 I/O 를 지원합니다.
 
 ## 파일 읽기 함수
 
@@ -100,7 +100,7 @@ if err != nil {
 
 시그니처: `func LoadFromReader(reader io.Reader, cfg ...Config) (string, error)`
 
-io.Reader에서 JSON 데이터를 로드합니다. 네트워크 연결, HTTP 요청 본문 등 스트리밍 데이터 소스에서 JSON을 읽는 데 적합합니다.
+io.Reader 에서 JSON 데이터를 로드합니다. 네트워크 연결, HTTP 요청 본문 등 스트리밍 데이터 소스에서 JSON 을 읽는 데 적합합니다.
 
 **매개변수**
 
@@ -123,7 +123,7 @@ data, err = json.LoadFromReader(strings.NewReader(`{"name":"test"}`))
 
 시그니처: `func SaveToWriter(writer io.Writer, data any, cfg ...Config) error`
 
-JSON 데이터를 io.Writer에 씁니다.
+JSON 데이터를 io.Writer 에 씁니다.
 
 **매개변수**
 

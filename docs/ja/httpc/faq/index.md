@@ -1,7 +1,7 @@
 ---
 sidebar_label: "FAQ"
 title: "よくある質問 - CyberGo HTTPC | 質問と回答"
-description: "HTTPC よくある質問: パッケージ関数とクライアントの選択、設定プリセットの比較、プロキシと DoH、Cookie セッション、リトライとタイムアウトの調整、errors.Is/As エラーマッチングパターンで実開発の典型的な疑問を解決します。"
+description: "HTTPC よくある質問：パッケージ関数とクライアントの選択、設定プリセットの比較、プロキシと DoH、Cookie セッション、リトライとタイムアウトの調整、errors.Is/As エラーマッチングパターンで実開発の典型的な疑問を解決します。"
 sidebar_position: 1
 ---
 
@@ -74,7 +74,7 @@ case result.IsClientError():
     log.Printf("リクエストパラメータエラー: %d", result.StatusCode())
 case result.IsServerError():
     // 5xx サーバーエラー
-    log.Printf("サーバー障害: %d", result.StatusCode())
+    log.Printf("サーバー障害：%d", result.StatusCode())
 }
 ```
 

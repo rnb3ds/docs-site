@@ -82,7 +82,7 @@ json.Set(data, "user.tags", []string{"admin", "developer"})
 | 이름 | 타입 | 필수 | 설명 |
 |------|------|------|------|
 | `jsonStr` | `string` | 예 | JSON 문자열 |
-| `updates` | `map[string]any` | 예 | 경로-값 매핑 |
+| `updates` | `map[string]any` | 예 | 경로 - 값 매핑 |
 | `cfg` | `Config` | 아니오 | 선택적 설정 |
 
 **예제**
@@ -161,8 +161,8 @@ result, err := json.SetMultipleCreate(`{}`, map[string]any{
 | 모드 | 객체 동작 | 배열 동작 |
 |------|----------|----------|
 | `MergeUnion` | 모든 키를 병합하고 충돌 시 patch 값 사용 | 모든 요소를 병합하고 중복 제거 |
-| `MergeIntersection` | 공통 키만 보존, 값은 patch에서 가져옴 | 공통 요소만 보존 |
-| `MergeDifference` | base에만 존재하는 키만 보존 | base에만 존재하는 요소만 보존 |
+| `MergeIntersection` | 공통 키만 보존, 값은 patch 에서 가져옴 | 공통 요소만 보존 |
+| `MergeDifference` | base 에만 존재하는 키만 보존 | base 에만 존재하는 요소만 보존 |
 
 ```go
 base := `{"a": 1, "b": 2, "nested": {"x": 10, "y": 20}}`
@@ -178,7 +178,7 @@ cfg.MergeMode = json.MergeIntersection
 result, _ = json.MergeJSON(base, override, cfg)
 // 결과: {"b":3,"nested":{"y":30}}
 
-// 차집합 병합 - base에만 존재하는 키만 보존
+// 차집합 병합 - base 에만 존재하는 키만 보존
 cfg = json.DefaultConfig()
 cfg.MergeMode = json.MergeDifference
 result, _ = json.MergeJSON(base, override, cfg)
@@ -189,13 +189,13 @@ result, _ = json.MergeJSON(base, override, cfg)
 
 시그니처: `func MergeMany(jsons []string, cfg ...Config) (string, error)`
 
-여러 JSON 객체를 병합합니다. 최소 2개의 JSON 문자열이 필요합니다. `Config.MergeMode`로 병합 모드를 설정할 수 있습니다.
+여러 JSON 객체를 병합합니다. 최소 2 개의 JSON 문자열이 필요합니다. `Config.MergeMode`로 병합 모드를 설정할 수 있습니다.
 
 **매개변수**
 
 | 이름 | 타입 | 필수 | 설명 |
 |------|------|------|------|
-| `jsons` | `[]string` | 예 | 병합할 JSON 문자열 슬라이스 (최소 2개) |
+| `jsons` | `[]string` | 예 | 병합할 JSON 문자열 슬라이스 (최소 2 개) |
 | `cfg` | `...Config` | 아니오 | 선택적 설정 (`MergeMode`로 병합 모드 설정) |
 
 ```go
@@ -210,7 +210,7 @@ result, err := json.MergeMany([]string{config1, config2, config3})
 
 ## Processor 메서드
 
-Processor는 패키지 레벨 함수와 동일한 시그니처의 수정 메서드를 제공합니다:
+Processor 는 패키지 레벨 함수와 동일한 시그니처의 수정 메서드를 제공합니다:
 
 ```go
 p, err := json.New()
@@ -220,14 +220,14 @@ result, err = p.Delete(jsonStr, "user.temp")
 result, err = p.SetCreate(jsonStr, "user.email", "test@example.com")
 ```
 
-`MergeJSON`, `MergeMany`에도 대응하는 Processor 메서드가 있으며, 시그니처는 패키지 레벨 함수와 동일하여 이미 설정된 Processor를 재사용하기 편리합니다:
+`MergeJSON`, `MergeMany`에도 대응하는 Processor 메서드가 있으며, 시그니처는 패키지 레벨 함수와 동일하여 이미 설정된 Processor 를 재사용하기 편리합니다:
 
 ```go
 result, err := p.MergeJSON(base, override)
 
 merged, err := p.MergeMany([]string{config1, config2, config3})
 
-// CompareJSON에도 Processor 메서드가 있습니다 (주의: Processor.CompareJSON은
+// CompareJSON 에도 Processor 메서드가 있습니다 (주의: Processor.CompareJSON 은
 // 항상 보안 검증을 수행하며, 패키지 레벨 함수의 cfg 없는 경로와 다릅니다)
 equal, err := p.CompareJSON(a, b)
 ```

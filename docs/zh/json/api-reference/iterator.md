@@ -639,7 +639,7 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("总和: %d\n", sum) // 输出: 总和: 55
+    fmt.Printf("总和：%d\n", sum) // 输出：总和：55
 }
 ```
 
@@ -674,7 +674,7 @@ func main() {
         fmt.Printf("批次 %d: 处理 %d 个元素\n", batchNum, len(batch))
     }
 
-    fmt.Printf("总批次: %d\n", it.TotalBatches())
+    fmt.Printf("总批次：%d\n", it.TotalBatches())
 }
 ```
 

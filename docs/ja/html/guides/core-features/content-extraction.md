@@ -14,11 +14,11 @@ sidebar_position: 1
 `Extract` を呼び出すと、ライブラリは以下のステップを実行します：
 
 ```text
-HTML 入力 → 入力検証 → エンコーディング検出(自動 UTF-8 変換) → DOM パース → 深さ検証
-    → 安全なサニタイズ(任意) → 記事検出(任意) → コンテンツ抽出 → フォーマット → Result を返す
+HTML 入力 → 入力検証 → エンコーディング検出 (自動 UTF-8 変換) → DOM パース → 深さ検証
+    → 安全なサニタイズ (任意) → 記事検出 (任意) → コンテンツ抽出 → フォーマット → Result を返す
 ```
 
-深さ検証はサニタイズの **前に**実行されます。まず DOM の深さを反復的(iterative)に検証し(再帰的な走査によるスタックオーバーフローを回避)、その後でパースされた DOM ツリーに対して安全なサニタイズを行います。どちらもパースされたノードツリーを対象とするため、DOM パースは常にその両方より先に行われます。
+深さ検証はサニタイズの **前に**実行されます。まず DOM の深さを反復的 (iterative) に検証し (再帰的な走査によるスタックオーバーフローを回避)、その後でパースされた DOM ツリーに対して安全なサニタイズを行います。どちらもパースされたノードツリーを対象とするため、DOM パースは常にその両方より先に行われます。
 
 各ステップは [設定](../../api-reference/core/config) でカスタマイズできます。
 
@@ -55,26 +55,26 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("タイトル:", result.Title)
-    // タイトル: Go 言語チュートリアル
+    fmt.Println("タイトル：", result.Title)
+    // タイトル：Go 言語チュートリアル
 
-    fmt.Println("本文:", result.Text)
-    // 本文: Go 入門ガイド
+    fmt.Println("本文：", result.Text)
+    // 本文：Go 入門ガイド
     //       Go は静的型付けのコンパイル言語で、組み込みの並行処理サポートを備えています。
     //       コンパイルが速く、デプロイが簡単で、高性能サービスの構築に適しています。
     //       Go 公式サイト
 
-    fmt.Println("単語数:", result.WordCount)
-    // 単語数: 7
+    fmt.Println("単語数：", result.WordCount)
+    // 単語数：7
 
-    fmt.Println("読了時間:", result.ReadingTime)
-    // 読了時間: 2.1s（200 語/分で計算）
+    fmt.Println("読了時間：", result.ReadingTime)
+    // 読了時間：2.1s（200 語/分で計算）
 
-    fmt.Println("画像:", len(result.Images))
-    // 画像: 1
+    fmt.Println("画像：", len(result.Images))
+    // 画像：1
 
-    fmt.Println("リンク:", len(result.Links))
-    // リンク: 1
+    fmt.Println("リンク：", len(result.Links))
+    // リンク：1
 }
 ```
 
@@ -103,7 +103,7 @@ result, err := html.ExtractFromFile("article.html")
 if err != nil {
     log.Fatal(err)
 }
-fmt.Println("タイトル:", result.Title)
+fmt.Println("タイトル：", result.Title)
 ```
 
 ファイル操作には組み込みのセキュリティチェックがあります：

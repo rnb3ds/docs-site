@@ -43,7 +43,7 @@ cfg.CacheCleanup = time.Minute   // 更频繁清理
 ```go
 stats := p.GetStatistics()
 hitRate := float64(stats.CacheHits) / float64(stats.CacheHits+stats.CacheMisses)
-fmt.Printf("缓存命中率: %.2f%%\n", hitRate*100)
+fmt.Printf("缓存命中率：%.2f%%\n", hitRate*100)
 ```
 
 ## 批量处理

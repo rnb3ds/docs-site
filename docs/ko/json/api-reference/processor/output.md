@@ -7,7 +7,7 @@ sidebar_position: 5
 
 # 출력 메서드
 
-Processor는 다양한 JSON 인코딩 출력 메서드를 제공합니다.
+Processor 는 다양한 JSON 인코딩 출력 메서드를 제공합니다.
 
 ## 기본 출력
 
@@ -76,7 +76,7 @@ result, err = p.EncodeWithConfig(data, cfg)
 
 시그니처: `func (p *Processor) EncodeBatch(pairs map[string]any, cfg ...Config) (string, error)`
 
-키-값 쌍을 JSON 객체로 배치 인코딩합니다.
+키 - 값 쌍을 JSON 객체로 배치 인코딩합니다.
 
 ```go
 result, err := p.EncodeBatch(map[string]any{
@@ -99,7 +99,7 @@ type User struct {
 }
 
 user := User{Name: "CyberGo", Email: "test@example.com", Private: "secret"}
-// name과 email 필드만 인코딩
+// name 과 email 필드만 인코딩
 result, err := p.EncodeFields(user, []string{"name", "email"})
 ```
 
@@ -107,7 +107,7 @@ result, err := p.EncodeFields(user, []string{"name", "email"})
 
 시그니처: `func (p *Processor) EncodeStream(values any, cfg ...Config) (string, error)`
 
-여러 값을 JSON 배열 스트림(array stream)으로 인코딩합니다. `values`는 일반적으로 슬라이스나 열거 가능한 컬렉션이며, `[v1,v2,...]` 형태의 JSON 배열 문자열을 출력합니다.
+여러 값을 JSON 배열 스트림 (array stream) 으로 인코딩합니다. `values`는 일반적으로 슬라이스나 열거 가능한 컬렉션이며, `[v1,v2,...]` 형태의 JSON 배열 문자열을 출력합니다.
 
 ```go
 values := []any{"item1", "item2", "item3"}
@@ -178,7 +178,7 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 ### Print (제거됨)
 
 :::warning API 변경 안내
-Print, PrintE, PrintPretty, PrintPrettyE는 라이브러리에서 제거되어 더 이상 제공되지 않습니다. 다음 대안을 사용하세요:
+Print, PrintE, PrintPretty, PrintPrettyE 는 라이브러리에서 제거되어 더 이상 제공되지 않습니다. 다음 대안을 사용하세요:
 
 ```go
 // 컴팩트 출력
@@ -201,7 +201,7 @@ fmt.Println(pretty)
 
 시그니처: `func (p *Processor) ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
 
-JSON 데이터가 지정된 Schema에 맞는지 검증합니다.
+JSON 데이터가 지정된 Schema 에 맞는지 검증합니다.
 
 ```go
 schema := &json.Schema{
@@ -239,7 +239,7 @@ compact, err := p.Compact(`{"name": "CyberGo"}`)
 
 시그니처: `func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-JSON을 압축하여 Buffer에 씁니다.
+JSON 을 압축하여 Buffer 에 씁니다.
 
 ```go
 var buf bytes.Buffer
@@ -250,7 +250,7 @@ err := p.CompactBuffer(&buf, []byte(`{"name": "test"}`))
 
 시그니처: `func (p *Processor) Indent(dst *bytes.Buffer, src []byte, prefix, indent string, cfg ...Config) error`
 
-JSON을 포맷팅하여 Buffer에 씁니다.
+JSON 을 포맷팅하여 Buffer 에 씁니다.
 
 ```go
 var buf bytes.Buffer
@@ -261,7 +261,7 @@ err := p.Indent(&buf, []byte(`{"name":"test"}`), "", "  ")
 
 시그니처: `func (p *Processor) HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
 
-JSON을 HTML 이스케이프하여 Buffer에 씁니다.
+JSON 을 HTML 이스케이프하여 Buffer 에 씁니다.
 
 ```go
 var buf bytes.Buffer

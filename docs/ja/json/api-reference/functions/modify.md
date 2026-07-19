@@ -105,7 +105,7 @@ fmt.Println(result)
 複数の変更操作を行う場合、`Set` を複数回呼び出すよりも `SetMultiple` の方が効率的です：
 
 ```go
-// 推奨：1回の呼び出し
+// 推奨：1 回の呼び出し
 updates := map[string]any{"a": 1, "b": 2, "c": 3}
 result, err := json.SetMultiple(data, updates)
 
@@ -146,7 +146,7 @@ result, err := json.SetMultipleCreate(`{}`, map[string]any{
 
 シグネチャ：`func MergeJSON(json1, json2 string, cfg ...Config) (string, error)`
 
-ディープマージ戦略を使用して2つの JSON オブジェクトをマージします。ネストされたオブジェクトの場合、`Config.MergeMode` で指定されたモードに従ってキーを再帰的にマージします。プリミティブ値と配列の場合、patch 側の値が優先されます。
+ディープマージ戦略を使用して 2 つの JSON オブジェクトをマージします。ネストされたオブジェクトの場合、`Config.MergeMode` で指定されたモードに従ってキーを再帰的にマージします。プリミティブ値と配列の場合、patch 側の値が優先されます。
 
 **パラメータ**
 
@@ -170,32 +170,32 @@ override := `{"b": 3, "c": 4, "nested": {"y": 30, "z": 40}}`
 
 // ユニオンマージ（デフォルト）
 result, _ := json.MergeJSON(base, override)
-// 結果: {"a":1,"b":3,"c":4,"nested":{"x":10,"y":30,"z":40}}
+// 結果：{"a":1,"b":3,"c":4,"nested":{"x":10,"y":30,"z":40}}
 
 // インターセクションマージ - 共通キーのみ保持
 cfg := json.DefaultConfig()
 cfg.MergeMode = json.MergeIntersection
 result, _ = json.MergeJSON(base, override, cfg)
-// 結果: {"b":3,"nested":{"y":30}}
+// 結果：{"b":3,"nested":{"y":30}}
 
 // ディファレンスマージ - ベース独自のキーのみ保持
 cfg = json.DefaultConfig()
 cfg.MergeMode = json.MergeDifference
 result, _ = json.MergeJSON(base, override, cfg)
-// 結果: {"a":1,"nested":{"x":10}}
+// 結果：{"a":1,"nested":{"x":10}}
 ```
 
 ### MergeMany
 
 シグネチャ：`func MergeMany(jsons []string, cfg ...Config) (string, error)`
 
-複数の JSON オブジェクトをマージします。2つ以上の JSON 文字列が必要です。`Config.MergeMode` でマージモードを設定できます。
+複数の JSON オブジェクトをマージします。2 つ以上の JSON 文字列が必要です。`Config.MergeMode` でマージモードを設定できます。
 
 **パラメータ**
 
 | 名前 | 型 | 必須 | 説明 |
 |------|------|------|------|
-| `jsons` | `[]string` | はい | マージする JSON 文字列のスライス（2つ以上） |
+| `jsons` | `[]string` | はい | マージする JSON 文字列のスライス（2 つ以上） |
 | `cfg` | `...Config` | いいえ | オプション設定（`MergeMode` でマージモードを設定） |
 
 ```go
@@ -205,7 +205,7 @@ config3 := `{"retries": 5, "debug": true}`
 
 // デフォルトのユニオンマージ
 result, err := json.MergeMany([]string{config1, config2, config3})
-// 結果: {"api":"v1","timeout":60,"retries":5,"debug":true}
+// 結果：{"api":"v1","timeout":60,"retries":5,"debug":true}
 ```
 
 ## Processor メソッド

@@ -53,7 +53,7 @@ func main() {
     fmt.Printf("昵称: %s\n", nickname)
 
     age := json.GetTyped[int](data, "user.age", 0)
-    fmt.Printf("年龄: %d\n", age)
+    fmt.Printf("年龄：%d\n", age)
 }
 ```
 
@@ -148,7 +148,7 @@ if !result.Exists {
 }
 
 // 检查类型
-fmt.Println("类型:", result.Type)
+fmt.Println("类型：", result.Type)
 ```
 
 ### 链式类型转换方法
@@ -210,7 +210,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Printf("年龄: %d\n", age)
+    fmt.Printf("年龄：%d\n", age)
 
     // 获取不存在的路径
     missing := processor.SafeGet(data, "user.nickname")
@@ -413,7 +413,7 @@ for _, e := range errors {
 
 ```go
 type BatchOperation struct {
-    Type    string `json:"type"`     // 操作类型: "get", "set", "delete", "validate"
+    Type    string `json:"type"`     // 操作类型："get", "set", "delete", "validate"
     JSONStr string `json:"json_str"` // JSON 数据字符串
     Path    string `json:"path"`     // 目标路径
     Value   any    `json:"value"`    // Set 操作的值
@@ -639,7 +639,7 @@ type SyntaxError struct {
 data := `{invalid json}`
 _, err := json.ParseAny(data)
 if syntaxErr, ok := err.(*json.SyntaxError); ok {
-    fmt.Printf("语法错误，偏移量: %d\n", syntaxErr.Offset)
+    fmt.Printf("语法错误，偏移量：%d\n", syntaxErr.Offset)
 }
 ```
 

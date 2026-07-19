@@ -16,10 +16,10 @@ CyberGo ドキュメントサイトは [CyberGoDev](https://github.com/cybergode
 | プロジェクト | 説明 | GitHub |
 |-------------|------|--------|
 | **JSON** | 高性能、スレッドセーフな JSON 処理ライブラリ | [cybergodev/json](https://github.com/cybergodev/json) |
-| **JWT** | わずか3つの関数ですべての JWT 操作を処理するプロダクション級 JWT ライブラリ | [cybergodev/jwt](https://github.com/cybergodev/jwt) |
+| **JWT** | わずか 3 つの関数ですべての JWT 操作を処理するプロダクション級 JWT ライブラリ | [cybergodev/jwt](https://github.com/cybergodev/jwt) |
 | **HTTPC** | TLS 1.2+ および SSRF 防護を備えた最新の高性能 HTTP クライアント | [cybergodev/httpc](https://github.com/cybergodev/httpc) |
 | **HTML** | インテリジェントな記事認識によるプロダクション級 HTML コンテンツ抽出 | [cybergodev/html](https://github.com/cybergodev/html) |
-| **DD** | 毎秒300万件以上を処理する高性能ロギングライブラリ | [cybergodev/dd](https://github.com/cybergodev/dd) |
+| **DD** | 毎秒 300 万件以上を処理する高性能ロギングライブラリ | [cybergodev/dd](https://github.com/cybergodev/dd) |
 | **ENV** | ゼロ依存設計のプロダクションレディ環境変数管理ライブラリ | [cybergodev/env](https://github.com/cybergodev/env) |
 
 ## 貢献する

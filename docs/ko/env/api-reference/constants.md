@@ -38,7 +38,7 @@ const (
 ### 하드 상한선
 
 :::warning 참고
-다음은 라이브러리 내부의 하드 상한선(내보내지 않음)으로, `Config.Validate()` 내부 검사에 사용됩니다. 사용자가 이 상수들을 직접 참조할 수는 없지만, `cfg.Validate()`가 자동으로 이 제한을 초과하는지 검사합니다.
+다음은 라이브러리 내부의 하드 상한선 (내보내지 않음) 으로, `Config.Validate()` 내부 검사에 사용됩니다. 사용자가 이 상수들을 직접 참조할 수는 없지만, `cfg.Validate()`가 자동으로 이 제한을 초과하는지 검사합니다.
 :::
 
 | 상수 | 값 | 설명 |
@@ -143,12 +143,12 @@ if errors.Is(err, env.ErrClosed) {
 
 // 기본 로더가 이미 초기화되었는지 확인
 if errors.Is(err, env.ErrAlreadyInitialized) {
-    // 기본 로더가 이미 존재함, Load()를 반복 호출할 수 없음
+    // 기본 로더가 이미 존재함, Load() 를 반복 호출할 수 없음
 }
 
 // 기본 로더가 초기화되지 않았는지 확인
 if errors.Is(err, env.ErrNotInitialized) {
-    // 먼저 env.Load() 또는 env.LoadWithConfig()를 호출해야 함
+    // 먼저 env.Load() 또는 env.LoadWithConfig() 를 호출해야 함
 }
 
 // 필수 키 누락 확인 (실제로는 *ValidationError{Rule:"required"} 반환)
@@ -179,7 +179,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 :::tip 해결 방법
-`KeyValidator`만 구현하는 대신 `Validator` 인터페이스(ValidateKey, ValidateValue, ValidateRequired 세 메서드 포함)를 구현하세요.
+`KeyValidator`만 구현하는 대신 `Validator` 인터페이스 (ValidateKey, ValidateValue, ValidateRequired 세 메서드 포함) 를 구현하세요.
 :::
 
 ## 오류 유형
@@ -287,13 +287,13 @@ type ExpansionError struct {
 type ExpansionErrorKind int
 
 const (
-    // ExpansionDepthKind는 확장이 재귀 깊이 제한에 도달했거나 변수 순환을 감지했음을 나타냅니다.
+    // ExpansionDepthKind 는 확장이 재귀 깊이 제한에 도달했거나 변수 순환을 감지했음을 나타냅니다.
     // 기본값이므로 일반적인 깊이/순환 오류는 명시적 분류가 필요 없습니다.
-    // errors.Is(err, ErrExpansionDepth)로 일치 여부를 확인할 수 있습니다.
+    // errors.Is(err, ErrExpansionDepth) 로 일치 여부를 확인할 수 있습니다.
     ExpansionDepthKind ExpansionErrorKind = iota
 
-    // ExpansionRequiredKind는 필수 변수(${VAR:?message})가 설정되지 않았거나 비어 있음을 나타냅니다.
-    // 깊이 초과가 아니므로 ErrExpansionDepth와 일치하지 않습니다.
+    // ExpansionRequiredKind 는 필수 변수 (${VAR:?message}) 가 설정되지 않았거나 비어 있음을 나타냅니다.
+    // 깊이 초과가 아니므로 ErrExpansionDepth 와 일치하지 않습니다.
     ExpansionRequiredKind
 )
 ```
@@ -362,7 +362,7 @@ func IsMarshalError(err error) bool  // 확인 함수
 내장 금지 키 목록으로, 시스템 핵심 변수의 수정을 방지합니다:
 
 :::warning 참고
-`defaultForbiddenKeys`는 라이브러리 내부 변수(내보내지 않음)로, `env.DefaultForbiddenKeys`를 통해 직접 접근할 수 없습니다. 다음은 참고용 내부 사용 전체 목록입니다.
+`defaultForbiddenKeys`는 라이브러리 내부 변수 (내보내지 않음) 로, `env.DefaultForbiddenKeys`를 통해 직접 접근할 수 없습니다. 다음은 참고용 내부 사용 전체 목록입니다.
 :::
 
 | 범주 | 금지 키 |
@@ -408,7 +408,7 @@ cfg.ForbiddenKeys = []string{"MY_SENSITIVE_VAR"}
 민감 키 패턴 목록으로, 민감한 설정을 자동으로 감지하는 데 사용합니다. 키 이름에 이 패턴이 포함되면 (대소문자 구분 없음) 민감한 것으로 식별됩니다:
 
 :::warning 참고
-`sensitiveKeyPatterns`는 라이브러리 내부 변수(내보내지 않음)로, `IsSensitiveKey()` 함수를 통해 간접적으로 접근합니다. 다음은 참고용 주요 민감 패턴 범주입니다.
+`sensitiveKeyPatterns`는 라이브러리 내부 변수 (내보내지 않음) 로, `IsSensitiveKey()` 함수를 통해 간접적으로 접근합니다. 다음은 참고용 주요 민감 패턴 범주입니다.
 :::
 
 **주요 민감 패턴 범주:**
@@ -449,7 +449,7 @@ var DefaultKeyPattern *regexp.Regexp = nil
 ```
 
 :::tip 성능 최적화
-`nil` 값은 빠른 바이트 수준 검증을 활성화합니다 (약 10배 성능 향상).
+`nil` 값은 빠른 바이트 수준 검증을 활성화합니다 (약 10 배 성능 향상).
 기본 검증 규칙: 문자로 시작, 문자, 숫자, 밑줄만 포함.
 :::
 
@@ -494,7 +494,7 @@ func MaskValue(key, value string) string
 masked := env.MaskValue("API_KEY", "secret123")
 // 반환: [MASKED:9 chars]
 
-// 민감하지 않은 키 - 원래 값 반환 (20자 초과 시 잘림)
+// 민감하지 않은 키 - 원래 값 반환 (20 자 초과 시 잘림)
 masked := env.MaskValue("APP_NAME", "myapp")
 // 반환: myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
@@ -520,7 +520,7 @@ masked := env.MaskKey("DB_PASSWORD")
 func MaskSensitiveInString(s string) string
 ```
 
-문자열에서 잠재적으로 민감한 내용을 마스킹합니다. 50자를 초과하는 문자열은 잘립니다.
+문자열에서 잠재적으로 민감한 내용을 마스킹합니다. 50 자를 초과하는 문자열은 잘립니다.
 
 **매개변수:**
 - `s` - 원래 문자열
@@ -541,7 +541,7 @@ clean := env.MaskSensitiveInString(short)
 ```
 
 :::warning 참고
-이 함수는 주로 긴 문자열을 자르는 데 사용됩니다. 민감한 키-값 쌍을 자동으로 마스킹하려면 `SanitizeForLog`를 사용하세요.
+이 함수는 주로 긴 문자열을 자르는 데 사용됩니다. 민감한 키 - 값 쌍을 자동으로 마스킹하려면 `SanitizeForLog`를 사용하세요.
 :::
 
 ### SanitizeForLog
@@ -550,7 +550,7 @@ clean := env.MaskSensitiveInString(short)
 func SanitizeForLog(s string) string
 ```
 
-문자열에서 민감한 키-값 쌍 정보를 정리합니다. `key=value` 형식의 민감한 값을 자동으로 감지하고 마스킹합니다.
+문자열에서 민감한 키 - 값 쌍 정보를 정리합니다. `key=value` 형식의 민감한 값을 자동으로 감지하고 마스킹합니다.
 
 **매개변수:**
 - `s` - 원래 문자열
@@ -567,19 +567,19 @@ func SanitizeForLog(s string) string
 - `connection_string=`, `database_url=`, `db_password=`
 
 ```go
-// 민감한 키-값 쌍 자동 마스킹
+// 민감한 키 - 값 쌍 자동 마스킹
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
 // 반환: "Connected with password=[MASKED] api_key=[MASKED]"
 
-// 민감하지 않은 키-값 쌍은 유지
+// 민감하지 않은 키 - 값 쌍은 유지
 msg := "Config loaded: app_name=myapp port=8080"
 clean := env.SanitizeForLog(msg)
 // 반환: "Config loaded: app_name=myapp port=8080"
 ```
 
 :::tip 사용 사례
-로그 출력, 오류 메시지, 디버그 정보 등 민감한 키-값 쌍을 자동으로 필터링해야 하는 시나리오에 적합합니다.
+로그 출력, 오류 메시지, 디버그 정보 등 민감한 키 - 값 쌍을 자동으로 필터링해야 하는 시나리오에 적합합니다.
 :::
 
 ### ClearBytes
@@ -594,7 +594,7 @@ func ClearBytes(b []byte)
 sensitive := []byte("secret-data")
 // 사용...
 env.ClearBytes(sensitive)
-// sensitive는 이제 모두 0
+// sensitive 는 이제 모두 0
 ```
 
 ## FileFormat 상수

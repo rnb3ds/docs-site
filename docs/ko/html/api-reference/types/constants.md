@@ -59,7 +59,7 @@ sidebar_position: 3
 | `ErrFileNotFound` | `html: file not found` | 파일을 찾을 수 없음 |
 | `ErrInvalidFilePath` | `html: invalid file path` | 유효하지 않은 파일 경로 |
 | `ErrInternalPanic` | `html: internal panic recovered` | 내부 패닉이 복구됨 |
-| `ErrMultipleConfigs` | `html: at most one Config may be provided` | 최대 1개의 Config만 허용됨 |
+| `ErrMultipleConfigs` | `html: at most one Config may be provided` | 최대 1 개의 Config 만 허용됨 |
 
 ## 오류 타입
 
@@ -76,7 +76,7 @@ type InputError struct {
 }
 
 func (e *InputError) Error() string
-func (e *InputError) Unwrap() error // → InputErr(nil이 아닌 경우) 또는 ErrInputTooLarge
+func (e *InputError) Unwrap() error // → InputErr(nil 이 아닌 경우) 또는 ErrInputTooLarge
 ```
 
 ### ConfigError
@@ -105,14 +105,14 @@ type FileError struct {
     FileErr error  // 원래 오류
 }
 
-func (e *FileError) Error() string        // 안전한 출력(경로 잘라냄)
+func (e *FileError) Error() string        // 안전한 출력 (경로 잘라냄)
 func (e *FileError) SafePath() string     // 파일명만 반환
 func (e *FileError) Unwrap() error        // → ErrFileNotFound | 원래 오류 | ErrInvalidFilePath
 func (e *FileError) MarshalJSON() ([]byte, error) // JSON 직렬화 시에도 경로를 잘라냄 (API 응답으로의 유출 방지)
 ```
 
 :::tip 안전한 경로
-`FileError.Error()`와 `SafePath()`는 모두 잘라낸 안전한 경로(파일명만)를 반환하여 경로 노출을 방지합니다. 내부 디버깅으로 전체 경로가 필요한 경우 `Path` 필드에 직접 접근할 수 있습니다.
+`FileError.Error()`와 `SafePath()`는 모두 잘라낸 안전한 경로 (파일명만) 를 반환하여 경로 노출을 방지합니다. 내부 디버깅으로 전체 경로가 필요한 경우 `Path` 필드에 직접 접근할 수 있습니다.
 :::
 
 ## 오류 처리 패턴

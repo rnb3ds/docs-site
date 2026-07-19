@@ -39,19 +39,19 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("タイトル:", result.Title)
-    fmt.Println("本文:", result.Text)
-    fmt.Println("単語数:", result.WordCount)
-    fmt.Println("読了時間:", result.ReadingTime)
-    // 出力:
-    // タイトル: Go 言語チュートリアル
-    // 本文: Go 入門ガイド
+    fmt.Println("タイトル：", result.Title)
+    fmt.Println("本文：", result.Text)
+    fmt.Println("単語数：", result.WordCount)
+    fmt.Println("読了時間：", result.ReadingTime)
+    // 出力：
+    // タイトル：Go 言語チュートリアル
+    // 本文：Go 入門ガイド
     //
     //       Go は Google が開発したオープンソースプログラミング言語です。
     //
     //       Go 公式サイト
-    // 単語数: 8
-    // 読了時間: 2.4s
+    // 単語数：8
+    // 読了時間：2.4s
 }
 ```
 
@@ -125,7 +125,7 @@ for _, page := range pages {
 
 // 統計を確認
 stats := p.GetStatistics()
-fmt.Printf("処理済み: %d, キャッシュヒット: %d\n",
+fmt.Printf("処理済み：%d, キャッシュヒット：%d\n",
     stats.TotalProcessed, stats.CacheHits)
 ```
 
@@ -150,7 +150,7 @@ p, _ := html.New(html.DefaultConfig())
 defer p.Close()
 
 batch := p.ExtractBatch(pages)
-fmt.Printf("成功: %d, 失敗: %d\n", batch.Success, batch.Failed)
+fmt.Printf("成功：%d, 失敗：%d\n", batch.Success, batch.Failed)
 
 for i, result := range batch.Results {
     if result != nil {

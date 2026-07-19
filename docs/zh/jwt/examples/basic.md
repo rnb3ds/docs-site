@@ -51,8 +51,8 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("Valid:", valid)          // 输出: true
-    fmt.Println("UserID:", parsed.UserID) // 输出: user123
+    fmt.Println("Valid:", valid)          // 输出：true
+    fmt.Println("UserID:", parsed.UserID) // 输出：user123
 }
 ```
 
@@ -147,7 +147,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("Is revoked:", revoked) // 输出: true
+    fmt.Println("Is revoked:", revoked) // 输出：true
 }
 ```
 

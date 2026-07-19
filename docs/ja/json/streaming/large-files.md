@@ -17,7 +17,7 @@ sidebar_position: 1
 
 | 方法 | 適用シナリオ | メモリ使用量 |
 |------|----------|----------|
-| **Processor.ForeachFile** | 構造化イテレーションによるファイル処理 | ファイル全体をロードし、1件ずつイテレーション |
+| **Processor.ForeachFile** | 構造化イテレーションによるファイル処理 | ファイル全体をロードし、1 件ずつイテレーション |
 | **Processor.ForeachFileChunked** | バッチチャンクイテレーション処理 | ファイル全体をロードし、チャンクでイテレーション |
 | **NDJSONProcessor** | JSONL ファイルの行単位処理 | メモリ制御可能、真のストリーム処理 |
 
@@ -58,7 +58,7 @@ func main() {
     }
     defer processor.Close()
 
-    // 方法 1：1 件ずつ処理（推奨）
+    // 方法 1:1 件ずつ処理（推奨）
     count := 0
     err = processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
         count++
@@ -91,7 +91,7 @@ func main() {
 ```go
 // 方法 2：バッチ処理（データベースへの一括書き込みに適しています）
 err := processor.ForeachFileChunked("large-data.json", 1000, func(chunk []*json.IterableValue) error {
-    log.Printf("バッチ処理: %d 件", len(chunk))
+    log.Printf("バッチ処理：%d 件", len(chunk))
 
     // データベースへの一括書き込み
     for _, item := range chunk {
@@ -123,7 +123,7 @@ err := processor.ForeachFile("large-data.json", func(key any, item *json.Iterabl
 ### オブジェクトファイルの処理
 ```go
 // 方法 4：JSON オブジェクトファイルの処理（キー・バリュー構造）
-// ファイル形式: {"user1": {...}, "user2": {...}, ...}
+// ファイル形式：{"user1": {...}, "user2": {...}, ...}
 err := processor.ForeachFile("config-map.json", func(key any, item *json.IterableValue) error {
     fmt.Printf("Key: %s, Name: %s\n", key, item.GetString("name"))
     return nil
@@ -296,7 +296,7 @@ defer processor.Close()
 
 シグネチャ：`func (p *Processor) ForeachFile(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-大規模ファイル内の JSON 配列要素を1件ずつ処理します。[基本的な使用方法](#基本的な使用方法)と[中断制御付き](#中断制御付き)を参照してください。
+大規模ファイル内の JSON 配列要素を 1 件ずつ処理します。[基本的な使用方法](#基本的な使用方法)と[中断制御付き](#中断制御付き)を参照してください。
 
 **パラメータ**
 
@@ -324,7 +324,7 @@ defer processor.Close()
 | 名前 | 型 | 説明 |
 |------|------|------|
 | `filePath` | `string` | JSON ファイルパス |
-| `chunkSize` | `int` | 1バッチあたりの要素数 |
+| `chunkSize` | `int` | 1 バッチあたりの要素数 |
 | `fn` | `func(chunk []*IterableValue) error` | バッチ処理コールバック |
 
 **ForeachFileWithPath**

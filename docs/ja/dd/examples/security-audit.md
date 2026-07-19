@@ -159,7 +159,7 @@ func main() {
         fmt.Printf("検証成功 - タイムスタンプ: %s, シリアル番号: %d\n",
             result.Timestamp, result.Sequence)
     } else {
-        fmt.Printf("検証失敗: ログが改ざんされた可能性\n")
+        fmt.Printf("検証失敗：ログが改ざんされた可能性\n")
     }
 }
 ```

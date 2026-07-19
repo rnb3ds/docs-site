@@ -300,7 +300,7 @@ if item.IsEmpty("tags") {
 反復停止のシグナルを返します。反復コールバック内で呼び出すと走査を早期終了できます。
 
 ```go
-// 注意: Break() は、コールバックが error を返す反復関数（ForeachWithError、
+// 注意：Break() は、コールバックが error を返す反復関数（ForeachWithError、
 // ForeachNestedWithError など）でのみ有効です。通常の Foreach コールバックは
 // error を返さないため、その中で item.Break() を呼び出しても反復は停止しません。
 err := json.ForeachNestedWithError(data, func(key any, item *json.IterableValue) error {
@@ -510,7 +510,7 @@ err := it.ForEachWithContext(ctx, func(idx int, val any) error {
 
 ```go
 err := it.ForEachBatch(100, func(batchIdx int, batch []any) error {
-    // 各バッチは1つのゴルーチンで処理
+    // 各バッチは 1 つのゴルーチンで処理
     return processBatch(batchIdx, batch)
 })
 ```
@@ -639,7 +639,7 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("合計: %d\n", sum) // 出力: 合計: 55
+    fmt.Printf("合計：%d\n", sum) // 出力：合計：55
 }
 ```
 
@@ -674,7 +674,7 @@ func main() {
         fmt.Printf("バッチ %d: %d 個の要素を処理\n", batchNum, len(batch))
     }
 
-    fmt.Printf("総バッチ数: %d\n", it.TotalBatches())
+    fmt.Printf("総バッチ数：%d\n", it.TotalBatches())
 }
 ```
 

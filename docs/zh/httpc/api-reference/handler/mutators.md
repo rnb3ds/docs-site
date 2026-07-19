@@ -166,7 +166,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(result.IsSuccess())
-	// 输出示例:
+	// 输出示例：
 	// 发送 GET 请求
 	// 收到状态码 200
 	// true

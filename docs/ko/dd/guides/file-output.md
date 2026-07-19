@@ -7,7 +7,7 @@ sidebar_position: 3
 
 # 파일 출력과 로테이션
 
-DD는 유연한 파일 출력 기능을 제공하여 자동 로테이션, 버퍼 쓰기, 다중 대상 분산을 지원하며, 프로덕션 환경에 적합합니다.
+DD 는 유연한 파일 출력 기능을 제공하여 자동 로테이션, 버퍼 쓰기, 다중 대상 분산을 지원하며, 프로덕션 환경에 적합합니다.
 
 ## 빠른 시작
 
@@ -54,15 +54,15 @@ defer logger.Close()
 
 ## FileWriter 로테이션 구성
 
-FileWriter는 크기별 자동 로테이션과 시간별 오래된 파일 정리를 지원합니다.
+FileWriter 는 크기별 자동 로테이션과 시간별 오래된 파일 정리를 지원합니다.
 
 ### 기본 구성
 
 ```go
 cfg := dd.DefaultFileWriterConfig()
 // MaxSizeMB:   100   — 단일 파일 최대 100MB
-// MaxAge:      30 * 24 * time.Hour  — 30일 보존
-// MaxBackups:  10    — 최대 10개 백업 보존
+// MaxAge:      30 * 24 * time.Hour  — 30 일 보존
+// MaxBackups:  10    — 최대 10 개 백업 보존
 // Compress:    false — 압축 안 함
 ```
 
@@ -72,8 +72,8 @@ cfg := dd.DefaultFileWriterConfig()
 // 고트래픽 서비스: 작은 파일, 빠른 로테이션
 fwCfg := dd.DefaultFileWriterConfig()
 fwCfg.MaxSizeMB = 50                // 50MB 로테이션
-fwCfg.MaxBackups = 20               // 20개 백업 보존
-fwCfg.MaxAge = 7 * 24 * time.Hour   // 7일 정리
+fwCfg.MaxBackups = 20               // 20 개 백업 보존
+fwCfg.MaxAge = 7 * 24 * time.Hour   // 7 일 정리
 fwCfg.Compress = true      // 이전 파일 압축
 
 fw, err := dd.NewFileWriter("logs/app.log", fwCfg)
@@ -108,13 +108,13 @@ defer logger.Close()
 
 ```text
 logs/app.log           ← 현재 로그
-logs/app_log_1.log     ← 첫 번째 로테이션(가장 최근 백업)
+logs/app_log_1.log     ← 첫 번째 로테이션 (가장 최근 백업)
 logs/app_log_2.log     ← 더 이전 백업
-logs/app_log_1.log.gz  ← Compress 활성화 시 이전 백업은 .gz로 압축
+logs/app_log_1.log.gz  ← Compress 활성화 시 이전 백업은 .gz 로 압축
 ```
 
 :::info 정보 압축과 백업은 공존하지 않음
-`Compress` 활성화 시 압축은 로테이션 이후 별도 goroutine에서 비동기로 진행됩니다. 압축 완료 시 원본 `.log` 백업은 `.log.gz`로 **이름이 변경**되며, 두 파일은 공존하지 않습니다.
+`Compress` 활성화 시 압축은 로테이션 이후 별도 goroutine 에서 비동기로 진행됩니다. 압축 완료 시 원본 `.log` 백업은 `.log.gz`로 **이름이 변경**되며, 두 파일은 공존하지 않습니다.
 :::
 
 ## BufferedWriter 버퍼 쓰기
@@ -128,7 +128,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-// 버퍼 Writer로 래핑
+// 버퍼 Writer 로 래핑
 bwCfg := dd.DefaultBufferedWriterConfig()
 // BufferSize: 1024  — 1KB 버퍼
 // FlushTime:  100ms — 100ms 자동 flush
@@ -157,7 +157,7 @@ defer logger.Close() // Close 시 자동 Flush
 | 배치 작업 | 8192 | 1000ms | 최대 버퍼, 오프라인 처리에 적합 |
 
 :::warning 경고 데이터 안전
-BufferedWriter는 버퍼가 반 찰 때(BufferSize/2 도달) 또는 타이머 트리거 시 flush합니다. 프로그램 비정상 종료 시 버퍼 데이터가 유실될 수 있습니다. 데이터 무결성을 위해 `Close()` 또는 `Flush()` 호출을 보장하세요.
+BufferedWriter 는 버퍼가 반 찰 때 (BufferSize/2 도달) 또는 타이머 트리거 시 flush 합니다. 프로그램 비정상 종료 시 버퍼 데이터가 유실될 수 있습니다. 데이터 무결성을 위해 `Close()` 또는 `Flush()` 호출을 보장하세요.
 :::
 
 ## MultiWriter 다중 대상 분산
@@ -181,11 +181,11 @@ if err != nil {
 defer logger.Close()
 ```
 
-MultiWriter는 모든 Writer에 로그를 분산하며, 어느 한 Writer 실패가 다른 Writer에 영향을 주지 않습니다.
+MultiWriter 는 모든 Writer 에 로그를 분산하며, 어느 한 Writer 실패가 다른 Writer 에 영향을 주지 않습니다.
 
 ## 동적 Writer 관리
 
-Logger는 런타임에 Writer 추가와 제거를 지원합니다.
+Logger 는 런타임에 Writer 추가와 제거를 지원합니다.
 
 ```go
 // 런타임에 Writer 추가
@@ -204,7 +204,7 @@ _ = count
 ```
 
 :::tip 팁 사용 시나리오
-동적 Writer는 런타임에 로그 대상을 전환해야 하는 시나리오에 적합합니다. 예: 디버그 모드 켤 때 상세 로그 파일 추가, 또는 디스크 공간 부족 시 원격 로그 서비스로 전환.
+동적 Writer 는 런타임에 로그 대상을 전환해야 하는 시나리오에 적합합니다. 예: 디버그 모드 켤 때 상세 로그 파일 추가, 또는 디스크 공간 부족 시 원격 로그 서비스로 전환.
 :::
 
 ## 사용자 정의 Writer
@@ -281,5 +281,5 @@ func NewProductionLogger() (*dd.Logger, error) {
 
 - [구조화 로그](./structured-logging) -- 필드와 체인 호출
 - [민감 데이터 필터링](./sensitive-filtering) -- 자동 마스킹
-- [API 레퍼런스 - Writers](../api-reference/output-integration/writers) -- Writer의 완전한 API
+- [API 레퍼런스 - Writers](../api-reference/output-integration/writers) -- Writer 의 완전한 API
 - [성능 최적화](../advanced/performance) -- 성능 튜닝 권장

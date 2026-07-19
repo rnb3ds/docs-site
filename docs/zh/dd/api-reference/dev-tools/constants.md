@@ -82,7 +82,7 @@ type HashAlgorithm int // 完整性签名哈希算法
 | `DefaultLogPath` | `"logs/app.log"` | 默认日志文件路径 |
 | `DefaultMaxSizeMB` | `100` | 默认文件大小限制（MB） |
 | `DefaultMaxBackups` | `10` | 默认备份数量 |
-| `DefaultMaxAge` | `30 * 24 * time.Hour` | 默认保留天数（30天） |
+| `DefaultMaxAge` | `30 * 24 * time.Hour` | 默认保留天数（30 天） |
 
 ## 上下文键
 

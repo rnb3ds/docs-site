@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Hook 시스템"
 title: "Hook 훅 시스템 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Hook 시스템: Hook, LoggingHook, TimingHook, ValidationHook, ErrorHook으로 JSON 작업 전후에 커스텀 로직을 삽입합니다."
+description: "CyberGo JSON Hook 시스템: Hook, LoggingHook, TimingHook, ValidationHook, ErrorHook 으로 JSON 작업 전후에 커스텀 로직을 삽입합니다."
 sidebar_position: 1
 ---
 
 # Hook 훅 시스템
 
-Hook은 JSON 작업 전후에 커스텀 로직을 삽입하여 로그 기록, 성능 모니터링, 검증 등의 기능을 구현할 수 있습니다.
+Hook 은 JSON 작업 전후에 커스텀 로직을 삽입하여 로그 기록, 성능 모니터링, 검증 등의 기능을 구현할 수 있습니다.
 
 ## Hook 인터페이스
 
@@ -29,7 +29,7 @@ type Hook interface {
 
 ## HookContext 구조체
 
-HookContext는 작업의 컨텍스트 정보를 제공합니다.
+HookContext 는 작업의 컨텍스트 정보를 제공합니다.
 
 ```go
 type HookContext struct {
@@ -57,7 +57,7 @@ type HookContext struct {
 
 ## HookFunc 어댑터
 
-HookFunc은 구조체 어댑터로, 함수를 Hook으로 사용할 수 있게 합니다. Before 또는 After 중 하나만 필요한 시나리오에 적합합니다.
+HookFunc 은 구조체 어댑터로, 함수를 Hook 으로 사용할 수 있게 합니다. Before 또는 After 중 하나만 필요한 시나리오에 적합합니다.
 
 ```go
 type HookFunc struct {
@@ -69,7 +69,7 @@ type HookFunc struct {
 ### 예제
 
 ```go
-// After만 필요한 경우
+// After 만 필요한 경우
 p.AddHook(&json.HookFunc{
     AfterFn: func(ctx json.HookContext, result any, err error) (any, error) {
         log.Printf("%s completed in %v", ctx.Operation, time.Since(ctx.StartTime))
@@ -77,7 +77,7 @@ p.AddHook(&json.HookFunc{
     },
 })
 
-// Before만 필요한 경우
+// Before 만 필요한 경우
 p.AddHook(&json.HookFunc{
     BeforeFn: func(ctx json.HookContext) error {
         log.Printf("starting %s on path %s", ctx.Operation, ctx.Path)
@@ -92,7 +92,7 @@ p.AddHook(&json.HookFunc{
 
 ### LoggingHook
 
-로그 기록 Hook을 생성합니다.
+로그 기록 Hook 을 생성합니다.
 
 ```go
 func LoggingHook(logger interface{ Info(msg string, args ...any) }) Hook
@@ -104,7 +104,7 @@ p.AddHook(json.LoggingHook(slog.Default()))
 
 ### TimingHook
 
-작업 소요 시간을 기록하는 Hook을 생성합니다.
+작업 소요 시간을 기록하는 Hook 을 생성합니다.
 
 ```go
 func TimingHook(recorder interface{ Record(op string, duration time.Duration) }) Hook
@@ -116,7 +116,7 @@ p.AddHook(json.TimingHook(myMetricsRecorder))
 
 ### ValidationHook
 
-작업 전에 입력을 검증하는 Hook을 생성합니다.
+작업 전에 입력을 검증하는 Hook 을 생성합니다.
 
 ```go
 func ValidationHook(validator func(jsonStr, path string) error) Hook
@@ -133,7 +133,7 @@ p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
 
 ### ErrorHook
 
-오류를 가로채서 처리하는 Hook을 생성합니다.
+오류를 가로채서 처리하는 Hook 을 생성합니다.
 
 ```go
 func ErrorHook(handler func(ctx HookContext, err error) error) Hook
@@ -201,7 +201,7 @@ func main() {
 }
 ```
 
-### HookFunc로 간소화
+### HookFunc 로 간소화
 
 ```go
 // 완료 시간만 기록하면 되는 경우
@@ -217,7 +217,7 @@ p.AddHook(&json.HookFunc{
 
 ## 훅 설정
 
-### Config로 추가
+### Config 로 추가
 
 ```go
 cfg := json.DefaultConfig()
@@ -231,7 +231,7 @@ if err != nil {
 }
 ```
 
-### Processor로 추가
+### Processor 로 추가
 
 ```go
 p, err := json.New()
@@ -249,12 +249,12 @@ p.AddHook(json.TimingHook(myRecorder))
 ### Before 훅
 
 - **추가 순서대로** 실행
-- 어떤 Hook이든 오류를 반환하면 작업 중단
+- 어떤 Hook 이든 오류를 반환하면 작업 중단
 
 ### After 훅
 
 - **추가 역순으로** 실행
-- 각 Hook은 모두 실행됨 (앞서 오류가 반환되어도)
+- 각 Hook 은 모두 실행됨 (앞서 오류가 반환되어도)
 
 ```go
 // 추가 순서: A, B, C

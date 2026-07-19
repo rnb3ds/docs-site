@@ -12,7 +12,7 @@ sidebar_position: 5
 ## 概述
 
 ```text
-业务日志（Logger）          审计日志（AuditLogger）
+业务日志（Logger）审计日志（AuditLogger）
     │                           │
     ├─ Info/Debug/Warn...       ├─ SensitiveDataRedacted
     ├─ 结构化字段               ├─ RateLimitExceeded
@@ -96,7 +96,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-// 创建带签名的审计Logger
+// 创建带签名的审计 Logger
 auditLogger, err := dd.NewAuditLogger(dd.AuditConfig{
     Enabled:          true,
     Output:           auditFile,
@@ -111,9 +111,9 @@ auditLogger, err := dd.NewAuditLogger(dd.AuditConfig{
 
 ```go
 stats := auditLogger.Stats()
-fmt.Printf("总事件数: %d\n", stats.TotalEvents)
-fmt.Printf("丢弃事件: %d\n", stats.Dropped)
-fmt.Printf("缓冲区使用率: %.1f%%\n",
+fmt.Printf("总事件数：%d\n", stats.TotalEvents)
+fmt.Printf("丢弃事件：%d\n", stats.Dropped)
+fmt.Printf("缓冲区使用率：%.1f%%\n",
     float64(stats.BufferUsage)/float64(stats.BufferSize)*100)
 
 // 按类型统计
@@ -195,7 +195,7 @@ func main() {
         log.Fatal(err)
     }
 
-    // 创建审计Logger
+    // 创建审计 Logger
     auditLogger, err := dd.NewAuditLogger(dd.AuditConfig{
         Enabled:          true,
         Output:           auditFile,
@@ -209,7 +209,7 @@ func main() {
     }
     defer auditLogger.Close()
 
-    // 创建业务Logger（带安全过滤）
+    // 创建业务 Logger（带安全过滤）
     logger, err := dd.New(dd.Config{
         Format:   dd.FormatJSON,
         Security: dd.DefaultSecureConfig(),

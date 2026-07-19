@@ -7,7 +7,7 @@ sidebar_position: 50
 
 # 오류 처리
 
-CyberGo JWT는 센티넬 오류(sentinel errors) 패턴을 사용하며, 모든 오류는 `errors.Is()`로 판별합니다.
+CyberGo JWT 는 센티넬 오류 (sentinel errors) 패턴을 사용하며, 모든 오류는 `errors.Is()`로 판별합니다.
 
 ## 기본 패턴
 
@@ -26,7 +26,7 @@ if err != nil {
     case errors.Is(err, jwt.ErrInvalidToken):
         // 서명 무효 또는 형식 오류
     case errors.Is(err, jwt.ErrProcessorClosed):
-        // Processor가 종료됨
+        // Processor 가 종료됨
     default:
         // 기타 오류
     }
@@ -46,8 +46,8 @@ if err != nil {
 | 오류 | 원인 | 해결 방법 |
 |------|------|----------|
 | `ErrInvalidConfig` | 여러 설정 항목이 올바르지 않음 | Config 각 필드 확인 |
-| `ErrInvalidSecretKey` | HMAC 키가 32바이트 미만이거나 약한 키 | 더 강한 키 사용 |
-| `ErrInvalidSigningMethod` | 지원하지 않는 서명 알고리즘 | 내장 12개 알고리즘 중 하나 사용 |
+| `ErrInvalidSecretKey` | HMAC 키가 32 바이트 미만이거나 약한 키 | 더 강한 키 사용 |
+| `ErrInvalidSigningMethod` | 지원하지 않는 서명 알고리즘 | 내장 12 개 알고리즘 중 하나 사용 |
 
 ### 토큰 작업
 
@@ -57,14 +57,14 @@ if err != nil {
 | `ErrInvalidToken` | Validate, Refresh, ValidateInto, RefreshInto, Revoke, IsRevoked | 서명 불일치, 접근 거부 |
 | `ErrAlgorithmMismatch` | Validate, Refresh, ValidateInto, RefreshInto | 토큰 알고리즘이 설정과 불일치, 접근 거부 |
 | `ErrExpirationRequired` | Validate, Refresh, ValidateInto, RefreshInto | `RequireExpiration` 활성화되었으나 토큰에 `exp` 선언 없음 |
-| `ErrTokenTypeMismatch` | Refresh, RefreshInto | 액세스 토큰(`token_type=access`)으로 갱신 시도, 접근 거부 |
+| `ErrTokenTypeMismatch` | Refresh, RefreshInto | 액세스 토큰 (`token_type=access`) 으로 갱신 시도, 접근 거부 |
 | `ErrTokenExpired` | Validate, Refresh, ValidateInto, RefreshInto | 사용자에게 토큰 갱신 안내 |
 | `ErrTokenNotValidYet` | Validate, Refresh, ValidateInto, RefreshInto | 시계 동기화 확인 |
 | `ErrTokenInvalidIssuer` | Validate, Refresh, ValidateInto, RefreshInto, Revoke, IsRevoked | 발급자 불일치 |
 | `ErrTokenInvalidAudience` | Validate, Refresh, ValidateInto, RefreshInto, Revoke, IsRevoked | 수신자 불일치 |
 | `ErrTokenRevoked` | Validate, Refresh, ValidateInto, RefreshInto | 토큰이 취소됨, 접근 거부 |
 | `ErrInvalidClaims` | Create, CreateRefresh, Validate, Refresh, ValidateInto, RefreshInto | 비즈니스 검증 실패 |
-| `ErrTokenMissingID` | Revoke, IsRevoked | 토큰에 jti가 없음 |
+| `ErrTokenMissingID` | Revoke, IsRevoked | 토큰에 jti 가 없음 |
 
 ### 속도 제한 및 블랙리스트
 

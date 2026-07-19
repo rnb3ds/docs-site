@@ -33,7 +33,7 @@ func main() {
     }
     defer logger.Close()
 
-    logger.Info("ログがファイルに書き込まれます") // 出力: logs/app.log に書き込まれる
+    logger.Info("ログがファイルに書き込まれます") // 出力：logs/app.log に書き込まれる
 }
 ```
 

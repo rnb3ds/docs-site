@@ -1,11 +1,11 @@
 ---
-sidebar_label: "Handlerとミドルウェアチェーン"
-title: "Handlerとミドルウェアチェーン - CyberGo HTTPC | リクエスト処理パイプライン"
-description: "HTTPC Handler パイプラインアーキテクチャの解説: 二重階層設計において Layer 1 のパッケージ関数が MiddlewareFunc オニオンチェーンを組み立てて Handler を実行する仕組み、Chain 結合器の原理とカスタムミドルウェアの作成例。"
+sidebar_label: "Handler とミドルウェアチェーン"
+title: "Handler とミドルウェアチェーン - CyberGo HTTPC | リクエスト処理パイプライン"
+description: "HTTPC Handler パイプラインアーキテクチャの解説：二重階層設計において Layer 1 のパッケージ関数が MiddlewareFunc オニオンチェーンを組み立てて Handler を実行する仕組み、Chain 結合器の原理とカスタムミドルウェアの作成例。"
 sidebar_position: 1
 ---
 
-# Handlerとミドルウェアチェーン
+# Handler とミドルウェアチェーン
 
 ## 二重階層アーキテクチャ
 
@@ -59,7 +59,7 @@ func Chain(middlewares ...MiddlewareFunc) MiddlewareFunc
 複数のミドルウェアを単一のミドルウェアに結合します。返される結合器は最終 Handler を受け取り、ミドルウェアを渡された順序で外側から内側へネストします。スライスの最初のミドルウェアが最も外側の階層（最初に実行）を包み、最後のミドルウェアが最終 Handler のすぐ隣に接します。HTTPC は内部的にこれを使い `MiddlewareConfig.Middlewares` をチェーンに組み立てます。
 
 ```go
-// 2 つの形式は等価です: Chain で組み立てて一度に注入するか、
+// 2 つの形式は等価です：Chain で組み立てて一度に注入するか、
 // 手動で階層ごとにネストするかで結果は同じです
 combined := httpc.Chain(mwA, mwB, mwC)
 chain := combined(finalHandler)
@@ -114,7 +114,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(result.StatusCode())
-	// 出力例:
+	// 出力例：
 	// GET https://httpbin.org/get -> 所要 123.456ms
 	// 200
 }

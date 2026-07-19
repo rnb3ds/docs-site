@@ -1,7 +1,7 @@
 ---
 sidebar_label: "本番チェックリスト"
 title: "本番チェックリスト - CyberGo HTTPC | デプロイ前チェック"
-description: "HTTPC 本番環境セキュリティチェックリスト: TLS 確認、SSRF と CIDR 監査、タイムアウト設定、レスポンスサイズ制限、リトライ戦略、リソース解放と AuditMiddleware 監査監視のベストプラクティスを解説します。本番運用に役立つ実践的な内容です。"
+description: "HTTPC 本番環境セキュリティチェックリスト：TLS 確認、SSRF と CIDR 監査、タイムアウト設定、レスポンスサイズ制限、リトライ戦略、リソース解放と AuditMiddleware 監査監視のベストプラクティスを解説します。本番運用に役立つ実践的な内容です。"
 sidebar_position: 4
 ---
 

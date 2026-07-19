@@ -49,7 +49,7 @@ HTML 库提供以下核心组件：
 | 基础 | `Extract*` | `Extract`, `ExtractText` |
 | 从文件 | `Extract*FromFile` | `ExtractFromFile` |
 | 带上下文 | `Extract*WithContext` | `ExtractWithContext` |
-| 从文件+上下文 | `Extract*FromFileWithContext` | `ExtractFromFileWithContext` |
+| 从文件 + 上下文 | `Extract*FromFileWithContext` | `ExtractFromFileWithContext` |
 
 ### 模块信息
 

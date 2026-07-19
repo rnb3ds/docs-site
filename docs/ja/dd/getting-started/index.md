@@ -1,6 +1,6 @@
 ---
 sidebar_label: "クイックスタート"
-title: "クイックスタート - CyberGo DD | 5分入門ガイド"
+title: "クイックスタート - CyberGo DD | 5 分入門ガイド"
 description: "CyberGo DD 高性能構造化ログライブラリの完全な入門チュートリアル。依存関係のインストールから初回ログ出力まで、ロガーの作成、出力先とファイルローテーションポリシーの設定、構造化フィールドによるリクエストコンテキスト記録、フックシステム拡張機能の使用方法を段階的に学び、5 分でコア機能を習得できます。"
 sidebar_position: 1
 ---
@@ -101,7 +101,7 @@ dd.Fatal("致命的エラー")   // LevelFatal（os.Exit を呼び出し）
 
 ```go
 dd.Debugf("ユーザー %s がログイン、所要時間 %dms", name, elapsed)
-dd.Infof("リクエスト処理完了: status=%d", status)
+dd.Infof("リクエスト処理完了：status=%d", status)
 dd.Warnf("接続プール使用率 %d%%", usage)
 dd.Errorf("データベースクエリ失敗: %v", err)
 ```
@@ -150,7 +150,7 @@ requestLogger.InfoWith("ルート登録完了",
 `FileWriter` でローテーションポリシーを設定：
 
 ```go
-// デフォルト 100MB、30日、10バックアップ
+// デフォルト 100MB、30 日、10 バックアップ
 fwCfg := dd.DefaultFileWriterConfig()
 fwCfg.MaxBackups = 3
 fwCfg.MaxSizeMB = 1
@@ -187,7 +187,7 @@ defer logger.Close()
 // パスワードフィールドは自動マスキング
 logger.InfoWith("ユーザーログイン",
     dd.String("username", "admin"),
-    dd.String("password", "s3cr3t"),  // 出力: [REDACTED]
+    dd.String("password", "s3cr3t"),  // 出力：[REDACTED]
 )
 ```
 

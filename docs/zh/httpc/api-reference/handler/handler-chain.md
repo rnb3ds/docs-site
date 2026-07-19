@@ -113,7 +113,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(result.StatusCode())
-	// 输出示例:
+	// 输出示例：
 	// GET https://httpbin.org/get -> 耗时 123.456ms
 	// 200
 }

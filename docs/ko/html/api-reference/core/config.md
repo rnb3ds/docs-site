@@ -15,7 +15,7 @@ sidebar_position: 3
 
 | 필드 | 타입 | 기본값 | 설명 |
 |------|------|--------|------|
-| `MaxInputSize` | `int` | `52428800` (50MB) | 최대 입력 크기(바이트) |
+| `MaxInputSize` | `int` | `52428800` (50MB) | 최대 입력 크기 (바이트) |
 | `MaxCacheEntries` | `int` | `2000` | 캐시 최대 항목 수 |
 | `CacheTTL` | `time.Duration` | `1h` | 캐시 만료 시간 |
 | `CacheCleanup` | `time.Duration` | `5m` | 캐시 정리 간격 |
@@ -23,7 +23,7 @@ sidebar_position: 3
 | `ProcessingTimeout` | `time.Duration` | `30s` | 처리 타임아웃 시간 |
 
 :::tip 팁
-`MaxCacheEntries`, `CacheCleanup`, `ProcessingTimeout`을 `0`으로 설정하는 것은 오류가 아니라 명확한 의미를 가집니다(각각 캐시 비활성화, 백그라운드 정리 비활성화, 시간 제한 없음을 의미). 반면 `MaxInputSize`, `WorkerPoolSize`, `MaxDepth`는 반드시 양수여야 하며, 그렇지 않으면 `ConfigError`가 발생합니다.
+`MaxCacheEntries`, `CacheCleanup`, `ProcessingTimeout`을 `0`으로 설정하는 것은 오류가 아니라 명확한 의미를 가집니다 (각각 캐시 비활성화, 백그라운드 정리 비활성화, 시간 제한 없음을 의미). 반면 `MaxInputSize`, `WorkerPoolSize`, `MaxDepth`는 반드시 양수여야 하며, 그렇지 않으면 `ConfigError`가 발생합니다.
 :::
 
 ### 보안
@@ -32,7 +32,7 @@ sidebar_position: 3
 |------|------|--------|------|
 | `EnableSanitization` | `bool` | `true` | 콘텐츠 정제 활성화, 신뢰할 수 있는 입력에만 비활성화 가능 |
 | `MaxDepth` | `int` | `500` | 최대 DOM 깊이 |
-| `AllowedBaseDir` | `string` | `""` | 파일 작업을 이 디렉터리로 제한합니다. 비워두면(기본값) 제한이 없습니다. 신뢰할 수 없는 파일 경로 입력을 받을 때 사용하세요 |
+| `AllowedBaseDir` | `string` | `""` | 파일 작업을 이 디렉터리로 제한합니다. 비워두면 (기본값) 제한이 없습니다. 신뢰할 수 없는 파일 경로 입력을 받을 때 사용하세요 |
 | `Audit` | `AuditConfig` | `DefaultAuditConfig()` | 감사 설정 |
 
 ### 콘텐츠 추출
@@ -52,7 +52,7 @@ sidebar_position: 3
 | `InlineImageFormat` | `string` | `none` | `none`, `markdown`, `html`, `placeholder` | 인라인 이미지 형식 |
 | `InlineLinkFormat` | `string` | `none` | `none`, `markdown`, `html` | 인라인 링크 형식 |
 | `TableFormat` | `string` | `markdown` | `markdown`, `html` | 테이블 형식 |
-| `Encoding` | `string` | `""` | - | 인코딩 지정(비워두면 자동 감지) |
+| `Encoding` | `string` | `""` | - | 인코딩 지정 (비워두면 자동 감지) |
 
 ### 링크 추출
 
@@ -87,7 +87,7 @@ cfg := html.DefaultConfig()
 
 ### TextOnlyConfig
 
-순수 텍스트만 추출하며, 모든 미디어와 링크 보존을 비활성화합니다(`PreserveImages`, `PreserveLinks`, `PreserveVideos`, `PreserveAudios` 모두 `false`로 설정).
+순수 텍스트만 추출하며, 모든 미디어와 링크 보존을 비활성화합니다 (`PreserveImages`, `PreserveLinks`, `PreserveVideos`, `PreserveAudios` 모두 `false`로 설정).
 
 ```go
 cfg := html.TextOnlyConfig()
@@ -138,7 +138,7 @@ err := cfg.Validate() // ConfigError 반환
 
 ### 검증 제약 조건
 
-`Validate()`가 숫자 필드에 적용하는 값의 범위입니다(위반 시 `ConfigError`를 반환하며, `errors.Is(err, html.ErrInvalidConfig)`로 확인할 수 있음):
+`Validate()`가 숫자 필드에 적용하는 값의 범위입니다 (위반 시 `ConfigError`를 반환하며, `errors.Is(err, html.ErrInvalidConfig)`로 확인할 수 있음):
 
 | 필드 | 제약 조건 | 잘못된 예 |
 |------|-----------|-----------|
@@ -153,4 +153,4 @@ err := cfg.Validate() // ConfigError 반환
 | `InlineLinkFormat` | 빈 값 / `none` / `markdown` / `html` | `"pdf"` |
 | `TableFormat` | 빈 값 / `markdown` / `html` | `"csv"` |
 
-형식 문자열은 대소문자를 구분하지 않으며, 빈 값은 기본값으로 간주됩니다(`InlineImageFormat`/`InlineLinkFormat` → `none`, `TableFormat` → `markdown`). `New()`는 Processor 생성 전에 `Validate()`를 먼저 호출하므로, 잘못된 설정은 사용 가능한 Processor를 생성하지 않습니다.
+형식 문자열은 대소문자를 구분하지 않으며, 빈 값은 기본값으로 간주됩니다 (`InlineImageFormat`/`InlineLinkFormat` → `none`, `TableFormat` → `markdown`). `New()`는 Processor 생성 전에 `Validate()`를 먼저 호출하므로, 잘못된 설정은 사용 가능한 Processor 를 생성하지 않습니다.

@@ -14,7 +14,7 @@ sidebar_position: 2
 :::
 
 :::info 結果の並べ替えと重複排除
-`ExtractAllLinks` の結果は **URL の昇順でソート**され、URL で重複排除されます。そのため同じ入力に対して複数回呼び出しても完全に同一の出力が得られます(v1.4.2 以降)。結果の比較、キャッシュ再利用、再現可能な下流処理に役立ちます。同じ URL が複数のタグに現れる場合は 1 件だけ保持されます。
+`ExtractAllLinks` の結果は **URL の昇順でソート**され、URL で重複排除されます。そのため同じ入力に対して複数回呼び出しても完全に同一の出力が得られます (v1.4.2 以降)。結果の比較、キャッシュ再利用、再現可能な下流処理に役立ちます。同じ URL が複数のタグに現れる場合は 1 件だけ保持されます。
 :::
 
 ## パッケージ関数
@@ -79,7 +79,7 @@ cfg.BaseURL = "https://example.com"
 ```
 
 :::tip ヒント
-`ResolveRelativeURLs=true` かつ `BaseURL` が**空の場合**、ライブラリは HTML 文書自身から BaseURL を自動的に推論します。以下の**優先順位**で順に試し、一致したものがあればその時点で返します:
+`ResolveRelativeURLs=true` かつ `BaseURL` が**空の場合**、ライブラリは HTML 文書自身から BaseURL を自動的に推論します。以下の**優先順位**で順に試し、一致したものがあればその時点で返します：
 
 1. `<base href>` タグ;
 2. `<meta property="og:url">` または `<meta property="canonical">` の `content`;

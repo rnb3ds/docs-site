@@ -90,7 +90,7 @@ result, err := client.Post(url, httpc.WithBody(data))
 // map[string]string → application/x-www-form-urlencoded,
 // *FormData → multipart/form-data, io.Reader → passed through,
 // 其他 → application/json
-// 可选显式指定: httpc.WithBody(data, httpc.BodyJSON)
+// 可选显式指定：httpc.WithBody(data, httpc.BodyJSON)
 ```
 
 ### 查询参数
@@ -158,7 +158,7 @@ result, err := client.Get(url,
         return nil
     }),
     httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
-        log.Printf("收到响应: %d", resp.StatusCode())
+        log.Printf("收到响应：%d", resp.StatusCode())
         return nil
     }),
 )

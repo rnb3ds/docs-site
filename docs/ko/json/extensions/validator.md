@@ -7,7 +7,7 @@ sidebar_position: 2
 
 # Validator
 
-Validator는 JSON 데이터의 구조와 내용을 검증하는 데 사용됩니다.
+Validator 는 JSON 데이터의 구조와 내용을 검증하는 데 사용됩니다.
 
 ## Validator 인터페이스
 
@@ -17,11 +17,11 @@ type Validator interface {
 }
 ```
 
-JSON 문자열을 받아 유효하면 nil을 반환하고, 그렇지 않으면 문제를 설명하는 오류를 반환합니다.
+JSON 문자열을 받아 유효하면 nil 을 반환하고, 그렇지 않으면 문제를 설명하는 오류를 반환합니다.
 
 ## Schema 타입
 
-`Schema`는 JSON Schema의 구조체 정의로, 타입 안전한 Schema 정의를 지원합니다.
+`Schema`는 JSON Schema 의 구조체 정의로, 타입 안전한 Schema 정의를 지원합니다.
 
 ```go
 type Schema struct {
@@ -72,7 +72,7 @@ schema := &json.Schema{
 
 ## SchemaConfig 구조체
 
-`SchemaConfig`는 Schema를 구성할 때의 설정 옵션입니다.
+`SchemaConfig`는 Schema 를 구성할 때의 설정 옵션입니다.
 
 ```go
 type SchemaConfig struct {
@@ -102,7 +102,7 @@ type SchemaConfig struct {
 }
 ```
 
-`DefaultSchemaConfig()`로 기본 설정을 가져오고, `NewSchemaWithConfig(cfg)`로 Schema를 생성합니다:
+`DefaultSchemaConfig()`로 기본 설정을 가져오고, `NewSchemaWithConfig(cfg)`로 Schema 를 생성합니다:
 
 ```go
 cfg := json.DefaultSchemaConfig()
@@ -111,7 +111,7 @@ cfg.Required = []string{"name", "email"}
 schema := json.NewSchemaWithConfig(cfg)
 ```
 
-또는 `DefaultSchema()`로 기본 Schema를 가져올 수 있습니다:
+또는 `DefaultSchema()`로 기본 Schema 를 가져올 수 있습니다:
 
 ```go
 schema := json.DefaultSchema()
@@ -142,13 +142,13 @@ type SizeValidator struct {
 func (v *SizeValidator) Validate(jsonStr string) error {
     // JSON 문자열 크기 확인
     if int64(len(jsonStr)) > v.MaxSize {
-        return fmt.Errorf("JSON이 최대 크기를 초과했습니다: %d 바이트", v.MaxSize)
+        return fmt.Errorf("JSON 이 최대 크기를 초과했습니다: %d 바이트", v.MaxSize)
     }
     return nil
 }
 ```
 
-### Processor와 함께 사용
+### Processor 와 함께 사용
 
 ```go
 cfg := json.DefaultConfig()
@@ -160,7 +160,7 @@ if err != nil {
 defer processor.Close()
 ```
 
-## Config의 검증 관련 필드
+## Config 의 검증 관련 필드
 
 | 필드 | 타입 | 설명 |
 |------|------|------|

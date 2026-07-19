@@ -273,7 +273,7 @@ func TestAuditLog(t *testing.T) {
     p.Extract(data)
 
     entries := p.GetAuditLog()
-    t.Logf("監査イベント: %d 件", len(entries))
+    t.Logf("監査イベント：%d 件", len(entries))
     for _, e := range entries {
         t.Logf("  [%s] %s", e.EventType, e.Message)
     }

@@ -1,13 +1,13 @@
 ---
 sidebar_label: "패키지 함수"
 title: "패키지 함수 - CyberGo html | 용법·매개변수·예제"
-description: "CyberGo html 패키지 함수: Extract, ExtractText, ExtractToMarkdown 등. 내부 sync.Pool로 Processor를 재사용해 일회성 호출에 적합합니다."
+description: "CyberGo html 패키지 함수: Extract, ExtractText, ExtractToMarkdown 등. 내부 sync.Pool 로 Processor 를 재사용해 일회성 호출에 적합합니다."
 sidebar_position: 1
 ---
 
 # 패키지 함수
 
-패키지 수준 함수는 일회성 호출 시나리오에 적합하며, 내부적으로 `sync.Pool`을 사용하여 Processor를 재사용하므로 라이프사이클을 수동으로 관리할 필요가 없습니다. 참고: 풀링된 Processor는 캐시와 감사 보존을 비활성화합니다; 캐시/통계/감사가 필요하면 [html.New](./processor)로 전용 Processor를 생성하세요.
+패키지 수준 함수는 일회성 호출 시나리오에 적합하며, 내부적으로 `sync.Pool`을 사용하여 Processor 를 재사용하므로 라이프사이클을 수동으로 관리할 필요가 없습니다. 참고: 풀링된 Processor 는 캐시와 감사 보존을 비활성화합니다; 캐시/통계/감사가 필요하면 [html.New](./processor)로 전용 Processor 를 생성하세요.
 
 ## 콘텐츠 추출
 
@@ -24,7 +24,7 @@ func Extract(htmlBytes []byte, cfg ...Config) (*Result, error)
 | 매개변수 | 타입 | 설명 |
 |------|------|------|
 | `htmlBytes` | `[]byte` | HTML 콘텐츠 |
-| `cfg` | `...Config` | 선택적 설정, 최대 1개 |
+| `cfg` | `...Config` | 선택적 설정, 최대 1 개 |
 
 **예시**:
 
@@ -87,11 +87,11 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractToMarkdown` | `(htmlBytes []byte, cfg ...Config) (string, error)` | HTML → Markdown |
 | `ExtractToMarkdownFromFile` | `(filePath string, cfg ...Config) (string, error)` | 파일 → Markdown |
 | `ExtractToMarkdownWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) (string, error)` | 컨텍스트 포함 |
-| `ExtractToMarkdownFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) (string, error)` | 파일+컨텍스트 |
+| `ExtractToMarkdownFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) (string, error)` | 파일 + 컨텍스트 |
 | `ExtractToJSON` | `(htmlBytes []byte, cfg ...Config) ([]byte, error)` | HTML → JSON |
 | `ExtractToJSONFromFile` | `(filePath string, cfg ...Config) ([]byte, error)` | 파일 → JSON |
 | `ExtractToJSONWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]byte, error)` | 컨텍스트 포함 |
-| `ExtractToJSONFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]byte, error)` | 파일+컨텍스트 |
+| `ExtractToJSONFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]byte, error)` | 파일 + 컨텍스트 |
 
 자세한 사용법과 예시는 [출력 형식](../modules/output)을 참조하세요.
 
@@ -102,7 +102,7 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractAllLinks` | `(htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | 모든 링크 추출 |
 | `ExtractAllLinksFromFile` | `(filePath string, cfg ...Config) ([]LinkResource, error)` | 파일에서 링크 추출 |
 | `ExtractAllLinksWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | 컨텍스트 포함 |
-| `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | 파일+컨텍스트 |
+| `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | 파일 + 컨텍스트 |
 
 자세한 사용법과 예시는 [링크 추출](../modules/links)을 참조하세요.
 
@@ -113,6 +113,6 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractBatch` | `(htmlContents [][]byte, cfg ...Config) *BatchResult` | 배치 추출 |
 | `ExtractBatchWithContext` | `(ctx context.Context, htmlContents [][]byte, cfg ...Config) *BatchResult` | 컨텍스트 포함 |
 | `ExtractBatchFiles` | `(filePaths []string, cfg ...Config) *BatchResult` | 배치 파일 추출 |
-| `ExtractBatchFilesWithContext` | `(ctx context.Context, filePaths []string, cfg ...Config) *BatchResult` | 파일+컨텍스트 |
+| `ExtractBatchFilesWithContext` | `(ctx context.Context, filePaths []string, cfg ...Config) *BatchResult` | 파일 + 컨텍스트 |
 
 자세한 사용법과 예시는 [배치 처리](../modules/batch)를 참조하세요.

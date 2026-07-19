@@ -23,7 +23,7 @@ var (
     // 제한 오류
     ErrSizeLimit        = errors.New("size limit exceeded")
     ErrDepthLimit       = errors.New("depth limit exceeded")
-    ErrConcurrencyLimit = errors.New("concurrency limit exceeded") // 제어된 작업(Get/Set/Delete 등)이 MaxConcurrency에 도달하면 반환
+    ErrConcurrencyLimit = errors.New("concurrency limit exceeded") // 제어된 작업 (Get/Set/Delete 등) 이 MaxConcurrency 에 도달하면 반환
 
     // 보안 및 검증 오류
     ErrSecurityViolation = errors.New("security violation detected")
@@ -185,7 +185,7 @@ result, err := json.EncodeWithConfig(data, json.PrettyConfig())
 ## 병합 모드 상수
 
 ```go
-// MergeMode는 병합 모드 타입입니다 (internal 패키지에서 내보냄)
+// MergeMode 는 병합 모드 타입입니다 (internal 패키지에서 내보냄)
 type MergeMode = internal.MergeMode
 
 const (
@@ -215,7 +215,7 @@ type PathSegment = internal.PathSegment
 ```
 
 ::: warning 내부 구현 별칭
-`PathSegment`는 `internal.PathSegment`의 타입 별칭입니다. 구체적인 필드, 필드 타입(예: PathSegmentType, PathSegmentFlags) 및 메서드는 `internal` 패키지에 속하며 **공개 API로 내보내지지 않습니다**. 버전에 따라 변경될 수 있으므로 비즈니스 코드에서 내부 구조에 직접 의존하지 마세요.
+`PathSegment`는 `internal.PathSegment`의 타입 별칭입니다. 구체적인 필드, 필드 타입 (예: PathSegmentType, PathSegmentFlags) 및 메서드는 `internal` 패키지에 속하며 **공개 API 로 내보내지지 않습니다**. 버전에 따라 변경될 수 있으므로 비즈니스 코드에서 내부 구조에 직접 의존하지 마세요.
 
 - 커스텀 경로 문법을 구현할 때는 [`PathParser`](./interfaces#pathparser) 인터페이스의 `ParsePath` 메서드를 통해 `[]PathSegment`를 반환합니다.
 - 사전 컴파일된 경로는 [`Processor.CompilePath`](./processor/query#compilepath)를 사용하며, `*CompiledPath`를 반환합니다.
@@ -250,7 +250,7 @@ type DangerousPattern struct {
 
 ## 오류 처리 모범 사례
 
-### errors.Is로 타입 확인
+### errors.Is 로 타입 확인
 
 ```go
 result, err := json.Get(data, path)
@@ -262,7 +262,7 @@ if errors.Is(err, json.ErrTypeMismatch) {
 }
 ```
 
-### errors.As로 상세 정보 가져오기
+### errors.As 로 상세 정보 가져오기
 
 ```go
 var jsonErr *json.JsonsError

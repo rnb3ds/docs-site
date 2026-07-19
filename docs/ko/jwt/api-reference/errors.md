@@ -1,7 +1,7 @@
 ---
 sidebar_label: "오류"
 title: "오류 레퍼런스 - CyberGo JWT | 센티넬 오류 목록"
-description: "오류 레퍼런스: CyberGo JWT는 구성 검증, 토큰 검증, 서명 알고리즘, 만료, 발급자·청중, 블랙리스트, 속도 제한과 수명주기의 19 에러를 정의하며 모두 errors.Is 매칭을 지원합니다."
+description: "오류 레퍼런스: CyberGo JWT 는 구성 검증, 토큰 검증, 서명 알고리즘, 만료, 발급자·청중, 블랙리스트, 속도 제한과 수명주기의 19 에러를 정의하며 모두 errors.Is 매칭을 지원합니다."
 sidebar_position: 70
 ---
 
@@ -51,7 +51,7 @@ var (
 | `ErrEmptyToken` | 토큰이 비어있음 | 모든 토큰 작업 메서드 |
 | `ErrAlgorithmMismatch` | 토큰 알고리즘이 설정과 불일치 | `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()` |
 | `ErrTokenRevoked` | 토큰이 취소됨 | `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()` |
-| `ErrTokenMissingID` | 토큰에 ID가 없음 | `Revoke()`, `IsRevoked()` |
+| `ErrTokenMissingID` | 토큰에 ID 가 없음 | `Revoke()`, `IsRevoked()` |
 | `ErrTokenTypeMismatch` | 토큰 타입 불일치 (액세스 토큰으로 갱신 시도) | `Refresh()`, `RefreshInto()` |
 | `ErrTokenExpired` | 토큰이 만료됨 | `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()` |
 | `ErrTokenNotValidYet` | 토큰이 아직 활성화되지 않음 | `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()` |
@@ -61,7 +61,7 @@ var (
 | `ErrInvalidClaims` | Claims 검증 실패 | `Create()`, `CreateRefresh()`, `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()` |
 | `ErrRateLimitExceeded` | 속도 제한 초과 | `Create()`, `CreateRefresh()`, `Refresh()`, `RefreshInto()` |
 | `ErrBlacklistNotConfigured` | 블랙리스트가 설정되지 않음 | `Revoke()` |
-| `ErrProcessorClosed` | Processor가 종료됨 | 모든 메서드 |
+| `ErrProcessorClosed` | Processor 가 종료됨 | 모든 메서드 |
 | `ErrStoreClosed` | 저장소가 종료됨 | `Revoke()` 등 |
 
 ### 시나리오별 분류
@@ -71,8 +71,8 @@ var (
 | 오류 | 발생 메서드 | 일반적인 원인 |
 |------|----------|----------|
 | `ErrInvalidConfig` | `New()` | 여러 설정 항목이 올바르지 않음 |
-| `ErrInvalidSecretKey` | `New()` | HMAC 키가 32바이트 미만이거나 약한 키 |
-| `ErrInvalidSigningMethod` | `New()` | 12개 내장 알고리즘에 포함되지 않음 |
+| `ErrInvalidSecretKey` | `New()` | HMAC 키가 32 바이트 미만이거나 약한 키 |
+| `ErrInvalidSigningMethod` | `New()` | 12 개 내장 알고리즘에 포함되지 않음 |
 
 #### 토큰 검증
 
@@ -87,7 +87,7 @@ var (
 | `ErrTokenInvalidIssuer` | `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()`, `Revoke()`, `IsRevoked()` | `iss`가 `Config.Issuer`와 불일치 |
 | `ErrTokenInvalidAudience` | `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()`, `Revoke()`, `IsRevoked()` | `aud`가 `Config.ExpectedAudience`와 불일치 |
 | `ErrTokenRevoked` | `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()` | 토큰이 블랙리스트에 있음 |
-| `ErrTokenTypeMismatch` | `Refresh()`, `RefreshInto()` | 액세스 토큰(`token_type=access`)으로 갱신 시도 |
+| `ErrTokenTypeMismatch` | `Refresh()`, `RefreshInto()` | 액세스 토큰 (`token_type=access`) 으로 갱신 시도 |
 | `ErrInvalidClaims` | `Create()`, `CreateRefresh()`, `Validate()`, `Refresh()`, `ValidateInto()`, `RefreshInto()` | 비즈니스 검증 실패 |
 | `ErrTokenMissingID` | `Revoke()`, `IsRevoked()` | 토큰에 `jti` 필드가 없음 |
 
@@ -123,7 +123,7 @@ if err != nil {
     case errors.Is(err, jwt.ErrInvalidToken):
         // 서명 무효 - 접근 거부
     case errors.Is(err, jwt.ErrProcessorClosed):
-        // 시스템 오류 - Processor가 종료됨
+        // 시스템 오류 - Processor 가 종료됨
     default:
         // 알 수 없는 오류
     }

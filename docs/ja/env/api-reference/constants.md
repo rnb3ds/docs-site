@@ -57,7 +57,7 @@ cfg := env.DefaultConfig()
 cfg.MaxFileSize = 200 * 1024 * 1024  // 100MB 上限を超過
 
 if err := cfg.Validate(); err != nil {
-    // エラーを返します: MaxFileSize exceeds hard limit
+    // エラーを返します：MaxFileSize exceeds hard limit
 }
 ```
 
@@ -179,7 +179,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 ::: tip 解決方法
-`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の3つのメソッドを含む）を実装してください。
+`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の 3 つのメソッドを含む）を実装してください。
 :::
 
 ## エラー型
@@ -300,17 +300,17 @@ const (
 
 **`errors.Is` の挙動:** `*ExpansionError` は `Kind != ExpansionRequiredKind` の場合のみ `ErrExpansionDepth` と一致します。必須変数エラーは別の失敗モードであり、`ErrExpansionDepth` には一致しません。
 
-使用例:
+使用例：
 
 ```go
 var expErr *env.ExpansionError
 if errors.As(err, &expErr) {
     switch expErr.Kind {
     case env.ExpansionDepthKind:
-        // 深度オーバーフローまたは循環: errors.Is(err, env.ErrExpansionDepth) == true
+        // 深度オーバーフローまたは循環：errors.Is(err, env.ErrExpansionDepth) == true
         fmt.Printf("深度 %d/%d、チェーン: %s\n", expErr.Depth, expErr.Limit, expErr.Chain)
     case env.ExpansionRequiredKind:
-        // 必須変数未設定: errors.Is(err, env.ErrExpansionDepth) == false
+        // 必須変数未設定：errors.Is(err, env.ErrExpansionDepth) == false
         fmt.Printf("必須変数 %s が未設定\n", expErr.Key)
     }
 }
@@ -492,13 +492,13 @@ func MaskValue(key, value string) string
 ```go
 // 機密キー - [MASKED:N chars] 形式で返す
 masked := env.MaskValue("API_KEY", "secret123")
-// 戻り値: [MASKED:9 chars]
+// 戻り値：[MASKED:9 chars]
 
 // 非機密キー - 元の値を返す（20 文字を超える場合は切り詰め）
 masked := env.MaskValue("APP_NAME", "myapp")
-// 戻り値: myapp
+// 戻り値：myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
-// 戻り値: this is a very lo...
+// 戻り値：this is a very lo...
 ```
 
 ### MaskKey
@@ -511,7 +511,7 @@ func MaskKey(key string) string
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
-// 戻り値: DB***
+// 戻り値：DB***
 ```
 
 ### MaskSensitiveInString
@@ -520,7 +520,7 @@ masked := env.MaskKey("DB_PASSWORD")
 func MaskSensitiveInString(s string) string
 ```
 
-文字列内の潜在的な機密内容をマスクします。50文字を超える文字列は切り詰められます。
+文字列内の潜在的な機密内容をマスクします。50 文字を超える文字列は切り詰められます。
 
 **パラメータ：**
 - `s` - 元の文字列
@@ -532,12 +532,12 @@ func MaskSensitiveInString(s string) string
 // 長い文字列は切り詰められます
 log := "This is a very long log message that exceeds 50 characters and will be truncated"
 clean := env.MaskSensitiveInString(log)
-// 戻り値: "This is a very long log message that exceeds 50..."
+// 戻り値："This is a very long log message that exceeds 50..."
 
 // 短い文字列はそのまま保持
 short := "Short message"
 clean := env.MaskSensitiveInString(short)
-// 戻り値: "Short message"
+// 戻り値："Short message"
 ```
 
 ::: warning 注意
@@ -570,12 +570,12 @@ func SanitizeForLog(s string) string
 // 機密キーと値のペアを自動マスク
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
-// 戻り値: "Connected with password=[MASKED] api_key=[MASKED]"
+// 戻り値："Connected with password=[MASKED] api_key=[MASKED]"
 
 // 非機密キーと値のペアはそのまま
 msg := "Config loaded: app_name=myapp port=8080"
 clean := env.SanitizeForLog(msg)
-// 戻り値: "Config loaded: app_name=myapp port=8080"
+// 戻り値："Config loaded: app_name=myapp port=8080"
 ```
 
 ::: tip ユースケース

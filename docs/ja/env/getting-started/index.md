@@ -1,7 +1,7 @@
 ---
 sidebar_label: "クイックスタート"
-title: "クイックスタート - CyberGo env | 5分で始める入門ガイド"
-description: "CyberGo env の5分クイックスタート。go get インストールから .env 読み込み、型安全読み取り、GetSecure セキュア値、構造体マッピング、変数展開、errors.Is エラー処理、4種の設定プリセットと多環境多ファイル読み込みまで、実行可能なコード例で素早く習得できます。"
+title: "クイックスタート - CyberGo env | 5 分で始める入門ガイド"
+description: "CyberGo env の 5 分クイックスタート。go get インストールから .env 読み込み、型安全読み取り、GetSecure セキュア値、構造体マッピング、変数展開、errors.Is エラー処理、4 種の設定プリセットと多環境多ファイル読み込みまで、実行可能なコード例で素早く習得できます。"
 sidebar_position: 1
 ---
 
@@ -103,7 +103,7 @@ timeout := env.GetDuration("TIMEOUT")
 
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 格納形式: APP_NAME=myapp
+// 格納形式：APP_NAME=myapp
 
 // 以下のメソッドで値にアクセス可能
 name := env.GetString("APP_NAME")      // フラット化キー名（推奨）
@@ -186,11 +186,11 @@ secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
 
-    // 元の値を取得（平文が必要な場合のみ呼び出し、例: 暗号化、API呼び出し）
+    // 元の値を取得（平文が必要な場合のみ呼び出し、例：暗号化、API 呼び出し）
     value := secret.Reveal()
 
     // ログ用マスク（漏洩防止）
-    log.Printf("API Key: %s", secret.Masked())  // 出力: [SECURE:32 bytes]
+    log.Printf("API Key: %s", secret.Masked())  // 出力：[SECURE:32 bytes]
 }
 ```
 
@@ -235,7 +235,7 @@ func main() {
 
 ## 設定プリセット
 
-ライブラリは4つのプリセット設定を提供し、異なるシナリオに対応します：
+ライブラリは 4 つのプリセット設定を提供し、異なるシナリオに対応します：
 
 | プリセット | 用途 | 特徴 |
 |------|------|------|
@@ -381,7 +381,7 @@ if err != nil {
         // その他のエラー
     }
 
-    // キー形式が不正: 実際は *ValidationError、Field=="key"
+    // キー形式が不正：実際は *ValidationError、Field=="key"
     var valErr *env.ValidationError
     if errors.As(err, &valErr) && valErr.Field == "key" {
         // 無効なキー形式

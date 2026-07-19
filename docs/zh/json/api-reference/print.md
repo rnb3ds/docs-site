@@ -25,7 +25,7 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
-// 输出: {"age":30,"name":"Alice"}
+// 输出：{"age":30,"name":"Alice"}
 
 // 或者使用 Marshal（[]byte 输出）
 b, err := json.Marshal(data)
@@ -49,7 +49,7 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
-// 输出:
+// 输出：
 // {
 //   "age": 30,
 //   "name": "Alice"

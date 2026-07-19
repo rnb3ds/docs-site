@@ -7,11 +7,11 @@ sidebar_position: 1
 
 # 성능 최적화
 
-DD는 설계 단계부터 고성능을 추구하며, 다음은 로그 성능을 추가로 최적화하는 몇 가지 권장 사항입니다.
+DD 는 설계 단계부터 고성능을 추구하며, 다음은 로그 성능을 추가로 최적화하는 몇 가지 권장 사항입니다.
 
 ## 저할당 최적화
 
-DD는 핫 패스에서 메모리 할당을 최소화합니다.
+DD 는 핫 패스에서 메모리 할당을 최소화합니다.
 
 - `IsLevelEnabled()` 검사는 원자 연산을 사용하여 락 없음
 - 구조화 필드는 사전 할당된 버퍼 사용
@@ -49,11 +49,11 @@ bw, _ := dd.NewBufferedWriter(fw, bwCfg)  // 8KB 버퍼
 logger, _ := dd.New(dd.Config{
     Targets: []dd.OutputTarget{dd.CustomOutput(bw)},
 })
-defer logger.Close()  // Close가 자동으로 Flush
+defer logger.Close()  // Close 가 자동으로 Flush
 ```
 
 :::tip 팁 버퍼 크기
-4KB-16KB를 권장합니다. 너무 작은 버퍼는 시스템 콜을 효과적으로 줄이지 못하고, 너무 큰 버퍼는 메모리 사용과 지연을 증가시킵니다.
+4KB-16KB 를 권장합니다. 너무 작은 버퍼는 시스템 콜을 효과적으로 줄이지 못하고, 너무 큰 버퍼는 메모리 사용과 지연을 증가시킵니다.
 :::
 
 ## 로그 샘플링
@@ -63,8 +63,8 @@ defer logger.Close()  // Close가 자동으로 Flush
 ```go
 logger.SetSampling(&dd.SamplingConfig{
     Enabled:    true,
-    Initial:    100,    // 처음 100개는 모두 기록
-    Thereafter: 10,     // 이후 10개당 1개 기록
+    Initial:    100,    // 처음 100 개는 모두 기록
+    Thereafter: 10,     // 이후 10 개당 1 개 기록
     Tick:       time.Minute, // 매분 카운터 리셋
 })
 
@@ -78,7 +78,7 @@ cfg := logger.GetSampling()
 
 ```go
 fw, _ := dd.NewFileWriter("logs/app.log", dd.DefaultFileWriterConfig())
-// 기본값: 100MB / 30일 / 10개 백업
+// 기본값: 100MB / 30 일 / 10 개 백업
 ```
 
 - 파일이 너무 작으면 빈번한 로테이션으로 I/O 증가
@@ -107,7 +107,7 @@ logger.RemoveWriter(oldWriter)
 
 ### 너무 많은 Writer 회피
 
-각 Writer는 쓰기 지연을 증가시킵니다. 3-4개 이하의 Writer를 권장합니다.
+각 Writer 는 쓰기 지연을 증가시킵니다. 3-4 개 이하의 Writer 를 권장합니다.
 
 ## 필드 최적화
 

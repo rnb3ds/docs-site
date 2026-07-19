@@ -1,13 +1,13 @@
 ---
 sidebar_label: "테스트 패턴"
 title: "테스트 패턴 - CyberGo DD | LoggerRecorder 테스트 예제"
-description: "CyberGo DD 테스트 패턴 예제입니다. LoggerRecorder를 단위 테스트와 통합 테스트에서 사용하는 완전한 방법을 자세히 소개합니다. 로그 메시지 단언, 레벨 필터 테스트, 필드값 검사, 다중 테스트 케이스 격리, 동시성 안전 테스트, 테스트 커버리지를 높이는 완전한 팁과 모범 사례를 다룹니다. 다양한 Go 프로젝트의 로그 테스트에 적합합니다."
+description: "CyberGo DD 테스트 패턴 예제입니다. LoggerRecorder 를 단위 테스트와 통합 테스트에서 사용하는 완전한 방법을 자세히 소개합니다. 로그 메시지 단언, 레벨 필터 테스트, 필드값 검사, 다중 테스트 케이스 격리, 동시성 안전 테스트, 테스트 커버리지를 높이는 완전한 팁과 모범 사례를 다룹니다. 다양한 Go 프로젝트의 로그 테스트에 적합합니다."
 sidebar_position: 4
 ---
 
 # 테스트 패턴
 
-DD는 `LoggerRecorder`를 테스트 보조 도구로 제공하여 단위 테스트에서 로그를 캡처하고 단언할 수 있으며, 실제로 파일이나 콘솔에 쓸 필요가 없습니다.
+DD 는 `LoggerRecorder`를 테스트 보조 도구로 제공하여 단위 테스트에서 로그를 캡처하고 단언할 수 있으며, 실제로 파일이나 콘솔에 쓸 필요가 없습니다.
 
 ## 기본 사용
 
@@ -77,8 +77,8 @@ if len(errorEntries) > 0 {
 }
 
 // DEBUG 레벨로 모든 레벨 캡처
-// 주의: Recorder는 ISO 8601 타임스탬프로 레벨을 파싱하며, DevelopmentConfig의 시간 형식은
-// 호환되지 않으므로 DefaultConfig로 수동 설정 DEBUG.
+// 주의: Recorder 는 ISO 8601 타임스탬프로 레벨을 파싱하며, DevelopmentConfig 의 시간 형식은
+// 호환되지 않으므로 DefaultConfig 로 수동 설정 DEBUG.
 rec2 := dd.NewLoggerRecorder()
 devCfg := dd.DefaultConfig()
 devCfg.Level = dd.LevelDebug
@@ -154,7 +154,7 @@ func TestService_DatabaseError(t *testing.T) {
     require.True(t, rec.ContainsField("error"))
     require.Contains(t, rec.GetFieldValue("error"), "database connection refused")
 
-    // 레벨이 Error인지 검증
+    // 레벨이 Error 인지 검증
     errorEntries := rec.EntriesAtLevel(dd.LevelError)
     require.NotEmpty(t, errorEntries)
 }
@@ -181,7 +181,7 @@ func TestMiddleware_LogsRequestFields(t *testing.T) {
 
     entry := entries[0]
     require.Equal(t, "요청 완료", entry.Message)
-    // 필드값 검증(주의: 텍스트 형식에서 필드값은 string 타입)
+    // 필드값 검증 (주의: 텍스트 형식에서 필드값은 string 타입)
     require.Equal(t, "GET", rec.GetFieldValue("method"))
     require.Equal(t, "/api/users", rec.GetFieldValue("path"))
     require.Equal(t, "200", rec.GetFieldValue("status"))
@@ -192,13 +192,13 @@ func TestMiddleware_LogsRequestFields(t *testing.T) {
 
 ```go
 func TestSuite(t *testing.T) {
-    t.Run("시나리오A", func(t *testing.T) {
+    t.Run("시나리오 A", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 각 테스트마다 독립 recorder
         logger, _ := rec.NewLogger()
         // 테스트 로직...
     })
 
-    t.Run("시나리오B", func(t *testing.T) {
+    t.Run("시나리오 B", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 독립 recorder
         logger, _ := rec.NewLogger()
         // 테스트 로직...
