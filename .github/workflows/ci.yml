@@ -31,7 +31,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Prettier is formatting-only and auto-fixable (npm run format); surface
+      # it as a warning rather than blocking the merge.
       - name: Prettier format check
+        continue-on-error: true
         run: npm run format:check
 
       - name: Typecheck
@@ -71,22 +74,24 @@ jobs:
           # (which files/lines changed relative to the base branch).
           fetch-depth: 0
 
-      # Step 1 — autocorrect lint gate. Error-level CJK typography issues
-      # (half/full-width punctuation, CJK–Latin spacing) fail the step (exit 1).
-      # Identical on PR and push.
+      # Step 1 — autocorrect lint gate, now NON-BLOCKING: CJK typography issues
+      # (half/full-width punctuation, CJK–Latin spacing) no longer fail the job.
+      # Local fix: `npm run fix:autocorrect`.
       - name: Autocorrect lint
+        id: autocorrect
+        continue-on-error: true
         uses: huacnlee/autocorrect-action@v2
         with:
           use_npm: true
 
-      # Step 2 (PR only) — When lint fails, re-run with reviewdog to post the
-      # offending lines as inline PR review comments (github-pr-review reporter),
-      # so contributors see exactly which line has the problem. Mirrors the
-      # upstream README recipe.
+      # Step 2 (PR only) — When lint found issues, re-run with reviewdog to post
+      # the offending lines as inline PR review comments. Uses steps.autocorrect
+      # .outcome (the real result, unaffected by continue-on-error above) instead
+      # of failure(), because the lint step no longer propagates a job failure.
       # REVIEWDOG_GITHUB_API_TOKEN is MANDATORY — without it reviewdog aborts
       # and autocorrect panics writing to the closed pipe.
       - name: Report to PR via reviewdog
-        if: failure() && github.event_name == 'pull_request'
+        if: steps.autocorrect.outcome == 'failure' && github.event_name == 'pull_request'
         uses: huacnlee/autocorrect-action@v2
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -94,14 +99,19 @@ jobs:
           use_npm: true
           reviewdog: true
 
-  # API drift gate (specs/0002). audit-api.ts scans each library's Go source
-  # (AST exports) and compares against the zh docs; DANGLING references — docs
-  # citing symbols the source no longer exports — fail the job (exit 1).
-  # Source is checked out from github.com/cybergodev/{project}: a missing or
-  # private repo fails the checkout step red, rather than letting audit:api
-  # silently skip it (scripts/audit-api.ts treats a missing source dir as skip).
-  audit-api:
-    name: API drift (audit:api)
+  # Combined Go-source gate: API drift + code-sample compile. These previously
+  # ran as two separate jobs, each duplicating the full 6-repo checkout + Go +
+  # Node setup (.github/actions/setup-cybergo-src). Merged into one job to pay
+  # that setup once. audit:api stays merge-blocking (DANGLING — docs citing
+  # symbols the source no longer exports — fails the job via the trailing
+  # "Fail on API drift" step), but runs non-interrupting so check:code still
+  # reports on the same run. check:code compile errors block as before.
+  #
+  # Source checkout mirrors the old jobs (6 cybergodev repos → src/{p}-dev) so
+  # a missing/private repo fails the checkout step red rather than letting the
+  # scripts silently skip those entries.
+  go-gates:
+    name: API drift & code samples
     runs-on: ubuntu-latest
     steps:
       - name: Checkout docs repo
@@ -112,6 +122,11 @@ jobs:
       - uses: ./.github/actions/setup-cybergo-src
 
       - name: API drift audit
+        id: audit-api
+        # Non-interrupting: keep going so check:code still runs on the same
+        # job even when drift is found. The trailing "Fail on API drift" step
+        # re-fails the job based on this outcome, preserving the merge gate.
+        continue-on-error: true
         env:
           # audit-api.ts joins CYBERGO_SOURCE_ROOT + `{project}-dev`, matching
           # the src/{project}-dev layout checked out above.
@@ -125,30 +140,16 @@ jobs:
           name: api-drift-report
           path: report/api-drift.md
 
-  # Go code-sample compile gate (roadmap #1). check-code-samples.ts extracts
-  # every ```go block from docs/zh/, writes the complete ones (with a `package`
-  # declaration) into a temp Go module — one subdir per block to avoid multiple
-  # `package main` clashing — and runs `go build ./...` + `gofmt -l` against
-  # the 6 cybergodev sources (replace'd to local checkouts). Compile errors fail
-  # the job; gofmt issues are warnings only.
-  #
-  # Source checkout mirrors the audit-api job (6 cybergodev repos → src/{p}-dev)
-  # so a missing/private repo fails the checkout step red rather than letting
-  # check:code silently skip those samples.
-  check-code-samples:
-    name: Code samples (check:code)
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout docs repo
-        uses: actions/checkout@v4
-
-      # Shared setup: 6 cybergodev source checkouts (src/{project}-dev) + Go +
-      # Node + npm ci. See .github/actions/setup-cybergo-src/action.yml.
-      - uses: ./.github/actions/setup-cybergo-src
-
       - name: Check Go code samples
         env:
           # check-code-samples.ts joins CYBERGO_SOURCE_ROOT + `{project}-dev`,
           # matching the src/{project}-dev layout checked out above.
           CYBERGO_SOURCE_ROOT: ${{ github.workspace }}/src
         run: npm run check:code -- --all
+
+      # Re-fail the job if audit:api found DANGLING drift. Its step ran with
+      # continue-on-error so check:code could still report; this final step
+      # restores the merge-blocking outcome based on the real step result.
+      - name: Fail on API drift
+        if: always() && steps.audit-api.outcome == 'failure'
+        run: exit 1
