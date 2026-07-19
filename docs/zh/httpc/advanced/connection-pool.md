@@ -1,6 +1,8 @@
 ---
+sidebar_label: "连接池与代理"
 title: "连接池与代理 - CyberGo HTTPC | 池调优与代理"
 description: "HTTPC 连接池与代理配置指南：MaxIdleConns 等连接池参数调优与场景推荐、ProxyURL 手动代理与系统代理检测、SOCKS5 与 HTTP 代理、DoH 三提供商回退、HTTP/2 配置与连接复用实践要点与最佳实践建议示例。"
+sidebar_position: 3
 ---
 
 # 连接池与代理
@@ -23,7 +25,7 @@ cfg.Timeouts.IdleConn = 120 * time.Second // 空闲连接保持时间
 | 参数 | 默认 | 说明 |
 |------|------|------|
 | `MaxIdleConns` | 50 | 全局最大空闲连接数 |
-| `MaxConnsPerHost` | 10 | 每主机最大连接数（含活跃+空闲） |
+| `MaxConnsPerHost` | 10 | 每主机最大连接数（含活跃 + 空闲） |
 | `IdleConn` | 90s | 空闲连接超时，超时后关闭 |
 | `Dial` | 10s | 建立连接超时 |
 | `TLSHandshake` | 10s | TLS 握手超时 |
@@ -77,7 +79,7 @@ cfg.Connection.ProxyURL = "socks5://proxy.example.com:1080"
 cfg := httpc.DefaultConfig()
 cfg.Connection.EnableSystemProxy = true
 
-// 自动检测:
+// 自动检测：
 // - Windows: 注册表 Internet Settings
 // - macOS: 系统偏好设置网络代理
 // - Linux: 环境变量 HTTP_PROXY / HTTPS_PROXY
@@ -180,5 +182,5 @@ func fetchAll(ctx context.Context, urls []string) ([]*httpc.Result, error) {
 ## 下一步
 
 - [性能优化](./performance) - 性能调优指南
-- [配置 API](../api-reference/config) - 连接配置参考
+- [配置 API](../api-reference/client-config/config) - 连接配置参考
 - [安全概述](../security/) - SSRF 和 TLS 安全

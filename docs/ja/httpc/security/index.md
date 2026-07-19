@@ -1,6 +1,8 @@
 ---
+sidebar_label: "セキュリティ概要"
 title: "セキュリティ概要 - CyberGo HTTPC | セキュリティ機能"
-description: "HTTPC セキュリティ機能概要: TLS 1.2+ バージョン制御、SSRF プライベート IP ブロックと CIDR 免除、CRLF インジェクション防止、Cookie セキュリティ、リダイレクトホワイトリストを解説します。"
+description: "HTTPC セキュリティ機能概要：TLS 1.2+ バージョン制御、SSRF プライベート IP ブロックと CIDR 免除、CRLF インジェクション防止、Cookie セキュリティ、リダイレクトホワイトリストなど、デフォルトで安全な設計を解説します。"
+sidebar_position: 1
 ---
 
 # セキュリティ概要
@@ -62,9 +64,13 @@ client, _ := httpc.New(httpc.SecureConfig())
 | 172.16.0.0/12 | クラス B プライベート |
 | 192.168.0.0/16 | クラス C プライベート |
 | 169.254.0.0/16 | リンクローカル |
+| 100.64.0.0/10 | CGNAT（Alibaba Cloud メタデータ `100.100.100.200` を含む） |
+| 240.0.0.0/4 | クラス E 予約 |
 | ::1/128 | IPv6 ループバック |
 | fc00::/7 | IPv6 ユニークローカル |
 | fe80::/10 | IPv6 リンクローカル |
+
+> 上記は主要な範囲です。完全なリスト（`0.0.0.0/8`、TEST-NET、IPv6 ドキュメントプレフィックス `2001:db8::/32`、NAT64 `64:ff9b::/96` など）はソースコード `isPrivateOrReservedIP` を参照してください。
 
 ## リクエストヘッダー検証
 
@@ -82,7 +88,7 @@ httpc.WithHeader("X-Bad", "value\x00null")                // 制御文字
 // 厳格な Cookie セキュリティ
 cfg := httpc.DefaultConfig()
 cfg.Security.CookieSecurity = httpc.StrictCookieSecurityConfig()
-// 要求: Secure, HttpOnly, SameSite=Strict
+// 要求：Secure, HttpOnly, SameSite=Strict
 ```
 
 ## リダイレクトセキュリティ

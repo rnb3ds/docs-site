@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Config"
 title: "Config 配置 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Config 配置参考：DefaultConfig 默认配置、SecurityConfig 安全、PrettyConfig 格式化、缓存、大小限制与编码选项，自定义 Go 应用的全部 JSON 行为。"
+description: "CyberGo JSON Config 配置：DefaultConfig 默认、SecurityConfig 安全、PrettyConfig 格式化与缓存、大小限制，自定义 Go 应用 JSON 行为。"
+sidebar_position: 4
 ---
 
 # Config
@@ -16,6 +18,7 @@ type Config struct {
     CacheTTL     time.Duration `json:"cache_ttl"`      // 缓存过期时间
     EnableCache  bool          `json:"enable_cache"`   // 是否启用缓存
     CacheResults bool          `json:"cache_results"`  // 是否缓存操作结果
+    CacheSharedResults bool `json:"cache_shared_results"` // 共享缓存结果（跳过防御性深拷贝，调用方不得修改返回的容器）
 
     // ===== 大小限制 =====
     MaxJSONSize  int64 `json:"max_json_size"`  // 最大 JSON 大小（字节）
@@ -102,6 +105,10 @@ type Config struct {
 }
 ```
 
+::: warning CacheSharedResults 契约
+`CacheSharedResults` 为 `true` 时，缓存命中的 `Get`/`GetFromParsed` 会**直接返回缓存值**，跳过防御性深拷贝（更快、更少分配）。此时**调用方不得修改**返回的 `map[string]any`/`[]any`，否则会破坏共享缓存、影响后续读取；原始值（`bool`、`float64`、`string`、`json.Number`、`nil`）不可变，始终安全。默认 `false` 保留安全的“读时拷贝”行为，仅在调用方将结果视为只读时启用（例如反复读取同一大型子树的只读工作负载）。
+:::
+
 ## 配置预设
 
 ### DefaultConfig
@@ -135,6 +142,7 @@ defer processor.Close()
 | MaxCacheSize | 128 | 最大缓存条目数 |
 | EnableCache | true | 启用缓存 |
 | CacheResults | true | 缓存操作结果 |
+| CacheSharedResults | false | 共享缓存结果（高性能只读场景） |
 | EnableValidation | true | 启用验证 |
 | StrictMode | false | 非严格模式 |
 | FullSecurityScan | false | 采样安全扫描（非全量） |
@@ -231,7 +239,7 @@ cfgCopy.EnableValidation = true // 不影响原配置
 
 签名：`func (c *Config) Validate() error`
 
-验证配置并自动修正无效值。此方法会**原地修改** Config，将不合法的字段修正为对应的最小有效值。
+验证配置并自动修正无效值。此方法会**原地修改** Config，将不合法的字段修正到有效范围内：过小（≤0）取最小值，过大（超出上限）取最大值。
 
 ```go
 cfg := json.DefaultConfig()
@@ -435,7 +443,7 @@ result, err := json.MergeJSON(
     `{"b": 3, "c": 4}`,
     cfg,
 )
-// 结果: {"a": 1, "b": 3, "c": 4}
+// 结果：{"a": 1, "b": 3, "c": 4}
 ```
 
 ### MergeIntersection
@@ -450,7 +458,7 @@ result, err := json.MergeJSON(
     `{"b": 3, "c": 4}`,
     cfg,
 )
-// 结果: {"b": 3}
+// 结果：{"b": 3}
 ```
 
 ### MergeDifference
@@ -465,7 +473,7 @@ result, err := json.MergeJSON(
     `{"b": 3, "c": 4}`,
     cfg,
 )
-// 结果: {"a": 1}
+// 结果：{"a": 1}
 ```
 
 ---

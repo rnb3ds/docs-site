@@ -1,6 +1,8 @@
 ---
+sidebar_label: "基础用法"
 title: "基础用法 - CyberGo DD | 实用示例"
 description: "CyberGo DD 日志库的实用代码示例集合，涵盖 Gin/Echo Web 服务请求日志、gRPC 拦截器集成、数据库操作日志记录、中间件链式调用、定时任务日志输出和微服务分布式追踪集成等常见场景，提供可直接复制使用的最佳实践代码片段。"
+sidebar_position: 1
 ---
 
 # 基础用法
@@ -58,7 +60,7 @@ func main() {
     mux := http.NewServeMux()
     mux.HandleFunc("/api/users", handleUsers)
 
-    fmt.Println("服务启动: :8080")
+    fmt.Println("服务启动：:8080")
     http.ListenAndServe(":8080", loggingMiddleware(mux))
 }
 
@@ -74,6 +76,7 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 ## 微服务日志
 
+<!-- check-code: skip -->
 ```go
 package service
 
@@ -116,6 +119,7 @@ func (s *UserService) GetUser(id int) (*User, error) {
 
 ## 定时任务日志
 
+<!-- check-code: skip -->
 ```go
 package cron
 
@@ -150,6 +154,7 @@ func RunCleanup() {
 
 ## 带审计的安全日志
 
+<!-- check-code: skip -->
 ```go
 package auth
 
@@ -179,8 +184,8 @@ func init() {
 func HandleLogin(username, password, ip string) error {
     logger.InfoWith("登录尝试",
         dd.String("username", username),
-        dd.String("ip", ip),
-        // password 经过 SecurityConfig 自动过滤
+        dd.String("ip", ip),  // FinancialConfig 会将 ip 也脱敏为 [REDACTED]
+        // password 未记录到日志（安全实践：永远不要 log 原始密码）
     )
 
     if isBruteForce(ip) {
@@ -260,6 +265,6 @@ func SetupLogger(env string) (*dd.Logger, error) {
 
 ## 下一步
 
-- [快速开始](../getting-started) -- 基础入门
+- [快速开始](../getting-started/) -- 基础入门
 - [API 参考](../api-reference/) -- 完整 API
 - [安全](../security/) -- 安全配置

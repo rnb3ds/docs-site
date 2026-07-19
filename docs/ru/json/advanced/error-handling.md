@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Обработка ошибок"
 title: "Обработка ошибок - CyberGo JSON | Лучшие практики"
-description: "Лучшие практики обработки ошибок CyberGo JSON: проверки JsonsError, errors.Is/As, стандартные ошибки, восстановление, SafeError и логирование RedactedPath."
+description: "CyberGo JSON обработка ошибок: определение типа JsonsError, сопоставление errors.Is/As, безопасный вывод SafeError и маскирование RedactedPath в логах — построение надёжного механизма обработки."
+sidebar_position: 2
 ---
 
 # Обработка ошибок
@@ -21,7 +23,7 @@ var (
     ErrSizeLimit          = errors.New("size limit exceeded")
     ErrSecurityViolation  = errors.New("security violation detected")
     ErrProcessorClosed    = errors.New("processor is closed")
-    ErrConcurrencyLimit   = errors.New("concurrency limit exceeded") // Deprecated
+    ErrConcurrencyLimit   = errors.New("concurrency limit exceeded")
     ErrUnsupportedPath    = errors.New("unsupported path operation")
     ErrOperationTimeout   = errors.New("operation timeout")           // Deprecated
     ErrResourceExhausted  = errors.New("system resources exhausted")  // Deprecated
@@ -318,7 +320,7 @@ if err != nil {
         return fmt.Errorf("временная ошибка, повторите попытку: %w", err)
     }
     if errors.Is(err, json.ErrConcurrencyLimit) {
-        // Ограничение параллелизма <Badge type="danger" text="Устарело" />
+        // Ограничение параллелизма (возвращается при достижении MaxConcurrency, можно повторить)
         return fmt.Errorf("система занята, попробуйте позже: %w", err)
     }
     if errors.Is(err, json.ErrResourceExhausted) {
@@ -353,9 +355,10 @@ func processJSON(data string) error {
             // Ошибка безопасности, записать и отклонить
             log.Warn("Нарушение безопасности", "error", err)
             return errors.New("недопустимый ввод")
-        case errors.Is(err, json.ErrOperationTimeout),          // Deprecated
-            errors.Is(err, json.ErrConcurrencyLimit): // Deprecated
-            // Повторяемая ошибка (эти ошибки в настоящее время не возвращаются библиотекой, сохранены для совместимости)
+        case errors.Is(err, json.ErrConcurrencyLimit):
+            // Превышен предел параллелизма, можно повторить позже
+            return fmt.Errorf("система занята, повторите попытку позже: %w", err)
+        case errors.Is(err, json.ErrOperationTimeout): // Deprecated (в настоящее время не возвращается, сохранён для совместимости)
             return fmt.Errorf("временная ошибка, повторите попытку: %w", err)
         default:
             // Системная ошибка

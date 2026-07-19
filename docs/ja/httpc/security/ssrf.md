@@ -1,6 +1,8 @@
 ---
-title: "SSRF 防護 - CyberGo HTTPC | プライベートIPとメタ"
-description: "HTTPC SSRF 防護の詳細: デフォルトで IPv4/IPv6 プライベート IP をブロック、SSRFExemptCIDRs 精密免除、DNS リバインディング防止、リダイレクトホワイトリスト、AWS/GCP/Azure クラウドメタデータ保護を解説します。"
+sidebar_label: "SSRF 防護"
+title: "SSRF 防護 - CyberGo HTTPC | プライベート IP とメタ"
+description: "HTTPC SSRF 防護の詳細：デフォルトで IPv4/IPv6 プライベート IP をブロック、SSRFExemptCIDRs 精密免除、DNS リバインディング防止、リダイレクトホワイトリスト、AWS/GCP/Azure クラウドメタデータ保護を解説します。"
+sidebar_position: 2
 ---
 
 # SSRF 防護
@@ -23,9 +25,13 @@ cfg := httpc.DefaultConfig()
 | クラス B プライベート | `172.16.0.0/12` | 内部ネットワーク |
 | クラス C プライベート | `192.168.0.0/16` | 内部ネットワーク |
 | リンクローカル | `169.254.0.0/16` | 自動設定 |
+| CGNAT | `100.64.0.0/10` | キャリアグレード NAT（Alibaba Cloud メタデータ `100.100.100.200` を含む） |
+| クラス E 予約 | `240.0.0.0/4` | 予約アドレス |
 | IPv6 ループバック | `::1/128` | localhost |
 | IPv6 ローカル | `fc00::/7` | ユニークローカルアドレス |
 | IPv6 リンクローカル | `fe80::/10` | リンクローカル |
+
+> 上記は主要な範囲です。完全なブロックリストには `0.0.0.0/8`、TEST-NET（`192.0.2.0/24`、`198.51.100.0/24`、`203.0.113.0/24` など）、IPv6 ドキュメントプレフィックス `2001:db8::/32`、NAT64 `64:ff9b::/96` も含まれます。詳しくはソースコード `isPrivateOrReservedIP` を参照してください。
 
 ## CIDR 免除
 
@@ -61,7 +67,7 @@ result, err := httpc.Get("http://localhost:8080/health",
 
 ## DNS リバインディング防護
 
-HTTPC は「解決-検証-直接接続」モードで DNS リバインディング攻撃を防止します：
+HTTPC は「解決 - 検証 - 直接接続」モードで DNS リバインディング攻撃を防止します：
 
 1. ドメイン名を IP アドレスに解決
 2. 解決されたすべての IP がプライベートアドレスでないか検証
@@ -112,7 +118,7 @@ cfg.Security.RedirectWhitelist = []string{
 HTTPC はデフォルトで AWS/Azure メタデータへのアクセスをブロックします（`169.254.169.254` は `169.254.0.0/16` ブロックリストに含まれています）。GCP メタデータ（`metadata.google.internal`）は DNS 解決検証でブロックされます。
 
 :::warning
-Alibaba Cloud メタデータ（`100.100.100.200`）は CGNAT 範囲（`100.64.0.0/10`）にあり、Tailscale/WireGuard などの VPN をサポートするため、この範囲はデフォルトのブロックリストに含まれて**いません**。Alibaba Cloud メタデータへのアクセスを防ぐ必要がある場合は、他のセキュリティポリシー（ファイアウォールルールなど）で制限してください。
+Alibaba Cloud メタデータ（`100.100.100.200`）は CGNAT 範囲（`100.64.0.0/10`）にあり、HTTPC は**デフォルトでこの範囲をブロック**するため、Alibaba Cloud メタデータへのアクセスはデフォルトで遮断されます。Tailscale/WireGuard などの VPN や内部ルーティングのためにこの範囲へのアクセスが本当に必要な場合は、`SSRFExemptCIDRs: []string{"100.64.0.0/10"}` で明示的に免除する必要があります。免除すると、この範囲内の Alibaba Cloud メタデータにも到達可能になるため、リスクを評価してください。
 :::
 
 ## SSRF 防護の完全な無効化

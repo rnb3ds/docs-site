@@ -1,6 +1,8 @@
 ---
+sidebar_label: "性能优化"
 title: "性能优化 - CyberGo env | 高并发读写调优"
-description: "CyberGo env 性能优化指南，详解 RWMutex 读写锁并发安全、sync.Pool 对象池复用、mlock 内存锁定使用与大文件流式解析，附基准测试对比与参数调优建议。"
+description: "CyberGo env 性能优化指南，详解 RWMutex 读写锁与分片锁的并发安全机制、sync.Pool 对象池复用显著减少分配、mlock 内存锁定开销权衡与大文件流式解析，附基准测试对比、并发吞吐量分析与 MaxFileSize/MaxVariables 参数调优建议。"
+sidebar_position: 1
 ---
 
 # 性能优化
@@ -86,7 +88,7 @@ wg.Wait()
 
 ```text
 无对象池：
-创建对象 → 使用 → GC回收 → 创建对象 → 使用 → GC回收 ...
+创建对象 → 使用 → GC 回收 → 创建对象 → 使用 → GC 回收 ...
 
 有对象池：
 创建对象 → 使用 → 放回池 → 获取 → 使用 → 放回池 ...
@@ -209,10 +211,10 @@ if err != nil {
 
 ```go
 secret := env.GetSecure("PASSWORD")
-// 内部存储: ['p', 'a', 's', 's', ...]
+// 内部存储：['p', 'a', 's', 's', ...]
 
 secret.Close()
-// 内部存储: [0, 0, 0, 0, ...]
+// 内部存储：[0, 0, 0, 0, ...]
 ```
 
 手动清零字节切片：
@@ -336,10 +338,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 ### 内存锁定开销
 
-| 操作 | 无锁定 | 有锁定 |
-|------|--------|--------|
-| 创建 | ~100ns | ~1μs |
-| 读取 | ~10ns | ~10ns |
+内存锁定（Linux 的 `mlock` / Windows 的 `VirtualLock`）仅在创建 `SecureValue` 时产生一次额外的 syscall 开销，读取操作（`Reveal` / `String` / `Masked`）无差异。建议保持 `SecureValue` 小而短命——用完立即 `Close()` / `Release()` 归还到对象池，避免长期持有大块锁定内存。
 
 ## 基准测试
 

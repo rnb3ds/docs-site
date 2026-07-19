@@ -1,6 +1,8 @@
 ---
+sidebar_label: "错误处理"
 title: "错误处理 - CyberGo JWT | 哨兵错误匹配"
 description: "错误处理指南：分类讲解 CyberGo JWT 全部 19 个哨兵错误在配置、令牌验证、限流与生命周期阶段的触发条件，演示 errors.Is 匹配、ValidationError 字段错误与标准化响应实践。"
+sidebar_position: 50
 ---
 
 # 错误处理
@@ -54,6 +56,8 @@ if err != nil {
 | `ErrEmptyToken` | 所有令牌操作方法 | 检查请求头 |
 | `ErrInvalidToken` | Validate, Refresh, ValidateInto, RefreshInto, Revoke, IsRevoked | 签名不匹配，拒绝访问 |
 | `ErrAlgorithmMismatch` | Validate, Refresh, ValidateInto, RefreshInto | 令牌算法与配置不匹配，拒绝访问 |
+| `ErrExpirationRequired` | Validate, Refresh, ValidateInto, RefreshInto | 启用 `RequireExpiration` 但令牌缺少 `exp` 声明 |
+| `ErrTokenTypeMismatch` | Refresh, RefreshInto | 用访问令牌（`token_type=access`）尝试刷新，拒绝访问 |
 | `ErrTokenExpired` | Validate, Refresh, ValidateInto, RefreshInto | 引导用户刷新令牌 |
 | `ErrTokenNotValidYet` | Validate, Refresh, ValidateInto, RefreshInto | 检查时钟同步 |
 | `ErrTokenInvalidIssuer` | Validate, Refresh, ValidateInto, RefreshInto, Revoke, IsRevoked | 签发者不匹配 |

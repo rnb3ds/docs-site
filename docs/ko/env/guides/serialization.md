@@ -1,6 +1,8 @@
 ---
+sidebar_label: "직렬화"
 title: "직렬화 - CyberGo env | 다중 형식 변환"
-description: "CyberGo env 직렬화 가이드로 .env·JSON·YAML 간 Map·구조체 변환, Marshal/Unmarshal 함수군, 커스텀 인터페이스, env 태그와 민감 필드 마스킹을 다룹니다."
+description: "CyberGo env 직렬화 가이드로 .env·JSON·YAML 간 Map·구조체 변환, Marshal/Unmarshal 함수군, Marshaler/Unmarshaler 인터페이스, DetectFormat 자동 감지와 env 태그·민감 필드 마스킹을 다룹니다."
+sidebar_position: 2
 ---
 
 # 직렬화
@@ -56,7 +58,7 @@ func main() {
         "PORT": "8080",
     }
 
-    // JSON으로 직렬화
+    // JSON 으로 직렬화
     result, err := env.Marshal(data, env.FormatJSON)
     if err != nil {
         panic(err)
@@ -66,7 +68,7 @@ func main() {
     // 출력:
     // {
     //   "HOST": "localhost",
-    //   "PORT": "8080"
+    //   "PORT": 8080
     // }
 }
 ```
@@ -88,7 +90,7 @@ func main() {
         "DATABASE_NAME": "myapp",
     }
 
-    // YAML로 직렬화
+    // YAML 로 직렬화
     result, err := env.Marshal(data, env.FormatYAML)
     if err != nil {
         panic(err)
@@ -97,8 +99,8 @@ func main() {
     fmt.Println(result)
     // 출력:
     // DATABASE_HOST: localhost
-    // DATABASE_PORT: "5432"
     // DATABASE_NAME: myapp
+    // DATABASE_PORT: 5432
 }
 ```
 
@@ -135,9 +137,9 @@ func main() {
 
     fmt.Println(result)
     // 출력:
+    // DEBUG=true
     // HOST=localhost
     // PORT=8080
-    // DEBUG=true
 }
 ```
 
@@ -215,7 +217,7 @@ func main() {
         Debug: true,
     }
 
-    // map으로 변환
+    // map 으로 변환
     data, err := env.MarshalStruct(cfg)
     if err != nil {
         panic(err)
@@ -250,7 +252,7 @@ PORT=8080
 DEBUG=true
 `
 
-    // map으로 역직렬화
+    // map 으로 역직렬화
     result, err := env.UnmarshalMap(data, env.FormatEnv)
     if err != nil {
         panic(err)
@@ -315,7 +317,7 @@ DATABASE_USER: postgres
 
 ## 구조체 역직렬화
 
-### Map에서 역직렬화
+### Map 에서 역직렬화
 
 ```go
 package main
@@ -382,24 +384,32 @@ ENABLED=true
 
 ## 커스텀 직렬화
 
-### Marshaler 인터페이스 구현
+::: tip 두 가지 커스텀 인터페이스의 동작 범위
+- **필드 수준**: 구조체 필드의 커스텀 인코딩/디코딩은 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`(`MarshalText()` / `UnmarshalText([]byte)`) 를 구현합니다. 구조체가 `env.Marshal`/`env.UnmarshalInto`로 처리될 때 필드 단위 로직이 이 두 인터페이스를 인식합니다.
+- **최상위**: `env.Marshaler`(`MarshalEnv()`) 와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 **`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 직접 전달된 최상위 값에서만 동작**합니다. 해당 타입을 필드로 포함한 외부 구조체를 전달하면 호출되지 않습니다.
+:::
+
+### 필드 수준: encoding.TextMarshaler 구현
 
 ```go
 package main
 
 import (
     "fmt"
+    "strings"
+
     "github.com/cybergodev/env"
 )
 
 type LogLevel string
 
-type LogConfig struct {
-    Level LogLevel `env:"LOG_LEVEL"`
+// encoding.TextMarshaler 구현 — 구조체 필드로 직렬화 시 호출됨
+func (l LogLevel) MarshalText() ([]byte, error) {
+    return []byte(strings.ToUpper(string(l))), nil
 }
 
-func (l LogLevel) MarshalEnv() ([]byte, error) {
-    return []byte(string(l)), nil
+type LogConfig struct {
+    Level LogLevel `env:"LOG_LEVEL"`
 }
 
 func main() {
@@ -413,28 +423,36 @@ func main() {
     }
 
     fmt.Println(result)
+    // 출력: LOG_LEVEL=DEBUG
 }
 ```
 
-### Unmarshaler 인터페이스 구현
+### 필드 수준: encoding.TextUnmarshaler 구현
 
 ```go
 package main
 
 import (
     "fmt"
+
     "github.com/cybergodev/env"
 )
 
 type LogLevel string
 
-type LogConfig struct {
-    Level LogLevel `env:"LOG_LEVEL"`
+// encoding.TextUnmarshaler 구현 — 구조체 필드로 역직렬화 시 호출됨
+func (l *LogLevel) UnmarshalText(text []byte) error {
+    switch string(text) {
+    case "debug", "info", "warn", "error":
+        *l = LogLevel(text)
+        return nil
+    default:
+        return fmt.Errorf("invalid log level: %s", string(text))
+    }
 }
 
-func (l *LogLevel) UnmarshalEnv(data map[string]string) error {
-    *l = LogLevel(data["LOG_LEVEL"])
-    return nil
+type LogConfig struct {
+    Level LogLevel `env:"LOG_LEVEL"`
 }
 
 func main() {
@@ -449,6 +467,42 @@ func main() {
     }
 
     fmt.Printf("Level: %s\n", cfg.Level)
+    // 출력: Level: info
+}
+```
+
+### 최상위: env.Marshaler / env.Unmarshaler 구현
+
+어떤 타입의 값을 `env.Marshal` / `env.UnmarshalInto`에 **직접** 전달할 때 (외부 구조체의 필드가 아닌), `env.Marshaler` / `env.Unmarshaler` 인터페이스가 해당 최상위 값에서 동작합니다:
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
+// 최상위 타입이 env.Marshaler 를 직접 구현
+type EnvBlob string
+
+func (e EnvBlob) MarshalEnv() ([]byte, error) {
+    // 커스텀 전체 직렬화 출력
+    return []byte("APP_NAME=custom\nAPP_VERSION=2.0.0"), nil
+}
+
+func main() {
+    // 최상위 값을 직접 직렬화 (외부 구조체의 필드가 아님)
+    result, err := env.Marshal(EnvBlob(""), env.FormatEnv)
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Println(result)
+    // 출력:
+    // APP_NAME=custom
+    // APP_VERSION=2.0.0
 }
 ```
 
@@ -475,7 +529,7 @@ func main() {
     format = env.DetectFormat(".env")
     fmt.Println(format.String()) // dotenv
 
-    // FormatAuto로 자동 감지
+    // FormatAuto 로 자동 감지
     data := `{"KEY": "value"}`
     result, _ := env.UnmarshalMap(data, env.FormatAuto)
     fmt.Println(result)
@@ -531,7 +585,7 @@ func main() {
     // 모든 환경 변수 가져오기
     all := env.All()
 
-    // JSON으로 내보내기
+    // JSON 으로 내보내기
     content, err := env.Marshal(all, env.FormatJSON)
     if err != nil {
         panic(err)

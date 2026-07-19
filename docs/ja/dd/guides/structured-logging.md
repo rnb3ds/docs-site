@@ -1,6 +1,8 @@
 ---
+sidebar_label: "構造化ログ"
 title: "構造化ログ - CyberGo DD | フィールドとチェーン呼び出し"
-description: "CyberGo DD 構造化ログ使用ガイド。20+ の型安全なフィールドコンストラクタ、Field チェーン渡しパターン、LoggerEntry 不変設計の原理、フィールド命名規則と検証ルール、構造化ログのベストプラクティスと一般的な使用パターンを詳細に紹介し、プロジェクトで高性能な構造化ログ記録ソリューションを効果的に活用できます。"
+description: "CyberGo DD 構造化ログ使用ガイド。20+ の型安全なフィールドコンストラクタ、Field チェーン渡しパターン、LoggerEntry 不変設計の原理、フィールド命名規則と検証ルール、ベストプラクティスと一般的な使用パターンを紹介し、構造化ログを効果的に活用するよう支援します。"
+sidebar_position: 2
 ---
 
 # 構造化ログ
@@ -64,7 +66,7 @@ dd.InfoWith("リクエストペイロード", dd.Any("body", requestBody))
 ```
 
 :::warning パフォーマンスに関する注意
-`Any` はリフレクションを使用するため、型が明確なコンストラクタよりパフォーマンスが低くなります。高頻度パスでは具体的な型の使用を優先してください。
+`Any` 自体はリフレクションを使用しませんが、struct/map/slice などの複合型はフィルタおよびフォーマット段階でリフレクションを必要とするため、型が明確なコンストラクタよりパフォーマンスが低くなります。高頻度パスでは具体的な型の使用を優先してください。
 :::
 
 ## チェーン呼び出し
@@ -103,7 +105,7 @@ queryLog.InfoWith("クエリ完了",
     dd.Int("rows", 42),
     dd.Duration("elapsed", 10*time.Millisecond),
 )
-// フィールド: service=order module=database operation=query rows=42 elapsed=10ms
+// フィールド：service=order module=database operation=query rows=42 elapsed=10ms
 ```
 
 ### パッケージレベル関数のチェーン呼び出し
@@ -135,16 +137,20 @@ cfg := dd.DefaultFieldValidationConfig()
 ### 設定で有効化
 
 ```go
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
     FieldValidation: dd.StrictSnakeCaseConfig(),
 })
+if err != nil {
+    log.Fatal(err)
+}
+defer logger.Close()
 ```
 
-有効にすると、非準拠のフィールド名はログに警告が出力されます：
+有効にすると、非準拠のフィールド名は **stderr** にエラー（Strict モード）または警告（Warn モード）として出力され、ログ行自体は影響を受けません：
 
 ```go
 logger.InfoWith("テスト",
-    dd.String("UserName", "alice"),   // PascalCase → 警告
+    dd.String("UserName", "alice"),   // PascalCase → stderr エラー（ログは依然書き込まれる）
     dd.String("user_name", "alice"),  // snake_case → 正常
 )
 ```
@@ -226,13 +232,21 @@ reqLog := logger.WithFields(dd.String("request_id", reqID))
 ### テキストフォーマット（デフォルト）
 
 ```text
-[2026-04-16T21:16:48+08:00   INFO] main.go:13 リクエスト完了 method=GET status=200 elapsed=150ms
+[2026-04-16T21:16:48+08:00   INFO] logger.go:1567 リクエスト完了 method=GET status=200 elapsed=150ms
 ```
+
+:::info caller フィールドの説明
+`caller` フィールドは呼び出し位置を記録します；`*Logger` メソッド（例：`logger.InfoWith(...)`）経由で呼び出すと、caller はライブラリ内部の呼び出しフレーム（例：`logger.go:1567`）に解決されます；パッケージレベル関数（例：`dd.InfoWith`）経由で呼び出すと、ユーザーコードに解決されます。
+:::
 
 ### JSON フォーマット
 
 ```go
-logger, _ := dd.New(dd.JSONConfig())
+logger, err := dd.New(dd.JSONConfig())
+if err != nil {
+    log.Fatal(err)
+}
+defer logger.Close()
 logger.InfoWith("リクエスト完了",
     dd.String("method", "GET"),
     dd.Int("status", 200),
@@ -240,12 +254,12 @@ logger.InfoWith("リクエスト完了",
 ```
 
 ```json
-{"timestamp":"2026-04-16T21:16:48+08:00","level":"info","caller":"main.go:13","message":"リクエスト完了","fields":{"method":"GET","status":200}}
+{"timestamp":"2026-04-16T21:16:48+08:00","level":"INFO","caller":"logger.go:1567","message":"リクエスト完了","fields":{"method":"GET","status":200}}
 ```
 
 ## 次のステップ
 
 - [ファイル出力とローテーション](./file-output) -- ログをファイルに書き込む
 - [機密データフィルタリング](./sensitive-filtering) -- 機密情報の自動マスキング
-- [API リファレンス - フィールド](../api-reference/fields) -- 全フィールドコンストラクタ
-- [API リファレンス - LoggerEntry](../api-reference/entry) -- Entry の全メソッド
+- [API リファレンス - フィールド](../api-reference/output-integration/fields) -- 全フィールドコンストラクタ
+- [API リファレンス - LoggerEntry](../api-reference/core/entry) -- Entry の全メソッド

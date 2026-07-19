@@ -1,13 +1,15 @@
 ---
+sidebar_label: "测试指南"
 title: "测试指南 - CyberGo HTTPC | httptest 与断言"
 description: "HTTPC 测试指南：覆盖 TestingConfig 测试专用配置、net/http/httptest 模拟服务器集成、模拟错误响应/延迟/重定向/文件上传场景、表格驱动测试、Cookie 会话断言模式与 context 超时测试最佳实践。"
+sidebar_position: 7
 ---
 
 # 测试指南
 
 ## TestingConfig
 
-`TestingConfig()` 专为测试环境设计，禁用安全检查、缩短超时，加速测试执行：
+`TestingConfig()` 专为测试环境设计，禁用安全检查、缩短连接/握手超时（Request 仍为默认 180s）：
 
 ```go
 func TestAPI(t *testing.T) {
@@ -30,6 +32,7 @@ func TestAPI(t *testing.T) {
 
 使用标准库 `net/http/httptest` 创建模拟服务器，实现无需真实后端的集成测试：
 
+<!-- check-code: skip -->
 ```go
 package main
 
@@ -110,17 +113,22 @@ defer server.Close()
 ### 模拟延迟
 
 ```go
+// TestingConfig 关闭 SSRF 防护——否则默认客户端会阻止 127.0.0.1 测试服务器，
+// 得到的是 SSRF 错误而非超时错误。
+client, _ := httpc.New(httpc.TestingConfig())
+defer client.Close()
+
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     time.Sleep(5 * time.Second)
     w.WriteHeader(http.StatusOK)
 }))
 defer server.Close()
 
-// 测试超时处理
+// 测试超时处理：1s 上下文超时 < 5s 服务端延迟
 ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 defer cancel()
 
-_, err := httpc.Request(ctx, "GET", server.URL)
+_, err := client.Request(ctx, "GET", server.URL)
 if err == nil {
     t.Fatal("expected timeout error")
 }
@@ -176,7 +184,10 @@ func TestHTTPMethods(t *testing.T) {
     }))
     defer server.Close()
 
-    client, _ := httpc.New(httpc.TestingConfig())
+    client, err := httpc.New(httpc.TestingConfig())
+    if err != nil {
+        t.Fatal(err)
+    }
     defer client.Close()
 
     tests := []struct {
@@ -216,6 +227,6 @@ func TestHTTPMethods(t *testing.T) {
 
 ## 下一步
 
-- [配置 API](../api-reference/config) - TestingConfig 详细参数
-- [错误类型](../api-reference/errors) - 错误断言参考
+- [配置 API](../api-reference/client-config/config) - TestingConfig 详细参数
+- [错误类型](../api-reference/types/errors) - 错误断言参考
 - [中间件链](./middleware-chain) - 中间件测试模式

@@ -1,11 +1,13 @@
 ---
+sidebar_label: "조회 및 가져오기"
 title: "Processor 경로 쿼리 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor 경로 쿼리: Get/GetString/GetInt, GetMultiple 배치, SafeGet(AccessResult), GetTyped[T]로 JSONPath와 캐시를 지원합니다."
+description: "CyberGo JSON Processor 경로 쿼리: Get/GetString/GetInt, GetMultiple 배치, SafeGet(AccessResult), GetTyped[T]로 JSONPath 와 캐시를 지원합니다."
+sidebar_position: 2
 ---
 
 # 경로 쿼리 메서드
 
-Processor는 다양한 타입 안전 경로 쿼리 메서드를 제공합니다.
+Processor 는 다양한 타입 안전 경로 쿼리 메서드를 제공합니다.
 
 ## 기본 쿼리
 
@@ -26,7 +28,7 @@ if err != nil {
 
 시그니처: `func (p *Processor) GetString(jsonStr, path string, defaultValue ...string) string`
 
-지정된 경로에서 문자열 값을 가져옵니다. 경로가 존재하지 않거나, 값이 null이거나, 타입 변환에 실패하면 빈 문자열 또는 `defaultValue`를 반환합니다.
+지정된 경로에서 문자열 값을 가져옵니다. 경로가 존재하지 않거나, 값이 null 이거나, 타입 변환에 실패하면 빈 문자열 또는 `defaultValue`를 반환합니다.
 
 ```go
 // 기본값 없이
@@ -40,7 +42,7 @@ email := p.GetString(data, "user.email", "unknown@example.com")
 
 시그니처: `func (p *Processor) GetInt(jsonStr, path string, defaultValue ...int) int`
 
-지정된 경로에서 정수 값을 가져옵니다. 경로가 존재하지 않거나, 값이 null이거나, 타입 변환에 실패하면 0 또는 `defaultValue`를 반환합니다.
+지정된 경로에서 정수 값을 가져옵니다. 경로가 존재하지 않거나, 값이 null 이거나, 타입 변환에 실패하면 0 또는 `defaultValue`를 반환합니다.
 
 ```go
 count := p.GetInt(data, "count")
@@ -51,7 +53,7 @@ timeout := p.GetInt(data, "timeout", 30)
 
 시그니처: `func (p *Processor) GetFloat(jsonStr, path string, defaultValue ...float64) float64`
 
-지정된 경로에서 부동소수점 값을 가져옵니다. 경로가 존재하지 않거나, 값이 null이거나, 타입 변환에 실패하면 0 또는 `defaultValue`를 반환합니다.
+지정된 경로에서 부동소수점 값을 가져옵니다. 경로가 존재하지 않거나, 값이 null 이거나, 타입 변환에 실패하면 0 또는 `defaultValue`를 반환합니다.
 
 ```go
 price := p.GetFloat(data, "price")
@@ -62,7 +64,7 @@ rate := p.GetFloat(data, "rate", 0.5)
 
 시그니처: `func (p *Processor) GetBool(jsonStr, path string, defaultValue ...bool) bool`
 
-지정된 경로에서 불리언 값을 가져옵니다. 경로가 존재하지 않거나, 값이 null이거나, 타입 변환에 실패하면 false 또는 `defaultValue`를 반환합니다.
+지정된 경로에서 불리언 값을 가져옵니다. 경로가 존재하지 않거나, 값이 null 이거나, 타입 변환에 실패하면 false 또는 `defaultValue`를 반환합니다.
 
 ```go
 enabled := p.GetBool(data, "enabled")
@@ -76,7 +78,7 @@ debug := p.GetBool(data, "debug", false)
 컨텍스트가 있는 경로 가져오기입니다. 시간 초과 및 취소 작업을 지원하며, `Get`의 컨텍스트 인식 버전입니다.
 
 :::info 주의
-Context는 작업 전후에 확인되며, 파싱/탐색 과정에서는 확인되지 않습니다. 대용량 JSON 문서의 경우 작업 중 취소에 응답하지 않을 수 있습니다.
+Context 는 작업 전후에 확인되며, 파싱/탐색 과정에서는 확인되지 않습니다. 대용량 JSON 문서의 경우 작업 중 취소에 응답하지 않을 수 있습니다.
 :::
 
 ```go
@@ -139,7 +141,7 @@ enabled, err := result.AsBool()
 
 시그니처: `func (p *Processor) GetArray(jsonStr, path string, defaultValue ...[]any) []any`
 
-지정된 경로에서 배열을 가져옵니다. 경로가 존재하지 않거나, 값이 null이거나, 타입 변환에 실패하면 nil 또는 `defaultValue`를 반환합니다.
+지정된 경로에서 배열을 가져옵니다. 경로가 존재하지 않거나, 값이 null 이거나, 타입 변환에 실패하면 nil 또는 `defaultValue`를 반환합니다.
 
 ```go
 items := p.GetArray(data, "items")
@@ -150,7 +152,7 @@ tags := p.GetArray(data, "tags", []any{"default"})
 
 시그니처: `func (p *Processor) GetObject(jsonStr, path string, defaultValue ...map[string]any) map[string]any`
 
-지정된 경로에서 객체를 가져옵니다. 경로가 존재하지 않거나, 값이 null이거나, 타입 변환에 실패하면 nil 또는 `defaultValue`를 반환합니다.
+지정된 경로에서 객체를 가져옵니다. 경로가 존재하지 않거나, 값이 null 이거나, 타입 변환에 실패하면 nil 또는 `defaultValue`를 반환합니다.
 
 ```go
 profile := p.GetObject(data, "user.profile")
@@ -177,7 +179,7 @@ user = json.GetTyped[User](data, "user", User{Name: "unknown"})
 
 시그니처: `func (p *Processor) GetMultiple(jsonStr string, paths []string, cfg ...Config) (map[string]any, error)`
 
-여러 경로의 값을 한 번에 가져오며, 경로-값 매핑을 반환합니다.
+여러 경로의 값을 한 번에 가져오며, 경로 - 값 매핑을 반환합니다.
 
 ```go
 results, err := p.GetMultiple(data, []string{"user.name", "user.age", "user.email"})

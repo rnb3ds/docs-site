@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Контрольный список для продакшена"
 title: "Чек-лист для production - CyberGo HTTPC | Аудит релиза"
 description: "Контрольный список безопасности production HTTPC: проверка TLS, аудит SSRF и CIDR, настройка таймаутов, лимиты размера ответов и аудит-мониторинг."
+sidebar_position: 4
 ---
 
 # Контрольный список для production
@@ -22,7 +24,7 @@ description: "Контрольный список безопасности produ
 ### Настройка таймаутов
 
 - [ ] Все значения таймаутов установлены и разумны
-- [ ] `Timeouts.Request` не равен 0 (предотвращает бесконечное ожидание)
+- [ ] `TimeoutConfig.Request` не равен 0 (предотвращает бесконечное ожидание)
 - [ ] Рассмотрите использование `WithContext` для установки таймаута каждого запроса
 
 ### Ограничения ответов
@@ -79,7 +81,7 @@ func createProductionClient() (httpc.Client, error) {
     cfg.Timeouts.Request = 30 * time.Second
     cfg.Timeouts.Dial = 10 * time.Second
     cfg.Timeouts.TLSHandshake = 10 * time.Second
-    cfg.Timeouts.ResponseHeader = 30 * time.Second
+    cfg.Timeouts.ResponseHeader = 30 * time.Second // транспортный жёсткий предел: применяется ко всем запросам клиента, не переопределяется per-request через WithTimeout; для AI API/долгих ответов ставить 0 и полагаться на Request timeout
 
     // Пул соединений
     cfg.Connection.MaxIdleConns = 50
@@ -134,4 +136,4 @@ grep -r "AllowPrivateIPs.*true" --include="*.go" | grep -v "_test.go"
 
 - [Обзор безопасности](./) - обзор функций безопасности
 - [Защита от SSRF](./ssrf) - подробное описание защиты от SSRF
-- [Конфигурация API](../api-reference/config) - полный справочник конфигурации
+- [Конфигурация API](../api-reference/client-config/config) - полный справочник конфигурации

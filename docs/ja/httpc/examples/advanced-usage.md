@@ -1,6 +1,8 @@
 ---
+sidebar_label: "高度なサンプル"
 title: "高度な使用例 - CyberGo HTTPC | 本番コード"
-description: "HTTPC 高度な使用例集: カスタム RetryPolicy リトライ戦略、完全なミドルウェアチェーン構成、RESTful API クライアントラッパー、並列ダウンロード、HMAC-SHA256 署名ミドルウェアの完全なコードを提供します。"
+description: "HTTPC 高度な使用例集：カスタム RetryPolicy リトライ戦略、完全なミドルウェアチェーン構成、RESTful API クライアントラッパー、sync.WaitGroup 並列ダウンロード、HMAC-SHA256 リクエスト署名ミドルウェアを通じて、高パフォーマンスで可観測な本番級 HTTP クライアントの構築を支援します。"
+sidebar_position: 2
 ---
 
 # 高度な使用例
@@ -10,7 +12,7 @@ description: "HTTPC 高度な使用例集: カスタム RetryPolicy リトライ
 502/503/504 のみリトライし、固定遅延を使用：
 
 :::warning 内部タイプ
-`RetryPolicy.ShouldRetry` の `resp` パラメータのタイプ `ResponseReader` は内部インターフェース（`internal/types` パッケージに定義）であり、外部パッケージからは直接参照できません。カスタム `RetryPolicy` は `httpc` と同じモジュール内のパッケージで実装する必要があります。ほとんどのシナリオでは `RetryConfig` 設定で要件を満たせます。以下の例は実装パターンを示していますが、実際のコードは `httpc` モジュール内部でコンパイルする必要があります。
+RetryPolicy.ShouldRetry の `resp` パラメータのタイプ ResponseReader は内部インターフェース（`internal/types` パッケージに定義）であり、外部パッケージからは直接参照できません。カスタム `RetryPolicy` は `httpc` と同じモジュール内のパッケージで実装する必要があります。ほとんどのシナリオでは `RetryConfig` 設定で要件を満たせます。以下の例は実装パターンを示していますが、実際のコードは `httpc` モジュール内部でコンパイルする必要があります。
 :::
 
 ```go
@@ -138,12 +140,12 @@ func main() {
     }
     defer client.Close()
 
-    result, err := client.Get("https://httpbin.org/get")
+    _, err = client.Get("https://httpbin.org/get")
     if err != nil {
         log.Fatal(err)
     }
 
-    log.Printf("総リクエスト数: %d", atomic.LoadInt64(&requestCount))
+    log.Printf("総リクエスト数：%d", atomic.LoadInt64(&requestCount))
 }
 ```
 
@@ -238,14 +240,14 @@ func main() {
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("作成: %+v\n", user)
+    fmt.Printf("作成：%+v\n", user)
 
     // ユーザーの取得
     user, err = api.GetUser(ctx, user.ID)
     if err != nil {
         log.Fatal(err)
     }
-    fmt.Printf("取得: %+v\n", user)
+    fmt.Printf("取得：%+v\n", user)
 }
 ```
 
@@ -305,7 +307,7 @@ func main() {
     }
 
     wg.Wait()
-    fmt.Printf("\nダウンロード完了: %d/%d, 合計 %d\n",
+    fmt.Printf("\nダウンロード完了：%d/%d, 合計 %d\n",
         successCount, len(urls), totalBytes)
 }
 ```

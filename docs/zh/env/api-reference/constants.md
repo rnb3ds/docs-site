@@ -1,6 +1,8 @@
 ---
+sidebar_label: "常量与错误"
 title: "常量与错误 - CyberGo env | 哨兵错误与安全常量"
-description: "CyberGo env 常量与错误参考，含 DefaultMaxFileSize 限制、ErrFileNotFound 哨兵错误、ParseError 类型及 IsSensitiveKey、MaskValue 工具函数。"
+description: "CyberGo env 常量与错误参考，含 DefaultMaxFileSize 与 MaxVariables 限制、ErrFileNotFound 哨兵错误、ParseError 类型、DefaultForbiddenKeys 禁止键及 IsSensitiveKey、MaskValue 工具函数。"
+sidebar_position: 7
 ---
 
 # 常量与错误
@@ -55,11 +57,15 @@ cfg := env.DefaultConfig()
 cfg.MaxFileSize = 200 * 1024 * 1024  // 超过 100MB 上限
 
 if err := cfg.Validate(); err != nil {
-    // 返回错误: MaxFileSize exceeds hard limit
+    // 返回错误：MaxFileSize exceeds hard limit
 }
 ```
 
 ## 哨兵错误
+
+::: warning 注意
+以下哨兵均为预定义符号，但当前实现中部分场景**不通过 `errors.Is` 匹配这些哨兵**：禁止键返回 `*SecurityError`（用 `errors.Is(err, ErrSecurityViolation)` 匹配），键格式非法与缺少必需键返回 `*ValidationError`（用 `errors.As` 提取）。详见各错误类型章节。
+:::
 
 ### 文件错误
 
@@ -100,8 +106,8 @@ var ErrInvalidValue = errors.New("invalid value content")
 
 ```go
 err := loader.Set("PATH", "value")
-if errors.Is(err, env.ErrForbiddenKey) {
-    // 尝试设置禁止键
+if errors.Is(err, env.ErrSecurityViolation) {
+    // 尝试设置禁止键返回 *SecurityError
 }
 ```
 
@@ -145,8 +151,9 @@ if errors.Is(err, env.ErrNotInitialized) {
     // 需要先调用 env.Load() 或 env.LoadWithConfig()
 }
 
-// 检查必需键是否缺失
-if errors.Is(err, env.ErrMissingRequired) {
+// 检查必需键是否缺失（实际返回 *ValidationError{Rule:"required"}）
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Rule == "required" {
     // 缺少必需键
 }
 ```
@@ -172,7 +179,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 ::: tip 解决方法
-实现 `Validator` 接口（包含 `ValidateKey`、`ValidateValue`、`ValidateRequired` 三个方法）而非仅实现 `KeyValidator`。
+实现 `Validator` 接口（包含 ValidateKey、ValidateValue、ValidateRequired 三个方法）而非仅实现 `KeyValidator`。
 :::
 
 ## 错误类型
@@ -274,7 +281,7 @@ type ExpansionError struct {
 }
 ```
 
-**错误分类（`Kind` 字段）：**
+**错误分类（Kind 字段）：**
 
 ```go
 type ExpansionErrorKind int
@@ -385,9 +392,9 @@ func IsMarshalError(err error) bool  // 检查函数
 **使用示例：**
 
 ```go
-// 尝试设置禁止键会返回 ErrForbiddenKey
+// 设置禁止键返回 *SecurityError
 err := loader.Set("PATH", "/malicious/path")
-if errors.Is(err, env.ErrForbiddenKey) {
+if errors.Is(err, env.ErrSecurityViolation) {
     // 键被禁止
 }
 
@@ -485,13 +492,13 @@ func MaskValue(key, value string) string
 ```go
 // 敏感键 - 返回 [MASKED:N chars] 格式
 masked := env.MaskValue("API_KEY", "secret123")
-// 返回: [MASKED:9 chars]
+// 返回：[MASKED:9 chars]
 
 // 非敏感键 - 返回原值（超过 20 字符则截断）
 masked := env.MaskValue("APP_NAME", "myapp")
-// 返回: myapp
+// 返回：myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
-// 返回: this is a very lo...
+// 返回：this is a very lo...
 ```
 
 ### MaskKey
@@ -504,7 +511,7 @@ func MaskKey(key string) string
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
-// 返回: DB***
+// 返回：DB***
 ```
 
 ### MaskSensitiveInString
@@ -525,12 +532,12 @@ func MaskSensitiveInString(s string) string
 // 长字符串会被截断
 log := "This is a very long log message that exceeds 50 characters and will be truncated"
 clean := env.MaskSensitiveInString(log)
-// 返回: "This is a very long log message that exceeds 50..."
+// 返回："This is a very long log message that exceeds 50..."
 
 // 短字符串保持不变
 short := "Short message"
 clean := env.MaskSensitiveInString(short)
-// 返回: "Short message"
+// 返回："Short message"
 ```
 
 ::: warning 注意
@@ -563,12 +570,12 @@ func SanitizeForLog(s string) string
 // 自动掩码敏感键值对
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
-// 返回: "Connected with password=[MASKED] api_key=[MASKED]"
+// 返回："Connected with password=[MASKED] api_key=[MASKED]"
 
 // 非敏感键值对保持不变
 msg := "Config loaded: app_name=myapp port=8080"
 clean := env.SanitizeForLog(msg)
-// 返回: "Config loaded: app_name=myapp port=8080"
+// 返回："Config loaded: app_name=myapp port=8080"
 ```
 
 ::: tip 使用场景
@@ -632,7 +639,7 @@ case errors.Is(err, env.ErrFileNotFound):
     // 文件不存在
 case errors.Is(err, env.ErrFileTooLarge):
     // 文件过大
-case errors.Is(err, env.ErrForbiddenKey):
+case errors.Is(err, env.ErrSecurityViolation):
     // 禁止键
 case errors.Is(err, env.ErrClosed):
     // 加载器已关闭

@@ -1,11 +1,13 @@
 ---
+sidebar_label: "도메인 클라이언트와 세션"
 title: "도메인 클라이언트와 세션 - CyberGo HTTPC | 세션과 도메인"
-description: "HTTPC 도메인 클라이언트와 세션 가이드: NewDomain으로 도메인 범위 클라이언트 생성, URL 자동 조합, SetHeader 헤더 유지, Cookie 보안 검증과 REST API 클라이언트 래핑 실전 예제를 다룹니다."
+description: "HTTPC 도메인 클라이언트와 세션 가이드: NewDomain 으로 도메인 범위 클라이언트 생성, URL 자동 조합, SetHeader 헤더 유지, Cookie 보안 검증과 REST API 클라이언트 래핑 실전 예제를 다룹니다."
+sidebar_position: 3
 ---
 
 # 도메인 클라이언트와 세션
 
-도메인 클라이언트(DomainClient)는 같은 도메인에 대한 세션 관리 클라이언트로, Cookie와 요청 헤더를 자동으로 유지합니다.
+도메인 클라이언트 (DomainClient) 는 같은 도메인에 대한 세션 관리 클라이언트로, Cookie 와 요청 헤더를 자동으로 유지합니다.
 
 ## 도메인 클라이언트 생성
 
@@ -24,7 +26,7 @@ result, err := dc.Get("/users")
 ```
 
 :::tip
-`NewDomain`은 Cookie 관리를 자동으로 활성화합니다(`EnableCookies = true`), 수동 설정이 필요 없습니다.
+`NewDomain`은 Cookie 관리를 자동으로 활성화합니다 (`EnableCookies = true`), 수동 설정이 필요 없습니다.
 :::
 
 ## 세션 헤더 관리
@@ -63,7 +65,7 @@ dc.SetCookies([]*http.Cookie{
 
 // 응답 Cookie 자동 캡처
 result, _ := dc.Get("/login")
-// 서버가 반환한 Set-Cookie가 세션에 자동 저장
+// 서버가 반환한 Set-Cookie 가 세션에 자동 저장
 
 // 조회
 cookie := dc.GetCookie("session")
@@ -75,7 +77,7 @@ dc.ClearCookies()
 ```
 
 :::tip
-매 요청 후 서버가 반환한 Cookie가 세션에 자동 업데이트되므로 수동 처리가 필요 없습니다.
+매 요청 후 서버가 반환한 Cookie 가 세션에 자동 업데이트되므로 수동 처리가 필요 없습니다.
 :::
 
 ## 요청 방식
@@ -97,6 +99,10 @@ result, _ := dc.Request(ctx, "GET", "/users")
 result, _ := dc.Get("https://other-api.com/data")
 ```
 
+:::warning 요청 옵션이 두 번 적용됨
+도메인 클라이언트는 내부적으로 요청 옵션을 **두 번 적용**합니다 (한 번은 세션 상태 캡처, 한 번은 실제 요청). 부작용이 있는 옵션 (예: 카운터, nonce 생성) 은 피하세요. 이러한 옵션이 필요하면 내부 `Client`를 대신 사용하세요.
+:::
+
 ## 세션 접근
 
 ```go
@@ -113,7 +119,7 @@ if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
 
 ## Cookie 보안 검증
 
-Cookie 보안 정책을 설정하여 보안 기준을 충족하는 Cookie만 수락할 수 있습니다:
+Cookie 보안 정책을 설정하여 보안 기준을 충족하는 Cookie 만 수락할 수 있습니다:
 
 ```go
 dc, _ := httpc.NewDomain("https://api.example.com")
@@ -123,7 +129,7 @@ session := dc.Session()
 session.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
 // 요구사항: Secure=true, HttpOnly=true, SameSite=Strict
 
-// 보안 요구사항을 충족하지 않는 Cookie는 SetCookie에서 오류 반환
+// 보안 요구사항을 충족하지 않는 Cookie 는 SetCookie 에서 오류 반환
 if err := dc.SetCookie(&http.Cookie{
     Name:  "insecure",
     Value: "test",
@@ -177,7 +183,7 @@ func main() {
         log.Fatal(err)
     }
 
-    // 후속 요청에 Token과 Cookie 자동 포함
+    // 후속 요청에 Token 과 Cookie 자동 포함
     ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
     defer cancel()
 
@@ -192,6 +198,6 @@ func main() {
 
 ## 다음 단계
 
-- [도메인 클라이언트 API](../api-reference/domain-client) - 완전한 API 참조
-- [세션 관리 API](../api-reference/session) - SessionManager 참조
+- [도메인 클라이언트 API](../api-reference/client-config/domain-client) - 완전한 API 참조
+- [세션 관리 API](../api-reference/client-config/session) - SessionManager 참조
 - [요청과 응답](./request-response) - 기본 요청 가이드

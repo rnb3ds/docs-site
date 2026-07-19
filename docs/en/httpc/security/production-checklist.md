@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Production Checklist"
 title: "Production Checklist - CyberGo HTTPC | Pre-Deploy Audit"
 description: "HTTPC production security checklist: TLS verification, SSRF and CIDR audit, timeout configuration, response size limits, retry strategy, and audit monitoring."
+sidebar_position: 4
 ---
 
 # Production Checklist
@@ -22,7 +24,7 @@ description: "HTTPC production security checklist: TLS verification, SSRF and CI
 ### Timeout Configuration
 
 - [ ] All timeout values are set and reasonable
-- [ ] `Timeouts.Request` is not 0 (prevents infinite waiting)
+- [ ] `TimeoutConfig.Request` is not 0 (prevents infinite waiting)
 - [ ] Consider using `WithContext` to set per-request timeouts
 
 ### Response Limits
@@ -79,7 +81,7 @@ func createProductionClient() (httpc.Client, error) {
     cfg.Timeouts.Request = 30 * time.Second
     cfg.Timeouts.Dial = 10 * time.Second
     cfg.Timeouts.TLSHandshake = 10 * time.Second
-    cfg.Timeouts.ResponseHeader = 30 * time.Second
+    cfg.Timeouts.ResponseHeader = 30 * time.Second // Transport-level hard cap: applies to every request on this client and cannot be overridden per request with WithTimeout; for AI API/long-response scenarios set to 0 and rely on the Request timeout
 
     // Connection pool
     cfg.Connection.MaxIdleConns = 50
@@ -134,4 +136,4 @@ grep -r "AllowPrivateIPs.*true" --include="*.go" | grep -v "_test.go"
 
 - [Security Overview](./) - Security features overview
 - [SSRF Protection](./ssrf) - SSRF protection in depth
-- [Configuration API](../api-reference/config) - Complete configuration reference
+- [Configuration API](../api-reference/client-config/config) - Complete configuration reference

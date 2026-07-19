@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Сценарии тестирования"
 title: "Тестирование - CyberGo env | Практики unit-тестов"
-description: "Руководство по тестированию CyberGo env: TestingConfig, мокинг файловой системы, табличные тесты, бенчмарки и очистка ResetDefaultLoader для стабильности."
+description: "Тесты CyberGo env: TestingConfig с OverwriteExisting, мокинг FileSystem, независимый загрузчик на тест, табличные/базовые тесты и ResetDefaultLoader."
+sidebar_position: 6
 ---
 
 # Сценарии тестирования
@@ -11,7 +13,7 @@ description: "Руководство по тестированию CyberGo env: 
 
 ### Использование TestingConfig
 
-`TestingConfig` перекрывает существующие переменные окружения, что подходит для изоляции тестов:
+TestingConfig перекрывает существующие переменные окружения, что подходит для изоляции тестов:
 
 ```go
 func TestWithTestingConfig(t *testing.T) {
@@ -28,7 +30,7 @@ func TestWithTestingConfig(t *testing.T) {
 ```
 
 ::: tip Примечание
-`TestingConfig` устанавливает `OverwriteExisting: true`, обеспечивая изоляцию тестов. Если нужно сохранить существующие переменные, можно вручную установить `cfg.OverwriteExisting = false`.
+TestingConfig устанавливает `OverwriteExisting: true`, обеспечивая изоляцию тестов. Если нужно сохранить существующие переменные, можно вручную установить `cfg.OverwriteExisting = false`.
 :::
 
 ### Независимый загрузчик для каждого теста

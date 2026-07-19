@@ -1,6 +1,8 @@
 ---
+sidebar_label: "生产检查清单"
 title: "生产检查清单 - CyberGo HTTPC | 上线前核查"
 description: "HTTPC 生产环境安全检查清单：TLS 核查、SSRF AllowPrivateIPs 确认与 CIDR 审计、Timeouts 超时配置、MaxResponseBodySize 大小限制、MaxRetries 重试策略、资源释放与 AuditMiddleware 监控审计。"
+sidebar_position: 4
 ---
 
 # 生产检查清单
@@ -22,7 +24,7 @@ description: "HTTPC 生产环境安全检查清单：TLS 核查、SSRF AllowPriv
 ### 超时配置
 
 - [ ] 所有超时值已设置且合理
-- [ ] `Timeouts.Request` 不为 0（防止无限等待）
+- [ ] `TimeoutConfig.Request` 不为 0（防止无限等待）
 - [ ] 考虑使用 `WithContext` 为每个请求设置超时
 
 ### 响应限制
@@ -79,7 +81,7 @@ func createProductionClient() (httpc.Client, error) {
     cfg.Timeouts.Request = 30 * time.Second
     cfg.Timeouts.Dial = 10 * time.Second
     cfg.Timeouts.TLSHandshake = 10 * time.Second
-    cfg.Timeouts.ResponseHeader = 30 * time.Second
+    cfg.Timeouts.ResponseHeader = 30 * time.Second // transport 级硬上限：作用于该 client 所有请求，无法按请求用 WithTimeout 覆盖；AI API/长响应场景应设为 0 依赖 Request 超时
 
     // 连接池
     cfg.Connection.MaxIdleConns = 50
@@ -134,4 +136,4 @@ grep -r "AllowPrivateIPs.*true" --include="*.go" | grep -v "_test.go"
 
 - [安全概述](./) - 安全特性总览
 - [SSRF 防护](./ssrf) - SSRF 防护详解
-- [配置 API](../api-reference/config) - 完整配置参考
+- [配置 API](../api-reference/client-config/config) - 完整配置参考

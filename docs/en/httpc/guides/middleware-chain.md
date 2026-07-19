@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Middleware Chain"
 title: "Middleware Chain - CyberGo HTTPC | Onion-Model Chains"
-description: "HTTPC middleware chain guide: onion-model execution, eight built-in middleware, Chain composition, custom MiddlewareFunc, and a circuit-breaker example."
+description: "HTTPC middleware chain guide: onion-model execution and bidirectional request/response processing, eight built-in middleware like Recovery/Logging/RequestID, Chain composition, custom MiddlewareFunc, and a circuit-breaker short-circuit example, helping you build observable, resilient request-processing pipelines."
+sidebar_position: 6
 ---
 
 # Middleware Chain
@@ -44,7 +46,7 @@ Request/response logging with automatic URL masking:
 httpc.LoggingMiddleware(func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
 })
-// Output: [HTTP] GET https://api.example.com/data -> 200 (150ms)
+// Output example: [HTTP] GET https://api.example.com/data -> 200 (150ms) (status code and duration are measured values, not fixed)
 ```
 
 ### RequestIDMiddleware
@@ -67,6 +69,10 @@ Middleware-level timeout enforced before the client timeout:
 ```go
 httpc.TimeoutMiddleware(30 * time.Second)
 ```
+
+:::warning Do not use for Download or streaming requests
+`TimeoutMiddleware`'s `defer cancel()` fires immediately after the handler returns (i.e., once the response headers are received), so for `Download` or `WithStreamBody` requests it cancels the context before the response body is read, producing a "context canceled" error. For streaming/download scenarios, use the [`WithTimeout`](../api-reference/core/options#withtimeout) option instead.
+:::
 
 ### HeaderMiddleware
 
@@ -215,6 +221,6 @@ client, _ := httpc.New(cfg)
 
 ## Next Steps
 
-- [Middleware API](../api-reference/middleware) - Complete middleware reference
+- [Middleware API](../api-reference/client-config/middleware) - Complete middleware reference
 - [Retry and Fault Tolerance](./retry-fault-tolerance) - Retry strategy guide
 - [Security Overview](../security/) - Audit middleware security practices

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "セキュリティと監査実践"
 title: "セキュリティと監査実践 - CyberGo DD | セキュリティログサンプル"
-description: "CyberGo DD セキュリティフィルタリングと監査ログの完全な実践サンプル集。機密データフィルタリングルール設定、HMAC 整合性署名と検証、監査イベント記録とバッチ検証、業界コンプライアンス設定スキーム（HIPAA/PCI-DSS）、本番環境セキュリティログアーキテクチャ設計とデプロイのベストプラクティス提案と注意事項。"
+description: "CyberGo DD セキュリティフィルタリングと監査ログの完全な実践サンプル集。機密データフィルタリングルール設定、HMAC 整合性署名と検証、監査イベント記録とバッチ検証、業界コンプライアンス設定スキーム（HIPAA/PCI-DSS）、本番環境セキュリティログアーキテクチャ設計と注意事項。"
+sidebar_position: 3
 ---
 
 # セキュリティと監査実践
@@ -31,9 +33,9 @@ func main() {
         dd.String("password", "s3cr3t123"),    // → password=[REDACTED]
     )
 
-    // API Key は自動マスキング
+    // API Key は自動マスキング（注意：endpoint も機密キー名に該当し、マスキングされる）
     logger.InfoWith("API 呼び出し",
-        dd.String("endpoint", "/api/data"),
+        dd.String("endpoint", "/api/data"),      // → endpoint=[REDACTED]（"endpoint" も機密キー名に該当）
         dd.String("api_key", "sk-abc123xyz"),   // → api_key=[REDACTED]
     )
 }
@@ -105,10 +107,13 @@ func main() {
         Format:   dd.FormatJSON,
         Security: dd.DefaultSecureConfig(),
         Targets:  []dd.OutputTarget{dd.ConsoleOutput()},
+        // 注意：ここでは Audit を未設定のため、業務 logger のマスキング/セキュリティイベントは上記 auditLogger に自動的に入りません。
+        // セキュリティイベントを自動的に監査に送るには、ここで Audit フィールドを設定する（例：上記 auditLogger に対応する
+        // AuditConfig を Audit: &auditCfg 経由で渡す）か、明示的に auditLogger.LogX(...) を呼び出してイベントを記録します。
     })
     defer logger.Close()
 
-    // 通常の業務操作
+    // 通常の業務操作（マスキングは Security が処理するが、監査ログには自動的に書き込まれない）
     logger.InfoWith("取引処理",
         dd.String("transaction_id", "TXN-001"),
         dd.String("amount", "1500.00"),
@@ -154,7 +159,7 @@ func main() {
         fmt.Printf("検証成功 - タイムスタンプ: %s, シリアル番号: %d\n",
             result.Timestamp, result.Sequence)
     } else {
-        fmt.Printf("検証失敗: ログが改ざんされた可能性\n")
+        fmt.Printf("検証失敗：ログが改ざんされた可能性\n")
     }
 }
 ```
@@ -225,7 +230,7 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
 
 ## 次のステップ
 
-- [API リファレンス - Security](../api-reference/security) -- セキュリティフィルタリング完全 API
-- [API リファレンス - Audit](../api-reference/audit) -- 監査ログ完全 API
-- [API リファレンス - Integrity](../api-reference/integrity) -- 整合性署名 API
+- [API リファレンス - Security](../api-reference/security-audit/security) -- セキュリティフィルタリング完全 API
+- [API リファレンス - Audit](../api-reference/security-audit/audit) -- 監査ログ完全 API
+- [API リファレンス - Integrity](../api-reference/security-audit/integrity) -- 整合性署名 API
 - [本番チェックリスト](../security/production-checklist) -- リリース前セキュリティチェック

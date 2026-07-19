@@ -1,0 +1,49 @@
+---
+sidebar_label: "삭제 작업"
+title: "Processor 삭제 메서드 - CyberGo JSON | API 레퍼런스"
+description: "CyberGo JSON Processor 삭제 메서드: Delete 경로 삭제, DeleteClean 삭제 후 빈 값과 빈 배열 자동 정리, 체인 호출 능력 유지."
+sidebar_position: 4
+---
+
+# 삭제 메서드
+
+Processor 는 지정된 경로의 값을 삭제하고 수정된 JSON 문자열을 반환하는 메서드를 제공합니다.
+
+## Delete
+
+시그니처: `func (p *Processor) Delete(jsonStr, path string, cfg ...Config) (string, error)`
+
+지정된 경로의 값을 삭제하고, 수정된 JSON 문자열을 반환합니다.
+
+```go
+result, err := p.Delete(data, "user.temporary")
+```
+
+## DeleteClean
+
+시그니처: `func (p *Processor) DeleteClean(jsonStr, path string, cfg ...Config) (string, error)`
+
+지정된 경로를 삭제하고 빈 값과 빈 배열을 자동으로 정리합니다.
+
+```go
+result, err := p.DeleteClean(data, "user.temporary")
+// 삭제 후 생성된 null 과 빈 배열을 정리
+```
+
+**Delete 와 DeleteClean 의 차이**:
+
+```go
+// 원본 데이터: {"user": {"temp": "value", "name": "test"}}
+
+// Delete 후: {"user": {"name": "test"}}
+result, _ := p.Delete(data, "user.temp")
+
+// DeleteClean 도 user.temp 를 동일하게 삭제; 이 예제에서는 user 가 여전히 name 을 포함하므로 비어있지 않음
+// 결과: {"user": {"name": "test"}}
+result, _ = p.DeleteClean(data, "user.temp")
+```
+
+## 관련 문서
+
+- [수정](./modify) - Set/SetCreate 체인 수정
+- [삭제 함수](../functions/delete) - 패키지 레벨 Delete 함수

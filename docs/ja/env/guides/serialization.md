@@ -1,6 +1,8 @@
 ---
+sidebar_label: "シリアライズ"
 title: "シリアライズ - CyberGo env | 多フォーマット変換"
-description: "CyberGo env シリアライズガイド。.env・JSON・YAML 間の Map・構造体変換、Marshal/Unmarshal 関数群、カスタムインターフェース、env タグ、機密フィールドマスクを解説します。"
+description: "CyberGo env シリアライズガイド。.env・JSON・YAML 間の Map・構造体変換、Marshal/Unmarshal 関数群、Marshaler/Unmarshaler インターフェース、DetectFormat 自動検出、env タグと機密フィールドマスクを解説します。"
+sidebar_position: 2
 ---
 
 # シリアライズ
@@ -33,7 +35,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
     // APP_NAME=my-app
     // APP_VERSION=1.0.0
     // DEBUG=true
@@ -63,10 +65,10 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
     // {
     //   "HOST": "localhost",
-    //   "PORT": "8080"
+    //   "PORT": 8080
     // }
 }
 ```
@@ -95,10 +97,10 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
     // DATABASE_HOST: localhost
-    // DATABASE_PORT: "5432"
     // DATABASE_NAME: myapp
+    // DATABASE_PORT: 5432
 }
 ```
 
@@ -134,10 +136,10 @@ func main() {
     }
 
     fmt.Println(result)
-    // 出力:
+    // 出力：
+    // DEBUG=true
     // HOST=localhost
     // PORT=8080
-    // DEBUG=true
 }
 ```
 
@@ -222,7 +224,7 @@ func main() {
     }
 
     fmt.Printf("%+v\n", data)
-    // 出力: map[DEBUG:true HOST:localhost PORT:8080]
+    // 出力：map[DEBUG:true HOST:localhost PORT:8080]
 
     // ファイルへのエクスポートに使用可能
     content, _ := env.Marshal(data, env.FormatEnv)
@@ -257,7 +259,7 @@ DEBUG=true
     }
 
     fmt.Printf("%+v\n", result)
-    // 出力: map[DEBUG:true HOST:localhost PORT:8080]
+    // 出力：map[DEBUG:true HOST:localhost PORT:8080]
 }
 ```
 
@@ -343,7 +345,7 @@ func main() {
     }
 
     fmt.Printf("%+v\n", cfg)
-    // 出力: {Host:example.com Port:443}
+    // 出力：{Host:example.com Port:443}
 }
 ```
 
@@ -382,24 +384,32 @@ ENABLED=true
 
 ## カスタムシリアライズ
 
-### Marshaler インターフェースの実装
+::: tip 2 種のカスタムインターフェースの有効範囲
+- **フィールドレベル**：構造体フィールドのカスタムエンコード/デコード。標準ライブラリ `encoding.TextMarshaler` / `encoding.TextUnmarshaler`（`MarshalText()` / `UnmarshalText([]byte)`）を実装します。構造体が `env.Marshal`/`env.UnmarshalInto` で処理される際、フィールド単位のロジックがこれら 2 つのインターフェースを認識します。
+- **トップレベル**：`env.Marshaler`（`MarshalEnv()`）と `env.Unmarshaler`（`UnmarshalEnv(map[string]string)`）インターフェースは、`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto` に**直接渡されたトップレベルの値に対してのみ有効**です。この型をフィールドとして含む外側の構造体を渡した場合は呼び出されません。
+:::
+
+### フィールドレベル：encoding.TextMarshaler の実装
 
 ```go
 package main
 
 import (
     "fmt"
+    "strings"
+
     "github.com/cybergodev/env"
 )
 
 type LogLevel string
 
-type LogConfig struct {
-    Level LogLevel `env:"LOG_LEVEL"`
+// encoding.TextMarshaler を実装 —— 構造体フィールドとしてシリアライズされる際に呼び出される
+func (l LogLevel) MarshalText() ([]byte, error) {
+    return []byte(strings.ToUpper(string(l))), nil
 }
 
-func (l LogLevel) MarshalEnv() ([]byte, error) {
-    return []byte(string(l)), nil
+type LogConfig struct {
+    Level LogLevel `env:"LOG_LEVEL"`
 }
 
 func main() {
@@ -413,28 +423,36 @@ func main() {
     }
 
     fmt.Println(result)
+    // 出力：LOG_LEVEL=DEBUG
 }
 ```
 
-### Unmarshaler インターフェースの実装
+### フィールドレベル：encoding.TextUnmarshaler の実装
 
 ```go
 package main
 
 import (
     "fmt"
+
     "github.com/cybergodev/env"
 )
 
 type LogLevel string
 
-type LogConfig struct {
-    Level LogLevel `env:"LOG_LEVEL"`
+// encoding.TextUnmarshaler を実装 —— 構造体フィールドとしてデシリアライズされる際に呼び出される
+func (l *LogLevel) UnmarshalText(text []byte) error {
+    switch string(text) {
+    case "debug", "info", "warn", "error":
+        *l = LogLevel(text)
+        return nil
+    default:
+        return fmt.Errorf("invalid log level: %s", string(text))
+    }
 }
 
-func (l *LogLevel) UnmarshalEnv(data map[string]string) error {
-    *l = LogLevel(data["LOG_LEVEL"])
-    return nil
+type LogConfig struct {
+    Level LogLevel `env:"LOG_LEVEL"`
 }
 
 func main() {
@@ -449,6 +467,42 @@ func main() {
     }
 
     fmt.Printf("Level: %s\n", cfg.Level)
+    // 出力：Level: info
+}
+```
+
+### トップレベル：env.Marshaler / env.Unmarshaler の実装
+
+ある型の値を（外側の構造体のフィールドではなく）`env.Marshal` / `env.UnmarshalInto` に**直接**渡す場合、そのトップレベルの値に対して `env.Marshaler` / `env.Unmarshaler` インターフェースが有効になります：
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
+// トップレベル型が直接 env.Marshaler を実装
+type EnvBlob string
+
+func (e EnvBlob) MarshalEnv() ([]byte, error) {
+    // カスタム全体シリアライズ出力
+    return []byte("APP_NAME=custom\nAPP_VERSION=2.0.0"), nil
+}
+
+func main() {
+    // トップレベルの値を直接シリアライズ（外側の構造体のフィールドではない）
+    result, err := env.Marshal(EnvBlob(""), env.FormatEnv)
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Println(result)
+    // 出力：
+    // APP_NAME=custom
+    // APP_VERSION=2.0.0
 }
 ```
 

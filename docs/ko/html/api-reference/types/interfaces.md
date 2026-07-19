@@ -1,0 +1,132 @@
+---
+sidebar_label: "인터페이스 정의"
+title: "인터페이스 정의 - CyberGo html | 핵심 인터페이스 참조"
+description: "CyberGo html 핵심 인터페이스: Extractor, StatsProvider, ContentNode, Scorer, AuditSink 로 기능 확장과 통합 테스트를 지원합니다."
+sidebar_position: 1
+---
+
+# 인터페이스 정의
+
+HTML 라이브러리는 다음 핵심 인터페이스를 정의합니다:
+
+## Extractor
+
+HTML 콘텐츠 추출의 주요 인터페이스로, `Processor`가 이 인터페이스를 구현합니다.
+
+```go
+type Extractor interface {
+    // 핵심 추출
+    Extract(htmlBytes []byte) (*Result, error)
+    ExtractWithContext(ctx context.Context, htmlBytes []byte) (*Result, error)
+    ExtractFromFile(filePath string) (*Result, error)
+    ExtractFromFileWithContext(ctx context.Context, filePath string) (*Result, error)
+
+    // 텍스트 추출
+    ExtractText(htmlBytes []byte) (string, error)
+    ExtractTextFromFile(filePath string) (string, error)
+    ExtractTextWithContext(ctx context.Context, htmlBytes []byte) (string, error)
+    ExtractTextFromFileWithContext(ctx context.Context, filePath string) (string, error)
+
+    // 형식화 출력
+    ExtractToMarkdown(htmlBytes []byte) (string, error)
+    ExtractToMarkdownFromFile(filePath string) (string, error)
+    ExtractToJSON(htmlBytes []byte) ([]byte, error)
+    ExtractToJSONFromFile(filePath string) ([]byte, error)
+    ExtractToMarkdownWithContext(ctx context.Context, htmlBytes []byte) (string, error)
+    ExtractToMarkdownFromFileWithContext(ctx context.Context, filePath string) (string, error)
+    ExtractToJSONWithContext(ctx context.Context, htmlBytes []byte) ([]byte, error)
+    ExtractToJSONFromFileWithContext(ctx context.Context, filePath string) ([]byte, error)
+
+    // 배치 처리
+    ExtractBatch(htmlContents [][]byte) *BatchResult
+    ExtractBatchWithContext(ctx context.Context, htmlContents [][]byte) *BatchResult
+    ExtractBatchFiles(filePaths []string) *BatchResult
+    ExtractBatchFilesWithContext(ctx context.Context, filePaths []string) *BatchResult
+
+    // 링크 추출
+    ExtractAllLinks(htmlBytes []byte) ([]LinkResource, error)
+    ExtractAllLinksFromFile(filePath string) ([]LinkResource, error)
+    ExtractAllLinksWithContext(ctx context.Context, htmlBytes []byte) ([]LinkResource, error)
+    ExtractAllLinksFromFileWithContext(ctx context.Context, filePath string) ([]LinkResource, error)
+
+    // 라이프사이클
+    Close() error
+}
+```
+
+## StatsProvider
+
+통계 정보와 캐시 관리 인터페이스입니다.
+
+```go
+type StatsProvider interface {
+    GetStatistics() Statistics
+    ClearCache()
+    ResetStatistics()
+}
+```
+
+## ContentNode
+
+HTML 노드의 추상 인터페이스로, 콘텐츠 평가 알고리즘에 사용됩니다.
+
+```go
+type ContentNode interface {
+    Type() string                    // 노드 유형 ("element", "text", "comment" 등)
+    Data() string                    // 태그명 또는 텍스트 콘텐츠
+    AttrValue(key string) string     // 속성 값
+    Attrs() []NodeAttr               // 모든 속성
+    FirstChild() ContentNode         // 첫 번째 자식 노드
+    NextSibling() ContentNode        // 다음 형제 노드
+    Parent() ContentNode             // 부모 노드
+}
+```
+
+## Scorer
+
+콘텐츠 평가 알고리즘 인터페이스로, 커스텀 문서 인식 전략에 사용됩니다.
+
+```go
+type Scorer interface {
+    Score(node ContentNode) int          // 노드 관련성 점수 계산
+    ShouldRemove(node ContentNode) bool  // 노드 제거 여부 판단
+}
+```
+
+:::warning 경고
+단일 `Processor`가 여러 동시 `Extract` 호출에서 공유될 때, `Score`/`ShouldRemove`가 **여러 goroutine 에서 동시에** 호출될 수 있습니다. 따라서 모든 `Scorer` 구현은 **스스로 동시성 안전을 보장**해야 합니다.
+
+라이브러리 내장 기본 스코어러는 읽기 전용이며 본질적으로 동시성 안전합니다. **가변 상태 (예: 캐시, 카운터) 를 가진 커스텀 `Scorer`는 자체적으로 잠금과 동기화를 수행**해야 합니다.
+:::
+
+`Config.Scorer` 필드를 통해 커스텀 스코어러를 주입합니다:
+
+```go
+type MyScorer struct{}
+
+func (s *MyScorer) Score(node html.ContentNode) int {
+    // 커스텀 평가 로직
+    return 0
+}
+
+func (s *MyScorer) ShouldRemove(node html.ContentNode) bool {
+    // 커스텀 제거 로직
+    return false
+}
+
+cfg := html.DefaultConfig()
+cfg.Scorer = &MyScorer{}
+```
+
+## AuditSink
+
+감사 로그 출력 인터페이스입니다.
+
+```go
+type AuditSink interface {
+    Write(entry AuditEntry)
+    Close() error
+}
+```
+
+내장 Sink 구현은 [감사 시스템](../modules/audit)을 참조하세요.

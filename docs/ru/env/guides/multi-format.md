@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Мультиформатные конфиги"
 title: "Мультиформатная конфигурация - CyberGo env | .env/JSON/YAML"
-description: "Руководство CyberGo env: загрузка .env, JSON и YAML с автоопределением и смешанной загрузкой, приоритет слияния и конвертация для контейнеров."
+description: "Мультиформат CyberGo env: авто-загрузка .env/JSON/YAML, плоские имена вложенных структур, Marshal/UnmarshalMap, RegisterParser и приоритет слияния."
+sidebar_position: 3
 ---
 
 # Мультиформатная конфигурация
@@ -314,7 +316,7 @@ BASE_URL=https://api.example.com
 API_URL=${BASE_URL}/v1
 
 # Значения по умолчанию
-LOG_LEVEL=${LOG_LEVEL:-info}
+LOG_LEVEL=info
 ```
 
 ### Подстановка переменных
@@ -350,8 +352,8 @@ PORT=8080
 URL=http://${HOST}:${PORT}
 
 # Значения по умолчанию
-TIMEOUT=${TIMEOUT:-30s}
-DEBUG=${DEBUG:-false}
+TIMEOUT_VALUE=${TIMEOUT:-30s}
+DEBUG_VALUE=${DEBUG:-false}
 ```
 
 ### Синтаксис export
@@ -458,21 +460,31 @@ data := map[string]string{
     "HOST": "localhost",
     "PORT": "8080",
 }
+```
 
-// Формат .env (по умолчанию)
+::: code-group
+
+```go [.env (по умолчанию)]
 envStr, _ := env.Marshal(data)
 // HOST=localhost
 // PORT=8080
+```
 
-// Формат JSON
+```go [JSON]
 jsonStr, _ := env.Marshal(data, env.FormatJSON)
-// {"HOST":"localhost","PORT":"8080"}
+// {
+//   "HOST": "localhost",
+//   "PORT": 8080
+// }
+```
 
-// Формат YAML
+```go [YAML]
 yamlStr, _ := env.Marshal(data, env.FormatYAML)
 // HOST: localhost
-// PORT: "8080"
+// PORT: 8080
 ```
+
+:::
 
 ### Marshal структуры
 
@@ -483,37 +495,50 @@ type Config struct {
 }
 
 cfg := Config{Host: "localhost", Port: 8080}
+```
 
-// В .env
+::: code-group
+
+```go [в .env]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
+```
 
-// В JSON
+```go [в JSON]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
+```
 
-// В YAML
+```go [в YAML]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
+
+:::
 
 ### UnmarshalMap
 
 Десериализация в map:
 
-```go
-// Из .env
+::: code-group
+
+```go [из .env]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
+```
 
-// Из JSON
+```go [из JSON]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
+```
 
-// Из YAML
+```go [из YAML]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
-
-// Автоопределение формата
-data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)
 ```
+
+:::
+
+::: tip Автоопределение формата
+Передайте `env.FormatAuto`, чтобы библиотека определила формат по содержимому: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`.
+:::
 
 ### UnmarshalStruct
 
@@ -526,16 +551,23 @@ type Config struct {
 }
 
 var cfg Config
+```
 
-// Из .env
+::: code-group
+
+```go [из .env]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
+```
 
-// Из JSON
+```go [из JSON]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
+```
 
-// Из YAML
+```go [из YAML]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
+
+:::
 
 ## Пользовательский формат
 

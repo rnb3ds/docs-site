@@ -1,6 +1,8 @@
 ---
+sidebar_label: "기본 예제"
 title: "기본 예제 - CyberGo JWT | HMAC 발급과 취소"
 description: "기본 예제: HMAC 대칭 키로 접근 토큰을 발급·검증, 갱신 토큰으로 새 토큰 로테이션, 내장 블랙리스트로 취소해 로그아웃 세션 차단, 토큰 버킷 속도 제한으로 무차별 남용을 방지합니다."
+sidebar_position: 10
 ---
 
 # 기본 예제
@@ -165,7 +167,7 @@ func main() {
     cfg := jwt.DefaultConfig()
     cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
     cfg.EnableRateLimit = true
-    cfg.RateLimitRate = 5              // 분당 최대 5회
+    cfg.RateLimitRate = 5              // 분당 최대 5 회
     cfg.RateLimitWindow = time.Minute
 
     processor, err := jwt.New(cfg)
@@ -186,7 +188,7 @@ func main() {
         }
     }
 
-    // 6번째 요청은 속도 제한 적용
+    // 6 번째 요청은 속도 제한 적용
     _, err = processor.Create(claims)
     fmt.Println("Request 6:", err) // rate limit exceeded
 }

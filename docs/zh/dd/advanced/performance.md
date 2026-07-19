@@ -1,13 +1,15 @@
 ---
+sidebar_label: "性能"
 title: "性能优化 - CyberGo DD | 高性能日志"
-description: "CyberGo DD 日志库性能优化完整指南，详解零分配优化技巧、BufferedWriter 缓冲写入配置、日志采样策略与频率控制、级别提前检查避免无用分配、sync.Pool 对象池复用和基准测试分析方法，帮助开发者在高并发场景下获得极致日志性能。"
+description: "CyberGo DD 日志库性能优化完整指南，详解低分配优化技巧、BufferedWriter 缓冲写入配置、日志采样策略与频率控制、级别提前检查避免无用分配、sync.Pool 对象池复用和基准测试分析方法，帮助开发者在高并发场景下获得极致日志性能。"
+sidebar_position: 1
 ---
 
 # 性能优化
 
 DD 在设计上追求高性能，以下是一些进一步优化日志性能的建议。
 
-## 零分配优化
+## 低分配优化
 
 DD 在热路径上最小化内存分配：
 
@@ -76,7 +78,7 @@ cfg := logger.GetSampling()
 
 ```go
 fw, _ := dd.NewFileWriter("logs/app.log", dd.DefaultFileWriterConfig())
-// 默认: 100MB / 30天 / 10个备份
+// 默认：100MB / 30 天 / 10 个备份
 ```
 
 - 文件过小导致频繁轮换，增加 I/O
@@ -147,6 +149,6 @@ logger.Shutdown(ctx)
 
 ## 下一步
 
-- [输出目标](../api-reference/writers) -- FileWriter、BufferedWriter API
-- [配置](../api-reference/config) -- 性能相关配置项
+- [输出目标](../api-reference/output-integration/writers) -- FileWriter、BufferedWriter API
+- [配置](../api-reference/core/config) -- 性能相关配置项
 - [生产检查清单](../security/production-checklist) -- 上线前检查

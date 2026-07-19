@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Constants & Errors"
 title: "Constants and Errors - CyberGo JSON | API Reference"
 description: "CyberGo JSON constants and errors: DefaultMaxJSONSize, DefaultMaxNestingDepth, ErrPathNotFound variables, and MergeMode enums for Go error handling."
+sidebar_position: 7
 ---
 
 # Constants and Errors
@@ -21,13 +23,13 @@ var (
     // Limit errors
     ErrSizeLimit        = errors.New("size limit exceeded")
     ErrDepthLimit       = errors.New("depth limit exceeded")
-    ErrConcurrencyLimit = errors.New("concurrency limit exceeded")
+    ErrConcurrencyLimit = errors.New("concurrency limit exceeded") // Returned when controlled operations (Get/Set/Delete, etc.) reach MaxConcurrency
 
     // Security and validation errors
     ErrSecurityViolation = errors.New("security violation detected")
     ErrUnsupportedPath   = errors.New("unsupported path operation")
 
-    // Resource and performance errors
+    // Resource and performance errors (both Deprecated: not returned by any operation currently, retained for future use)
     ErrOperationTimeout  = errors.New("operation timeout")
     ErrResourceExhausted = errors.New("system resources exhausted")
 )
@@ -213,7 +215,7 @@ type PathSegment = internal.PathSegment
 ```
 
 ::: warning Internal implementation alias
-`PathSegment` is a type alias for `internal.PathSegment`. Its specific fields, field types (such as `PathSegmentType`, `PathSegmentFlags`) and methods belong to the `internal` package, are **not exported as public API**, and may change between versions — do not rely on its internal structure directly in your business code.
+`PathSegment` is a type alias for `internal.PathSegment`. Its specific fields, field types (such as PathSegmentType, PathSegmentFlags) and methods belong to the `internal` package, are **not exported as public API**, and may change between versions — do not rely on its internal structure directly in your business code.
 
 - When implementing custom path syntax, return `[]PathSegment` via the `ParsePath` method of the [`PathParser`](./interfaces#pathparser) interface.
 - For precompiled paths, use [`Processor.CompilePath`](./processor/query#compilepath), which returns `*CompiledPath`.

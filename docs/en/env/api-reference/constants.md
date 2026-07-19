@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Constants & Errors"
 title: "Constants & Errors - CyberGo env | Sentinels & Security"
-description: "CyberGo env constants and errors reference: DefaultMaxFileSize limit, ErrFileNotFound sentinel, ParseError type, plus IsSensitiveKey and MaskValue helpers."
+description: "CyberGo env constants and errors: MaxFileSize/MaxVariables, ErrFileNotFound sentinel, ParseError, DefaultForbiddenKeys, IsSensitiveKey and MaskValue helpers."
+sidebar_position: 7
 ---
 
 # Constants & Errors
@@ -61,6 +63,10 @@ if err := cfg.Validate(); err != nil {
 
 ## Sentinel Errors
 
+:::warning Note
+The following are predefined sentinel symbols, but in the current implementation some scenarios **do not match these sentinels via `errors.Is`**: forbidden keys return `*SecurityError` (match with `errors.Is(err, ErrSecurityViolation)`), while invalid key format and missing required keys return `*ValidationError` (extract via `errors.As`). See each error type section for details.
+:::
+
 ### File Errors
 
 ```go
@@ -100,8 +106,8 @@ Checking forbidden keys:
 
 ```go
 err := loader.Set("PATH", "value")
-if errors.Is(err, env.ErrForbiddenKey) {
-    // Attempted to set forbidden key
+if errors.Is(err, env.ErrSecurityViolation) {
+    // Attempting to set a forbidden key returns *SecurityError
 }
 ```
 
@@ -145,9 +151,10 @@ if errors.Is(err, env.ErrNotInitialized) {
     // Need to call env.Load() or env.LoadWithConfig() first
 }
 
-// Check if required keys are missing
-if errors.Is(err, env.ErrMissingRequired) {
-    // Missing required key
+// Check if required keys are missing (actually returns *ValidationError{Rule:"required"})
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Rule == "required" {
+    // Required key is missing
 }
 ```
 
@@ -172,7 +179,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 :::tip Solution
-Implement the `Validator` interface (including `ValidateKey`, `ValidateValue`, `ValidateRequired` methods) instead of only implementing `KeyValidator`.
+Implement the `Validator` interface (including ValidateKey, ValidateValue, ValidateRequired methods) instead of only implementing `KeyValidator`.
 :::
 
 ## Error Types
@@ -274,7 +281,7 @@ type ExpansionError struct {
 }
 ```
 
-**Error classification (`Kind` field):**
+**Error classification (Kind field):**
 
 ```go
 type ExpansionErrorKind int
@@ -385,9 +392,9 @@ Built-in forbidden key list, preventing modification of system-critical variable
 **Usage Example:**
 
 ```go
-// Attempting to set a forbidden key returns ErrForbiddenKey
+// Attempting to set a forbidden key returns *SecurityError
 err := loader.Set("PATH", "/malicious/path")
-if errors.Is(err, env.ErrForbiddenKey) {
+if errors.Is(err, env.ErrSecurityViolation) {
     // Key is forbidden
 }
 
@@ -632,7 +639,7 @@ case errors.Is(err, env.ErrFileNotFound):
     // File not found
 case errors.Is(err, env.ErrFileTooLarge):
     // File too large
-case errors.Is(err, env.ErrForbiddenKey):
+case errors.Is(err, env.ErrSecurityViolation):
     // Forbidden key
 case errors.Is(err, env.ErrClosed):
     // Loader is closed

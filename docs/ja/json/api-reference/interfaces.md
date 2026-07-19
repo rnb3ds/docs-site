@@ -1,6 +1,8 @@
 ---
-title: "インターフェース定義 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON 拡張インターフェース：CustomEncoder、TypeEncoder、Validator、Hook、PathParser、DangerousPattern でエンコードや検証、セキュリティを柔軟に拡張します。"
+sidebar_label: "インターフェース定義"
+title: "インターフェース - CyberGo JSON | API リファレンス"
+description: "CyberGo JSON 拡張インターフェース：CustomEncoder、TypeEncoder、Validator、Hook、PathParser、DangerousPattern で、エンコード・検証・セキュリティ防護を柔軟に拡張します。"
+sidebar_position: 6
 ---
 
 # インターフェース定義
@@ -110,7 +112,7 @@ type SizeValidator struct {
 func (v *SizeValidator) Validate(jsonStr string) error {
     // 入力データのサイズをチェック
     if int64(len(jsonStr)) > v.MaxSize {
-        return fmt.Errorf("JSON が最大サイズを超過: %d", v.MaxSize)
+        return fmt.Errorf("JSON が最大サイズを超過：%d", v.MaxSize)
     }
     return nil
 }
@@ -148,7 +150,7 @@ type Hook interface {
 
 ```go
 type HookContext struct {
-    Operation string        // 操作タイプ: "get", "set", "delete", "marshal", "unmarshal"
+    Operation string        // 操作タイプ："get", "set", "delete", "marshal", "unmarshal"
     JSONStr   string        // 入力 JSON 文字列（marshal 時は空の可能性あり）。セキュリティ警告：機密データが含まれる可能性があります
     Path      string        // 対象パス（marshal/unmarshal 時は空の可能性あり）
     Value     any           // set 操作の値
@@ -381,20 +383,17 @@ func (n Number) Int64() (int64, error)       // int64 に変換
 **使用例**：
 
 ```go
-processor, err := json.New()
-if err != nil {
-    panic(err)
-}
-defer processor.Close()
+// Number 型の取得（Decoder.UseNumber で完全な精度を維持）
+decoder := json.NewDecoder(strings.NewReader(data))
+decoder.UseNumber()
 
-// Number 型の取得（Get メソッドで取得後に型アサーション）
-val, err := processor.Get(data, "large_number")
-if err != nil {
+var obj map[string]any
+if err := decoder.Decode(&obj); err != nil {
     panic(err)
 }
 
 // 型アサーションで Number を取得
-if num, ok := val.(json.Number); ok {
+if num, ok := obj["large_number"].(json.Number); ok {
     // Number は元の精度を維持
     fmt.Println(num.String()) // "9007199254740993"（完全な精度）
 
@@ -539,7 +538,7 @@ result := p.SafeGet(data, "user.age")
 age, err := result.AsInt()
 
 // フォーマット変換 - 任意の値を文字列に変換
-str, err := result.AsStringConverted() // 例: 30 -> "30"
+str, err := result.AsStringConverted() // 例：30 -> "30"
 ```
 
 ## Schema 型
@@ -647,6 +646,6 @@ func (ve *ValidationError) Error() string
 
 ## 関連
 
-- [Hook フックシステム](./hooks) - フックの詳細な使用ガイド
-- [バリデータ](./validator) - バリデータの詳細な使用ガイド
-- [CustomEncoder](./custom-encoder) - カスタムエンコーダガイド
+- [Hook フックシステム](../extensions/hooks) - フックの詳細な使用ガイド
+- [バリデータ](../extensions/validator) - バリデータの詳細な使用ガイド
+- [CustomEncoder](../extensions/custom-encoder) - カスタムエンコーダガイド

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "安全概述"
 title: "安全概述 - CyberGo HTTPC | 安全特性总览"
 description: "HTTPC 安全特性概述：TLS 1.2+ 版本控制、SSRF 私有 IP 阻止与 CIDR 豁免、CRLF 注入防护、StrictCookieSecurityConfig Cookie 安全、RedirectWhitelist 重定向白名单与响应体大小限制。"
+sidebar_position: 1
 ---
 
 # 安全概述
@@ -62,9 +64,13 @@ client, _ := httpc.New(httpc.SecureConfig())
 | 172.16.0.0/12 | B 类私有 |
 | 192.168.0.0/16 | C 类私有 |
 | 169.254.0.0/16 | 链路本地 |
+| 100.64.0.0/10 | CGNAT（含阿里云元数据 `100.100.100.200`） |
+| 240.0.0.0/4 | E 类保留 |
 | ::1/128 | IPv6 回环 |
 | fc00::/7 | IPv6 唯一本地 |
 | fe80::/10 | IPv6 链路本地 |
+
+> 上表为主要范围，完整列表（含 `0.0.0.0/8`、TEST-NET、IPv6 文档前缀 `2001:db8::/32`、NAT64 `64:ff9b::/96` 等）见源码 `isPrivateOrReservedIP`。
 
 ## 请求头验证
 
@@ -82,7 +88,7 @@ httpc.WithHeader("X-Bad", "value\x00null")                // 控制字符
 // 严格 Cookie 安全
 cfg := httpc.DefaultConfig()
 cfg.Security.CookieSecurity = httpc.StrictCookieSecurityConfig()
-// 要求: Secure, HttpOnly, SameSite=Strict
+// 要求：Secure, HttpOnly, SameSite=Strict
 ```
 
 ## 重定向安全

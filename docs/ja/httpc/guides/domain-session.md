@@ -1,6 +1,8 @@
 ---
+sidebar_label: "ドメインクライアントとセッション"
 title: "ドメインクライアントとセッション - CyberGo HTTPC | セッションとドメイン"
-description: "HTTPC ドメインクライアントとセッションガイド: NewDomain によるドメインスコープクライアント作成、URL 自動結合、SetHeader ヘッダー維持、Cookie セキュリティ検証、REST API クライアントラッパーの実践例を解説します。"
+description: "HTTPC ドメインクライアントとセッションガイド：NewDomain によるドメインスコープクライアント作成、URL 自動結合、SetHeader ヘッダー維持、Cookie セキュリティ検証、REST API クライアントラッパーの実践例を解説します。"
+sidebar_position: 3
 ---
 
 # ドメインクライアントとセッション
@@ -97,6 +99,10 @@ result, _ := dc.Request(ctx, "GET", "/users")
 result, _ := dc.Get("https://other-api.com/data")
 ```
 
+:::warning リクエストオプションは 2 回適用されます
+ドメインクライアントは内部でリクエストオプションを**2 回適用**します（セッション状態のキャプチャ用と実際のリクエスト用）。副作用のあるオプション（カウンター、nonce 生成など）は避けてください。このようなオプションが必要な場合は、基になる `Client` を使用してください。
+:::
+
 ## セッションアクセス
 
 ```go
@@ -121,7 +127,7 @@ dc, _ := httpc.NewDomain("https://api.example.com")
 // 厳格な Cookie セキュリティを設定
 session := dc.Session()
 session.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
-// 要求: Secure=true, HttpOnly=true, SameSite=Strict
+// 要求：Secure=true, HttpOnly=true, SameSite=Strict
 
 // セキュリティ要件を満たさない Cookie は SetCookie でエラーを返す
 if err := dc.SetCookie(&http.Cookie{
@@ -129,7 +135,7 @@ if err := dc.SetCookie(&http.Cookie{
     Value: "test",
     // Secure, HttpOnly が不足 → 拒否される
 }); err != nil {
-    log.Println("Cookie が拒否されました:", err)
+    log.Println("Cookie が拒否されました：", err)
 }
 ```
 
@@ -192,6 +198,6 @@ func main() {
 
 ## 次のステップ
 
-- [ドメインクライアント API](../api-reference/domain-client) - 完全な API リファレンス
-- [セッション管理 API](../api-reference/session) - SessionManager リファレンス
+- [ドメインクライアント API](../api-reference/client-config/domain-client) - 完全な API リファレンス
+- [セッション管理 API](../api-reference/client-config/session) - SessionManager リファレンス
 - [リクエストとレスポンス](./request-response) - 基本リクエストガイド

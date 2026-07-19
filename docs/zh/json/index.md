@@ -1,6 +1,7 @@
 ---
+sidebar_label: "概述"
 title: "JSON 处理库 - CyberGo JSON | 高性能 Go 库"
-description: "CyberGo JSON 是高性能、线程安全的 Go JSON 处理库，支持 JSONPath 路径查询、流式处理、泛型 API 与 Schema 验证，100% 兼容 encoding/json，适用于高并发生产环境。"
+description: "CyberGo JSON 是高性能、线程安全的 Go JSON 处理库，支持 JSONPath 路径查询、流式处理、泛型 API 与 Schema 验证，100% 兼容 encoding/json。"
 ---
 
 # JSON 处理库
@@ -100,19 +101,19 @@ func main() {
 
 | 模块 | 说明 |
 |------|------|
-| [快速开始](./getting-started) | 安装、基本用法、核心概念 |
-| [路径表达式语法](./path-syntax) | 路径查询、切片、通配符、字段提取 |
+| [快速开始](./getting-started/) | 安装、基本用法、核心概念 |
+| [路径表达式语法](./getting-started/path-syntax) | 路径查询、切片、通配符、字段提取 |
 | [API 文档](./api-reference/) | 完整 API 参考 |
-| [大文件处理](./large-files) | 流式处理、分块读写、内存优化 |
-| [使用示例](./examples) | 实战代码示例 |
-| [高级功能示例](./examples-advanced) | 批量编码、预解析、钩子系统 |
+| [大文件处理](./streaming/large-files) | 流式处理、分块读写、内存优化 |
+| [使用示例](./examples/) | 实战代码示例 |
+| [高级功能示例](./examples/examples-advanced) | 批量编码、预解析、钩子系统 |
 
 ## 性能特性
 
 - **零拷贝解析** — 减少内存分配
 - **智能缓存** — 自动缓存热点路径，支持缓存预热
 - **对象池** — 复用中间对象，降低 GC 压力
-- **并行处理** — 批量操作自动并行化
+- **并行流处理** — JSONL 流式处理支持多 worker 并行（`StreamJSONLParallel`）
 - **预解析优化** — 大型 JSON 一次解析多次查询
 
 ## 与标准库对比
@@ -141,6 +142,6 @@ func main() {
 
 ## 下一步
 
-- [快速开始](./getting-started) — 5 分钟上手
-- [路径表达式语法](./path-syntax) — 完整路径语法
-- [使用示例](./examples) — 更多实战示例
+- [快速开始](./getting-started/) — 5 分钟上手
+- [路径表达式语法](./getting-started/path-syntax) — 完整路径语法
+- [使用示例](./examples/) — 更多实战示例

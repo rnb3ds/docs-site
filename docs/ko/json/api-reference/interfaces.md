@@ -1,6 +1,8 @@
 ---
+sidebar_label: "인터페이스"
 title: "인터페이스 정의 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 확장 인터페이스: CustomEncoder, TypeEncoder, Validator, Hook, PathParser, DangerousPattern으로 인코딩, 검증, 보안 기능을 유연하게 확장합니다."
+description: "CyberGo JSON 확장 인터페이스: CustomEncoder, TypeEncoder, Validator, Hook, PathParser 와 DangerousPattern 으로 인코딩, 검증, 보안 방어 능력을 유연하게 확장합니다."
+sidebar_position: 6
 ---
 
 # 인터페이스 정의
@@ -15,7 +17,7 @@ json 패키지는 커스텀 JSON 처리 동작을 허용하는 여러 확장 인
 
 ```go
 type CustomEncoder interface {
-    // Encode는 Go 값을 JSON 문자열로 변환합니다
+    // Encode 는 Go 값을 JSON 문자열로 변환합니다
     Encode(value any) (string, error)
 }
 ```
@@ -57,7 +59,7 @@ if err != nil {
 
 ```go
 type TypeEncoder interface {
-    // Encode는 특정 타입의 값을 JSON 문자열로 인코딩합니다
+    // Encode 는 특정 타입의 값을 JSON 문자열로 인코딩합니다
     Encode(v reflect.Value) (string, error)
 }
 ```
@@ -94,8 +96,8 @@ JSON 검증기 인터페이스입니다.
 
 ```go
 type Validator interface {
-    // Validate는 JSON 문자열에 문제가 있는지 확인합니다
-    // 유효하면 nil을 반환하고, 그렇지 않으면 문제를 설명하는 오류를 반환합니다
+    // Validate 는 JSON 문자열에 문제가 있는지 확인합니다
+    // 유효하면 nil 을 반환하고, 그렇지 않으면 문제를 설명하는 오류를 반환합니다
     Validate(jsonStr string) error
 }
 ```
@@ -110,7 +112,7 @@ type SizeValidator struct {
 func (v *SizeValidator) Validate(jsonStr string) error {
     // 입력 데이터 크기 확인
     if int64(len(jsonStr)) > v.MaxSize {
-        return fmt.Errorf("JSON이 최대 크기를 초과했습니다: %d", v.MaxSize)
+        return fmt.Errorf("JSON 이 최대 크기를 초과했습니다: %d", v.MaxSize)
     }
     return nil
 }
@@ -132,11 +134,11 @@ if err != nil {
 
 ```go
 type Hook interface {
-    // Before는 작업 전에 호출됩니다
+    // Before 는 작업 전에 호출됩니다
     // 오류를 반환하면 작업을 중단합니다
     Before(ctx HookContext) error
 
-    // After는 작업 완료 후에 호출됩니다
+    // After 는 작업 완료 후에 호출됩니다
     // 결과를 수정하거나 오류를 확인할 수 있습니다
     After(ctx HookContext, result any, err error) (any, error)
 }
@@ -201,7 +203,7 @@ type HookFunc struct {
 **사용 예제**
 
 ```go
-// After만 필요한 경우
+// After 만 필요한 경우
 p.AddHook(&json.HookFunc{
     AfterFn: func(ctx json.HookContext, result any, err error) (any, error) {
         log.Printf("%s completed in %v", ctx.Operation, time.Since(ctx.StartTime))
@@ -209,7 +211,7 @@ p.AddHook(&json.HookFunc{
     },
 })
 
-// Before만 필요한 경우
+// Before 만 필요한 경우
 p.AddHook(&json.HookFunc{
     BeforeFn: func(ctx json.HookContext) error {
         log.Printf("starting %s on path %s", ctx.Operation, ctx.Path)
@@ -255,7 +257,7 @@ p.AddHook(json.TimingHook(&MetricsRecorder{}))
 ```go
 p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
     if len(jsonStr) > 1_000_000 {
-        return errors.New("JSON이 너무 큽니다")
+        return errors.New("JSON 이 너무 큽니다")
     }
     return nil
 }))
@@ -301,13 +303,13 @@ const (
 
 ```go
 type DangerousPattern struct {
-    // Pattern은 입력에서 감지할 부분 문자열입니다
+    // Pattern 은 입력에서 감지할 부분 문자열입니다
     Pattern string
 
-    // Name은 패턴의 설명적인 이름입니다
+    // Name 은 패턴의 설명적인 이름입니다
     Name string
 
-    // Level은 해당 패턴의 심각도 수준을 결정합니다
+    // Level 은 해당 패턴의 심각도 수준을 결정합니다
     Level PatternLevel
 }
 ```
@@ -340,7 +342,7 @@ cfg.AddDangerousPattern(json.DangerousPattern{
 
 ```go
 type PathParser interface {
-    // ParsePath는 경로 문자열을 경로 세그먼트로 파싱합니다
+    // ParsePath 는 경로 문자열을 경로 세그먼트로 파싱합니다
     ParsePath(path string) ([]PathSegment, error)
 }
 ```
@@ -374,28 +376,25 @@ type Number string
 
 ```go
 func (n Number) String() string              // 숫자의 리터럴 텍스트 반환
-func (n Number) Float64() (float64, error)   // float64로 변환
-func (n Number) Int64() (int64, error)       // int64로 변환
+func (n Number) Float64() (float64, error)   // float64 로 변환
+func (n Number) Int64() (int64, error)       // int64 로 변환
 ```
 
 **사용 예제**:
 
 ```go
-processor, err := json.New()
-if err != nil {
-    panic(err)
-}
-defer processor.Close()
+// Number 타입 가져오기 (Decoder.UseNumber 로 완전한 정밀도 보존)
+decoder := json.NewDecoder(strings.NewReader(data))
+decoder.UseNumber()
 
-// Number 타입 가져오기 (Get 메서드로 가져온 후 타입 단언)
-val, err := processor.Get(data, "large_number")
-if err != nil {
+var obj map[string]any
+if err := decoder.Decode(&obj); err != nil {
     panic(err)
 }
 
 // 타입 단언으로 Number 가져오기
-if num, ok := val.(json.Number); ok {
-    // Number는 원래 정밀도를 보존
+if num, ok := obj["large_number"].(json.Number); ok {
+    // Number 는 원래 정밀도를 보존
     fmt.Println(num.String()) // "9007199254740993" (완전한 정밀도)
 
     // 다른 타입으로 변환
@@ -502,7 +501,7 @@ name = json.GetTyped[string](data, "user.name", "unknown")
 
 ### AccessResult
 
-동적 타입 접근 결과로, Processor.SafeGet이 반환합니다.
+동적 타입 접근 결과로, Processor.SafeGet 이 반환합니다.
 
 ```go
 type AccessResult struct {
@@ -527,10 +526,10 @@ func (r AccessResult) AsBool() (bool, error)              // 엄격한 변환
 | 메서드 | 변환 동작 | 설명 |
 |------|----------|------|
 | `AsString()` | 엄격 | string 타입만 허용, 문자열이 아니면 오류 반환 |
-| `AsStringConverted()` | 포맷팅 | fmt.Sprintf로 임의의 값을 문자열 표현으로 변환 |
-| `AsInt()` | 엄격 | bool을 int로 변환하지 않음, 정수와 파싱 가능한 숫자만 허용 |
-| `AsFloat64()` | 엄격 | bool을 float로 변환하지 않음, 부동소수점과 파싱 가능한 숫자만 허용 |
-| `AsBool()` | 엄격 | bool과 `strconv.ParseBool`이 허용하는 문자열만 허용 ("1"/"t"/"T"/"TRUE"/"true"/"True", "0"/"f"/"F"/"FALSE"/"false"/"False") |
+| `AsStringConverted()` | 포맷팅 | fmt.Sprintf 로 임의의 값을 문자열 표현으로 변환 |
+| `AsInt()` | 엄격 | bool 을 int 로 변환하지 않음, 정수와 파싱 가능한 숫자만 허용 |
+| `AsFloat64()` | 엄격 | bool 을 float 로 변환하지 않음, 부동소수점과 파싱 가능한 숫자만 허용 |
+| `AsBool()` | 엄격 | bool 과 `strconv.ParseBool`이 허용하는 문자열만 허용 ("1"/"t"/"T"/"TRUE"/"true"/"True", "0"/"f"/"F"/"FALSE"/"false"/"False") |
 
 ```go
 result := p.SafeGet(data, "user.age")
@@ -546,7 +545,7 @@ str, err := result.AsStringConverted() // 예: 30 -> "30"
 
 ### Schema
 
-JSON Schema는 구조체로 정의되며, 타입 안전한 Schema 정의를 지원합니다.
+JSON Schema 는 구조체로 정의되며, 타입 안전한 Schema 정의를 지원합니다.
 
 ```go
 type Schema struct {
@@ -647,6 +646,6 @@ func (ve *ValidationError) Error() string
 
 ## 관련 문서
 
-- [Hook 훅 시스템](./hooks) - 훅 자세한 사용 가이드
-- [Validator 검증기](./validator) - 검증기 자세한 사용 가이드
-- [CustomEncoder](./custom-encoder) - 커스텀 인코더 가이드
+- [Hook 훅 시스템](../extensions/hooks) - 훅 자세한 사용 가이드
+- [Validator 검증기](../extensions/validator) - 검증기 자세한 사용 가이드
+- [CustomEncoder](../extensions/custom-encoder) - 커스텀 인코더 가이드

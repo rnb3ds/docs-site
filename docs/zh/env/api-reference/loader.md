@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Loader"
 title: "Loader API - CyberGo env | 加载器详解"
-description: "CyberGo env 的 Loader 加载器 API 参考，核心类型提供多格式文件加载、类型安全读取、键值增删改、验证、序列化导出与生命周期管理，所有方法线程安全。"
+description: "CyberGo env 的 Loader 加载器 API 参考，核心类型提供多格式 LoadFiles 加载、GetString/GetInt/GetSlice 类型安全读取、Set/Delete 增删改、Validate 验证、序列化导出与 Close 生命周期管理，所有方法线程安全。"
+sidebar_position: 3
 ---
 
 # Loader API
@@ -106,6 +108,7 @@ err := loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 - `*ParseError` - 解析错误
 - `*JSONError` - JSON 解析错误
 - `*YAMLError` - YAML 解析错误
+- `*SecurityError` - 文件路径安全校验失败（如路径穿越攻击）
 
 **格式检测规则：**
 
@@ -422,8 +425,9 @@ if err != nil {
 ```
 
 **错误类型：**
-- `ErrInvalidKey` - 键名无效
-- `ErrForbiddenKey` - 键被禁止
+- `*ValidationError` - 键名格式无效（Field="key"）
+- `*SecurityError` - 键被禁止（可用 `errors.Is(err, env.ErrSecurityViolation)` 匹配）
+- `ErrInvalidValue` - 值无效（当 `ValidateValues` 为 true 时，值包含空字节、控制字符等不安全内容）
 - `ErrClosed` - 加载器已关闭
 
 ---
@@ -532,6 +536,10 @@ func (l *Loader) Apply() error
 - 根据 `OverwriteExisting` 配置决定是否覆盖已存在的系统环境变量
 - 应用后可通过 `os.Getenv()` 访问
 
+**错误类型：**
+- `ErrClosed` - 加载器已关闭
+- 包装的 `os` 错误 - 设置环境变量失败（键名已掩码，错误消息中不暴露敏感键名）
+
 ```go
 err := loader.Apply()
 if err != nil {
@@ -602,7 +610,7 @@ func (l *Loader) Config() Config
 
 ```go
 cfg := loader.Config()
-fmt.Printf("最大文件大小: %d\n", cfg.MaxFileSize)
+fmt.Printf("最大文件大小：%d\n", cfg.MaxFileSize)
 ```
 
 ---
@@ -621,7 +629,7 @@ func (l *Loader) Validate() error
 - `error` - 验证错误
 
 **行为：**
-- 检查 `Config.RequiredKeys` 中指定的所有键是否存在
+- 检查 `ValidationConfig.RequiredKeys` 中指定的所有键是否存在
 
 ```go
 cfg := env.DefaultConfig()
@@ -659,14 +667,15 @@ func (l *Loader) ParseInto(v any) error
 - `env:"KEY"` - 指定环境变量名
 - `env:"-"` - 忽略此字段
 - `envDefault:"value"` - 指定默认值
-- `envSeparator:","` - 指定切片分隔符
+
+切片字段默认按逗号 `,` 分隔（分隔符前后空格自动去除），无自定义分隔符标签。
 
 ```go
 type Config struct {
     Host    string   `env:"HOST" envDefault:"localhost"`
     Port    int64    `env:"PORT" envDefault:"8080"`
     Debug   bool     `env:"DEBUG" envDefault:"false"`
-    Hosts   []string `env:"HOSTS" envSeparator:","`
+    Hosts   []string `env:"HOSTS"`
     Ignored string   `env:"-"`
 }
 
@@ -772,7 +781,7 @@ func main() {
 
     // 验证必需键
     if err := loader.Validate(); err != nil {
-        log.Fatal("缺少必需配置:", err)
+        log.Fatal("缺少必需配置：", err)
     }
 
     // 读取配置

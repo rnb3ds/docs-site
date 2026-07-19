@@ -1,6 +1,8 @@
 ---
-title: "パフォーマンス最適化 - CyberGo JSON | 高パフォーマンスガイド"
-description: "CyberGo JSON パフォーマンスガイド：EnableCache/CacheTTL、ParallelThreshold 並列、PreParse、WarmupCache、オブジェクトプール再利用で高頻度 JSON 処理を高速化します。"
+sidebar_label: "パフォーマンス最適化"
+title: "パフォーマンス最適化 - CyberGo JSON | 高速化"
+description: "CyberGo JSON パフォーマンス最適化：EnableCache/CacheTTL キャッシュ、ParallelThreshold 並列、PreParse プリパースと WarmupCache ウォームアップで、高頻度 JSON 処理の性能を向上します。"
+sidebar_position: 1
 ---
 
 # パフォーマンス最適化
@@ -36,8 +38,8 @@ for _, item := range dataList {
 // ✅ Marshal を使用してバイトスライスを返す
 bytes, _ := json.Marshal(data)
 
-// ✅ Encode を使用して文字列を返す
-s, _ := json.Encode(data)
+// ✅ EncodeWithConfig を使用して文字列を返す（Encode は非推奨）
+s, _ := json.EncodeWithConfig(data)
 ```
 
 ### バッファの事前割り当て
@@ -226,7 +228,7 @@ func TestMemoryUsage(t *testing.T) {
     runtime.ReadMemStats(&m)
     after := m.Alloc
 
-    fmt.Printf("メモリ使用量: %d bytes\n", after-before)
+    fmt.Printf("メモリ使用量：%d bytes\n", after-before)
 }
 ```
 
@@ -239,6 +241,5 @@ func TestMemoryUsage(t *testing.T) {
 
 ## 関連
 
-- [大ファイル処理 API](../api-reference/large-file)
+- [大ファイル処理](../streaming/large-files)
 - [エラー処理](./error-handling)
-- [大ファイル処理](../large-files)

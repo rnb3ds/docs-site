@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Audit Logging"
 title: "Audit Logging - CyberGo env | Security Audit Configuration"
-description: "CyberGo env audit logging guide for JSON-file, standard-log and Channel handlers, plus custom AuditHandler to record load, read, modify and delete operations."
+description: "CyberGo env audit logging: JSONAuditHandler, LogAuditHandler, ChannelAuditHandler and custom AuditHandler tracking load/read/modify/delete for security compliance."
+sidebar_position: 5
 ---
 
 # Audit Logging
@@ -51,9 +53,11 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 
 ```json
 {"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
-{"timestamp":"2024-01-15T10:30:01Z","action":"get","key":"API_KEY","success":true,"masked":true}
+{"timestamp":"2024-01-15T10:30:01Z","action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
+
+Sensitive keys (such as `API_KEY`) have their `key` field automatically masked as `[MASKED:N chars]` in the audit log (N is the key length); non-sensitive keys (such as `CUSTOM_VAR`) are shown as-is.
 
 ---
 
@@ -76,7 +80,7 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 
 ```text
 [AUDIT] 2024/01/15 10:30:00 action=load success=true reason="" file=.env duration=1.23ms
-[AUDIT] 2024/01/15 10:30:01 action=get key=API_KEY success=true reason=""
+[AUDIT] 2024/01/15 10:30:01 action=set key=[MASKED:7 chars] success=true reason=""
 [AUDIT] 2024/01/15 10:30:02 action=set key=CUSTOM_VAR success=true reason=""
 ```
 
@@ -158,7 +162,7 @@ type AuditEvent struct {
 
 ### Implementing the FullAuditLogger Interface
 
-`FullAuditLogger` is the complete audit logging interface, extending the minimal `AuditLogger` interface (which only contains the `LogError` method):
+`FullAuditLogger` is the complete audit logging interface, extending the minimal `AuditLogger` interface (which only contains the LogError method):
 
 ```go
 type FullAuditLogger interface {
@@ -328,14 +332,21 @@ func processAuditEvents(ch chan env.AuditEvent) {
 
 ## Security Considerations
 
-### Automatic Sensitive Value Masking
+### Audit Records and Masking
 
-Audit logs automatically mask values of sensitive keys:
+The audit log automatically masks the `key` field of sensitive keys (shown as `[MASKED:N chars]`, where N is the number of characters in the key name; non-sensitive keys are shown as-is). **Only write operations produce audit events**: `Set` / `Delete` / `LoadFiles` and similar trigger `ActionSet` / `ActionDelete` / `ActionLoad` events and record the masked key name in the event.
+
+Read operations do not produce audit events: `Get` / `GetString` / `GetInt` / `GetSecure` and similar **normal reads do not record audit logs**. The `ActionGet` event is only triggered on the error path of a **parse failure** during type conversion in `GetInt` / `GetBool` / `GetFloat64` and similar (`success=false`), for example:
 
 ```go
-// Sensitive values are automatically masked when retrieved
-secret := loader.GetSecure("API_KEY")
-// Audit record: {"action":"get","key":"API_KEY","masked":true}
+// Write operation: produces an audit event (sensitive key recorded after masking)
+_ = loader.Set("API_KEY", "sk-1234567890")
+// Audit record: {"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
+
+// Read operations: normal reads do not produce audit events
+secret := loader.GetSecure("API_KEY") // no audit log produced
+_ = loader.GetInt("PORT")             // parse succeeds, no audit log produced
+_ = loader.GetInt("API_KEY")          // produces an ActionGet event when parsing fails (success=false)
 ```
 
 ### Audit Log Permissions

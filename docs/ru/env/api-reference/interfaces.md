@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Определения интерфейсов"
 title: "Определения интерфейсов - CyberGo env | Иерархия интерфейсов"
-description: "Справочник интерфейсов CyberGo env для внедрения зависимостей: Validator, FullAuditLogger, EnvParser, EnvStorage и адаптер FileSystem."
+description: "Интерфейсы CyberGo env с детализированным дизайном для DI: EnvLoader, EnvFileLoader, EnvGetter, EnvSetter, Validator, FullAuditLogger, EnvParser и FileSystem."
+sidebar_position: 6
 ---
 
 # Определения интерфейсов
@@ -241,7 +243,7 @@ type FullAuditLogger interface {
 
 | Метод | Назначение |
 |-------|------------|
-| `LogError` | Регистрация события ошибки (наследуется от AuditLogger) |
+| LogError | Регистрация события ошибки (наследуется от AuditLogger) |
 | `Log` | Регистрация общего события аудита |
 | `LogWithFile` | Регистрация события с информацией о файле |
 | `LogWithDuration` | Регистрация события с информацией о продолжительности |
@@ -509,11 +511,11 @@ type File interface {
 
 | Метод | Назначение |
 |-------|------------|
-| `Read` | Чтение данных |
-| `Write` | Запись данных |
-| `Close` | Закрытие файла |
-| `Stat` | Получение информации о файле |
-| `Sync` | Синхронизация на диск |
+| Read | Чтение данных |
+| Write | Запись данных |
+| Close | Закрытие файла |
+| Stat | Получение информации о файле |
+| Sync | Синхронизация на диск |
 
 ---
 
@@ -659,15 +661,15 @@ type AuditEvent = internal.Event
 
 | Поле | Тип | Описание |
 |------|-----|----------|
-| `Timestamp` | `time.Time` | Метка времени |
-| `Action` | `AuditAction` | Тип операции |
-| `Key` | `string` | Имя ключа (маскировано) |
-| `File` | `string` | Имя файла |
-| `Reason` | `string` | Причина/описание |
-| `Success` | `bool` | Успешно ли |
-| `Masked` | `bool` | Маскировано ли |
-| `Details` | `string` | Подробности |
-| `Duration` | `int64` | Продолжительность (наносекунды) |
+| Timestamp | `time.Time` | Метка времени |
+| Action | `AuditAction` | Тип операции |
+| Key | `string` | Имя ключа (маскировано) |
+| File | `string` | Имя файла |
+| Reason | `string` | Причина/описание |
+| Success | `bool` | Успешно ли |
+| Masked | `bool` | Маскировано ли |
+| Details | `string` | Подробности |
+| Duration | `int64` | Продолжительность (наносекунды) |
 
 ---
 

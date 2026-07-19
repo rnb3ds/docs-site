@@ -1,6 +1,8 @@
 ---
+sidebar_label: "错误处理"
 title: "错误处理 - CyberGo DD | 日志错误管理"
 description: "CyberGo DD 日志库错误处理完整指南，详解结构化错误类型与层级体系、错误码设计、哨兵错误定义与判断方法、errors.Is/As 错误包装与拆包、自定义错误处理策略实现、错误恢复机制和错误钩子回调配置，帮助开发者精确识别和处理各类日志相关错误。"
+sidebar_position: 2
 ---
 
 # 错误处理
@@ -93,8 +95,10 @@ if err != nil {
 ```go
 logger.SetWriteErrorHandler(func(w io.Writer, err error) {
     // 自定义写入错误处理
-    if errors.Is(err, dd.ErrWriterNotFound) {
-        // Writer 已被移除
+    // 注意：此回调仅在 writer.Write() 失败时触发，传入的是 writer 自身错误；
+    // dd.ErrWriterNotFound 由 RemoveWriter 直接返回给调用者，不会经此回调传递。
+    if errors.Is(err, io.ErrShortWrite) {
+        // 写入字节数不足
         return
     }
     // 记录错误指标
@@ -164,7 +168,7 @@ if err != nil {
 
 ## 钩子错误
 
-使用钩子时可通过钩子配置的 `OnError` 回调来捕获和处理钩子执行中的错误：
+使用钩子时可通过钩子配置的 `ErrorHandler` 回调来捕获和处理钩子执行中的错误：
 
 ```go
 // 通过 HooksConfig 配置钩子错误处理
@@ -190,12 +194,12 @@ if err != nil {
 
 // 运行时检查
 if err := dd.DefaultInitError(); err != nil {
-    fmt.Println("全局日志记录器初始化有误:", err)
+    fmt.Println("全局日志记录器初始化有误：", err)
 }
 ```
 
 ## 下一步
 
-- [常量与错误](../api-reference/constants) -- 完整错误码列表
-- [钩子系统](../api-reference/hooks) -- HookRegistry
-- [安全过滤](../api-reference/security) -- 安全相关错误
+- [常量与错误](../api-reference/dev-tools/constants) -- 完整错误码列表
+- [钩子系统](../api-reference/security-audit/hooks) -- HookRegistry
+- [安全过滤](../api-reference/security-audit/security) -- 安全相关错误

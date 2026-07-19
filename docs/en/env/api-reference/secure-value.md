@@ -1,6 +1,8 @@
 ---
+sidebar_label: "SecureValue"
 title: "SecureValue API - CyberGo env | Secure Value Storage"
-description: "CyberGo env SecureValue API reference for storing secrets: mlock memory locking, Release zeroing, Masked display, IsSensitiveKey detection and ClearBytes."
+description: "CyberGo env SecureValue API: NewSecureValue, mlock lock, Reveal plaintext, Masked display, Release zeroing, IsSensitiveKey; stores passwords, tokens and keys."
+sidebar_position: 5
 ---
 
 # SecureValue API
@@ -128,7 +130,7 @@ func (sv *SecureValue) String() string
 Returns the masked representation, safe for logging and formatting. Implements the `fmt.Stringer` interface, preventing accidental key leakage through `fmt.Printf`, `log.Println`, or error wrapping.
 
 **Returns:**
-- `string` - Masked representation (e.g., `[SECURE:32 bytes locked]`); returns `[NIL]` when nil
+- `string` - Masked representation (e.g., `[SECURE:32 bytes]`); returns `[NIL]` when nil
 
 ```go
 secret := env.GetSecure("PASSWORD")
@@ -233,7 +235,10 @@ Returns the masked value for log output.
 secret := env.GetSecure("API_KEY")
 if secret != nil {
     log.Printf("API Key: %s", secret.Masked())
-    // Output: API Key: [SECURE:32 bytes locked]
+    // Output: API Key: [SECURE:32 bytes]
+    // Note: Only when memory locking is enabled (SetMemoryLockEnabled(true)) and
+    // locking succeeds does the mask append a " locked" suffix
+    // (also " lock-failed" or " unlocked").
 }
 ```
 
@@ -604,10 +609,10 @@ Masks potentially sensitive content in a string. Truncates strings exceeding 50 
 - `string` - Masked string
 
 ```go
-// Long strings are truncated
+// Long strings are truncated (keeps the first 47 characters and appends "...")
 long := "This is a very long string that exceeds 50 characters"
 clean := env.MaskSensitiveInString(long)
-// Returns: "This is a very long string that exceeds 50..."
+// Returns: "This is a very long string that exceeds 50 char..."
 ```
 
 :::tip Use Case

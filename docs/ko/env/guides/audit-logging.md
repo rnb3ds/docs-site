@@ -1,6 +1,8 @@
 ---
+sidebar_label: "감사 로그"
 title: "감사 로그 - CyberGo env | 보안 감사 구성"
-description: "CyberGo env 감사 로그 설정 가이드로 JSON 파일·표준 로그·채널 핸들러와 커스텀 AuditHandler로 변수 로딩·읽기·수정·삭제 작업을 기록해 규정 준수를 충족합니다."
+description: "CyberGo env 감사 로그 설정 가이드로 JSONAuditHandler·LogAuditHandler·ChannelAuditHandler 핸들러와 커스텀 AuditHandler 로 변수 로딩·읽기·수정·삭제 작업을 기록해 보안 감사와 규정 준수에 활용합니다."
+sidebar_position: 5
 ---
 
 # 감사 로그
@@ -51,9 +53,11 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 
 ```json
 {"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
-{"timestamp":"2024-01-15T10:30:01Z","action":"get","key":"API_KEY","success":true,"masked":true}
+{"timestamp":"2024-01-15T10:30:01Z","action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
+
+민감한 키 (예: `API_KEY`) 는 감사 로그의 `key` 필드에서 자동으로 `[MASKED:N chars]`(N 은 키 길이) 로 마스킹되며, 민감하지 않은 키 (예: `CUSTOM_VAR`) 는 원래대로 표시됩니다.
 
 ---
 
@@ -76,7 +80,7 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 
 ```text
 [AUDIT] 2024/01/15 10:30:00 action=load success=true reason="" file=.env duration=1.23ms
-[AUDIT] 2024/01/15 10:30:01 action=get key=API_KEY success=true reason=""
+[AUDIT] 2024/01/15 10:30:01 action=set key=[MASKED:7 chars] success=true reason=""
 [AUDIT] 2024/01/15 10:30:02 action=set key=CUSTOM_VAR success=true reason=""
 ```
 
@@ -158,7 +162,7 @@ type AuditEvent struct {
 
 ### FullAuditLogger 인터페이스 구현
 
-`FullAuditLogger`는 최소 인터페이스 `AuditLogger`(`LogError` 메서드만 포함)를 확장한 완전한 감사 로그 인터페이스입니다:
+`FullAuditLogger`는 최소 인터페이스 `AuditLogger`(LogError 메서드만 포함) 를 확장한 완전한 감사 로그 인터페이스입니다:
 
 ```go
 type FullAuditLogger interface {
@@ -328,14 +332,21 @@ func processAuditEvents(ch chan env.AuditEvent) {
 
 ## 보안 주의 사항
 
-### 민감 값 자동 마스킹
+### 감사 기록과 마스킹
 
-감사 로그는 민감한 키의 값을 자동으로 마스킹합니다:
+감사 로그는 민감한 키의 `key` 필드를 자동으로 마스킹합니다 (기본적으로 `[MASKED:N chars]`로 표시, N 은 키 이름의 문자 수. 민감하지 않은 키는 원래대로 표시). **쓰기 작업만 감사 이벤트를 기록합니다**: `Set` / `Delete` / `LoadFiles` 등은 `ActionSet` / `ActionDelete` / `ActionLoad` 등의 이벤트를 트리거하며, 이벤트에 마스킹된 키 이름을 기록합니다.
+
+읽기 작업은 감사를 생성하지 않습니다: `Get` / `GetString` / `GetInt` / `GetSecure` 등의 **정상적인 읽기는 감사 로그를 기록하지 않습니다**. `ActionGet` 이벤트는 `GetInt` / `GetBool` / `GetFloat64` 등의 타입 변환 **파싱 실패** 오류 경로에서만 트리거됩니다 (`success=false`). 예:
 
 ```go
-// 민감 값 가져오기 시 자동 마스킹
-secret := loader.GetSecure("API_KEY")
-// 감사 기록: {"action":"get","key":"API_KEY","masked":true}
+// 쓰기 작업: 감사 이벤트 기록 (민감한 키는 마스킹 후 기록)
+_ = loader.Set("API_KEY", "sk-1234567890")
+// 감사 기록: {"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
+
+// 읽기 작업: 정상 읽기는 감사 미생성
+secret := loader.GetSecure("API_KEY") // 감사 로그 미생성
+_ = loader.GetInt("PORT")             // 파싱 성공, 감사 로그 미생성
+_ = loader.GetInt("API_KEY")          // 파싱 실패 시 ActionGet 이벤트 생성 (success=false)
 ```
 
 ### 감사 로그 권한
@@ -350,7 +361,7 @@ chown app:app /var/log/app/env-audit.log
 
 ### 로그 순환
 
-logrotate를 사용하여 감사 로그를 관리하는 것이 좋습니다:
+logrotate 를 사용하여 감사 로그를 관리하는 것이 좋습니다:
 
 ```bash
 # /etc/logrotate.d/app-env-audit

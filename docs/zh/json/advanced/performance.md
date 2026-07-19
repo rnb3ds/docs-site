@@ -1,6 +1,8 @@
 ---
+sidebar_label: "性能优化"
 title: "性能优化 - CyberGo JSON | 高性能指南"
-description: "CyberGo JSON 性能优化指南：EnableCache/CacheTTL 缓存、ParallelThreshold 并行、PreParse 预解析、WarmupCache 预热与对象池复用，提升高频 JSON 处理性能。"
+description: "CyberGo JSON 性能优化：EnableCache/CacheTTL 缓存、ParallelThreshold 并行、PreParse 预解析与 WarmupCache 预热，提升高频 JSON 处理性能。"
+sidebar_position: 1
 ---
 
 # 性能优化
@@ -36,8 +38,8 @@ for _, item := range dataList {
 // ✅ 使用 Marshal 返回字节切片
 bytes, _ := json.Marshal(data)
 
-// ✅ 使用 Encode 返回字符串
-s, _ := json.Encode(data)
+// ✅ 使用 EncodeWithConfig 返回字符串（Encode 已废弃）
+s, _ := json.EncodeWithConfig(data)
 ```
 
 ### 预分配缓冲区
@@ -226,7 +228,7 @@ func TestMemoryUsage(t *testing.T) {
     runtime.ReadMemStats(&m)
     after := m.Alloc
 
-    fmt.Printf("内存使用: %d bytes\n", after-before)
+    fmt.Printf("内存使用：%d bytes\n", after-before)
 }
 ```
 
@@ -239,6 +241,5 @@ func TestMemoryUsage(t *testing.T) {
 
 ## 相关
 
-- [大文件处理 API](../api-reference/large-file)
+- [大文件处理](../streaming/large-files)
 - [错误处理](./error-handling)
-- [大文件处理](../large-files)

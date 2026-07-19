@@ -1,6 +1,8 @@
 ---
+sidebar_label: "概要"
 title: "セキュリティ概要 - CyberGo DD | ログセキュリティ"
-description: "CyberGo DD ログライブラリのセキュリティ機能の包括的な概要。機密データの自動検出とマスキングフィルタリングメカニズム、ファイルパスセキュリティ検証と防護戦略、非同期監査イベント記録とチェーン追跡能力、HMAC 整合性署名改ざん防止技術、コンプライアンス設定ベストプラクティスガイドを含み、データフィルタリングから監査追跡までログシステムの安全な運用を全面的に保障。"
+description: "CyberGo DD セキュリティ機能の包括的概要。機密データの自動検出とマスキングフィルタリング、ファイルパスセキュリティ検証と防護戦略、非同期監査イベント記録とチェーン追跡、HMAC 整合性署名改ざん防止、コンプライアンスベストプラクティスを含み、データフィルタリングから監査追跡まで安全な運用を保障。"
+sidebar_position: 1
 ---
 
 # セキュリティ概要
@@ -29,7 +31,7 @@ logger, _ := dd.New(dd.Config{
 // password フィールドは自動マスキング
 logger.InfoWith("ログイン",
     dd.String("username", "admin"),
-    dd.String("password", "s3cr3t"),  // 出力: [REDACTED]
+    dd.String("password", "s3cr3t"),  // 出力：[REDACTED]
 )
 ```
 
@@ -43,7 +45,7 @@ filter, _ := dd.NewCustomSensitiveDataFilter(
 )
 ```
 
-詳細は [セキュリティフィルタ API](../api-reference/security) を参照。
+詳細は [セキュリティフィルタ API](../api-reference/security-audit/security) を参照。
 
 ## パスセキュリティ
 
@@ -61,7 +63,7 @@ FileWriter は多層のパスセキュリティ検証を組み込みで提供：
 ```go
 // パストラバーサル攻撃は自動拒否
 fw, err := dd.NewFileWriter("../../../etc/passwd", dd.DefaultFileWriterConfig())
-// err: PATH_TRAVERSAL
+// err.Error(): "path traversal detected"
 ```
 
 ## コンプライアンス設定
@@ -94,7 +96,7 @@ audit.LogSecurityViolation("sql_injection", "SQL インジェクション", map[
 })
 ```
 
-詳細は [監査ログ API](../api-reference/audit) を参照。
+詳細は [監査ログ API](../api-reference/security-audit/audit) を参照。
 
 ## ログ整合性
 
@@ -104,13 +106,13 @@ HMAC 署名でログの改ざんを防止：
 cfg, _ := dd.DefaultIntegrityConfigSafe()
 signer, _ := dd.NewIntegritySigner(cfg)
 signature := signer.Sign(logMessage)
-// 検証時: signer.Verify(signedEntry)
+// 検証時：signer.Verify(signedEntry)
 ```
 
-詳細は [整合性署名 API](../api-reference/integrity) を参照。
+詳細は [整合性署名 API](../api-reference/security-audit/integrity) を参照。
 
 ## 次のステップ
 
 - [本番チェックリスト](./production-checklist) -- リリース前セキュリティチェック
-- [セキュリティフィルタ API](../api-reference/security) -- SensitiveDataFilter 詳解
-- [監査ログ API](../api-reference/audit) -- AuditLogger 詳解
+- [セキュリティフィルタ API](../api-reference/security-audit/security) -- SensitiveDataFilter 詳解
+- [監査ログ API](../api-reference/security-audit/audit) -- AuditLogger 詳解

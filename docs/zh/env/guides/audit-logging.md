@@ -1,6 +1,8 @@
 ---
+sidebar_label: "审计日志"
 title: "审计日志 - CyberGo env | 安全审计配置"
-description: "CyberGo env 审计日志配置指南，涵盖 JSON 文件、标准日志与 Channel 处理器，及自定义 AuditHandler 记录变量加载、读取、修改与删除操作。"
+description: "CyberGo env 审计日志配置指南，涵盖 JSONAuditHandler、LogAuditHandler 与 ChannelAuditHandler 三种处理器，及自定义 AuditHandler 记录变量加载、读取、修改与删除操作，用于安全审计、合规检查与问题排查。"
+sidebar_position: 5
 ---
 
 # 审计日志
@@ -51,9 +53,11 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 
 ```json
 {"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
-{"timestamp":"2024-01-15T10:30:01Z","action":"get","key":"API_KEY","success":true,"masked":true}
+{"timestamp":"2024-01-15T10:30:01Z","action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
+
+敏感键（如 `API_KEY`）在审计日志的 `key` 字段中被自动掩码为 `[MASKED:N chars]`（N 为键长），非敏感键（如 `CUSTOM_VAR`）原样显示。
 
 ---
 
@@ -76,7 +80,7 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 
 ```text
 [AUDIT] 2024/01/15 10:30:00 action=load success=true reason="" file=.env duration=1.23ms
-[AUDIT] 2024/01/15 10:30:01 action=get key=API_KEY success=true reason=""
+[AUDIT] 2024/01/15 10:30:01 action=set key=[MASKED:7 chars] success=true reason=""
 [AUDIT] 2024/01/15 10:30:02 action=set key=CUSTOM_VAR success=true reason=""
 ```
 
@@ -158,7 +162,7 @@ type AuditEvent struct {
 
 ### 实现 FullAuditLogger 接口
 
-`FullAuditLogger` 是完整的审计日志接口，扩展了最小接口 `AuditLogger`（仅包含 `LogError` 方法）：
+`FullAuditLogger` 是完整的审计日志接口，扩展了最小接口 `AuditLogger`（仅包含 LogError 方法）：
 
 ```go
 type FullAuditLogger interface {
@@ -328,14 +332,21 @@ func processAuditEvents(ch chan env.AuditEvent) {
 
 ## 安全注意事项
 
-### 敏感值自动掩码
+### 审计记录与掩码
 
-审计日志自动掩码敏感键的值：
+审计日志对敏感键的 `key` 字段自动掩码（默认显示为 `[MASKED:N chars]`，N 为键名字符数；非敏感键原样显示）。**仅写操作记录审计事件**：`Set` / `Delete` / `LoadFiles` 等会触发 `ActionSet` / `ActionDelete` / `ActionLoad` 等事件，并在事件中记录掩码后的键名。
+
+读操作不产审计：`Get` / `GetString` / `GetInt` / `GetSecure` 等**正常读取不记录审计日志**。`ActionGet` 事件仅在 `GetInt` / `GetBool` / `GetFloat64` 等类型转换**解析失败**的错误路径触发（`success=false`），例如：
 
 ```go
-// 获取敏感值时自动掩码
-secret := loader.GetSecure("API_KEY")
-// 审计记录: {"action":"get","key":"API_KEY","masked":true}
+// 写操作：会记录审计事件（敏感键掩码后记录）
+_ = loader.Set("API_KEY", "sk-1234567890")
+// 审计记录：{"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
+
+// 读操作：正常读取不产审计
+secret := loader.GetSecure("API_KEY") // 不产生审计日志
+_ = loader.GetInt("PORT")             // 解析成功，不产生审计日志
+_ = loader.GetInt("API_KEY")          // 解析失败时产生 ActionGet 事件（success=false）
 ```
 
 ### 审计日志权限

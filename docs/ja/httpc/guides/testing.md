@@ -1,13 +1,15 @@
 ---
-title: "テストガイド - CyberGo HTTPC | httptestとモック"
-description: "HTTPC テストガイド: TestingConfig テスト専用設定、net/http/httptest モックサーバー統合、エラー応答とリダイレクトのシミュレーション、テーブル駆動テスト、Cookie セッションアサーションのベストプラクティスを解説します。"
+sidebar_label: "テストガイド"
+title: "テストガイド - CyberGo HTTPC | httptest とモック"
+description: "HTTPC テストガイド：TestingConfig テスト専用設定、net/http/httptest モックサーバー統合、エラー応答とリダイレクトのシミュレーション、テーブル駆動テスト、Cookie セッションアサーションのベストプラクティスを解説します。"
+sidebar_position: 7
 ---
 
 # テストガイド
 
 ## TestingConfig
 
-`TestingConfig()` はテスト環境専用に設計されており、セキュリティチェックを無効にし、タイムアウトを短縮してテスト実行を高速化します：
+`TestingConfig()` はテスト環境専用に設計されており、セキュリティチェックを無効にし、接続/ハンドシェイクタイムアウトを短縮します（Request はデフォルト 180s のまま）：
 
 ```go
 func TestAPI(t *testing.T) {
@@ -30,6 +32,7 @@ func TestAPI(t *testing.T) {
 
 標準ライブラリ `net/http/httptest` を使用してモックサーバーを作成し、実際のバックエンドなしで統合テストを実行できます：
 
+<!-- check-code: skip -->
 ```go
 package main
 
@@ -110,17 +113,22 @@ defer server.Close()
 ### 遅延のシミュレーション
 
 ```go
+// TestingConfig は SSRF 防護を無効化します。さもないとデフォルトクライアントが
+// 127.0.0.1 のテストサーバーをブロックし、タイムアウトエラーではなく SSRF エラーになります。
+client, _ := httpc.New(httpc.TestingConfig())
+defer client.Close()
+
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     time.Sleep(5 * time.Second)
     w.WriteHeader(http.StatusOK)
 }))
 defer server.Close()
 
-// タイムアウト処理のテスト
+// タイムアウト処理のテスト：1s のコンテキストタイムアウト < 5s のサーバー遅延
 ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 defer cancel()
 
-_, err := httpc.Request(ctx, "GET", server.URL)
+_, err := client.Request(ctx, "GET", server.URL)
 if err == nil {
     t.Fatal("expected timeout error")
 }
@@ -176,7 +184,10 @@ func TestHTTPMethods(t *testing.T) {
     }))
     defer server.Close()
 
-    client, _ := httpc.New(httpc.TestingConfig())
+    client, err := httpc.New(httpc.TestingConfig())
+    if err != nil {
+        t.Fatal(err)
+    }
     defer client.Close()
 
     tests := []struct {
@@ -216,6 +227,6 @@ func TestHTTPMethods(t *testing.T) {
 
 ## 次のステップ
 
-- [設定 API](../api-reference/config) - TestingConfig の詳細パラメータ
-- [エラータイプ](../api-reference/errors) - エラーアサーションリファレンス
+- [設定 API](../api-reference/client-config/config) - TestingConfig の詳細パラメータ
+- [エラータイプ](../api-reference/types/errors) - エラーアサーションリファレンス
 - [ミドルウェアチェーン](./middleware-chain) - ミドルウェアのテストパターン

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo JSON | ベストプラクティス"
-description: "CyberGo JSON エラー処理ベストプラクティス：JsonsError 判定、errors.Is/As、標準エラー変数、リカバリ戦略、SafeError、RedactedPath ログで堅牢な例外処理を構築します。"
+description: "CyberGo JSON エラー処理：JsonsError 型判定、errors.Is/As マッチング、SafeError 安全出力と RedactedPath によるパスマスキングで、堅牢な例外機構を構築します。"
+sidebar_position: 2
 ---
 
 # エラー処理
@@ -23,8 +25,8 @@ var (
     ErrProcessorClosed    = errors.New("processor is closed")
     ErrConcurrencyLimit   = errors.New("concurrency limit exceeded")
     ErrUnsupportedPath    = errors.New("unsupported path operation")
-    ErrOperationTimeout   = errors.New("operation timeout")
-    ErrResourceExhausted  = errors.New("system resources exhausted")
+    ErrOperationTimeout   = errors.New("operation timeout")           // Deprecated
+    ErrResourceExhausted  = errors.New("system resources exhausted")  // Deprecated
 )
 ```
 
@@ -53,7 +55,7 @@ if err != nil {
 
 ```go
 type JsonsError struct {
-    Op      string `json:"op"`      // 操作タイプ: "get", "set", "delete", "marshal" など
+    Op      string `json:"op"`      // 操作タイプ："get", "set", "delete", "marshal" など
     Path    string `json:"path"`    // JSON パス（該当する場合）
     Message string `json:"message"` // 人間が読めるエラーメッセージ
     Err     error  `json:"err"`     // 基底エラー
@@ -138,7 +140,7 @@ if multiErr.HasError() {
 ```go
 val, err := json.Get(data, "config.api_key")
 if err != nil {
-    return fmt.Errorf("API キーの読み取りに失敗: %w", err)
+    return fmt.Errorf("API キーの読み取りに失敗：%w", err)
 }
 ```
 
@@ -211,7 +213,7 @@ func auditLog(op string, path string, err error) {
 `SafeError` はクライアントに安全なエラーメッセージを返し、内部コンテキスト情報を削除します：
 
 ```go
-// シグネチャ: func SafeError(err error) string
+// シグネチャ：func SafeError(err error) string
 
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
@@ -270,7 +272,7 @@ if err != nil {
         return fmt.Errorf("データ形式エラー: %w", err)
     case errors.Is(err, json.ErrPathNotFound):
         // パスが存在しない
-        return fmt.Errorf("フィールドが存在しません: %w", err)
+        return fmt.Errorf("フィールドが存在しません：%w", err)
     case errors.Is(err, json.ErrTypeMismatch):
         // 型の不一致
         return fmt.Errorf("型エラー: %w", err)
@@ -279,7 +281,7 @@ if err != nil {
         return fmt.Errorf("パス構文エラー: %w", err)
     case errors.Is(err, json.ErrUnsupportedPath):
         // サポートされていないパス操作
-        return fmt.Errorf("サポートされていない操作: %w", err)
+        return fmt.Errorf("サポートされていない操作：%w", err)
     }
 }
 ```
@@ -297,10 +299,10 @@ if err != nil {
         return errors.New("入力が不正です")
     }
     if errors.Is(err, json.ErrSizeLimit) {
-        return fmt.Errorf("データがサイズ制限を超過: %w", err)
+        return fmt.Errorf("データがサイズ制限を超過：%w", err)
     }
     if errors.Is(err, json.ErrDepthLimit) {
-        return fmt.Errorf("ネスト深度の制限超過: %w", err)
+        return fmt.Errorf("ネスト深度の制限超過：%w", err)
     }
     return err
 }
@@ -314,20 +316,20 @@ if err != nil {
 val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrOperationTimeout) {
-        // 操作タイムアウト、リトライ可能
-        return fmt.Errorf("一時的なエラーです、リトライしてください: %w", err)
+        // 操作タイムアウト、リトライ可能 <Badge type="danger" text="非推奨" />
+        return fmt.Errorf("一時的なエラーです、リトライしてください：%w", err)
     }
     if errors.Is(err, json.ErrConcurrencyLimit) {
-        // 同時実行制限
-        return fmt.Errorf("システムが混雑しています、後でもう一度お試しください: %w", err)
+        // 同時実行制限（MaxConcurrency 到達時に返される、リトライ可能）
+        return fmt.Errorf("システムが混雑しています、後でもう一度お試しください：%w", err)
     }
     if errors.Is(err, json.ErrResourceExhausted) {
-        // リソース枯渇
-        return fmt.Errorf("システムリソースが不足: %w", err)
+        // リソース枯渇 <Badge type="danger" text="非推奨" />
+        return fmt.Errorf("システムリソースが不足：%w", err)
     }
     if errors.Is(err, json.ErrProcessorClosed) {
         // プロセッサがクローズ済み
-        return fmt.Errorf("プロセッサが利用不可: %w", err)
+        return fmt.Errorf("プロセッサが利用不可：%w", err)
     }
     return err
 }
@@ -353,10 +355,11 @@ func processJSON(data string) error {
             // セキュリティエラー、記録して拒否
             log.Warn("セキュリティ違反", "error", err)
             return errors.New("入力が不正です")
-        case errors.Is(err, json.ErrOperationTimeout),
-            errors.Is(err, json.ErrConcurrencyLimit):
-            // リトライ可能なエラー
-            return fmt.Errorf("一時的なエラーです、リトライしてください: %w", err)
+        case errors.Is(err, json.ErrConcurrencyLimit):
+            // 同時実行上限、後でリトライ可能
+            return fmt.Errorf("システムが混雑しています、後でリトライしてください：%w", err)
+        case errors.Is(err, json.ErrOperationTimeout): // Deprecated（現在返されることはありません、互換性のために保持）
+            return fmt.Errorf("一時的なエラーです、リトライしてください：%w", err)
         default:
             // システムエラー
             log.Error("システムエラー", "error", err)
@@ -378,7 +381,7 @@ func handleWithDetail(data string, path string) error {
             return fmt.Errorf("操作 %s に失敗 (パス: %s): %w",
                 jsonErr.Op, jsonErr.Path, jsonErr.Err)
         }
-        return fmt.Errorf("操作に失敗: %w", err)
+        return fmt.Errorf("操作に失敗：%w", err)
     }
     return nil
 }
@@ -389,14 +392,14 @@ func handleWithDetail(data string, path string) error {
 ```go
 func deepProcess(data string) error {
     if err := processLevel1(data); err != nil {
-        return fmt.Errorf("深度処理に失敗: %w", err)
+        return fmt.Errorf("深度処理に失敗：%w", err)
     }
     return nil
 }
 
 func processLevel1(data string) error {
     if err := processLevel2(data); err != nil {
-        return fmt.Errorf("レベル1処理に失敗 (パス data.field): %w", err)
+        return fmt.Errorf("レベル 1 処理に失敗 (パス data.field): %w", err)
     }
     return nil
 }
@@ -406,8 +409,8 @@ func processLevel2(data string) error {
     return err
 }
 
-// エラーチェーンの例:
-// 深度処理に失敗: レベル1処理に失敗 (パス data.field): path not found
+// エラーチェーンの例：
+// 深度処理に失敗：レベル 1 処理に失敗 (パス data.field): path not found
 ```
 
 ## 関連

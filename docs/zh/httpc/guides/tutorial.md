@@ -1,6 +1,8 @@
 ---
+sidebar_label: "实战教程"
 title: "实战教程 - CyberGo HTTPC | GitHub API 实战"
 description: "三十分钟实战教程：从 httpc.Get 逐步构建完整的 GitHub REST API 客户端，涵盖 JSON 响应解析、NewDomain 域名客户端、WithJSON 发送数据、中间件链组合、ClientError 错误处理与文件下载功能。"
+sidebar_position: 1
 ---
 
 # 实战教程：构建 GitHub API 客户端
@@ -183,7 +185,7 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 ```
 
 要点：
-- 中间件在 `Config.Middleware.Middlewares` 中配置
+- 中间件在 `MiddlewareConfig.Middlewares` 中配置
 - `LoggingMiddleware` 记录请求日志
 - `RecoveryMiddleware` 防止 panic 崩溃
 - `RequestIDMiddleware` 为每个请求生成唯一 ID
@@ -220,9 +222,9 @@ case result.IsSuccess():
 case result.StatusCode() == 401:
     log.Println("Token 过期或无效")
 case result.IsClientError():
-    log.Printf("客户端错误: %d", result.StatusCode())
+    log.Printf("客户端错误：%d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("服务端错误: %d (已自动重试 %d 次)",
+    log.Printf("服务端错误：%d (共尝试 %d 次，含首次请求)",
         result.StatusCode(), result.Meta.Attempts)
 }
 ```
@@ -250,7 +252,7 @@ dlCfg.FilePath = "go1.22.0.linux-amd64.tar.gz"
 dlCfg.Overwrite = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r下载进度: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
+    fmt.Printf("\r下载进度：%.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.Download(
@@ -274,7 +276,10 @@ fmt.Printf("\n下载完成: %s (%d bytes)\n",
 
 ```go
 func fetchRepos(ctx context.Context, repos []string) error {
-    client, _ := httpc.New(httpc.PerformanceConfig())
+    client, err := httpc.New(httpc.PerformanceConfig())
+    if err != nil {
+        return err
+    }
     defer client.Close()
 
     results := make([]*httpc.Result, len(repos))
@@ -370,7 +375,7 @@ func main() {
         fmt.Printf("✅ %s\n", repo.FullName)
         fmt.Printf("   ⭐ %d | 语言: %s\n", repo.Stars, repo.Language)
         fmt.Printf("   %s\n", repo.Description)
-        fmt.Printf("   耗时: %s (重试 %d 次)\n",
+        fmt.Printf("   耗时: %s (共尝试 %d 次，含首次请求)\n",
             result.Meta.Duration, result.Meta.Attempts)
     }
 }

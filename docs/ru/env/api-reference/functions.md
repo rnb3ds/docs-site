@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Функции пакета"
 title: "Функции пакета - CyberGo env | Глобальные удобные функции"
-description: "Справочник пакетных функций CyberGo env: Load, GetString, GetInt, Keys, Marshal и ParseInto поверх потокобезопасного глобального загрузчика."
+description: "Пакетные функции CyberGo env поверх глобального загрузчика: Load, GetString, GetInt, GetBool, GetDuration, GetSlice, GetSecure, Lookup, Keys и ParseInto."
+sidebar_position: 2
 ---
 
 # Функции пакета
@@ -516,13 +518,14 @@ func Set(key, value string) error
 - `error` - Ошибка установки
 
 **Типы ошибок:**
-- `ErrInvalidKey` - Имя ключа недействительно
-- `ErrForbiddenKey` - Ключ запрещён
+- `*ValidationError` - Недопустимый формат имени ключа (Field="key")
+- `*SecurityError` - Ключ запрещён (можно сопоставить через `errors.Is(err, env.ErrSecurityViolation)`)
+- `ErrInvalidValue` - Недопустимое значение (когда `ValidateValues` равно true, значение содержит небезопасный контент: нулевые байты, управляющие символы)
 - `ErrClosed` - Загрузчик закрыт
 
 ```go
 if err := env.Set("CUSTOM_KEY", "value"); err != nil {
-    // Может быть ErrForbiddenKey или ErrInvalidKey
+    // Может быть *SecurityError (запрещённый ключ) или *ValidationError (формат ключа)
 }
 ```
 
@@ -610,7 +613,8 @@ if err := env.ParseInto(&cfg); err != nil {
 | `env:"KEY"` | Маппинг на указанный ключ |
 | `env:"-"` | Игнорировать это поле |
 | `envDefault:"value"` | Значение по умолчанию |
-| `envSeparator:","` | Разделитель срезов |
+
+По умолчанию поля-срезы разделяются запятой `,` (пробелы вокруг разделителя удаляются автоматически), пользовательского тега разделителя нет.
 
 :::tip Подробнее
 [Маппинг структур](/ru/env/guides/struct-mapping) - полное руководство.
@@ -632,9 +636,9 @@ func ResetDefaultLoader() error
 - `error` - Ошибка закрытия старого загрузчика (если он существует); nil если загрузчика не было или закрытие успешно
 
 **Поведение:**
-- Атомарно заменяет загрузчик по умолчанию на nil
-- Закрывает старый загрузчик (выполняется вне блокировки, чтобы избежать блокировки)
-- Позволяет создать новый загрузчик по умолчанию
+- Атомарно заменяет загрузчик по умолчанию на nil через `atomic.Pointer.Swap`
+- Закрывает старый загрузчик, удерживая блокировку `defaultMu` (блокировка снимается только после завершения закрытия, что обеспечивает атомарность сброса)
+- После сброса можно создать новый загрузчик по умолчанию через `Load()` или `LoadWithConfig()`
 
 ```go
 func TestMain(m *testing.M) {
@@ -733,7 +737,10 @@ envStr, _ := env.Marshal(mapData)
 
 // map в формат JSON
 jsonStr, _ := env.Marshal(mapData, env.FormatJSON)
-// {"HOST":"localhost","PORT":"8080"}
+// {
+//   "HOST": "localhost",
+//   "PORT": 8080
+// }
 
 // Структура в формат .env
 type Config struct {
@@ -910,7 +917,7 @@ type AppConfig struct {
     Port     int64         `env:"APP_PORT" envDefault:"8080"`
     Debug    bool          `env:"DEBUG" envDefault:"false"`
     Timeout  time.Duration `env:"TIMEOUT" envDefault:"30s"`
-    Hosts    []string      `env:"HOSTS" envSeparator:","`
+    Hosts    []string      `env:"HOSTS"`
 }
 
 func main() {

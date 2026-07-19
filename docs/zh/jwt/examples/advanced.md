@@ -1,6 +1,8 @@
 ---
+sidebar_label: "高级示例"
 title: "高级示例 - CyberGo JWT | 非对称签名与自定义存储"
 description: "高级示例集：RSA 与 ECDSA 非对称签名验证、实现 CustomClaims 自定义业务声明、对接 Redis 自定义黑名单后端、FixedClock 时钟注入测试及完整 Web 服务集成。"
+sidebar_position: 20
 ---
 
 # 高级示例
@@ -164,8 +166,8 @@ func main() {
     }
     if valid {
         parsed := result.(*MyClaims)
-        fmt.Println("UserID:", parsed.UserID) // 输出: user123
-        fmt.Println("Email:", parsed.Email)   // 输出: alice@example.com
+        fmt.Println("UserID:", parsed.UserID) // 输出：user123
+        fmt.Println("Email:", parsed.Email)   // 输出：alice@example.com
     }
 
     // 刷新到自定义 Claims
@@ -284,8 +286,8 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // 输出: 2026-01-01 00:00:00
-    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // 输出: 2026-01-01 00:15:00
+    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // 输出：2026-01-01 00:00:00 +0000 UTC
+    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // 输出：2026-01-01 00:15:00 +0000 UTC
 }
 ```
 

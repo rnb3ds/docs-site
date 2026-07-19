@@ -1,6 +1,8 @@
 ---
+sidebar_label: "성능 최적화"
 title: "성능 최적화 - CyberGo HTTPC | 프리셋과 동시성"
 description: "HTTPC 성능 최적화 가이드: Default/Secure/Performance/Minimal 네 가지 프리셋 비교와 시나리오 선택, 연결 풀과 타임아웃 미세 조정, Result 수명 주기 관리와 고동시성 요청 패턴을 다룹니다."
+sidebar_position: 1
 ---
 
 # 성능 최적화
@@ -43,14 +45,14 @@ client, _ := httpc.New(cfg)
 
 ## 객체 풀 재사용
 
-HTTPC는 내부적으로 엔진 응답 객체와 문자열 빌더를 sync.Pool로 재사용하여 GC 부하를 줄이며, Result는 매 요청마다 새로 생성되어 GC가 자동 회수합니다:
+HTTPC 는 내부적으로 엔진 응답 객체와 문자열 빌더를 sync.Pool 로 재사용하여 GC 부하를 줄이며, Result 는 매 요청마다 새로 생성되어 GC 가 자동 회수합니다:
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result는 매 요청마다 새로 생성, GC가 자동 회수, 수동 해제 불필요
+// Result 는 매 요청마다 새로 생성, GC 가 자동 회수, 수동 해제 불필요
 ```
 
 :::tip
@@ -67,6 +69,6 @@ if err != nil {
 
 ## 다음 단계
 
-- [연결 풀과 프록시](./connection-pool) -- 연결 풀 매개변수 선택, 프록시와 DoH 설정
-- [오류 처리](./error-handling) -- 타임아웃 계층화 전략
-- [보안 개요](../security/) -- 보안과 성능의 균형
+- [연결 풀과 프록시](./connection-pool) — 연결 풀 매개변수 선택, 프록시와 DoH 설정
+- [오류 처리](./error-handling) — 타임아웃 계층화 전략
+- [보안 개요](../security/) — 보안과 성능의 균형

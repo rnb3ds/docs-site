@@ -1,6 +1,8 @@
 ---
+sidebar_label: "域名客户端与会话"
 title: "域名客户端与会话 - CyberGo HTTPC | 会话与域名管理"
 description: "HTTPC 域名客户端与会话管理指南：NewDomain 创建域名作用域客户端、URL 自动拼接规则、SetHeader 会话头维护、Cookie 自动管理与响应捕获、CookieSecurity 安全验证策略与 REST API 客户端封装实战示例。"
+sidebar_position: 3
 ---
 
 # 域名客户端与会话
@@ -97,6 +99,10 @@ result, _ := dc.Request(ctx, "GET", "/users")
 result, _ := dc.Get("https://other-api.com/data")
 ```
 
+:::warning 请求选项会应用两次
+域名客户端在内部对请求选项**应用两次**（一次捕获会话状态、一次实际请求）。避免使用带副作用的选项（如计数器、nonce 生成）；如需此类选项请改用底层 `Client`。
+:::
+
 ## 会话访问
 
 ```go
@@ -121,7 +127,7 @@ dc, _ := httpc.NewDomain("https://api.example.com")
 // 设置严格 Cookie 安全
 session := dc.Session()
 session.SetCookieSecurity(httpc.StrictCookieSecurityConfig())
-// 要求: Secure=true, HttpOnly=true, SameSite=Strict
+// 要求：Secure=true, HttpOnly=true, SameSite=Strict
 
 // 不符合安全要求的 Cookie 会导致 SetCookie 返回错误
 if err := dc.SetCookie(&http.Cookie{
@@ -129,7 +135,7 @@ if err := dc.SetCookie(&http.Cookie{
     Value: "test",
     // 缺少 Secure, HttpOnly → 被拒绝
 }); err != nil {
-    log.Println("Cookie 被拒绝:", err)
+    log.Println("Cookie 被拒绝：", err)
 }
 ```
 
@@ -192,6 +198,6 @@ func main() {
 
 ## 下一步
 
-- [域名客户端 API](../api-reference/domain-client) - 完整 API 参考
-- [会话管理 API](../api-reference/session) - SessionManager 参考
+- [域名客户端 API](../api-reference/client-config/domain-client) - 完整 API 参考
+- [会话管理 API](../api-reference/client-config/session) - SessionManager 参考
 - [请求与响应](./request-response) - 基本请求指南

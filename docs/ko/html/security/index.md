@@ -1,6 +1,8 @@
 ---
-title: "보안 개요 - CyberGo HTML | 보호 기능 총람"
-description: "CyberGo HTML 보안 개요: 입력 크기 제한, DOM 깊이 제한, 경로 순회 방지, 패닉 복구, 타임아웃, 콘텐츠 정제, 플러그형 감사로 모든 위반을 errors.Is/As로 판별합니다."
+sidebar_label: "보안 개요"
+title: "보안 개요 - CyberGo html | 보안 방어 총람"
+description: "CyberGo html 보안 개요: 입력 크기 제한, DOM 깊이 제한, 경로 순회 방지, 패닉 복구, 처리 타임아웃, 콘텐츠 정제와 플러그형 감사를 다룹니다."
+sidebar_position: 1
 ---
 
 # 보안 개요
@@ -11,16 +13,16 @@ HTML 라이브러리는 설계 시 보안을 최우선으로 고려하여 다층
 
 ### 입력 크기 제한
 
-기본 최대 입력은 50MB이며, 메모리 고갈을 방지합니다:
+기본 최대 입력은 50MB 이며, 메모리 고갈을 방지합니다:
 
 ```go
 cfg := html.DefaultConfig()
-cfg.MaxInputSize = 10 * 1024 * 1024 // 10MB로 조정
+cfg.MaxInputSize = 10 * 1024 * 1024 // 10MB 로 조정
 ```
 
 ### DOM 깊이 제한
 
-기본 최대 깊이는 500이며, 재귀 폭탄 공격을 방지합니다:
+기본 최대 깊이는 500 이며, 재귀 폭탄 공격을 방지합니다:
 
 ```go
 cfg.MaxDepth = 200 // 제한 강화
@@ -28,7 +30,7 @@ cfg.MaxDepth = 200 // 제한 강화
 
 ### 경로 순회 방지
 
-파일 작업은 경로 순회 시도(예: `../../../etc/passwd`)를 자동으로 감지하고 차단하며, 감사 시스템을 통해 기록합니다.
+파일 작업은 경로 순회 시도 (예: `../../../etc/passwd`) 를 자동으로 감지하고 차단하며, 감사 시스템을 통해 기록합니다.
 
 ### 패닉 복구
 
@@ -36,7 +38,7 @@ cfg.MaxDepth = 200 // 제한 강화
 
 ### 처리 타임아웃
 
-설정 가능한 처리 타임아웃으로, 악의적인 HTML이 무한 처리를 유발하는 것을 방지합니다:
+설정 가능한 처리 타임아웃으로, 악의적인 HTML 이 무한 처리를 유발하는 것을 방지합니다:
 
 ```go
 cfg.ProcessingTimeout = 10 * time.Second
@@ -52,7 +54,7 @@ cfg.EnableSanitization = true
 
 ## 감사 시스템
 
-자세한 보안 감사 설정은 [감사 시스템](../api-reference/audit)을 참조하세요.
+자세한 보안 감사 설정은 [감사 시스템](../api-reference/modules/audit)을 참조하세요.
 
 감사 시스템은 다음과 같은 보안 이벤트를 기록할 수 있습니다:
 

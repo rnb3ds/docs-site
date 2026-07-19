@@ -1,6 +1,8 @@
 ---
+sidebar_label: "基本サンプル"
 title: "基本的な使い方 - CyberGo HTTPC | 実行可能な例"
-description: "HTTPC 基本的な使用例集: 認証付き GET リクエスト、JSON/フォーム/ファイルアップロード POST、カスタム設定、プロキシ、ミドルウェア、メトリクス収集、進捗コールバック付きファイルダウンロードの完全なコードを提供します。すべての例はすぐに実行できます。"
+description: "HTTPC 基本的な使用例集：認証付き GET リクエスト、JSON/フォーム/ファイルアップロード POST、カスタム設定、プロキシ、ミドルウェア、メトリクス収集、進捗コールバック付きファイルダウンロードの完全なコードを提供します。すべての例はすぐに実行できます。"
+sidebar_position: 1
 ---
 
 # 基本的な使い方
@@ -186,7 +188,7 @@ cfg.FilePath = "/tmp/file.zip"
 cfg.Overwrite = true
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rダウンロード中: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
+    fmt.Printf("\rダウンロード中：%.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.Download(context.Background(), "https://example.com/file.zip", cfg)

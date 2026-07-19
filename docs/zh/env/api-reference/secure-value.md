@@ -1,6 +1,8 @@
 ---
+sidebar_label: "SecureValue"
 title: "SecureValue API - CyberGo env | 安全值存储"
-description: "CyberGo env 的 SecureValue 安全值 API 参考，含 mlock 内存锁定、Release 清零销毁、Masked 掩码、IsSensitiveKey 检测，安全存储密码与令牌。"
+description: "CyberGo env 的 SecureValue 安全值 API 参考，含 NewSecureValue 创建、mlock 内存锁定、Reveal 读取明文、Masked 掩码、Release 清零销毁、IsSensitiveKey 检测，安全存储密码、令牌与密钥。"
+sidebar_position: 5
 ---
 
 # SecureValue API
@@ -128,7 +130,7 @@ func (sv *SecureValue) String() string
 返回掩码表示，安全用于日志和格式化。实现了 `fmt.Stringer` 接口，防止通过 `fmt.Printf`、`log.Println` 或错误包装意外泄露密钥。
 
 **返回：**
-- `string` - 掩码表示（如 `[SECURE:32 bytes locked]`），nil 时返回 `[NIL]`
+- `string` - 掩码表示（如 `[SECURE:32 bytes]`），nil 时返回 `[NIL]`
 
 ```go
 secret := env.GetSecure("PASSWORD")
@@ -233,7 +235,9 @@ func (sv *SecureValue) Masked() string
 secret := env.GetSecure("API_KEY")
 if secret != nil {
     log.Printf("API Key: %s", secret.Masked())
-    // 输出: API Key: [SECURE:32 bytes locked]
+    // 输出：API Key: [SECURE:32 bytes]
+    // 注：仅当启用内存锁定（SetMemoryLockEnabled(true)）且锁定成功时，
+    // 掩码才追加 " locked" 后缀（另有 " lock-failed" / " unlocked"）
 }
 ```
 
@@ -536,11 +540,11 @@ func MaskValue(key, value string) string
 ```go
 // 敏感键 - 返回 [MASKED:N chars] 格式
 masked := env.MaskValue("API_KEY", "secret123")
-// 返回: [MASKED:9 chars]
+// 返回：[MASKED:9 chars]
 
 // 非敏感键 - 返回原值（超过 20 字符则截断）
 masked := env.MaskValue("APP_NAME", "myapp")
-// 返回: myapp
+// 返回：myapp
 ```
 
 ---
@@ -561,7 +565,7 @@ func MaskKey(key string) string
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
-// 返回: DB***
+// 返回：DB***
 ```
 
 ---
@@ -584,7 +588,7 @@ func SanitizeForLog(s string) string
 // 自动掩码敏感键值对
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
-// 返回: "Connected with password=[MASKED] api_key=[MASKED]"
+// 返回："Connected with password=[MASKED] api_key=[MASKED]"
 ```
 
 ---
@@ -604,10 +608,10 @@ func MaskSensitiveInString(s string) string
 - `string` - 掩码后的字符串
 
 ```go
-// 长字符串会被截断
+// 长字符串会被截断（保留前 47 个字符并追加 "..."）
 long := "This is a very long string that exceeds 50 characters"
 clean := env.MaskSensitiveInString(long)
-// 返回: "This is a very long string that exceeds 50..."
+// 返回："This is a very long string that exceeds 50 char..."
 ```
 
 ::: tip 使用场景

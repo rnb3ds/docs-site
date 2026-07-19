@@ -1,6 +1,8 @@
 ---
+sidebar_label: "型定義"
 title: "型定義 - CyberGo JSON | API リファレンス"
 description: "CyberGo JSON コア型：Result[T]、AccessResult、BatchOperation、BatchResult、Schema、Stats、HealthStatus、IterableValue で完全な型システムを構成します。"
+sidebar_position: 5
 ---
 
 # 型定義
@@ -51,7 +53,7 @@ func main() {
     fmt.Printf("ニックネーム: %s\n", nickname)
 
     age := json.GetTyped[int](data, "user.age", 0)
-    fmt.Printf("年齢: %d\n", age)
+    fmt.Printf("年齢：%d\n", age)
 }
 ```
 
@@ -146,7 +148,7 @@ if !result.Exists {
 }
 
 // 型の確認
-fmt.Println("型:", result.Type)
+fmt.Println("型：", result.Type)
 ```
 
 ### チェーン型変換メソッド
@@ -208,7 +210,7 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Printf("年齢: %d\n", age)
+    fmt.Printf("年齢：%d\n", age)
 
     // 存在しないパスの取得
     missing := processor.SafeGet(data, "user.nickname")
@@ -411,7 +413,7 @@ for _, e := range errors {
 
 ```go
 type BatchOperation struct {
-    Type    string `json:"type"`     // 操作タイプ: "get", "set", "delete", "validate"
+    Type    string `json:"type"`     // 操作タイプ："get", "set", "delete", "validate"
     JSONStr string `json:"json_str"` // JSON データ文字列
     Path    string `json:"path"`     // 対象パス
     Value   any    `json:"value"`    // Set 操作の値
@@ -637,7 +639,7 @@ type SyntaxError struct {
 data := `{invalid json}`
 _, err := json.ParseAny(data)
 if syntaxErr, ok := err.(*json.SyntaxError); ok {
-    fmt.Printf("構文エラー、オフセット: %d\n", syntaxErr.Offset)
+    fmt.Printf("構文エラー、オフセット：%d\n", syntaxErr.Offset)
 }
 ```
 
@@ -975,7 +977,7 @@ for {
 
 `Token` は JSON トークン値で、以下のいずれかの型を保持します：
 
-- `Delim`：4つの JSON デリミタ `[ ] { }` を表す
+- `Delim`：4 つの JSON デリミタ `[ ] { }` を表す
 - `bool`：JSON ブーリアンを表す
 - `float64`：JSON 数値を表す
 - `Number`：`UseNumber` 有効時の JSON 数値を表す
@@ -1047,7 +1049,7 @@ if delim, ok := token.(json.Delim); ok {
 
 ## 関連
 
-- [パッケージ関数](./functions) - パッケージレベル関数リファレンス
+- [パッケージ関数](./functions/) - パッケージレベル関数リファレンス
 - [Config](./config) - 設定オプション
 - [Processor](./processor/) - プロセッサメソッド
 - [インターフェース定義](./interfaces) - 拡張インターフェース

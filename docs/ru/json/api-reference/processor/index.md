@@ -1,6 +1,8 @@
 ---
-title: "Processor - CyberGo JSON | Справочник API"
-description: "Processor CyberGo JSON: создание New, GetString/Set/Delete, итерация Foreach, Encode, жизненный цикл Close, Stats и кэш для частого повторного использования."
+sidebar_label: "Обзор"
+title: "Processor процессор - CyberGo JSON | Справочник API"
+description: "CyberGo JSON Processor процессор: создание New, операции GetString/Set/Delete, итерация Foreach, кодирование Encode и жизненный цикл Close — подходит для высокочастотного повторного использования."
+sidebar_position: 1
 ---
 
 # Processor
@@ -56,13 +58,15 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 | Категория | Описание |
 |-----------|----------|
-| [Запросы по пути](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
-| [Модификация данных](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/Delete/DeleteClean |
-| [Методы вывода](./output) | Encode/EncodePretty/EncodeWithConfig/Compact/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
-| [Парсинг и загрузка](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal/LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [Запрос и получение](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
+| [Модификация](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/MergeJSON/MergeMany/CompareJSON |
+| [Операции удаления](./delete) | Delete/DeleteClean |
+| [Кодирование и вывод](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
+| [Парсинг и валидация](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal |
+| [Пакетные операции](./batch) | ProcessBatch/WarmupCache |
+| [JSONL](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
+| [Файловый ввод-вывод](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
 | [Методы итерации](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachReturn/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachWithPathAndControl/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
-| [Массовые операции](./batch) | ProcessBatch/WarmupCache |
-| [Обработка JSONL](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
 | [Жизненный цикл](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
 
 ---
@@ -151,7 +155,7 @@ func main() {
 
 ## Связанные разделы
 
-- [Функции пакета](../functions) - Справочник функций верхнего уровня
+- [Функции пакета](../functions/) - Справочник функций верхнего уровня
 - [Config](../config) - Параметры конфигурации
 - [Определения интерфейсов](../interfaces) - Интерфейсы Hook
-- [Система хуков](../hooks) - Подробное руководство по использованию хуков
+- [Система хуков](../../extensions/hooks) - Подробное руководство по использованию хуков

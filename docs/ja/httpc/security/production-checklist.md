@@ -1,6 +1,8 @@
 ---
+sidebar_label: "本番チェックリスト"
 title: "本番チェックリスト - CyberGo HTTPC | デプロイ前チェック"
-description: "HTTPC 本番環境セキュリティチェックリスト: TLS 確認、SSRF と CIDR 監査、タイムアウト設定、レスポンスサイズ制限、リトライ戦略、リソース解放と AuditMiddleware 監査監視のベストプラクティスを解説します。本番運用に役立つ実践的な内容です。"
+description: "HTTPC 本番環境セキュリティチェックリスト：TLS 確認、SSRF と CIDR 監査、タイムアウト設定、レスポンスサイズ制限、リトライ戦略、リソース解放と AuditMiddleware 監査監視のベストプラクティスを解説します。本番運用に役立つ実践的な内容です。"
+sidebar_position: 4
 ---
 
 # 本番チェックリスト
@@ -22,7 +24,7 @@ description: "HTTPC 本番環境セキュリティチェックリスト: TLS 確
 ### タイムアウト設定
 
 - [ ] すべてのタイムアウト値が適切に設定されている
-- [ ] `Timeouts.Request` が 0 ではないことを確認（無限待機を防止）
+- [ ] `TimeoutConfig.Request` が 0 ではないことを確認（無限待機を防止）
 - [ ] 各リクエストに `WithContext` でタイムアウトを設定することを検討
 
 ### レスポンス制限
@@ -79,7 +81,7 @@ func createProductionClient() (httpc.Client, error) {
     cfg.Timeouts.Request = 30 * time.Second
     cfg.Timeouts.Dial = 10 * time.Second
     cfg.Timeouts.TLSHandshake = 10 * time.Second
-    cfg.Timeouts.ResponseHeader = 30 * time.Second
+    cfg.Timeouts.ResponseHeader = 30 * time.Second // transport レベルのハードキャップ：該 client の全リクエストに適用、WithTimeout でリクエストごとに上書き不可; AI API/長時間応答シナリオは 0 に設定し Request タイムアウトに依存
 
     // コネクションプール
     cfg.Connection.MaxIdleConns = 50
@@ -134,4 +136,4 @@ grep -r "AllowPrivateIPs.*true" --include="*.go" | grep -v "_test.go"
 
 - [セキュリティ概要](./) - セキュリティ機能一覧
 - [SSRF 防護](./ssrf) - SSRF 防護の詳細
-- [設定 API](../api-reference/config) - 完全な設定リファレンス
+- [設定 API](../api-reference/client-config/config) - 完全な設定リファレンス

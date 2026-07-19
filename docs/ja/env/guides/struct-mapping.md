@@ -1,6 +1,8 @@
 ---
+sidebar_label: "構造体マッピング"
 title: "構造体マッピング - CyberGo env | 環境変数から構造体へ"
-description: "CyberGo env 構造体マッピングガイド。env タグで変数を構造体にマッピングし、ネスト、ポインタ、スライス、カスタムコンバーター、デフォルト値、必須検証を説明します。"
+description: "CyberGo env 構造体マッピングガイド。env・envDefault タグで環境変数を構造体にマッピングし、ネスト、ポインタ、スライス、カスタム型デコード、フィールド無視、デフォルト値、必須検証を説明します。"
+sidebar_position: 1
 ---
 
 # 構造体マッピング
@@ -125,6 +127,8 @@ type Config struct {
 
 ### スライス型
 
+スライスフィールドはカンマ `,` で区切られ、セパレータ前後の空白は自動的に削除されます。
+
 ```go
 type Config struct {
     Hosts []string `env:"HOSTS"`      // カンマ区切り
@@ -138,36 +142,6 @@ type Config struct {
 HOSTS=localhost,example.com,api.example.com
 PORTS=80,443,8080
 ```
-
-### カスタムセパレータ
-
-`envSeparator` タグを使用してカスタムセパレータを指定します：
-
-```go
-type Config struct {
-    // セミコロン区切り
-    Servers []string `env:"SERVERS" envSeparator:";"`
-
-    // パイプ区切り
-    Tags []string `env:"TAGS" envSeparator:"|"`
-
-    // スペース区切り
-    Words []string `env:"WORDS" envSeparator:" "`
-}
-```
-
-`.env` ファイル：
-
-```bash
-SERVERS=server1.example.com;server2.example.com;server3.example.com
-TAGS=production|api|v2
-WORDS=hello world go lang
-```
-
-**注意事項：**
-- デフォルトのセパレータはカンマ `,`
-- `envSeparator` はスライス型にのみ有効
-- セパレータ前後の空白は自動的に削除される
 
 ## ネストされた構造体
 
@@ -244,28 +218,58 @@ func main() {
 
 ## カスタム型
 
-### Unmarshaler インターフェースの実装
+### encoding.TextUnmarshaler インターフェースの実装
+
+構造体フィールドのカスタムデコードは、標準ライブラリ `encoding.TextUnmarshaler` インターフェースを実装することで行います。これはフィールド単位の充填時に**実際に呼び出される**インターフェースです。
 
 ```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
 type LogLevel string
 
-func (l *LogLevel) UnmarshalEnv(data map[string]string) error {
-    *l = LogLevel(data["LOG_LEVEL"])
-    return nil
+// encoding.TextUnmarshaler を実装 —— フィールドレベルで呼び出される
+func (l *LogLevel) UnmarshalText(text []byte) error {
+    switch string(text) {
+    case "debug", "info", "warn", "error":
+        *l = LogLevel(text)
+        return nil
+    default:
+        return fmt.Errorf("invalid log level: %s", string(text))
+    }
 }
 
 type Config struct {
     Level LogLevel `env:"LOG_LEVEL"`
 }
+
+func main() {
+    data := map[string]string{"LOG_LEVEL": "info"}
+
+    var cfg Config
+    if err := env.UnmarshalInto(data, &cfg); err != nil {
+        panic(err)
+    }
+
+    fmt.Println(cfg.Level)
+    // 出力：info
+}
 ```
 
-### 型エイリアス
+### バリデーション付きの型エイリアス
 
+<!-- check-code: skip -->
 ```go
 type Port int64
 
-func (p *Port) UnmarshalEnv(data map[string]string) error {
-    val, err := strconv.ParseInt(data["PORT"], 10, 64)
+// encoding.TextUnmarshaler を実装、解析時に範囲バリデーションを伴う
+func (p *Port) UnmarshalText(text []byte) error {
+    val, err := strconv.ParseInt(string(text), 10, 64)
     if err != nil {
         return err
     }
@@ -276,6 +280,10 @@ func (p *Port) UnmarshalEnv(data map[string]string) error {
     return nil
 }
 ```
+
+::: tip env.Marshaler / env.Unmarshaler インターフェースについて
+`env.Marshaler`（`MarshalEnv()`）と `env.Unmarshaler`（`UnmarshalEnv(map[string]string)`）インターフェースは、`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto` に渡された**トップレベルの値に対してのみ有効**で、構造体のフィールド単位の充填ロジックからは呼び出されません。構造体フィールドでカスタムエンコード/デコードを行うには、標準ライブラリ `encoding.TextMarshaler` / `encoding.TextUnmarshaler` を実装してください。これらはフィールドレベルで認識されます。
+:::
 
 ## 設定の検証
 
@@ -339,6 +347,7 @@ func (c *Config) Validate() error {
 
 ### 集中設定管理
 
+<!-- check-code: skip -->
 ```go
 // config/config.go
 package config
@@ -527,4 +536,4 @@ func main() {
 
 - [パッケージ関数 - ParseInto](/ja/env/api-reference/functions#parseinto) - ParseInto 関数リファレンス
 - [Loader API - ParseInto](/ja/env/api-reference/loader#parseinto) - Loader メソッドリファレンス
-- [クイックスタート](/ja/env/getting-started) - 基本的な使い方
+- [クイックスタート](/ja/env/getting-started/) - 基本的な使い方

@@ -1,13 +1,15 @@
 ---
-title: "高级示例 - CyberGo HTML | 进阶场景示例"
-description: "CyberGo HTML 高级示例：自定义 Scorer、多 Sink 审计管道、批量文件与并发控制、Processor 池化与 ChannelAuditSink 实时监控等可运行示例。"
+sidebar_label: "高级示例"
+title: "高级示例 - CyberGo html | 进阶场景示例"
+description: "CyberGo html 高级示例：自定义 Scorer、多 Sink 审计管道、批量文件处理、Processor 池化与 Web 服务单例等进阶可运行代码。"
+sidebar_position: 2
 ---
 
 # 高级示例
 
 ## 自定义 Scorer
 
-针对特定网站结构定制内容识别逻辑。完整实现请参考 [测试与自定义扩展](../guides/testing-custom)，以下展示核心用法：
+针对特定网站结构定制内容识别逻辑。完整实现请参考 [测试与自定义扩展](../guides/integration/testing-custom)，以下展示核心用法：
 
 ```go
 package main
@@ -69,8 +71,8 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("正文:", result.Text)
-    // 正文: 深入理解 Go 并发
+    fmt.Println("正文：", result.Text)
+    // 正文：深入理解 Go 并发
     //
     // goroutine 是 Go 的轻量级线程。
 }
@@ -132,7 +134,7 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("正文:", result.Text)
+    fmt.Println("正文：", result.Text)
     // 审计日志自动记录到文件和 stderr
 }
 ```
@@ -171,10 +173,10 @@ func main() {
     p, _ := html.New(html.TextOnlyConfig())
     defer p.Close()
 
-    // 最多 10000 个文件一批
+    // 单批上限 10000；超出会整批失败，需调用方自行分批
     batch := p.ExtractBatchFiles(files)
 
-    fmt.Printf("成功: %d, 失败: %d, 取消: %d\n",
+    fmt.Printf("成功：%d, 失败：%d, 取消：%d\n",
         batch.Success, batch.Failed, batch.Cancelled)
 
     // 处理结果
@@ -248,7 +250,7 @@ func extractHandler(w http.ResponseWriter, r *http.Request) {
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
     stats := processor.GetStatistics()
-    fmt.Fprintf(w, "已处理: %d\n缓存命中: %d\n错误: %d\n",
+    fmt.Fprintf(w, "已处理：%d\n缓存命中：%d\n错误：%d\n",
         stats.TotalProcessed, stats.CacheHits, stats.ErrorCount)
 }
 

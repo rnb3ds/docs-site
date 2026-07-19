@@ -1,4 +1,4 @@
-name: Deploy Docs to Server
+name: Deploy Docs to Server (FTP)
 
 on:
   push:

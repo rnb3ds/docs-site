@@ -1,6 +1,8 @@
 ---
+sidebar_label: "包函数"
 title: "包函数 - CyberGo env | 全局便捷函数"
-description: "CyberGo env 包级便捷函数 API 参考，提供 Load、GetString、GetInt、Keys、Marshal、ParseInto 等基于全局默认 Loader 的线程安全接口。"
+description: "CyberGo env 包级便捷函数 API 参考，提供 Load、GetString、GetInt、GetBool、GetDuration、GetSlice、GetSecure、Lookup、Keys 与 ParseInto 等基于全局默认 Loader 的线程安全接口。"
+sidebar_position: 2
 ---
 
 # 包函数
@@ -80,7 +82,7 @@ name := env.GetString("app_name")  // 查找 app_name -> APP_NAME
 **3. 点号路径解析（嵌套键）**
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 存储为: APP_NAME=myapp
+// 存储为：APP_NAME=myapp
 
 // 以下方式都能访问到该值
 name := env.GetString("APP_NAME")   // 扁平化键名（推荐）
@@ -103,7 +105,7 @@ name := env.GetString("APP.NAME")   // 大写点号路径
 
 ```go
 // JSON: {"servers": [{"host": "a.com"}, {"host": "b.com"}]}
-// 存储为: SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
+// 存储为：SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
 
 host0 := env.GetString("servers.0.host")  // "a.com"
 host1 := env.GetString("servers.1.host")  // "b.com"
@@ -300,7 +302,7 @@ if secret != nil {
     defer secret.Release()
 
     value := secret.Reveal()   // 明文值（仅在需要时调用）
-    masked := secret.Masked()  // 用于日志: [SECURE:32 bytes]
+    masked := secret.Masked()  // 用于日志：[SECURE:32 bytes]
 }
 ```
 
@@ -516,13 +518,14 @@ func Set(key, value string) error
 - `error` - 设置错误
 
 **错误类型：**
-- `ErrInvalidKey` - 键名无效
-- `ErrForbiddenKey` - 键被禁止
+- `*ValidationError` - 键名格式无效（Field="key"）
+- `*SecurityError` - 键被禁止（可用 `errors.Is(err, env.ErrSecurityViolation)` 匹配）
+- `ErrInvalidValue` - 值无效（当 `ValidateValues` 为 true 时，值包含空字节、控制字符等不安全内容）
 - `ErrClosed` - 加载器已关闭
 
 ```go
 if err := env.Set("CUSTOM_KEY", "value"); err != nil {
-    // 可能是 ErrForbiddenKey 或 ErrInvalidKey
+    // 可能是 *SecurityError（禁止键）或 *ValidationError（键格式）
 }
 ```
 
@@ -610,7 +613,8 @@ if err := env.ParseInto(&cfg); err != nil {
 | `env:"KEY"` | 映射到指定键 |
 | `env:"-"` | 忽略此字段 |
 | `envDefault:"value"` | 默认值 |
-| `envSeparator:","` | 切片分隔符 |
+
+切片字段默认按逗号 `,` 分隔（分隔符前后空格自动去除），无自定义分隔符标签。
 
 ::: tip 详见
 [结构体映射](/zh/env/guides/struct-mapping) 获取完整指南。
@@ -632,9 +636,9 @@ func ResetDefaultLoader() error
 - `error` - 关闭旧加载器的错误（如果存在）；如果之前没有加载器或关闭成功则返回 nil
 
 **行为：**
-- 原子地将默认加载器交换为 nil
-- 关闭旧的加载器（在锁外执行，避免阻塞）
-- 允许创建新的默认加载器
+- 通过 `atomic.Pointer.Swap` 原子地将默认加载器交换为 nil
+- 在持有 `defaultMu` 锁的状态下关闭旧的加载器（关闭完成才释放锁，确保重置过程的原子性）
+- 重置后允许通过 `Load()` 或 `LoadWithConfig()` 创建新的默认加载器
 
 ```go
 func TestMain(m *testing.M) {
@@ -731,9 +735,12 @@ envStr, _ := env.Marshal(mapData)
 // HOST=localhost
 // PORT=8080
 
-// map 转 JSON 格式
+// map 转 JSON 格式（数字字符串原样输出为数字，键按字母序排列）
 jsonStr, _ := env.Marshal(mapData, env.FormatJSON)
-// {"HOST":"localhost","PORT":"8080"}
+// {
+//   "HOST": "localhost",
+//   "PORT": 8080
+// }
 
 // 结构体转 .env 格式
 type Config struct {
@@ -910,7 +917,7 @@ type AppConfig struct {
     Port     int64         `env:"APP_PORT" envDefault:"8080"`
     Debug    bool          `env:"DEBUG" envDefault:"false"`
     Timeout  time.Duration `env:"TIMEOUT" envDefault:"30s"`
-    Hosts    []string      `env:"HOSTS" envSeparator:","`
+    Hosts    []string      `env:"HOSTS"`
 }
 
 func main() {

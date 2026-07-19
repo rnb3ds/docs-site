@@ -1,17 +1,19 @@
 ---
+sidebar_label: "개요"
 title: "Processor 프로세서 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor: New 생성, GetString/Set/Delete, Foreach 반복, Encode, Close 수명 주기, Stats 통계, 캐시 설정으로 고빈도 재사용에 적합합니다."
+description: "CyberGo JSON Processor 프로세서: New 생성, GetString/Set/Delete 작업, Foreach 반복, Encode 인코딩과 Close 수명 주기로 고빈도 재사용에 적합합니다."
+sidebar_position: 1
 ---
 
 # Processor
 
-Processor는 고성능, 커스텀 가능성, 유연한 재사용 능력을 제공하여 동일한 데이터 소스에 대한 여러 작업에 적합합니다.
+Processor 는 고성능, 커스텀 가능성, 유연한 재사용 능력을 제공하여 동일한 데이터 소스에 대한 여러 작업에 적합합니다.
 
 ## 특징
 
 - **고성능**: 내부 캐시 메커니즘으로 반복 작업이 더 효율적
 - **설정 가능**: 다양한 설정 옵션 지원
-- **체인 호출**: 메서드가 수정된 JSON을 반환하여 연속 작업 지원
+- **체인 호출**: 메서드가 수정된 JSON 을 반환하여 연속 작업 지원
 - **리소스 관리**: 명시적인 수명 주기 제어
 
 ## Processor 생성
@@ -56,13 +58,15 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 | 카테고리 | 설명 |
 |------|------|
-| [경로 쿼리](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
-| [데이터 수정](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/Delete/DeleteClean |
-| [출력 메서드](./output) | Encode/EncodePretty/EncodeWithConfig/Compact/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
-| [파싱 및 로드](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal/LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
-| [반복 메서드](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachReturn/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachWithPathAndControl/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
+| [조회 및 가져오기](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
+| [수정](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/MergeJSON/MergeMany/CompareJSON |
+| [삭제 작업](./delete) | Delete/DeleteClean |
+| [인코딩 및 출력](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
+| [파싱 및 검증](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal |
 | [배치 작업](./batch) | ProcessBatch/WarmupCache |
-| [JSONL 처리](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
+| [JSONL](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
+| [파일 I/O](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [반복 메서드](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachReturn/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachWithPathAndControl/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
 | [수명 주기](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
 
 ---
@@ -75,7 +79,7 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 시그니처: `func SetGlobalProcessor(processor *Processor)`
 
-커스텀 전역 프로세서를 설정합니다. 모든 패키지 레벨 함수(Get, Set, Marshal 등)가 해당 프로세서를 사용합니다.
+커스텀 전역 프로세서를 설정합니다. 모든 패키지 레벨 함수 (Get, Set, Marshal 등) 가 해당 프로세서를 사용합니다.
 
 **매개변수**
 
@@ -103,7 +107,7 @@ func main() {
 
     // 이제 모든 패키지 레벨 함수가 보안 설정을 사용
     data, err := json.Get(`{"name":"Alice"}`, "name")
-    // SecurityConfig의 제한이 적용됨
+    // SecurityConfig 의 제한이 적용됨
     _ = data
 }
 ```
@@ -151,7 +155,7 @@ func main() {
 
 ## 관련 문서
 
-- [패키지 함수](../functions) - 최상위 함수 레퍼런스
+- [패키지 함수](../functions/) - 최상위 함수 레퍼런스
 - [Config](../config) - 설정 옵션
 - [인터페이스 정의](../interfaces) - Hook 인터페이스
-- [Hook 훅 시스템](../hooks) - 훅 자세한 사용 가이드
+- [Hook 훅 시스템](../../extensions/hooks) - 훅 자세한 사용 가이드

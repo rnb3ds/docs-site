@@ -1,6 +1,8 @@
 ---
-title: "Processor Output Methods - CyberGo JSON | API Reference"
+sidebar_label: "Encode & Output"
+title: "Processor Encode & Output - CyberGo JSON | API"
 description: "CyberGo JSON Processor output: Encode, EncodePretty, EncodeWithConfig, EncodeBatch/EncodeFields, and Compact/Indent/HTMLEscape for varied output."
+sidebar_position: 5
 ---
 
 # Output Methods
@@ -14,6 +16,10 @@ Processor provides multiple JSON encoding output methods.
 Signature: `func (p *Processor) Encode(value any, config ...Config) (string, error)`
 
 Encodes any value to a JSON string.
+
+::: warning Deprecated
+`Processor.Encode` delegates directly to [`EncodeWithConfig`](#encodewithconfig). Prefer `EncodeWithConfig`. `Encode` will be removed in a future major version.
+:::
 
 ```go
 result, err := p.Encode(map[string]any{"name": "CyberGo"})
@@ -172,7 +178,7 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 ### Print (Removed)
 
 ::: warning API Change Notice
-`Print`, `PrintE`, `PrintPretty`, `PrintPrettyE` have been removed from the library and are no longer available. Please use the following alternatives:
+Print, PrintE, PrintPretty, PrintPrettyE have been removed from the library and are no longer available. Please use the following alternatives:
 
 ```go
 // Compact output

@@ -1,11 +1,13 @@
 ---
+sidebar_label: "分散トレーシング統合"
 title: "分散トレーシング統合 - CyberGo DD | Context とトレーシングガイド"
-description: "CyberGo DD 分散トレーシング統合ガイド。TraceID、SpanID、RequestID コンテキスト伝播、ContextExtractor カスタムエクストラクタ、HTTP ミドルウェア統合パターン、リクエストスコープログ、OpenTelemetry などのトレーシングシステムとの統合方法をカバーし、マイクロサービスアーキテクチャでエンドツーエンドのログトレーシングを実現します。"
+description: "CyberGo DD 分散トレーシング統合ガイド。TraceID、SpanID、RequestID 伝播、ContextExtractor 抽出器、HTTP ミドルウェア統合、リクエストスコープログと OpenTelemetry 連携でエンドツーエンド追跡を実現。"
+sidebar_position: 7
 ---
 
 # 分散トレーシング統合
 
-DD は `context.Context` を通じたトレーシング識別子（TraceID、SpanID、RequestID）の自動伝播をサポートし、マイクロサービスアーキテクチャでエンドツーエンドのログ関連付けを実現します。
+DD は `context.Context` ベースのトレーシング識別子ツール関数（`WithTraceID`/`GetTraceID` など）を提供し、マイクロサービスアーキテクチャでのログ関連付けに便利です。注意：**DD のログメソッドは `context.Context` パラメータを受け取りません**、そのためリクエストスコープから TraceID を自動抽出できません——`WithFields()` でトレーシング識別子をフィールドとしてログに手動付与する必要があります（詳細は [HTTP ミドルウェア統合](#http-ミドルウェア統合) を参照）。
 
 ## コンテキストキー
 
@@ -35,10 +37,10 @@ spanID := dd.GetSpanID(ctx)      // "span-def456"
 requestID := dd.GetRequestID(ctx) // "req-789"
 ```
 
-### ログへの自動抽出
+### なぜログに「自動抽出」できないのか
 
 :::warning 現在の制限
-DD のログメソッド（`Info`、`InfoWith` など）は `context.Context` パラメータを直接受け取りません。コンテキストエクストラクタは内部で `context.Background()` を呼び出すため、リクエストスコープの context から TraceID などの値を直接取得できません。手動でフィールドを渡す方法（以下の HTTP ミドルウェア統合を参照）を推奨します。
+DD のログメソッド（`Info`、`InfoWith` など）は `context.Context` パラメータを直接受け取りません。コンテキストエクストラクタは内部で `context.Background()` を呼び出すため（`logger.go:1414`）、リクエストスコープの context から TraceID などの値を直接取得できません。手動でフィールドを渡す方法（以下の HTTP ミドルウェア統合を参照）を推奨します。
 :::
 
 ```go
@@ -100,11 +102,11 @@ func TracingMiddleware(logger *dd.Logger) func(http.Handler) http.Handler {
 
 ### 完全なリクエストトレーシングの例
 
+<!-- check-code: skip -->
 ```go
 package main
 
 import (
-    "context"
     "net/http"
 
     "github.com/cybergodev/dd"
@@ -183,7 +185,10 @@ logger.AddContextExtractor(tenantExtractor)
 ```go
 // 送信側：トレーシング識別子をリクエストヘッダーに注入
 func callUpstream(ctx context.Context, url string) (*http.Response, error) {
-    req, _ := http.NewRequestWithContext(ctx, "GET", url, nil)
+    req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+    if err != nil {
+        return nil, err
+    }
 
     // トレーシング識別子を伝播
     if traceID := dd.GetTraceID(ctx); traceID != "" {
@@ -239,5 +244,5 @@ func (rl *RequestLogger) Finish(status int) {
 
 - [フックシステム](./hooks) -- ライフサイクルフック拡張
 - [監査ログ](./audit-logging) -- セキュリティ監査
-- [API リファレンス - Context](../api-reference/context) -- Context 完全 API
+- [API リファレンス - Context](../api-reference/output-integration/context) -- Context 完全 API
 - [Web サービスサンプル](../examples/web-service) -- 完全 Web サービス例

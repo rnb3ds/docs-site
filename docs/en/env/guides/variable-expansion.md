@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Variable Expansion"
 title: "Variable Expansion - CyberGo env | Variable Syntax"
-description: "CyberGo env variable expansion guide: ${VAR} and ${VAR:-default} references, conditional expansion, circular-reference detection and MaxExpansionDepth limits."
+description: "CyberGo env variable expansion: ${VAR}, ${VAR:-default}, ${VAR:=default}, ${VAR:?error}, $VAR shorthand, circular-ref detection, MaxExpansionDepth limits."
+sidebar_position: 4
 ---
 
 # Variable Expansion
@@ -41,6 +43,10 @@ URL=$HOST:8080
 | `${VAR:=default}` | Use default if VAR does not exist (same as `:-`) |
 | `${VAR:?error}` | Return error if VAR does not exist or is empty |
 
+::: warning Self-reference limitation
+The variable referenced by `:-`, `:=`, `:?` must differ from the key being assigned. A self-reference such as `KEY=${KEY:-default}` is detected as a cycle and fails at load with `ErrExpansionDepth`. To set a default for a key, assign a literal directly (`KEY=default`) or reference another variable (see the examples below).
+:::
+
 ---
 
 ## Syntax Details
@@ -50,16 +56,19 @@ URL=$HOST:8080
 The most common default value syntax. When the variable does not exist, the default value is used; when the variable exists (even if empty), the original value is used:
 
 ```bash
-# If LOG_LEVEL does not exist, use "info"
-LOG_LEVEL=${LOG_LEVEL:-info}
+# HOST is defined, use its value
+HOST=localhost
+PRIMARY_HOST=${HOST:-127.0.0.1}
+# PRIMARY_HOST expands to: localhost
 
-# If TIMEOUT does not exist, use "30s"
-TIMEOUT=${TIMEOUT:-30s}
+# If TIMEOUT is not defined, use the default value "30s"
+TIMEOUT_VALUE=${TIMEOUT:-30s}
+# TIMEOUT_VALUE expands to: 30s
 
 # Nested defaults
-DB_HOST=${DB_HOST:-localhost}
+DB_HOST=localhost
 DB_URL=${DB_HOST}:${DB_PORT:-5432}
-# If DB_HOST=localhost and DB_PORT does not exist
+# When DB_HOST=localhost and DB_PORT is not defined
 # DB_URL expands to: localhost:5432
 ```
 
@@ -74,11 +83,11 @@ DB_URL=${DB_HOST}:${DB_PORT:-5432}
 Behaves identically to `${VAR:-default}`, using the default value when the variable does not exist:
 
 ```bash
-# If DEBUG does not exist, use "false"
-DEBUG=${DEBUG:=false}
+# If DEBUG is not defined, use "false"
+DEBUG_VALUE=${DEBUG:=false}
 
-# Use default value if not present
-CACHE_TTL=${CACHE_TTL:=3600}
+# If CACHE_TTL is not defined, use the default value
+CACHE_TTL_VALUE=${CACHE_TTL:=3600}
 ```
 
 ::: info Relationship with `:-`
@@ -92,11 +101,11 @@ CACHE_TTL=${CACHE_TTL:=3600}
 Returns an error if the variable does not exist or is empty:
 
 ```bash
-# If DATABASE_URL does not exist, loading fails with an error message
-DATABASE_URL=${DATABASE_URL:?Database URL is required}
+# If DATABASE_URL is not defined, loading fails with an error
+DB_URL=${DATABASE_URL:?Database URL is required}
 
-# If API_KEY does not exist, raise error
-API_KEY=${API_KEY:?API_KEY must be set}
+# If API_TOKEN is not defined, raise error
+AUTH_TOKEN=${API_TOKEN:?API_TOKEN must be set}
 ```
 
 **Use cases:**
@@ -121,18 +130,26 @@ MESSAGE=Price is $$100
 # Expands to: Price is $100
 ```
 
-### Single Quotes
+### Quotes and Expansion
 
-Variables inside single quotes are not expanded:
+Variable expansion happens during a unified post-processing stage after quote stripping, and **neither single quotes nor double quotes affect expansion**. For example, `SINGLE='${BASE}'` (with `BASE=hello`) expands to `hello`, identical to the double-quote behavior; if the referenced variable is undefined (e.g., `LITERAL='${NO_EXPANSION}'`), the result is an empty string rather than the literal `${NO_EXPANSION}`.
+
+The only difference between single and double quotes is in **literal parsing**: double quotes process escape sequences like `\n` and `\t`, while single quotes preserve them verbatim (no escaping).
+
+::: warning Note
+Do not use quotes to "disable expansion." To preserve the literal `${VAR}`, use one of the following approaches:
+:::
 
 ```bash
-# Not expanded
-LITERAL='${NO_EXPANSION}'
+# Method 1: escape the dollar sign ($$ expands to literal $)
+LITERAL='$${NO_EXPANSION}'
 # Value: ${NO_EXPANSION}
+```
 
-# Compare with double quotes
-EXPANDED="${WILL_EXPAND}"
-# ${WILL_EXPAND} will be expanded
+```go
+// Method 2: disable global variable expansion
+cfg := env.DefaultConfig()
+cfg.ExpandVariables = false
 ```
 
 ---
@@ -142,15 +159,15 @@ EXPANDED="${WILL_EXPAND}"
 Variables can reference each other with nesting:
 
 ```bash
-# Base configuration
+# Base configuration (avoid the built-in forbidden key ENV, use DEPLOY_ENV instead)
 APP_NAME=myapp
-ENV=production
+DEPLOY_ENV=production
 
 # Nested references
-DB_HOST=db.${ENV}.example.com
+DB_HOST=db.${DEPLOY_ENV}.example.com
 # Expands to: db.production.example.com
 
-API_URL=https://${APP_NAME}.${ENV}.api.example.com
+API_URL=https://${APP_NAME}.${DEPLOY_ENV}.api.example.com
 # Expands to: https://myapp.production.api.example.com
 ```
 
@@ -194,24 +211,23 @@ The hard upper limit is 20 (internal restriction). The configured `MaxExpansionD
 ```bash
 # .env file
 
-# Base configuration
+# Base configuration (avoid the built-in forbidden key ENV)
 APP_NAME=myapp
-ENV=development
+DEPLOY_ENV=development
 DEBUG=true
 
 # Database configuration
-DB_HOST=${DB_HOST:-localhost}
-DB_PORT=${DB_PORT:-5432}
-DB_NAME=${DB_NAME:-${APP_NAME}}
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=${APP_NAME}
 DB_URL=postgres://${DB_HOST}:${DB_PORT}/${DB_NAME}
 
 # API configuration
-API_BASE=https://api.${ENV}.example.com
+API_BASE=https://api.${DEPLOY_ENV}.example.com
 API_URL=${API_BASE}/v1
-API_KEY=${API_KEY:?API_KEY is required}
 
 # Logging configuration
-LOG_LEVEL=${LOG_LEVEL:-info}
+LOG_LEVEL=info
 
 # Price (escaped)
 PRICE=$$99.99
@@ -252,6 +268,6 @@ func main() {
 
 ## Related Documentation
 
-- [Getting Started](/en/env/getting-started) - Basic usage
+- [Getting Started](/en/env/getting-started/) - Basic usage
 - [Config API](/en/env/api-reference/config) - ExpandVariables configuration
 - [Constants & Errors](/en/env/api-reference/constants) - Expansion depth limits

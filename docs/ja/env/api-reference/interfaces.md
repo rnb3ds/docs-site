@@ -1,6 +1,8 @@
 ---
+sidebar_label: "インターフェース定義"
 title: "インターフェース定義 - CyberGo env | コアインターフェース階層"
-description: "CyberGo env のコアインターフェース参照。依存性注入を支える細粒度設計の Validator、FullAuditLogger、EnvParser、EnvStorage、FileSystem インターフェースを説明します。"
+description: "CyberGo env のコアインターフェース参照。依存性注入用の細粒度設計の EnvLoader、EnvFileLoader、EnvGetter、EnvSetter、Validator、FullAuditLogger、EnvParser、FileSystem インターフェースを説明します。"
+sidebar_position: 6
 ---
 
 # インターフェース定義
@@ -241,7 +243,7 @@ type FullAuditLogger interface {
 
 | 方法 | 用途 |
 |------|------|
-| `LogError` | エラーイベントを記録（AuditLogger から継承） |
+| LogError | エラーイベントを記録（AuditLogger から継承） |
 | `Log` | 一般的な監査イベントを記録 |
 | `LogWithFile` | ファイル情報を含むイベントを記録 |
 | `LogWithDuration` | 所要時間を含むイベントを記録 |
@@ -260,7 +262,7 @@ type AuditHandler interface {
 }
 ```
 
-**用途：** このインターフェースを実装すると監査イベントの処理方法をカスタマイズできます。`AuditLogger` インターフェースとは異なり、`AuditHandler` は `Log` と `Close` の2つのメソッドを必要とし、監査イベントの受信処理とリソース解放に使用します。
+**用途：** このインターフェースを実装すると監査イベントの処理方法をカスタマイズできます。`AuditLogger` インターフェースとは異なり、`AuditHandler` は `Log` と `Close` の 2 つのメソッドを必要とし、監査イベントの受信処理とリソース解放に使用します。
 
 **組み込み実装：**
 - `JSONAuditHandler` - JSON フォーマットのログを出力
@@ -509,11 +511,11 @@ type File interface {
 
 | 方法 | 用途 |
 |------|------|
-| `Read` | データの読み取り |
-| `Write` | データの書き込み |
-| `Close` | ファイルをクローズ |
-| `Stat` | ファイル情報の取得 |
-| `Sync` | ディスクに同期 |
+| Read | データの読み取り |
+| Write | データの書き込み |
+| Close | ファイルをクローズ |
+| Stat | ファイル情報の取得 |
+| Sync | ディスクに同期 |
 
 ---
 
@@ -659,15 +661,15 @@ type AuditEvent = internal.Event
 
 | フィールド | 型 | 説明 |
 |------|------|------|
-| `Timestamp` | `time.Time` | タイムスタンプ |
-| `Action` | `AuditAction` | 操作タイプ |
-| `Key` | `string` | キー名（マスク済み） |
-| `File` | `string` | ファイル名 |
-| `Reason` | `string` | 原因/説明 |
-| `Success` | `bool` | 成功したかどうか |
-| `Masked` | `bool` | マスク済みかどうか |
-| `Details` | `string` | 詳細 |
-| `Duration` | `int64` | 所要時間（ナノ秒） |
+| Timestamp | `time.Time` | タイムスタンプ |
+| Action | `AuditAction` | 操作タイプ |
+| Key | `string` | キー名（マスク済み） |
+| File | `string` | ファイル名 |
+| Reason | `string` | 原因/説明 |
+| Success | `bool` | 成功したかどうか |
+| Masked | `bool` | マスク済みかどうか |
+| Details | `string` | 詳細 |
+| Duration | `int64` | 所要時間（ナノ秒） |
 
 ---
 

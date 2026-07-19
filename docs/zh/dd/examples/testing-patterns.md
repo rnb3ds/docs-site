@@ -1,6 +1,8 @@
 ---
+sidebar_label: "测试模式"
 title: "测试模式 - CyberGo DD | LoggerRecorder 测试示例"
 description: "CyberGo DD 测试模式示例，详细介绍 LoggerRecorder 在单元测试与集成测试中的完整使用方法，包括日志消息断言、级别过滤测试、字段值检查、多测试用例隔离、并发安全测试以及提升测试覆盖率的完整技巧与最佳实践经验总结。适用于各类 Go 项目的日志测试。"
+sidebar_position: 4
 ---
 
 # 测试模式
@@ -74,9 +76,13 @@ if len(errorEntries) > 0 {
     t.Error("Unexpected error logs")
 }
 
-// 使用 DevelopmentConfig 捕获所有级别
+// 使用 DEBUG 级别捕获所有级别
+// 注意：Recorder 依 ISO 8601 时间戳解析级别，DevelopmentConfig 的时间格式
+// 与其不兼容，故用 DefaultConfig 手动设 DEBUG 级别。
 rec2 := dd.NewLoggerRecorder()
-logger2, _ := rec2.NewLogger(dd.DevelopmentConfig())
+devCfg := dd.DefaultConfig()
+devCfg.Level = dd.LevelDebug
+logger2, _ := rec2.NewLogger(devCfg)
 logger2.Debug("调试信息")
 debugs := rec2.EntriesAtLevel(dd.LevelDebug)
 ```
@@ -186,13 +192,13 @@ func TestMiddleware_LogsRequestFields(t *testing.T) {
 
 ```go
 func TestSuite(t *testing.T) {
-    t.Run("场景A", func(t *testing.T) {
+    t.Run("场景 A", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 每个测试独立 recorder
         logger, _ := rec.NewLogger()
         // 测试逻辑...
     })
 
-    t.Run("场景B", func(t *testing.T) {
+    t.Run("场景 B", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 独立 recorder
         logger, _ := rec.NewLogger()
         // 测试逻辑...
@@ -211,19 +217,19 @@ func TestLogLevel_Behavior(t *testing.T) {
         expected string
     }{
         {
-            name:     "Debug级别",
+            name:     "Debug 级别",
             level:    dd.LevelDebug,
             logFunc:  func(l *dd.Logger) { l.Debug("调试信息") },
             expected: "调试信息",
         },
         {
-            name:     "Info级别",
+            name:     "Info 级别",
             level:    dd.LevelInfo,
             logFunc:  func(l *dd.Logger) { l.Info("一般信息") },
             expected: "一般信息",
         },
         {
-            name:     "Error级别",
+            name:     "Error 级别",
             level:    dd.LevelError,
             logFunc:  func(l *dd.Logger) { l.Error("错误信息") },
             expected: "错误信息",
@@ -250,5 +256,5 @@ func TestLogLevel_Behavior(t *testing.T) {
 ## 下一步
 
 - [Web 服务集成](./web-service) -- HTTP 服务日志集成
-- [API 参考 - Recorder](../api-reference/recorder) -- LoggerRecorder 完整 API
+- [API 参考 - Recorder](../api-reference/dev-tools/recorder) -- LoggerRecorder 完整 API
 - [钩子系统](../guides/hooks) -- 生命周期钩子

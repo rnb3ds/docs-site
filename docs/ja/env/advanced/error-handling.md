@@ -1,6 +1,8 @@
 ---
+sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo env | センチネルエラーと復旧戦略"
-description: "CyberGo env エラー処理ガイド。16個のセンチネルエラーの errors.Is 検査、8種の構造化エラーの errors.As 抽出、復旧・グレードダウン戦略、エラーチェーン追跡を解説します。"
+description: "CyberGo env エラー処理ガイド。16 個のセンチネルエラーの errors.Is 検査、ParseError/FileError/SecurityError 構造化エラーの errors.As 抽出、復旧・グレードダウン戦略、エラーチェーン追跡をプロダクション観点で解説します。"
+sidebar_position: 2
 ---
 
 # エラー処理
@@ -50,11 +52,11 @@ var (
 )
 ```
 
-**禁止キーのチェック：**
+**禁止キーのチェック（実際は `*SecurityError` を返し、`ErrSecurityViolation` に一致）：**
 
 ```go
 err := loader.Set("PATH", "/malicious")
-if errors.Is(err, env.ErrForbiddenKey) {
+if errors.Is(err, env.ErrSecurityViolation) {
     log.Println("禁止キーの設定を試みました")
 }
 ```
@@ -101,9 +103,10 @@ if errors.Is(err, env.ErrNotInitialized) {
     // 先に env.Load() または env.LoadWithConfig() を呼び出す必要がある
 }
 
-// 必須キーが不足していないか確認
-if errors.Is(err, env.ErrMissingRequired) {
-    // 必須キーが不足
+// 必須キーが不足していないか確認（実際は *ValidationError、Rule=="required"）
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Rule == "required" {
+    // 必須キーが不足：valErr.Message に不足キーのリストを含む
 }
 ```
 
@@ -128,7 +131,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 ::: tip 解決方法
-`KeyValidator` のみではなく、`Validator` インターフェース（`ValidateKey`、`ValidateValue`、`ValidateRequired` の3つのメソッドを含む）を実装してください。
+`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の 3 つのメソッドを含む）を実装してください。
 :::
 
 ## 構造化エラー型
@@ -155,7 +158,7 @@ var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
     log.Printf("解析エラー %s:%d - %s\n",
         parseErr.File, parseErr.Line, parseErr.Err)
-    // 出力: 解析エラー .env:15 - invalid key format
+    // 出力：解析エラー .env:15 - invalid key format
 }
 ```
 
@@ -339,17 +342,19 @@ case errors.Is(err, env.ErrFileTooLarge):
     // ファイルが大きすぎます
     log.Fatal("設定ファイルが大きすぎます")
 
-case errors.Is(err, env.ErrForbiddenKey):
-    // 禁止キー
+case errors.Is(err, env.ErrSecurityViolation):
+    // 禁止キー（実際は *SecurityError を返す）
     log.Fatal("禁止キーを検出")
-
-case errors.Is(err, env.ErrInvalidKey):
-    // 無効なキーフォーマット
-    log.Fatal("無効なキーを検出")
 
 case err != nil:
     // その他のエラー
     log.Fatalf("読み込み失敗: %v", err)
+}
+
+// キー形式が不正（実際は *ValidationError、Field=="key"）
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Field == "key" {
+    log.Fatalf("無効なキーを検出: %s", valErr.Message)
 }
 ```
 
@@ -397,7 +402,7 @@ func handleLoadError(err error) {
     // まずセンチネルエラーをチェック
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        log.Println("警告: 設定ファイルが存在しません")
+        log.Println("警告：設定ファイルが存在しません")
         return
 
     case errors.Is(err, env.ErrFileTooLarge):
@@ -532,7 +537,7 @@ func handleLoadError(err error) {
         errors.As(err, &fileErr)
         log.Fatalf("ファイルが大きすぎます: %s (%d bytes)", fileErr.Path, fileErr.Size)
 
-    case errors.Is(err, env.ErrForbiddenKey):
+    case errors.Is(err, env.ErrSecurityViolation):
         log.Fatal("禁止キーを検出")
     }
 
@@ -554,11 +559,11 @@ func handleLoadError(err error) {
 func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
+        if valErr.Rule == "required" {
+            // 必須キーが不足：valErr.Message に不足キーのリストを含む
+            log.Fatalf("必須キーが不足: %s", valErr.Message)
+        }
         log.Fatalf("検証失敗: %s - %s", valErr.Field, valErr.Message)
-    }
-
-    if errors.Is(err, env.ErrMissingRequired) {
-        log.Fatal("必須キーが不足")
     }
 
     log.Fatalf("検証失敗: %v", err)

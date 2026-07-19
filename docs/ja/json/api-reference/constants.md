@@ -1,6 +1,8 @@
 ---
+sidebar_label: "定数とエラー"
 title: "定数とエラー - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON 定数とエラー：DefaultMaxJSONSize、DefaultMaxNestingDepth、ErrPathNotFound などのエラー変数と MergeMode 列挙型で Go の設定とエラー処理を支えます。"
+description: "CyberGo JSON 定数とエラー：DefaultMaxJSONSize、DefaultMaxNestingDepth 制限、ErrPathNotFound エラー変数と MergeMode マージモードで、Go 設定を支えます。"
+sidebar_position: 7
 ---
 
 # 定数とエラー
@@ -21,13 +23,13 @@ var (
     // 制限エラー
     ErrSizeLimit        = errors.New("size limit exceeded")
     ErrDepthLimit       = errors.New("depth limit exceeded")
-    ErrConcurrencyLimit = errors.New("concurrency limit exceeded")
+    ErrConcurrencyLimit = errors.New("concurrency limit exceeded") // 制御された操作（Get/Set/Delete など）が MaxConcurrency に達したときに返されます
 
     // セキュリティとバリデーションエラー
     ErrSecurityViolation = errors.New("security violation detected")
     ErrUnsupportedPath   = errors.New("unsupported path operation")
 
-    // リソースとパフォーマンスエラー
+    // リソースとパフォーマンスエラー（いずれも Deprecated：現在どの操作からも返されず、将来の使用のために予約）
     ErrOperationTimeout  = errors.New("operation timeout")
     ErrResourceExhausted = errors.New("system resources exhausted")
 )
@@ -93,7 +95,7 @@ if err != nil {
 
 ## エラーヘルパー関数
 
-上記のエラー型に加え、ライブラリは2つのエラー処理ヘルパー関数を提供します（詳細は [ヘルパーユーティリティ](./helpers#safeerror) を参照）：
+上記のエラー型に加え、ライブラリは 2 つのエラー処理ヘルパー関数を提供します（詳細は [ヘルパーユーティリティ](./helpers#safeerror) を参照）：
 
 | 関数 | シグネチャ | 説明 |
 |------|-----------|------|
@@ -213,7 +215,7 @@ type PathSegment = internal.PathSegment
 ```
 
 ::: warning 内部実装のエイリアス
-`PathSegment` は `internal.PathSegment` の型エイリアスです。具体的なフィールド、フィールド型（`PathSegmentType`、`PathSegmentFlags` など）およびメソッドは `internal` パッケージに属し、**公開 API としてはエクスポートされていません**。バージョン間で変更される可能性があるため、ビジネスコードで内部構造に直接依存しないでください。
+`PathSegment` は `internal.PathSegment` の型エイリアスです。具体的なフィールド、フィールド型（PathSegmentType、PathSegmentFlags など）およびメソッドは `internal` パッケージに属し、**公開 API としてはエクスポートされていません**。バージョン間で変更される可能性があるため、ビジネスコードで内部構造に直接依存しないでください。
 
 - カスタムパス構文を実装する際は、[`PathParser`](./interfaces#pathparser) インターフェースの `ParsePath` メソッドで `[]PathSegment` を返します。
 - プリコンパイル済みパスには [`Processor.CompilePath`](./processor/query#compilepath) を使用し、`*CompiledPath` を返します。

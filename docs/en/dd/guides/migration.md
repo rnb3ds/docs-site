@@ -1,18 +1,20 @@
 ---
-title: "Migration Guide - CyberGo DD | Library Migration"
-description: "Migrate to CyberGo DD from log/slog, zap, logrus, or zerolog with API mapping tables, config comparisons, and progressive migration strategies."
+sidebar_label: "Migration Guide"
+title: "Migration Guide - CyberGo DD | Migrating From Other Log Libraries"
+description: "A complete side-by-side migration guide from the standard library log/slog and popular third-party log libraries (zap, logrus, zerolog) to CyberGo DD, with detailed API mapping tables, configuration-parameter comparisons, common migration patterns, and a progressive migration strategy to help you smoothly switch existing logging systems to DD with low risk."
+sidebar_position: 8
 ---
 
 # Migration Guide
 
-If you are currently using another logging library, this guide helps you quickly migrate your project to DD.
+If you are using another log library, this guide helps you migrate your project to DD quickly.
 
-## Migrating from the Standard Library log
+## From the Standard Library log
 
-### API Comparison
+### API Mapping
 
-| log | DD | Description |
-|-----|-----|-------------|
+| log | DD | Notes |
+|-----|-----|-------|
 | `log.Print(msg)` | `dd.Info(msg)` | Info level |
 | `log.Printf(format, args)` | `dd.Infof(format, args)` | Formatted |
 | `log.Println(msg)` | `dd.Info(msg)` | Info level |
@@ -25,19 +27,19 @@ If you are currently using another logging library, this guide helps you quickly
 
 ```go
 // Before: log
-log.Printf("User %s login failed: %v", username, err)
+log.Printf("user %s login failed: %v", username, err)
 
 // After: DD
-dd.Infof("User %s login failed: %v", username, err)
+dd.Infof("user %s login failed: %v", username, err)
 
-// Or use structured logging
-dd.ErrorWith("User login failed",
+// Or using structured logging
+dd.ErrorWith("user login failed",
     dd.String("username", username),
     dd.Err(err),
 )
 ```
 
-### Replacing the Global Logger
+### Replace the Global Logger
 
 ```go
 // Before: log
@@ -45,21 +47,25 @@ log.SetOutput(file)
 log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 // After: DD
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
+    Level:  dd.LevelInfo,
     Format: dd.FormatText,
     Targets: []dd.OutputTarget{
         dd.FileOutput("logs/app.log"),
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
 dd.SetDefault(logger)
 ```
 
-## Migrating from slog
+## From slog
 
-### API Comparison
+### API Mapping
 
-| slog | DD | Description |
-|------|-----|-------------|
+| slog | DD | Notes |
+|------|-----|-------|
 | `slog.Info(msg)` | `dd.Info(msg)` | Info level |
 | `slog.Info(msg, "key", value)` | `dd.InfoWith(msg, dd.String("key", value))` | Structured |
 | `slog.Debug(msg)` | `dd.Debug(msg)` | Debug level |
@@ -80,7 +86,7 @@ slog.Info("request completed",
 )
 
 // After: DD
-dd.InfoWith("Request completed",
+dd.InfoWith("request completed",
     dd.String("method", "GET"),
     dd.Int("status", 200),
     dd.Duration("duration", 150*time.Millisecond),
@@ -88,15 +94,15 @@ dd.InfoWith("Request completed",
 ```
 
 :::tip Type Safety
-slog uses `any` key-value pairs, while DD uses type-specific field constructors. Type errors can be caught at compile time.
+slog uses `any` key-value pairs; DD uses type-specific field constructors. Type errors are caught at compile time.
 :::
 
-## Migrating from zap
+## From zap
 
-### API Comparison
+### API Mapping
 
-| zap | DD | Description |
-|-----|-----|-------------|
+| zap | DD | Notes |
+|-----|-----|-------|
 | `zap.L().Info(msg, zap.Field...)` | `dd.InfoWith(msg, dd.Field...)` | Structured |
 | `zap.String(key, val)` | `dd.String(key, val)` | String field |
 | `zap.Int(key, val)` | `dd.Int(key, val)` | Integer field |
@@ -106,7 +112,7 @@ slog uses `any` key-value pairs, while DD uses type-specific field constructors.
 | `logger.With(zap.Field...)` | `logger.WithFields(dd.Field...)` | Preset fields |
 | `zapcore.NewCore(...)` | `dd.New(dd.Config{...})` | Create instance |
 
-### Configuration Comparison
+### Configuration Mapping
 
 ```go
 // Before: zap
@@ -118,7 +124,7 @@ cfg := zap.Config{
 logger, _ := cfg.Build()
 
 // After: DD
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
     Level:  dd.LevelInfo,
     Format: dd.FormatJSON,
     Targets: []dd.OutputTarget{
@@ -126,9 +132,12 @@ logger, _ := dd.New(dd.Config{
         dd.FileOutput("logs/app.json"),
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
-### Field Comparison
+### Field Mapping
 
 ```go
 // Before: zap
@@ -148,12 +157,12 @@ dd.InfoWith("request",
 )
 ```
 
-## Migrating from logrus
+## From logrus
 
-### API Comparison
+### API Mapping
 
-| logrus | DD | Description |
-|--------|-----|-------------|
+| logrus | DD | Notes |
+|--------|-----|-------|
 | `logrus.Info(msg)` | `dd.Info(msg)` | Info level |
 | `logrus.WithField("k", v)` | `dd.WithField("k", v)` | Single field |
 | `logrus.WithFields(logrus.Fields{...})` | `dd.WithFields(dd.String(...), ...)` | Multiple fields |
@@ -180,21 +189,21 @@ dd.WithFields(
 ).Info("Request completed")
 ```
 
-## DD-Specific Features
+## DD-Exclusive Features
 
-After migration, you can take advantage of DD's unique features:
+After migrating, you can take advantage of DD's unique features:
 
-| Feature | Description | Documentation |
-|---------|-------------|---------------|
-| Sensitive data filtering | Automatic redaction of passwords, API keys, etc. | [Sensitive Data Filtering](./sensitive-filtering) |
-| Audit logging | Asynchronous security event recording | [Audit Logging](./audit-logging) |
-| HMAC signatures | Log tamper-proofing | [HMAC Signatures in Practice](../advanced/integrity) |
+| Feature | Description | Docs |
+|---------|-------------|------|
+| Sensitive-data filtering | Auto-redact passwords, API keys, etc. | [Sensitive Data Filtering](./sensitive-filtering) |
+| Audit logging | Asynchronous security-event recording | [Audit Logging](./audit-logging) |
+| HMAC signing | Tamper-protection for logs | [HMAC Signing In Practice](../advanced/integrity) |
 | Industry compliance | HIPAA/PCI-DSS presets | [Industry Compliance Configuration](../security/compliance) |
-| Lifecycle hooks | 6 Hook events | [Hook System](./hooks) |
-| LoggerRecorder | Testing helper | [Testing Patterns](../examples/testing-patterns) |
+| Lifecycle hooks | 6 hook events | [Hook System](./hooks) |
+| LoggerRecorder | Test helper | [Testing Patterns](../examples/testing-patterns) |
 
 ## Next Steps
 
 - [Core Concepts](./core-concepts) -- DD architecture overview
-- [Structured Logging](./structured-logging) -- Field usage in detail
-- [Cheat Sheet](../cheatsheet) -- API quick reference
+- [Structured Logging](./structured-logging) -- Field usage in depth
+- [Cheat Sheet](../getting-started/cheatsheet) -- API quick reference

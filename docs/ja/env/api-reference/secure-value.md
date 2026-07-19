@@ -1,6 +1,8 @@
 ---
+sidebar_label: "SecureValue"
 title: "SecureValue API - CyberGo env | セキュア値ストレージ"
-description: "CyberGo env の SecureValue API リファレンス。mlock メモリロック、Release ゼロクリア、Masked マスク、IsSensitiveKey 検出でパスワードやトークンを安全に保存します。"
+description: "CyberGo env の SecureValue API リファレンス。NewSecureValue 生成、mlock メモリロック、Reveal 平文読み取り、Masked マスク、Release ゼロクリア、IsSensitiveKey 検出でパスワード・トークン・キーを安全に保存します。"
+sidebar_position: 5
 ---
 
 # SecureValue API
@@ -27,7 +29,7 @@ if secret != nil {
 ```
 
 ::: warning 注意
-`Close()` と `Release()` は1回のみ呼び出してください。繰り返し呼び出しは安全ですが効果はありません。
+`Close()` と `Release()` は 1 回のみ呼び出してください。繰り返し呼び出しは安全ですが効果はありません。
 :::
 
 ## 作成
@@ -128,7 +130,7 @@ func (sv *SecureValue) String() string
 マスク表現を返します。安全なログ出力とフォーマット用。`fmt.Stringer` インターフェースを実装し、`fmt.Printf`、`log.Println`、エラーラッピングによる秘密鍵の意図しない漏洩を防止します。
 
 **戻り値：**
-- `string` - マスク表現（例：`[SECURE:32 bytes locked]`）、nil の場合は `[NIL]` を返す
+- `string` - マスク表現（例：`[SECURE:32 bytes]`）、nil の場合は `[NIL]` を返す
 
 ```go
 secret := env.GetSecure("PASSWORD")
@@ -233,7 +235,9 @@ func (sv *SecureValue) Masked() string
 secret := env.GetSecure("API_KEY")
 if secret != nil {
     log.Printf("API Key: %s", secret.Masked())
-    // 出力: API Key: [SECURE:32 bytes locked]
+    // 出力：API Key: [SECURE:32 bytes]
+    // 注：メモリロック（SetMemoryLockEnabled(true)）が有効かつロック成功時にのみ、
+    // マスクに " locked" サフィックスが追加されます（他に " lock-failed" / " unlocked" あり）
 }
 ```
 
@@ -536,11 +540,11 @@ func MaskValue(key, value string) string
 ```go
 // 機密キー - [MASKED:N chars] フォーマットを返す
 masked := env.MaskValue("API_KEY", "secret123")
-// 戻り値: [MASKED:9 chars]
+// 戻り値：[MASKED:9 chars]
 
-// 非機密キー - 元の値を返す（20文字を超える場合は切り詰め）
+// 非機密キー - 元の値を返す（20 文字を超える場合は切り詰め）
 masked := env.MaskValue("APP_NAME", "myapp")
-// 戻り値: myapp
+// 戻り値：myapp
 ```
 
 ---
@@ -561,7 +565,7 @@ func MaskKey(key string) string
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
-// 戻り値: DB***
+// 戻り値：DB***
 ```
 
 ---
@@ -584,7 +588,7 @@ func SanitizeForLog(s string) string
 // 機密キーと値のペアを自動マスク
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
-// 戻り値: "Connected with password=[MASKED] api_key=[MASKED]"
+// 戻り値："Connected with password=[MASKED] api_key=[MASKED]"
 ```
 
 ---
@@ -595,7 +599,7 @@ clean := env.SanitizeForLog(msg)
 func MaskSensitiveInString(s string) string
 ```
 
-文字列内の潜在的な機密内容をマスクします。50文字を超える文字列は切り詰められます。
+文字列内の潜在的な機密内容をマスクします。50 文字を超える文字列は切り詰められます。
 
 **パラメータ：**
 - `s` - 元の文字列
@@ -604,10 +608,10 @@ func MaskSensitiveInString(s string) string
 - `string` - マスクされた文字列
 
 ```go
-// 長い文字列は切り詰められます
+// 長い文字列は切り詰められます（先頭 47 文字を保持し "..." を追加）
 long := "This is a very long string that exceeds 50 characters"
 clean := env.MaskSensitiveInString(long)
-// 戻り値: "This is a very long string that exceeds 50..."
+// 戻り値："This is a very long string that exceeds 50 char..."
 ```
 
 ::: tip 使用例

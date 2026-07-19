@@ -1,6 +1,8 @@
 ---
+sidebar_label: "JSONL"
 title: "Processor JSONL 方法 - CyberGo JSON | API 参考"
 description: "CyberGo JSON Processor JSONL 方法：StreamJSONL 流式、ForeachJSONL 迭代、MapJSONL 映射、ReduceJSONL 归约与 FilterJSONL 过滤，适合流式数据处理。"
+sidebar_position: 8
 ---
 
 # Processor JSONL 方法
@@ -220,7 +222,7 @@ total, err := processor.ReduceJSONL(file, 0.0, func(acc any, item *json.Iterable
     price := item.GetFloat64("price")
     return acc.(float64) + price
 })
-fmt.Printf("总销售额: %.2f\n", total.(float64))
+fmt.Printf("总销售额：%.2f\n", total.(float64))
 ```
 
 ---
@@ -373,7 +375,7 @@ func main() {
         panic(err)
     }
 
-    fmt.Printf("统计: %d 错误, %d 警告\n", errorCount, warningCount)
+    fmt.Printf("统计：%d 错误，%d 警告\n", errorCount, warningCount)
 }
 ```
 
@@ -420,6 +422,6 @@ func main() {
 
 ## 相关
 
-- [JSONL 处理器](../jsonl) - 包级 JSONL 函数
-- [大文件处理](../../large-files) - 大文件处理指南
+- [JSONL 处理器](../../streaming/jsonl) - 包级 JSONL 函数
+- [大文件处理](../../streaming/large-files) - 大文件处理指南
 - [迭代器](../iterator) - IterableValue 类型详解

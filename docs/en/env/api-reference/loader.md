@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Loader"
 title: "Loader API - CyberGo env | Loader Details"
-description: "CyberGo env Loader API reference: multi-format file loading, type-safe reading, key set/delete, validation, serialization and Close — all thread-safe."
+description: "CyberGo env Loader API: LoadFiles multi-format, GetString/GetInt/GetSlice reads, Set/Delete, Validate, serialization and Close — all thread-safe."
+sidebar_position: 3
 ---
 
 # Loader API
@@ -106,6 +108,7 @@ err := loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 - `*ParseError` - Parse error
 - `*JSONError` - JSON parse error
 - `*YAMLError` - YAML parse error
+- `*SecurityError` - File path security validation failed (e.g., path traversal attack)
 
 **Format Detection Rules:**
 
@@ -422,8 +425,9 @@ if err != nil {
 ```
 
 **Error Types:**
-- `ErrInvalidKey` - Invalid key name
-- `ErrForbiddenKey` - Forbidden key
+- `*ValidationError` - Invalid key name format (Field="key")
+- `*SecurityError` - Forbidden key (matchable via `errors.Is(err, env.ErrSecurityViolation)`)
+- `ErrInvalidValue` - Invalid value (when `ValidateValues` is true, value contains unsafe content like null bytes or control characters)
 - `ErrClosed` - Loader is closed
 
 ---
@@ -532,6 +536,10 @@ Applies variables to the system environment (`os.Environ`).
 - Whether to overwrite existing system environment variables is controlled by `OverwriteExisting` configuration
 - After applying, values can be accessed via `os.Getenv()`
 
+**Error types:**
+- `ErrClosed` - Loader has been closed
+- Wrapped `os` error - Failed to set environment variable (key name masked; sensitive key not exposed in error message)
+
 ```go
 err := loader.Apply()
 if err != nil {
@@ -621,7 +629,7 @@ Validates that all required keys exist.
 - `error` - Validation error
 
 **Behavior:**
-- Checks whether all keys specified in `Config.RequiredKeys` exist
+- Checks whether all keys specified in `ValidationConfig.RequiredKeys` exist
 
 ```go
 cfg := env.DefaultConfig()
@@ -659,14 +667,15 @@ Maps environment variables to a struct.
 - `env:"KEY"` - Specifies the environment variable name
 - `env:"-"` - Ignores this field
 - `envDefault:"value"` - Specifies the default value
-- `envSeparator:","` - Specifies the slice separator
+
+Slice fields are split by comma `,` by default (surrounding whitespace around the separator is trimmed automatically); there is no custom separator tag.
 
 ```go
 type Config struct {
     Host    string   `env:"HOST" envDefault:"localhost"`
     Port    int64    `env:"PORT" envDefault:"8080"`
     Debug   bool     `env:"DEBUG" envDefault:"false"`
-    Hosts   []string `env:"HOSTS" envSeparator:","`
+    Hosts   []string `env:"HOSTS"`
     Ignored string   `env:"-"`
 }
 

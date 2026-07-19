@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Testing Scenarios"
 title: "Testing - CyberGo env | Unit Test Practices"
-description: "CyberGo env testing guide: TestingConfig, in-memory FileSystem mocking, table-driven tests, benchmarks and ResetDefaultLoader cleanup for stable results."
+description: "CyberGo env testing: TestingConfig, OverwriteExisting isolation, in-memory FileSystem mock, per-test loaders, table-driven tests, benchmarks, ResetDefaultLoader."
+sidebar_position: 6
 ---
 
 # Testing Scenarios
@@ -11,7 +13,7 @@ This guide covers how to use the env library in tests, including isolated test e
 
 ### Using TestingConfig
 
-`TestingConfig` overrides existing environment variables, suitable for test isolation:
+TestingConfig overrides existing environment variables, suitable for test isolation:
 
 ```go
 func TestWithTestingConfig(t *testing.T) {
@@ -28,7 +30,7 @@ func TestWithTestingConfig(t *testing.T) {
 ```
 
 ::: tip Note
-`TestingConfig` sets `OverwriteExisting: true` to ensure test isolation. If you need to preserve existing variables, manually set `cfg.OverwriteExisting = false`.
+TestingConfig sets `OverwriteExisting: true` to ensure test isolation. If you need to preserve existing variables, manually set `cfg.OverwriteExisting = false`.
 :::
 
 ### Independent Loader per Test

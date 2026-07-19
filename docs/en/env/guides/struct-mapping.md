@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Struct Mapping"
 title: "Struct Mapping - CyberGo env | Env Vars to Struct"
-description: "CyberGo env struct mapping guide: map env vars to Go struct fields via env tags, covering nesting, pointers, slices, converters, defaults and validation."
+description: "CyberGo env struct mapping guide: env and envDefault tags map environment variables to Go struct fields; covers nested structs, pointers and slices, custom type decoding, field ignoring, defaults and required validation for type-safe configuration loading."
+sidebar_position: 1
 ---
 
 # Struct Mapping
@@ -125,6 +127,8 @@ Supported formats:
 
 ### Slice Types
 
+Slice fields are split by comma `,`, with surrounding whitespace around the separator trimmed automatically.
+
 ```go
 type Config struct {
     Hosts []string `env:"HOSTS"`      // Comma-separated
@@ -138,36 +142,6 @@ type Config struct {
 HOSTS=localhost,example.com,api.example.com
 PORTS=80,443,8080
 ```
-
-### Custom Separator
-
-Use the `envSeparator` tag to specify a custom separator:
-
-```go
-type Config struct {
-    // Semicolon-separated
-    Servers []string `env:"SERVERS" envSeparator:";"`
-
-    // Pipe-separated
-    Tags []string `env:"TAGS" envSeparator:"|"`
-
-    // Space-separated
-    Words []string `env:"WORDS" envSeparator:" "`
-}
-```
-
-`.env` file:
-
-```bash
-SERVERS=server1.example.com;server2.example.com;server3.example.com
-TAGS=production|api|v2
-WORDS=hello world go lang
-```
-
-**Notes:**
-- The default separator is a comma `,`
-- `envSeparator` only works with slice types
-- Whitespace around separators is automatically trimmed
 
 ## Nested Structs
 
@@ -244,28 +218,58 @@ func main() {
 
 ## Custom Types
 
-### Implementing the Unmarshaler Interface
+### Implementing the encoding.TextUnmarshaler Interface
+
+Custom decoding of struct fields is done by implementing the standard library `encoding.TextUnmarshaler` interface — this is the interface that is **actually invoked** during per-field population.
 
 ```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
 type LogLevel string
 
-func (l *LogLevel) UnmarshalEnv(data map[string]string) error {
-    *l = LogLevel(data["LOG_LEVEL"])
-    return nil
+// Implement encoding.TextUnmarshaler — invoked at the field level
+func (l *LogLevel) UnmarshalText(text []byte) error {
+    switch string(text) {
+    case "debug", "info", "warn", "error":
+        *l = LogLevel(text)
+        return nil
+    default:
+        return fmt.Errorf("invalid log level: %s", string(text))
+    }
 }
 
 type Config struct {
     Level LogLevel `env:"LOG_LEVEL"`
 }
+
+func main() {
+    data := map[string]string{"LOG_LEVEL": "info"}
+
+    var cfg Config
+    if err := env.UnmarshalInto(data, &cfg); err != nil {
+        panic(err)
+    }
+
+    fmt.Println(cfg.Level)
+    // Output: info
+}
 ```
 
-### Type Aliases
+### Type Aliases with Validation
 
+<!-- check-code: skip -->
 ```go
 type Port int64
 
-func (p *Port) UnmarshalEnv(data map[string]string) error {
-    val, err := strconv.ParseInt(data["PORT"], 10, 64)
+// Implement encoding.TextUnmarshaler with range validation during parsing
+func (p *Port) UnmarshalText(text []byte) error {
+    val, err := strconv.ParseInt(string(text), 10, 64)
     if err != nil {
         return err
     }
@@ -276,6 +280,10 @@ func (p *Port) UnmarshalEnv(data map[string]string) error {
     return nil
 }
 ```
+
+:::tip About env.Marshaler / env.Unmarshaler interfaces
+The `env.Marshaler` (`MarshalEnv()`) and `env.Unmarshaler` (`UnmarshalEnv(map[string]string)`) interfaces **only take effect on the top-level value passed to `env.Marshal` / `env.MarshalStruct` / `env.UnmarshalInto`**, and are not invoked by the per-field population logic of structs. To customize encoding/decoding of struct fields, implement the standard library `encoding.TextMarshaler` / `encoding.TextUnmarshaler`; they are recognized at the field level.
+:::
 
 ## Configuration Validation
 
@@ -339,6 +347,7 @@ func (c *Config) Validate() error {
 
 ### Centralized Configuration Management
 
+<!-- check-code: skip -->
 ```go
 // config/config.go
 package config
@@ -527,4 +536,4 @@ func main() {
 
 - [Package Functions - ParseInto](/en/env/api-reference/functions#parseinto) - ParseInto function reference
 - [Loader API - ParseInto](/en/env/api-reference/loader#parseinto) - Loader method reference
-- [Getting Started](/en/env/getting-started) - Basic usage
+- [Getting Started](/en/env/getting-started/) - Basic usage

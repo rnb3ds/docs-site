@@ -1,6 +1,8 @@
 ---
+sidebar_label: "パッケージ関数"
 title: "パッケージ関数 - CyberGo JWT | ファクトリ関数と既定値"
 description: "パッケージ関数参考：New で Processor を作成し検証、DefaultConfig と DefaultBlacklistConfig が既定設定を返し、NewNumericDate が時刻印を構築、NewRateLimiter がトークンバケット制限器を作成する。"
+sidebar_position: 10
 ---
 
 # パッケージ関数
@@ -13,7 +15,7 @@ func New(cfg Config) (*Processor, error)
 
 新しい JWT Processor を作成します。`DefaultConfig()` でデフォルト設定を取得し、必要なフィールドを変更して渡します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -71,7 +73,7 @@ func DefaultConfig() Config
 
 適切なデフォルト値を持つ設定を返します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 戻り値
 
@@ -109,7 +111,7 @@ func DefaultBlacklistConfig() BlacklistConfig
 
 適切なデフォルト値を持つブラックリスト設定を返します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 戻り値
 
@@ -135,7 +137,7 @@ func NewNumericDate(t time.Time) NumericDate
 
 `time.Time` から `NumericDate` を作成します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -159,7 +161,7 @@ func NewRateLimiter(maxRate int, window time.Duration) *RateLimiter
 
 トークンバケットレートリミッターを作成します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 

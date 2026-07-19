@@ -1,6 +1,8 @@
 ---
-title: "Error Handling - CyberGo HTML | Robust Error Guide"
-description: "CyberGo HTML error handling: five error categories, errors.Is sentinel matching, errors.As structured errors, context cancellation, and batch partial failures."
+sidebar_label: "Error Handling"
+title: "Error Handling - CyberGo html | Robust Error Guide"
+description: "CyberGo html error handling guide: five error categories, errors.Is/As matching, context cancellation, and batch partial-failure handling for robust logic."
+sidebar_position: 2
 ---
 
 # Error Handling
@@ -67,7 +69,7 @@ if errors.As(err, &fileErr) {
 
 ## Context Cancellation
 
-Use `WithContext` variants for cancellation support:
+Use `ExtractWithContext` variants for cancellation support:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -75,10 +77,16 @@ defer cancel()
 
 result, err := html.ExtractWithContext(ctx, data)
 if err != nil {
-    if ctx.Err() == context.DeadlineExceeded {
-        // Timeout
-    } else if ctx.Err() == context.Canceled {
+    switch {
+    case errors.Is(err, html.ErrProcessingTimeout):
+        // Library ProcessingTimeout fired (ctx.Err() may still be nil here)
+    case ctx.Err() == context.DeadlineExceeded:
+        // User context deadline exceeded
+    case ctx.Err() == context.Canceled:
         // Manual cancellation
+    default:
+        // Other errors (ErrInvalidHTML, ErrInputTooLarge, etc.)
+        slog.Error("extraction failed", "err", err)
     }
 }
 ```

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Multi-format Config"
 title: "Multi-format Config - CyberGo env | .env/JSON/YAML"
-description: "CyberGo env multi-format guide: load .env, JSON and YAML with auto-detection and mixed loading, merge-priority rules and format conversion for containers."
+description: "CyberGo env multi-format: load .env/JSON/YAML, auto-detect, flatten nested keys, merge priority, Marshal/UnmarshalMap, RegisterParser for containers."
+sidebar_position: 3
 ---
 
 # Multi-format Config
@@ -313,8 +315,8 @@ LITERAL='literal ${noexpand}'
 BASE_URL=https://api.example.com
 API_URL=${BASE_URL}/v1
 
-# Default values
-LOG_LEVEL=${LOG_LEVEL:-info}
+# Log level
+LOG_LEVEL=info
 ```
 
 ### Variable Expansion
@@ -349,9 +351,9 @@ PORT=8080
 # Reference other variables
 URL=http://${HOST}:${PORT}
 
-# Default values
-TIMEOUT=${TIMEOUT:-30s}
-DEBUG=${DEBUG:-false}
+# Default values (reference another variable, use default when undefined)
+TIMEOUT_VALUE=${TIMEOUT:-30s}
+DEBUG_VALUE=${DEBUG:-false}
 ```
 
 ### export Syntax
@@ -458,21 +460,31 @@ data := map[string]string{
     "HOST": "localhost",
     "PORT": "8080",
 }
+```
 
-// .env format (default)
+::: code-group
+
+```go [.env (default)]
 envStr, _ := env.Marshal(data)
 // HOST=localhost
 // PORT=8080
+```
 
-// JSON format
+```go [JSON]
 jsonStr, _ := env.Marshal(data, env.FormatJSON)
-// {"HOST":"localhost","PORT":"8080"}
+// {
+//   "HOST": "localhost",
+//   "PORT": 8080
+// }
+```
 
-// YAML format
+```go [YAML]
 yamlStr, _ := env.Marshal(data, env.FormatYAML)
 // HOST: localhost
-// PORT: "8080"
+// PORT: 8080
 ```
+
+:::
 
 ### Marshal Struct
 
@@ -483,37 +495,50 @@ type Config struct {
 }
 
 cfg := Config{Host: "localhost", Port: 8080}
+```
 
-// To .env
+::: code-group
+
+```go [to .env]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
+```
 
-// To JSON
+```go [to JSON]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
+```
 
-// To YAML
+```go [to YAML]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
+
+:::
 
 ### UnmarshalMap
 
 Deserialize to a map:
 
-```go
-// From .env
+::: code-group
+
+```go [from .env]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
+```
 
-// From JSON
+```go [from JSON]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
+```
 
-// From YAML
+```go [from YAML]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
-
-// Auto-detect format
-data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)
 ```
+
+:::
+
+::: tip Auto-detect format
+Pass `env.FormatAuto` to let the library determine the format from content: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`.
+:::
 
 ### UnmarshalStruct
 
@@ -526,16 +551,23 @@ type Config struct {
 }
 
 var cfg Config
+```
 
-// From .env
+::: code-group
+
+```go [from .env]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
+```
 
-// From JSON
+```go [from JSON]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
+```
 
-// From YAML
+```go [from YAML]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
+
+:::
 
 ## Custom Formats
 

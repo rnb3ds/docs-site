@@ -1,6 +1,8 @@
 ---
+sidebar_label: "基本的な使い方"
 title: "基本的な使い方 - CyberGo DD | 実用サンプル"
-description: "CyberGo DD ログライブラリの実用的なコードサンプル集。Gin/Echo Web サービスのリクエストログ、gRPC インターセプター統合、データベース操作ログ記録、ミドルウェアチェーン呼び出し、定期タスクログ出力、マイクロサービス分散トレーシング統合など一般的なシナリオをカバーし、そのままコピーして使用できるベストプラクティスコードスニペットを提供。"
+description: "CyberGo DD ログライブラリの実用的なコードサンプル集。Gin/Echo Web サービスのリクエストログ、gRPC インターセプター統合、データベース操作ログ、ミドルウェアチェーン呼び出し、定期タスクログ出力、マイクロサービス分散トレーシング統合など一般的なシナリオをカバーするコードスニペット。"
+sidebar_position: 1
 ---
 
 # 基本的な使い方
@@ -58,7 +60,7 @@ func main() {
     mux := http.NewServeMux()
     mux.HandleFunc("/api/users", handleUsers)
 
-    fmt.Println("サービス起動: :8080")
+    fmt.Println("サービス起動：:8080")
     http.ListenAndServe(":8080", loggingMiddleware(mux))
 }
 
@@ -74,6 +76,7 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 ## マイクロサービスログ
 
+<!-- check-code: skip -->
 ```go
 package service
 
@@ -116,6 +119,7 @@ func (s *UserService) GetUser(id int) (*User, error) {
 
 ## 定期タスクログ
 
+<!-- check-code: skip -->
 ```go
 package cron
 
@@ -150,6 +154,7 @@ func RunCleanup() {
 
 ## 監査付きセキュリティログ
 
+<!-- check-code: skip -->
 ```go
 package auth
 
@@ -179,8 +184,8 @@ func init() {
 func HandleLogin(username, password, ip string) error {
     logger.InfoWith("ログイン試行",
         dd.String("username", username),
-        dd.String("ip", ip),
-        // password は SecurityConfig で自動フィルタリング
+        dd.String("ip", ip),  // FinancialConfig は ip も [REDACTED] にマスキング
+        // password はログに記録しない（セキュリティプラクティス：生のパスワードを絶対に log しない）
     )
 
     if isBruteForce(ip) {
@@ -260,6 +265,6 @@ func SetupLogger(env string) (*dd.Logger, error) {
 
 ## 次のステップ
 
-- [クイックスタート](../getting-started) -- 基礎入門
+- [クイックスタート](../getting-started/) -- 基礎入門
 - [API リファレンス](../api-reference/) -- 完全 API
 - [セキュリティ](../security/) -- セキュリティ設定

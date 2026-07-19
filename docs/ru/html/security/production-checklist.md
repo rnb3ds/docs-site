@@ -1,6 +1,8 @@
 ---
-title: "Чек-лист продакшена - CyberGo HTML | безопасность"
-description: "Чек-лист безопасности CyberGo HTML для продакшена: пресет HighSecurityConfig, жизненный цикл Processor, аудит, тайм-ауты, обработка ошибок, ресурсы и файлы."
+sidebar_label: "Контрольный список для продакшена"
+title: "Чек-лист продакшена - CyberGo html | безопасность"
+description: "Чек-лист безопасности CyberGo html для продакшена: пресет HighSecurityConfig, жизненный цикл Processor, аудит, тайм-ауты контекста и обработка ошибок."
+sidebar_position: 2
 ---
 
 # Контрольный список для продакшена
@@ -36,7 +38,7 @@ defer p.Close()
 - [ ] Обращать внимание на ошибки `ErrInternalPanic` и события аудита `AuditEventPathTraversal`
 
 ```go
-auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE, 0644)
+auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 defer auditFile.Close()
 
 cfg := html.HighSecurityConfig()
@@ -45,7 +47,7 @@ cfg.Audit.Sink = html.NewWriterAuditSink(auditFile)
 
 ## Контекст и тайм-ауты
 
-- [ ] Использовать версии `WithContext` для всех операций извлечения
+- [ ] Использовать версии `ExtractWithContext` для всех операций извлечения
 - [ ] Установить разумный тайм-аут контекста
 - [ ] Использовать контекст с отменой для пакетных операций
 

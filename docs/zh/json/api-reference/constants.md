@@ -1,6 +1,8 @@
 ---
+sidebar_label: "常量与错误"
 title: "常量与错误 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 常量与错误参考：DefaultMaxJSONSize、DefaultMaxNestingDepth 默认限制、ErrPathNotFound 等错误变量与 MergeMode 合并模式，支撑 Go 配置与错误处理。"
+description: "CyberGo JSON 常量与错误：DefaultMaxJSONSize、DefaultMaxNestingDepth 限制、ErrPathNotFound 错误变量与 MergeMode 合并模式，支撑 Go 配置。"
+sidebar_position: 7
 ---
 
 # 常量与错误
@@ -21,7 +23,7 @@ var (
     // 限制错误
     ErrSizeLimit        = errors.New("size limit exceeded")
     ErrDepthLimit       = errors.New("depth limit exceeded")
-    ErrConcurrencyLimit = errors.New("concurrency limit exceeded") // Deprecated: 当前未被任何操作返回，保留供未来使用
+    ErrConcurrencyLimit = errors.New("concurrency limit exceeded") // 受控操作（Get/Set/Delete 等）达到 MaxConcurrency 时返回
 
     // 安全和验证错误
     ErrSecurityViolation = errors.New("security violation detected")
@@ -213,7 +215,7 @@ type PathSegment = internal.PathSegment
 ```
 
 ::: warning 内部实现别名
-`PathSegment` 是 `internal.PathSegment` 的类型别名。其具体字段、字段类型（如 `PathSegmentType`、`PathSegmentFlags`）及方法均属于 `internal` 包，**未作为公开 API 导出**，可能随版本变化，请勿在业务代码中直接依赖其内部结构。
+`PathSegment` 是 `internal.PathSegment` 的类型别名。其具体字段、字段类型（如 PathSegmentType、PathSegmentFlags）及方法均属于 `internal` 包，**未作为公开 API 导出**，可能随版本变化，请勿在业务代码中直接依赖其内部结构。
 
 - 实现自定义路径语法时，通过 [`PathParser`](./interfaces#pathparser) 接口的 `ParsePath` 方法返回 `[]PathSegment`。
 - 预编译路径请使用 [`Processor.CompilePath`](./processor/query#compilepath)，返回 `*CompiledPath`。

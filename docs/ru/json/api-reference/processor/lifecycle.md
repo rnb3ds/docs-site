@@ -1,6 +1,8 @@
 ---
-title: "Processor - Жизненный цикл - CyberGo JSON | Справочник API"
-description: "Жизненный цикл Processor CyberGo JSON: New, Close, IsClosed, GetStats и GetHealthStatus для безопасного завершения в многопоточной среде."
+sidebar_label: "Жизненный цикл"
+title: "Processor: жизненный цикл - CyberGo JSON | API"
+description: "Жизненный цикл Processor CyberGo JSON: New, Close, IsClosed, GetStats, GetHealthStatus для безопасного завершения."
+sidebar_position: 11
 ---
 
 # Жизненный цикл и статистика
@@ -267,5 +269,5 @@ go func() {
 ## Связанные разделы
 
 - [Config](../config) - Параметры конфигурации (размер кэша, TTL и др.)
-- [Система хуков](../hooks) - Подробное руководство по использованию хуков
+- [Система хуков](../../extensions/hooks) - Подробное руководство по использованию хуков
 - [Определения интерфейсов](../interfaces) - Интерфейсы Hook

@@ -1,11 +1,13 @@
 ---
+sidebar_label: "보안 개요"
 title: "보안 개요 - CyberGo HTTPC | 보안 기능 개요"
 description: "HTTPC 보안 기능 개요: TLS 1.2+ 버전 제어, SSRF 사설 IP 차단과 CIDR 면제, CRLF 주입 방어, StrictCookieSecurityConfig Cookie 보안과 리다이렉트 허용 목록을 다룹니다."
+sidebar_position: 1
 ---
 
 # 보안 개요
 
-HTTPC은 기본 보안(Secure by Default)이며, 모든 보안 기능이 즉시 사용 가능합니다.
+HTTPC 은 기본 보안 (Secure by Default) 이며, 모든 보안 기능이 즉시 사용 가능합니다.
 
 ## 보안 기능 개요
 
@@ -19,7 +21,7 @@ HTTPC은 기본 보안(Secure by Default)이며, 모든 보안 기능이 즉시 
 | Cookie 보안 검증 | 선택 | Cookie 보안 속성 검증 |
 | 응답 본문 크기 제한 | 10MB | 메모리 고갈 방지 |
 | 압축 해제 본문 크기 제한 | 100MB | 압축 폭탄 방지 |
-| 리다이렉트 제한 | 10회 | 무한 리다이렉트 방지 |
+| 리다이렉트 제한 | 10 회 | 무한 리다이렉트 방지 |
 
 ## TLS 보안
 
@@ -36,7 +38,7 @@ cfg.Security.MaxTLSVersion = tls.VersionTLS13
 
 ## SSRF 방어
 
-SSRF(서버 측 요청 위조)는 공격자가 서버를 이용해 내부 네트워크에 요청을 보내는 공격 방식입니다.
+SSRF(서버 측 요청 위조) 는 공격자가 서버를 이용해 내부 네트워크에 요청을 보내는 공격 방식입니다.
 
 ```go
 // 기본값: 사설 IP 차단
@@ -62,9 +64,13 @@ client, _ := httpc.New(httpc.SecureConfig())
 | 172.16.0.0/12 | B 클래스 사설 |
 | 192.168.0.0/16 | C 클래스 사설 |
 | 169.254.0.0/16 | 링크 로컬 |
+| 100.64.0.0/10 | CGNAT (알리바바 클라우드 메타데이터 `100.100.100.200` 포함) |
+| 240.0.0.0/4 | E 클래스 예약 |
 | ::1/128 | IPv6 루프백 |
 | fc00::/7 | IPv6 고유 로컬 |
 | fe80::/10 | IPv6 링크 로컬 |
+
+> 위 표는 주요 범위이며, 전체 목록 (`0.0.0.0/8`, TEST-NET, IPv6 문서 접두사 `2001:db8::/32`, NAT64 `64:ff9b::/96` 등 포함) 은 소스 코드의 `isPrivateOrReservedIP`를 참조하세요.
 
 ## 요청 헤더 검증
 
@@ -130,5 +136,5 @@ auditMiddleware := httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) 
 ## 다음 단계
 
 - [SSRF 방어](./ssrf) - SSRF 방어 상세와 설정
-- [TLS와 인증서 고정](./tls-certpin) - TLS 설정과 인증서 고정
+- [TLS 와 인증서 고정](./tls-certpin) - TLS 설정과 인증서 고정
 - [프로덕션 체크리스트](./production-checklist) - 릴리스 전 필수 확인 항목

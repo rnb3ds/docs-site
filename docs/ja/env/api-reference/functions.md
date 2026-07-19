@@ -1,6 +1,8 @@
 ---
+sidebar_label: "パッケージ関数"
 title: "パッケージ関数 - CyberGo env | グローバル便利関数"
-description: "CyberGo env のパッケージ関数 API リファレンス。Load、GetString、GetInt、Keys、Marshal、ParseInto などスレッドセーフなグローバルローダー基盤の簡潔な API を提供します。"
+description: "CyberGo env のパッケージ関数 API リファレンス。Load、GetString、GetInt、GetBool、GetDuration、GetSlice、GetSecure、Lookup、Keys、ParseInto などスレッドセーフなグローバルローダー基盤の簡潔な API を提供します。"
+sidebar_position: 2
 ---
 
 # パッケージ関数
@@ -8,7 +10,7 @@ description: "CyberGo env のパッケージ関数 API リファレンス。Load
 パッケージレベル便利関数はシンプルな API を提供し、ほとんどのユースケースに適しています。これらの関数はグローバルデフォルトローダーを使用し、すべての関数はスレッドセーフです。
 
 :::info 初期化の必要性
-グローバルデフォルトローダーは `Load()` または `LoadWithConfig()` で明示的に初期化する必要があり、初回呼び出し時に自動生成され**ません**。未初期化時の関数の挙動は以下の通りです:
+グローバルデフォルトローダーは `Load()` または `LoadWithConfig()` で明示的に初期化する必要があり、初回呼び出し時に自動生成され**ません**。未初期化時の関数の挙動は以下の通りです：
 
 - `Get*` 関数（`GetString`、`GetInt`、`GetBool` など）: 指定されたデフォルト値（またはゼロ値）を返す
 - `Lookup`: `("", false)` を返す
@@ -80,7 +82,7 @@ name := env.GetString("app_name")  // app_name を検索 -> APP_NAME
 **3. ドットパス解決（ネストキー）**
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 保存: APP_NAME=myapp
+// 保存：APP_NAME=myapp
 
 // 以下のすべての方法でこの値にアクセス可能
 name := env.GetString("APP_NAME")   // フラット化キー名（推奨）
@@ -103,7 +105,7 @@ name := env.GetString("APP.NAME")   // 大文字ドットパス
 
 ```go
 // JSON: {"servers": [{"host": "a.com"}, {"host": "b.com"}]}
-// 格納結果: SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
+// 格納結果：SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
 
 host0 := env.GetString("servers.0.host")  // "a.com"
 host1 := env.GetString("servers.1.host")  // "b.com"
@@ -300,7 +302,7 @@ if secret != nil {
     defer secret.Release()
 
     value := secret.Reveal()   // 平文の値（必要な場合のみ呼び出し）
-    masked := secret.Masked()  // ログ用: [SECURE:32 bytes]
+    masked := secret.Masked()  // ログ用：[SECURE:32 bytes]
 }
 ```
 
@@ -423,7 +425,7 @@ func Lookup(key string) (string, bool)
 - `key` - キー名（ドットパスをサポート）
 
 **戻り値：**
-- `string` - 值（先頭と末尾の空白は削除される）
+- `string` - 値（先頭と末尾の空白は削除される）
 - `bool` - 存在するかどうか
 
 ```go
@@ -516,13 +518,14 @@ func Set(key, value string) error
 - `error` - 設定エラー
 
 **エラー型：**
-- `ErrInvalidKey` - キー名が無効
-- `ErrForbiddenKey` - キーが禁止されています
+- `*ValidationError` - キー名形式が無効（Field="key"）
+- `*SecurityError` - キーが禁止されています（`errors.Is(err, env.ErrSecurityViolation)` で一致）
+- `ErrInvalidValue` - 値が無効です（`ValidateValues` が true のとき、値にヌルバイトや制御文字など安全でない内容が含まれる場合）
 - `ErrClosed` - ローダークローズ済み
 
 ```go
 if err := env.Set("CUSTOM_KEY", "value"); err != nil {
-    // ErrForbiddenKey または ErrInvalidKey の可能性
+    // *SecurityError（禁止キー）または *ValidationError（キー形式）の可能性
 }
 ```
 
@@ -610,7 +613,8 @@ if err := env.ParseInto(&cfg); err != nil {
 | `env:"KEY"` | 指定キーにマッピング |
 | `env:"-"` | このフィールドを無視 |
 | `envDefault:"value"` | デフォルト値 |
-| `envSeparator:","` | スライスセパレータ |
+
+スライスフィールドはデフォルトでカンマ `,` で区切られます（セパレータ前後の空白は自動的に削除されます）。カスタムセパレータタグは存在しません。
 
 ::: tip 詳細は
 [構造体マッピング](/ja/env/guides/struct-mapping) 完全なガイドを取得。
@@ -632,9 +636,9 @@ func ResetDefaultLoader() error
 - `error` - 旧ローダーをクローズする際のエラー（存在する場合）；以前にローダーがない場合、またはクローズが成功した場合は nil を返す
 
 **動作：**
-- アトミックにデフォルトローダーを nil と交換
-- 旧ローダーをクローズ（ロックの外で実行し、ブロックを回避）
-- 新しいデフォルトローダーの作成を許可
+- `atomic.Pointer.Swap` でデフォルトローダーを nil に原子的に置換
+- `defaultMu` ロックを保持した状態で旧ローダーをクローズ（クローズ完了後にロック解放、リセットの原子性を保証）
+- リセット後、`Load()` または `LoadWithConfig()` で新しいデフォルトローダーを作成可能
 
 ```go
 func TestMain(m *testing.M) {
@@ -731,9 +735,12 @@ envStr, _ := env.Marshal(mapData)
 // HOST=localhost
 // PORT=8080
 
-// map を JSON フォーマットに変換
+// map を JSON フォーマットに変換（数字文字列はそのまま数値として出力、キーはアルファベット順にソート）
 jsonStr, _ := env.Marshal(mapData, env.FormatJSON)
-// {"HOST":"localhost","PORT":"8080"}
+// {
+//   "HOST": "localhost",
+//   "PORT": 8080
+// }
 
 // 構造体を .env フォーマットに変換
 type Config struct {
@@ -910,7 +917,7 @@ type AppConfig struct {
     Port     int64         `env:"APP_PORT" envDefault:"8080"`
     Debug    bool          `env:"DEBUG" envDefault:"false"`
     Timeout  time.Duration `env:"TIMEOUT" envDefault:"30s"`
-    Hosts    []string      `env:"HOSTS" envSeparator:","`
+    Hosts    []string      `env:"HOSTS"`
 }
 
 func main() {

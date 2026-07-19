@@ -1,6 +1,8 @@
 ---
-title: "本番チェックリスト - CyberGo HTML | 本番前点検"
-description: "CyberGo HTML 本番セキュリティチェックリスト：HighSecurityConfig プリセット、Processor ライフサイクル、監査・モニタリング、タイムアウト、エラー処理、リソース・ファイルの注意点です。"
+sidebar_label: "本番チェックリスト"
+title: "本番チェックリスト - CyberGo html | 本番前セキュリティ点検"
+description: "CyberGo html 本番デプロイセキュリティチェックリスト：HighSecurityConfig プリセット、Processor ライフサイクル、監査監視、コンテキストタイムアウト、エラー処理の要点。"
+sidebar_position: 2
 ---
 
 # 本番チェックリスト
@@ -36,7 +38,7 @@ defer p.Close()
 - [ ] `ErrInternalPanic` エラーと `AuditEventPathTraversal` 監査イベントに注目
 
 ```go
-auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE, 0644)
+auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 defer auditFile.Close()
 
 cfg := html.HighSecurityConfig()
@@ -45,7 +47,7 @@ cfg.Audit.Sink = html.NewWriterAuditSink(auditFile)
 
 ## コンテキストとタイムアウト
 
-- [ ] すべての抽出操作で `WithContext` バージョンを使用
+- [ ] すべての抽出操作で `ExtractWithContext` バージョンを使用
 - [ ] 適切なコンテキストタイムアウトを設定
 - [ ] バッチ操作ではキャンセル付きのコンテキストを使用
 

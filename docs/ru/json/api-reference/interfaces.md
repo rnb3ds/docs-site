@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Интерфейсы"
 title: "Определения интерфейсов - CyberGo JSON | Справочник API"
-description: "Интерфейсы CyberGo JSON: CustomEncoder, TypeEncoder, Validator, Hook, PathParser и DangerousPattern для расширения кодирования, валидации и безопасности."
+description: "Расширяемые интерфейсы CyberGo JSON: CustomEncoder, TypeEncoder, Validator, Hook, PathParser и DangerousPattern — гибкое расширение возможностей кодирования, валидации и защиты безопасности."
+sidebar_position: 6
 ---
 
 # Определения интерфейсов
@@ -381,20 +383,17 @@ func (n Number) Int64() (int64, error)       // Преобразует в int64
 **Пример использования**:
 
 ```go
-processor, err := json.New()
-if err != nil {
-    panic(err)
-}
-defer processor.Close()
+// Получение типа Number (через Decoder.UseNumber сохраняется полная точность)
+decoder := json.NewDecoder(strings.NewReader(data))
+decoder.UseNumber()
 
-// Получение типа Number (через метод Get с последующим приведением типа)
-val, err := processor.Get(data, "large_number")
-if err != nil {
+var obj map[string]any
+if err := decoder.Decode(&obj); err != nil {
     panic(err)
 }
 
-// Приведение типа к Number
-if num, ok := val.(json.Number); ok {
+// Получение Number через утверждение типа
+if num, ok := obj["large_number"].(json.Number); ok {
     // Number сохраняет исходную точность
     fmt.Println(num.String()) // "9007199254740993" (полная точность)
 
@@ -647,6 +646,6 @@ func (ve *ValidationError) Error() string
 
 ## Смотрите также
 
-- [Система перехватчиков Hook](./hooks) - Подробное руководство по перехватчикам
-- [Validator](./validator) - Подробное руководство по валидаторам
-- [CustomEncoder](./custom-encoder) - Руководство по пользовательскому кодировщику
+- [Система перехватчиков Hook](../extensions/hooks) - Подробное руководство по перехватчикам
+- [Validator](../extensions/validator) - Подробное руководство по валидаторам
+- [CustomEncoder](../extensions/custom-encoder) - Руководство по пользовательскому кодировщику

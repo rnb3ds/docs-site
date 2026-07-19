@@ -1,6 +1,8 @@
 ---
+sidebar_label: "安全与审计实战"
 title: "安全与审计实战 - CyberGo DD | 安全日志示例"
 description: "CyberGo DD 安全过滤与审计日志的完整实战示例集合，涵盖敏感数据过滤规则配置、HMAC 完整性签名与验签、审计事件记录与批量验证、行业合规配置方案（HIPAA/PCI-DSS）以及生产环境安全日志架构设计与部署的最佳实践建议和注意事项。"
+sidebar_position: 3
 ---
 
 # 安全与审计实战
@@ -31,9 +33,9 @@ func main() {
         dd.String("password", "s3cr3t123"),    // → password=[REDACTED]
     )
 
-    // API Key 自动脱敏
+    // API Key 自动脱敏（注意：endpoint 同属敏感键名，也会被脱敏）
     logger.InfoWith("API 调用",
-        dd.String("endpoint", "/api/data"),
+        dd.String("endpoint", "/api/data"),      // → endpoint=[REDACTED]（"endpoint" 同属敏感键名）
         dd.String("api_key", "sk-abc123xyz"),   // → api_key=[REDACTED]
     )
 }
@@ -89,7 +91,7 @@ func main() {
     integrityCfg, _ := dd.DefaultIntegrityConfigSafe()
     signer, _ := dd.NewIntegritySigner(integrityCfg)
 
-    // 审计Logger
+    // 审计 Logger
     auditLogger, _ := dd.NewAuditLogger(dd.AuditConfig{
         Enabled:          true,
         Output:           auditFile,
@@ -100,15 +102,18 @@ func main() {
     })
     defer auditLogger.Close()
 
-    // 业务Logger
+    // 业务 Logger
     logger, _ := dd.New(dd.Config{
         Format:   dd.FormatJSON,
         Security: dd.DefaultSecureConfig(),
         Targets:  []dd.OutputTarget{dd.ConsoleOutput()},
+        // 注意：此处未配置 Audit，业务 logger 的脱敏/安全事件不会自动进入上面的 auditLogger。
+        // 若要让安全事件自动入审计，需在此配置 Audit 字段（例如把上方 auditLogger 对应的
+        // AuditConfig 经 Audit: &auditCfg 传入），或通过显式调用 auditLogger.LogX(...) 记录事件。
     })
     defer logger.Close()
 
-    // 正常业务操作
+    // 正常业务操作（脱敏由 Security 处理，但不会自动写入审计日志）
     logger.InfoWith("交易处理",
         dd.String("transaction_id", "TXN-001"),
         dd.String("amount", "1500.00"),
@@ -154,7 +159,7 @@ func main() {
         fmt.Printf("验证通过 - 时间戳: %s, 序列号: %d\n",
             result.Timestamp, result.Sequence)
     } else {
-        fmt.Printf("验证失败: 日志可能被篡改\n")
+        fmt.Printf("验证失败：日志可能被篡改\n")
     }
 }
 ```
@@ -195,7 +200,7 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
     integrityCfg, _ := dd.DefaultIntegrityConfigSafe()
     signer, _ := dd.NewIntegritySigner(integrityCfg)
 
-    // 审计Logger
+    // 审计 Logger
     auditFile, _ := os.OpenFile("logs/audit.json", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
     auditLogger, _ := dd.NewAuditLogger(dd.AuditConfig{
         Enabled:          true,
@@ -206,7 +211,7 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
         IntegritySigner:  signer,
     })
 
-    // 业务Logger
+    // 业务 Logger
     fwCfg := dd.DefaultFileWriterConfig()
     fwCfg.MaxSizeMB = 50
     fwCfg.Compress = true
@@ -225,7 +230,7 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
 
 ## 下一步
 
-- [API 参考 - Security](../api-reference/security) -- 安全过滤完整 API
-- [API 参考 - Audit](../api-reference/audit) -- 审计日志完整 API
-- [API 参考 - Integrity](../api-reference/integrity) -- 完整性签名 API
+- [API 参考 - Security](../api-reference/security-audit/security) -- 安全过滤完整 API
+- [API 参考 - Audit](../api-reference/security-audit/audit) -- 审计日志完整 API
+- [API 参考 - Integrity](../api-reference/security-audit/integrity) -- 完整性签名 API
 - [生产检查清单](../security/production-checklist) -- 上线安全检查

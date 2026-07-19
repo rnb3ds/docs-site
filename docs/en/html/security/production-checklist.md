@@ -1,6 +1,8 @@
 ---
-title: "Production Checklist - CyberGo HTML | Launch Checklist"
-description: "CyberGo HTML production security checklist: HighSecurityConfig preset, Processor lifecycle, audit and monitoring, context timeouts, error handling, file safety."
+sidebar_label: "Production Checklist"
+title: "Production Checklist - CyberGo html | Launch Checklist"
+description: "CyberGo html production checklist: HighSecurityConfig preset, Processor lifecycle, audit monitoring, context timeouts, and error-handling safety points."
+sidebar_position: 2
 ---
 
 # Production Checklist
@@ -36,7 +38,7 @@ defer p.Close()
 - [ ] Watch for `ErrInternalPanic` errors and `AuditEventPathTraversal` audit events
 
 ```go
-auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE, 0644)
+auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 defer auditFile.Close()
 
 cfg := html.HighSecurityConfig()
@@ -45,7 +47,7 @@ cfg.Audit.Sink = html.NewWriterAuditSink(auditFile)
 
 ## Context & Timeout
 
-- [ ] Use `WithContext` variants for all extraction operations
+- [ ] Use `ExtractWithContext` variants for all extraction operations
 - [ ] Set reasonable context timeouts
 - [ ] Use cancellation-enabled contexts for batch operations
 

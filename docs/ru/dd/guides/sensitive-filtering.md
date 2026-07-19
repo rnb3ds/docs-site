@@ -1,6 +1,8 @@
 ---
-title: "Фильтрация данных - CyberGo DD | Автомаскирование"
-description: "Руководство по конфигурации фильтрации конфиденциальных данных CyberGo DD, охватывающее встроенные шаблоны фильтрации (пароли, API-ключи, кредитные карты, SSN, JWT и др.), пользовательские regex-шаблоны, пять уровней безопасности, отраслевые предустановки соответствия (HIPAA, PCI-DSS, правительственные стандарты) и статистику фильтрации с мониторингом, помогающее разработчикам создать соответствующую стандартам систему маскирования логов."
+sidebar_label: "Фильтрация конфиденциальных данных"
+title: "Фильтрация данных - CyberGo DD | Маскирование логов"
+description: "Руководство по настройке фильтрации конфиденциальных данных CyberGo DD, охватывающее встроенные шаблоны фильтрации (пароли, API-ключи, кредитные карты, SSN, JWT и др.), пользовательские regex-шаблоны, пять уровней безопасности, отраслевые пресеты соответствия (HIPAA, PCI-DSS, правительственный стандарт), а также статистику и мониторинг фильтрации, помогая разработчикам создавать соответствующие требованиям схемы маскирования логов."
+sidebar_position: 4
 ---
 
 # Фильтрация конфиденциальных данных
@@ -10,9 +12,13 @@ DD имеет встроенную автоматическую фильтрац
 ## Быстрое включение
 
 ```go
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
     Security: dd.DefaultSecurityConfig(),
 })
+if err != nil {
+    log.Fatal(err)
+}
+defer logger.Close()
 
 // Поле password автоматически маскируется
 logger.InfoWith("Пользователь вошёл",
@@ -33,7 +39,7 @@ logger.InfoWith("Пользователь вошёл",
 | SSN | Формат номера социального страхования США |
 | Номера телефонов | Мировые форматы телефонных номеров (включая международные) |
 
-`DefaultSecureConfig()` добавляет к базовому набору:
+`DefaultSecureConfig()` использует **полный набор шаблонов** (включая все базовые, плюс следующие распространённые категории):
 
 | Категория | Цель сопоставления |
 |----------|-------------------|
@@ -41,6 +47,10 @@ logger.InfoWith("Пользователь вошёл",
 | IP-адреса | Адреса IPv4/IPv6 |
 | JWT-токены | JWT формат, начинающийся с `eyJ` |
 | Строки подключения | Пароли в строках подключения к БД |
+
+:::info Информация
+В таблице выше приведены лишь примеры распространённых категорий. На самом деле `DefaultSecurityConfig()` включает около 36 шаблонов, а отраслевые предустановки (например, `HealthcareConfig()`) могут содержать до 71; они также охватывают ключи AWS, токены Stripe/GitHub/Slack, IBAN, налоговые номера разных стран, Log4Shell и др. Полный набор шаблонов см. в исходниках `internal/patterns.go`.
+:::
 
 ## Пользовательские шаблоны фильтрации
 
@@ -53,11 +63,15 @@ filter := dd.NewEmptySensitiveDataFilter()
 _ = filter.AddPattern(`(?i)credit_card\s*[:=]\s*\d+`)
 _ = filter.AddPattern(`(?i)phone\s*[:=]\s*\d{11}`)
 
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
     Security: &dd.SecurityConfig{
         SensitiveFilter: filter,
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
+defer logger.Close()
 ```
 
 ### Создание пользовательского фильтра с нуля
@@ -87,11 +101,11 @@ cfg := dd.SecurityConfigForLevel(dd.SecurityLevelStandard)
 
 | Уровень | Описание | Сценарий применения |
 |---------|----------|-------------------|
-| `Development` | Наиболее мягкий | Локальная разработка |
-| `Basic` | Базовая фильтрация | Тестовая среда |
-| `Standard` | Стандартная фильтрация | Общая производственная среда |
-| `Strict` | Строгая фильтрация | Высокие требования к безопасности |
-| `Paranoid` | Наиболее строгий | Чувствительные отрасли: финансы/медицина и др. |
+| `SecurityLevelDevelopment` | Наиболее мягкий | Локальная разработка |
+| `SecurityLevelBasic` | Базовая фильтрация | Тестовая среда |
+| `SecurityLevelStandard` | Стандартная фильтрация | Общая производственная среда |
+| `SecurityLevelStrict` | Строгая фильтрация | Высокие требования к безопасности |
+| `SecurityLevelParanoid` | Наиболее строгий | Чувствительные отрасли: финансы/медицина и др. |
 
 ## Отраслевые предустановки соответствия
 
@@ -125,13 +139,17 @@ cfg := dd.GovernmentConfig()
 
 ```go
 // Медицинская система: использование конфигурации соответствия HIPAA
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
     Format:   dd.FormatJSON,
     Security: dd.HealthcareConfig(),
     Targets: []dd.OutputTarget{
         dd.FileOutput("logs/hipaa-audit.json"),
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
+defer logger.Close()
 
 // Лог-сообщения с конфиденциальной информацией автоматически маскируются
 logger.Info("Запись пациента mrn=MRN-123456 diagnosis=J18.9 обновлена")
@@ -161,16 +179,23 @@ fmt.Printf("Количество таймаутов: %d\n", stats.TotalTimeouts)
 
 ```go
 // Использование уровня безопасности Development (без фильтрации конфиденциальных данных)
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
     Security: dd.SecurityConfigForLevel(dd.SecurityLevelDevelopment),
 })
+if err != nil {
+    log.Fatal(err)
+}
 
 // Или ручная установка пустого SensitiveFilter
-logger, _ := dd.New(dd.Config{
+logger, err = dd.New(dd.Config{
     Security: &dd.SecurityConfig{
         SensitiveFilter: nil,
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
+defer logger.Close()
 ```
 
 :::warning Фильтрация включена по умолчанию
@@ -181,5 +206,5 @@ logger, _ := dd.New(dd.Config{
 
 - [Аудитные логи](./audit-logging) -- аудит событий безопасности
 - [Конфигурация отраслевого соответствия](../security/compliance) -- подробно о HIPAA/PCI-DSS
-- [Справочник API - Security](../api-reference/security) -- полная документация API безопасности
+- [Справочник API - Security](../api-reference/security-audit/security) -- полная документация API безопасности
 - [Контрольный список для продакшена](../security/production-checklist) -- проверка перед развёртыванием

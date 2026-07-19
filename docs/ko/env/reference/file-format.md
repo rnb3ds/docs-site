@@ -1,6 +1,8 @@
 ---
+sidebar_label: "파일 포맷"
 title: "파일 형식 - CyberGo env | .env/JSON/YAML 구문"
-description: "CyberGo env 구성 파일 형식 참조로 .env·JSON·YAML 구문 규칙, 주석, 데이터 타입, UTF-8 인코딩, DetectFormat 자동 감지를 상세히 설명합니다."
+description: "CyberGo env 구성 파일 형식 참조로 .env·JSON·YAML 세 형식의 구문 규칙, 따옴표와 export 접두사, 변수 확장 ${VAR}, 여러 줄 문자열, 중첩 객체·배열 플랫화, UTF-8 인코딩과 DetectFormat 자동 감지를 상세히 설명합니다."
+sidebar_position: 1
 ---
 
 # 파일 형식
@@ -31,8 +33,9 @@ URL=https://example.com?foo=bar
 MESSAGE="Hello World"
 PATH="/usr/local/bin"
 
-# 작은따옴표: 그대로 유지, 이스케이프 없음
-LITERAL='no ${expansion} here'
+# 작은따옴표: 이스케이프 미처리 (백슬래시 시퀀스를 그대로 보존)
+# 참고: 작은따옴표는 변수 확장을 막지 않음 — 확장은 따옴표 제거 후 일괄 수행
+LITERAL='no escaping here: \n stays literal'
 
 # 따옴표 없음
 SIMPLE=value
@@ -106,15 +109,18 @@ ANOTHER: "quoted value"
 
 ### 여러 줄 값
 
-```bash
-# 큰따옴표 내 줄바꿈
-PRIVATE_KEY="-----BEGIN KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
------END KEY-----"
+`.env` 파서는 줄 단위로 스캔하며 각 줄을 독립적으로 파싱하므로, **여러 줄에 걸친 따옴표 문자열을 지원하지 않습니다** — 큰따옴표 값은 반드시 한 줄 안에서 닫혀야 하며, 그렇지 않으면 `ErrInvalidValue`가 발생합니다. 줄바꿈이 필요하면 `\n` 이스케이프를 사용하세요 (큰따옴표 안에서만 유효하며 작은따옴표는 이스케이프를 처리하지 않음):
 
-# \n 이스케이프 사용
+```bash
+# 큰따옴표 안의 \n은 줄바꿈 문자로 파싱됨
 LINES="line1\nline2\nline3"
+# 실제 값은 세 줄 텍스트: line1 / line2 / line3
+
+# PRIVATE_KEY 등 여러 줄 인증서는 \n으로 연결 권장
+PRIVATE_KEY="-----BEGIN KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END KEY-----"
 ```
+
+실제로 여러 줄에 걸친 문자열이 필요하다면 [JSON 또는 YAML 형식](#형식-감지)을 사용하거나, 커스텀 파서로 여러 줄 지원을 확장하세요.
 
 ## JSON 형식
 
@@ -184,7 +190,7 @@ port0 := env.GetInt("PORTS_0")  // 80
 ```go
 cfg := env.DefaultConfig()
 
-// null을 빈 문자열로 변환
+// null 을 빈 문자열로 변환
 cfg.JSONNullAsEmpty = true
 
 // 숫자를 문자열로 변환
@@ -252,19 +258,17 @@ ALLOWED_HOSTS_2=api.example.com
 
 ### 여러 줄 문자열
 
-```yaml
-# 리터럴 블록 (줄바꿈 유지)
-description: |
-  Line 1
-  Line 2
-  Line 3
+::: warning 참고
+YAML 블록 스칼라 (리터럴 블록 `|`와 폴딩 블록 `>`) 는 **현재 지원되지 않습니다**. 파서는 `|`/`>`를 일반 스칼라 문자로 저장하며, 이후 들여쓰기된 줄은 키 - 값 파싱을 망칩니다.
+:::
 
-# 폴딩 블록 (줄바꿈이 공백으로 변환)
-summary: >
-  This is a long
-  summary that will
-  be on one line.
+줄바꿈을 유지해야 하는 값은 큰따옴표와 `\n` 이스케이프를 사용하세요:
+
+```yaml
+description: "Line1\nLine2\nLine3"
 ```
+
+또는 커스텀 파서로 블록 스칼라 지원을 확장하세요.
 
 ### 타입 변환 옵션
 
@@ -339,7 +343,7 @@ fmt.Println(format.String())  // 출력: json
 loader.LoadFiles(
     "base.env",           // 기본 구성
     "database.json",      // 데이터베이스 구성
-    "secrets.yaml",       # 민감 구성
+    "secrets.yaml",       // 민감 구성
     ".env.local",         // 로컬 덮어쓰기
 )
 ```

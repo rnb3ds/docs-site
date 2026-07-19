@@ -1,6 +1,8 @@
 ---
-title: "기본 예제 - CyberGo HTML | 실행 가능 예제"
-description: "CyberGo HTML 기본 예제: 기본 추출, 파일 추출, 텍스트, Markdown 출력, 링크 그룹화, Processor 재사용, 타임아웃, 동시성 배치, JSON 직렬화 등 실행 가능 예시입니다."
+sidebar_label: "기본 예제"
+title: "기본 예제 - CyberGo html | 실행 가능 예제 모음"
+description: "CyberGo html 기본 예제: 콘텐츠 추출, 파일 추출, 순수 텍스트, Markdown 출력, 링크 그룹화, Processor 재사용, 동시성 배치 등 실행 가능 코드입니다."
+sidebar_position: 1
 ---
 
 # 기본 예제
@@ -25,7 +27,7 @@ func main() {
         <body>
             <article>
                 <h1>Go 입문 가이드</h1>
-                <p>Go는 Google이 개발한 오픈소스 프로그래밍 언어입니다.</p>
+                <p>Go 는 Google 이 개발한 오픈소스 프로그래밍 언어입니다.</p>
                 <img src="gopher.png" alt="Gopher 마스코트" />
                 <a href="https://go.dev">Go 공식 웹사이트</a>
             </article>
@@ -45,7 +47,7 @@ func main() {
     // 제목: Go 언어 튜토리얼
     // 본문: Go 입문 가이드
     //
-    //       Go는 Google이 개발한 오픈소스 프로그래밍 언어입니다.
+    //       Go 는 Google 이 개발한 오픈소스 프로그래밍 언어입니다.
     //
     //       Go 공식 웹사이트
     // 단어 수: 8

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "テストパターン"
 title: "テストパターン - CyberGo DD | LoggerRecorder テストサンプル"
-description: "CyberGo DD テストパターンサンプル。LoggerRecorder の単体テストと統合テストでの完全な使用方法を詳細に紹介。ログメッセージアサーション、レベルフィルタリングテスト、フィールド値検査、マルチテストケースの分離、並行安全性テスト、テストカバレッジ向上の完全なヒントとベストプラクティス。各種 Go プロジェクトのログテストに適用可能。"
+description: "CyberGo DD テストパターンサンプル。LoggerRecorder の単体/統合テストでの使用方法、メッセージアサーション、レベルフィルタ、フィールド値検査、並行安全テスト、カバレッジ向上のベストプラクティスを紹介。Go プロジェクトのログテストに適用。"
+sidebar_position: 4
 ---
 
 # テストパターン
@@ -74,9 +76,13 @@ if len(errorEntries) > 0 {
     t.Error("Unexpected error logs")
 }
 
-// DevelopmentConfig で全レベルをキャプチャ
+// DEBUG レベルを使用して全レベルをキャプチャ
+// 注意：Recorder は ISO 8601 タイムスタンプでレベルを解析するが、DevelopmentConfig の時間フォーマット
+// とは非互換のため、DefaultConfig で手動 DEBUG 設定。
 rec2 := dd.NewLoggerRecorder()
-logger2, _ := rec2.NewLogger(dd.DevelopmentConfig())
+devCfg := dd.DefaultConfig()
+devCfg.Level = dd.LevelDebug
+logger2, _ := rec2.NewLogger(devCfg)
 logger2.Debug("デバッグ情報")
 debugs := rec2.EntriesAtLevel(dd.LevelDebug)
 ```
@@ -186,13 +192,13 @@ func TestMiddleware_LogsRequestFields(t *testing.T) {
 
 ```go
 func TestSuite(t *testing.T) {
-    t.Run("シナリオA", func(t *testing.T) {
+    t.Run("シナリオ A", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 各テストで独立した recorder
         logger, _ := rec.NewLogger()
         // テストロジック...
     })
 
-    t.Run("シナリオB", func(t *testing.T) {
+    t.Run("シナリオ B", func(t *testing.T) {
         rec := dd.NewLoggerRecorder() // 独立した recorder
         logger, _ := rec.NewLogger()
         // テストロジック...
@@ -211,19 +217,19 @@ func TestLogLevel_Behavior(t *testing.T) {
         expected string
     }{
         {
-            name:     "Debugレベル",
+            name:     "Debug レベル",
             level:    dd.LevelDebug,
             logFunc:  func(l *dd.Logger) { l.Debug("デバッグ情報") },
             expected: "デバッグ情報",
         },
         {
-            name:     "Infoレベル",
+            name:     "Info レベル",
             level:    dd.LevelInfo,
             logFunc:  func(l *dd.Logger) { l.Info("一般情報") },
             expected: "一般情報",
         },
         {
-            name:     "Errorレベル",
+            name:     "Error レベル",
             level:    dd.LevelError,
             logFunc:  func(l *dd.Logger) { l.Error("エラー情報") },
             expected: "エラー情報",
@@ -250,5 +256,5 @@ func TestLogLevel_Behavior(t *testing.T) {
 ## 次のステップ
 
 - [Web サービス統合](./web-service) -- HTTP サービスログ統合
-- [API リファレンス - Recorder](../api-reference/recorder) -- LoggerRecorder 完全 API
+- [API リファレンス - Recorder](../api-reference/dev-tools/recorder) -- LoggerRecorder 完全 API
 - [フックシステム](../guides/hooks) -- ライフサイクルフック

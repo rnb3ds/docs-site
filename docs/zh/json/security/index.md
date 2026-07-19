@@ -1,6 +1,8 @@
 ---
+sidebar_label: "安全概述"
 title: "安全概述 - CyberGo JSON | 安全最佳实践"
-description: "CyberGo JSON 安全最佳实践：输入验证与清洗、MaxNestingDepthSecurity/MaxMemory 资源限制、路径遍历与 JSON 注入防御、敏感数据过滤与审计日志，保障生产安全。"
+description: "CyberGo JSON 安全最佳实践：输入验证、MaxNestingDepthSecurity/MaxMemory 资源限制、路径遍历与 JSON 注入防御、敏感数据过滤。"
+sidebar_position: 1
 ---
 
 # 安全概述
@@ -143,15 +145,15 @@ for _, p := range patterns {
 
 #### 禁用默认模式
 
-通过 `Config.DisableDefaultPatterns` 可以禁用内置的默认警告级模式：
+通过 `Config.DisableDefaultPatterns` 可以禁用内置的默认模式：
 
 ```go
 cfg := json.DefaultConfig()
-cfg.DisableDefaultPatterns = true // 禁用默认警告级模式
+cfg.DisableDefaultPatterns = true // 禁用内置默认模式
 ```
 
 ::: warning 注意
-`DisableDefaultPatterns` 仅禁用默认的警告级（`PatternLevelWarning`）模式。严重级别（`PatternLevelCritical`）的默认模式不受影响。
+`DisableDefaultPatterns=true` 时，除 3 个关键模式（`__proto__`、`constructor[`、`prototype.`，始终强制扫描）外，其余内置模式将被禁用。注意：内置模式全部为 Critical 级别。
 :::
 
 ### 生产环境配置
@@ -261,4 +263,4 @@ func (h *AuditHook) After(ctx json.HookContext, result any, err error) (any, err
 
 - [生产检查清单](./production-checklist)
 - [Config 配置](../api-reference/config)
-- [Validator](../api-reference/validator)
+- [Validator](../extensions/validator)

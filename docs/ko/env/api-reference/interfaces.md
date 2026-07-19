@@ -1,6 +1,8 @@
 ---
+sidebar_label: "인터페이스 정의"
 title: "인터페이스 정의 - CyberGo env | 핵심 인터페이스 계층"
-description: "CyberGo env 핵심 인터페이스 참조로 의존성 주입을 지원하는 세분화 설계의 Validator, FullAuditLogger, EnvParser, EnvStorage, FileSystem 인터페이스를 설명합니다."
+description: "CyberGo env 핵심 인터페이스 참조로 의존성 주입용 세분화 설계의 EnvLoader, EnvFileLoader, EnvGetter, EnvSetter, Validator, FullAuditLogger, EnvParser, FileSystem 인터페이스를 설명합니다."
+sidebar_position: 6
 ---
 
 # 인터페이스 정의
@@ -241,7 +243,7 @@ type FullAuditLogger interface {
 
 | 메서드 | 용도 |
 |------|------|
-| `LogError` | 오류 이벤트 기록 (AuditLogger에서 상속) |
+| LogError | 오류 이벤트 기록 (AuditLogger 에서 상속) |
 | `Log` | 일반 감사 이벤트 기록 |
 | `LogWithFile` | 파일 정보가 포함된 이벤트 기록 |
 | `LogWithDuration` | 소요 시간이 포함된 이벤트 기록 |
@@ -308,7 +310,7 @@ type EnvParser interface {
 - `filename` - 파일 이름 (오류 메시지용)
 
 **반환값:**
-- `map[string]string` - 파싱된 키-값 쌍
+- `map[string]string` - 파싱된 키 - 값 쌍
 - `error` - 파싱 오류
 
 **용도:** 사용자 정의 파일 형식 파서.
@@ -340,11 +342,11 @@ type EnvStorage interface {
 | 메서드 | 용도 |
 |------|------|
 | `Get` | 값 가져오기, 값과 존재 여부 반환 |
-| `Set` | 키-값 쌍 설정 |
+| `Set` | 키 - 값 쌍 설정 |
 | `Delete` | 키 삭제 |
 | `Keys` | 모든 키 이름 반환 |
-| `Len` | 키-값 쌍 수 반환 |
-| `ToMap` | 모든 키-값 쌍의 복사본 반환 |
+| `Len` | 키 - 값 쌍 수 반환 |
+| `ToMap` | 모든 키 - 값 쌍의 복사본 반환 |
 | `Clear` | 모든 데이터 비우기 |
 
 ---
@@ -438,7 +440,7 @@ type MockFileSystem struct {
     env   map[string]string
 }
 
-// MockFile은 env.File 인터페이스 구현 (테스트용)
+// MockFile 은 env.File 인터페이스 구현 (테스트용)
 type MockFile struct {
     reader *strings.Reader
 }
@@ -509,11 +511,11 @@ type File interface {
 
 | 메서드 | 용도 |
 |------|------|
-| `Read` | 데이터 읽기 |
-| `Write` | 데이터 쓰기 |
-| `Close` | 파일 닫기 |
-| `Stat` | 파일 정보 가져오기 |
-| `Sync` | 디스크에 동기화 |
+| Read | 데이터 읽기 |
+| Write | 데이터 쓰기 |
+| Close | 파일 닫기 |
+| Stat | 파일 정보 가져오기 |
+| Sync | 디스크에 동기화 |
 
 ---
 
@@ -659,15 +661,15 @@ type AuditEvent = internal.Event
 
 | 필드 | 유형 | 설명 |
 |------|------|------|
-| `Timestamp` | `time.Time` | 타임스탬프 |
-| `Action` | `AuditAction` | 작업 유형 |
-| `Key` | `string` | 키 이름 (마스킹됨) |
-| `File` | `string` | 파일 이름 |
-| `Reason` | `string` | 사유/설명 |
-| `Success` | `bool` | 성공 여부 |
-| `Masked` | `bool` | 마스킹 여부 |
-| `Details` | `string` | 상세 정보 |
-| `Duration` | `int64` | 소요 시간 (나노초) |
+| Timestamp | `time.Time` | 타임스탬프 |
+| Action | `AuditAction` | 작업 유형 |
+| Key | `string` | 키 이름 (마스킹됨) |
+| File | `string` | 파일 이름 |
+| Reason | `string` | 사유/설명 |
+| Success | `bool` | 성공 여부 |
+| Masked | `bool` | 마스킹 여부 |
+| Details | `string` | 상세 정보 |
+| Duration | `int64` | 소요 시간 (나노초) |
 
 ---
 

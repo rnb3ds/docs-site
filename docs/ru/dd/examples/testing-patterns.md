@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Паттерны тестирования"
 title: "Паттерны тестирования - CyberGo DD | Примеры LoggerRecorder"
-description: "Примеры паттернов тестирования CyberGo DD, подробно описывающие полное использование LoggerRecorder в модульных и интеграционных тестах, включая проверку сообщений логов, фильтрацию по уровню, проверку значений полей, изоляцию нескольких тестовых случаев, тестирование конкурентности и полные приёмы и лучшие практики для повышения покрытия тестами, подходящие для логирования тестов в различных Go-проектах."
+description: "Примеры паттернов тестирования CyberGo DD с подробным описанием полного использования LoggerRecorder в модульных и интеграционных тестах, включая утверждения сообщений логов, тестирование фильтрации по уровню, проверку значений полей, изоляцию тестовых случаев, проверку потокобезопасности и методы повышения покрытия тестами; применимо к тестированию логирования в различных проектах на Go."
+sidebar_position: 4
 ---
 
 # Паттерны тестирования
@@ -74,9 +76,14 @@ if len(errorEntries) > 0 {
     t.Error("Unexpected error logs")
 }
 
-// Использование DevelopmentConfig для захвата всех уровней
+// Использование уровня DEBUG для захвата всех уровней
+// Примечание: Recorder разбирает уровень по временной метке ISO 8601,
+// формат времени DevelopmentConfig с ним несовместим, поэтому используем
+// DefaultConfig и вручную задаём уровень DEBUG.
 rec2 := dd.NewLoggerRecorder()
-logger2, _ := rec2.NewLogger(dd.DevelopmentConfig())
+devCfg := dd.DefaultConfig()
+devCfg.Level = dd.LevelDebug
+logger2, _ := rec2.NewLogger(devCfg)
 logger2.Debug("Отладочная информация")
 debugs := rec2.EntriesAtLevel(dd.LevelDebug)
 ```
@@ -250,5 +257,5 @@ func TestLogLevel_Behavior(t *testing.T) {
 ## Следующие шаги
 
 - [Интеграция с Web-сервисом](./web-service) -- интеграция логирования HTTP-сервиса
-- [Справочник API - Recorder](../api-reference/recorder) -- полный API LoggerRecorder
+- [Справочник API - Recorder](../api-reference/dev-tools/recorder) -- полный API LoggerRecorder
 - [Система хуков](../guides/hooks) -- хуки жизненного цикла

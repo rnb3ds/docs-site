@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Практическое руководство"
 title: "Практическое руководство - CyberGo HTTPC | GitHub API Tour"
 description: "Практическое руководство HTTPC: пошаговое построение клиента GitHub REST API от httpc.Get с парсингом JSON, доменным клиентом, middleware и загрузкой файлов."
+sidebar_position: 1
 ---
 
 # Практическое руководство: создание клиента GitHub API
@@ -183,7 +185,7 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 ```
 
 Ключевые моменты:
-- Промежуточное ПО настраивается в `Config.Middleware.Middlewares`
+- Промежуточное ПО настраивается в `MiddlewareConfig.Middlewares`
 - `LoggingMiddleware` записывает логи запросов
 - `RecoveryMiddleware` предотвращает падение процесса при panic
 - `RequestIDMiddleware` генерирует уникальный ID для каждого запроса
@@ -222,7 +224,7 @@ case result.StatusCode() == 401:
 case result.IsClientError():
     log.Printf("Ошибка клиента: %d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("Ошибка сервера: %d (автоматически повторено %d раз)",
+    log.Printf("Ошибка сервера: %d (всего попыток: %d, включая первую)",
         result.StatusCode(), result.Meta.Attempts)
 }
 ```
@@ -274,7 +276,10 @@ fmt.Printf("\nЗагрузка завершена: %s (%d bytes)\n",
 
 ```go
 func fetchRepos(ctx context.Context, repos []string) error {
-    client, _ := httpc.New(httpc.PerformanceConfig())
+    client, err := httpc.New(httpc.PerformanceConfig())
+    if err != nil {
+        return err
+    }
     defer client.Close()
 
     results := make([]*httpc.Result, len(repos))
@@ -370,7 +375,7 @@ func main() {
         fmt.Printf("✅ %s\n", repo.FullName)
         fmt.Printf("   ⭐ %d | Язык: %s\n", repo.Stars, repo.Language)
         fmt.Printf("   %s\n", repo.Description)
-        fmt.Printf("   Время: %s (повторных попыток: %d)\n",
+        fmt.Printf("   Время: %s (всего попыток: %d, включая первую)\n",
             result.Meta.Duration, result.Meta.Attempts)
     }
 }

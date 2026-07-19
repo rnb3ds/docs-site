@@ -1,11 +1,13 @@
 ---
+sidebar_label: "배치 작업"
 title: "Processor 배치 작업 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor 배치 작업: ProcessBatch, BatchOperation, BatchResult, ContinueOnError 설정과 성능 최적화로 배치 데이터 처리에 적합합니다."
+description: "CyberGo JSON Processor 배치 작업: ProcessBatch 다중 작업, BatchOperation 과 BatchResult 타입으로 배치 처리에 적합합니다."
+sidebar_position: 7
 ---
 
 # 배치 작업 메서드
 
-Processor는 배치 작업 능력을 제공하여, 한 번에 여러 JSON 작업을 처리합니다.
+Processor 는 배치 작업 능력을 제공하여, 한 번에 여러 JSON 작업을 처리합니다.
 
 ## ProcessBatch
 
@@ -62,8 +64,8 @@ type BatchResult struct {
 
 | 필드 | 타입 | 설명 |
 |------|------|------|
-| `ID` | `string` | 해당 BatchOperation의 ID |
-| `Result` | `any` | 작업 결과 (Get은 반환값, Set/Delete는 새 JSON 반환) |
+| `ID` | `string` | 해당 BatchOperation 의 ID |
+| `Result` | `any` | 작업 결과 (Get 은 반환값, Set/Delete는 새 JSON 반환) |
 | `Error` | `error` | 개별 작업의 오류 (다른 작업에 영향 없음) |
 
 ## 사용 예제
@@ -120,7 +122,7 @@ for _, r := range results {
 
 1. 각 작업은 독립적으로 실행되며, 하나의 실패가 다른 작업에 영향을 주지 않습니다
 2. 결과 순서는 작업 순서와 일치합니다
-3. ID로 작업과 결과를 매칭합니다
+3. ID 로 작업과 결과를 매칭합니다
 
 ## 관련 문서
 

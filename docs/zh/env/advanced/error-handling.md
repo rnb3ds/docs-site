@@ -1,6 +1,8 @@
 ---
+sidebar_label: "错误处理"
 title: "错误处理 - CyberGo env | 哨兵错误与恢复策略"
-description: "CyberGo env 错误处理指南，详解 16 个哨兵错误的 errors.Is 精确匹配、8 种结构化错误的 errors.As 上下文提取、恢复降级策略与错误链 Unwrap 追踪。"
+description: "CyberGo env 错误处理指南，详解 16 个哨兵错误的 errors.Is 精确匹配、ParseError/FileError/SecurityError 等结构化错误的 errors.As 上下文提取、恢复降级策略与错误链 Unwrap 追踪，附生产环境错误分类实践。"
+sidebar_position: 2
 ---
 
 # 错误处理
@@ -50,11 +52,11 @@ var (
 )
 ```
 
-**禁止键检查：**
+**禁止键检查（实际返回 `*SecurityError`，匹配 `ErrSecurityViolation`）：**
 
 ```go
 err := loader.Set("PATH", "/malicious")
-if errors.Is(err, env.ErrForbiddenKey) {
+if errors.Is(err, env.ErrSecurityViolation) {
     log.Println("尝试设置禁止键")
 }
 ```
@@ -101,9 +103,10 @@ if errors.Is(err, env.ErrNotInitialized) {
     // 需要先调用 env.Load() 或 env.LoadWithConfig()
 }
 
-// 检查必需键是否缺失
-if errors.Is(err, env.ErrMissingRequired) {
-    // 缺少必需键
+// 检查必需键是否缺失（实际返回 *ValidationError，Rule=="required"）
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Rule == "required" {
+    // 缺少必需键：valErr.Message 含缺失键列表
 }
 ```
 
@@ -128,7 +131,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 ::: tip 解决方法
-实现 `Validator` 接口（包含 `ValidateKey`、`ValidateValue`、`ValidateRequired` 三个方法）而非仅实现 `KeyValidator`。
+实现 `Validator` 接口（包含 ValidateKey、ValidateValue、ValidateRequired 三个方法）而非仅实现 `KeyValidator`。
 :::
 
 ## 结构化错误类型
@@ -155,7 +158,7 @@ var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
     log.Printf("解析错误 %s:%d - %s\n",
         parseErr.File, parseErr.Line, parseErr.Err)
-    // 输出: 解析错误 .env:15 - invalid key format
+    // 输出：解析错误 .env:15 - invalid key format
 }
 ```
 
@@ -339,17 +342,19 @@ case errors.Is(err, env.ErrFileTooLarge):
     // 文件过大
     log.Fatal("配置文件过大")
 
-case errors.Is(err, env.ErrForbiddenKey):
-    // 禁止键
+case errors.Is(err, env.ErrSecurityViolation):
+    // 禁止键（实际返回 *SecurityError）
     log.Fatal("检测到禁止键")
-
-case errors.Is(err, env.ErrInvalidKey):
-    // 无效键格式
-    log.Fatal("检测到无效键")
 
 case err != nil:
     // 其他错误
     log.Fatalf("加载失败: %v", err)
+}
+
+// 键格式非法（实际返回 *ValidationError，Field=="key"）
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Field == "key" {
+    log.Fatalf("检测到无效键: %s", valErr.Message)
 }
 ```
 
@@ -397,7 +402,7 @@ func handleLoadError(err error) {
     // 首先检查哨兵错误
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        log.Println("警告: 配置文件不存在")
+        log.Println("警告：配置文件不存在")
         return
 
     case errors.Is(err, env.ErrFileTooLarge):
@@ -532,7 +537,7 @@ func handleLoadError(err error) {
         errors.As(err, &fileErr)
         log.Fatalf("文件过大: %s (%d bytes)", fileErr.Path, fileErr.Size)
 
-    case errors.Is(err, env.ErrForbiddenKey):
+    case errors.Is(err, env.ErrSecurityViolation):
         log.Fatal("检测到禁止键")
     }
 
@@ -554,11 +559,11 @@ func handleLoadError(err error) {
 func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
+        if valErr.Rule == "required" {
+            // 缺少必需键：valErr.Message 含缺失键列表
+            log.Fatalf("缺少必需键: %s", valErr.Message)
+        }
         log.Fatalf("验证失败: %s - %s", valErr.Field, valErr.Message)
-    }
-
-    if errors.Is(err, env.ErrMissingRequired) {
-        log.Fatal("缺少必需键")
     }
 
     log.Fatalf("验证失败: %v", err)

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "重试与容错"
 title: "重试与容错 - CyberGo HTTPC | 退避与自动重试"
 description: "HTTPC 重试与容错指南：默认指数退避重试策略与 RetryConfig 配置、408/429/5xx 自动重试条件、RetryPolicy 自定义接口、Retry-After 响应头自动解析、退避策略选择与按请求 WithMaxRetries 控制最佳实践。"
+sidebar_position: 5
 ---
 
 # 重试与容错
@@ -14,7 +16,11 @@ cfg.Retry.Delay = 1 * time.Second  // 初始延迟 1s
 cfg.Retry.BackoffFactor = 2.0      // 指数退避 2x
 cfg.Retry.EnableJitter = true      // 启用抖动
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 默认重试延迟序列：`1s → 2s → 4s`（含随机抖动）
@@ -25,7 +31,7 @@ client, _ := httpc.New(cfg)
 
 | 条件 | 重试 |
 |------|------|
-| 网络错误（连接拒绝、DNS 失败） | 是 |
+| 网络错误（连接拒绝、临时/超时类 DNS 失败） | 是 |
 | 超时错误 | 是 |
 | 5xx 服务端错误（500/502/503/504） | 是 |
 | 408 Request Timeout / 429 Too Many Requests | 是 |
@@ -38,7 +44,7 @@ client, _ := httpc.New(cfg)
 实现 `RetryPolicy` 接口完全控制重试行为：
 
 :::warning 内部类型
-`RetryPolicy.ShouldRetry` 的 `resp` 参数类型 `ResponseReader` 为内部接口（定义在 `internal/types` 包中），外部包无法直接引用。自定义 `RetryPolicy` 必须在与 `httpc` 同一模块内的包中实现。大多数场景可通过 `RetryConfig` 字段配置满足需求。
+RetryPolicy.ShouldRetry 的 `resp` 参数类型 ResponseReader 为内部接口（定义在 `internal/types` 包中），外部包无法直接引用。自定义 `RetryPolicy` 必须在与 `httpc` 同一模块内的包中实现。大多数场景可通过 `RetryConfig` 字段配置满足需求。
 :::
 
 ```go
@@ -98,11 +104,11 @@ result, err := client.Request(ctx, "GET", url, httpc.WithMaxRetries(3))
 HTTPC 自动解析服务端返回的 `Retry-After` 响应头：
 
 ```go
-// 服务端返回: Retry-After: 120
-// HTTPC 会等待 120 秒后重试，而不是使用指数退避延迟
+// 服务端返回：Retry-After: 120
+// HTTPC 最多等待 60 秒后重试（服务端指定的 120s 会被截断为安全上限 60s）
 
-// 服务端返回: Retry-After: Fri, 25 Apr 2026 12:00:00 GMT
-// HTTPC 会等待到指定时间后重试
+// 服务端返回：Retry-After: Fri, 25 Apr 2026 12:00:00 GMT
+// HTTPC 会等待到指定时间后重试（若距今超过 60s 则截断为 60s）
 ```
 
 :::tip
@@ -115,20 +121,20 @@ HTTPC 自动解析服务端返回的 `Retry-After` 响应头：
 
 ```go
 cfg.Retry.BackoffFactor = 2.0
-// 延迟序列: delay, delay*2, delay*4, delay*8...
+// 延迟序列：delay, delay*2, delay*4, delay*8...
 ```
 
 ### 固定延迟
 
 ```go
 cfg.Retry.BackoffFactor = 1.0
-// 延迟序列: delay, delay, delay...
+// 延迟序列：delay, delay, delay...
 ```
 
 ### 线性增长
 
 ```go
-// 需要自定义 RetryPolicy 实现:
+// 需要自定义 RetryPolicy 实现：
 // delay * (attempt + 1)
 // 详见高级示例中的自定义重试策略
 ```
@@ -165,7 +171,7 @@ if err != nil {
 | 微服务通信 | MaxRetries=2, Delay=500ms |
 | 文件下载 | MaxRetries=5, Delay=2s, Backoff=2.0 |
 | 幂等操作 | 可放心重试 |
-| 非幂等操作（POST） | 仅在网络错误时重试 |
+| 非幂等操作（POST） | 建议仅在网络错误时重试（默认也会对 5xx/408/429 重试，需自定义 RetryPolicy 收窄） |
 
 :::warning
 非幂等的 POST 请求默认也会重试。如需精确控制，请实现自定义 `RetryPolicy`。
@@ -174,5 +180,5 @@ if err != nil {
 ## 下一步
 
 - [错误处理](../advanced/error-handling) - 完整错误处理指南
-- [配置 API](../api-reference/config) - 重试配置参考
-- [接口定义](../api-reference/interfaces) - RetryPolicy 接口参考
+- [配置 API](../api-reference/client-config/config) - 重试配置参考
+- [接口定义](../api-reference/types/interfaces) - RetryPolicy 接口参考

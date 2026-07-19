@@ -1,6 +1,8 @@
 ---
+sidebar_label: "セキュリティ概要"
 title: "セキュリティ概要 - CyberGo env | セキュリティアーキテクチャ"
-description: "CyberGo env セキュリティアーキテクチャ概要。SecureValue メモリロック、キー検証、禁止キーリスト、IsSensitiveKey 自動検出、セキュリティプリセット、監査追跡を説明します。"
+description: "CyberGo env セキュリティアーキテクチャ概要。SecureValue メモリロック・自動ゼロクリア、キー検証で制御文字・ヌルバイト遮断、DefaultForbiddenKeys で PATH・LD_PRELOAD 禁止、IsSensitiveKey 自動検出、セキュリティプリセット、監査追跡を説明します。"
+sidebar_position: 1
 ---
 
 # セキュリティ概要
@@ -50,7 +52,7 @@ password := secret.Reveal()  // 平文が必要な場合のみ呼び出し
 ```
 
 **コア機能：**
-- **メモリロック** - ディスクへのスワップを防止（Linux/macOS/FreeBSD）
+- **メモリロック** - ディスクへのスワップを防止（Linux/macOS/Windows/FreeBSD）
 - **自動ゼロクリア** - `Close()` 時にメモリを安全に消去
 - **マスク表示** - `Masked()` はログ出力に使用
 - **スレッドセーフ** - 並行読み取りをサポート

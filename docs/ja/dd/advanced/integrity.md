@@ -1,6 +1,8 @@
 ---
+sidebar_label: "HMAC 署名"
 title: "HMAC 署名実践 - CyberGo DD | ログ整合性保護"
-description: "CyberGo DD HMAC-SHA256 ログ整合性署名実践ガイド。IntegritySigner の作成と初期化設定、署名と検証の完全なフロー、タイムスタンプとシリアル番号インクリメントメカニズム、改ざん検出戦略、監査ログシステムとの統合スキーム、本番環境デプロイのベストプラクティスをカバーし、ログチェーンの整合性とトレーサビリティを確保。"
+description: "CyberGo DD HMAC-SHA256 ログ整合性署名実践ガイド。IntegritySigner の作成と初期化、署名と検証の完全フロー、タイムスタンプとシリアル番号インクリメント、改ざん検出戦略、監査ログ統合、本番環境デプロイのベストプラクティスを網羅しログチェーンの整合性を確保。"
+sidebar_position: 3
 ---
 
 # HMAC 署名実践
@@ -63,14 +65,14 @@ signature := signer.Sign(logEntry)
 signedEntry := logEntry + signature
 
 fmt.Println(signedEntry)
-// 出力: {"level":"info","message":"ユーザーログイン","user":"admin"}[SIG:1713456789000000000:1:base64sig...]
+// 出力：{"level":"info","message":"ユーザーログイン","user":"admin"}[SIG:1713456789000000000:1:base64sig...]
 ```
 
 ### 署名統計
 
 ```go
 stats := signer.Stats()
-fmt.Printf("現在のシリアル番号: %d\n", stats.Sequence)
+fmt.Printf("現在のシリアル番号：%d\n", stats.Sequence)
 fmt.Printf("アルゴリズム: %s\n", stats.Algorithm)
 fmt.Printf("タイムスタンプを含む: %v\n", stats.IncludeTimestamp)
 fmt.Printf("シリアル番号を含む: %v\n", stats.IncludeSequence)
@@ -180,7 +182,7 @@ result.Sequence   // 署名時のシリアル番号
 ```
 
 :::tip シリアル番号による検出
-シリアル番号を有効にすると、ログが削除または並べ替えられたかを検出できます。シリアル番号が不連続な場合、ログが改ざんされた可能性があります。
+シリアル番号を有効にすると、ログが削除または並べ替えられたかを検出できます。シリアル番号が不連続な場合、ログが改ざんされた可能性があります。ただし、シリアル番号自体はリプレイを防止しないため、検証者は観測したシリアル番号を自前で追跡して重複を検出する必要があります。
 :::
 
 ## 本番ベストプラクティス
@@ -227,4 +229,4 @@ func startIntegrityChecker(signer *dd.IntegritySigner, logPath string) {
 
 - [監査ログ](../guides/audit-logging) -- セキュリティ監査統合
 - [業界コンプライアンス設定](../security/compliance) -- HIPAA/PCI-DSS 署名要件
-- [API リファレンス - Integrity](../api-reference/integrity) -- IntegritySigner 完全 API
+- [API リファレンス - Integrity](../api-reference/security-audit/integrity) -- IntegritySigner 完全 API

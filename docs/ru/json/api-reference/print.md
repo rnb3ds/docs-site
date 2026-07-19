@@ -1,30 +1,43 @@
 ---
-title: "Функции печати - CyberGo JSON | Справочник API"
-description: "Печать и форматирование CyberGo JSON: Encode, EncodePretty, Prettify и стандартный fmt для вывода JSON, заменяя удалённые функции Print."
+sidebar_label: "Функции вывода"
+title: "Функции печати - CyberGo JSON | API"
+description: "Печать и форматирование CyberGo JSON: Encode, EncodePretty, Prettify и fmt для вывода JSON."
+sidebar_position: 11
 ---
 
 # Функции печати
 
 ::: warning
-`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE` удалены из библиотеки и больше не предоставляются. Используйте следующие альтернативы.
+Print, PrintPretty, PrintE, PrintPrettyE удалены из библиотеки и больше не предоставляются. Используйте следующие альтернативы.
 :::
 
 ## Альтернативы
 
 ### Печать компактного JSON
 
-Используйте `fmt.Println` + `Encode`:
+Используйте `fmt.Println` + `EncodeWithConfig` (рекомендуется) или `Marshal`:
 
 ```go
 data := map[string]any{"name": "Alice", "age": 30}
 
-s, err := json.Encode(data)
+s, err := json.EncodeWithConfig(data)
 if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
 // Вывод: {"age":30,"name":"Alice"}
+
+// Либо через Marshal (вывод []byte)
+b, err := json.Marshal(data)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(string(b))
 ```
+
+::: warning Encode устарел
+`json.Encode` помечен как устаревший (функционально эквивалентен `EncodeWithConfig`) и будет удалён в будущей мажорной версии. В новом коде используйте `EncodeWithConfig` или `Marshal`.
+:::
 
 ### Печать форматированного JSON
 
@@ -64,8 +77,8 @@ if err != nil {
 }
 defer p.Close()
 
-// Кодирование и печать
-s, err := p.Encode(data)
+// Кодирование и печать (рекомендуется EncodeWithConfig; Encode устарел)
+s, err := p.EncodeWithConfig(data)
 if err != nil {
     log.Fatal(err)
 }
@@ -99,8 +112,8 @@ func main() {
         "total": 2,
     }
 
-    // Компактный вывод
-    compact, err := json.Encode(data)
+    // Компактный вывод (Encode устарел, рекомендуется EncodeWithConfig)
+    compact, err := json.EncodeWithConfig(data)
     if err != nil {
         log.Fatal(err)
     }
@@ -117,5 +130,5 @@ func main() {
 
 ## Связанные разделы
 
-- [Функции кодирования/декодирования](./functions/encode-decode) - Encode, EncodePretty, Prettify
-- [Функции пакета](./functions) - Обзор функций уровня пакета
+- [Функции кодирования и вывода](./functions/output) - Encode, EncodePretty, Prettify
+- [Функции пакета](./functions/) - Обзор функций уровня пакета

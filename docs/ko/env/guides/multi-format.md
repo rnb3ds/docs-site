@@ -1,6 +1,8 @@
 ---
+sidebar_label: "다중 포맷 설정"
 title: "다중 형식 구성 - CyberGo env | .env/JSON/YAML"
-description: "CyberGo env 다중 형식 로딩 가이드로 .env·JSON·YAML 자동 감지와 혼합 로딩, 병합 우선순위 규칙과 형식 변환을 마이크로서비스·컨테이너 환경에 제공합니다."
+description: "CyberGo env 다중 형식 로딩 가이드로 .env·JSON·YAML 자동 감지와 혼합 로딩, 중첩·배열 플랫 키, 병합 우선순위 규칙, Marshal/UnmarshalMap 형식 변환과 RegisterParser 형식을 마이크로서비스·컨테이너 환경에 제공합니다."
+sidebar_position: 3
 ---
 
 # 다중 형식 구성
@@ -220,7 +222,7 @@ ALLOWED_HOSTS:
 
 ### 키 이름 해석
 
-YAML의 중첩 구조는 JSON과 동일한 평탄화 규칙을 사용합니다:
+YAML 의 중첩 구조는 JSON 과 동일한 평탄화 규칙을 사용합니다:
 
 ```go
 loader.LoadFiles("config.yaml")
@@ -314,7 +316,7 @@ BASE_URL=https://api.example.com
 API_URL=${BASE_URL}/v1
 
 # 기본값
-LOG_LEVEL=${LOG_LEVEL:-info}
+LOG_LEVEL=info
 ```
 
 ### 변수 확장
@@ -349,9 +351,9 @@ PORT=8080
 # 다른 변수 참조
 URL=http://${HOST}:${PORT}
 
-# 기본값
-TIMEOUT=${TIMEOUT:-30s}
-DEBUG=${DEBUG:-false}
+# 기본값 (다른 변수 참조, 정의되지 않은 경우 기본값 사용)
+TIMEOUT_VALUE=${TIMEOUT:-30s}
+DEBUG_VALUE=${DEBUG:-false}
 ```
 
 ### export 구문
@@ -458,21 +460,31 @@ data := map[string]string{
     "HOST": "localhost",
     "PORT": "8080",
 }
+```
 
-// .env 형식 (기본값)
+::: code-group
+
+```go [.env (기본)]
 envStr, _ := env.Marshal(data)
 // HOST=localhost
 // PORT=8080
+```
 
-// JSON 형식
+```go [JSON]
 jsonStr, _ := env.Marshal(data, env.FormatJSON)
-// {"HOST":"localhost","PORT":"8080"}
+// {
+//   "HOST": "localhost",
+//   "PORT": 8080
+// }
+```
 
-// YAML 형식
+```go [YAML]
 yamlStr, _ := env.Marshal(data, env.FormatYAML)
 // HOST: localhost
-// PORT: "8080"
+// PORT: 8080
 ```
+
+:::
 
 ### 구조체 Marshal
 
@@ -483,37 +495,50 @@ type Config struct {
 }
 
 cfg := Config{Host: "localhost", Port: 8080}
+```
 
-// .env로 변환
+::: code-group
+
+```go [.env로]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
+```
 
-// JSON으로 변환
+```go [JSON으로]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
+```
 
-// YAML로 변환
+```go [YAML로]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
 
+:::
+
 ### UnmarshalMap
 
-map으로 역직렬화:
+map 으로 역직렬화:
 
-```go
-// .env에서
+::: code-group
+
+```go [.env에서]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
+```
 
-// JSON에서
+```go [JSON에서]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
+```
 
-// YAML에서
+```go [YAML에서]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
-
-// 자동 형식 감지
-data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)
 ```
+
+:::
+
+::: tip 형식 자동 감지
+`env.FormatAuto`를 전달하면 라이브러리가 내용을 기반으로 형식을 자동으로 판단합니다: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`.
+:::
 
 ### UnmarshalStruct
 
@@ -526,16 +551,23 @@ type Config struct {
 }
 
 var cfg Config
+```
 
-// .env에서
+::: code-group
+
+```go [.env에서]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
+```
 
-// JSON에서
+```go [JSON에서]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
+```
 
-// YAML에서
+```go [YAML에서]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
+
+:::
 
 ## 커스텀 형식
 

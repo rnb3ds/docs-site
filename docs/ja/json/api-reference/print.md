@@ -1,30 +1,43 @@
 ---
+sidebar_label: "出力関数"
 title: "出力関数 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON 出力とフォーマット：Encode、EncodePretty、Prettify と標準 fmt パッケージでカスタムインデント付き JSON 出力を実現し、廃止された Print 系関数を置き換えます。"
+description: "CyberGo JSON 出力とフォーマット：Encode、EncodePretty、Prettify と標準 fmt パッケージで JSON を出力し、カスタムインデントとプレフィックスに対応、廃止された Print シリーズを置き換えます。"
+sidebar_position: 11
 ---
 
 # 出力関数
 
 ::: warning API 変更のお知らせ
-`Print`、`PrintPretty`、`PrintE`、`PrintPrettyE` はライブラリから削除され、提供されなくなりました。以下の代替案を使用してください。
+Print、PrintPretty、PrintE、PrintPrettyE はライブラリから削除され、提供されなくなりました。以下の代替案を使用してください。
 :::
 
 ## 代替案
 
 ### コンパクト JSON の出力
 
-`fmt.Println` + `Encode` を使用：
+`fmt.Println` + `EncodeWithConfig`（推奨）または `Marshal` を使用：
 
 ```go
 data := map[string]any{"name": "Alice", "age": 30}
 
-s, err := json.Encode(data)
+s, err := json.EncodeWithConfig(data)
 if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
-// 出力: {"age":30,"name":"Alice"}
+// 出力：{"age":30,"name":"Alice"}
+
+// または Marshal を使用（[]byte 出力）
+b, err := json.Marshal(data)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(string(b))
 ```
+
+::: warning Encode は非推奨
+`json.Encode` は非推奨としてマークされています（`EncodeWithConfig` と機能的に等価）。将来のメジャーバージョンで削除されます。新規コードでは `EncodeWithConfig` または `Marshal` を使用してください。
+:::
 
 ### フォーマット済み JSON の出力
 
@@ -36,7 +49,7 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
-// 出力:
+// 出力：
 // {
 //   "age": 30,
 //   "name": "Alice"
@@ -64,8 +77,8 @@ if err != nil {
 }
 defer p.Close()
 
-// エンコードして出力
-s, err := p.Encode(data)
+// エンコードして出力（EncodeWithConfig を推奨、Encode は非推奨）
+s, err := p.EncodeWithConfig(data)
 if err != nil {
     log.Fatal(err)
 }
@@ -99,8 +112,8 @@ func main() {
         "total": 2,
     }
 
-    // コンパクト出力
-    compact, err := json.Encode(data)
+    // コンパクト出力（Encode は非推奨、EncodeWithConfig を推奨）
+    compact, err := json.EncodeWithConfig(data)
     if err != nil {
         log.Fatal(err)
     }
@@ -117,5 +130,5 @@ func main() {
 
 ## 関連
 
-- [エンコード・デコード関数](./functions/encode-decode) - Encode、EncodePretty、Prettify
-- [パッケージ関数](./functions) - パッケージレベル関数の概要
+- [エンコード出力関数](./functions/output) - Encode、EncodePretty、Prettify
+- [パッケージ関数](./functions/) - パッケージレベル関数の概要

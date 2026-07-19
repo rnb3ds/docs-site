@@ -1,6 +1,8 @@
 ---
-title: "プロダクションチェックリスト - CyberGo JSON | セキュアデプロイ"
-description: "CyberGo JSON プロダクションセキュリティチェックリスト：SecurityConfig、リソース制限、入力バリデーション、エラー処理、監視アラート、性能とセキュリティのバランスで本番の信頼性を確保します。"
+sidebar_label: "本番チェックリスト"
+title: "本番チェックリスト - CyberGo JSON | 安全なデプロイ"
+description: "CyberGo JSON 本番デプロイのセキュリティチェックリスト：SecurityConfig 設定、リソース制限、入力バリデーション、エラー処理、監視アラートと性能・セキュリティのバランスで、本番環境の信頼性を確保します。"
+sidebar_position: 3
 ---
 
 # プロダクションチェックリスト

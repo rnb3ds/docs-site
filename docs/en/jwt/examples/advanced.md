@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Advanced Examples"
 title: "Advanced Examples - CyberGo JWT | Asymmetric"
 description: "Advanced examples: RSA and ECDSA asymmetric signing, CustomClaims business claims, Redis blacklist backends, FixedClock testing, and full web integration."
+sidebar_position: 20
 ---
 
 # Advanced Examples
@@ -284,8 +286,8 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // Output: 2026-01-01 00:00:00
-    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // Output: 2026-01-01 00:15:00
+    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // Output: 2026-01-01 00:00:00 +0000 UTC
+    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // Output: 2026-01-01 00:15:00 +0000 UTC
 }
 ```
 

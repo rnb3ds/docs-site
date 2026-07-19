@@ -1,6 +1,8 @@
 ---
+sidebar_label: "성능 최적화"
 title: "성능 최적화 - CyberGo env | 고동시성 읽기/쓰기 튜닝"
-description: "CyberGo env 성능 최적화 가이드로 RWMutex 동시성, 객체 풀 재사용, mlock 메모리 잠금, 대용량 파일 스트리밍과 벤치마크 기반 매개변수 튜닝을 제안합니다."
+description: "CyberGo env 성능 최적화 가이드로 RWMutex·샤드 락 동시성, sync.Pool 객체 풀 재사용으로 할당을 크게 줄임, mlock 메모리 잠금 비용 절충, 대용량 파일 스트리밍과 MaxFileSize/MaxVariables 매개변수 튜닝을 벤치마크 기반으로 제안합니다."
+sidebar_position: 1
 ---
 
 # 성능 최적화
@@ -60,11 +62,11 @@ wg.Wait()
 
 ### 내부 구현
 
-라이브러리는 샤딩된 저장소(Sharded Storage)를 사용하여 잠금 경합을 줄입니다:
+라이브러리는 샤딩된 저장소 (Sharded Storage) 를 사용하여 잠금 경합을 줄입니다:
 
 ```text
 ┌─────────────────────────────────────────┐
-│          Loader (8개 샤드)               │
+│          Loader (8 개 샤드)               │
 ├─────────────────────────────────────────┤
 │  ┌─────────┐ ┌─────────┐    ┌────────┐ │
 │  │ Shard 0 │ │ Shard 1 │... │ Shard 7│ │
@@ -100,7 +102,7 @@ wg.Wait()
 // SecureValue 가져오기 (풀에서 재사용될 수 있음)
 secret := env.GetSecure("API_KEY")
 
-// 사용 (Reveal은 평문 반환, String/Masked는 마스크 반환)
+// 사용 (Reveal 은 평문 반환, String/Masked는 마스크 반환)
 value := secret.Reveal()
 
 // 풀에 반납
@@ -132,7 +134,7 @@ func init() {
 }
 
 func later() {
-    // 위험: globalSecret이 다른 코드에서 이미 사용 중일 수 있음
+    // 위험: globalSecret 이 다른 코드에서 이미 사용 중일 수 있음
     globalSecret.String()
 }
 
@@ -220,7 +222,7 @@ secret.Close()
 ```go
 sensitiveBytes := []byte("secret")
 env.ClearBytes(sensitiveBytes)
-// sensitiveBytes는 이제 모두 0
+// sensitiveBytes 는 이제 모두 0
 ```
 
 ## 성능 패턴
@@ -239,7 +241,7 @@ func init() {
     env.ParseInto(config)
 }
 
-// 임의의 goroutine에서 안전하게 읽기
+// 임의의 goroutine 에서 안전하게 읽기
 func getValue() string {
     return config.Key
 }
@@ -336,10 +338,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 ### 메모리 잠금 오버헤드
 
-| 작업 | 잠금 없음 | 잠금 있음 |
-|------|--------|--------|
-| 생성 | ~100ns | ~1μs |
-| 읽기 | ~10ns | ~10ns |
+메모리 잠금 (Linux 의 `mlock` / Windows 의 `VirtualLock`) 은 `SecureValue` 생성 시 한 번만 추가 syscall 오버헤드를 발생시키며, 읽기 작업 (`Reveal` / `String` / `Masked`) 에는 차이가 없습니다. `SecureValue`는 작고 짧게 유지하는 것을 권장합니다 — 사용 후 즉시 `Close()` / `Release()`하여 객체 풀에 반납하고, 큰 잠금 메모리를 장기간 보유하지 마세요.
 
 ## 벤치마크 테스트
 
@@ -403,7 +402,7 @@ func BenchmarkMixedReadWrite(b *testing.B) {
 // 위험: 교착 상태 발생 가능
 func (l *Loader) BadMethod() {
     // 잠금 내에서 차단될 수 있는 작업 호출
-    l.Set("KEY", computeValue())  // computeValue가 느릴 수 있음
+    l.Set("KEY", computeValue())  // computeValue 가 느릴 수 있음
 }
 
 // 안전: 먼저 계산, 그 다음 설정
@@ -421,10 +420,10 @@ loader, _ := env.New(cfg)
 // goroutine 시작
 go func() {
     time.Sleep(1 * time.Second)
-    loader.GetString("KEY")  // 빈 문자열 반환 (GetString은 error를 반환하지 않음)
+    loader.GetString("KEY")  // 빈 문자열 반환 (GetString 은 error 를 반환하지 않음)
 }()
 
-loader.Close()  // 주 goroutine에서 닫기
+loader.Close()  // 주 goroutine 에서 닫기
 ```
 
 ### 전역 로더 재설정

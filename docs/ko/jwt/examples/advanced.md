@@ -1,6 +1,8 @@
 ---
+sidebar_label: "고급 예제"
 title: "고급 예제 - CyberGo JWT | 비대칭 서명과 커스텀 저장소"
-description: "고급 예제: RSA와 ECDSA 비대칭 서명 검증, CustomClaims 비즈니스 선언, Redis 커스텀 블랙리스트 백엔드, FixedClock 클럭 인젝션 테스트, 완전한 웹 서비스 통합."
+description: "고급 예제: RSA 와 ECDSA 비대칭 서명 검증, CustomClaims 비즈니스 선언, Redis 커스텀 블랙리스트 백엔드, FixedClock 클럭 인젝션 테스트, 완전한 웹 서비스 통합."
+sidebar_position: 20
 ---
 
 # 고급 예제
@@ -156,7 +158,7 @@ func main() {
     }
     fmt.Println("Token:", token)
 
-    // 커스텀 Claims로 검증
+    // 커스텀 Claims 로 검증
     myClaims := &MyClaims{}
     result, valid, err := processor.ValidateInto(token, myClaims)
     if err != nil {
@@ -168,7 +170,7 @@ func main() {
         fmt.Println("Email:", parsed.Email)   // 출력: alice@example.com
     }
 
-    // 커스텀 Claims로 갱신
+    // 커스텀 Claims 로 갱신
     refreshToken, err := processor.CreateRefresh(claims)
     if err != nil {
         panic(err)
@@ -194,7 +196,7 @@ import (
     "github.com/cybergodev/jwt"
 )
 
-// RedisBlacklistStore는 BlacklistStore 인터페이스를 구현
+// RedisBlacklistStore 는 BlacklistStore 인터페이스를 구현
 // 참고: 실제 사용 시 Redis 클라이언트를 가져와야 함 (예: github.com/redis/go-redis)
 type RedisBlacklistStore struct {
     // client *redis.Client
@@ -284,8 +286,8 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // 출력: 2026-01-01 00:00:00
-    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // 출력: 2026-01-01 00:15:00
+    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // 출력: 2026-01-01 00:00:00 +0000 UTC
+    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // 출력: 2026-01-01 00:15:00 +0000 UTC
 }
 ```
 

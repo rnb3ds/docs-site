@@ -1,6 +1,8 @@
 ---
+sidebar_label: "高度なサンプル"
 title: "高度なサンプル - CyberGo JWT | 非対称署名とカスタムストア"
 description: "高度なサンプル集：RSA と ECDSA 非対称署名の検証、CustomClaims でカスタムビジネス宣言を実装、Redis カスタムブラックリストバックエンドへの接続、FixedClock 時計注入テストと完全な Web サービス統合。"
+sidebar_position: 20
 ---
 
 # 高度なサンプル
@@ -164,8 +166,8 @@ func main() {
     }
     if valid {
         parsed := result.(*MyClaims)
-        fmt.Println("UserID:", parsed.UserID) // 出力: user123
-        fmt.Println("Email:", parsed.Email)   // 出力: alice@example.com
+        fmt.Println("UserID:", parsed.UserID) // 出力：user123
+        fmt.Println("Email:", parsed.Email)   // 出力：alice@example.com
     }
 
     // カスタム Claims にリフレッシュ
@@ -284,8 +286,8 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // 出力: 2026-01-01 00:00:00
-    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // 出力: 2026-01-01 00:15:00
+    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // 出力：2026-01-01 00:00:00 +0000 UTC
+    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // 出力：2026-01-01 00:15:00 +0000 UTC
 }
 ```
 

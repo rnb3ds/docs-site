@@ -1,13 +1,15 @@
 ---
+sidebar_label: "パフォーマンス"
 title: "パフォーマンス最適化 - CyberGo DD | 高性能ログ"
-description: "CyberGo DD ログライブラリのパフォーマンス最適化完全ガイド。ゼロアロケーション最適化のヒント、BufferedWriter バッファ書き込み設定、ログサンプリング戦略と頻度制御、レベル事前チェックで不要なアロケーションを回避、sync.Pool オブジェクトプール再利用、ベンチマークテスト分析方法を詳解し、高並行シナリオで極限のログパフォーマンスを獲得。"
+description: "CyberGo DD ログライブラリのパフォーマンス最適化完全ガイド。低アロケーション最適化、BufferedWriter バッファ書き込み、ログサンプリング戦略と頻度制御、レベル事前チェックによる不要アロケーション回避、sync.Pool オブジェクトプール再利用、ベンチマーク分析方法を解説。"
+sidebar_position: 1
 ---
 
 # パフォーマンス最適化
 
 DD は高いパフォーマンスを目指して設計されています。以下に、ログパフォーマンスをさらに最適化するためのアドバイスをいくつか紹介します。
 
-## ゼロアロケーション最適化
+## 低アロケーション最適化
 
 DD はホットパスでメモリ割り当てを最小化：
 
@@ -76,7 +78,7 @@ cfg := logger.GetSampling()
 
 ```go
 fw, _ := dd.NewFileWriter("logs/app.log", dd.DefaultFileWriterConfig())
-// デフォルト: 100MB / 30日 / 10バックアップ
+// デフォルト：100MB / 30 日 / 10 バックアップ
 ```
 
 - ファイルが小さすぎると頻繁なローテーションで I/O が増加
@@ -147,6 +149,6 @@ logger.Shutdown(ctx)
 
 ## 次のステップ
 
-- [出力先](../api-reference/writers) -- FileWriter、BufferedWriter API
-- [設定](../api-reference/config) -- パフォーマンス関連の設定項目
+- [出力先](../api-reference/output-integration/writers) -- FileWriter、BufferedWriter API
+- [設定](../api-reference/core/config) -- パフォーマンス関連の設定項目
 - [本番チェックリスト](../security/production-checklist) -- リリース前チェック

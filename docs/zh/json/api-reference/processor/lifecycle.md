@@ -1,6 +1,8 @@
 ---
+sidebar_label: "生命周期"
 title: "Processor 生命周期 - CyberGo JSON | API 参考"
 description: "CyberGo JSON Processor 生命周期：New 创建、Close 释放资源、IsClosed 状态检查、GetStats 统计与 GetHealthStatus 健康监控，保障并发安全关闭。"
+sidebar_position: 11
 ---
 
 # 生命周期与统计
@@ -94,8 +96,8 @@ type WarmupResult struct {
 
 ```go
 stats := processor.GetStats()
-fmt.Printf("缓存命中率: %.2f%%\n", stats.HitRatio * 100)
-fmt.Printf("缓存大小: %d\n", stats.CacheSize)
+fmt.Printf("缓存命中率：%.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("缓存大小：%d\n", stats.CacheSize)
 ```
 
 **Stats 结构**：
@@ -218,7 +220,7 @@ defer processor.Close()
 
 cfg := processor.GetConfig()
 fmt.Printf("缓存启用: %v\n", cfg.EnableCache)
-fmt.Printf("最大 JSON 大小: %d\n", cfg.MaxJSONSize)
+fmt.Printf("最大 JSON 大小：%d\n", cfg.MaxJSONSize)
 ```
 
 ## 使用建议
@@ -267,5 +269,5 @@ go func() {
 ## 相关
 
 - [Config](../config) - 配置选项（缓存大小、TTL 等）
-- [Hook 钩子系统](../hooks) - 钩子详细使用指南
+- [Hook 钩子系统](../../extensions/hooks) - 钩子详细使用指南
 - [接口定义](../interfaces) - Hook 接口

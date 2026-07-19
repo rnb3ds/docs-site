@@ -1,11 +1,13 @@
 ---
+sidebar_label: "Config"
 title: "Config 설정 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Config 레퍼런스: DefaultConfig, SecurityConfig, PrettyConfig, 캐시, 크기 제한, 인코딩 옵션으로 Go 앱의 모든 JSON 동작을 맞춤 설정합니다."
+description: "CyberGo JSON Config 설정: DefaultConfig 기본, SecurityConfig 보안, PrettyConfig 포맷팅과 캐시, 크기 제한으로 Go 애플리케이션의 JSON 동작을 커스터마이즈합니다."
+sidebar_position: 4
 ---
 
 # Config
 
-Config는 Processor와 모든 JSON 작업의 동작을 커스터마이즈하는 데 사용됩니다.
+Config 는 Processor 와 모든 JSON 작업의 동작을 커스터마이즈하는 데 사용됩니다.
 
 ## Config 구조체
 
@@ -16,6 +18,7 @@ type Config struct {
     CacheTTL     time.Duration `json:"cache_ttl"`      // 캐시 만료 시간
     EnableCache  bool          `json:"enable_cache"`   // 캐시 활성화 여부
     CacheResults bool          `json:"cache_results"`  // 작업 결과 캐시 여부
+    CacheSharedResults bool `json:"cache_shared_results"` // 캐시 결과 공유 (방어적 딥카피 건너뛰기, 호출자는 반환된 컨테이너를 수정하면 안 됨)
 
     // ===== 크기 제한 =====
     MaxJSONSize  int64 `json:"max_json_size"`  // 최대 JSON 크기 (바이트)
@@ -57,7 +60,7 @@ type Config struct {
     ValidateUTF8    bool            `json:"validate_utf8"`    // UTF-8 검증
     MaxDepth        int             `json:"max_depth"`        // 최대 인코딩 깊이
     DisallowUnknown bool            `json:"disallow_unknown"` // 알 수 없는 필드 금지
-    FloatPrecision  int             `json:"float_precision"`  // 부동소수점 정밀도 (-1은 자동)
+    FloatPrecision  int             `json:"float_precision"`  // 부동소수점 정밀도 (-1 은 자동)
     FloatTruncate   bool            `json:"float_truncate"`   // 부동소수점 자르기
     DisableEscaping bool            `json:"disable_escaping"` // 이스케이프 비활성화
     EscapeUnicode   bool            `json:"escape_unicode"`   // 유니코드 이스케이프
@@ -102,6 +105,10 @@ type Config struct {
 }
 ```
 
+::: warning CacheSharedResults 계약
+`CacheSharedResults`가 `true`이면, 캐시 적중 시 `Get`/`GetFromParsed`는 방어적 딥카피를 건너뛰고 **캐시 값을 직접 반환**합니다 (더 빠르고 할당이 적음). 이때 **호출자는 반환된 `map[string]any`/`[]any`를 수정해서는 안 됩니다**. 수정하면 공유 캐시가 훼손되어 이후 읽기에 영향을 줍니다. 원시 값 (`bool`, `float64`, `string`, `json.Number`, `nil`) 은 불변이므로 항상 안전합니다. 기본값 `false`는 안전한 "읽기 시 복사" 동작을 유지하며, 호출자가 결과를 읽기 전용으로 취급할 때만 활성화하세요 (예: 동일한 대형 하위 트리를 반복적으로 읽는 읽기 전용 워크로드).
+:::
+
 ## 설정 프리셋
 
 ### DefaultConfig
@@ -131,10 +138,11 @@ defer processor.Close()
 | MaxArrayElements | 100000 | 배열 최대 요소 수 |
 | MaxConcurrency | 50 | 동시성 수 |
 | MaxBatchSize | 2000 | 배치 작업 수 |
-| CacheTTL | 5분 | 캐시 만료 |
+| CacheTTL | 5 분 | 캐시 만료 |
 | MaxCacheSize | 128 | 최대 캐시 항목 수 |
 | EnableCache | true | 캐시 활성화 |
 | CacheResults | true | 작업 결과 캐시 |
+| CacheSharedResults | false | 캐시 결과 공유 (읽기 전용 고성능) |
 | EnableValidation | true | 유효성 검사 활성화 |
 | StrictMode | false | 비엄격 모드 |
 | FullSecurityScan | false | 샘플링 보안 스캔 (전체 아님) |
@@ -201,7 +209,7 @@ defer processor.Close()
 | EnableValidation | true | 유효성 검사 활성화 |
 | EnableCache | true | 캐시 활성화 |
 | MaxCacheSize | 256 | 캐시 크기 |
-| CacheTTL | 3분 | 짧은 TTL |
+| CacheTTL | 3 분 | 짧은 TTL |
 
 ### PrettyConfig
 
@@ -231,7 +239,7 @@ cfgCopy.EnableValidation = true // 원래 설정에 영향 없음
 
 시그니처: `func (c *Config) Validate() error`
 
-설정을 검증하고 유효하지 않은 값을 자동으로 수정합니다. 이 메서드는 Config를 **원본에서 수정**하며, 유효하지 않은 필드를 해당하는 최소 유효값으로 수정합니다.
+설정을 검증하고 유효하지 않은 값을 자동으로 수정합니다. 이 메서드는 Config 를 **원본에서 수정**하며, 유효하지 않은 필드를 해당하는 최소 유효값으로 수정합니다.
 
 ```go
 cfg := json.DefaultConfig()
@@ -239,7 +247,7 @@ cfg.MaxJSONSize = -1 // 유효하지 않은 값
 if err := cfg.Validate(); err != nil {
     panic(err)
 }
-// MaxJSONSize가 최소값으로 원본 수정됨
+// MaxJSONSize 가 최소값으로 원본 수정됨
 ```
 
 ### ValidateWithWarnings
@@ -264,7 +272,7 @@ for _, w := range warnings {
 ```go
 type ConfigWarning struct {
     Field    string // 수정된 필드명
-    OldValue any    // 원래 값 (유효하지 않은 값은 nil일 수 있음)
+    OldValue any    // 원래 값 (유효하지 않은 값은 nil 일 수 있음)
     NewValue any    // 수정된 값
     Reason   string // 수정 사유
 }
@@ -272,7 +280,7 @@ type ConfigWarning struct {
 
 ### SecurityLimits 타입
 
-`SecurityLimits`는 Config의 보안 관련 제한 필드를 요약합니다.
+`SecurityLimits`는 Config 의 보안 관련 제한 필드를 요약합니다.
 
 ```go
 type SecurityLimits struct {
@@ -414,7 +422,7 @@ const (
 ```
 
 :::info 내부 상수
-경로 검증 길이 제한(`maxPathLength`) 등의 상수는 내부 구현으로 전환되어 공개 API로 내보내지 않습니다. 관련 기본값은 `Config` 구조체의 필드 기본값으로 반영됩니다.
+경로 검증 길이 제한 (`maxPathLength`) 등의 상수는 내부 구현으로 전환되어 공개 API 로 내보내지 않습니다. 관련 기본값은 `Config` 구조체의 필드 기본값으로 반영됩니다.
 :::
 
 ---

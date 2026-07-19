@@ -1,6 +1,8 @@
 ---
+sidebar_label: "パフォーマンス最適化"
 title: "パフォーマンス最適化 - CyberGo env | 高並発読み書きチューニング"
-description: "CyberGo env 性能最適化ガイド。RWMutex 並行性、オブジェクトプール再利用、mlock メモリロック、大容量ファイルストリーミング、ベンチマークに基づくチューニングを提案します。"
+description: "CyberGo env パフォーマンス最適化ガイド。RWMutex 読み書きロックとシャードロックの並行安全性、sync.Pool オブジェクトプール再利用による割り当ての大幅削減、mlock メモリロックのオーバーヘッドと大容量ファイルのストリーミング解析、ベンチマーク比較、並行スループット分析、MaxFileSize/MaxVariables パラメータチューニングの提案を含みます。"
+sidebar_position: 1
 ---
 
 # パフォーマンス最適化
@@ -86,7 +88,7 @@ wg.Wait()
 
 ```text
 オブジェクトプールなし：
-オブジェクト作成 → 使用 → GC回収 → オブジェクト作成 → 使用 → GC回収 ...
+オブジェクト作成 → 使用 → GC 回収 → オブジェクト作成 → 使用 → GC 回収 ...
 
 オブジェクトプールあり：
 オブジェクト作成 → 使用 → プールに返却 → 取得 → 使用 → プールに返却 ...
@@ -100,7 +102,7 @@ wg.Wait()
 // SecureValue を取得（プールから再利用される場合がある）
 secret := env.GetSecure("API_KEY")
 
-// 使用（Revealは平文を返し、String/Maskedはマスクを返す）
+// 使用（Reveal は平文を返し、String/Masked はマスクを返す）
 value := secret.Reveal()
 
 // プールに返却
@@ -209,10 +211,10 @@ if err != nil {
 
 ```go
 secret := env.GetSecure("PASSWORD")
-// 内部状態: ['p', 'a', 's', 's', ...]
+// 内部状態：['p', 'a', 's', 's', ...]
 
 secret.Close()
-// 内部状態: [0, 0, 0, 0, ...]
+// 内部状態：[0, 0, 0, 0, ...]
 ```
 
 バイトスライスの手動ゼロクリア：
@@ -336,10 +338,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 ### メモリロックのオーバーヘッド
 
-| 操作 | ロックなし | ロックあり |
-|------|--------|--------|
-| 作成 | ~100ns | ~1μs |
-| 読み取り | ~10ns | ~10ns |
+メモリロック（Linux の `mlock` / Windows の `VirtualLock`）は `SecureValue` 作成時にのみ 1 回の追加 syscall オーバーヘッドを発生させ、読み取り操作（`Reveal` / `String` / `Masked`）に差異はありません。`SecureValue` は小さく短命に保つことを推奨します——使用後すぐに `Close()` / `Release()` でオブジェクトプールに返却し、大きなロック済みメモリを長期間保持しないでください。
 
 ## ベンチマークテスト
 
@@ -421,7 +420,7 @@ loader, _ := env.New(cfg)
 // goroutine を起動
 go func() {
     time.Sleep(1 * time.Second)
-    loader.GetString("KEY")  // 空文字列を返す（GetStringはerrorを返さない）
+    loader.GetString("KEY")  // 空文字列を返す（GetString は error を返さない）
 }()
 
 loader.Close()  // メイン goroutine がクローズ

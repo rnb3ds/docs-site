@@ -1,6 +1,8 @@
 ---
-title: "프로덕션 체크리스트 - CyberGo HTML | 런칭 점검"
-description: "CyberGo HTML 프로덕션 보안 체크리스트: HighSecurityConfig 프리셋, Processor 생명주기, 감사·모니터링, 컨텍스트 타임아웃, 오류 처리, 리소스·파일 보안 주의사항입니다."
+sidebar_label: "프로덕션 체크리스트"
+title: "프로덕션 체크리스트 - CyberGo html | 런칭 보안 점검"
+description: "CyberGo html 프로덕션 배포 보안 체크리스트: HighSecurityConfig 프리셋, Processor 생명주기, 감사 모니터링, 컨텍스트 타임아웃, 오류 처리 안전 항목을 다룹니다."
+sidebar_position: 2
 ---
 
 # 프로덕션 체크리스트
@@ -15,8 +17,8 @@ description: "CyberGo HTML 프로덕션 보안 체크리스트: HighSecurityConf
 
 ## Processor 라이프사이클
 
-- [ ] `defer p.Close()`를 사용하여 Processor가 올바르게 해제되도록 보장
-- [ ] 종료 후 Processor를 계속 사용하지 않기
+- [ ] `defer p.Close()`를 사용하여 Processor 가 올바르게 해제되도록 보장
+- [ ] 종료 후 Processor 를 계속 사용하지 않기
 - [ ] 리소스를 재사용하기 위해 싱글톤 Processor 사용 고려
 
 ```go
@@ -36,7 +38,7 @@ defer p.Close()
 - [ ] `ErrInternalPanic` 오류와 `AuditEventPathTraversal` 감사 이벤트에 주의
 
 ```go
-auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE, 0644)
+auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 defer auditFile.Close()
 
 cfg := html.HighSecurityConfig()
@@ -45,7 +47,7 @@ cfg.Audit.Sink = html.NewWriterAuditSink(auditFile)
 
 ## 컨텍스트와 타임아웃
 
-- [ ] 모든 추출 작업에 `WithContext` 버전 사용
+- [ ] 모든 추출 작업에 `ExtractWithContext` 버전 사용
 - [ ] 적절한 컨텍스트 타임아웃 설정
 - [ ] 배치 작업에 취소가 포함된 컨텍스트 사용
 
@@ -64,13 +66,13 @@ result, err := html.ExtractWithContext(ctx, data)
 
 ## 리소스 관리
 
-- [ ] 배치 작업은 한 번에 10000건을 초과하지 않기
+- [ ] 배치 작업은 한 번에 10000 건을 초과하지 않기
 - [ ] `WorkerPoolSize`를 적절하게 설정
 - [ ] 정기적으로 `ClearCache()`를 호출하여 캐시 해제
 - [ ] 메모리 사용량과 캐시 적중률 모니터링
 
 ## 파일 처리
 
-- [ ] 파일 경로 출처 검증(사용자가 경로를 제어하지 못하도록 방지)
+- [ ] 파일 경로 출처 검증 (사용자가 경로를 제어하지 못하도록 방지)
 - [ ] 파일 읽기 디렉토리 제한
 - [ ] 파일 크기를 먼저 확인한 후 처리

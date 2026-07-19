@@ -1,13 +1,15 @@
 ---
+sidebar_label: "연결 풀과 프록시"
 title: "연결 풀과 프록시 - CyberGo HTTPC | 풀과 프록시"
-description: "HTTPC 연결 풀과 프록시 가이드: MaxIdleConns 튜닝과 시나리오 추천, ProxyURL 수동과 시스템 프록시, SOCKS5와 HTTP 프록시, DoH 폴백, HTTP/2 설정과 연결 재사용 실무 요점을 다룹니다."
+description: "HTTPC 연결 풀과 프록시 가이드: MaxIdleConns 튜닝과 시나리오 추천, ProxyURL 수동과 시스템 프록시, SOCKS5 와 HTTP 프록시, DoH 폴백, HTTP/2 설정과 연결 재사용 실무 요점을 다룹니다."
+sidebar_position: 3
 ---
 
 # 연결 풀과 프록시
 
 ## 연결 풀 설정
 
-연결 풀은 HTTP 클라이언트 성능의 핵심 요소입니다. HTTPC은 `ConnectionConfig`로 연결 풀을 관리합니다.
+연결 풀은 HTTP 클라이언트 성능의 핵심 요소입니다. HTTPC 은 `ConnectionConfig`로 연결 풀을 관리합니다.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -23,7 +25,7 @@ cfg.Timeouts.IdleConn = 120 * time.Second // 유휴 연결 유지 시간
 | 매개변수 | 기본값 | 설명 |
 |-----------|--------|------|
 | `MaxIdleConns` | 50 | 전역 최대 유휴 연결 수 |
-| `MaxConnsPerHost` | 10 | 호스트당 최대 연결 수 (활성+유휴 포함) |
+| `MaxConnsPerHost` | 10 | 호스트당 최대 연결 수 (활성 + 유휴 포함) |
 | `IdleConn` | 90s | 유휴 연결 타임아웃, 초과 시 연결 닫기 |
 | `Dial` | 10s | 연결 수립 타임아웃 |
 | `TLSHandshake` | 10s | TLS 핸드셰이크 타임아웃 |
@@ -61,7 +63,7 @@ cfg.Connection.ProxyURL = "http://user:password@proxy.example.com:8080"
 ```
 
 :::tip
-`Config.String()` 메서드는 프록시 URL의 사용자 이름과 비밀번호를 자동으로 마스킹합니다.
+`Config.String()` 메서드는 프록시 URL 의 사용자 이름과 비밀번호를 자동으로 마스킹합니다.
 :::
 
 ### SOCKS5 프록시
@@ -91,7 +93,7 @@ cfg.Connection.EnableSystemProxy = true
 
 ## DNS-over-HTTPS
 
-DoH를 활성화하여 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지합니다:
+DoH 를 활성화하여 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지합니다:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -108,7 +110,7 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute
 | AliDNS | `dns.alidns.com/resolve` | 중국 지역 최적화 |
 
 :::tip
-DoH 활성화 시 DNS 해석 결과가 `DoHCacheTTL` 시간 동안 캐시됩니다. 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS로 폴백합니다.
+DoH 활성화 시 DNS 해석 결과가 `DoHCacheTTL` 시간 동안 캐시됩니다. 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS 로 폴백합니다.
 :::
 
 ## HTTP/2
@@ -127,14 +129,14 @@ HTTP/2 특징:
 
 ## 객체 풀 재사용
 
-HTTPC는 내부적으로 엔진 응답 객체와 문자열 빌더를 sync.Pool로 재사용하여 GC 부하를 줄이며, Result는 매 요청마다 새로 생성되어 GC가 자동 회수합니다.
+HTTPC 는 내부적으로 엔진 응답 객체와 문자열 빌더를 sync.Pool 로 재사용하여 GC 부하를 줄이며, Result 는 매 요청마다 새로 생성되어 GC 가 자동 회수합니다.
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result는 매 요청마다 새로 생성, GC가 자동 회수, 수동 해제 불필요
+// Result 는 매 요청마다 새로 생성, GC 가 자동 회수, 수동 해제 불필요
 ```
 
 고동시성 시나리오에서 내부 객체 풀 재사용은 GC 부하를 크게 줄일 수 있습니다.
@@ -180,5 +182,5 @@ func fetchAll(ctx context.Context, urls []string) ([]*httpc.Result, error) {
 ## 다음 단계
 
 - [성능 최적화](./performance) - 성능 튜닝 가이드
-- [설정 API](../api-reference/config) - 연결 설정 참조
-- [보안 개요](../security/) - SSRF와 TLS 보안
+- [설정 API](../api-reference/client-config/config) - 연결 설정 참조
+- [보안 개요](../security/) - SSRF 와 TLS 보안

@@ -1,6 +1,8 @@
 ---
-title: "Обработка ошибок - CyberGo HTML | надёжная обработка"
-description: "Обработка ошибок CyberGo HTML: пять категорий, errors.Is, errors.As, отмена context и частичные неудачи пакетов для надёжной логики."
+sidebar_label: "Обработка ошибок"
+title: "Обработка ошибок - CyberGo html | надёжная логика"
+description: "Обработка ошибок CyberGo html: пять категорий, errors.Is/As, отмена context и частичные неудачи пакетов для построения надёжной логики."
+sidebar_position: 2
 ---
 
 # Обработка ошибок
@@ -67,7 +69,7 @@ if errors.As(err, &fileErr) {
 
 ## Отмена через контекст
 
-Использование версий `WithContext` для поддержки отмены:
+Использование версий `ExtractWithContext` для поддержки отмены:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -75,10 +77,16 @@ defer cancel()
 
 result, err := html.ExtractWithContext(ctx, data)
 if err != nil {
-    if ctx.Err() == context.DeadlineExceeded {
-        // Тайм-аут
-    } else if ctx.Err() == context.Canceled {
+    switch {
+    case errors.Is(err, html.ErrProcessingTimeout):
+        // Внутренний тайм-аут ProcessingTimeout (в этот момент ctx.Err() может быть nil)
+    case ctx.Err() == context.DeadlineExceeded:
+        // Дедлайн пользовательского контекста истёк
+    case ctx.Err() == context.Canceled:
         // Ручная отмена
+    default:
+        // Другие ошибки (ErrInvalidHTML, ErrInputTooLarge и т.д.)
+        slog.Error("Извлечение не удалось", "err", err)
     }
 }
 ```

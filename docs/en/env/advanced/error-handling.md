@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Error Handling"
 title: "Error Handling - CyberGo env | Sentinel Errors & Recovery"
-description: "CyberGo env error-handling guide: 16 sentinel errors with errors.Is, 8 structured types with errors.As, recovery strategies and error-chain unwrapping."
+description: "CyberGo env error handling: 16 sentinels via errors.Is, ParseError/FileError/SecurityError via errors.As, recovery, Unwrap, production classification."
+sidebar_position: 2
 ---
 
 # Error Handling
@@ -50,11 +52,11 @@ var (
 )
 ```
 
-**Forbidden key check:**
+**Forbidden key check (actually returns `*SecurityError`, matches `ErrSecurityViolation`):**
 
 ```go
 err := loader.Set("PATH", "/malicious")
-if errors.Is(err, env.ErrForbiddenKey) {
+if errors.Is(err, env.ErrSecurityViolation) {
     log.Println("Attempted to set a forbidden key")
 }
 ```
@@ -101,9 +103,10 @@ if errors.Is(err, env.ErrNotInitialized) {
     // Need to call env.Load() or env.LoadWithConfig() first
 }
 
-// Check if a required key is missing
-if errors.Is(err, env.ErrMissingRequired) {
-    // Required key is missing
+// Check if a required key is missing (actually returns *ValidationError, Rule=="required")
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Rule == "required" {
+    // Required key is missing: valErr.Message contains the missing key list
 }
 ```
 
@@ -128,7 +131,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 :::tip Resolution
-Implement the `Validator` interface (which includes `ValidateKey`, `ValidateValue`, and `ValidateRequired` methods) rather than only implementing `KeyValidator`.
+Implement the `Validator` interface (which includes ValidateKey, ValidateValue, and ValidateRequired methods) rather than only implementing `KeyValidator`.
 :::
 
 ## Structured Error Types
@@ -339,17 +342,19 @@ case errors.Is(err, env.ErrFileTooLarge):
     // File too large
     log.Fatal("Configuration file is too large")
 
-case errors.Is(err, env.ErrForbiddenKey):
-    // Forbidden key
+case errors.Is(err, env.ErrSecurityViolation):
+    // Forbidden key (actually returns *SecurityError)
     log.Fatal("Forbidden key detected")
-
-case errors.Is(err, env.ErrInvalidKey):
-    // Invalid key format
-    log.Fatal("Invalid key detected")
 
 case err != nil:
     // Other error
     log.Fatalf("Load failed: %v", err)
+}
+
+// Invalid key format (actually returns *ValidationError, Field=="key")
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Field == "key" {
+    log.Fatalf("Invalid key detected: %s", valErr.Message)
 }
 ```
 
@@ -532,7 +537,7 @@ func handleLoadError(err error) {
         errors.As(err, &fileErr)
         log.Fatalf("File too large: %s (%d bytes)", fileErr.Path, fileErr.Size)
 
-    case errors.Is(err, env.ErrForbiddenKey):
+    case errors.Is(err, env.ErrSecurityViolation):
         log.Fatal("Forbidden key detected")
     }
 
@@ -554,11 +559,11 @@ func handleLoadError(err error) {
 func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
+        if valErr.Rule == "required" {
+            // Required key is missing: valErr.Message contains the missing key list
+            log.Fatalf("Missing required key: %s", valErr.Message)
+        }
         log.Fatalf("Validation failed: %s - %s", valErr.Field, valErr.Message)
-    }
-
-    if errors.Is(err, env.ErrMissingRequired) {
-        log.Fatal("Required key is missing")
     }
 
     log.Fatalf("Validation failed: %v", err)

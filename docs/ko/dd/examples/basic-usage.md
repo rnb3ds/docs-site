@@ -1,6 +1,8 @@
 ---
+sidebar_label: "기본 사용법"
 title: "기본 사용법 - CyberGo DD | 실용 예제"
-description: "CyberGo DD 로그 라이브러리의 실용 코드 예제 모음. Gin/Echo 웹 서비스 요청 로그, gRPC 인터셉터 통합, 데이터베이스 작업 로그 기록, 미들웨어 체인 호출, 스케줄된 작업 로그 출력 및 마이크로서비스 분산 추적 통합 등 일반적인 시나리오를 다루며, 복사해서 바로 사용할 수 있는 모범 사례 코드 조각을 제공합니다."
+description: "CyberGo DD 로그 라이브러리의 실용 코드 예제 모음입니다. Gin/Echo 웹 서비스 요청 로그, gRPC 인터셉터 통합, 데이터베이스 작업 로그 기록, 미들웨어 체인 호출, 스케줄 작업 로그 출력, 마이크로서비스 분산 추적 통합 등 일반적인 시나리오를 다루며, 바로 복사해 사용할 수 있는 모범 사례 코드 조각을 제공합니다."
+sidebar_position: 1
 ---
 
 # 기본 사용법
@@ -74,6 +76,7 @@ func handleUsers(w http.ResponseWriter, r *http.Request) {
 
 ## 마이크로서비스 로그
 
+<!-- check-code: skip -->
 ```go
 package service
 
@@ -114,8 +117,9 @@ func (s *UserService) GetUser(id int) (*User, error) {
 }
 ```
 
-## 스케줄된 작업 로그
+## 스케줄 작업 로그
 
+<!-- check-code: skip -->
 ```go
 package cron
 
@@ -150,6 +154,7 @@ func RunCleanup() {
 
 ## 감사가 포함된 보안 로그
 
+<!-- check-code: skip -->
 ```go
 package auth
 
@@ -179,12 +184,12 @@ func init() {
 func HandleLogin(username, password, ip string) error {
     logger.InfoWith("로그인 시도",
         dd.String("username", username),
-        dd.String("ip", ip),
-        // password는 SecurityConfig에 의해 자동 필터링
+        dd.String("ip", ip),  // FinancialConfig 는 ip 도 [REDACTED] 로 마스킹
+        // password 는 로그에 기록하지 않음 (보안 실천: 원본 비밀번호는 절대 로그하지 말 것)
     )
 
     if isBruteForce(ip) {
-        audit.LogRateLimitExceeded("로그인 빈도 과다", map[string]any{
+        audit.LogRateLimitExceeded("로그인 빈도 너무 높음", map[string]any{
             "ip":      ip,
             "attempts": getAttemptCount(ip),
         })
@@ -222,12 +227,12 @@ func TestUserCreation(t *testing.T) {
     }
 
     if rec.GetFieldValue("username") != "admin" {
-        t.Error("username은 admin이어야 함")
+        t.Error("username 은 admin 이어야 함")
     }
 }
 ```
 
-## 다중 환경 설정
+## 다중 환경 구성
 
 ```go
 package logger
@@ -260,6 +265,6 @@ func SetupLogger(env string) (*dd.Logger, error) {
 
 ## 다음 단계
 
-- [빠른 시작](../getting-started) -- 기본 입문
-- [API 레퍼런스](../api-reference/) -- 전체 API
-- [보안](../security/) -- 보안 설정
+- [빠른 시작](../getting-started/) -- 기본 입문
+- [API 레퍼런스](../api-reference/) -- 완전한 API
+- [보안](../security/) -- 보안 구성

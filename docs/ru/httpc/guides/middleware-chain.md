@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Цепочки промежуточного ПО"
 title: "Цепочки промежуточного ПО - CyberGo HTTPC | Луковые цепочки"
-description: "Руководство по цепочке middleware HTTPC: выполнение луковой модели, восемь встроенных middleware, композиция Chain, написание MiddlewareFunc и размыкатель цепи."
+description: "Руководство по цепочке middleware HTTPC: выполнение луковой модели и двусторонняя обработка запроса/ответа, настройка восьми встроенных middleware (Recovery/Logging/RequestID и др.), композиция Chain, написание собственного MiddlewareFunc и пример короткого замыкания размыкателем цепи — помогут построить наблюдаемый, отказоустойчивый конвейер обработки запросов."
+sidebar_position: 6
 ---
 
 # Цепочки промежуточного ПО
@@ -44,7 +46,7 @@ httpc.RecoveryMiddleware()
 httpc.LoggingMiddleware(func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
 })
-// Вывод: [HTTP] GET https://api.example.com/data -> 200 (150ms)
+// Пример вывода: [HTTP] GET https://api.example.com/data -> 200 (150ms) (код состояния и длительность — фактические измерения, не фиксированные значения)
 ```
 
 ### RequestIDMiddleware
@@ -67,6 +69,10 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 ```go
 httpc.TimeoutMiddleware(30 * time.Second)
 ```
+
+:::warning Не используйте для Download или потоковых запросов
+`defer cancel()` в `TimeoutMiddleware` срабатывает сразу после возврата обработчика (т.е. после получения заголовков ответа), поэтому для запросов `Download` или `WithStreamBody` контекст отменяется до чтения тела ответа, что проявляется как ошибка «context canceled». Для потоковых сценариев и загрузок используйте опцию [`WithTimeout`](../api-reference/core/options#withtimeout).
+:::
 
 ### HeaderMiddleware
 
@@ -117,7 +123,11 @@ auditCfg := &httpc.AuditMiddlewareConfig{
 }
 
 httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
-    data, _ := json.Marshal(event)
+    data, err := json.Marshal(event)
+    if err != nil {
+        log.Println("Ошибка сериализации события аудита:", err)
+        return
+    }
     log.Println(string(data))
 }, auditCfg)
 ```
@@ -215,6 +225,6 @@ client, _ := httpc.New(cfg)
 
 ## Что дальше
 
-- [Промежуточное ПО API](../api-reference/middleware) - полный справочник промежуточного ПО
+- [Промежуточное ПО API](../api-reference/client-config/middleware) - полный справочник промежуточного ПО
 - [Повторные попытки и отказоустойчивость](./retry-fault-tolerance) - руководство по стратегии повторов
 - [Обзор безопасности](../security/) - практики безопасности промежуточного ПО аудита

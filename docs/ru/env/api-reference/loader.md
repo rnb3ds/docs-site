@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Loader"
 title: "Loader API - CyberGo env | Подробно о загрузчике"
-description: "Справочник API Loader в CyberGo env: загрузка файлов, типобезопасное чтение, операции с ключами, валидация, сериализация и Close — всё потокобезопасно."
+description: "Loader в CyberGo env: LoadFiles для нескольких форматов, GetString/GetInt/GetSlice, Set/Delete, Validate, сериализация и Close — все методы потокобезопасны."
+sidebar_position: 3
 ---
 
 # Loader API
@@ -106,6 +108,7 @@ err := loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 - `*ParseError` - Ошибка разбора
 - `*JSONError` - Ошибка разбора JSON
 - `*YAMLError` - Ошибка разбора YAML
+- `*SecurityError` - Ошибка проверки безопасности пути к файлу (например, атака обхода пути)
 
 **Правила определения формата:**
 
@@ -422,8 +425,9 @@ if err != nil {
 ```
 
 **Типы ошибок:**
-- `ErrInvalidKey` - Имя ключа недействительно
-- `ErrForbiddenKey` - Ключ запрещён
+- `*ValidationError` - Недопустимый формат имени ключа (Field="key")
+- `*SecurityError` - Ключ запрещён (можно сопоставить через `errors.Is(err, env.ErrSecurityViolation)`)
+- `ErrInvalidValue` - Недопустимое значение (когда `ValidateValues` равно true, значение содержит небезопасный контент: нулевые байты, управляющие символы)
 - `ErrClosed` - Загрузчик закрыт
 
 ---
@@ -532,6 +536,10 @@ func (l *Loader) Apply() error
 - Перезапись существующих системных переменных окружения определяется конфигурацией `OverwriteExisting`
 - После применения доступно через `os.Getenv()`
 
+**Типы ошибок:**
+- `ErrClosed` - Загрузчик закрыт
+- Обёрнутая ошибка `os` - Не удалось установить переменную окружения (имя ключа маскировано; конфиденциальный ключ не раскрывается в сообщении об ошибке)
+
 ```go
 err := loader.Apply()
 if err != nil {
@@ -621,7 +629,7 @@ func (l *Loader) Validate() error
 - `error` - Ошибка валидации
 
 **Поведение:**
-- Проверяет, существуют ли все ключи, указанные в `Config.RequiredKeys`
+- Проверяет, существуют ли все ключи, указанные в `ValidationConfig.RequiredKeys`
 
 ```go
 cfg := env.DefaultConfig()
@@ -659,14 +667,15 @@ func (l *Loader) ParseInto(v any) error
 - `env:"KEY"` - Указывает имя переменной окружения
 - `env:"-"` - Игнорирует это поле
 - `envDefault:"value"` - Указывает значение по умолчанию
-- `envSeparator:","` - Указывает разделитель срезов
+
+По умолчанию поля-срезы разделяются запятой `,` (пробелы вокруг разделителя удаляются автоматически), пользовательского тега разделителя нет.
 
 ```go
 type Config struct {
     Host    string   `env:"HOST" envDefault:"localhost"`
     Port    int64    `env:"PORT" envDefault:"8080"`
     Debug   bool     `env:"DEBUG" envDefault:"false"`
-    Hosts   []string `env:"HOSTS" envSeparator:","`
+    Hosts   []string `env:"HOSTS"`
     Ignored string   `env:"-"`
 }
 

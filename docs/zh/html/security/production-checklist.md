@@ -1,6 +1,8 @@
 ---
-title: "生产检查清单 - CyberGo HTML | 上线安全核对"
-description: "CyberGo HTML 生产部署安全清单：HighSecurityConfig 预设、Processor 生命周期、审计监控、上下文超时、错误处理、资源与文件处理安全要点。"
+sidebar_label: "生产检查清单"
+title: "生产检查清单 - CyberGo html | 上线安全核对"
+description: "CyberGo html 生产部署安全清单：HighSecurityConfig 预设、Processor 生命周期、审计监控、上下文超时、错误处理与资源管理。"
+sidebar_position: 2
 ---
 
 # 生产检查清单
@@ -36,7 +38,7 @@ defer p.Close()
 - [ ] 关注 `ErrInternalPanic` 错误和 `AuditEventPathTraversal` 审计事件
 
 ```go
-auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE, 0644)
+auditFile, _ := os.OpenFile("audit.jsonl", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 defer auditFile.Close()
 
 cfg := html.HighSecurityConfig()
@@ -45,7 +47,7 @@ cfg.Audit.Sink = html.NewWriterAuditSink(auditFile)
 
 ## 上下文与超时
 
-- [ ] 所有提取操作使用 `WithContext` 版本
+- [ ] 所有提取操作使用 `ExtractWithContext` 版本
 - [ ] 设置合理的上下文超时
 - [ ] 批量操作使用带取消的上下文
 

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "中间件链"
 title: "中间件链 - CyberGo HTTPC | 洋葱模型与链组合"
-description: "HTTPC 中间件链指南：洋葱模型执行原理与请求/响应双向处理、八个内置中间件配置、Chain 手动组合、自定义 MiddlewareFunc 编写与断路器短路示例。"
+description: "HTTPC 中间件链指南：洋葱模型执行原理与请求/响应双向处理流程、Recovery/Logging/RequestID 等八个内置中间件配置、Chain 手动组合、自定义 MiddlewareFunc 编写与断路器短路示例，助您构建可观测、可恢复的请求处理管道。"
+sidebar_position: 6
 ---
 
 # 中间件链
@@ -23,7 +25,11 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RequestIDMiddleware("X-Request-ID", nil), // 最内层：请求 ID
 }
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## 内置中间件
@@ -44,7 +50,7 @@ httpc.RecoveryMiddleware()
 httpc.LoggingMiddleware(func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
 })
-// 输出: [HTTP] GET https://api.example.com/data -> 200 (150ms)
+// 输出示例：[HTTP] GET https://api.example.com/data -> 200 (150ms)（状态码与耗时为实际测量值，非固定）
 ```
 
 ### RequestIDMiddleware
@@ -67,6 +73,10 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 ```go
 httpc.TimeoutMiddleware(30 * time.Second)
 ```
+
+:::warning 不要用于 Download 或流式请求
+`TimeoutMiddleware` 的 `defer cancel()` 会在处理器返回（即收到响应头）后立即触发，对 `Download` 或 `WithStreamBody` 请求会在读取响应体之前提前取消上下文，表现为「context canceled」错误。流式/下载场景请改用 [`WithTimeout`](../api-reference/core/options#withtimeout) 选项。
+:::
 
 ### HeaderMiddleware
 
@@ -117,7 +127,11 @@ auditCfg := &httpc.AuditMiddlewareConfig{
 }
 
 httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
-    data, _ := json.Marshal(event)
+    data, err := json.Marshal(event)
+    if err != nil {
+        log.Println("序列化审计事件失败：", err)
+        return
+    }
     log.Println(string(data))
 }, auditCfg)
 ```
@@ -158,7 +172,7 @@ func CORSMiddleware(origin string) httpc.MiddlewareFunc {
 
             // 响应阶段：记录或修改响应
             if resp != nil {
-                log.Printf("响应状态: %d", resp.StatusCode())
+                log.Printf("响应状态：%d", resp.StatusCode())
             }
 
             return resp, err
@@ -210,11 +224,15 @@ cfg.Middleware = &httpc.MiddlewareConfig{
     MaxRedirects:    10,
 }
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## 下一步
 
-- [中间件 API](../api-reference/middleware) - 完整中间件参考
+- [中间件 API](../api-reference/client-config/middleware) - 完整中间件参考
 - [重试与容错](./retry-fault-tolerance) - 重试策略指南
 - [安全概述](../security/) - 审计中间件安全实践

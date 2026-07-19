@@ -1,6 +1,8 @@
 ---
-title: "Security Overview - CyberGo HTML | Protection Overview"
-description: "CyberGo HTML security overview: 50MB input limit, DOM depth (500), path traversal prevention, panic recovery, timeouts, content sanitization, and audit logging."
+sidebar_label: "Security Overview"
+title: "Security Overview - CyberGo html | Protection Overview"
+description: "CyberGo html security overview: input size limit, DOM depth, path traversal prevention, panic recovery, timeouts, content sanitization, and pluggable audit."
+sidebar_position: 1
 ---
 
 # Security Overview
@@ -52,7 +54,7 @@ cfg.EnableSanitization = true
 
 ## Audit System
 
-See [Audit System](../api-reference/audit) for detailed audit configuration.
+See [Audit System](../api-reference/modules/audit) for detailed audit configuration.
 
 The audit system can record the following security events:
 

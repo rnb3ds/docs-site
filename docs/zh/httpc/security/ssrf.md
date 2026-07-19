@@ -1,6 +1,8 @@
 ---
+sidebar_label: "SSRF 防护"
 title: "SSRF 防护 - CyberGo HTTPC | 私有 IP 与元数据"
 description: "HTTPC SSRF 防护详解：默认阻止 IPv4/IPv6 私有 IP、SSRFExemptCIDRs 精确豁免、DNS 重绑定防护、RedirectWhitelist 重定向白名单、AWS/GCP/Azure 云元数据保护与 AllowPrivateIPs 注意事项。"
+sidebar_position: 2
 ---
 
 # SSRF 防护
@@ -23,9 +25,13 @@ cfg := httpc.DefaultConfig()
 | B 类私有 | `172.16.0.0/12` | 内网 |
 | C 类私有 | `192.168.0.0/16` | 内网 |
 | 链路本地 | `169.254.0.0/16` | 自动配置 |
+| CGNAT | `100.64.0.0/10` | 运营商级 NAT（含阿里云元数据 `100.100.100.200`） |
+| E 类保留 | `240.0.0.0/4` | 保留地址 |
 | IPv6 回环 | `::1/128` | localhost |
 | IPv6 本地 | `fc00::/7` | 唯一本地地址 |
 | IPv6 链路 | `fe80::/10` | 链路本地 |
+
+> 上表为主要范围。完整阻止列表还包含 `0.0.0.0/8`、TEST-NET（`192.0.2.0/24`、`198.51.100.0/24`、`203.0.113.0/24` 等）、IPv6 文档前缀 `2001:db8::/32` 与 NAT64 `64:ff9b::/96`，详见源码 `isPrivateOrReservedIP`。
 
 ## CIDR 豁免
 
@@ -61,7 +67,7 @@ result, err := httpc.Get("http://localhost:8080/health",
 
 ## DNS 重绑定防护
 
-HTTPC 采用"解析-验证-直连"模式防止 DNS 重绑定攻击：
+HTTPC 采用"解析 - 验证 - 直连"模式防止 DNS 重绑定攻击：
 
 1. 解析域名为 IP 地址
 2. 验证所有解析出的 IP 是否为私有地址
@@ -112,7 +118,7 @@ cfg.Security.RedirectWhitelist = []string{
 HTTPC 默认阻止 AWS/Azure 元数据访问（`169.254.169.254` 在 `169.254.0.0/16` 阻止列表中）。GCP 元数据（`metadata.google.internal`）通过 DNS 解析验证被阻止。
 
 :::warning
-阿里云元数据（`100.100.100.200`）位于 CGNAT 范围（`100.64.0.0/10`），为支持 Tailscale/WireGuard 等 VPN，该范围**未**在默认阻止列表中。如需防护阿里云元数据访问，请通过其他安全策略（如防火墙规则）进行限制。
+阿里云元数据（`100.100.100.200`）位于 CGNAT 范围（`100.64.0.0/10`），HTTPC **默认阻止该范围**，因此阿里云元数据访问默认即被拦截。若因 Tailscale/WireGuard 等 VPN 或内部路由确需访问该范围，须显式通过 `SSRFExemptCIDRs: []string{"100.64.0.0/10"}` 豁免——豁免后该范围内的阿里云元数据也将可达，请评估风险。
 :::
 
 ## 完全禁用 SSRF 防护

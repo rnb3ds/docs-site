@@ -1,6 +1,8 @@
 ---
+sidebar_label: "文件上传与下载"
 title: "文件上传与下载 - CyberGo HTTPC | 上传与下载"
 description: "HTTPC 文件上传与下载指南：WithFile 简单上传、WithFormData Multipart 多文件上传、Download 统一下载、带进度回调、断点续传 ResumeDownload、SHA-256 校验与 UNC 路径等安全防护。"
+sidebar_position: 4
 ---
 
 # 文件上传与下载
@@ -10,14 +12,30 @@ description: "HTTPC 文件上传与下载指南：WithFile 简单上传、WithFo
 ### 简单文件上传
 
 ```go
-fileContent, err := os.ReadFile("document.pdf")
-if err != nil {
-    log.Fatal(err)
-}
+package main
 
-result, err := httpc.Post("https://api.example.com/upload",
-    httpc.WithFile("file", "document.pdf", fileContent),
+import (
+    "log"
+    "os"
+
+    "github.com/cybergodev/httpc"
 )
+
+func main() {
+    fileContent, err := os.ReadFile("document.pdf")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    result, err := httpc.Post("https://api.example.com/upload",
+        httpc.WithFile("file", "document.pdf", fileContent),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Printf("上传完成：%d", result.StatusCode()) // 输出示例：上传完成：200（实际状态码取决于服务端）
+}
 ```
 
 ### Multipart 表单
@@ -63,10 +81,16 @@ result, err := httpc.Post(url, httpc.WithFormData(form))
 ### 二进制上传
 
 ```go
-data, _ := os.ReadFile("data.bin")
+data, err := os.ReadFile("data.bin")
+if err != nil {
+    log.Fatal(err)
+}
 result, err := httpc.Post(url,
     httpc.WithBinary(data, "application/octet-stream"),
 )
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ## 文件下载
@@ -123,12 +147,12 @@ if err != nil {
 }
 
 if result.Resumed {
-    fmt.Printf("续传完成: 从断点恢复\n")
+    fmt.Printf("续传完成：从断点恢复\n")
 }
 ```
 
 :::tip
-断点续传依赖服务端支持 `Range` 请求头。如果服务端不支持（返回 200 而非 206），将返回错误以保护已下载的部分文件。
+断点续传依赖服务端支持 Range 请求头。如果服务端不支持（返回 200 而非 206），将返回错误以保护已下载的部分文件。
 :::
 
 ### 带上下文控制
@@ -165,7 +189,10 @@ if err != nil {
 域名客户端的下载会自动捕获响应 Cookie 到会话：
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomain("https://api.example.com")
+if err != nil {
+    log.Fatal(err)
+}
 defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
@@ -175,10 +202,13 @@ cfg.FilePath = "/tmp/report.pdf"
 
 // 下载并自动管理会话（path 相对于 baseURL）
 result, err := dc.Download(context.Background(), "/files/report.pdf", cfg)
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ## 下一步
 
-- [文件下载 API](../api-reference/download) - 完整下载 API 参考
+- [文件下载 API](../api-reference/client-config/download) - 完整下载 API 参考
 - [域名客户端与会话](./domain-session) - 会话管理
 - [请求与响应](./request-response) - 基本请求指南

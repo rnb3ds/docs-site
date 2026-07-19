@@ -1,6 +1,8 @@
 ---
+sidebar_label: "包函数"
 title: "包函数 - CyberGo JWT | 工厂函数与默认值"
 description: "包级函数参考：New 创建并校验 Processor、DefaultConfig 与 DefaultBlacklistConfig 返回默认配置、NewNumericDate 构造时间戳、NewRateLimiter 创建令牌桶限流器，含完整签名与默认值。"
+sidebar_position: 10
 ---
 
 # 包函数
@@ -13,7 +15,7 @@ func New(cfg Config) (*Processor, error)
 
 创建新的 JWT Processor。使用 `DefaultConfig()` 获取默认配置，修改必要字段后传入。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 参数
 
@@ -71,7 +73,7 @@ func DefaultConfig() Config
 
 返回带有合理默认值的配置。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 返回值
 
@@ -109,7 +111,7 @@ func DefaultBlacklistConfig() BlacklistConfig
 
 返回带有合理默认值的黑名单配置。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 返回值
 
@@ -135,7 +137,7 @@ func NewNumericDate(t time.Time) NumericDate
 
 从 `time.Time` 创建 `NumericDate`。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 参数
 
@@ -159,7 +161,7 @@ func NewRateLimiter(maxRate int, window time.Duration) *RateLimiter
 
 创建令牌桶限流器。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 参数
 

@@ -1,13 +1,15 @@
 ---
-title: "Advanced Usage - CyberGo HTML | Advanced Scenarios"
-description: "CyberGo HTML advanced examples: custom Scorer, multi-Sink audit pipeline, batch file processing, Processor pooling, and ChannelAuditSink monitoring."
+sidebar_label: "Advanced Usage"
+title: "Advanced Examples - CyberGo html | Advanced Scenarios"
+description: "CyberGo html advanced examples: custom Scorer, multi-Sink audit pipeline, batch concurrency control, Processor pooling, and more runnable advanced code."
+sidebar_position: 2
 ---
 
 # Advanced Usage
 
 ## Custom Scorer
 
-Customize content recognition logic for specific website structures. See [Testing & Custom Extensions](../guides/testing-custom) for the full implementation. Here's the core usage:
+Customize content recognition logic for specific website structures. See [Testing & Custom Extensions](../guides/integration/testing-custom) for the full implementation. Here's the core usage:
 
 ```go
 package main
@@ -171,7 +173,7 @@ func main() {
     p, _ := html.New(html.TextOnlyConfig())
     defer p.Close()
 
-    // Up to 10000 files per batch
+    // single batch limit 10000; exceeding it fails the whole batch — caller must chunk
     batch := p.ExtractBatchFiles(files)
 
     fmt.Printf("Success: %d, Failed: %d, Cancelled: %d\n",

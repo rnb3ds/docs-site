@@ -1,0 +1,156 @@
+/**
+ * Page components: custom site footer.
+ *
+ * Hardcoded px migrated to design tokens where the value matches the scale.
+ * Off-scale values (10/14/28/34px icon sizes, the 1200px max-width)
+ * stay literal — they are intentionally bespoke.
+ */
+
+/* ============================================
+   Custom Site Footer
+   ============================================ */
+
+.site-footer {
+  border-top: 1px solid var(--vp-c-divider);
+  background: var(--vp-c-bg-soft);
+  padding: var(--cg-sp-8) var(--cg-sp-5) var(--cg-sp-5);
+  margin-top: 0;
+}
+
+.site-footer .footer-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.site-footer .footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: var(--cg-sp-7);
+  margin-bottom: var(--cg-sp-7);
+}
+
+/* Brand Column */
+.site-footer .footer-brand .brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.site-footer .footer-brand .brand-icon {
+  width: 28px;
+  height: 28px;
+}
+
+.site-footer .footer-brand .brand-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--vp-c-text-1);
+}
+
+.site-footer .footer-brand .brand-desc {
+  color: var(--vp-c-text-2);
+  font-size: 0.88rem;
+  line-height: 1.65;
+  margin: 0 0 18px;
+}
+
+.site-footer .social-links {
+  display: flex;
+  gap: var(--cg-sp-3);
+}
+
+.site-footer .social-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--cg-radius-md);
+  color: var(--vp-c-text-2);
+  background: var(--vp-c-default-soft);
+  transition: all 0.2s ease;
+}
+
+.site-footer .social-link:hover {
+  color: var(--vp-c-brand-1);
+  background: var(--vp-c-brand-soft);
+}
+
+/* Column Titles */
+.site-footer .col-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
+  margin: 0 0 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Column Links */
+.site-footer .col-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.site-footer .col-links li {
+  margin-bottom: var(--cg-sp-2);
+}
+
+.site-footer .col-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cg-sp-1);
+  color: var(--vp-c-text-2);
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.site-footer .col-links a:hover {
+  color: var(--vp-c-brand-1);
+}
+
+.site-footer .col-links .external-icon {
+  opacity: 0.5;
+  transition: opacity 0.2s ease;
+}
+
+.site-footer .col-links a:hover .external-icon {
+  opacity: 1;
+}
+
+/* Footer Bottom */
+.site-footer .footer-bottom {
+  border-top: 1px solid var(--vp-c-divider);
+  padding-top: 20px;
+  text-align: center;
+  color: var(--vp-c-text-3);
+  font-size: 0.82rem;
+}
+
+/* Hide default VitePress footer when custom footer is present */
+.Layout > .VPFooter {
+  display: none;
+}
+
+/* Responsive: Tablet */
+@media (max-width: 960px) {
+  .site-footer .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--cg-sp-6);
+  }
+}
+
+/* Responsive: Mobile */
+@media (max-width: 640px) {
+  .site-footer {
+    padding: var(--cg-sp-6) var(--cg-sp-4) 20px;
+  }
+
+  .site-footer .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+}

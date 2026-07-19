@@ -1,15 +1,17 @@
 ---
+sidebar_label: "반복"
 title: "Processor 반복 메서드 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor 반복 메서드: Foreach, ForeachWithPath, ForeachNested, IterableValue, IteratorControl로 배치 반복 실무를 지원합니다."
+description: "CyberGo JSON Processor 반복 메서드: Foreach, ForeachWithPath, ForeachNested, IterableValue, IteratorControl 로 배치 반복 실무를 지원합니다."
+sidebar_position: 10
 ---
 
 # 반복 메서드
 
-Processor는 JSON 배열과 객체를 반복하는 다양한 메서드를 제공합니다.
+Processor 는 JSON 배열과 객체를 반복하는 다양한 메서드를 제공합니다.
 
 ## Foreach
 
-시그니처: `func (p *Processor) Foreach(jsonStr string, fn func(key any, item *IterableValue))`
+시그니처: `func (p *Processor) Foreach(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config)`
 
 JSON 배열 또는 객체를 반복합니다.
 
@@ -19,12 +21,12 @@ p.Foreach(data, func(key any, item *json.IterableValue) {
 })
 ```
 
-**배열 반복 시**: key는 인덱스(int)
-**객체 반복 시**: key는 키 이름(string)
+**배열 반복 시**: key 는 인덱스 (int)
+**객체 반복 시**: key 는 키 이름 (string)
 
 ## ForeachWithPath
 
-시그니처: `func (p *Processor) ForeachWithPath(jsonStr, path string, fn func(key any, item *IterableValue)) error`
+시그니처: `func (p *Processor) ForeachWithPath(jsonStr, path string, fn func(key any, item *IterableValue), cfg ...Config) error`
 
 경로로 반복하며, 오류를 반환합니다.
 
@@ -40,7 +42,7 @@ err := p.ForeachWithPath(data, "items", func(key any, item *json.IterableValue) 
 
 ## ForeachNested
 
-시그니처: `func (p *Processor) ForeachNested(jsonStr string, fn func(key any, item *IterableValue))`
+시그니처: `func (p *Processor) ForeachNested(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config)`
 
 모든 중첩 레벨을 재귀적으로 반복합니다.
 
@@ -77,9 +79,9 @@ p.ForeachNested(data, func(key any, item *json.IterableValue) {
 
 ## ForeachReturn
 
-시그니처: `func (p *Processor) ForeachReturn(jsonStr string, fn func(key any, item *IterableValue)) (string, error)`
+시그니처: `func (p *Processor) ForeachReturn(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config) (string, error)`
 
-반복하고 원시 JSON을 반환합니다 (읽기 전용 작업).
+반복하고 원시 JSON 을 반환합니다 (읽기 전용 작업).
 
 ```go
 result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {
@@ -91,7 +93,7 @@ result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {
 
 ## ForeachWithError
 
-시그니처: `func (p *Processor) ForeachWithError(jsonStr, path string, fn func(key any, item *IterableValue) error) error`
+시그니처: `func (p *Processor) ForeachWithError(jsonStr, path string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
 경로로 반복하며, 콜백이 오류 반환을 지원합니다.
 
@@ -106,7 +108,7 @@ err := p.ForeachWithError(data, "items", func(key any, item *json.IterableValue)
 
 ## ForeachNestedWithError
 
-시그니처: `func (p *Processor) ForeachNestedWithError(jsonStr string, fn func(key any, item *IterableValue) error) error`
+시그니처: `func (p *Processor) ForeachNestedWithError(jsonStr string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
 모든 중첩 레벨을 재귀적으로 반복하며, 콜백이 오류 반환을 지원합니다.
 
@@ -119,7 +121,7 @@ err := p.ForeachNestedWithError(data, func(key any, item *json.IterableValue) er
 
 ## ForeachWithPathAndIterator
 
-시그니처: `func (p *Processor) ForeachWithPathAndIterator(jsonStr, path string, fn func(key any, item *IterableValue, currentPath string) IteratorControl) error`
+시그니처: `func (p *Processor) ForeachWithPathAndIterator(jsonStr, path string, fn func(key any, item *IterableValue, currentPath string) IteratorControl, cfg ...Config) error`
 
 경로로 반복하며 현재 경로 정보를 제공합니다. `IteratorControl`로 반복 흐름을 제어합니다.
 
@@ -135,7 +137,7 @@ err := p.ForeachWithPathAndIterator(data, "items", func(key any, item *json.Iter
 
 ## ForeachWithPathAndControl
 
-시그니처: `func (p *Processor) ForeachWithPathAndControl(jsonStr, path string, fn func(key any, value any) IteratorControl) error`
+시그니처: `func (p *Processor) ForeachWithPathAndControl(jsonStr, path string, fn func(key any, value any) IteratorControl, cfg ...Config) error`
 
 경로로 원시 값을 반복하며, `IteratorControl`로 흐름을 제어합니다.
 
@@ -166,8 +168,8 @@ err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.
 | `GetFloat64WithDefault(key string, defaultValue float64) float64` | 부동소수점 가져오기 (기본값 포함) |
 | `GetBoolWithDefault(key string, defaultValue bool) bool` | 불리언 가져오기 (기본값 포함) |
 | `Exists(key string) bool` | 필드 존재 여부 확인 |
-| `IsNull(key string) bool` | 필드가 null인지 확인 |
-| `IsNullData() bool` | 현재 값이 null인지 확인 |
+| `IsNull(key string) bool` | 필드가 null 인지 확인 |
+| `IsNullData() bool` | 현재 값이 null 인지 확인 |
 | `IsEmpty(key string) bool` | 필드가 비어있는지 확인 |
 | `IsEmptyData() bool` | 현재 값이 비어있는지 확인 |
 | `Break() error` | 반복 중단 오류 신호 반환 |
@@ -191,13 +193,13 @@ err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.
 
 ## 파일 반복 메서드
 
-Processor는 파일에서 직접 반복하는 메서드를 제공하여, 대용량 JSON 파일 처리에 적합합니다.
+Processor 는 파일에서 직접 반복하는 메서드를 제공하여, 대용량 JSON 파일 처리에 적합합니다.
 
 ### ForeachFile
 
-시그니처: `func (p *Processor) ForeachFile(filePath string, fn func(key any, item *IterableValue) error) error`
+시그니처: `func (p *Processor) ForeachFile(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-파일에서 JSON을 로드하고 반복합니다.
+파일에서 JSON 을 로드하고 반복합니다.
 
 **매개변수**
 
@@ -217,9 +219,9 @@ err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error 
 
 ### ForeachFileWithPath
 
-시그니처: `func (p *Processor) ForeachFileWithPath(filePath, path string, fn func(key any, item *IterableValue) error) error`
+시그니처: `func (p *Processor) ForeachFileWithPath(filePath, path string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-파일에서 JSON을 로드하고 경로로 반복합니다.
+파일에서 JSON 을 로드하고 경로로 반복합니다.
 
 ```go
 // users 배열만 반복
@@ -234,7 +236,7 @@ err := p.ForeachFileWithPath("data.json", ".users", func(key any, item *json.Ite
 
 ### ForeachFileChunked
 
-시그니처: `func (p *Processor) ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error) error`
+시그니처: `func (p *Processor) ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error, cfg ...Config) (err error)`
 
 파일의 JSON 배열을 청크 단위로 반복하여, 대용량 데이터셋의 배치 처리에 적합합니다.
 
@@ -247,7 +249,7 @@ err := p.ForeachFileWithPath("data.json", ".users", func(key any, item *json.Ite
 | `fn` | `func(chunk []*IterableValue) error` | 배치 처리 콜백 |
 
 ```go
-// 배치당 100개의 레코드 처리
+// 배치당 100 개의 레코드 처리
 err := p.ForeachFileChunked("large_data.json", 100, func(chunk []*json.IterableValue) error {
     // 데이터베이스에 배치 삽입
     records := make([]Record, len(chunk))
@@ -271,13 +273,13 @@ err := p.ForeachFileChunked("large_data.json", 100, func(chunk []*json.IterableV
 
 ### ForeachFileNested
 
-시그니처: `func (p *Processor) ForeachFileNested(filePath string, fn func(key any, item *IterableValue) error) error`
+시그니처: `func (p *Processor) ForeachFileNested(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-파일에서 JSON을 로드하고 모든 중첩 구조를 재귀적으로 반복합니다.
+파일에서 JSON 을 로드하고 모든 중첩 구조를 재귀적으로 반복합니다.
 
 ```go
 err := p.ForeachFileNested("config.json", func(key any, item *json.IterableValue) error {
-    // 모든 레벨의 모든 키-값 쌍 순회
+    // 모든 레벨의 모든 키 - 값 쌍 순회
     fmt.Printf("경로: %v, 타입: %T\n", key, item.GetData())
     return nil
 })

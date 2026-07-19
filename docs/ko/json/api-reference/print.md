@@ -1,30 +1,43 @@
 ---
+sidebar_label: "출력 함수"
 title: "출력 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 출력과 포맷: Encode, EncodePretty, Prettify와 표준 fmt 패키지로 커스텀 들여쓰기 JSON 출력을 구현하고 제거된 Print 계열을 대체합니다."
+description: "CyberGo JSON 출력과 포맷: Encode, EncodePretty, Prettify 와 fmt 패키지로 들여쓰기 JSON 출력을 구현하고 제거된 Print 계열을 대체합니다."
+sidebar_position: 11
 ---
 
 # 출력 함수
 
 :::warning API 변경 안내
-`Print`, `PrintPretty`, `PrintE`, `PrintPrettyE`는 라이브러리에서 제거되어 더 이상 제공되지 않습니다. 다음 대안을 사용하십시오.
+Print, PrintPretty, PrintE, PrintPrettyE 는 라이브러리에서 제거되어 더 이상 제공되지 않습니다. 다음 대안을 사용하십시오.
 :::
 
 ## 대안
 
 ### 압축 JSON 출력
 
-`fmt.Println` + `Encode` 사용:
+`fmt.Println` + `EncodeWithConfig` (권장) 또는 `Marshal` 사용:
 
 ```go
 data := map[string]any{"name": "Alice", "age": 30}
 
-s, err := json.Encode(data)
+s, err := json.EncodeWithConfig(data)
 if err != nil {
     log.Fatal(err)
 }
 fmt.Println(s)
 // 출력: {"age":30,"name":"Alice"}
+
+// 또는 Marshal 사용 ([]byte 출력)
+b, err := json.Marshal(data)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(string(b))
 ```
+
+:::warning Encode 는 더 이상 사용되지 않음
+`json.Encode`는 더 이상 사용되지 않는 것으로 표시되었습니다 (`EncodeWithConfig`와 기능적으로 동일), 향후 메이저 버전에서 제거될 예정입니다. 새 코드에서는 `EncodeWithConfig` 또는 `Marshal`을 사용하세요.
+:::
 
 ### 포맷 JSON 출력
 
@@ -55,7 +68,7 @@ if err != nil {
 fmt.Println(pretty)
 ```
 
-### Processor를 사용한 출력
+### Processor 를 사용한 출력
 
 ```go
 p, err := json.New()
@@ -64,8 +77,8 @@ if err != nil {
 }
 defer p.Close()
 
-// 인코딩 후 출력
-s, err := p.Encode(data)
+// 인코딩 후 출력 (EncodeWithConfig 권장; Encode 는 더 이상 사용되지 않음)
+s, err := p.EncodeWithConfig(data)
 if err != nil {
     log.Fatal(err)
 }
@@ -99,8 +112,8 @@ func main() {
         "total": 2,
     }
 
-    // 압축 출력
-    compact, err := json.Encode(data)
+    // 압축 출력 (Encode 는 더 이상 사용되지 않음, EncodeWithConfig 권장)
+    compact, err := json.EncodeWithConfig(data)
     if err != nil {
         log.Fatal(err)
     }
@@ -117,5 +130,5 @@ func main() {
 
 ## 관련 문서
 
-- [인코딩 디코딩 함수](./functions/encode-decode) - Encode, EncodePretty, Prettify
-- [패키지 함수](./functions) - 패키지 레벨 함수 개요
+- [인코딩 출력 함수](./functions/output) - Encode, EncodePretty, Prettify
+- [패키지 함수](./functions/) - 패키지 레벨 함수 개요

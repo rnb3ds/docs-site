@@ -1,6 +1,8 @@
 ---
+sidebar_label: "定数とエラー"
 title: "定数とエラー - CyberGo env | センチネルエラーとセキュリティ定数"
-description: "CyberGo env の定数とエラーリファレンス。DefaultMaxFileSize 制限、ErrFileNotFound センチネルエラー、ParseError 型、IsSensitiveKey と MaskValue ユーティリティを提供します。"
+description: "CyberGo env の定数とエラー参照。DefaultMaxFileSize・MaxVariables 制限、ErrFileNotFound センチネル、ParseError、DefaultForbiddenKeys、IsSensitiveKey・MaskValue ユーティリティを提供します。"
+sidebar_position: 7
 ---
 
 # 定数とエラー
@@ -55,11 +57,15 @@ cfg := env.DefaultConfig()
 cfg.MaxFileSize = 200 * 1024 * 1024  // 100MB 上限を超過
 
 if err := cfg.Validate(); err != nil {
-    // エラーを返します: MaxFileSize exceeds hard limit
+    // エラーを返します：MaxFileSize exceeds hard limit
 }
 ```
 
 ## センチネルエラー
+
+::: warning 注意
+以下のセンチネルは事前定義されたシンボルですが、現在の実装では一部のシナリオで**これらのセンチネルに `errors.Is` で一致しません**：禁止キーは `*SecurityError` を返し（`errors.Is(err, ErrSecurityViolation)` で一致）、キー形式不正や必須キー不足は `*ValidationError` を返します（`errors.As` で抽出）。詳細は各エラー型のセクションを参照してください。
+:::
 
 ### ファイルエラー
 
@@ -100,8 +106,8 @@ var ErrInvalidValue = errors.New("invalid value content")
 
 ```go
 err := loader.Set("PATH", "value")
-if errors.Is(err, env.ErrForbiddenKey) {
-    // 禁止キーの設定を試みました
+if errors.Is(err, env.ErrSecurityViolation) {
+    // 禁止キーの設定を試みると *SecurityError が返されます
 }
 ```
 
@@ -145,8 +151,9 @@ if errors.Is(err, env.ErrNotInitialized) {
     // 先に env.Load() または env.LoadWithConfig() を呼び出す必要があります
 }
 
-// 必須キーが不足していないか確認
-if errors.Is(err, env.ErrMissingRequired) {
+// 必須キーが不足していないか確認（実際は *ValidationError{Rule:"required"}）
+var valErr *env.ValidationError
+if errors.As(err, &valErr) && valErr.Rule == "required" {
     // 必須キーが不足
 }
 ```
@@ -172,7 +179,7 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 ```
 
 ::: tip 解決方法
-`KeyValidator` のみではなく、`Validator` インターフェース（`ValidateKey`、`ValidateValue`、`ValidateRequired` の3つのメソッドを含む）を実装してください。
+`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の 3 つのメソッドを含む）を実装してください。
 :::
 
 ## エラー型
@@ -274,7 +281,7 @@ type ExpansionError struct {
 }
 ```
 
-**エラー分類（`Kind` フィールド）:**
+**エラー分類（Kind フィールド）:**
 
 ```go
 type ExpansionErrorKind int
@@ -293,17 +300,17 @@ const (
 
 **`errors.Is` の挙動:** `*ExpansionError` は `Kind != ExpansionRequiredKind` の場合のみ `ErrExpansionDepth` と一致します。必須変数エラーは別の失敗モードであり、`ErrExpansionDepth` には一致しません。
 
-使用例:
+使用例：
 
 ```go
 var expErr *env.ExpansionError
 if errors.As(err, &expErr) {
     switch expErr.Kind {
     case env.ExpansionDepthKind:
-        // 深度オーバーフローまたは循環: errors.Is(err, env.ErrExpansionDepth) == true
+        // 深度オーバーフローまたは循環：errors.Is(err, env.ErrExpansionDepth) == true
         fmt.Printf("深度 %d/%d、チェーン: %s\n", expErr.Depth, expErr.Limit, expErr.Chain)
     case env.ExpansionRequiredKind:
-        // 必須変数未設定: errors.Is(err, env.ErrExpansionDepth) == false
+        // 必須変数未設定：errors.Is(err, env.ErrExpansionDepth) == false
         fmt.Printf("必須変数 %s が未設定\n", expErr.Key)
     }
 }
@@ -385,9 +392,9 @@ func IsMarshalError(err error) bool  // チェック関数
 **使用例：**
 
 ```go
-// 禁止キーを設定しようとすると ErrForbiddenKey が返されます
+// 禁止キーを設定しようとすると *SecurityError が返されます
 err := loader.Set("PATH", "/malicious/path")
-if errors.Is(err, env.ErrForbiddenKey) {
+if errors.Is(err, env.ErrSecurityViolation) {
     // キーが禁止されています
 }
 
@@ -485,13 +492,13 @@ func MaskValue(key, value string) string
 ```go
 // 機密キー - [MASKED:N chars] 形式で返す
 masked := env.MaskValue("API_KEY", "secret123")
-// 戻り値: [MASKED:9 chars]
+// 戻り値：[MASKED:9 chars]
 
 // 非機密キー - 元の値を返す（20 文字を超える場合は切り詰め）
 masked := env.MaskValue("APP_NAME", "myapp")
-// 戻り値: myapp
+// 戻り値：myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
-// 戻り値: this is a very lo...
+// 戻り値：this is a very lo...
 ```
 
 ### MaskKey
@@ -504,7 +511,7 @@ func MaskKey(key string) string
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
-// 戻り値: DB***
+// 戻り値：DB***
 ```
 
 ### MaskSensitiveInString
@@ -513,7 +520,7 @@ masked := env.MaskKey("DB_PASSWORD")
 func MaskSensitiveInString(s string) string
 ```
 
-文字列内の潜在的な機密内容をマスクします。50文字を超える文字列は切り詰められます。
+文字列内の潜在的な機密内容をマスクします。50 文字を超える文字列は切り詰められます。
 
 **パラメータ：**
 - `s` - 元の文字列
@@ -525,12 +532,12 @@ func MaskSensitiveInString(s string) string
 // 長い文字列は切り詰められます
 log := "This is a very long log message that exceeds 50 characters and will be truncated"
 clean := env.MaskSensitiveInString(log)
-// 戻り値: "This is a very long log message that exceeds 50..."
+// 戻り値："This is a very long log message that exceeds 50..."
 
 // 短い文字列はそのまま保持
 short := "Short message"
 clean := env.MaskSensitiveInString(short)
-// 戻り値: "Short message"
+// 戻り値："Short message"
 ```
 
 ::: warning 注意
@@ -563,12 +570,12 @@ func SanitizeForLog(s string) string
 // 機密キーと値のペアを自動マスク
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
-// 戻り値: "Connected with password=[MASKED] api_key=[MASKED]"
+// 戻り値："Connected with password=[MASKED] api_key=[MASKED]"
 
 // 非機密キーと値のペアはそのまま
 msg := "Config loaded: app_name=myapp port=8080"
 clean := env.SanitizeForLog(msg)
-// 戻り値: "Config loaded: app_name=myapp port=8080"
+// 戻り値："Config loaded: app_name=myapp port=8080"
 ```
 
 ::: tip ユースケース
@@ -632,7 +639,7 @@ case errors.Is(err, env.ErrFileNotFound):
     // ファイルが存在しません
 case errors.Is(err, env.ErrFileTooLarge):
     // ファイルが大きすぎます
-case errors.Is(err, env.ErrForbiddenKey):
+case errors.Is(err, env.ErrSecurityViolation):
     // 禁止キー
 case errors.Is(err, env.ErrClosed):
     // ローダーはクローズ済み

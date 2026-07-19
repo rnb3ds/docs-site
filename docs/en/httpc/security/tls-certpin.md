@@ -1,6 +1,8 @@
 ---
+sidebar_label: "TLS & Certificate Pinning"
 title: "TLS and Certificate Pinning - CyberGo HTTPC | Crypto & Pins"
-description: "HTTPC TLS and certificate pinning guide: TLS 1.2-1.3 and cipher suites, custom CA loading, mTLS, the CertificatePinner API, and HTTP/2 negotiation."
+description: "HTTPC TLS and certificate pinning guide: TLS 1.2-1.3 version control and secure cipher suite configuration, custom CA loading, mTLS mutual auth, the CertificatePinner pinning API, and HTTP/2 negotiation -- secure by default out of the box, building a transport-layer encryption defense."
+sidebar_position: 3
 ---
 
 # TLS and Certificate Pinning
@@ -134,7 +136,7 @@ cfg.Security.CertificatePinner = chainPinner
 
 ### Advanced: Custom TLS Verification Callback
 
-If you need full control over TLS verification logic (for example, pinning the full certificate rather than its public key), implement it yourself via `TLSConfig`. Standard chain validation is then skipped via `InsecureSkipVerify`, and you **must** perform all validation in `VerifyPeerCertificate`:
+If you need full control over TLS verification logic (for example, pinning the full certificate rather than its public key), implement it yourself via `TLSConfig`. Standard chain validation is then skipped via `InsecureSkipVerify`, and you **must** perform all validation in VerifyPeerCertificate:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -193,4 +195,4 @@ cfg.Connection.EnableHTTP2 = false // Disable HTTP/2
 
 - [SSRF Protection](./ssrf) - SSRF security configuration
 - [Security Overview](./) - Security features overview
-- [Configuration API](../api-reference/config) - SecurityConfig reference
+- [Configuration API](../api-reference/client-config/config) - SecurityConfig reference

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "ファイルアップロードとダウンロード"
 title: "ファイルアップロードとダウンロード - CyberGo HTTPC | アップロードと取得"
-description: "HTTPC ファイルアップロードとダウンロードガイド: WithFile アップロード、WithFormData マルチファイル、Download 統合ダウンロード、レジューム ResumeDownload、SHA-256 チェックサムなどセキュリティ防護を解説します。"
+description: "HTTPC ファイルアップロードとダウンロードガイド：WithFile アップロード、WithFormData マルチファイル、Download 統合ダウンロード、レジューム ResumeDownload、SHA-256 チェックサムなどセキュリティ防護を解説します。"
+sidebar_position: 4
 ---
 
 # ファイルアップロードとダウンロード
@@ -10,14 +12,30 @@ description: "HTTPC ファイルアップロードとダウンロードガイド
 ### シンプルなファイルアップロード
 
 ```go
-fileContent, err := os.ReadFile("document.pdf")
-if err != nil {
-    log.Fatal(err)
-}
+package main
 
-result, err := httpc.Post("https://api.example.com/upload",
-    httpc.WithFile("file", "document.pdf", fileContent),
+import (
+    "log"
+    "os"
+
+    "github.com/cybergodev/httpc"
 )
+
+func main() {
+    fileContent, err := os.ReadFile("document.pdf")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    result, err := httpc.Post("https://api.example.com/upload",
+        httpc.WithFile("file", "document.pdf", fileContent),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    log.Printf("アップロード完了：%d", result.StatusCode()) // 出力例：アップロード完了：200（実際のステータスコードはサーバーに依存）
+}
 ```
 
 ### Multipart フォーム
@@ -63,10 +81,16 @@ result, err := httpc.Post(url, httpc.WithFormData(form))
 ### バイナリアップロード
 
 ```go
-data, _ := os.ReadFile("data.bin")
+data, err := os.ReadFile("data.bin")
+if err != nil {
+    log.Fatal(err)
+}
 result, err := httpc.Post(url,
     httpc.WithBinary(data, "application/octet-stream"),
 )
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ## ファイルダウンロード
@@ -123,12 +147,12 @@ if err != nil {
 }
 
 if result.Resumed {
-    fmt.Printf("レジューム完了: ブレイクポイントから再開\n")
+    fmt.Printf("レジューム完了：ブレイクポイントから再開\n")
 }
 ```
 
 :::tip
-レジュームはサーバーが `Range` リクエストヘッダーをサポートしている必要があります。サーバーがサポートしていない場合（206 ではなく 200 を返す）、ダウンロード済みの部分ファイルを保護するためにエラーが返されます。
+レジュームはサーバーが Range リクエストヘッダーをサポートしている必要があります。サーバーがサポートしていない場合（206 ではなく 200 を返す）、ダウンロード済みの部分ファイルを保護するためにエラーが返されます。
 :::
 
 ### コンテキスト制御付き
@@ -165,7 +189,10 @@ if err != nil {
 ドメインクライアントのダウンロードでは、レスポンス Cookie が自動的にセッションにキャプチャされます：
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomain("https://api.example.com")
+if err != nil {
+    log.Fatal(err)
+}
 defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
@@ -175,10 +202,13 @@ cfg.FilePath = "/tmp/report.pdf"
 
 // ダウンロードしながらセッションを自動管理（path は baseURL に対して相対）
 result, err := dc.Download(context.Background(), "/files/report.pdf", cfg)
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ## 次のステップ
 
-- [ファイルダウンロード API](../api-reference/download) - 完全なダウンロード API リファレンス
+- [ファイルダウンロード API](../api-reference/client-config/download) - 完全なダウンロード API リファレンス
 - [ドメインクライアントとセッション](./domain-session) - セッション管理
 - [リクエストとレスポンス](./request-response) - 基本リクエストガイド

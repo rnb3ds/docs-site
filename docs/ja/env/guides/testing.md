@@ -1,6 +1,8 @@
 ---
+sidebar_label: "テストシナリオ"
 title: "テストシナリオ - CyberGo env | ユニットテストベストプラクティス"
-description: "CyberGo env テストベストプラクティスガイド。TestingConfig、メモリファイルシステムモック、テーブル駆動テスト、ベンチマーク、ResetDefaultLoader クリーンアップで安定した結果を保証します。"
+description: "CyberGo env テストベストプラクティスガイド。TestingConfig と OverwriteExisting テスト分離、FileSystem インターフェースのモック、テストごとの独立ローダー、テーブル駆動・ベンチマーク、ResetDefaultLoader クリーンアップで結果を保証します。"
+sidebar_position: 6
 ---
 
 # テストシナリオ
@@ -11,7 +13,7 @@ description: "CyberGo env テストベストプラクティスガイド。Testin
 
 ### TestingConfig の使用
 
-`TestingConfig` は既存の環境変数を上書きし、テストの分離に適しています：
+TestingConfig は既存の環境変数を上書きし、テストの分離に適しています：
 
 ```go
 func TestWithTestingConfig(t *testing.T) {
@@ -28,7 +30,7 @@ func TestWithTestingConfig(t *testing.T) {
 ```
 
 ::: tip 注意
-`TestingConfig` は `OverwriteExisting: true` を設定し、テストの分離を保証します。既存の変数を保持する必要がある場合は、手動で `cfg.OverwriteExisting = false` に設定できます。
+TestingConfig は `OverwriteExisting: true` を設定し、テストの分離を保証します。既存の変数を保持する必要がある場合は、手動で `cfg.OverwriteExisting = false` に設定できます。
 :::
 
 ### テストごとに独立したローダー

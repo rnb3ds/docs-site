@@ -1,6 +1,8 @@
 ---
-title: "基本サンプル - CyberGo HTML | 実行可能サンプル"
-description: "CyberGo HTML 基本サンプル：基本抽出、ファイル抽出、テキスト、Markdown 出力、リンクグループ化、Processor 再利用、タイムアウト、並列バッチ、JSON 直列化の実行可能例です。"
+sidebar_label: "基本サンプル"
+title: "基本サンプル - CyberGo html | 実行可能サンプル集"
+description: "CyberGo html 基本サンプル：コンテンツ抽出、ファイル抽出、テキスト、Markdown 出力、リンクグループ化、Processor 再利用、並行バッチなどの実行可能コード。"
+sidebar_position: 1
 ---
 
 # 基本サンプル
@@ -37,19 +39,19 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("タイトル:", result.Title)
-    fmt.Println("本文:", result.Text)
-    fmt.Println("単語数:", result.WordCount)
-    fmt.Println("読了時間:", result.ReadingTime)
-    // 出力:
-    // タイトル: Go 言語チュートリアル
-    // 本文: Go 入門ガイド
+    fmt.Println("タイトル：", result.Title)
+    fmt.Println("本文：", result.Text)
+    fmt.Println("単語数：", result.WordCount)
+    fmt.Println("読了時間：", result.ReadingTime)
+    // 出力：
+    // タイトル：Go 言語チュートリアル
+    // 本文：Go 入門ガイド
     //
     //       Go は Google が開発したオープンソースプログラミング言語です。
     //
     //       Go 公式サイト
-    // 単語数: 8
-    // 読了時間: 2.4s
+    // 単語数：8
+    // 読了時間：2.4s
 }
 ```
 
@@ -123,7 +125,7 @@ for _, page := range pages {
 
 // 統計を確認
 stats := p.GetStatistics()
-fmt.Printf("処理済み: %d, キャッシュヒット: %d\n",
+fmt.Printf("処理済み：%d, キャッシュヒット：%d\n",
     stats.TotalProcessed, stats.CacheHits)
 ```
 
@@ -148,7 +150,7 @@ p, _ := html.New(html.DefaultConfig())
 defer p.Close()
 
 batch := p.ExtractBatch(pages)
-fmt.Printf("成功: %d, 失敗: %d\n", batch.Success, batch.Failed)
+fmt.Printf("成功：%d, 失敗：%d\n", batch.Success, batch.Failed)
 
 for i, result := range batch.Results {
     if result != nil {

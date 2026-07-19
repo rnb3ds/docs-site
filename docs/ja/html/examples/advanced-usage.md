@@ -1,13 +1,15 @@
 ---
-title: "高度なサンプル - CyberGo HTML | 応用シナリオ"
-description: "CyberGo HTML 高度なサンプル：カスタム Scorer、マルチ Sink 監査パイプライン、バッチファイルと並列制御、Processor プーリング、ChannelAuditSink 監視の実行可能例です。"
+sidebar_label: "高度なサンプル"
+title: "高度なサンプル - CyberGo html | 応用シナリオ集"
+description: "CyberGo html 高度なサンプル：カスタム Scorer、マルチ Sink 監査パイプライン、バッチ並行制御、Processor プーリングなどの応用向け実行可能コード集。"
+sidebar_position: 2
 ---
 
 # 高度なサンプル
 
 ## カスタム Scorer
 
-特定のウェブサイト構造に合わせてコンテンツ認識ロジックをカスタマイズします。完全な実装は [テストとカスタム拡張](../guides/testing-custom) を参照してください。以下はコアとなる使い方です：
+特定のウェブサイト構造に合わせてコンテンツ認識ロジックをカスタマイズします。完全な実装は [テストとカスタム拡張](../guides/integration/testing-custom) を参照してください。以下はコアとなる使い方です：
 
 ```go
 package main
@@ -69,8 +71,8 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("本文:", result.Text)
-    // 本文: Go 並行処理の深い理解
+    fmt.Println("本文：", result.Text)
+    // 本文：Go 並行処理の深い理解
     //
     // goroutine は Go の軽量スレッドです。
 }
@@ -132,7 +134,7 @@ func main() {
         log.Fatal(err)
     }
 
-    fmt.Println("本文:", result.Text)
+    fmt.Println("本文：", result.Text)
     // 監査ログは自動的にファイルと stderr に記録される
 }
 ```
@@ -171,10 +173,10 @@ func main() {
     p, _ := html.New(html.TextOnlyConfig())
     defer p.Close()
 
-    // 1 バッチ最大 10000 ファイル
+    // 単一バッチの上限は 10000、超過するとバッチ全体が失敗し呼び出し側で分割が必要
     batch := p.ExtractBatchFiles(files)
 
-    fmt.Printf("成功: %d, 失敗: %d, キャンセル: %d\n",
+    fmt.Printf("成功：%d, 失敗：%d, キャンセル：%d\n",
         batch.Success, batch.Failed, batch.Cancelled)
 
     // 結果を処理
@@ -248,7 +250,7 @@ func extractHandler(w http.ResponseWriter, r *http.Request) {
 
 func statsHandler(w http.ResponseWriter, r *http.Request) {
     stats := processor.GetStatistics()
-    fmt.Fprintf(w, "処理済み: %d\nキャッシュヒット: %d\nエラー: %d\n",
+    fmt.Fprintf(w, "処理済み：%d\nキャッシュヒット：%d\nエラー: %d\n",
         stats.TotalProcessed, stats.CacheHits, stats.ErrorCount)
 }
 

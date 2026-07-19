@@ -1,13 +1,15 @@
 ---
-title: "TLS와 인증서 고정 - CyberGo HTTPC | 암호와 핀닝"
-description: "HTTPC TLS와 인증서 고정 가이드: TLS 1.2-1.3 버전 제어와 암호 스위트, 커스텀 CA 인증서 로드, mTLS 상호 인증, CertificatePinner 인증서 고정 API와 HTTP/2 협상을 다룹니다."
+sidebar_label: "TLS 와 인증서 고정"
+title: "TLS 와 인증서 고정 - CyberGo HTTPC | 암호와 핀닝"
+description: "HTTPC TLS 와 인증서 고정 가이드: TLS 1.2-1.3 버전 제어와 보안 암호 스위트 구성, 커스텀 CA 인증서 로드, mTLS 상호 인증, CertificatePinner 인증서 고정 API 와 HTTP/2 협상으로, 기본적으로 안전하게 즉시 사용 가능하며 전송 계층 암호화 방어선을 구축합니다."
+sidebar_position: 3
 ---
 
-# TLS와 인증서 고정
+# TLS 와 인증서 고정
 
 ## TLS 버전 제어
 
-HTTPC은 기본적으로 TLS 1.2+를 요구하며, TLS 1.3을 권장합니다:
+HTTPC 은 기본적으로 TLS 1.2+ 를 요구하며, TLS 1.3 을 권장합니다:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -79,7 +81,7 @@ client, _ := httpc.New(cfg)
 
 ## 인증서 고정
 
-인증서 고정(Certificate Pinning)은 서버 인증서의 공개 키 해시를 검증하여 중간자 공격을 방지합니다.
+인증서 고정 (Certificate Pinning) 은 서버 인증서의 공개 키 해시를 검증하여 중간자 공격을 방지합니다.
 
 ### SPKI 해시 고정 (권장)
 
@@ -94,7 +96,7 @@ openssl x509 -in cert.pem -pubkey -noout | \
   openssl enc -base64
 ```
 
-Let's Encrypt 중간 인증서 고정(보안과 유지보수 비용의 균형을 위해 중간 인증서 고정을 권장):
+Let's Encrypt 중간 인증서 고정 (보안과 유지보수 비용의 균형을 위해 중간 인증서 고정을 권장):
 
 ```go
 pinner, err := httpc.NewSPKIHashPinner(
@@ -115,26 +117,26 @@ client, err := httpc.New(cfg)
 :::
 
 :::warning
-인증서 고정은 유지보수 비용을 증가시킵니다. 서버가 인증서를 교체하는 경우(예: Let's Encrypt 갱신) 클라이언트도 고정 값을 동기화해야 합니다.
-여러 인증서(예: 리프 인증서 + 중간 인증서)를 함께 고정하고 업데이트 메커니즘을 설정하는 것이 좋습니다.
+인증서 고정은 유지보수 비용을 증가시킵니다. 서버가 인증서를 교체하는 경우 (예: Let's Encrypt 갱신) 클라이언트도 고정 값을 동기화해야 합니다.
+여러 인증서 (예: 리프 인증서 + 중간 인증서) 를 함께 고정하고 업데이트 메커니즘을 설정하는 것이 좋습니다.
 :::
 
 ### 기타 고정 생성자
 
-SPKI 해시 외에도 HTTPC은 다음을 제공합니다:
+SPKI 해시 외에도 HTTPC 은 다음을 제공합니다:
 
 ```go
 // DER 인코딩된 PKIX 공개키로 직접 생성 (내부적으로 SHA-256 계산)
 pubPinner, err := httpc.NewPublicKeyPinner(pubKeyDER1, pubKeyDER2)
 
-// 여러 pinner를 조합, 어느 하나라도 통과하면 수락 (혼합 고정 전략이나 키 로테이션)
+// 여러 pinner 를 조합, 어느 하나라도 통과하면 수락 (혼합 고정 전략이나 키 로테이션)
 chainPinner := httpc.NewCertificatePinnerChain(spkiPinner, pubPinner)
 cfg.Security.CertificatePinner = chainPinner
 ```
 
 ### 고급: 커스텀 TLS 검증 콜백
 
-TLS 검증 로직을 완전히 제어해야 하는 경우(예: 공개키가 아닌 전체 인증서를 고정), `TLSConfig`로 직접 구현할 수 있습니다. 이때 표준 체인 검증은 `InsecureSkipVerify`로 건너뛰며, `VerifyPeerCertificate`에서 **반드시** 모든 검증을 완료해야 합니다:
+TLS 검증 로직을 완전히 제어해야 하는 경우 (예: 공개키가 아닌 전체 인증서를 고정), `TLSConfig`로 직접 구현할 수 있습니다. 이때 표준 체인 검증은 `InsecureSkipVerify`로 건너뛰며, VerifyPeerCertificate 에서 **반드시** 모든 검증을 완료해야 합니다:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -193,4 +195,4 @@ cfg.Connection.EnableHTTP2 = false // HTTP/2 비활성화
 
 - [SSRF 방어](./ssrf) - SSRF 보안 설정
 - [보안 개요](./) - 보안 기능 개요
-- [설정 API](../api-reference/config) - SecurityConfig 참조
+- [설정 API](../api-reference/client-config/config) - SecurityConfig 참조

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "ミドルウェアチェーン"
 title: "ミドルウェアチェーン - CyberGo HTTPC | オニオンモデル連鎖"
-description: "HTTPC ミドルウェアチェーンガイド: オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、8 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc 作成、サーキットブレーカー短路の実装例を解説します。"
+description: "HTTPC ミドルウェアチェーンガイド：オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、Recovery/Logging/RequestID など 8 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc 作成、サーキットブレーカー短路の実装例を通じて、可観測で回復力のあるリクエスト処理パイプラインの構築を支援します。"
+sidebar_position: 6
 ---
 
 # ミドルウェアチェーン
@@ -23,7 +25,11 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RequestIDMiddleware("X-Request-ID", nil), // 最内層：リクエスト ID
 }
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## 内蔵ミドルウェア
@@ -44,7 +50,7 @@ httpc.RecoveryMiddleware()
 httpc.LoggingMiddleware(func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
 })
-// 出力: [HTTP] GET https://api.example.com/data -> 200 (150ms)
+// 出力例：[HTTP] GET https://api.example.com/data -> 200 (150ms)（ステータスコードと所要時間は実測値、固定ではありません）
 ```
 
 ### RequestIDMiddleware
@@ -67,6 +73,10 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 ```go
 httpc.TimeoutMiddleware(30 * time.Second)
 ```
+
+:::warning Download やストリーミングリクエストには使用しないでください
+`TimeoutMiddleware` の `defer cancel()` は、ハンドラーが戻った（レスポンスヘッダーを受信した）直後に発火します。`Download` や `WithStreamBody` リクエストでは、レスポンスボディを読み取る前にコンテキストがキャンセルされ、「context canceled」エラーとして現れます。ストリーミング/ダウンロードのシナリオでは [`WithTimeout`](../api-reference/core/options#withtimeout) オプションを使用してください。
+:::
 
 ### HeaderMiddleware
 
@@ -117,7 +127,11 @@ auditCfg := &httpc.AuditMiddlewareConfig{
 }
 
 httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
-    data, _ := json.Marshal(event)
+    data, err := json.Marshal(event)
+    if err != nil {
+        log.Println("監査イベントのシリアライズ失敗：", err)
+        return
+    }
     log.Println(string(data))
 }, auditCfg)
 ```
@@ -158,7 +172,7 @@ func CORSMiddleware(origin string) httpc.MiddlewareFunc {
 
             // レスポンスフェーズ：記録または変更
             if resp != nil {
-                log.Printf("レスポンスステータス: %d", resp.StatusCode())
+                log.Printf("レスポンスステータス：%d", resp.StatusCode())
             }
 
             return resp, err
@@ -210,11 +224,15 @@ cfg.Middleware = &httpc.MiddlewareConfig{
     MaxRedirects:    10,
 }
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## 次のステップ
 
-- [ミドルウェア API](../api-reference/middleware) - 完全なミドルウェアリファレンス
+- [ミドルウェア API](../api-reference/client-config/middleware) - 完全なミドルウェアリファレンス
 - [リトライとフォールトトレランス](./retry-fault-tolerance) - リトライポリシーガイド
 - [セキュリティ概要](../security/) - 監査ミドルウェアのセキュリティプラクティス

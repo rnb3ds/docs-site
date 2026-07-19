@@ -1,6 +1,8 @@
 ---
+sidebar_label: "ファイル形式"
 title: "ファイルフォーマット - CyberGo env | .env/JSON/YAML 構文"
-description: "CyberGo env 設定ファイルフォーマットリファレンス。.env・JSON・YAML の構文規則、コメント、データ型、UTF-8 エンコーディング、DetectFormat 自動検出を詳解します。"
+description: "CyberGo env 設定ファイルフォーマットリファレンス。.env・JSON・YAML の 3 形式の構文規則、クォートと export 接頭辞、変数展開 ${VAR}、複数行文字列、ネスト・配列のフラット化、UTF-8 エンコーディング、DetectFormat 自動検出を詳解します。"
+sidebar_position: 1
 ---
 
 # ファイルフォーマット
@@ -31,8 +33,9 @@ URL=https://example.com?foo=bar
 MESSAGE="Hello World"
 PATH="/usr/local/bin"
 
-# シングルクォート：そのまま保持、エスケープなし
-LITERAL='no ${expansion} here'
+# シングルクォート：エスケープを処理しない（バックスラッシュ序列をそのまま保持）
+# 注意：シングルクォートは変数展開を阻止しない——展開は引用符が剥がれた後に統一的に行われる
+LITERAL='no escaping here: \n stays literal'
 
 # 引用符なし
 SIMPLE=value
@@ -106,15 +109,18 @@ ANOTHER: "quoted value"
 
 ### 複数行の値
 
-```bash
-# ダブルクォート内の改行
-PRIVATE_KEY="-----BEGIN KEY-----
-MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
------END KEY-----"
+`.env` パーサーは行単位でスキャンし、各行を個別に解析します。**複数行にまたがる引用符文字列はサポートされていません**——ダブルクォート値は 1 行内で閉じる必要があり、そうでない場合は `ErrInvalidValue` が返されます。改行が必要な場合は `\n` エスケープを使用してください（ダブルクォート内でのみ有効、シングルクォートはエスケープを処理しません）：
 
-# \n エスケープを使用
+```bash
+# ダブルクォート内の \n は改行文字として解析される
 LINES="line1\nline2\nline3"
+# 実際の値は 3 行のテキスト: line1 / line2 / line3
+
+# PRIVATE_KEY などの複数行証明書は \n で結合することを推奨
+PRIVATE_KEY="-----BEGIN KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END KEY-----"
 ```
+
+本当にまたがる文字列が必要な場合は、[JSON または YAML フォーマット](#フォーマット検出)を使用するか、カスタムパーサーで複数行サポートを拡張してください。
 
 ## JSON フォーマット
 
@@ -252,19 +258,17 @@ ALLOWED_HOSTS_2=api.example.com
 
 ### 複数行文字列
 
-```yaml
-# リテラルブロック（改行を保持）
-description: |
-  Line 1
-  Line 2
-  Line 3
+::: warning 注意
+YAML ブロックスカラー（リテラルブロック `|` とフォールドブロック `>`）は**現在サポートされていません**。パーサーは `|`/`>` を通常のスカラー文字として保存し、後続のインデント行はキーと値の解析を壊します。
+:::
 
-# フォールドブロック（改行をスペースに変換）
-summary: >
-  This is a long
-  summary that will
-  be on one line.
+改行を保持する必要がある値は、ダブルクォートと `\n` エスケープを使用してください：
+
+```yaml
+description: "Line1\nLine2\nLine3"
 ```
+
+またはカスタムパーサーでブロックスカラーのサポートを拡張してください。
 
 ### 型変換オプション
 
@@ -306,7 +310,7 @@ const (
 
 ```go
 format := env.FormatJSON
-fmt.Println(format.String())  // 出力: json
+fmt.Println(format.String())  // 出力：json
 ```
 
 ## ベストプラクティス

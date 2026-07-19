@@ -1,13 +1,15 @@
 ---
-title: "테스트 가이드 - CyberGo HTTPC | httptest와 목"
+sidebar_label: "테스트 가이드"
+title: "테스트 가이드 - CyberGo HTTPC | httptest 와 목"
 description: "HTTPC 테스트 가이드: TestingConfig 테스트 전용 설정, net/http/httptest 모의 서버 통합, 오류 응답과 리다이렉트 시뮬레이션, 테이블 기반 테스트와 Cookie 세션 단언 모범 사례를 다룹니다."
+sidebar_position: 7
 ---
 
 # 테스트 가이드
 
 ## TestingConfig
 
-`TestingConfig()`은 테스트 환경에 특화되어 보안 검사를 비활성화하고 타임아웃을 단축하여 테스트 실행을 가속화합니다:
+`TestingConfig()`은 테스트 환경에 특화되어 보안 검사를 비활성화하고 연결/핸드셰이크 타임아웃을 단축합니다 (Request 는 기본 180s 유지):
 
 ```go
 func TestAPI(t *testing.T) {
@@ -30,6 +32,7 @@ func TestAPI(t *testing.T) {
 
 표준 라이브러리 `net/http/httptest`로 모의 서버를 생성하여, 실제 백엔드 없이 통합 테스트를 구현합니다:
 
+<!-- check-code: skip -->
 ```go
 package main
 
@@ -60,7 +63,7 @@ func TestGetUser(t *testing.T) {
     }))
     defer server.Close()
 
-    // TestingConfig으로 클라이언트 생성
+    // TestingConfig 으로 클라이언트 생성
     client, err := httpc.New(httpc.TestingConfig())
     if err != nil {
         t.Fatal(err)
@@ -110,17 +113,22 @@ defer server.Close()
 ### 지연 모의
 
 ```go
+// TestingConfig 은 SSRF 방어를 끕니다 — 그렇지 않으면 기본 클라이언트가 127.0.0.1
+// 테스트 서버를 차단하여 타임아웃 오류 대신 SSRF 오류가 발생합니다.
+client, _ := httpc.New(httpc.TestingConfig())
+defer client.Close()
+
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     time.Sleep(5 * time.Second)
     w.WriteHeader(http.StatusOK)
 }))
 defer server.Close()
 
-// 타임아웃 처리 테스트
+// 타임아웃 처리 테스트: 1s 컨텍스트 타임아웃 < 5s 서버 지연
 ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 defer cancel()
 
-_, err := httpc.Request(ctx, "GET", server.URL)
+_, err := client.Request(ctx, "GET", server.URL)
 if err == nil {
     t.Fatal("expected timeout error")
 }
@@ -176,7 +184,10 @@ func TestHTTPMethods(t *testing.T) {
     }))
     defer server.Close()
 
-    client, _ := httpc.New(httpc.TestingConfig())
+    client, err := httpc.New(httpc.TestingConfig())
+    if err != nil {
+        t.Fatal(err)
+    }
     defer client.Close()
 
     tests := []struct {
@@ -216,6 +227,6 @@ func TestHTTPMethods(t *testing.T) {
 
 ## 다음 단계
 
-- [설정 API](../api-reference/config) - TestingConfig 상세 매개변수
-- [오류 타입](../api-reference/errors) - 오류 단언 참조
+- [설정 API](../api-reference/client-config/config) - TestingConfig 상세 매개변수
+- [오류 타입](../api-reference/types/errors) - 오류 단언 참조
 - [미들웨어 체인](./middleware-chain) - 미들웨어 테스트 패턴

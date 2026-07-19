@@ -1,6 +1,7 @@
 ---
-title: "CyberGo JSON | 고성능 Go JSON 라이브러리"
-description: "CyberGo JSON은 고성능 스레드 안전 Go JSON 라이브러리로, JSONPath 쿼리, 스트림 처리, 제네릭 API, Schema 검증을 지원하며 encoding/json과 100% 호환되는 고동시성 프로덕션 환경용입니다."
+sidebar_label: "개요"
+title: "JSON 라이브러리 - CyberGo JSON | 고성능 Go"
+description: "CyberGo JSON 은 고성능 스레드 안전 Go 라이브러리로 JSONPath 쿼리, 스트림 처리, 제네릭 API, Schema 검증을 지원하며 encoding/json과 100% 호환됩니다."
 ---
 
 # JSON 처리 라이브러리
@@ -24,7 +25,7 @@ description: "CyberGo JSON은 고성능 스레드 안전 Go JSON 라이브러리
 go get github.com/cybergodev/json
 ```
 
-## 30초 빠른 체험
+## 30 초 빠른 체험
 
 ```go
 package main
@@ -100,19 +101,19 @@ func main() {
 
 | 모듈 | 설명 |
 |------|------|
-| [빠른 시작](./getting-started) | 설치, 기본 사용법, 핵심 개념 |
-| [경로 표현식 문법](./path-syntax) | 경로 쿼리, 슬라이스, 와일드카드, 필드 추출 |
+| [빠른 시작](./getting-started/) | 설치, 기본 사용법, 핵심 개념 |
+| [경로 표현식 문법](./getting-started/path-syntax) | 경로 쿼리, 슬라이스, 와일드카드, 필드 추출 |
 | [API 문서](./api-reference/) | 완전한 API 참조 |
-| [대용량 파일 처리](./large-files) | 스트림 처리, 청크 읽기/쓰기, 메모리 최적화 |
-| [사용 예제](./examples) | 실전 코드 예제 |
-| [고급 기능 예제](./examples-advanced) | 배치 인코딩, 사전 파싱, 훅 시스템 |
+| [대용량 파일 처리](./streaming/large-files) | 스트림 처리, 청크 읽기/쓰기, 메모리 최적화 |
+| [사용 예제](./examples/) | 실전 코드 예제 |
+| [고급 기능 예제](./examples/examples-advanced) | 배치 인코딩, 사전 파싱, 훅 시스템 |
 
 ## 성능 특징
 
 - **제로 카피 파싱** — 메모리 할당 감소
 - **스마트 캐시** — 핫 경로 자동 캐시, 캐시 웜업 지원
 - **객체 풀** — 중간 객체 재사용, GC 압력 감소
-- **병렬 처리** — 배치 작업 자동 병렬화
+- **병렬 스트림 처리** — JSONL 스트리밍 처리에서 다중 worker 병렬 지원 (`StreamJSONLParallel`)
 - **사전 파싱 최적화** — 대형 JSON 한 번 파싱, 여러 번 쿼리
 
 ## 표준 라이브러리 비교
@@ -141,6 +142,6 @@ func main() {
 
 ## 다음 단계
 
-- [빠른 시작](./getting-started) — 5분 안에 시작하기
-- [경로 표현식 문법](./path-syntax) — 완전한 경로 문법
-- [사용 예제](./examples) — 더 많은 실전 예제
+- [빠른 시작](./getting-started/) — 5 분 안에 시작하기
+- [경로 표현식 문법](./getting-started/path-syntax) — 완전한 경로 문법
+- [사용 예제](./examples/) — 더 많은 실전 예제

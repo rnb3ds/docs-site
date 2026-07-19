@@ -1,6 +1,8 @@
 ---
+sidebar_label: "接口定义"
 title: "接口定义 - CyberGo env | 核心接口层次"
-description: "CyberGo env 核心接口定义参考，采用细粒度设计支持依赖注入，含 Validator、FullAuditLogger、EnvParser、EnvStorage、FileSystem 等接口。"
+description: "CyberGo env 核心接口定义参考，采用细粒度设计支持依赖注入，含 EnvLoader 组合接口与 EnvFileLoader、EnvGetter、EnvSetter、Validator、FullAuditLogger、EnvParser、FileSystem 等子接口。"
+sidebar_position: 6
 ---
 
 # 接口定义
@@ -241,7 +243,7 @@ type FullAuditLogger interface {
 
 | 方法 | 用途 |
 |------|------|
-| `LogError` | 记录错误事件（继承自 AuditLogger） |
+| LogError | 记录错误事件（继承自 AuditLogger） |
 | `Log` | 记录一般审计事件 |
 | `LogWithFile` | 记录包含文件信息的事件 |
 | `LogWithDuration` | 记录包含耗时的事件 |
@@ -509,11 +511,11 @@ type File interface {
 
 | 方法 | 用途 |
 |------|------|
-| `Read` | 读取数据 |
-| `Write` | 写入数据 |
-| `Close` | 关闭文件 |
-| `Stat` | 获取文件信息 |
-| `Sync` | 同步到磁盘 |
+| Read | 读取数据 |
+| Write | 写入数据 |
+| Close | 关闭文件 |
+| Stat | 获取文件信息 |
+| Sync | 同步到磁盘 |
 
 ---
 
@@ -659,15 +661,15 @@ type AuditEvent = internal.Event
 
 | 字段 | 类型 | 说明 |
 |------|------|------|
-| `Timestamp` | `time.Time` | 时间戳 |
-| `Action` | `AuditAction` | 操作类型 |
-| `Key` | `string` | 键名（已掩码） |
-| `File` | `string` | 文件名 |
-| `Reason` | `string` | 原因/描述 |
-| `Success` | `bool` | 是否成功 |
-| `Masked` | `bool` | 是否已掩码 |
-| `Details` | `string` | 详情 |
-| `Duration` | `int64` | 耗时（纳秒） |
+| Timestamp | `time.Time` | 时间戳 |
+| Action | `AuditAction` | 操作类型 |
+| Key | `string` | 键名（已掩码） |
+| File | `string` | 文件名 |
+| Reason | `string` | 原因/描述 |
+| Success | `bool` | 是否成功 |
+| Masked | `bool` | 是否已掩码 |
+| Details | `string` | 详情 |
+| Duration | `int64` | 耗时（纳秒） |
 
 ---
 

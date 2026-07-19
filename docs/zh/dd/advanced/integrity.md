@@ -1,6 +1,8 @@
 ---
+sidebar_label: "HMAC 签名"
 title: "HMAC 签名实战 - CyberGo DD | 日志完整性保护"
 description: "CyberGo DD HMAC-SHA256 日志完整性签名实战指南，涵盖 IntegritySigner 创建与初始化配置、签名与验签完整流程、时间戳与序列号递增机制、防篡改检测策略、与审计日志系统集成方案以及生产环境部署最佳实践，确保日志链路的完整性与可追溯性。"
+sidebar_position: 3
 ---
 
 # HMAC 签名实战
@@ -10,10 +12,10 @@ DD 的 `IntegritySigner` 使用 HMAC-SHA256 对日志条目进行签名，确保
 ## 核心概念
 
 ```text
-签名流程:
+签名流程：
   原始日志 → HMAC-SHA256(密钥 + 时间戳 + 序列号) → 签名后日志
 
-验证流程:
+验证流程：
   签名后日志 → 提取签名 → 重新计算 HMAC → 对比签名 → 判断完整性
 ```
 
@@ -63,14 +65,14 @@ signature := signer.Sign(logEntry)
 signedEntry := logEntry + signature
 
 fmt.Println(signedEntry)
-// 输出: {"level":"info","message":"用户登录","user":"admin"}[SIG:1713456789000000000:1:base64sig...]
+// 输出：{"level":"info","message":"用户登录","user":"admin"}[SIG:1713456789000000000:1:base64sig...]
 ```
 
 ### 签名统计
 
 ```go
 stats := signer.Stats()
-fmt.Printf("当前序列号: %d\n", stats.Sequence)
+fmt.Printf("当前序列号：%d\n", stats.Sequence)
 fmt.Printf("算法: %s\n", stats.Algorithm)
 fmt.Printf("包含时间戳: %v\n", stats.IncludeTimestamp)
 fmt.Printf("包含序列号: %v\n", stats.IncludeSequence)
@@ -147,7 +149,7 @@ func NewSignedAuditSystem() (*dd.AuditLogger, *dd.IntegritySigner, error) {
         0600,
     )
 
-    // 审计Logger（带签名）
+    // 审计 Logger（带签名）
     auditLogger, _ := dd.NewAuditLogger(dd.AuditConfig{
         Enabled:          true,
         Output:           auditFile,
@@ -181,6 +183,8 @@ result.Sequence   // 签名时的序列号
 
 :::tip 序列号检测
 启用序列号后，可以检测日志是否被删除或重排。如果序列号不连续，说明日志可能被篡改。
+
+注意：序列号本身不阻止重放攻击，验证端必须自行追踪已观察的序列号以拒绝重复。
 :::
 
 ## 生产最佳实践
@@ -227,4 +231,4 @@ func startIntegrityChecker(signer *dd.IntegritySigner, logPath string) {
 
 - [审计日志](../guides/audit-logging) -- 安全审计集成
 - [行业合规配置](../security/compliance) -- HIPAA/PCI-DSS 签名要求
-- [API 参考 - Integrity](../api-reference/integrity) -- IntegritySigner 完整 API
+- [API 参考 - Integrity](../api-reference/security-audit/integrity) -- IntegritySigner 完整 API

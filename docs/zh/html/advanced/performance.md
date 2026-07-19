@@ -1,6 +1,8 @@
 ---
-title: "性能优化 - CyberGo HTML | 吞吐量提升指南"
-description: "CyberGo HTML 性能优化：Processor 实例复用、缓存策略、批量并发控制、输入大小与超时设置等技巧，提升大规模处理吞吐量。"
+sidebar_label: "性能优化"
+title: "性能优化 - CyberGo html | 吞吐量提升指南"
+description: "CyberGo html 性能优化：Processor 复用、缓存命中率监控、批量并发控制、WorkerPool 调优与超时设置，提升处理吞吐量。"
+sidebar_position: 1
 ---
 
 # 性能优化
@@ -41,7 +43,7 @@ cfg.CacheCleanup = time.Minute   // 更频繁清理
 ```go
 stats := p.GetStatistics()
 hitRate := float64(stats.CacheHits) / float64(stats.CacheHits+stats.CacheMisses)
-fmt.Printf("缓存命中率: %.2f%%\n", hitRate*100)
+fmt.Printf("缓存命中率：%.2f%%\n", hitRate*100)
 ```
 
 ## 批量处理
@@ -61,7 +63,11 @@ for _, page := range pages {
 配置工作池大小以匹配 CPU 核心数：
 
 ```go
-cfg.WorkerPoolSize = runtime.NumCPU()
+// WorkerPoolSize 上限为 256，高核数机器需封顶
+if n := runtime.NumCPU(); n > 256 {
+    n = 256
+}
+cfg.WorkerPoolSize = n
 ```
 
 ## 输入控制

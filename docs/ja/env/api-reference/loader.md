@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Loader"
 title: "Loader API - CyberGo env | ローダー詳細"
-description: "CyberGo env の Loader API リファレンス。コア型が多フォーマット読み込み、型安全読み取り、キー操作、検証、シリアライズ、Close ライフサイクルを提供し、すべてスレッドセーフです。"
+description: "CyberGo env の Loader API リファレンス。コア型が多フォーマット LoadFiles 読み込み、GetString/GetInt 型安全読み取り、Set/Delete キー操作、Validate 検証、シリアライズ・Close ライフサイクルを提供し、すべてスレッドセーフです。"
+sidebar_position: 3
 ---
 
 # Loader API
@@ -74,7 +76,7 @@ defer loader.Close()
 func (l *Loader) LoadFiles(filenames ...string) error
 ```
 
-1つ以上の設定ファイルを読み込み。
+1 つ以上の設定ファイルを読み込み。
 
 **パラメータ：**
 - `filenames` - ファイルパスのリスト、空の場合はデフォルトで `.env` を読み込み
@@ -106,6 +108,7 @@ err := loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 - `*ParseError` - 解析エラー
 - `*JSONError` - JSON 解析エラー
 - `*YAMLError` - YAML 解析エラー
+- `*SecurityError` - ファイルパスのセキュリティ検証失敗（例：パストラバーサル攻撃）
 
 **フォーマット検出ルール：**
 
@@ -422,8 +425,9 @@ if err != nil {
 ```
 
 **エラー型：**
-- `ErrInvalidKey` - キー名が無効
-- `ErrForbiddenKey` - キーが禁止されています
+- `*ValidationError` - キー名形式が無効（Field="key"）
+- `*SecurityError` - キーが禁止されています（`errors.Is(err, env.ErrSecurityViolation)` で一致）
+- `ErrInvalidValue` - 値が無効です（`ValidateValues` が true のとき、値にヌルバイトや制御文字など安全でない内容が含まれる場合）
 - `ErrClosed` - ローダークローズ済み
 
 ---
@@ -532,6 +536,10 @@ func (l *Loader) Apply() error
 - `OverwriteExisting` 設定に基づいて既存のシステム環境変数を上書きするかどうかを決定
 - 適用後は `os.Getenv()` でアクセス可能
 
+**エラー型：**
+- `ErrClosed` - ローダーはクローズ済み
+- ラップされた `os` エラー - 環境変数の設定失敗（キー名はマスク済み、エラーメッセージに機密キーを露出しない）
+
 ```go
 err := loader.Apply()
 if err != nil {
@@ -602,7 +610,7 @@ func (l *Loader) Config() Config
 
 ```go
 cfg := loader.Config()
-fmt.Printf("最大ファイルサイズ: %d\n", cfg.MaxFileSize)
+fmt.Printf("最大ファイルサイズ：%d\n", cfg.MaxFileSize)
 ```
 
 ---
@@ -615,13 +623,13 @@ fmt.Printf("最大ファイルサイズ: %d\n", cfg.MaxFileSize)
 func (l *Loader) Validate() error
 ```
 
-検証必需键存在するかどうか。
+必須キーがすべて存在するかを検証します。
 
 **戻り値：**
 - `error` - 検証エラー
 
 **動作：**
-- `Config.RequiredKeys` で指定されたすべてのキーが存在するかどうかをチェック
+- `ValidationConfig.RequiredKeys` で指定されたすべてのキーが存在するかどうかをチェック
 
 ```go
 cfg := env.DefaultConfig()
@@ -659,14 +667,15 @@ func (l *Loader) ParseInto(v any) error
 - `env:"KEY"` - 指定環境変数名
 - `env:"-"` - このフィールドを無視
 - `envDefault:"value"` - デフォルト値を指定
-- `envSeparator:","` - スライスのセパレータを指定
+
+スライスフィールドはデフォルトでカンマ `,` で区切られます（セパレータ前後の空白は自動的に削除されます）。カスタムセパレータタグは存在しません。
 
 ```go
 type Config struct {
     Host    string   `env:"HOST" envDefault:"localhost"`
     Port    int64    `env:"PORT" envDefault:"8080"`
     Debug   bool     `env:"DEBUG" envDefault:"false"`
-    Hosts   []string `env:"HOSTS" envSeparator:","`
+    Hosts   []string `env:"HOSTS"`
     Ignored string   `env:"-"`
 }
 
@@ -772,7 +781,7 @@ func main() {
 
     // 必須キーを検証
     if err := loader.Validate(); err != nil {
-        log.Fatal("必須設定が不足:", err)
+        log.Fatal("必須設定が不足：", err)
     }
 
     // 設定の読み取り

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Config"
 title: "Config API - CyberGo env | 配置详解"
-description: "CyberGo env 的 Config 配置结构体 API 参考，含文件搜索路径、安全限制、键值验证、变量展开、审计配置及 Development/Production 预设模板。"
+description: "CyberGo env 的 Config 配置结构体 API 参考，含文件搜索路径、大小与数量限制、键值验证、JSON/YAML 解析选项、变量展开、审计配置及 Development/Production 预设模板，详解嵌套结构与字段提升两种访问方式。"
+sidebar_position: 4
 ---
 
 # Config API
@@ -164,9 +166,13 @@ cfg.ExpandVariables = true
 | 语法 | 说明 |
 |------|------|
 | `${VAR}` | 引用变量 |
-| `${VAR:-default}` | 变量不存在或为空时使用默认值 |
-| `${VAR:=default}` | 变量不存在或为空时设置默认值 |
+| `${VAR:-default}` | 变量不存在时使用默认值（变量存在即使为空也用原值） |
+| `${VAR:=default}` | 同 `${VAR:-default}`（变量不存在时使用默认值，不写回存储） |
 | `${VAR:?error}` | 变量不存在或为空时报错 |
+
+::: tip 空字符串的处理
+`${VAR:-default}` 与 `${VAR:=default}` 仅在变量**未设置**时使用默认值；若变量被显式设为空字符串（`VAR=`），则使用空字符串原值。仅 `${VAR:?error}` 会把空字符串视为错误。详见 [变量展开](/zh/env/guides/variable-expansion)。
+:::
 
 ### 安全限制
 
@@ -733,7 +739,7 @@ if err := loader.LoadFiles(".env"); err != nil {
 }
 
 if err := loader.Validate(); err != nil {
-    log.Fatal("缺少必需配置:", err)
+    log.Fatal("缺少必需配置：", err)
 }
 ```
 

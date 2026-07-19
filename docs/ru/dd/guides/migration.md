@@ -1,6 +1,8 @@
 ---
-title: "Руководство по миграции - CyberGo DD | Миграция библиотек"
-description: "Полное сравнительное руководство по миграции CyberGo DD со стандартной библиотекой log/slog и основными сторонними библиотеками логирования (zap, logrus, zerolog), предоставляющее подробные таблицы отображения API, сравнение параметров конфигурации, распространённые паттерны миграции и стратегии постепенной миграции, помогающее разработчикам выполнить плавный переход существующей системы логирования на DD с минимальными рисками."
+sidebar_label: "Руководство по миграции"
+title: "Руководство по миграции - CyberGo DD | С других библиотек"
+description: "Полное сравнительное руководство по миграции на CyberGo DD со стандартной библиотеки log/slog и популярных сторонних библиотек (zap, logrus, zerolog), содержащее подробные таблицы соответствия API, сравнение параметров конфигурации, распространённые шаблоны миграции и стратегии постепенной миграции, помогая разработчикам плавно переключить существующие системы логирования на библиотеку DD с низкими рисками."
+sidebar_position: 8
 ---
 
 # Руководство по миграции
@@ -45,12 +47,16 @@ log.SetOutput(file)
 log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 // После: DD
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
+    Level:  dd.LevelInfo,
     Format: dd.FormatText,
     Targets: []dd.OutputTarget{
         dd.FileOutput("logs/app.log"),
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
 dd.SetDefault(logger)
 ```
 
@@ -118,7 +124,7 @@ cfg := zap.Config{
 logger, _ := cfg.Build()
 
 // После: DD
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
     Level:  dd.LevelInfo,
     Format: dd.FormatJSON,
     Targets: []dd.OutputTarget{
@@ -126,6 +132,9 @@ logger, _ := dd.New(dd.Config{
         dd.FileOutput("logs/app.json"),
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ### Сравнение полей
@@ -197,4 +206,4 @@ dd.WithFields(
 
 - [Основные концепции](./core-concepts) -- обзор архитектуры DD
 - [Структурированное логирование](./structured-logging) -- подробное описание использования полей
-- [Шпаргалка](../cheatsheet) -- краткий справочник API
+- [Шпаргалка](../getting-started/cheatsheet) -- краткий справочник API

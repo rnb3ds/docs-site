@@ -1,6 +1,8 @@
 ---
-title: "パフォーマンス最適化 - CyberGo HTML | スループット向上"
-description: "CyberGo HTML パフォーマンス最適化：Processor 再利用、キャッシュ戦略、バッチ並列制御、入力サイズ・タイムアウト設定で大規模処理のスループットを向上します。"
+sidebar_label: "パフォーマンス最適化"
+title: "パフォーマンス最適化 - CyberGo html | スループット向上ガイド"
+description: "CyberGo html パフォーマンス最適化：Processor インスタンス再利用、キャッシュ戦略、バッチ並行制御、入力サイズ・タイムアウト設定で処理スループットを向上します。"
+sidebar_position: 1
 ---
 
 # パフォーマンス最適化
@@ -41,7 +43,7 @@ cfg.CacheCleanup = time.Minute   // より頻繁にクリーンアップ
 ```go
 stats := p.GetStatistics()
 hitRate := float64(stats.CacheHits) / float64(stats.CacheHits+stats.CacheMisses)
-fmt.Printf("キャッシュヒット率: %.2f%%\n", hitRate*100)
+fmt.Printf("キャッシュヒット率：%.2f%%\n", hitRate*100)
 ```
 
 ## バッチ処理
@@ -61,7 +63,11 @@ for _, page := range pages {
 CPU コア数に合わせてワーカープールサイズを設定：
 
 ```go
-cfg.WorkerPoolSize = runtime.NumCPU()
+// WorkerPoolSize の上限は 256、コア数が多いマシンでは上限でキャップ
+if n := runtime.NumCPU(); n > 256 {
+    n = 256
+}
+cfg.WorkerPoolSize = n
 ```
 
 ## 入力の制御

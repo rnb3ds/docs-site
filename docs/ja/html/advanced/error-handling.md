@@ -1,6 +1,8 @@
 ---
-title: "エラー処理 - CyberGo HTML | 堅牢なエラーガイド"
-description: "CyberGo HTML エラー処理ガイド：5 種のエラー分類、errors.Is センチネル判定、errors.As 構造化抽出、context キャンセルとバッチ部分失敗処理で堅牢なロジックを構築します。"
+sidebar_label: "エラー処理"
+title: "エラー処理 - CyberGo html | 堅牢なエラー処理ガイド"
+description: "CyberGo html エラー処理ガイド：5 種のエラー分類、errors.Is/As 判定、context キャンセル、バッチ部分失敗処理で堅牢なロジックを構築します。"
+sidebar_position: 2
 ---
 
 # エラー処理
@@ -67,7 +69,7 @@ if errors.As(err, &fileErr) {
 
 ## コンテキストのキャンセル
 
-`WithContext` バージョンを使用してキャンセルに対応します：
+`ExtractWithContext` バージョンを使用してキャンセルに対応します：
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -75,10 +77,16 @@ defer cancel()
 
 result, err := html.ExtractWithContext(ctx, data)
 if err != nil {
-    if ctx.Err() == context.DeadlineExceeded {
-        // タイムアウト
-    } else if ctx.Err() == context.Canceled {
+    switch {
+    case errors.Is(err, html.ErrProcessingTimeout):
+        // ライブラリ内の ProcessingTimeout タイムアウト（この時点で ctx.Err() は nil の可能性あり）
+    case ctx.Err() == context.DeadlineExceeded:
+        // ユーザーコンテキストの期限切れ
+    case ctx.Err() == context.Canceled:
         // 手動キャンセル
+    default:
+        // その他のエラー（ErrInvalidHTML、ErrInputTooLarge など）
+        slog.Error("抽出失敗", "err", err)
     }
 }
 ```
@@ -96,6 +104,6 @@ for i, err := range batch.Errors {
     }
 }
 
-fmt.Printf("成功: %d, 失敗: %d, キャンセル: %d\n",
+fmt.Printf("成功：%d, 失敗：%d, キャンセル：%d\n",
     batch.Success, batch.Failed, batch.Cancelled)
 ```

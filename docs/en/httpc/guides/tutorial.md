@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Tutorial"
 title: "Tutorial - CyberGo HTTPC | GitHub API Tour"
 description: "HTTPC tutorial: build a GitHub REST API client step by step from httpc.Get, covering JSON parsing, domain client, middleware, and file downloads."
+sidebar_position: 1
 ---
 
 # Tutorial: Build a GitHub API Client
@@ -183,7 +185,7 @@ fmt.Printf("%s: Stars %d\n", repo.FullName, repo.Stars)
 ```
 
 Key points:
-- Middleware is configured in `Config.Middleware.Middlewares`
+- Middleware is configured in `MiddlewareConfig.Middlewares`
 - `LoggingMiddleware` records request logs
 - `RecoveryMiddleware` prevents panic crashes
 - `RequestIDMiddleware` generates a unique ID for each request
@@ -222,7 +224,7 @@ case result.StatusCode() == 401:
 case result.IsClientError():
     log.Printf("Client error: %d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("Server error: %d (auto-retried %d times)",
+    log.Printf("Server error: %d (attempted %d times, including first request)",
         result.StatusCode(), result.Meta.Attempts)
 }
 ```
@@ -370,7 +372,7 @@ func main() {
         fmt.Printf("%s\n", repo.FullName)
         fmt.Printf("   Stars %d | Language: %s\n", repo.Stars, repo.Language)
         fmt.Printf("   %s\n", repo.Description)
-        fmt.Printf("   Duration: %s (retries %d)\n",
+        fmt.Printf("   Duration: %s (attempted %d times, including first request)\n",
             result.Meta.Duration, result.Meta.Attempts)
     }
 }

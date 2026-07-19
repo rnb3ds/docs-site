@@ -1,13 +1,15 @@
 ---
+sidebar_label: "Testing Guide"
 title: "Testing Guide - CyberGo HTTPC | httptest & Mocks"
 description: "HTTPC testing guide: TestingConfig for tests, net/http/httptest mock servers, error and redirect simulation, table-driven tests, and Cookie assertions."
+sidebar_position: 7
 ---
 
 # Testing Guide
 
 ## TestingConfig
 
-`TestingConfig()` is designed specifically for testing environments, disabling security checks and shortening timeouts to accelerate test execution:
+`TestingConfig()` is designed specifically for testing environments, disabling security checks; it shortens connection/handshake timeouts (Request stays default 180s):
 
 ```go
 func TestAPI(t *testing.T) {
@@ -30,6 +32,7 @@ func TestAPI(t *testing.T) {
 
 Use the standard library `net/http/httptest` to create mock servers for integration testing without a real backend:
 
+<!-- check-code: skip -->
 ```go
 package main
 
@@ -110,17 +113,22 @@ defer server.Close()
 ### Mock Delays
 
 ```go
+// TestingConfig disables SSRF protection -- otherwise the default client blocks the 127.0.0.1 test server,
+// resulting in an SSRF error instead of a timeout.
+client, _ := httpc.New(httpc.TestingConfig())
+defer client.Close()
+
 server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
     time.Sleep(5 * time.Second)
     w.WriteHeader(http.StatusOK)
 }))
 defer server.Close()
 
-// Test timeout handling
+// Test timeout handling: 1s context timeout < 5s server delay
 ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 defer cancel()
 
-_, err := httpc.Request(ctx, "GET", server.URL)
+_, err := client.Request(ctx, "GET", server.URL)
 if err == nil {
     t.Fatal("expected timeout error")
 }
@@ -176,7 +184,10 @@ func TestHTTPMethods(t *testing.T) {
     }))
     defer server.Close()
 
-    client, _ := httpc.New(httpc.TestingConfig())
+    client, err := httpc.New(httpc.TestingConfig())
+    if err != nil {
+        t.Fatal(err)
+    }
     defer client.Close()
 
     tests := []struct {
@@ -216,6 +227,6 @@ func TestHTTPMethods(t *testing.T) {
 
 ## Next Steps
 
-- [Configuration API](../api-reference/config) - TestingConfig detailed parameters
-- [Error Types](../api-reference/errors) - Error assertion reference
+- [Configuration API](../api-reference/client-config/config) - TestingConfig detailed parameters
+- [Error Types](../api-reference/types/errors) - Error assertion reference
 - [Middleware Chain](./middleware-chain) - Middleware testing patterns

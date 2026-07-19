@@ -1,6 +1,8 @@
 ---
+sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo JWT | センチネルエラー照合"
 description: "エラー処理ガイド：CyberGo JWT 全 19 個のセンチネルエラーが設定・トークン検証・レート制限・ライフサイクル各段階で発動する条件を分類、errors.Is 照合・ValidationError 項目エラー・標準化応答の実務を示す。"
+sidebar_position: 50
 ---
 
 # エラー処理
@@ -54,6 +56,8 @@ if err != nil {
 | `ErrEmptyToken` | すべてのトークン操作メソッド | リクエストヘッダーを確認 |
 | `ErrInvalidToken` | Validate, Refresh, ValidateInto, RefreshInto, Revoke, IsRevoked | 署名の不一致、アクセスを拒否 |
 | `ErrAlgorithmMismatch` | Validate, Refresh, ValidateInto, RefreshInto | トークンのアルゴリズムが設定と不一致、アクセスを拒否 |
+| `ErrExpirationRequired` | Validate, Refresh, ValidateInto, RefreshInto | `RequireExpiration` 有効だがトークンに `exp` クレームなし |
+| `ErrTokenTypeMismatch` | Refresh, RefreshInto | アクセストークン（`token_type=access`）でリフレッシュ試行、アクセスを拒否 |
 | `ErrTokenExpired` | Validate, Refresh, ValidateInto, RefreshInto | ユーザーにトークンのリフレッシュを案内 |
 | `ErrTokenNotValidYet` | Validate, Refresh, ValidateInto, RefreshInto | クロックの同期を確認 |
 | `ErrTokenInvalidIssuer` | Validate, Refresh, ValidateInto, RefreshInto, Revoke, IsRevoked | 発行者が一致しない |

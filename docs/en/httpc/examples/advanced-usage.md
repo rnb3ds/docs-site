@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Advanced Usage"
 title: "Advanced Examples - CyberGo HTTPC | Production Code"
-description: "HTTPC advanced examples: a custom RetryPolicy, a complete middleware chain, a RESTful client wrapper, concurrent downloads, and HMAC-SHA256 signing."
+description: "HTTPC advanced examples: a custom RetryPolicy, a complete middleware chain, a RESTful client wrapper, concurrent downloads, and HMAC-SHA256 signing, helping you build a high-performance, observable production HTTP client."
+sidebar_position: 2
 ---
 
 # Advanced Examples
@@ -10,7 +12,7 @@ description: "HTTPC advanced examples: a custom RetryPolicy, a complete middlewa
 Retry only on 502/503/504 with fixed delay:
 
 :::warning Internal Type
-The `resp` parameter type `ResponseReader` in `RetryPolicy.ShouldRetry` is an internal interface (defined in the `internal/types` package) that external packages cannot reference directly. Custom `RetryPolicy` must be implemented in a package within the same module as `httpc`. Most scenarios can be satisfied through `RetryConfig` configuration. The following example demonstrates the implementation pattern; actual code must compile within the `httpc` module.
+The `resp` parameter type ResponseReader in RetryPolicy.ShouldRetry is an internal interface (defined in the `internal/types` package) that external packages cannot reference directly. Custom `RetryPolicy` must be implemented in a package within the same module as `httpc`. Most scenarios can be satisfied through `RetryConfig` configuration. The following example demonstrates the implementation pattern; actual code must compile within the `httpc` module.
 :::
 
 ```go
@@ -138,7 +140,7 @@ func main() {
     }
     defer client.Close()
 
-    result, err := client.Get("https://httpbin.org/get")
+    _, err = client.Get("https://httpbin.org/get")
     if err != nil {
         log.Fatal(err)
     }

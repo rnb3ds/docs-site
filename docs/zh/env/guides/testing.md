@@ -1,6 +1,8 @@
 ---
+sidebar_label: "测试场景"
 title: "测试场景 - CyberGo env | 单元测试最佳实践"
-description: "CyberGo env 测试最佳实践指南，含 TestingConfig 配置、内存文件系统模拟、表驱动测试、基准测试与 ResetDefaultLoader 状态清理策略。"
+description: "CyberGo env 测试最佳实践指南，含 TestingConfig 配置与 OverwriteExisting 测试隔离、FileSystem 接口模拟内存文件系统、每个测试独立加载器、表驱动与基准测试、ResetDefaultLoader 状态清理策略，保障测试稳定可复现。"
+sidebar_position: 6
 ---
 
 # 测试场景
@@ -11,7 +13,7 @@ description: "CyberGo env 测试最佳实践指南，含 TestingConfig 配置、
 
 ### 使用 TestingConfig
 
-`TestingConfig` 会覆盖已存在的环境变量，适合测试隔离：
+TestingConfig 会覆盖已存在的环境变量，适合测试隔离：
 
 ```go
 func TestWithTestingConfig(t *testing.T) {
@@ -28,7 +30,7 @@ func TestWithTestingConfig(t *testing.T) {
 ```
 
 ::: tip 注意
-`TestingConfig` 设置 `OverwriteExisting: true`，确保测试隔离。如果需要保留已存在变量，可手动设置 `cfg.OverwriteExisting = false`。
+TestingConfig 设置 `OverwriteExisting: true`，确保测试隔离。如果需要保留已存在变量，可手动设置 `cfg.OverwriteExisting = false`。
 :::
 
 ### 每个测试独立加载器

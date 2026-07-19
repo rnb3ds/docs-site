@@ -1,6 +1,8 @@
 ---
+sidebar_label: "보안 개요"
 title: "보안 개요 - CyberGo env | 보안 아키텍처"
-description: "CyberGo env 보안 아키텍처 개요로 SecureValue 메모리 잠금, 키 검증, 금지 키 목록, IsSensitiveKey 자동 감지, 보안 프리셋과 감사 추적을 설명합니다."
+description: "CyberGo env 보안 아키텍처 개요로 SecureValue 메모리 잠금·자동 제로화, 키 검증으로 제어 문자·널 바이트 차단, DefaultForbiddenKeys 로 PATH·LD_PRELOAD 금지, IsSensitiveKey 자동 감지, 보안 프리셋과 감사 추적을 설명합니다."
+sidebar_position: 1
 ---
 
 # 보안 개요
@@ -50,7 +52,7 @@ password := secret.Reveal()  // 평문이 필요할 때만 호출
 ```
 
 **핵심 기능:**
-- **메모리 잠금** - 디스크 스왑 방지 (Linux/macOS/FreeBSD)
+- **메모리 잠금** - 디스크 스왑 방지 (Linux/macOS/Windows/FreeBSD)
 - **자동 영값 초기화** - `Close()` 시 보안 메모리 삭제
 - **마스킹 표시** - `Masked()`는 로그 출력에 사용
 - **스레드 안전** - 동시 읽기 지원

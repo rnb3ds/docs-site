@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Overview"
 title: "Processor - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor: New, GetString/Set/Delete, Foreach iteration, Encode, Close lifecycle, Stats, and cache config for high-frequency reuse."
+description: "CyberGo JSON Processor: New creation, GetString/Set/Delete operations, Foreach iteration, Encode encoding and Close lifecycle, suitable for high-frequency reuse."
+sidebar_position: 1
 ---
 
 # Processor
@@ -56,13 +58,15 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 | Category | Description |
 |----------|-------------|
-| [Path Query](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
-| [Data Modification](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/Delete/DeleteClean |
-| [Output Methods](./output) | Encode/EncodePretty/EncodeWithConfig/Compact/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
-| [Parse and Load](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal/LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
-| [Iteration Methods](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachReturn/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachWithPathAndControl/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
+| [Query & Get](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
+| [Modify](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/MergeJSON/MergeMany/CompareJSON |
+| [Delete Operations](./delete) | Delete/DeleteClean |
+| [Encode & Output](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
+| [Parse & Validate](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal |
 | [Batch Operations](./batch) | ProcessBatch/WarmupCache |
-| [JSONL Processing](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
+| [JSONL](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
+| [File I/O](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [Iteration Methods](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachReturn/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachWithPathAndControl/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
 | [Lifecycle](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
 
 ---
@@ -151,7 +155,7 @@ func main() {
 
 ## See Also
 
-- [Package Functions](../functions) - Top-level function reference
+- [Package Functions](../functions/) - Top-level function reference
 - [Config](../config) - Configuration options
 - [Interface Definitions](../interfaces) - Hook interface
-- [Hook System](../hooks) - Detailed hook usage guide
+- [Hook System](../../extensions/hooks) - Detailed hook usage guide

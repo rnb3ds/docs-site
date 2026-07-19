@@ -1,6 +1,8 @@
 ---
+sidebar_label: "TLS と証明書ピンニング"
 title: "TLS と証明書ピンニング - CyberGo HTTPC | 暗号とピンニング"
-description: "HTTPC TLS と証明書ピンニングガイド: TLS 1.2-1.3 バージョン制御と暗号スイート、カスタム CA 証明書の読み込み、mTLS 双方向認証、CertificatePinner ピンニング API、HTTP/2 ネゴシエーションを解説します。"
+description: "HTTPC TLS と証明書ピンニングガイド：TLS 1.2-1.3 バージョン制御と安全な暗号スイート設定、カスタム CA 証明書の読み込み、mTLS 双方向認証、CertificatePinner 証明書ピンニング API、HTTP/2 ネゴシエーションにより、デフォルトで安全な設定を提供し、トランスポート層の暗号化防御を構築します。"
+sidebar_position: 3
 ---
 
 # TLS と証明書ピンニング
@@ -134,12 +136,12 @@ cfg.Security.CertificatePinner = chainPinner
 
 ### 高度：カスタム TLS 検証コールバック
 
-TLS 検証ロジックを完全に制御したい場合（例：公開鍵ではなく完全な証明書を固定する場合）は、`TLSConfig` で独自に実装できます。この場合、標準のチェーン検証は `InsecureSkipVerify` でスキップされるため、`VerifyPeerCertificate` で**必ず**すべての検証を行う必要があります：
+TLS 検証ロジックを完全に制御したい場合（例：公開鍵ではなく完全な証明書を固定する場合）は、`TLSConfig` で独自に実装できます。この場合、標準のチェーン検証は `InsecureSkipVerify` でスキップされるため、VerifyPeerCertificate で**必ず**すべての検証を行う必要があります：
 
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Security.TLSConfig = &tls.Config{
-    InsecureSkipVerify: true, // 標準のチェーン検証をスキップ。コールバック内で全検証を自行実施する必要がある
+    InsecureSkipVerify: true, // 標準のチェーン検証をスキップ。コールバック内で独自に全検証を実施する必要がある
     VerifyPeerCertificate: func(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error {
         // ここで完全な証明書検証 + ピンニングロジックを実装
         return nil
@@ -193,4 +195,4 @@ cfg.Connection.EnableHTTP2 = false // HTTP/2 を無効化
 
 - [SSRF 防護](./ssrf) - SSRF セキュリティ設定
 - [セキュリティ概要](./) - セキュリティ機能一覧
-- [設定 API](../api-reference/config) - SecurityConfig リファレンス
+- [設定 API](../api-reference/client-config/config) - SecurityConfig リファレンス

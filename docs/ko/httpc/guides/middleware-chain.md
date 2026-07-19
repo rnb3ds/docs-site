@@ -1,6 +1,8 @@
 ---
-title: "미들웨어 체인 - CyberGo HTTPC | 양파 모델 체인"
-description: "HTTPC 미들웨어 체인 가이드: 양파 모델 실행 원리와 요청/응답 양방향 처리, 여덟 개 내장 미들웨어 설정, Chain 수동 조합, 커스텀 MiddlewareFunc 작성법과 서킷 브레이커 단락 예제를 다룹니다."
+sidebar_label: "미들웨어 체인"
+title: "미들웨어 체인 - CyberGo HTTPC | 양파 모델 체인 조합"
+description: "HTTPC 미들웨어 체인 가이드: 양파 모델 실행 원리와 요청/응답 양방향 처리, Recovery/Logging/RequestID 등 여덟 개 내장 미들웨어 설정, Chain 수동 조합, 커스텀 MiddlewareFunc 작성법과 서킷 브레이커 단락 예제로 관측 가능하고 복원력 있는 요청 처리 파이프라인을 구축하는 데 도움을 줍니다."
+sidebar_position: 6
 ---
 
 # 미들웨어 체인
@@ -23,7 +25,11 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RequestIDMiddleware("X-Request-ID", nil), // 가장 안쪽: 요청 ID
 }
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## 내장 미들웨어
@@ -44,7 +50,7 @@ httpc.RecoveryMiddleware()
 httpc.LoggingMiddleware(func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
 })
-// 출력: [HTTP] GET https://api.example.com/data -> 200 (150ms)
+// 출력 예시: [HTTP] GET https://api.example.com/data -> 200 (150ms)(상태 코드와 소요 시간은 실측값이며 고정값이 아님)
 ```
 
 ### RequestIDMiddleware
@@ -52,7 +58,7 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 각 요청에 고유 ID 추가, `crypto/rand`로 생성:
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // 기본 32자 hex
+httpc.RequestIDMiddleware("X-Request-ID", nil) // 기본 32 자 hex
 
 // 커스텀 생성기
 httpc.RequestIDMiddleware("X-Request-ID", func() string {
@@ -67,6 +73,10 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 ```go
 httpc.TimeoutMiddleware(30 * time.Second)
 ```
+
+:::warning Download 나 스트리밍 요청에는 사용 금지
+`TimeoutMiddleware`의 `defer cancel()`은 핸들러가 반환 (응답 헤더 수신) 된 직후에 실행되어, `Download`나 `WithStreamBody` 요청에서는 응답 본문을 읽기 전에 컨텍스트가 미리 취소되어 "context canceled" 오류가 발생합니다. 스트리밍/다운로드 시나리오에서는 [`WithTimeout`](../api-reference/core/options#withtimeout) 옵션을 대신 사용하세요.
+:::
 
 ### HeaderMiddleware
 
@@ -117,12 +127,16 @@ auditCfg := &httpc.AuditMiddlewareConfig{
 }
 
 httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
-    data, _ := json.Marshal(event)
+    data, err := json.Marshal(event)
+    if err != nil {
+        log.Println("감사 이벤트 직렬화 실패:", err)
+        return
+    }
     log.Println(string(data))
 }, auditCfg)
 ```
 
-감사 이벤트는 컨텍스트에서 SourceIP와 UserID 추출을 지원합니다:
+감사 이벤트는 컨텍스트에서 SourceIP 와 UserID 추출을 지원합니다:
 
 ```go
 ctx := context.WithValue(context.Background(), httpc.SourceIPKey, "192.168.1.1")
@@ -210,11 +224,15 @@ cfg.Middleware = &httpc.MiddlewareConfig{
     MaxRedirects:    10,
 }
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## 다음 단계
 
-- [미들웨어 API](../api-reference/middleware) - 완전한 미들웨어 참조
+- [미들웨어 API](../api-reference/client-config/middleware) - 완전한 미들웨어 참조
 - [재시도와 장애 허용](./retry-fault-tolerance) - 재시도 전략 가이드
 - [보안 개요](../security/) - 감사 미들웨어 보안 실천

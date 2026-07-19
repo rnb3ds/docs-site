@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Продвинутые примеры"
 title: "Продвинутые примеры - CyberGo JWT | Асимметрия и хранилище"
 description: "Продвинутые примеры CyberGo JWT: подпись RSA и ECDSA, реализация CustomClaims, чёрный список на Redis, FixedClock для тестов и интеграция с веб-сервисом."
+sidebar_position: 20
 ---
 
 # Продвинутые примеры
@@ -284,8 +286,8 @@ func main() {
     if err != nil {
         panic(err)
     }
-    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // Вывод: 2026-01-01 00:00:00
-    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // Вывод: 2026-01-01 00:15:00
+    fmt.Println("IssuedAt:", parsed.IssuedAt.Time)   // Вывод: 2026-01-01 00:00:00 +0000 UTC
+    fmt.Println("ExpiresAt:", parsed.ExpiresAt.Time) // Вывод: 2026-01-01 00:15:00 +0000 UTC
 }
 ```
 

@@ -1,6 +1,7 @@
 ---
-title: "JSON 処理ライブラリ - CyberGo JSON | 高性能 Go ライブラリ"
-description: "CyberGo JSON は高性能でスレッドセーフな Go 向け JSON ライブラリです。JSONPath クエリ、ストリーミング、ジェネリック API、Schema 検証を提供し、encoding/json と 100% 互換の高並行プロダクション環境向けです。"
+sidebar_label: "概要"
+title: "JSON ライブラリ - CyberGo JSON | 高性能 Go"
+description: "CyberGo JSON は高性能・スレッドセーフな Go JSON ライブラリで、JSONPath パスクエリ、ストリーミング、ジェネリック API と Schema 検証を提供し、encoding/json と 100% 互換です。"
 ---
 
 # JSON 処理ライブラリ
@@ -100,19 +101,19 @@ func main() {
 
 | モジュール | 説明 |
 |------|------|
-| [クイックスタート](./getting-started) | インストール、基本操作、コア概念 |
-| [パス式の構文](./path-syntax) | パスクエリ、スライス、ワイルドカード、フィールド抽出 |
+| [クイックスタート](./getting-started/) | インストール、基本操作、コア概念 |
+| [パス式の構文](./getting-started/path-syntax) | パスクエリ、スライス、ワイルドカード、フィールド抽出 |
 | [API ドキュメント](./api-reference/) | 完全な API リファレンス |
-| [大規模ファイル処理](./large-files) | ストリーミング処理、チャンク読み書き、メモリ最適化 |
-| [使用例](./examples) | 実践的なコードサンプル |
-| [高度な機能の例](./examples-advanced) | バッチエンコード、事前解析、フックシステム |
+| [大規模ファイル処理](./streaming/large-files) | ストリーミング処理、チャンク読み書き、メモリ最適化 |
+| [使用例](./examples/) | 実践的なコードサンプル |
+| [高度な機能の例](./examples/examples-advanced) | バッチエンコード、事前解析、フックシステム |
 
 ## パフォーマンス特性
 
 - **ゼロコピー解析** — メモリ割り当てを削減
 - **スマートキャッシュ** — ホットパスを自動キャッシュ、キャッシュウォームアップをサポート
 - **オブジェクトプール** — 中間オブジェクトの再利用、GC 負荷を低減
-- **並列処理** — バッチ操作の自動並列化
+- **並列ストリーム処理** — JSONL ストリーミング処理はマルチワーカー並列に対応（`StreamJSONLParallel`）
 - **事前解析最適化** — 大型 JSON を一度解析して複数回クエリ
 
 ## 標準ライブラリとの比較
@@ -141,6 +142,6 @@ func main() {
 
 ## 次のステップ
 
-- [クイックスタート](./getting-started) — 5 分で始める
-- [パス式の構文](./path-syntax) — 完全なパス構文
-- [使用例](./examples) — より多くの実践的なサンプル
+- [クイックスタート](./getting-started/) — 5 分で始める
+- [パス式の構文](./getting-started/path-syntax) — 完全なパス構文
+- [使用例](./examples/) — より多くの実践的なサンプル

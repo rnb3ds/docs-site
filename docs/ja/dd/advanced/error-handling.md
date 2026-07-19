@@ -1,6 +1,8 @@
 ---
+sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo DD | ログエラー管理"
-description: "CyberGo DD ログライブラリのエラー処理完全ガイド。構造化エラータイプと階層体系、エラーコード設計、センチネルエラー定義と判定方法、errors.Is/As エラーラッピングとアンラッピング、カスタムエラー処理戦略の実装、エラー復旧メカニズム、エラーフックコールバック設定を詳解し、開発者が各種ログ関連エラーを正確に識別して処理できるようにします。"
+description: "CyberGo DD ログライブラリのエラー処理完全ガイド。構造化エラータイプと階層体系、エラーコード設計、センチネルエラー判定、errors.Is/As ラッピングとアンラッピング、カスタムエラー処理戦略、エラー復旧メカニズム、エラーフックコールバック設定を解説。"
+sidebar_position: 2
 ---
 
 # エラー処理
@@ -93,8 +95,10 @@ if err != nil {
 ```go
 logger.SetWriteErrorHandler(func(w io.Writer, err error) {
     // カスタム書き込みエラー処理
-    if errors.Is(err, dd.ErrWriterNotFound) {
-        // Writer が既に削除されている
+    // 注意：このコールバックは writer.Write() の失敗時のみ発火し、writer 自身のエラーが渡されます；
+    // dd.ErrWriterNotFound は RemoveWriter が呼び出し元に直接返すものであり、このコールバック経由では渡されません。
+    if errors.Is(err, io.ErrShortWrite) {
+        // 書き込みバイト数が不足
         return
     }
     // エラーメトリクスを記録
@@ -164,7 +168,7 @@ if err != nil {
 
 ## フックエラー
 
-フック使用時はフック設定の `OnError` コールバックでフック実行中のエラーをキャプチャして処理できます：
+フック使用時はフック設定の `ErrorHandler` コールバックでフック実行中のエラーをキャプチャして処理できます：
 
 ```go
 // HooksConfig でフックエラー処理を設定
@@ -196,6 +200,6 @@ if err := dd.DefaultInitError(); err != nil {
 
 ## 次のステップ
 
-- [定数とエラー](../api-reference/constants) -- 完全エラーコードリスト
-- [フックシステム](../api-reference/hooks) -- HookRegistry
-- [セキュリティフィルタ](../api-reference/security) -- セキュリティ関連エラー
+- [定数とエラー](../api-reference/dev-tools/constants) -- 完全エラーコードリスト
+- [フックシステム](../api-reference/security-audit/hooks) -- HookRegistry
+- [セキュリティフィルタ](../api-reference/security-audit/security) -- セキュリティ関連エラー

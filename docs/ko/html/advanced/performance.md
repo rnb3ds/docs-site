@@ -1,6 +1,8 @@
 ---
-title: "성능 최적화 - CyberGo HTML | 처리량 향상 가이드"
-description: "CyberGo HTML 성능 최적화: Processor 재사용, 캐시 전략, 배치 동시성 제어, 입력 크기와 타임아웃 설정 등 대규모 처리의 처리량을 높이는 팁입니다."
+sidebar_label: "성능 최적화"
+title: "성능 최적화 - CyberGo html | 처리량 향상 가이드"
+description: "CyberGo html 성능 최적화: Processor 인스턴스 재사용, 캐시 전략, 배치 동시성 제어, 입력 크기와 타임아웃 설정 등 처리량 향상 팁을 다룹니다."
+sidebar_position: 1
 ---
 
 # 성능 최적화
@@ -21,13 +23,13 @@ for _, page := range pages {
 
 // 비추천: 매번 새 Processor 생성
 for _, page := range pages {
-    result, _ := html.Extract(page) // 매번 Pool에서 가져옴
+    result, _ := html.Extract(page) // 매번 Pool 에서 가져옴
 }
 ```
 
 ## 캐시 전략
 
-Processor는 내장 캐시를 제공하여, 동일한 입력은 반복해서 처리되지 않습니다:
+Processor 는 내장 캐시를 제공하여, 동일한 입력은 반복해서 처리되지 않습니다:
 
 ```go
 cfg := html.DefaultConfig()
@@ -61,7 +63,11 @@ for _, page := range pages {
 CPU 코어 수에 맞게 워커 풀 크기 설정:
 
 ```go
-cfg.WorkerPoolSize = runtime.NumCPU()
+// WorkerPoolSize 상한은 256, 고코어 머신에서는 상한 적용 필요
+if n := runtime.NumCPU(); n > 256 {
+    n = 256
+}
+cfg.WorkerPoolSize = n
 ```
 
 ## 입력 제어
@@ -71,7 +77,7 @@ cfg.WorkerPoolSize = runtime.NumCPU()
 - 필요 없는 `Preserve*` 옵션 비활성화
 
 ```go
-// TextOnlyConfig는 모든 미디어 보존을 비활성화하므로 추가 설정 불필요
+// TextOnlyConfig 는 모든 미디어 보존을 비활성화하므로 추가 설정 불필요
 cfg := html.TextOnlyConfig()
 
 // 성능 향상을 위해 문서 인식 비활성화 가능

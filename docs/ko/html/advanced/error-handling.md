@@ -1,6 +1,8 @@
 ---
-title: "오류 처리 - CyberGo HTML | 견고한 오류 가이드"
-description: "CyberGo HTML 오류 처리 가이드: 5가지 오류 분류, errors.Is 센티넬 판별, errors.As 구조화 추출, context 취소와 배치 부분 실패 처리로 견고한 로직을 구축합니다."
+sidebar_label: "오류 처리"
+title: "오류 처리 - CyberGo html | 견고한 오류 처리 가이드"
+description: "CyberGo html 오류 처리 가이드: 5 가지 오류 분류, errors.Is/As 판별, context 취소와 배치 부분 실패 처리로 견고한 로직을 구축합니다."
+sidebar_position: 2
 ---
 
 # 오류 처리
@@ -28,7 +30,7 @@ if err != nil {
     case errors.Is(err, html.ErrInputTooLarge):
         slog.Warn("입력이 너무 큽니다. 문서 크기를 줄이세요")
     case errors.Is(err, html.ErrInvalidHTML):
-        slog.Warn("유효하지 않은 HTML입니다. 입력을 확인하세요")
+        slog.Warn("유효하지 않은 HTML 입니다. 입력을 확인하세요")
     case errors.Is(err, html.ErrProcessingTimeout):
         slog.Warn("처리 타임아웃. 문서가 너무 복잡할 수 있습니다")
     case errors.Is(err, html.ErrFileNotFound):
@@ -67,7 +69,7 @@ if errors.As(err, &fileErr) {
 
 ## 컨텍스트 취소
 
-`WithContext` 버전을 사용하여 취소를 지원합니다:
+`ExtractWithContext` 버전을 사용하여 취소를 지원합니다:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -75,10 +77,16 @@ defer cancel()
 
 result, err := html.ExtractWithContext(ctx, data)
 if err != nil {
-    if ctx.Err() == context.DeadlineExceeded {
-        // 타임아웃
-    } else if ctx.Err() == context.Canceled {
+    switch {
+    case errors.Is(err, html.ErrProcessingTimeout):
+        // 타임아웃 처리 (라이브러리 내 ProcessingTimeout 트리거, 이때 ctx.Err() 는 nil 일 수 있음)
+    case ctx.Err() == context.DeadlineExceeded:
+        // 사용자 컨텍스트 마감 시간 도달
+    case ctx.Err() == context.Canceled:
         // 수동 취소
+    default:
+        // 기타 오류 (ErrInvalidHTML, ErrInputTooLarge 등)
+        slog.Error("추출 실패", "err", err)
     }
 }
 ```

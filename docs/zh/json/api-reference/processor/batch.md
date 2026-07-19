@@ -1,6 +1,8 @@
 ---
+sidebar_label: "批量操作"
 title: "Processor 批量操作 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 批量操作：ProcessBatch 多操作、BatchOperation 定义、BatchResult 类型、ContinueOnError 配置与性能优化策略，适合批量数据处理。"
+description: "CyberGo JSON Processor 批量操作：ProcessBatch 多操作、BatchOperation 与 BatchResult 类型，适合批量处理。"
+sidebar_position: 7
 ---
 
 # 批量操作方法
@@ -34,7 +36,7 @@ for _, result := range results {
 
 ```go
 type BatchOperation struct {
-    Type    string `json:"type"`     // 操作类型: "get", "set", "delete", "validate"
+    Type    string `json:"type"`     // 操作类型："get", "set", "delete", "validate"
     JSONStr string `json:"json_str"` // JSON 字符串
     Path    string `json:"path"`     // 目标路径
     Value   any    `json:"value"`    // Set 操作的值

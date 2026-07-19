@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Interface Definitions"
 title: "Interfaces - CyberGo env | Core Interface Hierarchy"
-description: "CyberGo env core interface reference with fine-grained design for dependency injection: Validator, FullAuditLogger, EnvParser, EnvStorage and FileSystem."
+description: "CyberGo env interfaces: EnvLoader composite, EnvFileLoader, EnvGetter, EnvSetter, Validator, FullAuditLogger, EnvParser, FileSystem for dependency injection."
+sidebar_position: 6
 ---
 
 # Interfaces
@@ -241,7 +243,7 @@ type FullAuditLogger interface {
 
 | Method | Purpose |
 |--------|---------|
-| `LogError` | Log error events (inherited from AuditLogger) |
+| LogError | Log error events (inherited from AuditLogger) |
 | `Log` | Log general audit events |
 | `LogWithFile` | Log events with file information |
 | `LogWithDuration` | Log events with duration |
@@ -509,11 +511,11 @@ type File interface {
 
 | Method | Purpose |
 |--------|---------|
-| `Read` | Read data |
-| `Write` | Write data |
-| `Close` | Close file |
-| `Stat` | Get file information |
-| `Sync` | Sync to disk |
+| Read | Read data |
+| Write | Write data |
+| Close | Close file |
+| Stat | Get file information |
+| Sync | Sync to disk |
 
 ---
 
@@ -659,15 +661,15 @@ type AuditEvent = internal.Event
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `Timestamp` | `time.Time` | Timestamp |
-| `Action` | `AuditAction` | Operation type |
-| `Key` | `string` | Key name (masked) |
-| `File` | `string` | File name |
-| `Reason` | `string` | Reason/description |
-| `Success` | `bool` | Whether successful |
-| `Masked` | `bool` | Whether masked |
-| `Details` | `string` | Details |
-| `Duration` | `int64` | Duration (nanoseconds) |
+| Timestamp | `time.Time` | Timestamp |
+| Action | `AuditAction` | Operation type |
+| Key | `string` | Key name (masked) |
+| File | `string` | File name |
+| Reason | `string` | Reason/description |
+| Success | `bool` | Whether successful |
+| Masked | `bool` | Whether masked |
+| Details | `string` | Details |
+| Duration | `int64` | Duration (nanoseconds) |
 
 ---
 

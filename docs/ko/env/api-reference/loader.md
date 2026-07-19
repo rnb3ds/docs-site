@@ -1,14 +1,16 @@
 ---
+sidebar_label: "Loader"
 title: "Loader API - CyberGo env | 로더 상세"
-description: "CyberGo env Loader API 참조로 핵심 유형이 다중 형식 로딩·타입 안전 읽기·키 조작·검증·직렬화·Close 수명 주기를 제공하며 모두 스레드 안전합니다."
+description: "CyberGo env Loader API 참조로 핵심 유형이 다중 형식 LoadFiles 로딩, GetString/GetInt/GetSlice 타입 안전 읽기, Set/Delete 키 조작, Validate 검증, 직렬화·Close 수명 주기를 제공하며 모두 스레드 안전합니다."
+sidebar_position: 3
 ---
 
 # Loader API
 
-`Loader` 유형의 전체 메서드 참조입니다. Loader는 env 라이브러리의 핵심 유형으로, 환경 변수의 로드, 저장 및 접근 기능을 제공합니다.
+`Loader` 유형의 전체 메서드 참조입니다. Loader 는 env 라이브러리의 핵심 유형으로, 환경 변수의 로드, 저장 및 접근 기능을 제공합니다.
 
 :::tip 스레드 안전
-Loader의 모든 메서드는 스레드 안전하며, 여러 goroutine에서 동시에 호출할 수 있습니다.
+Loader 의 모든 메서드는 스레드 안전하며, 여러 goroutine 에서 동시에 호출할 수 있습니다.
 :::
 
 ## 유형 정의
@@ -36,7 +38,7 @@ func New(cfg ...Config) (*Loader, error)
 새로운 로더 인스턴스를 생성합니다.
 
 **매개변수:**
-- `cfg` - 선택적 설정 옵션. 제공하지 않거나 제로값 Config를 전달하면 자동으로 `DefaultConfig()` 사용
+- `cfg` - 선택적 설정 옵션. 제공하지 않거나 제로값 Config 를 전달하면 자동으로 `DefaultConfig()` 사용
 
 **반환값:**
 - `*Loader` - 로더 인스턴스
@@ -46,7 +48,7 @@ func New(cfg ...Config) (*Loader, error)
 - 설정 유효성 검증
 - 내부 컴포넌트 생성 (검증기, 감사기, 확장기)
 - `cfg.Filenames`가 비어 있지 않으면 자동으로 파일 로드
-- `cfg.AutoApply`가 true이면 시스템 환경에 자동 적용
+- `cfg.AutoApply`가 true 이면 시스템 환경에 자동 적용
 
 ```go
 // 기본 설정 사용
@@ -86,7 +88,7 @@ func (l *Loader) LoadFiles(filenames ...string) error
 - 순서대로 로드, 나중에 로드한 것이 먼저 로드한 것을 덮어씀 (`OverwriteExisting` 설정에 의해 제어)
 - 파일 형식 자동 감지 (.env, JSON, YAML)
 - `FailOnMissingFile` 설정에 따라 파일이 존재하지 않을 때의 동작 결정
-- `AutoApply`가 true이면 로드 후 자동 적용
+- `AutoApply`가 true 이면 로드 후 자동 적용
 
 ```go
 // 기본 .env 파일 로드
@@ -106,6 +108,7 @@ err := loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 - `*ParseError` - 파싱 오류
 - `*JSONError` - JSON 파싱 오류
 - `*YAMLError` - YAML 파싱 오류
+- `*SecurityError` - 파일 경로 보안 검증 실패 (예: 경로 순회 공격)
 
 **형식 감지 규칙:**
 
@@ -328,7 +331,7 @@ if secret != nil {
 :::
 
 :::tip 방어적 복사본
-`GetSecure`는 원본 값의 복사본을 반환하며, 부모 Loader와 독립적입니다. 호출자가 `Release()` 또는 `Close()`를 호출하여 해제할 책임이 있습니다.
+`GetSecure`는 원본 값의 복사본을 반환하며, 부모 Loader 와 독립적입니다. 호출자가 `Release()` 또는 `Close()`를 호출하여 해제할 책임이 있습니다.
 :::
 
 :::tip 자세히
@@ -339,13 +342,13 @@ if secret != nil {
 
 ### 슬라이스 값 가져오기
 
-Loader는 슬라이스 가져오기 메서드를 제공하지 않습니다 (Go는 제네릭 메서드를 지원하지 않음). 독립적인 제네릭 함수 `GetSliceFrom[T]`를 사용하여 Loader 인스턴스에서 슬라이스를 가져오세요:
+Loader 는 슬라이스 가져오기 메서드를 제공하지 않습니다 (Go 는 제네릭 메서드를 지원하지 않음). 독립적인 제네릭 함수 `GetSliceFrom[T]`를 사용하여 Loader 인스턴스에서 슬라이스를 가져오세요:
 
 ```go
 // 독립 제네릭 함수 사용
 hosts := env.GetSliceFrom[string](loader, "HOSTS")
 ports := env.GetSliceFrom[int64](loader, "PORTS", []int64{80})
-portsInt := env.GetSliceFrom[int](loader, "PORTS")  // int도 지원
+portsInt := env.GetSliceFrom[int](loader, "PORTS")  // int 도 지원
 ```
 
 **지원 유형:** `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`
@@ -410,9 +413,9 @@ func (l *Loader) Set(key, value string) error
 
 **동작:**
 - 키 이름 유효성 검증
-- `ValidateValues`가 true이면 값의 안전성 검증
-- `OverwriteExisting`이 false이고 키가 이미 존재하면 건너뜀 (nil 반환)
-- `AutoApply`가 true이면 시스템 환경에도 동시 설정
+- `ValidateValues`가 true 이면 값의 안전성 검증
+- `OverwriteExisting`이 false 이고 키가 이미 존재하면 건너뜀 (nil 반환)
+- `AutoApply`가 true 이면 시스템 환경에도 동시 설정
 
 ```go
 err := loader.Set("CUSTOM_KEY", "value")
@@ -422,8 +425,9 @@ if err != nil {
 ```
 
 **오류 유형:**
-- `ErrInvalidKey` - 키 이름이 유효하지 않음
-- `ErrForbiddenKey` - 금지된 키
+- `*ValidationError` - 키 이름 형식이 유효하지 않음 (Field="key")
+- `*SecurityError` - 키가 금지됨 (`errors.Is(err, env.ErrSecurityViolation)`로 일치 가능)
+- `ErrInvalidValue` - 값이 유효하지 않음 (`ValidateValues`가 true 일 때, 값에 널 바이트·제어 문자 등 안전하지 않은 내용이 포함된 경우)
 - `ErrClosed` - 로더가 닫힘
 
 ---
@@ -482,10 +486,10 @@ for _, key := range keys {
 func (l *Loader) All() map[string]string
 ```
 
-모든 키-값 쌍을 가져옵니다.
+모든 키 - 값 쌍을 가져옵니다.
 
 **반환값:**
-- `map[string]string` - 키-값 매핑, 로더가 닫힌 경우 nil 반환
+- `map[string]string` - 키 - 값 매핑, 로더가 닫힌 경우 nil 반환
 
 ```go
 all := loader.All()
@@ -522,7 +526,7 @@ fmt.Printf("%d개의 변수가 로드됨\n", count)
 func (l *Loader) Apply() error
 ```
 
-변수를 시스템 환경(`os.Environ`)에 적용합니다.
+변수를 시스템 환경 (`os.Environ`) 에 적용합니다.
 
 **반환값:**
 - `error` - 적용 오류
@@ -532,13 +536,17 @@ func (l *Loader) Apply() error
 - `OverwriteExisting` 설정에 따라 이미 존재하는 시스템 환경 변수를 덮어쓸지 결정
 - 적용 후 `os.Getenv()`로 접근 가능
 
+**오류 유형:**
+- `ErrClosed` - 로더가 닫힘
+- 래핑된 `os` 오류 - 환경 변수 설정 실패 (키 이름 마스킹됨, 오류 메시지에 민감 키 노출 안 함)
+
 ```go
 err := loader.Apply()
 if err != nil {
     panic(err)
 }
 
-// 이후 os.Getenv()로도 접근 가능
+// 이후 os.Getenv() 로도 접근 가능
 host := os.Getenv("HOST")
 ```
 
@@ -557,7 +565,7 @@ func (l *Loader) IsApplied() bool
 
 ```go
 if loader.IsApplied() {
-    // 변수가 os.Environ에 적용됨
+    // 변수가 os.Environ 에 적용됨
 }
 ```
 
@@ -597,7 +605,7 @@ func (l *Loader) Config() Config
 - `Config` - 설정 (읽기 전용으로 간주해야 함)
 
 :::warning 참고
-반환된 Config는 읽기 전용으로 간주해야 합니다. `KeyPattern`, `AllowedKeys`, `ForbiddenKeys`, `RequiredKeys` 등의 필드를 수정하면 로더 동작에 영향을 줄 수 있습니다. 안전한 가변 복사본이 필요한 경우 필요한 필드를 수동으로 복사하세요.
+반환된 Config 는 읽기 전용으로 간주해야 합니다. `KeyPattern`, `AllowedKeys`, `ForbiddenKeys`, `RequiredKeys` 등의 필드를 수정하면 로더 동작에 영향을 줄 수 있습니다. 안전한 가변 복사본이 필요한 경우 필요한 필드를 수동으로 복사하세요.
 :::
 
 ```go
@@ -621,7 +629,7 @@ func (l *Loader) Validate() error
 - `error` - 검증 오류
 
 **동작:**
-- `Config.RequiredKeys`에 지정된 모든 키가 존재하는지 확인
+- `ValidationConfig.RequiredKeys`에 지정된 모든 키가 존재하는지 확인
 
 ```go
 cfg := env.DefaultConfig()
@@ -659,14 +667,15 @@ func (l *Loader) ParseInto(v any) error
 - `env:"KEY"` - 환경 변수 이름 지정
 - `env:"-"` - 이 필드 무시
 - `envDefault:"value"` - 기본값 지정
-- `envSeparator:","` - 슬라이스 구분자 지정
+
+슬라이스 필드는 기본적으로 쉼표 `,`로 구분됩니다 (구분자 앞뒤 공백은 자동 제거되며, 커스텀 구분자 태그는 없습니다).
 
 ```go
 type Config struct {
     Host    string   `env:"HOST" envDefault:"localhost"`
     Port    int64    `env:"PORT" envDefault:"8080"`
     Debug   bool     `env:"DEBUG" envDefault:"false"`
-    Hosts   []string `env:"HOSTS" envSeparator:","`
+    Hosts   []string `env:"HOSTS"`
     Ignored string   `env:"-"`
 }
 
@@ -694,7 +703,7 @@ func (l *Loader) Close() error
 
 **동작:**
 - 저장된 모든 민감 데이터를 안전하게 초기화
-- Loader가 ComponentFactory를 소유한 경우 팩토리도 동시에 닫기
+- Loader 가 ComponentFactory 를 소유한 경우 팩토리도 동시에 닫기
 - 안전한 닫기, 여러 번 호출해도 nil 반환
 
 ```go

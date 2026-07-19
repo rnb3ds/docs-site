@@ -1,6 +1,7 @@
 ---
+sidebar_label: "개요"
 title: "HTTP 클라이언트 - CyberGo HTTPC | 보안 Go 클라이언트"
-description: "CyberGo HTTPC는 Go 보안 고성능 HTTP 클라이언트로, TLS 1.2+ 강제 암호화, SSRF 방어, 지수 백오프 재시도, 양파 모델 미들웨어 체인, 연결 풀 관리를 내장해 마이크로서비스와 고동시성 API 호출에 적합합니다."
+description: "CyberGo HTTPC 는 Go 보안 고성능 HTTP 클라이언트로, TLS 1.2+ 강제 암호화, SSRF 방어, 지수 백오프 재시도, 양파 모델 미들웨어 체인, 연결 풀 관리를 내장해 마이크로서비스와 고동시성 API 호출에 적합합니다."
 ---
 
 # HTTPC
@@ -16,7 +17,7 @@ description: "CyberGo HTTPC는 Go 보안 고성능 HTTP 클라이언트로, TLS 
 - **미들웨어 체인** - 로깅, 감사, 메트릭, 복구, 요청 ID 등 내장 미들웨어
 - **파일 다운로드** - 이어받기, 진행률 콜백, 체크섬 검증 지원
 - **DNS-over-HTTPS** - 내장 DoH 리졸루션, DNS 하이재킹 위험 감소
-- **객체 풀 재사용** - 내부 응답 객체와 문자열 빌더를 sync.Pool로 재사용, GC 부하 감소
+- **객체 풀 재사용** - 내부 응답 객체와 문자열 빌더를 sync.Pool 로 재사용, GC 부하 감소
 
 ## 설치
 
@@ -24,7 +25,7 @@ description: "CyberGo HTTPC는 Go 보안 고성능 HTTP 클라이언트로, TLS 
 go get github.com/cybergodev/httpc
 ```
 
-## 30초 체험
+## 30 초 체험
 
 ```go
 package main
@@ -50,15 +51,15 @@ func main() {
 
 | 목적 | 추천 |
 |------|------|
-| 5분 만에 시작 | [빠른 시작](./getting-started) |
-| 30분 실전 | [실전 튜토리얼](./guides/tutorial) |
-| 특정 사용법 찾기 | [치트시트](./cheatsheet) |
+| 5 분 만에 시작 | [빠른 시작](./getting-started/) |
+| 30 분 실전 | [실전 튜토리얼](./guides/tutorial) |
+| 특정 사용법 찾기 | [치트시트](./getting-started/cheatsheet) |
 | 보안 기능 알아보기 | [보안 개요](./security/) |
 | API 서명 확인 | [API 레퍼런스](./api-reference/) |
 
 ## 핵심 개념
 
-HTTPC는 간단한 것부터 유연한 것까지 세 가지 사용 방식을 제공합니다:
+HTTPC 는 간단한 것부터 유연한 것까지 세 가지 사용 방식을 제공합니다:
 
 ```text
 패키지 함수            클라이언트 인스턴스                  도메인 클라이언트

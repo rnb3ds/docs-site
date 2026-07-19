@@ -1,0 +1,161 @@
+/**
+ * VitePress overrides: hide the native language switcher (replaced by our
+ * LanguageMenu.vue), content/doc/sidebar spacing, sidebar scrollbar, and
+ * inline code styling.
+ */
+
+/* ============================================
+   Unified Language Switcher
+   ============================================
+   LanguageMenu.vue renders the language switcher on EVERY page (root `/`
+   included), so the homepage and every /{lang}/ page share one identical
+   switcher. Hide VitePress's native instances to avoid duplicates:
+     - .VPNavBarTranslations               : dedicated switcher (desktop ≥1280px)
+     - .VPNavBarExtra .group.translations  : switcher group consolidated into
+                                             the "..." menu at 768–1280px
+     - .VPNavScreenTranslations            : mobile nav drawer switcher
+   The unified component uses a different class (.LanguageMenu / .LanguageMenuScreen),
+   so these rules never target it.
+*/
+.VPNavBarTranslations,
+.VPNavBarExtra .group.translations,
+.VPNavScreenTranslations {
+  display: none !important;
+}
+
+/* Content area spacing */
+.VPContent {
+  padding-top: 0;
+}
+
+.VPDoc {
+  padding-top: 32px;
+}
+
+.VPSidebar {
+  border-right: 1px solid var(--vp-c-divider);
+}
+
+.vp-doc > div:first-child::before,
+.VPDoc::before,
+.VPDocFooter::before {
+  display: none;
+}
+
+.VPNavBarMenuGroup::before,
+.VPNavBarMenuGroup::after,
+.divider {
+  border-color: var(--vp-c-divider);
+}
+
+/* ============================================
+   Sidebar Scrollbar
+   ============================================ */
+
+.VPSidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.VPSidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.VPSidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(200, 200, 200, 0.4);
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+.VPSidebar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(200, 200, 200, 0.6);
+}
+
+.dark .VPSidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(60, 60, 60, 0.4);
+}
+
+.dark .VPSidebar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(80, 80, 80, 0.5);
+}
+
+.VPSidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200, 200, 200, 0.4) transparent;
+}
+
+.dark .VPSidebar {
+  scrollbar-color: rgba(60, 60, 60, 0.4) transparent;
+}
+
+/* ============================================
+   Inline Code Styles
+   ============================================ */
+
+.vp-doc :not(pre) > code {
+  background-color: rgba(118, 185, 0, 0.05);
+  color: #3d6a00;
+  padding: 0.2em 0.5em;
+  border-radius: 6px;
+  font-size: 0.9em;
+  font-weight: 500;
+  border: 1px solid rgba(118, 185, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.dark .vp-doc :not(pre) > code {
+  background-color: rgba(142, 208, 0, 0.05);
+  color: #b8e85c;
+  border: 1px solid rgba(142, 208, 0, 0.25);
+}
+
+.vp-doc a {
+  text-decoration: none;
+}
+
+/* ============================================
+   Project-aware Navbar Title & GitHub Link
+   ============================================
+   ProjectNavBarTitle.vue (rendered in the `nav-bar-title-after` slot) is the
+   SOLE visible navbar title text. Hide VitePress's native siteTitle <span> so
+   the two never show at once. The native <a class="title"> still carries the
+   logo and the click target; only the redundant text span is suppressed.
+   `:not(.project-nav-title)` is essential: our ProjectNavBarTitle also renders
+   a <span> inside <a class="title"> (via the nav-bar-title-after slot), and
+   without the exclusion this rule would hide the replacement title too. */
+.VPNavBarTitle .title > span:not(.project-nav-title) {
+  display: none;
+}
+
+/* ProjectGitHubLink.vue (rendered in `nav-bar-content-after`) replaces the
+   native social-links cluster, which only ever held this one GitHub link.
+   Hide it on desktop so the two never duplicate. (Below 768px the native
+   cluster is already hidden by VitePress, and ProjectGitHubLink mirrors that,
+   so mobile is unaffected.) */
+@media (min-width: 768px) {
+  .VPNavBar .social-links {
+    display: none !important;
+  }
+}
+
+/* ============================================
+   Native Search Wrapper (hidden — replaced by ProjectSearch)
+   ============================================
+   Native search is intentionally unset in config.mts (built-in `local`/`algolia`
+   are global-index only and conflict with ProjectSearch's per-project scope).
+   VitePress STILL renders an empty `<div class="VPNavBarSearch">` wrapper even
+   with no provider configured — only the inner `<template>` blocks (local /
+   algolia) are conditional, the outer div is not. That wrapper's CSS carries
+   `flex-grow: 1; padding-left: 24px` on ≥768px.
+
+   Per the CSS Flexbox spec, `flex-grow` is resolved BEFORE `auto` margins, so
+   an empty `flex-grow: 1` wrapper would absorb ALL free space in the navbar's
+   `.content-body` (a `justify-content: flex-end` flex container), leaving
+   nothing for ProjectSearch's `margin-left: auto` to consume — stranding the
+   trigger on the LEFT end of the cluster (right after the title) with a wide
+   empty gap before the menu. Hiding the wrapper makes the flex layout give our
+   trigger its intended right-end slot, flush against the nav menu. Safe because
+   `themeConfig.search` is permanently unset here (ProjectSearch is the sole
+   search surface), so the wrapper is always empty. */
+.VPNavBarSearch {
+  display: none !important;
+}

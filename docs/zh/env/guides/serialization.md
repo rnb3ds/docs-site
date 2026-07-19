@@ -1,6 +1,8 @@
 ---
+sidebar_label: "序列化"
 title: "序列化 - CyberGo env | 多格式转换"
-description: "CyberGo env 序列化指南，详解 .env、JSON、YAML 间的 Map 与结构体转换，含 Marshal/Unmarshal 函数族、自定义接口与敏感字段掩码处理。"
+description: "CyberGo env 序列化指南，详解 .env、JSON、YAML 间的 Map 与结构体转换，含 Marshal/Unmarshal 函数族、Marshaler/Unmarshaler 自定义接口与 DetectFormat 自动检测，覆盖配置导出与格式迁移等实用场景。"
+sidebar_position: 2
 ---
 
 # 序列化
@@ -33,7 +35,7 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
     // APP_NAME=my-app
     // APP_VERSION=1.0.0
     // DEBUG=true
@@ -63,10 +65,10 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
     // {
     //   "HOST": "localhost",
-    //   "PORT": "8080"
+    //   "PORT": 8080
     // }
 }
 ```
@@ -95,10 +97,10 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
     // DATABASE_HOST: localhost
-    // DATABASE_PORT: "5432"
     // DATABASE_NAME: myapp
+    // DATABASE_PORT: 5432
 }
 ```
 
@@ -134,10 +136,10 @@ func main() {
     }
 
     fmt.Println(result)
-    // 输出:
+    // 输出：
+    // DEBUG=true
     // HOST=localhost
     // PORT=8080
-    // DEBUG=true
 }
 ```
 
@@ -222,7 +224,7 @@ func main() {
     }
 
     fmt.Printf("%+v\n", data)
-    // 输出: map[DEBUG:true HOST:localhost PORT:8080]
+    // 输出：map[DEBUG:true HOST:localhost PORT:8080]
 
     // 可用于导出到文件
     content, _ := env.Marshal(data, env.FormatEnv)
@@ -257,7 +259,7 @@ DEBUG=true
     }
 
     fmt.Printf("%+v\n", result)
-    // 输出: map[DEBUG:true HOST:localhost PORT:8080]
+    // 输出：map[DEBUG:true HOST:localhost PORT:8080]
 }
 ```
 
@@ -343,7 +345,7 @@ func main() {
     }
 
     fmt.Printf("%+v\n", cfg)
-    // 输出: {Host:example.com Port:443}
+    // 输出：{Host:example.com Port:443}
 }
 ```
 
@@ -382,24 +384,32 @@ ENABLED=true
 
 ## 自定义序列化
 
-### 实现 Marshaler 接口
+::: tip 两种自定义接口的生效范围
+- **字段级**：结构体字段的自定义编解码，实现标准库 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`（`MarshalText()` / `UnmarshalText([]byte)`）。当结构体被 `env.Marshal`/`env.UnmarshalInto` 处理时，逐字段逻辑会识别这两个接口。
+- **顶层**：`env.Marshaler`（`MarshalEnv()`）与 `env.Unmarshaler`（`UnmarshalEnv(map[string]string)`）接口**仅在直接传给 `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto` 的顶层值上生效**；若传入的是含该类型字段的外层结构体，则不会被调用。
+:::
+
+### 字段级：实现 encoding.TextMarshaler
 
 ```go
 package main
 
 import (
     "fmt"
+    "strings"
+
     "github.com/cybergodev/env"
 )
 
 type LogLevel string
 
-type LogConfig struct {
-    Level LogLevel `env:"LOG_LEVEL"`
+// 实现 encoding.TextMarshaler —— 作为结构体字段序列化时会被调用
+func (l LogLevel) MarshalText() ([]byte, error) {
+    return []byte(strings.ToUpper(string(l))), nil
 }
 
-func (l LogLevel) MarshalEnv() ([]byte, error) {
-    return []byte(string(l)), nil
+type LogConfig struct {
+    Level LogLevel `env:"LOG_LEVEL"`
 }
 
 func main() {
@@ -413,28 +423,36 @@ func main() {
     }
 
     fmt.Println(result)
+    // 输出：LOG_LEVEL=DEBUG
 }
 ```
 
-### 实现 Unmarshaler 接口
+### 字段级：实现 encoding.TextUnmarshaler
 
 ```go
 package main
 
 import (
     "fmt"
+
     "github.com/cybergodev/env"
 )
 
 type LogLevel string
 
-type LogConfig struct {
-    Level LogLevel `env:"LOG_LEVEL"`
+// 实现 encoding.TextUnmarshaler —— 作为结构体字段反序列化时会被调用
+func (l *LogLevel) UnmarshalText(text []byte) error {
+    switch string(text) {
+    case "debug", "info", "warn", "error":
+        *l = LogLevel(text)
+        return nil
+    default:
+        return fmt.Errorf("invalid log level: %s", string(text))
+    }
 }
 
-func (l *LogLevel) UnmarshalEnv(data map[string]string) error {
-    *l = LogLevel(data["LOG_LEVEL"])
-    return nil
+type LogConfig struct {
+    Level LogLevel `env:"LOG_LEVEL"`
 }
 
 func main() {
@@ -449,6 +467,42 @@ func main() {
     }
 
     fmt.Printf("Level: %s\n", cfg.Level)
+    // 输出：Level: info
+}
+```
+
+### 顶层：实现 env.Marshaler / env.Unmarshaler
+
+当**直接**把一个类型的值传给 `env.Marshal` / `env.UnmarshalInto`（而非作为外层结构体的字段）时，`env.Marshaler` / `env.Unmarshaler` 接口会在该顶层值上生效：
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
+// 顶层类型直接实现 env.Marshaler
+type EnvBlob string
+
+func (e EnvBlob) MarshalEnv() ([]byte, error) {
+    // 自定义整体序列化输出
+    return []byte("APP_NAME=custom\nAPP_VERSION=2.0.0"), nil
+}
+
+func main() {
+    // 直接序列化顶层值（不是外层结构体的字段）
+    result, err := env.Marshal(EnvBlob(""), env.FormatEnv)
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Println(result)
+    // 输出：
+    // APP_NAME=custom
+    // APP_VERSION=2.0.0
 }
 ```
 

@@ -1,6 +1,8 @@
 ---
+sidebar_label: "ライフサイクル"
 title: "Processor ライフサイクル - CyberGo JSON | API リファレンス"
 description: "CyberGo JSON Processor ライフサイクル：New 作成、Close 解放、IsClosed 確認、GetStats 統計、GetHealthStatus 監視で並行安全な終了を保証します。"
+sidebar_position: 11
 ---
 
 # ライフサイクルと統計
@@ -94,8 +96,8 @@ type WarmupResult struct {
 
 ```go
 stats := processor.GetStats()
-fmt.Printf("キャッシュヒット率: %.2f%%\n", stats.HitRatio * 100)
-fmt.Printf("キャッシュサイズ: %d\n", stats.CacheSize)
+fmt.Printf("キャッシュヒット率：%.2f%%\n", stats.HitRatio * 100)
+fmt.Printf("キャッシュサイズ：%d\n", stats.CacheSize)
 ```
 
 **Stats 構造体**：
@@ -218,7 +220,7 @@ defer processor.Close()
 
 cfg := processor.GetConfig()
 fmt.Printf("キャッシュ有効: %v\n", cfg.EnableCache)
-fmt.Printf("最大 JSON サイズ: %d\n", cfg.MaxJSONSize)
+fmt.Printf("最大 JSON サイズ：%d\n", cfg.MaxJSONSize)
 ```
 
 ## 使用のヒント
@@ -267,5 +269,5 @@ go func() {
 ## 関連
 
 - [Config](../config) - 設定オプション（キャッシュサイズ、TTL など）
-- [Hook フックシステム](../hooks) - フックの詳細な使用ガイド
+- [Hook フックシステム](../../extensions/hooks) - フックの詳細な使用ガイド
 - [インターフェース定義](../interfaces) - Hook インターフェース

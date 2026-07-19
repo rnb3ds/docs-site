@@ -84,6 +84,19 @@ npm run build
 npm run preview
 ```
 
+### Pre-push Checks
+
+Run these locally to catch errors before pushing to main (a push triggers the FTP auto-deploy):
+
+```bash
+npm run precheck      # format:check → typecheck → check:projects → build → audit
+npm run precheck:go   # audit:api + check:code --all (run when you change Go code samples or API references)
+npx autocorrect-node --fix   # CJK typography polish (run on demand)
+```
+
+- `precheck` includes a full production build, so it verifies your push will build successfully on the deploy runner.
+- `precheck:go` requires the Go toolchain and the 6 source repos at `D:/MyProject/{project}-dev`.
+
 ## Project Structure
 
 ```

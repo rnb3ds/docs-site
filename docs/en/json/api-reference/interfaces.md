@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Interfaces"
 title: "Interface Definitions - CyberGo JSON | API Reference"
 description: "CyberGo JSON extension interfaces: CustomEncoder, TypeEncoder, Validator, Hook, PathParser, and DangerousPattern to extend encoding, validation, and security."
+sidebar_position: 6
 ---
 
 # Interface Definitions
@@ -381,20 +383,17 @@ func (n Number) Int64() (int64, error)       // Converts to int64
 **Usage Example**:
 
 ```go
-processor, err := json.New()
-if err != nil {
-    panic(err)
-}
-defer processor.Close()
+// Get Number type (via Decoder.UseNumber to preserve full precision)
+decoder := json.NewDecoder(strings.NewReader(data))
+decoder.UseNumber()
 
-// Get Number type (via Get method then type assertion)
-val, err := processor.Get(data, "large_number")
-if err != nil {
+var obj map[string]any
+if err := decoder.Decode(&obj); err != nil {
     panic(err)
 }
 
 // Type assertion to get Number
-if num, ok := val.(json.Number); ok {
+if num, ok := obj["large_number"].(json.Number); ok {
     // Number preserves original precision
     fmt.Println(num.String()) // "9007199254740993" (full precision)
 
@@ -647,6 +646,6 @@ func (ve *ValidationError) Error() string
 
 ## See Also
 
-- [Hook System](./hooks) - Detailed hook usage guide
-- [Validator](./validator) - Detailed validator usage guide
-- [CustomEncoder](./custom-encoder) - Custom encoder guide
+- [Hook System](../extensions/hooks) - Detailed hook usage guide
+- [Validator](../extensions/validator) - Detailed validator usage guide
+- [CustomEncoder](../extensions/custom-encoder) - Custom encoder guide

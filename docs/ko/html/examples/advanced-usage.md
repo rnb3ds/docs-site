@@ -1,13 +1,15 @@
 ---
-title: "고급 예제 - CyberGo HTML | 심화 시나리오"
-description: "CyberGo HTML 고급 예제: 커스텀 Scorer, 다중 Sink 감사 파이프라인, 배치 파일과 동시성 제어, Processor 풀링, ChannelAuditSink 모니터링 등 실행 가능 예시입니다."
+sidebar_label: "고급 예제"
+title: "고급 예제 - CyberGo html | 심화 시나리오 예제"
+description: "CyberGo html 고급 예제: 커스텀 Scorer, 다중 Sink 감사 파이프라인, 배치 동시성 제어, Processor 풀링 등 심화 실행 가능 코드입니다."
+sidebar_position: 2
 ---
 
 # 고급 예제
 
 ## 커스텀 Scorer
 
-특정 웹사이트 구조에 맞게 콘텐츠 식별 로직을 커스터마이즈합니다. 전체 구현은 [테스트와 커스텀 확장](../guides/testing-custom)을 참조하고, 아래는 핵심 사용법을 보여줍니다:
+특정 웹사이트 구조에 맞게 콘텐츠 식별 로직을 커스터마이즈합니다. 전체 구현은 [테스트와 커스텀 확장](../guides/integration/testing-custom)을 참조하고, 아래는 핵심 사용법을 보여줍니다:
 
 ```go
 package main
@@ -20,7 +22,7 @@ import (
     "github.com/cybergodev/html"
 )
 
-// 커스텀 Scorer 구현(전체 예시는 guides/testing-custom 참조)
+// 커스텀 Scorer 구현 (전체 예시는 guides/testing-custom 참조)
 type myScorer struct{}
 
 func (s myScorer) Score(node html.ContentNode) int {
@@ -59,7 +61,7 @@ func main() {
         <nav><a href="/">홈</a></nav>
         <article class="post-content">
             <h1>Go 동시성 이해하기</h1>
-            <p>고루틴은 Go의 경량 스레드입니다.</p>
+            <p>고루틴은 Go 의 경량 스레드입니다.</p>
         </article>
         <aside class="sidebar">추천 읽기</aside>
     </body></html>`)
@@ -72,7 +74,7 @@ func main() {
     fmt.Println("본문:", result.Text)
     // 본문: Go 동시성 이해하기
     //
-    // 고루틴은 Go의 경량 스레드입니다.
+    // 고루틴은 Go 의 경량 스레드입니다.
 }
 ```
 
@@ -133,7 +135,7 @@ func main() {
     }
 
     fmt.Println("본문:", result.Text)
-    // 감사 로그가 파일과 stderr에 자동으로 기록됨
+    // 감사 로그가 파일과 stderr 에 자동으로 기록됨
 }
 ```
 
@@ -171,7 +173,7 @@ func main() {
     p, _ := html.New(html.TextOnlyConfig())
     defer p.Close()
 
-    // 한 배치당 최대 10000개 파일
+    // 단일 배치 상한 10000; 초과 시 전체 실패, 호출자가 직접 분할
     batch := p.ExtractBatchFiles(files)
 
     fmt.Printf("성공: %d, 실패: %d, 취소: %d\n",

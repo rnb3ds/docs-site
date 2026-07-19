@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Processor"
 title: "Processor - CyberGo JWT | 核心トークン操作型"
 description: "Processor は CyberGo JWT の核心型で、Create・Validate・Refresh・Revoke・IsRevoked・ParseUnverified・Close など全トークン操作メソッドの署名・引数・戻り値・エラー・例を説明。"
+sidebar_position: 20
 ---
 
 # Processor
@@ -17,7 +19,7 @@ func (p *Processor) Create(claims CustomClaims) (string, error)
 
 新しい JWT アクセストークンを作成します。`CustomClaims` インターフェースを実装する任意の型を受け付けます。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -62,7 +64,7 @@ func (p *Processor) Validate(tokenString string) (Claims, bool, error)
 
 JWT アクセストークンを検証し、パースされた Claims を返します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -117,7 +119,7 @@ func (p *Processor) CreateRefresh(claims CustomClaims) (string, error)
 
 リフレッシュトークンを作成します。`AccessTokenTTL` ではなく `RefreshTokenTTL` を使用します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -159,7 +161,7 @@ func (p *Processor) Refresh(refreshTokenString string) (string, error)
 リフレッシュ時は標準 JWT フィールド（exp、nbf、iss、aud、ブラックリスト）と基本構造の有効性（UserID または Username が必須）のみ検証します。深いフィールド制約（長さ制限、注入パターン）は作成時に検証済みのため、再チェックされません。
 :::
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -202,7 +204,7 @@ func (p *Processor) ValidateInto(tokenString string, claims CustomClaims) (Custo
 
 トークンを検証し、カスタム Claims 構造体に格納します。渡された `claims` と同じポインタを返します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -263,7 +265,7 @@ func (p *Processor) RefreshInto(refreshTokenString string, claims CustomClaims) 
 リフレッシュ時は標準 JWT フィールド（exp、nbf、iss、aud、ブラックリスト）と基本構造の有効性のみ検証します。深いフィールド制約（長さ制限、注入パターン）は作成時に検証済みのため、再チェックされません。
 :::
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -305,9 +307,16 @@ func (p *Processor) RefreshInto(refreshTokenString string, claims CustomClaims) 
 func (p *Processor) Revoke(tokenString string) error
 ```
 
-トークンをブラックリストに追加します。
+署名を検証してトークン ID（jti）を抽出し、トークンをブラックリストに追加します。有効な署名を持つトークンのみが失効可能で、悪意のある呼び出し元が任意のトークン ID をブラックリストに追加するのを防ぎます。
 
-<Badge type="tip" text="v1.0.0+" />
+:::info TTL の振る舞い
+- トークンの `exp` がブラックリストエントリの TTL を決定します
+- `exp` のないトークンはデフォルトで 7 日間の TTL となります
+- TTL の上限は 30 日で、偽造された極端に長い `exp` によるメモリのロックを防ぎます（DoS 防御）
+- 期限切れのトークンも失効可能です。エントリはブラックリストにより自動的にクリーンアップされます
+:::
+
+
 
 ### パラメータ
 
@@ -341,9 +350,9 @@ func (p *Processor) Revoke(tokenString string) error
 func (p *Processor) IsRevoked(tokenString string) (bool, error)
 ```
 
-トークンが失効済みかどうかを確認します。
+トークンが失効済みかどうかを確認します。署名を検証した後、ブラックリスト内のトークンの jti ステータスを検索します。ブラックリストが未設定の場合、`false` と `nil` エラーを返します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -383,7 +392,7 @@ func (p *Processor) ParseUnverified(tokenString string, claims any) error
 返される Claims は未検証のため、**信頼できません**。デバッグやログ目的でのみ使用してください。
 :::
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### パラメータ
 
@@ -416,7 +425,7 @@ func (p *Processor) Close() error
 
 リソースを解放し、秘密鍵を安全にクリアします。複数回呼び出し可能で、2 回目以降は `ErrProcessorClosed` を返します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 戻り値
 
@@ -434,7 +443,7 @@ func (p *Processor) IsClosed() bool
 
 Processor がクローズ済みかどうかを確認します。
 
-<Badge type="tip" text="v1.0.0+" />
+
 
 ### 戻り値
 

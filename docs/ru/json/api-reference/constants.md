@@ -1,6 +1,8 @@
 ---
-title: "Константы и ошибки - CyberGo JSON | Справочник API"
-description: "Константы и ошибки CyberGo JSON: DefaultMaxJSONSize, DefaultMaxNestingDepth, переменные ErrPathNotFound и MergeMode для настройки и обработки ошибок в Go."
+sidebar_label: "Константы и ошибки"
+title: "Константы и ошибки - CyberGo JSON | API"
+description: "Константы и ошибки CyberGo JSON: DefaultMaxJSONSize, DefaultMaxNestingDepth, ErrPathNotFound и MergeMode."
+sidebar_position: 7
 ---
 
 # Константы и ошибки
@@ -21,13 +23,13 @@ var (
     // Ошибки ограничений
     ErrSizeLimit        = errors.New("size limit exceeded")
     ErrDepthLimit       = errors.New("depth limit exceeded")
-    ErrConcurrencyLimit = errors.New("concurrency limit exceeded")
+    ErrConcurrencyLimit = errors.New("concurrency limit exceeded") // возвращается, когда управляемые операции (Get/Set/Delete и др.) достигают MaxConcurrency
 
     // Ошибки безопасности и валидации
     ErrSecurityViolation = errors.New("security violation detected")
     ErrUnsupportedPath   = errors.New("unsupported path operation")
 
-    // Ошибки ресурсов и производительности
+    // Ошибки ресурсов и производительности (обе Deprecated: в настоящее время не возвращаются ни одной операцией, сохранены для будущего использования)
     ErrOperationTimeout  = errors.New("operation timeout")
     ErrResourceExhausted = errors.New("system resources exhausted")
 )
@@ -213,7 +215,7 @@ type PathSegment = internal.PathSegment
 ```
 
 ::: warning Псевдоним внутренней реализации
-`PathSegment` — это псевдоним типа `internal.PathSegment`. Его конкретные поля, типы полей (например, `PathSegmentType`, `PathSegmentFlags`) и методы принадлежат пакету `internal`, **не экспортируются как публичный API** и могут меняться между версиями — не полагайтесь на его внутреннюю структуру напрямую в бизнес-коде.
+`PathSegment` — это псевдоним типа `internal.PathSegment`. Его конкретные поля, типы полей (например, PathSegmentType, PathSegmentFlags) и методы принадлежат пакету `internal`, **не экспортируются как публичный API** и могут меняться между версиями — не полагайтесь на его внутреннюю структуру напрямую в бизнес-коде.
 
 - При реализации пользовательского синтаксиса путей возвращайте `[]PathSegment` через метод `ParsePath` интерфейса [`PathParser`](./interfaces#pathparser).
 - Для предкомпилированных путей используйте [`Processor.CompilePath`](./processor/query#compilepath), который возвращает `*CompiledPath`.

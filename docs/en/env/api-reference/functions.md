@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Package Functions"
 title: "Package Functions - CyberGo env | Global Helpers"
-description: "CyberGo env package function API reference: Load, GetString, GetInt, Keys, Marshal and ParseInto over a thread-safe global default Loader."
+description: "CyberGo env package functions: Load, GetString, GetInt, GetBool, GetDuration, GetSlice, GetSecure, Lookup, Keys, ParseInto over the global default Loader."
+sidebar_position: 2
 ---
 
 # Package Functions
@@ -516,13 +518,14 @@ Sets an environment variable.
 - `error` - Setting error
 
 **Error Types:**
-- `ErrInvalidKey` - Invalid key name
-- `ErrForbiddenKey` - Forbidden key
+- `*ValidationError` - Invalid key name format (Field="key")
+- `*SecurityError` - Forbidden key (matchable via `errors.Is(err, env.ErrSecurityViolation)`)
+- `ErrInvalidValue` - Invalid value (when `ValidateValues` is true, value contains unsafe content like null bytes or control characters)
 - `ErrClosed` - Loader is closed
 
 ```go
 if err := env.Set("CUSTOM_KEY", "value"); err != nil {
-    // Could be ErrForbiddenKey or ErrInvalidKey
+    // Could be *SecurityError (forbidden key) or *ValidationError (key format)
 }
 ```
 
@@ -610,7 +613,8 @@ if err := env.ParseInto(&cfg); err != nil {
 | `env:"KEY"` | Maps to specified key |
 | `env:"-"` | Ignores this field |
 | `envDefault:"value"` | Default value |
-| `envSeparator:","` | Slice separator |
+
+Slice fields are split by comma `,` by default (surrounding whitespace around the separator is trimmed automatically); there is no custom separator tag.
 
 :::tip See Also
 [Struct Mapping](/en/env/guides/struct-mapping) for a complete guide.
@@ -632,9 +636,9 @@ Resets the global default loader. Primarily used in testing scenarios.
 - `error` - Error from closing the old loader (if one exists); returns nil if there was no previous loader or if closing succeeded
 
 **Behavior:**
-- Atomically swaps the default loader with nil
-- Closes the old loader (executed outside the lock to avoid blocking)
-- Allows a new default loader to be created
+- Atomically swaps the default loader to nil via `atomic.Pointer.Swap`
+- Closes the old loader while holding the `defaultMu` lock (lock released only after close completes, ensuring atomic reset)
+- After reset, a new default loader can be created via `Load()` or `LoadWithConfig()`
 
 ```go
 func TestMain(m *testing.M) {
@@ -731,9 +735,12 @@ envStr, _ := env.Marshal(mapData)
 // HOST=localhost
 // PORT=8080
 
-// Map to JSON format
+// Map to JSON format (numeric strings emitted as bare numbers, keys sorted alphabetically)
 jsonStr, _ := env.Marshal(mapData, env.FormatJSON)
-// {"HOST":"localhost","PORT":"8080"}
+// {
+//   "HOST": "localhost",
+//   "PORT": 8080
+// }
 
 // Struct to .env format
 type Config struct {
@@ -910,7 +917,7 @@ type AppConfig struct {
     Port     int64         `env:"APP_PORT" envDefault:"8080"`
     Debug    bool          `env:"DEBUG" envDefault:"false"`
     Timeout  time.Duration `env:"TIMEOUT" envDefault:"30s"`
-    Hosts    []string      `env:"HOSTS" envSeparator:","`
+    Hosts    []string      `env:"HOSTS"`
 }
 
 func main() {

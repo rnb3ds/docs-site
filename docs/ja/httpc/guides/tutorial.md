@@ -1,6 +1,8 @@
 ---
+sidebar_label: "チュートリアル"
 title: "チュートリアル - CyberGo HTTPC | GitHub API 実戦"
-description: "HTTPC 実践チュートリアル: httpc.Get から段階的に完全な GitHub REST API クライアントを構築し、JSON 解析、ドメインクライアント、ミドルウェアチェーン組み合わせ、ClientError エラー処理、ファイルダウンロードをカバーします。"
+description: "HTTPC 実践チュートリアル：httpc.Get から段階的に完全な GitHub REST API クライアントを構築し、JSON 解析、ドメインクライアント、ミドルウェアチェーン組み合わせ、ClientError エラー処理、ファイルダウンロードをカバーします。"
+sidebar_position: 1
 ---
 
 # チュートリアル：GitHub API クライアントの構築
@@ -183,7 +185,7 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 ```
 
 ポイント：
-- ミドルウェアは `Config.Middleware.Middlewares` で設定
+- ミドルウェアは `MiddlewareConfig.Middlewares` で設定
 - `LoggingMiddleware` はリクエストログを記録
 - `RecoveryMiddleware` は panic によるクラッシュを防止
 - `RequestIDMiddleware` は各リクエストにユニーク ID を生成
@@ -222,7 +224,7 @@ case result.StatusCode() == 401:
 case result.IsClientError():
     log.Printf("クライアントエラー: %d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("サーバーエラー: %d (自動リトライ %d 回)",
+    log.Printf("サーバーエラー: %d (合計 %d 回試行、初回含む)",
         result.StatusCode(), result.Meta.Attempts)
 }
 ```
@@ -250,7 +252,7 @@ dlCfg.FilePath = "go1.22.0.linux-amd64.tar.gz"
 dlCfg.Overwrite = true
 dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
     pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\rダウンロード進捗: %.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
+    fmt.Printf("\rダウンロード進捗：%.1f%% (%.2f MB/s)", pct, float64(speed)/1024/1024)
 }
 
 result, err := client.Download(
@@ -274,7 +276,10 @@ fmt.Printf("\nダウンロード完了: %s (%d bytes)\n",
 
 ```go
 func fetchRepos(ctx context.Context, repos []string) error {
-    client, _ := httpc.New(httpc.PerformanceConfig())
+    client, err := httpc.New(httpc.PerformanceConfig())
+    if err != nil {
+        return err
+    }
     defer client.Close()
 
     results := make([]*httpc.Result, len(repos))
@@ -370,7 +375,7 @@ func main() {
         fmt.Printf("✅ %s\n", repo.FullName)
         fmt.Printf("   ⭐ %d | 言語: %s\n", repo.Stars, repo.Language)
         fmt.Printf("   %s\n", repo.Description)
-        fmt.Printf("   所要時間: %s (リトライ %d 回)\n",
+        fmt.Printf("   所要時間: %s (合計 %d 回試行、初回含む)\n",
             result.Meta.Duration, result.Meta.Attempts)
     }
 }

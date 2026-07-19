@@ -1,6 +1,8 @@
 ---
+sidebar_label: "Overview"
 title: "API Reference - CyberGo JSON | Complete Function Reference"
 description: "CyberGo JSON API reference: GetString/GetInt queries, Set/Delete, Marshal/Unmarshal, Processor, Schema validation, Hook, and security config."
+sidebar_position: 1
 ---
 
 # API Reference
@@ -11,21 +13,21 @@ This section provides the complete API reference for the `github.com/cybergodev/
 
 | Module | Description |
 |--------|-------------|
-| [Package Functions](./functions) | Package-level function reference, including path queries, type getters, encoding/decoding, etc. |
+| [Package Functions](./functions/) | Package-level function reference, including path queries, type getters, encoding/decoding, etc. |
 | [Processor](./processor/) | Processor methods and configuration |
 | [Config](./config) | Configuration options in detail |
 | [Type Definitions](./types) | Core type definitions (including Encoder/Decoder) |
 | [Generic Operations](./generics) | Generic API reference |
 | [Interface Definitions](./interfaces) | Extension interface definitions |
-| [Stream Processing](./large-file) | Stream processor reference |
-| [NDJSON Processing](./jsonl) | JSONL/NDJSON processor |
+| [Stream Processing](../streaming/large-files) | Stream processor reference |
+| [NDJSON Processing](../streaming/jsonl) | JSONL/NDJSON processor |
 | [Iterator](./iterator) | Iteration traversal API |
 | [Helper Functions](./helpers) | Type conversion and utility functions |
 | [Pretty Print](./print) | Formatting and pretty-print output |
-| [Security](./security) | Security-related API |
-| [Validator](./validator) | Schema validator |
-| [Hook System](./hooks) | Operation interception hooks |
-| [Custom Encoder](./custom-encoder) | Custom encoders |
+| [Security](../security/security-mode) | Security-related API |
+| [Validator](../extensions/validator) | Schema validator |
+| [Hook System](../extensions/hooks) | Operation interception hooks |
+| [Custom Encoder](../extensions/custom-encoder) | Custom encoders |
 | [Constants & Errors](./constants) | Constants and error types |
 
 ## Quick Find
@@ -54,8 +56,8 @@ This section provides the complete API reference for the `github.com/cybergodev/
 
 | Function | Description |
 |----------|-------------|
-| `Marshal`, `Unmarshal` | Standard encoding/decoding |
-| `MarshalIndent` | Pretty-print encoding |
+| `Marshal`, `Unmarshal` | Standard encoding/decoding (compatible with `encoding/json`, optional `cfg`) |
+| `MarshalIndent` | Pretty-print encoding (compatible with `encoding/json.MarshalIndent`, optional `cfg`) |
 | `Encode`, `EncodeWithConfig` | Encode to string |
 | `NewEncoder`, `NewDecoder` | Stream encoding/decoding |
 | `Parse` | Parse JSON |
@@ -65,7 +67,8 @@ This section provides the complete API reference for the `github.com/cybergodev/
 | Function | Description |
 |----------|-------------|
 | `Prettify` | Format JSON |
-| `Compact` | Compact JSON |
+| `Compact` | Compact JSON (buffer form, compatible with `encoding/json.Compact`) |
+| `CompactString` | Compact JSON (string in/out form, mirrors `Processor.Compact`) |
 
 #### File Operations
 
@@ -109,7 +112,7 @@ The library follows these naming conventions:
 
 ## Related
 
-- [Getting Started](../getting-started) -- Installation and basic usage
-- [Path Expression Syntax](../path-syntax) -- Path query syntax
-- [Usage Examples](../examples) -- Practical code examples
-- [Large File Processing](../large-files) -- Stream processing guide
+- [Getting Started](../getting-started/) -- Installation and basic usage
+- [Path Expression Syntax](../getting-started/path-syntax) -- Path query syntax
+- [Usage Examples](../examples/) -- Practical code examples
+- [Large File Processing](../streaming/large-files) -- Stream processing guide

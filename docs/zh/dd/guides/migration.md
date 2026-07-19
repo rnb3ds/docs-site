@@ -1,6 +1,8 @@
 ---
+sidebar_label: "迁移指南"
 title: "迁移指南 - CyberGo DD | 从其他日志库迁移"
 description: "CyberGo DD 从标准库 log/slog 及主流第三方日志库（zap、logrus、zerolog）迁移的完整对照指南，提供详细的 API 映射表、配置参数对照、常见迁移模式和渐进式迁移策略，帮助开发者低风险地将现有日志系统平滑切换到 DD 日志库。"
+sidebar_position: 8
 ---
 
 # 迁移指南
@@ -45,12 +47,16 @@ log.SetOutput(file)
 log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 // After: DD
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
+    Level:  dd.LevelInfo,
     Format: dd.FormatText,
     Targets: []dd.OutputTarget{
         dd.FileOutput("logs/app.log"),
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
 dd.SetDefault(logger)
 ```
 
@@ -118,7 +124,7 @@ cfg := zap.Config{
 logger, _ := cfg.Build()
 
 // After: DD
-logger, _ := dd.New(dd.Config{
+logger, err := dd.New(dd.Config{
     Level:  dd.LevelInfo,
     Format: dd.FormatJSON,
     Targets: []dd.OutputTarget{
@@ -126,6 +132,9 @@ logger, _ := dd.New(dd.Config{
         dd.FileOutput("logs/app.json"),
     },
 })
+if err != nil {
+    log.Fatal(err)
+}
 ```
 
 ### 字段对照
@@ -197,4 +206,4 @@ dd.WithFields(
 
 - [核心概念](./core-concepts) -- DD 架构概述
 - [结构化日志](./structured-logging) -- 字段使用详解
-- [速查表](../cheatsheet) -- API 速查
+- [速查表](../getting-started/cheatsheet) -- API 速查
