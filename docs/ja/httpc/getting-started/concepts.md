@@ -112,4 +112,4 @@ if !result.IsSuccess() {
 }
 ```
 
-[エラー処理](./error-handling) を参照してください。
+[エラー処理](../guides/error-handling) を参照してください。

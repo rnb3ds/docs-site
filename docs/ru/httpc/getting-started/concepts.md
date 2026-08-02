@@ -112,4 +112,4 @@ if !result.IsSuccess() {
 }
 ```
 
-См. [Обработка ошибок](./error-handling).
+См. [Обработка ошибок](../guides/error-handling).
