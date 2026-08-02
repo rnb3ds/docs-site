@@ -1,7 +1,7 @@
 ---
 sidebar_label: "概要"
-title: "HTTP クライアント - CyberGo HTTPC | 安全な Go クライアント"
-description: "CyberGo HTTPC は Go 向けの安全で高性能な HTTP クライアントライブラリ。TLS 1.2+ 強制暗号化、SSRF 防護、指数バックオフリトライ、オニオンモデルミドルウェア、接続プール管理を内蔵し、マイクロサービス通信に適しています。"
+title: "HTTP クライアント - CyberGo HTTPC | 安全・高性能クライアント"
+description: "CyberGo HTTPC は Go 言語向けの安全・高性能な HTTP クライアントライブラリで、TLS 1.2+ 強制暗号化、SSRF 防護、インテリジェントな指数バックオフリトライ、オニオンモデルのミドルウェアチェーン、コネクションプール管理と Result ライフサイクル自動管理を提供し、マイクロサービス通信や高並列 API 呼び出しのシナリオに適しています。"
 ---
 
 # HTTPC
@@ -10,7 +10,7 @@ description: "CyberGo HTTPC は Go 向けの安全で高性能な HTTP クライ
 
 ## 特徴
 
-- **TLS 1.2+** - 最低 TLS バージョンを強制、デフォルト TLS 1.2-1.3
+- **TLS 1.2+** - 最低 TLS バージョンを強制、デフォルトは TLS 1.2-1.3
 - **SSRF 防護** - デフォルトでプライベート IP 接続をブロック、CIDR 免除設定可能
 - **インテリジェントリトライ** - 指数バックオフ + ジッター、カスタムリトライ戦略に対応
 - **コネクションプール管理** - 高性能な接続再利用、HTTP/2 対応
@@ -59,11 +59,11 @@ func main() {
 
 ## コアコンセプト
 
-HTTPC は 3 つの使用方法を提供します。シンプルから柔軟まで：
+HTTPC は 3 つの使用方法を提供します。シンプルなものから柔軟なものまで：
 
 ```text
 パッケージ関数         クライアントインスタンス            ドメインクライアント
-httpc.Get()  →  client, _ := httpc.New()  →  dc, _ := httpc.NewDomain(url)
+httpc.Get()  →  client, _ := httpc.NewDefault()  →  dc, _ := httpc.NewDomainDefault(url)
 一度きりのリクエスト   カスタム設定/ミドルウェア   セッション管理/Cookie 自動維持
 ```
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "도메인 클라이언트와 세션"
 title: "도메인 클라이언트와 세션 - CyberGo HTTPC | 세션과 도메인"
-description: "HTTPC 도메인 클라이언트와 세션 가이드: NewDomain 으로 도메인 범위 클라이언트 생성, URL 자동 조합, SetHeader 헤더 유지, Cookie 보안 검증과 REST API 클라이언트 래핑 실전 예제를 다룹니다."
+description: "HTTPC 도메인 클라이언트와 세션 가이드: NewDomain 으로 도메인 클라이언트 생성, URL 자동 조합, SetHeader 헤더 유지, Cookie 보안 검증과 REST API 래핑 실전 예제를 다룹니다."
 sidebar_position: 3
 ---
 
@@ -12,7 +12,7 @@ sidebar_position: 3
 ## 도메인 클라이언트 생성
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -122,7 +122,7 @@ if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
 Cookie 보안 정책을 설정하여 보안 기준을 충족하는 Cookie 만 수락할 수 있습니다:
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
 
 // 엄격한 Cookie 보안 설정
 session := dc.Session()
@@ -155,7 +155,7 @@ import (
 
 func main() {
     // 도메인 클라이언트 생성
-    dc, err := httpc.NewDomain("https://api.example.com")
+    dc, err := httpc.NewDomainDefault("https://api.example.com")
     if err != nil {
         log.Fatal(err)
     }

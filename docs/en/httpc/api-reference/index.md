@@ -1,17 +1,17 @@
 ---
 sidebar_label: "Overview"
 title: "API Reference - CyberGo HTTPC | Full API Index"
-description: "HTTPC API reference index: navigate core, request/response, and advanced features — functions, options, presets, middleware, downloads, and error types."
+description: "HTTPC API reference index organized into three groups (core, request/response, advanced features), covering package-level HTTP functions, 28 WithXxx request options, the Config system with five presets, seven built-in middleware, the domain client, file download, and error types as complete entry points for quick lookup."
 sidebar_position: 1
 ---
 
 # API Reference
 
-HTTPC provides 28 request option functions, 5 configuration presets, 8 built-in middleware, and complete download support.
+HTTPC provides 28 request-option functions, 5 configuration presets, 7 built-in middleware, and complete download support.
 
 ## Core Architecture
 
-HTTPC uses a two-layer design: the Layer 1 method API is a thin wrapper, and the real request-processing engine is the Layer 2 Handler pipeline.
+HTTPC uses a two-layer design: the Layer 1 method API is a thin wrapper, while the real request-processing engine is the Layer 2 Handler pipeline.
 
 ```text
 HTTPC two-layer architecture
@@ -40,8 +40,8 @@ HTTPC two-layer architecture
 
 | Module | Description |
 |--------|-------------|
-| [Request Options](./core/options) | 28 WithXxx request option functions (headers, body, authentication, cookies, callbacks, etc.) |
-| [Middleware](./client-config/middleware) | Chain composition, 8 built-in middleware factories, and audit event types |
+| [Request Options](./core/options) | 28 WithXxx request-option functions (headers, body, authentication, cookies, callbacks, etc.) |
+| [Middleware](./client-config/middleware) | Chain composition, 7 built-in middleware factories, and audit event types |
 | [Error Types](./types/errors) | ClientError, 12 ErrorType enums, and 12 error variables |
 
 ### Advanced Features
@@ -58,9 +58,9 @@ HTTPC two-layer architecture
 ### Creating a Client
 
 ```go
-client, err := httpc.New()                    // Default configuration
+client, err := httpc.NewDefault()              // Default configuration
 client, err := httpc.New(httpc.SecureConfig()) // Secure preset
-client, err := httpc.New(customConfig)         // Custom configuration
+client, err := httpc.New(customConfig)          // Custom configuration
 ```
 
 ### Sending Requests

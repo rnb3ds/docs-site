@@ -1,7 +1,7 @@
 ---
 sidebar_label: "기본 예제"
 title: "기본 예제 - CyberGo HTTPC | 실행 가능 예제"
-description: "HTTPC 기본 예제 모음: 인증이 포함된 GET 요청, JSON/폼/파일 업로드 POST, 커스텀 설정, 프록시, 미들웨어, 메트릭 수집과 진행률 콜백 파일 다운로드의 완전하고 컴파일 가능한 코드를 제공합니다. 모든 예제는 즉시 실행 가능합니다."
+description: "HTTPC 기본 예제 모음: 인증 GET 요청, JSON/폼/파일 업로드 POST, 커스텀 설정, 프록시, 미들웨어, 메트릭 수집과 진행률 콜백 파일 다운로드의 컴파일 가능한 코드를 제공합니다."
 sidebar_position: 1
 ---
 
@@ -156,9 +156,9 @@ client, _ := httpc.New(cfg)
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
-cfg.Middleware.UserAgent = "my-app/1.0"
+cfg.Defaults.UserAgent = "my-app/1.0"
 
 client, _ := httpc.New(cfg)
 ```
@@ -168,10 +168,10 @@ client, _ := httpc.New(cfg)
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
-    httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
         metrics.Record(method, statusCode, duration)
-    }),
+    }}),
 }
 
 client, _ := httpc.New(cfg)
@@ -180,7 +180,7 @@ client, _ := httpc.New(cfg)
 ## 파일 다운로드
 
 ```go
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 
 cfg := httpc.DefaultDownloadConfig()
@@ -206,7 +206,7 @@ fmt.Printf("\n다운로드 완료: %d bytes, 소요 시간 %v, 평균 속도 %.2
 ## 도메인 클라이언트
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

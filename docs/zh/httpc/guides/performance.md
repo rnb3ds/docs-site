@@ -1,0 +1,479 @@
+---
+sidebar_label: "性能优化"
+title: "性能优化 - CyberGo HTTPC | 预设与并发"
+description: "HTTPC 性能优化指南：Default/Secure/Performance/Minimal 四种预设对比与场景选型、基于预设微调连接池与超时参数、Result 生命周期自动管理减少 GC 压力、高并发请求模式与性能反模式分析与优化建议。"
+sidebar_position: 9
+---
+
+# 性能优化
+
+HTTPC 从设计上就是高性能的：连接池复用、HTTP/2 多路复用、对象池化、单次分配结果对象。在大多数场景下，直接使用预设配置即可获得优秀性能；需要进一步调优时，理解底层机制才能对症下药。
+
+## 预设配置对比
+
+HTTPC 提供 5 种预设配置，每种针对不同场景做了系统性调参。下面按类别列出关键字段的精确值，方便对照选型。
+
+### 超时配置
+
+| 字段 | Default | Secure | Performance | Testing | Minimal |
+|------|---------|--------|-------------|---------|---------|
+| `TimeoutConfig.Request` | 180s | 15s | 60s | 180s | 180s |
+| `TimeoutConfig.Dial` | 10s | 5s | 15s | 5s | 5s |
+| `TimeoutConfig.TLSHandshake` | 10s | 5s | 15s | 5s | 5s |
+| `TimeoutConfig.ResponseHeader` | 0（禁用） | 10s | 0（禁用） | 0（禁用） | 0（禁用） |
+| `TimeoutConfig.IdleConn` | 90s | 30s | 120s | 30s | 30s |
+
+### 连接配置
+
+| 字段 | Default | Secure | Performance | Testing | Minimal |
+|------|---------|--------|-------------|---------|---------|
+| `MaxIdleConns` | 50 | 20 | 100 | 10 | 10 |
+| `MaxConnsPerHost` | 10 | 5 | 20 | 5 | 2 |
+| `EnableHTTP2` | 开启 | 开启 | 开启 | **关闭** | 开启 |
+| `EnableCookies` | 关闭 | 关闭 | 开启 | 开启 | 关闭 |
+| `EnableDoH` | 关闭 | 关闭 | 关闭 | 关闭 | 关闭 |
+
+### 安全配置
+
+| 字段 | Default | Secure | Performance | Testing | Minimal |
+|------|---------|--------|-------------|---------|---------|
+| `MaxResponseBodySize` | 10MB | 5MB | 50MB | 10MB | 1MB |
+| `MaxDecompressedBodySize` | 100MB | 100MB | 100MB | 100MB | 100MB |
+| `ValidateURL` | 开启 | 开启 | 开启 | **关闭** | 开启 |
+| `ValidateHeaders` | 开启 | 开启 | 开启 | **关闭** | 开启 |
+| `StrictContentLength` | 开启 | 开启 | 关闭 | 开启 | 开启 |
+| `AllowPrivateIPs` | false | false | false | **true** | false |
+| `InsecureSkipVerify` | false | false | false | **true** | false |
+
+### 重试配置
+
+| 字段 | Default | Secure | Performance | Testing | Minimal |
+|------|---------|--------|-------------|---------|---------|
+| `MaxRetries` | 3 | 1 | 3 | 1 | 0 |
+| `Delay` | 1s | 2s | 500ms | 100ms | 0 |
+| `BackoffFactor` | 2.0 | 2.0 | 1.5 | 2.0 | 1.0 |
+| `MaxRetryDelay` | 30s | 30s | 30s | 30s | 30s |
+| `EnableJitter` | 开启 | 开启 | 开启 | 关闭 | 关闭 |
+
+### 请求默认值
+
+| 字段 | Default | Secure | Performance | Testing | Minimal |
+|------|---------|--------|-------------|---------|---------|
+| `FollowRedirects` | 开启 | **关闭** | 开启 | 开启 | **关闭** |
+| `MaxRedirects` | 10 | 10 | 10 | 10 | 10 |
+| `UserAgent` | `httpc/1.0` | `httpc/1.0` | `httpc/1.0` | `httpc-test/1.0` | `httpc/1.0` |
+
+:::warning TestingConfig 禁止用于生产
+`TestingConfig()` 关闭了 URL/Header 校验、TLS 证书验证和 SSRF 防护，仅限本地开发和测试使用。在非测试环境中调用时会输出安全警告。生产环境请使用 `SecureConfig()` 或 `DefaultConfig()`。
+:::
+
+## 场景选型
+
+| 场景 | 推荐预设 | 调整建议 |
+|------|----------|----------|
+| 通用 Web 服务 | Default | — |
+| 处理用户提供的 URL | Secure | — |
+| 内部微服务高并发 | Performance | 按后端数量调大 `MaxIdleConns` |
+| 一次性脚本 | Minimal | — |
+| 文件下载服务 | Performance | 增大 `MaxResponseBodySize` |
+| 金融/医疗 API | Secure + 自定义 | 增加审计中间件 |
+| 本地开发/单元测试 | Testing | 切勿部署到生产 |
+
+<!-- check-code: skip -->
+```go
+// 高吞吐场景直接使用预设
+client, _ := httpc.New(httpc.PerformanceConfig())
+
+// 在预设基础上微调单个字段
+cfg := httpc.PerformanceConfig()
+cfg.Timeouts.Request = 120 * time.Second
+cfg.Connection.MaxIdleConns = 200
+client, _ := httpc.New(cfg)
+```
+
+## 连接池调优原理
+
+连接池是 HTTP 客户端性能的核心。HTTPC 的连接池基于 Go 标准库的 `http.Transport`，但在其上增加了自动计算逻辑和安全默认值。
+
+### 空闲连接自动计算
+
+`MaxIdleConnsPerHost`（每主机空闲连接上限）无需手动设置——HTTPC 根据 `MaxConnsPerHost` 自动推导：
+
+```
+空闲连接数 = MaxConnsPerHost / 2，限制在 [2, 10] 区间
+```
+
+具体规则（`calculateIdleConnsPerHost`）：
+
+| MaxConnsPerHost | 自动空闲连接数 | 说明 |
+|-----------------|---------------|------|
+| 0（无限制） | 10 | 使用上限默认值 |
+| 1 | 2 | 不低于下限 |
+| 2 | 2 | 恰好等于下限 |
+| 5 | 2 | 一半取下限 |
+| 10 | 5 | Default 预设 |
+| 20 | 10 | Performance 预设，取上限 |
+| 100 | 10 | 超出上限取 10 |
+
+:::tip 为什么是 MaxConnsPerHost / 2
+空闲连接是「连接的缓存」——已建立但暂时未使用的连接。设为最大连接数的一半，在「复用已有连接」（命中缓存）和「新建连接」（缓存未命中时需重新握手）之间取得平衡，避免空闲连接过多占用服务端资源。
+:::
+
+### TCP Keep-Alive
+
+HTTPC 的连接池固定使用 30 秒 TCP keep-alive 间隔（`defaultKeepAlive = 30 * time.Second`）。这个值在连接建立后由操作系统周期性发送 keep-alive 探测包，检测死连接。`IdleConn` 超时控制空闲连接在池中的存活时间（Default 为 90s），两者协同工作。
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    // 微服务高 QPS 场景：调大连接池
+    cfg := httpc.PerformanceConfig()
+    cfg.Connection.MaxIdleConns = 200   // 全局空闲连接上限
+    cfg.Connection.MaxConnsPerHost = 50 // 每主机最大连接（空闲自动计算为 10）
+    cfg.Timeouts.IdleConn = 300 * time.Second // 空闲连接存活更久，提高复用率
+
+    client, err := httpc.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    // 热路径请求直接复用连接池中的连接
+    for i := 0; i < 100; i++ {
+        result, err := client.Get("https://api.example.com/data")
+        if err != nil {
+            log.Printf("请求 %d 失败: %v", i, err)
+            continue
+        }
+        fmt.Printf("请求 %d: %d\n", i, result.StatusCode())
+    }
+}
+```
+
+## HTTP/2 性能优势
+
+HTTP/2 默认开启（`EnableHTTP2 = true`），提供三大性能提升：
+
+| 特性 | HTTP/1.1 | HTTP/2 |
+|------|----------|--------|
+| 多路复用 | 每个请求独占连接 | 多个请求共享单连接 |
+| 头部压缩 | 明文重复发送 | HPACK 压缩头部 |
+| 连接复用 | Keep-alive 串行 | 并行流（stream） |
+
+:::tip HTTP/2 与连接池的关系
+HTTP/2 的多路复用让单个 TCP 连接可以同时承载多个请求，大幅减少连接建立开销。在高并发对同一主机的场景下，HTTP/2 的吞吐量远超 HTTP/1.1。仅在使用 `TestingConfig()`（显式关闭 HTTP/2）或连接不支持 ALPN 协商时才会回退到 HTTP/1.1。
+:::
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    // 默认配置已启用 HTTP/2
+    cfg := httpc.DefaultConfig()
+    cfg.Connection.EnableHTTP2 = true // 默认即 true，显式声明更清晰
+
+    client, err := httpc.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    // 对支持 HTTP/2 的站点（如大多数 CDN/云服务）发起并发请求
+    // 单个 TCP 连接即可复用，无需为每个请求新建连接
+    start := time.Now()
+    for i := 0; i < 10; i++ {
+        result, err := client.Get("https://http2.golang.org/")
+        if err != nil {
+            log.Printf("请求 %d 失败: %v", i, err)
+            continue
+        }
+        // Proto() 返回协议版本，如 "HTTP/2.0"
+        fmt.Printf("请求 %d: %s, 状态码 %d\n", i, result.Proto(), result.StatusCode())
+    }
+    fmt.Printf("10 个请求耗时: %v\n", time.Since(start))
+}
+```
+
+## 内存优化机制
+
+HTTPC 在内存管理上做了多层优化，核心思路是减少堆分配和复用对象。
+
+### resultBundle 单次分配
+
+每次请求返回的 `*Result` 携带三个嵌套结构体：`RequestInfo`（请求信息）、`ResponseInfo`（响应信息）、`RequestMeta`（元数据如耗时）。传统做法需要为 Result 和三个嵌套结构体分别分配——四次堆分配。HTTPC 将它们打包进一个 `resultBundle`，一次堆分配搞定全部：
+
+```
+传统方式：4 次独立分配（Result + RequestInfo + ResponseInfo + RequestMeta）
+HTTPC：1 次分配（resultBundle），Result 的三个指针指向同一块内存
+```
+
+调用方拿到的是 `*Result`，其 `Request`、`Response`、`Meta` 字段（指针）指向 bundle 内的对应结构体，完全透明。由于调用方可能长期持有 `*Result`，这里不适合用对象池（池化会导致数据竞争），而由 GC 自动回收。
+
+### 引擎对象池
+
+HTTPC 引擎层广泛使用 `sync.Pool` 复用短生命周期对象，减少 GC 压力：
+
+| 池化对象 | 用途 | 说明 |
+|----------|------|------|
+| `engine.Response` | 响应对象 | 请求完成后归还池，下次请求复用 |
+| `engine.Request` | 请求对象 | 同上 |
+| `strings.Builder` | 字符串构建 | URL 构建、错误格式化、Config 序列化 |
+| `http.Header` | HTTP 头 map | 请求/响应头处理 |
+| `bytes.Buffer` | JSON/multipart 编码 | 按初始容量预分配 |
+| `time.Timer` | 重试定时器 | 避免频繁创建定时器 |
+| gzip/flate reader | 解压 | 复用解压器 |
+
+:::tip 对象池与 resultBundle 的分工
+引擎内部对象（Response/Request/Builder）生命周期短、在请求内部完成 borrow-return 循环，适合池化。返回给调用方的 `*Result` 生命周期不确定，适合单次分配 + GC 回收。两者互补，各取所长。
+:::
+
+### 你无需关心这些
+
+以上优化对调用方完全透明。你只需要正常使用 API，连接复用、对象池化、单次分配都在内部自动完成：
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    client, err := httpc.NewDefault()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    // Result 每次请求新建，GC 自动回收，无需手动释放
+    result, err := client.Get("https://api.example.com/data")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 热路径中优先用 RawBody() 而非 Body()
+    // RawBody() 返回原始字节切片；Body() 返回预存字符串；String() 是调试格式化（开销最大）
+    data := result.RawBody()
+    fmt.Printf("响应大小: %d 字节\n", len(data))
+    fmt.Printf("请求耗时: %v\n", result.Meta.Duration)
+}
+```
+
+## 工作负载调优示例
+
+### AI API 长轮询
+
+AI 推理 API 响应时间可能长达数分钟，需要放宽超时限制：
+
+<!-- check-code: skip -->
+```go
+// AI API 可能需要 5-15 分钟响应，不要被默认 180s 超时截断
+result, err := httpc.Post("https://api.ai.example.com/v1/completions",
+    httpc.WithJSON(payload),
+    httpc.WithTimeout(900*time.Second), // 15 分钟
+)
+```
+
+:::warning 为什么 Default 的 ResponseHeader 为 0
+`TimeoutConfig.ResponseHeader = 0` 表示不在传输层强制响应头超时，由 context 级超时（`TimeoutConfig.Request` 或 `WithTimeout`）统一控制。这确保 `WithTimeout()` 对长响应请求有完全控制权。如需对抗 slowloris 攻击的传输层防御，使用 `SecureConfig()`（设为 10s）。
+:::
+
+### 微服务高 QPS
+
+内部微服务之间的高频调用需要大连接池：
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    cfg := httpc.PerformanceConfig()
+    // 连接池按后端实例数量调优
+    cfg.Connection.MaxIdleConns = 300   // 总空闲连接
+    cfg.Connection.MaxConnsPerHost = 30 // 每个后端实例
+    // 微服务响应通常很快，缩短超时快速失败
+    cfg.Timeouts.Request = 10 * time.Second
+    cfg.Retry.Delay = 200 * time.Millisecond
+    cfg.Retry.BackoffFactor = 2.0
+    cfg.Retry.MaxRetries = 2
+
+    client, err := httpc.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    start := time.Now()
+    // 高频请求复用连接池，无需重建 TCP/TLS
+    for i := 0; i < 50; i++ {
+        result, err := client.Get("http://user-service:8080/api/users")
+        if err != nil {
+            log.Printf("请求 %d 失败: %v", i, err)
+            continue
+        }
+        _ = result
+    }
+    fmt.Printf("50 个请求耗时: %v\n", time.Since(start))
+}
+```
+
+### 大文件下载（流式）
+
+下载大文件时使用 `WithStreamBody(true)` 避免将整个响应载入内存，配合 `Download()` 方法支持断点续传：
+
+```go
+package main
+
+import (
+    "context"
+    "log"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    cfg := httpc.PerformanceConfig()
+    cfg.Security.MaxResponseBodySize = 500 * 1024 * 1024 // 500MB 上限
+
+    client, err := httpc.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    dcfg := httpc.DefaultDownloadConfig()
+    dcfg.FilePath = "/tmp/large-file.zip"
+    dcfg.ResumeDownload = true // 断点续传
+
+    result, err := client.Download(
+        context.Background(),
+        "https://example.com/large-file.zip",
+        dcfg,
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+    log.Printf("下载完成: %d 字节", result.BytesWritten)
+}
+```
+
+### 爬虫与代理池
+
+爬虫场景使用代理池轮换 IP，HTTPC 会自动提高重试次数确保每个代理至少尝试一次（详见 [重试与容错](./retry-fault-tolerance#代理池与重试交互)）：
+
+<!-- check-code: skip -->
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+    "http://proxy4:8080",
+    "http://proxy5:8080",
+}
+cfg.Connection.ProxyRotateOnStatus = []int{403} // 403 触发换代理
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
+// MaxRetries 自动提高到 4（代理数-1），确保 5 个代理都尝试一次
+```
+
+## 性能反模式
+
+| 反模式 | 原因 | 正确做法 |
+|--------|------|----------|
+| 每请求新建 Client | 连接无法复用，每次重新 TCP/TLS 握手 | 全局复用单个 Client 实例 |
+| 过大 `MaxResponseBodySize` | 无谓地放开内存上限 | 按实际响应大小设定 |
+| 热路径用 `result.String()` | 额外字符串构建开销 | 用 `result.Body()` 或 `result.RawBody()` |
+| 连接池过小 | 高并发时连接不够用，排队等待 | `MaxConnsPerHost` 按并发数调 |
+| 关闭 HTTP/2 | 退化为 HTTP/1.1 串行请求 | 默认保持开启 |
+| 忽略 `Close()` | 连接泄漏 | `defer client.Close()` |
+| 全局共享后忘记复用 | 反复创建/销毁 Client | 一次创建、长期持有 |
+
+:::warning Client 必须复用
+HTTP 性能的根基是连接复用。每请求新建 Client 意味着每次都走 TCP 三次握手 + TLS 握手，延迟从亚毫秒暴增到数十毫秒。在微服务场景下，将 Client 作为单例注入到服务结构体中，随服务生命周期存活。
+:::
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/cybergodev/httpc"
+)
+
+// 反模式演示：每请求新建 Client
+func main() {
+    start := time.Now()
+
+    for i := 0; i < 5; i++ {
+        // ❌ 每次循环新建 Client——连接无法复用
+        client, err := httpc.NewDefault()
+        if err != nil {
+            log.Fatal(err)
+        }
+        result, err := client.Get("https://httpbin.org/get")
+        client.Close() // 每次都关闭，连接池清空
+        if err != nil {
+            log.Printf("请求 %d 失败: %v", i, err)
+            continue
+        }
+        _ = result
+    }
+    // 5 个请求的耗时远高于复用 Client 的方案
+    fmt.Printf("反模式耗时: %v\n", time.Since(start))
+
+    // ✅ 正确做法：复用 Client
+    client, err := httpc.NewDefault()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    start = time.Now()
+    for i := 0; i < 5; i++ {
+        result, err := client.Get("https://httpbin.org/get")
+        if err != nil {
+            log.Printf("请求 %d 失败: %v", i, err)
+            continue
+        }
+        _ = result
+    }
+    fmt.Printf("复用模式耗时: %v\n", time.Since(start))
+}
+```
+
+## 下一步
+
+- [连接池与代理](./connection-pool) — 连接池参数详解、代理池配置与轮换策略
+- [错误处理](./error-handling) — 超时分层策略与错误分类
+- [重试与容错](./retry-fault-tolerance) — 退避算法详解与重试预算
+- [安全概述](../security/) — 安全与性能的平衡

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Domain Client & Sessions"
 title: "Domain Client and Sessions - CyberGo HTTPC | Cookie Mgmt"
-description: "HTTPC domain client and session guide: NewDomain domain-scoped client, URL auto-concatenation, SetHeader headers, Cookie validation, and a REST wrapper."
+description: "HTTPC domain client and session management guide: creating domain-scoped clients with NewDomain, URL auto-concatenation rules, SetHeader session-header maintenance, automatic cookie management and response capture, CookieSecurity validation policies, and a practical REST API client wrapper example."
 sidebar_position: 3
 ---
 
@@ -12,7 +12,7 @@ The domain client (DomainClient) is a session management client for a specific d
 ## Creating a Domain Client
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -122,7 +122,7 @@ if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
 You can configure a cookie security policy to only accept cookies that meet security standards:
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
 
 // Set strict cookie security
 session := dc.Session()
@@ -155,7 +155,7 @@ import (
 
 func main() {
     // Create domain client
-    dc, err := httpc.NewDomain("https://api.example.com")
+    dc, err := httpc.NewDomainDefault("https://api.example.com")
     if err != nil {
         log.Fatal(err)
     }

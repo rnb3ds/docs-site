@@ -1,8 +1,8 @@
 ---
 sidebar_label: "치트시트"
-title: "치트시트 - CyberGo HTTPC | 빠른 참조"
-description: "HTTPC 치트시트: 클라이언트 생성과 다섯 가지 프리셋, 일곱 가지 요청 메서드, 주요 WithXxx 요청 옵션, Result 처리, 미들웨어 체인, 오류 분류와 파일 다운로드의 완전하고 재사용 가능한 코드 조각을 빠르게 참조하세요."
-sidebar_position: 2
+title: "치트시트 - CyberGo HTTPC | 자주 쓰는 코드 빠른 참조"
+description: "HTTPC 치트시트: 클라이언트 생성과 5가지 설정 프리셋, Get/Post 등 7가지 요청 메서드, 28개 자주 쓰는 WithXxx 요청 옵션, Result 응답 처리, 미들웨어 체인 조합, ClientError 오류 분류, 파일 다운로드와 도메인 클라이언트 작업의 완전한 재사용 가능 코드 조각으로 개발자가 빠르게 참조할 수 있습니다."
+sidebar_position: 3
 ---
 
 # 치트시트
@@ -11,10 +11,10 @@ sidebar_position: 2
 
 ```go
 // 기본 설정
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 
-// 커스텀 설정
+// 사용자 정의 설정
 cfg := httpc.DefaultConfig()
 cfg.Timeouts.Request = 60 * time.Second
 cfg.Retry.MaxRetries = 5
@@ -24,7 +24,7 @@ client, _ = httpc.New(cfg)
 ## HTTP 메서드
 
 ```go
-// 패키지 함수 (기본 클라이언트 사용)
+// 패키지 함수(기본 클라이언트 사용)
 result, _ := httpc.Get(url)
 result, _ := httpc.Post(url)
 result, _ := httpc.Put(url)
@@ -60,8 +60,8 @@ httpc.WithForm(map[string]string{...})  // x-www-form-urlencoded
 httpc.WithFormData(formData)            // multipart/form-data
 httpc.WithFile("file", "doc.pdf", data) // 파일 업로드
 httpc.WithBinary([]byte{...})           // application/octet-stream
-httpc.WithBinary([]byte{...}, "image/png") // 타입 지정
-httpc.WithBody(data)                    // 자동 타입 감지
+httpc.WithBinary([]byte{...}, "image/png") // 유형 지정
+httpc.WithBody(data)                    // 자동 유형 감지
 httpc.WithBody(data, httpc.BodyJSON)    // 명시적 지정: BodyJSON/BodyXML/BodyForm/BodyBinary/BodyMultipart
 ```
 
@@ -132,7 +132,7 @@ result.RequestCookies()                // 모든 요청 Cookie
 result.GetRequestCookie("name")        // 요청 Cookie 가져오기
 result.HasRequestCookie("name")        // 요청 Cookie 확인
 result.SaveToFile("/path/to/file")     // 파일로 저장
-result.String()                        // 사람이 읽을 수 있는 표현 (민감 헤더 마스킹)
+result.String()                        // 사람이 읽을 수 있는 표현(민감한 헤더 마스킹)
 ```
 
 ## 설정
@@ -172,15 +172,19 @@ cfg.Retry.EnableJitter = true
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
     httpc.RecoveryMiddleware(),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
-    httpc.TimeoutMiddleware(30 * time.Second),
-    httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
-        metrics.Record(method, statusCode, duration)
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+    httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second}),
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{
+        OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
+            metrics.Record(method, statusCode, duration)
+        },
     }),
-    httpc.AuditMiddleware(func(event httpc.AuditEvent) {
-        log.Printf("[AUDIT] %s %s -> %d", event.Method, event.URL, event.StatusCode)
+    httpc.AuditMiddleware(&httpc.AuditConfig{
+        OnAudit: func(event httpc.AuditEvent) {
+            log.Printf("[AUDIT] %s %s -> %d", event.Method, event.URL, event.StatusCode)
+        },
     }),
 }
 ```
@@ -200,7 +204,7 @@ if err != nil {
         case httpc.ErrorTypeTLS:
             // TLS 오류
         case httpc.ErrorTypeDNS:
-            // DNS 해석 오류
+            // DNS 리졸브 오류
         case httpc.ErrorTypeContextCanceled:
             // 컨텍스트 취소
         case httpc.ErrorTypeRetryExhausted:
@@ -222,12 +226,12 @@ if err != nil {
 ## 파일 다운로드
 
 ```go
-// 기본 다운로드 (ctx 는 context.Context, 예: context.Background())
+// 기본 다운로드(ctx는 context.Context, 예: context.Background())
 dlCfg := httpc.DefaultDownloadConfig()
 dlCfg.FilePath = "/path/to/file"
 dlResult, err := client.Download(ctx, url, dlCfg)
 
-// 옵션 포함 (덮어쓰기, 이어받기, 진행률)
+// 옵션 포함(덮어쓰기, 이어받기, 진행률)
 dlCfg := httpc.DefaultDownloadConfig()
 dlCfg.FilePath = "/path/to/file"
 dlCfg.Overwrite = true
@@ -237,14 +241,14 @@ dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 }
 dlResult, err := client.Download(ctx, url, dlCfg)
 
-// dlResult 타입은 *DownloadResult (*Result 가 아님)
+// dlResult 타입은 *DownloadResult(*Result가 아님)
 // 필드: FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
 ```
 
 ## 도메인 클라이언트
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
 defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)

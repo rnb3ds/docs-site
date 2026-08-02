@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Tutorial"
 title: "Tutorial - CyberGo HTTPC | GitHub API Tour"
-description: "HTTPC tutorial: build a GitHub REST API client step by step from httpc.Get, covering JSON parsing, domain client, middleware, and file downloads."
+description: "A thirty-minute hands-on tutorial: demonstrating HTTPC's core features through GitHub API examples, covering JSON response parsing, the NewDomain domain client, sending data with WithJSON, middleware-chain composition, ClientError error handling, and file download functionality."
 sidebar_position: 1
 ---
 
 # Tutorial: Build a GitHub API Client
 
-Build a GitHub API client step by step, connecting HTTPC's core concepts. Approximately 30 minutes to complete.
+The following examples use the GitHub API to demonstrate HTTPC's core features. Each example is self-contained and can be read independently.
 
 **You will learn:**
 
@@ -18,7 +18,7 @@ Build a GitHub API client step by step, connecting HTTPC's core concepts. Approx
 - Handling errors and retries
 - Result response objects and automatic management
 
-## Step 1: Basic Request
+## Basic Request
 
 Install dependencies and create `main.go`:
 
@@ -51,7 +51,7 @@ Key points:
 - Package-level function `httpc.Get` requires no client creation, suitable for quick validation
 - Result is created fresh per request, reclaimed by GC, no manual release needed
 
-## Step 2: Parsing JSON Responses
+## Parsing JSON Responses
 
 ```go
 type Repo struct {
@@ -80,12 +80,12 @@ Key points:
 - `result.Unmarshal(&v)` directly parses JSON responses into structs
 - Define Go structs that correspond to API responses
 
-## Step 3: Creating a Domain Client
+## Creating a Domain Client
 
 All GitHub API endpoints are under `https://api.github.com`. Use a domain client to avoid repeating the URL:
 
 ```go
-client, err := httpc.NewDomain("https://api.github.com")
+client, err := httpc.NewDomainDefault("https://api.github.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -110,7 +110,7 @@ Key points:
 - `WithHeader` passed as a request option applies only to that request
 - Domain client automatically manages cookies
 
-## Step 4: Sending Data (Create Issue)
+## Sending Data (Create Issue)
 
 ```go
 type CreateIssueRequest struct {
@@ -146,7 +146,7 @@ Key points:
 - `WithJSON(data)` automatically serializes and sets Content-Type
 - `result.IsSuccess()` checks for 2xx status codes
 
-## Step 5: Adding Middleware
+## Adding Middleware
 
 Add logging and request IDs to the client:
 
@@ -154,11 +154,11 @@ Add logging and request IDs to the client:
 // Configure middleware
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(func(format string, args ...any) {
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
         log.Printf("[HTTP] "+format, args...)
-    }),
+    }}),
     httpc.RecoveryMiddleware(),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 }
 
 // Pass configuration to NewDomain to create a domain client with middleware
@@ -190,7 +190,7 @@ Key points:
 - `RecoveryMiddleware` prevents panic crashes
 - `RequestIDMiddleware` generates a unique ID for each request
 
-## Step 6: Error Handling and Retry
+## Error Handling and Retry
 
 ```go
 result, err := client.Get("/repos/golang/go")
@@ -244,7 +244,7 @@ Key points:
 - `ClientError` provides error classification and retryability checks
 - 408, 429, 500, 502, 503, 504 are automatically retried by default
 
-## Step 7: File Download (Download Release Package)
+## File Download (Download Release Package)
 
 ```go
 dlCfg := httpc.DefaultDownloadConfig()
@@ -270,13 +270,16 @@ fmt.Printf("\nDownload complete: %s (%d bytes)\n",
 )
 ```
 
-## Step 8: Concurrent Requests
+## Concurrent Requests
 
 Fetch multiple repository details simultaneously:
 
 ```go
 func fetchRepos(ctx context.Context, repos []string) error {
-    client, _ := httpc.New(httpc.PerformanceConfig())
+    client, err := httpc.New(httpc.PerformanceConfig())
+    if err != nil {
+        return err
+    }
     defer client.Close()
 
     results := make([]*httpc.Result, len(repos))
@@ -313,7 +316,7 @@ func fetchRepos(ctx context.Context, repos []string) error {
 
 ## Complete Example
 
-Full code integrating the above steps:
+Full code integrating the above examples:
 
 ```go
 package main
@@ -342,9 +345,9 @@ func main() {
     cfg.Retry.MaxRetries = 3
     cfg.Retry.Delay = 1 * time.Second
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         httpc.RecoveryMiddleware(),
     }
 
@@ -383,5 +386,5 @@ func main() {
 - [Request and Response](./request-response) - Complete request options reference
 - [Middleware Chain](./middleware-chain) - Custom middleware development
 - [Retry and Fault Tolerance](./retry-fault-tolerance) - Advanced retry strategies
-- [Performance Optimization](../advanced/performance) - Production tuning
+- [Performance Optimization](./performance) - Production tuning
 - [Production Checklist](../security/production-checklist) - Security best practices

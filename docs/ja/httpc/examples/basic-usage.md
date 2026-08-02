@@ -1,7 +1,7 @@
 ---
 sidebar_label: "基本サンプル"
 title: "基本的な使い方 - CyberGo HTTPC | 実行可能な例"
-description: "HTTPC 基本的な使用例集：認証付き GET リクエスト、JSON/フォーム/ファイルアップロード POST、カスタム設定、プロキシ、ミドルウェア、メトリクス収集、進捗コールバック付きファイルダウンロードの完全なコードを提供します。すべての例はすぐに実行できます。"
+description: "HTTPC 基本使用例集：クエリパラメータと認証付き GET リクエスト、JSON/フォーム/ファイルアップロード POST リクエスト、FormData 複数フィールドフォーム、DefaultConfig カスタム設定、ProxyURL プロキシ、Recovery/Logging ミドルウェア、進捗コールバック付きファイルダウンロードの実行可能な完全コード。"
 sidebar_position: 1
 ---
 
@@ -156,9 +156,9 @@ client, _ := httpc.New(cfg)
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
-cfg.Middleware.UserAgent = "my-app/1.0"
+cfg.Defaults.UserAgent = "my-app/1.0"
 
 client, _ := httpc.New(cfg)
 ```
@@ -168,10 +168,10 @@ client, _ := httpc.New(cfg)
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
-    httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
         metrics.Record(method, statusCode, duration)
-    }),
+    }}),
 }
 
 client, _ := httpc.New(cfg)
@@ -180,7 +180,7 @@ client, _ := httpc.New(cfg)
 ## ファイルダウンロード
 
 ```go
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 
 cfg := httpc.DefaultDownloadConfig()
@@ -206,7 +206,7 @@ fmt.Printf("\nダウンロード完了: %d bytes, 所要時間 %v, 平均速度 
 ## ドメインクライアント
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

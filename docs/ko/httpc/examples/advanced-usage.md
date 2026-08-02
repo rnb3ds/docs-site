@@ -1,7 +1,7 @@
 ---
 sidebar_label: "고급 예제"
 title: "고급 예제 - CyberGo HTTPC | 프로덕션 코드"
-description: "HTTPC 고급 예제 모음: 커스텀 RetryPolicy 재시도 전략, 완전한 미들웨어 체인 구성, RESTful API 클라이언트 래핑, sync.WaitGroup 동시성 다운로드와 HMAC-SHA256 서명 미들웨어로, 고성능, 관측 가능한 프로덕션급 HTTP 클라이언트를 구축하는 데 도움을 줍니다."
+description: "HTTPC 고급 예제 모음: 커스텀 RetryPolicy 재시도, 미들웨어 체인 구성, RESTful API 래핑, 동시성 다운로드와 HMAC-SHA256 서명으로 고성능 프로덕션급 HTTP 클라이언트를 구축합니다."
 sidebar_position: 2
 ---
 
@@ -104,32 +104,32 @@ func main() {
 
     // 메트릭 수집
     metricsMiddleware := httpc.MetricsMiddleware(
-        func(method, url string, statusCode int, duration time.Duration, err error) {
+        &httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
             atomic.AddInt64(&requestCount, 1)
             log.Printf("[METRICS] %s %s -> %d (%v)", method, url, statusCode, duration)
-        },
+        }},
     )
 
     // 감사 로그 (JSON 형식)
-    auditCfg := &httpc.AuditMiddlewareConfig{
-        Format:         "json",
-        IncludeHeaders: true,
-        MaskHeaders:    []string{"Authorization", "Cookie"},
-        SanitizeError:  true,
-    }
-    auditMiddleware := httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
+    auditCfg := httpc.DefaultAuditConfig()
+    auditCfg.Format = "json"
+    auditCfg.IncludeHeaders = true
+    auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+    auditCfg.SanitizeError = true
+    auditCfg.OnAudit = func(event httpc.AuditEvent) {
         data, _ := json.Marshal(event)
         log.Printf("[AUDIT] %s", data)
-    }, auditCfg)
+    }
+    auditMiddleware := httpc.AuditMiddleware(auditCfg)
 
     cfg := httpc.DefaultConfig()
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
         httpc.RecoveryMiddleware(),                              // panic 복구
-        httpc.TimeoutMiddleware(30 * time.Second),              // 강제 타임아웃
-        httpc.RequestIDMiddleware("X-Request-ID", nil),         // 요청 ID
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second}), // 강제 타임아웃
+        httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),                            // 요청 ID
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         metricsMiddleware,
         auditMiddleware,
     }
@@ -173,7 +173,7 @@ type User struct {
 }
 
 func NewAPIClient(baseURL, token string) (*APIClient, error) {
-    dc, err := httpc.NewDomain(baseURL)
+    dc, err := httpc.NewDomainDefault(baseURL)
     if err != nil {
         return nil, err
     }
@@ -273,7 +273,7 @@ func main() {
         "file3.zip": "https://example.com/files/file3.zip",
     }
 
-    client, _ := httpc.New()
+    client, _ := httpc.NewDefault()
     defer client.Close()
 
     var successCount int64
@@ -369,4 +369,4 @@ func main() {
 
 - [미들웨어 체인](../guides/middleware-chain) - 미들웨어 아키텍처 상세
 - [재시도와 장애 허용](../guides/retry-fault-tolerance) - 커스텀 재시도 전략
-- [성능 최적화](../advanced/performance) - 성능 튜닝 제안
+- [성능 최적화](../guides/performance) - 성능 튜닝 제안

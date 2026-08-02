@@ -1,8 +1,8 @@
 ---
 sidebar_label: "미들웨어 체인"
 title: "미들웨어 체인 - CyberGo HTTPC | 양파 모델 체인 조합"
-description: "HTTPC 미들웨어 체인 가이드: 양파 모델 실행 원리와 요청/응답 양방향 처리, Recovery/Logging/RequestID 등 여덟 개 내장 미들웨어 설정, Chain 수동 조합, 커스텀 MiddlewareFunc 작성법과 서킷 브레이커 단락 예제로 관측 가능하고 복원력 있는 요청 처리 파이프라인을 구축하는 데 도움을 줍니다."
-sidebar_position: 6
+description: "HTTPC 미들웨어 체인 가이드: 양파 모델 실행 원리, Recovery/Logging/RequestID 등 7개 내장 미들웨어 설정, Chain 수동 조합과 커스텀 MiddlewareFunc 작성으로 관측 가능하고 복원력 있는 파이프라인을 구축합니다."
+sidebar_position: 7
 ---
 
 # 미들웨어 체인
@@ -20,9 +20,9 @@ HTTPC 미들웨어는 양파 모델을 채택하여, 요청은 외부에서 내�
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RecoveryMiddleware(),    // 가장 바깥: panic 복구
-    httpc.LoggingMiddleware(log.Printf), // 두 번째: 로그 기록
-    httpc.RequestIDMiddleware("X-Request-ID", nil), // 가장 안쪽: 요청 ID
+    httpc.RecoveryMiddleware(),                                      // 가장 바깥: panic 복구
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}), // 두 번째: 로그 기록
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),          // 가장 안쪽: 요청 ID
 }
 
 client, err := httpc.New(cfg)
@@ -47,9 +47,9 @@ httpc.RecoveryMiddleware()
 요청/응답 로그, URL 자동 마스킹:
 
 ```go
-httpc.LoggingMiddleware(func(format string, args ...any) {
+httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
-})
+}})
 // 출력 예시: [HTTP] GET https://api.example.com/data -> 200 (150ms)(상태 코드와 소요 시간은 실측값이며 고정값이 아님)
 ```
 
@@ -58,11 +58,14 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 각 요청에 고유 ID 추가, `crypto/rand`로 생성:
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // 기본 32 자 hex
+httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()) // 기본 32 자 hex
 
 // 커스텀 생성기
-httpc.RequestIDMiddleware("X-Request-ID", func() string {
-    return uuid.New().String()
+httpc.RequestIDMiddleware(&httpc.RequestIDConfig{
+    HeaderName: "X-Request-ID",
+    Generator:  func() string {
+        return uuid.New().String()
+    },
 })
 ```
 
@@ -71,7 +74,7 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 미들웨어 계층 타임아웃, 클라이언트 타임아웃 전에 강제 실행:
 
 ```go
-httpc.TimeoutMiddleware(30 * time.Second)
+httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second})
 ```
 
 :::warning Download 나 스트리밍 요청에는 사용 금지
@@ -83,10 +86,10 @@ httpc.TimeoutMiddleware(30 * time.Second)
 모든 요청에 정적 헤더 추가:
 
 ```go
-httpc.HeaderMiddleware(map[string]string{
+httpc.HeaderMiddleware(&httpc.HeaderConfig{Headers: map[string]string{
     "X-App-Version": "1.0.0",
     "X-Platform":    "server",
-})
+}})
 ```
 
 ### MetricsMiddleware
@@ -94,13 +97,13 @@ httpc.HeaderMiddleware(map[string]string{
 요청 메트릭 수집:
 
 ```go
-httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
     metrics.IncrCounter("http.requests", 1)
     metrics.RecordTimer("http.latency", duration)
     if err != nil {
         metrics.IncrCounter("http.errors", 1)
     }
-})
+}})
 ```
 
 ### AuditMiddleware
@@ -108,32 +111,34 @@ httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.D
 보안 감사, 금융, 의료 등 컴플라이언스 시나리오에 적합:
 
 ```go
-httpc.AuditMiddleware(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     log.Printf("[AUDIT] %s %s -> %d (%v)",
         event.Method, event.URL, event.StatusCode, event.Duration)
-})
+}
+httpc.AuditMiddleware(auditCfg)
 ```
 
-### AuditMiddlewareWithConfig
+### 감사 옵션 설정
 
-설정 가능한 감사 미들웨어:
+`DefaultAuditConfig()`로 기본 설정을 가져온 뒤 필드를 수정하여 출력 형식, 헤더 기록 및 마스킹을 제어할 수 있습니다:
 
 ```go
-auditCfg := &httpc.AuditMiddlewareConfig{
-    Format:         "json",
-    IncludeHeaders: true,
-    MaskHeaders:    []string{"Authorization", "Cookie"},
-    SanitizeError:  true,
-}
-
-httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.Format = "json"
+auditCfg.IncludeHeaders = true
+auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+auditCfg.SanitizeError = true
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     data, err := json.Marshal(event)
     if err != nil {
         log.Println("감사 이벤트 직렬화 실패:", err)
         return
     }
     log.Println(string(data))
-}, auditCfg)
+}
+
+httpc.AuditMiddleware(auditCfg)
 ```
 
 감사 이벤트는 컨텍스트에서 SourceIP 와 UserID 추출을 지원합니다:
@@ -150,8 +155,8 @@ ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 ```go
 middleware := httpc.Chain(
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 )
 
 cfg := httpc.DefaultConfig()
@@ -213,16 +218,14 @@ func CircuitBreakerMiddleware(threshold int) httpc.MiddlewareFunc {
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Middleware = &httpc.MiddlewareConfig{
-    Middlewares: []httpc.MiddlewareFunc{
-        httpc.RecoveryMiddleware(),
-        httpc.LoggingMiddleware(log.Printf),
-    },
-    UserAgent:       "my-app/1.0",
-    Headers:         map[string]string{"X-App": "my-app"},
-    FollowRedirects: true,
-    MaxRedirects:    10,
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.RecoveryMiddleware(),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
+cfg.Defaults.UserAgent = "my-app/1.0"
+cfg.Defaults.Headers = map[string]string{"X-App": "my-app"}
+cfg.Defaults.FollowRedirects = true
+cfg.Defaults.MaxRedirects = 10
 
 client, err := httpc.New(cfg)
 if err != nil {

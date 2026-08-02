@@ -1,13 +1,13 @@
 ---
 sidebar_label: "File Download"
-title: "File Download - CyberGo HTTPC | Download & Verify"
-description: "HTTPC file download API reference: the unified Download entry, DownloadConfig, progress callbacks, DownloadResult, SHA-256 checksums, and UNC path protection."
+title: "File Download - CyberGo HTTPC | Download & Verification"
+description: "HTTPC file download API reference: the unified Download entry-point function, DownloadConfig configuration struct, DownloadProgressCallback progress callback, DownloadResult result type, SHA-256 checksum verification, and six layers of file-path security protection including UNC-path blocking."
 sidebar_position: 4
 ---
 
 # File Download
 
-## Package-Level Download Functions
+## Package-Level Download Function
 
 ### Download
 
@@ -26,6 +26,8 @@ cfg.ResumeDownload = true
 result, err := httpc.Download(context.Background(), url, cfg)
 ```
 
+The `Download` method has an identical signature on the `Client` interface and on `DomainClient`; all three entry points behave the same.
+
 ## DownloadConfig
 
 ```go
@@ -41,31 +43,60 @@ type DownloadConfig struct {
 func DefaultDownloadConfig() *DownloadConfig
 ```
 
-| Field | Type | Default | Description |
-|-------|------|---------|-------------|
-| `FilePath` | `string` | - | Save path (required) |
-| `ProgressCallback` | `DownloadProgressCallback` | `nil` | Progress callback function |
-| `Overwrite` | `bool` | `false` | Overwrite existing file |
-| `ResumeDownload` | `bool` | `false` | Enable resumable download |
-| `Checksum` | `string` | `""` | Expected checksum value |
-| `ChecksumAlgorithm` | `ChecksumAlgorithm` | `"sha256"` | Checksum algorithm |
+### Field Details
 
-### DownloadProgressCallback
+| Field | Type | Default | Description |
+|------|------|--------|------|
+| `FilePath` | `string` | — | File save path (**required**, cannot be empty) |
+| `ProgressCallback` | `DownloadProgressCallback` | `nil` | Progress callback function; nil disables progress reporting |
+| `Overwrite` | `bool` | `false` | Whether to overwrite an existing file. When false, returns `ErrFileExists` if the file exists |
+| `ResumeDownload` | `bool` | `false` | Whether to enable resumable download. When true, reuses the existing partial file |
+| `Checksum` | `string` | `""` | Expected hex-encoded checksum. When set, verified automatically on completion |
+| `ChecksumAlgorithm` | `ChecksumAlgorithm` | `"sha256"` | Checksum algorithm (currently only SHA-256 is supported) |
+
+:::tip Priority of Overwrite and ResumeDownload
+When the file exists and both are true, `ResumeDownload` takes priority — the existing file is **appended to** rather than replaced. When the file does not exist, both behave the same (a normal download).
+:::
+
+### DefaultDownloadConfig
+
+```go
+func DefaultDownloadConfig() *DownloadConfig
+```
+
+Returns the default download config: `Overwrite` and `ResumeDownload` both false, `ChecksumAlgorithm` set to `ChecksumSHA256`. The caller must set `FilePath` before use.
+
+## DownloadProgressCallback
 
 ```go
 type DownloadProgressCallback func(downloaded, total int64, speed float64)
 ```
 
 | Parameter | Type | Description |
-|-----------|------|-------------|
-| `downloaded` | `int64` | Bytes downloaded |
-| `total` | `int64` | Total bytes (-1 if unknown) |
+|------|------|------|
+| `downloaded` | `int64` | Bytes downloaded (including the resume offset) |
+| `total` | `int64` | Total bytes (`-1` means unknown, no Content-Length) |
 | `speed` | `float64` | Current speed (bytes/second) |
+
+### Progress Callback Mechanism
+
+The progress callback is implemented by wrapping `io.Writer` with a `progressWriter` that checks on every `Write` whether the throttle interval has elapsed:
+
+| Feature | Description |
+|------|------|
+| Throttle interval | 200ms (`progressInterval`) — avoids frequent callbacks on high-speed networks |
+| Resume offset adjustment | `downloaded = offset + written` — during resume, reports the total downloaded, not this session's delta |
+| Total adjustment | During resume, `total = contentLength + offset` — restores the full file size |
+| Final callback | Fires one extra callback after the download completes, reporting the final stats |
 
 ```go
 cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
-    pct := float64(downloaded) / float64(total) * 100
-    fmt.Printf("\r%.1f%% (%s)", pct, httpc.FormatSpeed(speed))
+    if total > 0 {
+        pct := float64(downloaded) / float64(total) * 100
+        fmt.Printf("\r%.1f%% (%s/s)", pct, httpc.FormatSpeed(speed))
+    } else {
+        fmt.Printf("\r%s (%s/s)", httpc.FormatBytes(downloaded), httpc.FormatSpeed(speed))
+    }
 }
 ```
 
@@ -90,25 +121,27 @@ type DownloadResult struct {
 }
 ```
 
+### Field Details
+
 | Field | Type | Description |
-|-------|------|-------------|
-| `FilePath` | `string` | File save path |
-| `BytesWritten` | `int64` | Bytes written |
-| `Duration` | `time.Duration` | Download duration |
-| `AverageSpeed` | `float64` | Average speed (bytes/second) |
-| `StatusCode` | `int` | HTTP status code |
-| `ContentLength` | `int64` | Content-Length header value |
-| `Resumed` | `bool` | Whether completed via resume |
+|------|------|------|
+| `FilePath` | `string` | The **absolute path** where the file was actually saved (the path after `prepareFilePath` validation) |
+| `BytesWritten` | `int64` | Bytes written this session (during resume, the appended amount, not the total file size) |
+| `Duration` | `time.Duration` | Download duration (from start of writing to file close) |
+| `AverageSpeed` | `float64` | Average speed (bytes/second, = BytesWritten / Duration) |
+| `StatusCode` | `int` | HTTP status code (200 or 206) |
+| `ContentLength` | `int64` | Content-Length reported by the server (during resume, the remaining-part length) |
+| `Resumed` | `bool` | Whether completed via resume (Range requested and 206 received) |
 | `ResponseCookies` | `[]*http.Cookie` | Response cookies |
-| `ActualChecksum` | `string` | Actually computed checksum |
+| `ActualChecksum` | `string` | Actually computed checksum (filled only when `Checksum` is set) |
 | `Proto` | `string` | HTTP protocol version (e.g. `"HTTP/1.1"`, `"HTTP/2.0"`) |
 | `ResponseHeaders` | `http.Header` | Response headers |
 | `RequestURL` | `string` | Actual request URL |
-| `RequestMethod` | `string` | Request HTTP method |
-| `RequestHeaders` | `http.Header` | Request headers |
+| `RequestMethod` | `string` | Request HTTP method (always `"GET"`) |
+| `RequestHeaders` | `http.Header` | Request headers actually sent |
 
 ```go
-fmt.Printf("Download complete: %s, duration %v, average speed %s\n",
+fmt.Printf("download complete: %s, duration %v, average speed %s\n",
     httpc.FormatBytes(result.BytesWritten),
     result.Duration,
     httpc.FormatSpeed(result.AverageSpeed),
@@ -127,13 +160,37 @@ Use [FormatBytes](../core/functions#formatbytes) and [FormatSpeed](../core/funct
 type ChecksumAlgorithm string
 ```
 
-Download file integrity verification algorithm.
+Algorithm for verifying downloaded-file integrity.
 
 | Constant | Value | Description |
-|----------|-------|-------------|
+|------|-----|------|
 | `ChecksumSHA256` | `"sha256"` | SHA-256 hash algorithm |
 
-### Usage Example
+### SHA-256 Streaming Verification Flow
+
+Once `Checksum` is set, the hash is computed **as data is written** during the download, avoiding a second full-file read after completion:
+
+```text
+Verification flow:
+
+  ① hasher = sha256.New()
+  ② writer = io.MultiWriter(file, hasher)
+     |
+     network stream -> file (written to disk)
+                    -> hasher (updates hash state)
+     |
+  ③ After download: actualChecksum = hex(hasher.Sum(nil))
+  ④ Compare: actualChecksum == strings.ToLower(cfg.Checksum)?
+     |- match    -> return DownloadResult (with ActualChecksum)
+     +- mismatch -> delete file + return checksum error
+```
+
+| Step | Description |
+|------|------|
+| MultiWriter | `io.MultiWriter(file, hasher)` writes data to the file and the hasher simultaneously, with zero extra memory |
+| Algorithm pre-check | Validates the algorithm name **before** touching the target file — a config mistake will not truncate an existing file |
+| Failure cleanup | On checksum mismatch, the downloaded file is **automatically deleted** (in non-resume mode), avoiding leftover corrupt files |
+| Case-insensitive | The expected value is auto-`ToLower`'d; the actual value is lowercase hex, so case does not affect comparison |
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -143,30 +200,41 @@ cfg.ChecksumAlgorithm = httpc.ChecksumSHA256
 
 result, err := httpc.Download(context.Background(), url, cfg)
 if err != nil {
-    // Automatically returns error and deletes downloaded file on checksum mismatch
+    // On checksum mismatch, an error is returned automatically and the downloaded file is deleted
     log.Fatal(err)
 }
-fmt.Println("Checksum:", result.ActualChecksum)
+fmt.Println("checksum:", result.ActualChecksum)
 ```
 
-:::tip
-When `Checksum` is set, file integrity is automatically verified upon download completion. A failed verification automatically deletes the file and returns an error -- no manual comparison needed.
+## Resumable Download Mechanism
+
+### ResumeDownload Workflow
+
+```text
+prepareResumeState(filePath, opts, options):
+
+  ① prepareFilePath(filePath) -> validate path safety -> validatedPath
+  ② os.Stat(validatedPath)
+     |- file does not exist -> resumeOffset = 0, normal download
+     |- is a directory      -> return error
+     |- file exists + Overwrite=false + Resume=false -> ErrFileExists
+     |- file exists + Resume=true -> resumeOffset = fileInfo.Size()
+     |     -> append WithHeader("Range", "bytes={offset}-") to options
+     +- file exists + Overwrite=true (not Resume) -> resumeOffset = 0, overwrite download
+```
+
+### Server-Response Handling
+
+| Server returns | Handling |
+|-----------|------|
+| `206 Partial Content` | Resume succeeded: `O_APPEND` append-mode write, `Resumed = true` |
+| `200 OK` (Range not supported) | **Return error**: the server ignored the Range request; resuming would truncate existing data. Drain the response body, then error |
+| `416 Range Not Satisfiable` | **Return error**: the requested offset exceeds the file size. Drain the response body, then error |
+| Other status codes (4xx/5xx) | Return error, with a preview of the first 200 characters of the response body |
+
+:::warning Why error on 200
+When `ResumeDownload=true` but the server returns 200 (instead of 206), the server does not support Range requests. Continuing the download would overwrite the existing partial file from scratch — **silently destroying the user's intended resume data**. HTTPC chooses to return an error rather than truncate, protecting the local partial file. To force an overwrite, set `Overwrite=true` + `ResumeDownload=false`.
 :::
-
-## Security Protection
-
-File downloads include multiple layers of built-in security:
-
-| Protection | Description |
-|------------|-------------|
-| UNC path blocking | Blocks `\\server\share` format paths |
-| Control character filtering | Blocks control characters in paths |
-| System path protection | Blocks writing to system directories |
-| Path traversal detection | Detects `../` path traversal |
-| Symlink detection | Prevents symlink attacks |
-| Parent directory check | Recursively checks parent directory symlinks |
-
-## Resumable Downloads
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -174,19 +242,193 @@ cfg.FilePath = "/tmp/large-file.zip"
 cfg.ResumeDownload = true
 
 result, err := httpc.Download(context.Background(), url, cfg)
+if err != nil {
+    log.Fatal(err)
+}
 if result.Resumed {
-    fmt.Println("Resumed download complete")
+    fmt.Printf("resume complete, appended %s this session\n", httpc.FormatBytes(result.BytesWritten))
 }
 ```
 
-Resume mechanism:
-1. Check local file size -> use as Range request offset
-2. Server returns 206 (Partial Content) -> append write
-3. Server returns 416 (Range Not Satisfiable) -> return error
-4. Server returns 200 (Range not supported) -> return error (protect local partial file from being overwritten)
+## Streaming Download Principle
+
+File download uses streaming mode (`WithStreamBody(true)`), avoiding buffering the entire response body in memory:
+
+```text
+Streaming download data path:
+
+  server response
+    |
+  engine.Response.RawBodyReader()  <- network reader (io.ReadCloser)
+    |
+  io.Copy(writer, bodyReader)      <- direct streaming write, zero full buffering
+    |
+  writer = progressWriter(MultiWriter(file, hasher))
+    |
+  disk file
+```
+
+| Feature | Description |
+|------|------|
+| Zero memory buffering | Data flows from network directly to disk, without passing through a full memory buffer |
+| Streaming hash | Checksum computation happens in sync with writing, no second read needed |
+| Auto-release | The response-body reader is closed via `defer`; the engine response is returned to the object pool via `defer` |
+
+:::warning Middleware compatibility
+Download needs direct access to `*engine.Response`'s `RawBodyReader()`. If middleware **wraps** the `ResponseMutator` with a custom type (rather than mutating the engine response in place), the download returns an error: `download is not compatible with middleware that wraps ResponseMutator`. All built-in middleware mutates in place and does not trigger this error.
+:::
+
+## File Path Security Protection
+
+`prepareFilePath` implements multiple layers of security to prevent malicious paths from writing to sensitive system locations. Each layer intercepts the path before it reaches the filesystem.
+
+### Protection-Layer Overview
+
+| Layer | Protection | What it intercepts |
+|------|------|----------|
+| 1 | Length check | Empty paths / over 4096 characters |
+| 2 | UNC path blocking | `\\server\share` or `//server/share` network paths |
+| 3 | Control-character filtering | ASCII < 0x20, 0x7F (DEL), 0x00 (NUL) |
+| 4 | System-path protection | Writes to OS-protected directories (see table below) |
+| 5 | Path-traversal detection | `../` escaping the working directory |
+| 6 | Symlink defense | The file itself + recursive parent-directory symlink checks |
+
+### Layer 2: UNC Path Blocking
+
+```text
+Blocked formats:
+  \\server\share\file     <- Windows UNC path
+  //server/share/file     <- POSIX double-slash network path
+
+Reason: UNC paths can access network resources and may be exploited for SSRF or SMB relay attacks
+```
+
+### Layer 3: Control-Character Filtering
+
+Every byte in the path is checked — ASCII control characters (0x00-0x1F), DEL (0x7F), and NUL bytes are rejected. This prevents terminal-escape-sequence injection and CRLF path-confusion attacks.
+
+### Layer 4: System-Path Protection
+
+Writes to protected system directories are blocked per operating system:
+
+| OS | Protected paths |
+|----|-----------|
+| **Windows** | `C:\Windows\`, `C:\System32\`, `C:\Program Files\`, `C:\ProgramData\`, `C:\Program Files (x86)\` + env-var expansion: `${SystemRoot}`, `${windir}`, `${ProgramFiles}`, etc. |
+| **macOS** | `/system/`, `/library/`, `/applications/`, `/usr/`, `/bin/`, `/sbin/`, `/etc/`, `/var/` |
+| **Linux** | `/etc/`, `/sys/`, `/proc/`, `/dev/`, `/boot/`, `/root/`, `/usr/bin/`, `/usr/sbin/`, `/bin/`, `/sbin/`, `/lib/`, `/run/`, etc. |
+
+Path matching uses prefix checks (with a trailing separator) to prevent prefix collisions (e.g. `C:\Windows` will not incorrectly match `C:\WindowsEvil`). Windows env-var patterns are expanded dynamically at check time, catching system directories installed on non-C drives.
+
+### Layer 5: Path-Traversal Detection
+
+```text
+Working-directory boundary check:
+
+  filePath = "../../etc/passwd"
+  cleanPath = filepath.Clean -> "../../etc/passwd"
+  absPath = filepath.Abs -> "/home/user/../../etc/passwd" -> "/etc/passwd"
+
+  Check: is absPath inside the working directory?
+  Result: no -> "path traversal detected: path outside working directory"
+```
+
+The check fires when the cleaned path (`filepath.Clean`) starts with `..`. Only **relative paths** are checked — absolute paths are not constrained to the working directory (but are still subject to system-path protection).
+
+### Layer 6: Symlink Defense
+
+| Check | Description |
+|------|------|
+| The file itself | `os.Lstat` checks whether the target file is a symlink — an attacker may create a symlink pointing to a sensitive file |
+| Parent-directory recursion | `checkParentDirSymlinks` recursively checks all parent directories (up to 32 levels), preventing TOCTOU attacks (a directory replaced by a symlink after the check) |
+| Resolved system path | If a parent-directory symlink resolves to a system directory, it is also rejected |
+
+```go
+// Each protection layer blocks these attack scenarios:
+cfg.FilePath = "\\malicious-server\share\payload"  // UNC blocked
+cfg.FilePath = "/etc/passwd"                        // system-path protection
+cfg.FilePath = "../../../etc/shadow"                // path-traversal detection
+cfg.FilePath = "/tmp/safe/../../../etc/passwd"      // Clean + traversal + system path
+```
+
+## Complete Example: Production-Grade Download
+
+The example below shows a complete download flow with progress callback, SHA-256 checksum, and resumable download.
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	cfg := httpc.DefaultDownloadConfig()
+	cfg.FilePath = "/tmp/large-archive.zip"
+	cfg.Overwrite = true
+	cfg.ResumeDownload = true
+	cfg.Checksum = "abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+
+	lastUpdate := time.Now()
+	cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
+		// Throttle control: the progress callback fires every 200ms; filter once more here
+		if time.Since(lastUpdate) < time.Second {
+			return
+		}
+		lastUpdate = time.Now()
+
+		if total > 0 {
+			pct := float64(downloaded) / float64(total) * 100
+			fmt.Printf("progress: %s / %s (%.1f%%) speed: %s/s\n",
+				httpc.FormatBytes(downloaded),
+				httpc.FormatBytes(total),
+				pct,
+				httpc.FormatSpeed(speed))
+		} else {
+			fmt.Printf("downloaded: %s  speed: %s/s\n",
+				httpc.FormatBytes(downloaded),
+				httpc.FormatSpeed(speed))
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	result, err := httpc.Download(ctx,
+		"https://example.com/files/large-archive.zip", cfg)
+	if err != nil {
+		log.Fatalf("download failed: %v", err)
+	}
+
+	fmt.Println("download complete")
+	fmt.Printf("  file path: %s\n", result.FilePath)
+	fmt.Printf("  written:   %s\n", httpc.FormatBytes(result.BytesWritten))
+	fmt.Printf("  duration:  %v\n", result.Duration)
+	fmt.Printf("  avg speed: %s/s\n", httpc.FormatSpeed(result.AverageSpeed))
+	fmt.Printf("  status:    %d\n", result.StatusCode)
+	fmt.Printf("  resumed:   %v\n", result.Resumed)
+	fmt.Printf("  checksum:  %s\n", result.ActualChecksum)
+	// Sample output:
+	// progress: 5.2 MB / 52.4 MB (9.9%) speed: 12.3 MB/s
+	// progress: 26.1 MB / 52.4 MB (49.8%) speed: 11.8 MB/s
+	// progress: 52.4 MB / 52.4 MB (100.0%) speed: 12.1 MB/s
+	// download complete
+	//   file path: /tmp/large-archive.zip
+	//   written:   52.4 MB
+	//   duration:  4.331s
+	//   avg speed: 12.1 MB/s
+	//   status:    200
+	//   resumed:   false
+	//   checksum:  abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890
+}
+```
 
 ## See Also
 
 - [File Upload and Download](../../guides/file-transfer) - Usage guide
-- [Package Functions](../core/functions) - Helper function reference
-- [Domain Client](./domain-client) - Domain client download methods
+- [Package Functions](../core/functions) - `FormatBytes`/`FormatSpeed` helper-function reference
+- [Domain Client](./domain-client) - Domain-client download method

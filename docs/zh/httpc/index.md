@@ -63,7 +63,7 @@ HTTPC 提供三种使用方式，从简单到灵活：
 
 ```text
 包级函数            客户端实例                  域名客户端
-httpc.Get()  →  client, _ := httpc.New()  →  dc, _ := httpc.NewDomain(url)
+httpc.Get()  →  client, _ := httpc.NewDefault()  →  dc, _ := httpc.NewDomainDefault(url)
 一次性请求       自定义配置/中间件       会话管理/Cookie 自动维护
 ```
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Result"
 title: "Result - CyberGo HTTPC | Тип Result"
-description: "Справочник API типа ответа Result HTTPC: методы StatusCode/Body, проверка состояния, операции Cookie, парсинг JSON и сохранение файлов SaveToFile."
+description: "Справочник API типа ответа Result HTTPC: базовые методы StatusCode/Body, проверка состояния, операции Cookie, парсинг JSON Unmarshal, сохранение в файл SaveToFile и подтипы RequestInfo/ResponseInfo."
 sidebar_position: 3
 ---
 

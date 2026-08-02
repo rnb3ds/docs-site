@@ -1,118 +1,24 @@
 ---
 sidebar_label: "Domain Client"
 title: "Domain Client - CyberGo HTTPC | NewDomain & Sessions"
-description: "HTTPC domain client API reference: NewDomain, seven HTTP methods, the Request method, URL auto-concatenation, and SetHeader/SetCookie session management."
+description: "HTTPC domain client API reference: the NewDomain constructor, seven HTTP methods plus the generic Request method, URL auto-concatenation rules, and the DomainClienter interface's SetHeader/SetCookie session management and Close lifecycle."
 sidebar_position: 2
 ---
 
 # Domain Client
 
-The domain client provides request management for a specific domain, automatically maintaining cookies and headers.
+The domain client (`DomainClient`) provides request management for a specific domain, automatically maintaining cookies and headers. It solves the pain point of manually passing auth headers and tracking cookies across multiple requests with a plain `Client` — session state is injected into every request automatically, and response cookies are captured automatically.
 
-## NewDomain
-
-```go
-func NewDomain(baseURL string, config ...*Config) (DomainClienter, error)
+```text
+DomainClient architecture
+├── client         underlying Client (reuses connection pool, middleware chain)
+├── baseURL        domain scope (e.g. https://api.example.com/v1)
+├── parsedURL      cached parse result (avoids re-running url.Parse per request)
+├── domain         hostname (without port)
+└── SessionManager session state
+      ├── headers  map[string]string  session-level request headers
+      └── cookies  map[string]*Cookie session-level cookies
 ```
-
-Creates a domain-scoped client. Cookies are automatically enabled.
-
-```go
-// Using default configuration
-dc, err := httpc.NewDomain("https://api.example.com")
-if err != nil {
-    log.Fatal(err)
-}
-defer dc.Close()
-
-// Using custom configuration
-cfg := httpc.DefaultConfig()
-cfg.Timeouts.Request = 60 * time.Second
-dc, err := httpc.NewDomain("https://api.example.com", cfg)
-if err != nil {
-    log.Fatal(err)
-}
-defer dc.Close()
-```
-
-**Parameters:**
-
-| Parameter | Type | Description |
-|-----------|------|-------------|
-| `baseURL` | `string` | Base URL (must include scheme and host) |
-| `config` | `...*Config` | Optional configuration; uses DefaultConfig() if not provided |
-
-**Returns:** `DomainClienter` interface (not the concrete `*DomainClient` type).
-
-## HTTP Methods
-
-All methods accept relative paths or absolute URLs:
-
-```go
-// Relative path: auto-concatenated with baseURL
-result, err := dc.Get("/users")
-result, err := dc.Post("/users", httpc.WithJSON(data))
-result, err := dc.Put("/users/1", httpc.WithJSON(data))
-result, err := dc.Patch("/users/1", httpc.WithJSON(data))
-result, err := dc.Delete("/users/1")
-result, err := dc.Head("/users/1")
-result, err := dc.Options("/users")
-
-// Absolute URL: used directly
-result, err := dc.Get("https://other-api.com/data")
-```
-
-### Request
-
-```go
-result, err := dc.Request(ctx, "GET", "/users", options...)
-```
-
-Generic request method with context support for timeout and cancellation control.
-
-:::warning Request options are applied twice
-The domain client internally applies request options **twice** -- once to capture session state (cookies, headers) and once for the actual request. Avoid side-effect options (e.g. counters, nonce generation); use the underlying `Client` if you need them.
-:::
-
-## Download Methods
-
-```go
-func (dc *DomainClient) Download(ctx context.Context, path string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
-```
-
-Downloads a file to `cfg.FilePath`; `path` is resolved relative to `baseURL`. The signature matches the package-level `Download` and `Client.Download` — `Download` is the single canonical download entry point across all three. `cfg` must not be nil, and `cfg.FilePath` must be set (otherwise `ErrEmptyFilePath` is returned).
-
-```go
-cfg := httpc.DefaultDownloadConfig()
-cfg.FilePath = "/tmp/report.pdf"
-cfg.Overwrite = true
-
-result, err := dc.Download(ctx, "/files/report.pdf", cfg)
-```
-
-Download response cookies are automatically captured into the session.
-
-## Access Methods
-
-```go
-dc.URL()      // string - Base URL
-dc.Domain()   // string - Domain (without port)
-dc.Session()  // *SessionManager - Underlying session manager
-dc.Close()    // error - Close client and release resources
-```
-
-## URL Concatenation Rules
-
-| Input Path | Result (baseURL = `https://api.example.com/v1`) |
-|------------|------|
-| `/users` | `https://api.example.com/v1/users` |
-| `users` | `https://api.example.com/v1/users` |
-| `/users?page=1` | `https://api.example.com/v1/users?page=1` |
-| `https://other.com/api` | `https://other.com/api` (absolute URL) |
-
-:::warning
-Only paths prefixed with `http://` or `https://` are recognized as absolute URLs; other protocols (e.g. `ftp://`) are not recognized as absolute, are joined as relative paths, and usually cause the request to fail.
-:::
 
 ## DomainClienter Interface
 
@@ -140,10 +46,401 @@ type DomainClienter interface {
 }
 ```
 
-Using the interface type rather than the concrete type is recommended for easier testing and implementation swapping.
+`DomainClienter` implements both the `Client` interface (with `Get`/`Post`/`Put`/`Patch`/`Delete`/`Head`/`Options`/`Request`/`Download`/`Close`) and the session-management methods. Using the interface type rather than the concrete type is recommended for easier testing and implementation swapping.
+
+### Complete Method Table
+
+#### HTTP Request Methods (inherited from Client)
+
+| Method | Signature | Description |
+|------|------|------|
+| `Get` | `(path string, opts ...RequestOption) (*Result, error)` | GET request |
+| `Post` | `(path string, opts ...RequestOption) (*Result, error)` | POST request |
+| `Put` | `(path string, opts ...RequestOption) (*Result, error)` | PUT request |
+| `Patch` | `(path string, opts ...RequestOption) (*Result, error)` | PATCH request |
+| `Delete` | `(path string, opts ...RequestOption) (*Result, error)` | DELETE request |
+| `Head` | `(path string, opts ...RequestOption) (*Result, error)` | HEAD request |
+| `Options` | `(path string, opts ...RequestOption) (*Result, error)` | OPTIONS request |
+| `Request` | `(ctx, method, path string, opts ...RequestOption) (*Result, error)` | Generic request with context |
+| `Download` | `(ctx, path string, cfg *DownloadConfig, opts ...RequestOption) (*DownloadResult, error)` | File download |
+| `Close` | `() error` | Close the client and release resources |
+
+#### URL Access Methods
+
+| Method | Return type | Description |
+|------|----------|------|
+| `URL()` | `string` | Base URL (the `baseURL` passed at construction) |
+| `Domain()` | `string` | Domain (hostname, without port) |
+| `Session()` | `*SessionManager` | Underlying session manager |
+
+#### Session Header Management
+
+| Method | Description |
+|------|------|
+| `SetHeader(key, value string) error` | Set a single session header (validates CRLF safety) |
+| `SetHeaders(headers map[string]string) error` | Set session headers in bulk |
+| `DeleteHeader(key string)` | Delete a single session header |
+| `ClearHeaders()` | Clear all session headers |
+| `GetHeaders() map[string]string` | Get a copy of the session headers |
+
+#### Session Cookie Management
+
+| Method | Description |
+|------|------|
+| `SetCookie(cookie *http.Cookie) error` | Set a single session cookie |
+| `SetCookies(cookies []*http.Cookie) error` | Set session cookies in bulk |
+| `DeleteCookie(name string)` | Delete a cookie by name |
+| `ClearCookies()` | Clear all cookies |
+| `GetCookies() []*http.Cookie` | Get a copy of all cookies |
+| `GetCookie(name string) *http.Cookie` | Get a copy of a cookie by name |
+
+## NewDomain
+
+```go
+func NewDomain(baseURL string, cfg Config) (DomainClienter, error)
+```
+
+Creates a domain-scoped client. Cookies are automatically enabled. Pass a `Config` value, or use `NewDomainDefault(baseURL)` as a zero-argument shortcut.
+
+```go
+// Using default config (or call NewDomainDefault for the same effect)
+dc, err := httpc.NewDomain("https://api.example.com", httpc.DefaultConfig())
+if err != nil {
+    log.Fatal(err)
+}
+defer dc.Close()
+
+// Using custom configuration
+cfg := httpc.DefaultConfig()
+cfg.Timeouts.Request = 60 * time.Second
+dc, err := httpc.NewDomain("https://api.example.com", cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer dc.Close()
+```
+
+**Parameters:**
+
+| Parameter | Type | Description |
+|------|------|------|
+| `baseURL` | `string` | Base URL (must include scheme and host) |
+| `cfg` | `Config` | Configuration value (recommended: obtain via `DefaultConfig()` or a preset function) |
+
+**Returns:** `DomainClienter` interface (not the concrete `*DomainClient` type).
+
+**Error conditions:**
+
+| Condition | Error message |
+|------|----------|
+| `baseURL` missing scheme or host | `base URL must include scheme and host` |
+| Configuration validation failure | `invalid configuration: ...` |
+
+:::tip Cookies are auto-enabled
+`NewDomain` internally forces `cfg.Connection.EnableCookies = true`, regardless of whether your passed-in `cfg` enables cookies. This is because the core value of the domain client is maintaining a cookie session across requests.
+:::
+
+## NewDomainDefault
+
+```go
+func NewDomainDefault(baseURL string) (DomainClienter, error)
+```
+
+Convenience constructor, equivalent to `NewDomain(baseURL, DefaultConfig())`.
+
+```go
+dc, err := httpc.NewDomainDefault("https://api.example.com")
+if err != nil {
+    log.Fatal(err)
+}
+defer dc.Close()
+```
+
+## HTTP Methods
+
+All methods accept relative paths or absolute URLs:
+
+```go
+// Relative path: auto-concatenated with baseURL
+result, err := dc.Get("/users")
+result, err := dc.Post("/users", httpc.WithJSON(data))
+result, err := dc.Put("/users/1", httpc.WithJSON(data))
+result, err := dc.Patch("/users/1", httpc.WithJSON(data))
+result, err := dc.Delete("/users/1")
+result, err := dc.Head("/users/1")
+result, err := dc.Options("/users")
+
+// Absolute URL: used directly
+result, err := dc.Get("https://other-api.com/data")
+```
+
+### Request
+
+```go
+result, err := dc.Request(ctx, "GET", "/users", options...)
+```
+
+Generic request method with context support for timeout and cancellation control. `DomainClient` satisfies the `Client` interface by implementing this method.
+
+## URL Concatenation Rules In Detail
+
+The `buildURL` method is responsible for joining the request path with `baseURL`. The rules:
+
+```text
+buildURL(pathStr):
+
+  ① pathStr is empty -> return baseURL
+  ② pathStr starts with http:// or https:// -> absolute URL, returned directly
+  ③ Otherwise -> relative-path join:
+       a. Clone the cached parsedURL (to avoid mutating the original)
+       b. Parse pathStr to split path / query / fragment
+       c. result.Path = path.Join(basePath, parsedPath)
+       d. Trailing-slash preservation: if the original path ends with /, so does the result
+       e. Path-traversal defense: the result must stay within the base-path scope
+       f. Query-parameter merge: base query params + path query params
+       g. Fragment passthrough
+```
+
+### Concatenation Examples
+
+| Input path | Result (baseURL = `https://api.example.com/v1`) |
+|----------|------|
+| `""` | `https://api.example.com/v1` |
+| `/users` | `https://api.example.com/v1/users` |
+| `users` | `https://api.example.com/v1/users` |
+| `/users/` | `https://api.example.com/v1/users/` (trailing slash preserved) |
+| `/users?page=1` | `https://api.example.com/v1/users?page=1` |
+| `search?q=go` | `https://api.example.com/v1/search?q=go` |
+| `https://other.com/api` | `https://other.com/api` (absolute URL used directly) |
+
+### Query-Parameter Merge
+
+When `baseURL` itself carries query parameters, the request path's query parameters are **appended** to them:
+
+```text
+baseURL  = https://api.example.com/v1?lang=zh
+path     = /users?page=1
+result   = https://api.example.com/v1/users?lang=zh&page=1
+```
+
+### Path-Traversal Defense
+
+`buildURL` checks that the joined path stays within the base-path scope, preventing path-traversal attacks:
+
+```text
+baseURL = https://api.example.com/v1
+path    = ../admin/delete       <- after path.Clean this becomes /admin/delete
+
+Check: is /admin/delete within the /v1 scope?
+Result: no -> returns error "path escapes base URL scope"
+```
+
+:::warning Absolute-URL recognition
+Only paths prefixed with `http://` or `https://` are recognized as absolute URLs; other protocols (e.g. `ftp://`) are not recognized as absolute, are joined as relative paths, and usually cause the request to fail. No scope check is performed when the base path is empty or `/`.
+:::
+
+## Automatic Session Management
+
+The domain client's session management has three phases:
+
+```text
+Session management across the request lifecycle:
+
+  ① prepareOptions() (before send)
+     Read session headers and cookies from the SessionManager
+     -> convert to RequestOption and inject into the request
+
+  ② captureFromOptions() (before send)
+     Extract cookies and headers from the user-supplied RequestOptions
+     -> store into the SessionManager (update if present, skip otherwise)
+
+  ③ UpdateFromResult() (after send)
+     Extract Set-Cookie from the response
+     -> store into the SessionManager
+```
+
+```go
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
+
+// Session headers: injected into every subsequent request
+dc.SetHeader("Authorization", "Bearer token-abc")
+dc.SetHeader("Accept-Language", "zh-CN")
+
+// After login, the response's Set-Cookie is auto-captured
+dc.Post("/login", httpc.WithJSON(loginData))
+// Subsequent requests automatically carry the login cookies
+
+// You can also set cookies manually
+dc.SetCookie(&http.Cookie{Name: "session", Value: "xyz"})
+
+// Inspect session state
+dc.GetCookie("session")  // -> *http.Cookie copy
+dc.GetHeaders()          // -> map[string]string copy
+```
+
+:::tip Thread safety
+`SessionManager` is protected internally by a `sync.RWMutex`; `SetHeader`/`SetCookie`/`GetCookie` and similar methods can be called concurrently safely. `prepareOptions` uses a read-then-write non-atomic sequence — the session state is designed for eventual consistency. Concurrent requests may interleave during `prepareOptions`, but each request captures a consistent snapshot at its `prepareOptions` moment.
+:::
+
+## Double-Option-Execution Caveat
+
+`prepareSessionOptions` applies the user-supplied `RequestOption` **twice** before the request is sent: once in `captureFromOptions` to capture session state, and once in `client.Request` for the actual request.
+
+```text
+prepareSessionOptions(options):
+  ① managedOptions = prepareOptions()        <- read session state
+  ② allOptions = managedOptions + options    <- merge
+  ③ captureFromOptions(options)              <- applied once to a temp request (capture session)
+  ④ return allOptions -> client.Request()    <- applied a second time to the actual request
+```
+
+::: warning Avoid side-effect options
+The following options execute twice in `DomainClient`, leading to unexpected behavior:
+
+| Problematic option | Reason |
+|------------|------|
+| Counter increments | Incremented twice per request |
+| Nonce random generation | Different values generated in the capture phase and the request phase |
+| `WithOnRequest` / `WithOnResponse` | Callbacks are explicitly cleared and do not fire twice (safe) |
+
+If you need side-effect options, use the underlying `Client` to send the request directly, or manage state outside the option.
+:::
+
+## Download Method
+
+```go
+func (dc *DomainClient) Download(ctx context.Context, path string, cfg *DownloadConfig, options ...RequestOption) (*DownloadResult, error)
+```
+
+Downloads a file to `cfg.FilePath`; `path` is resolved relative to `baseURL`. The signature matches the package-level `Download` and `Client.Download` — `Download` is the single canonical download entry point across all three. `cfg` must not be nil, and `cfg.FilePath` must be set (otherwise `ErrEmptyFilePath` is returned).
+
+```go
+cfg := httpc.DefaultDownloadConfig()
+cfg.FilePath = "/tmp/report.pdf"
+cfg.Overwrite = true
+
+result, err := dc.Download(ctx, "/files/report.pdf", cfg)
+```
+
+Download response cookies are automatically captured into the session (via `UpdateFromCookies`). As with `Request`, request options are applied twice.
+
+## Relationship to the Client Interface
+
+`DomainClient` satisfies both interfaces via compile-time assertions:
+
+```go
+var _ Client = (*DomainClient)(nil)           // implements Client
+var _ DomainClienter = (*DomainClient)(nil)   // implements DomainClienter
+```
+
+```text
+Interface hierarchy:
+  Doer                                    <- minimal interface (only Request)
+    └── Client                             <- + HTTP methods + Download + Close
+          └── DomainClienter               <- + URL/Domain/Session + session header/cookie management
+                └── *DomainClient          <- concrete implementation
+```
+
+`DomainClienter` embeds `Client`, so any function that accepts a `Client` parameter also accepts a `DomainClienter`. This lets `DomainClient` be used seamlessly wherever a `Client` is expected, while providing additional session-management capabilities.
+
+## Complete REST API Client Wrapper Example
+
+The example below shows how to use `DomainClient` to wrap a GitHub API client that automatically manages auth headers and pagination query parameters.
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/cybergodev/httpc"
+)
+
+// GitHubClient wraps the GitHub REST API
+type GitHubClient struct {
+	dc httpc.DomainClienter
+}
+
+// NewGitHubClient creates a GitHub API client
+func NewGitHubClient(token string) (*GitHubClient, error) {
+	cfg := httpc.DefaultConfig()
+	cfg.Timeouts.Request = 30 * time.Second
+
+	dc, err := httpc.NewDomain("https://api.github.com", cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	// Set session-level request headers
+	if err := dc.SetHeader("Authorization", "Bearer "+token); err != nil {
+		return nil, fmt.Errorf("set auth header: %w", err)
+	}
+	if err := dc.SetHeader("Accept", "application/vnd.github+json"); err != nil {
+		return nil, fmt.Errorf("set accept header: %w", err)
+	}
+	if err := dc.SetHeader("X-GitHub-Api-Version", "2022-11-28"); err != nil {
+		return nil, fmt.Errorf("set api version: %w", err)
+	}
+
+	return &GitHubClient{dc: dc}, nil
+}
+
+// Close releases resources
+func (g *GitHubClient) Close() error { return g.dc.Close() }
+
+// GetUser fetches user info (relative path auto-concatenated with baseURL)
+func (g *GitHubClient) GetUser(username string) (*httpc.Result, error) {
+	return g.dc.Get(fmt.Sprintf("/users/%s", username))
+}
+
+// ListUserRepos lists a user's repositories (with pagination parameters)
+func (g *GitHubClient) ListUserRepos(username string, page, perPage int) (*httpc.Result, error) {
+	return g.dc.Get(fmt.Sprintf("/users/%s/repos?page=%d&per_page=%d", username, page, perPage))
+}
+
+func main() {
+	client, err := NewGitHubClient("ghp_your_token_here")
+	if err != nil {
+		panic(err)
+	}
+	defer client.Close()
+
+	// Every request automatically carries Authorization, Accept, X-GitHub-Api-Version headers
+	result, err := client.GetUser("torvalds")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("status code: %d\n", result.StatusCode())
+
+	// Parse the JSON response via Unmarshal
+	var user struct {
+		Login string `json:"login"`
+	}
+	if err := result.Unmarshal(&user); err != nil {
+		panic(err)
+	}
+	fmt.Printf("username: %s\n", user.Login)
+
+	repos, err := client.ListUserRepos("torvalds", 1, 5)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("repo list status code: %d\n", repos.StatusCode())
+	// Sample output:
+	// status code: 200
+	// username: torvalds
+	// repo list status code: 200
+}
+```
+
+:::tip Interface return type
+`NewDomain` and `NewDomainDefault` return the `DomainClienter` interface rather than the concrete `*DomainClient` type, making it easy to substitute a mock in tests. Type-assert when you need to access the concrete type.
+:::
 
 ## See Also
 
 - [Session Management](./session) - Detailed SessionManager reference
 - [Domain Client and Sessions](../../guides/domain-session) - Usage guide
-- [Interface Definitions](../types/interfaces) - Client, Doer interface reference
+- [Interface Definitions](../types/interfaces) - Client, Doer, DomainClienter interface definitions
+- [File Download](./download) - DownloadConfig and DownloadResult details

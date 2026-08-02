@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Практическое руководство"
-title: "Практическое руководство - CyberGo HTTPC | GitHub API Tour"
-description: "Практическое руководство HTTPC: пошаговое построение клиента GitHub REST API от httpc.Get с парсингом JSON, доменным клиентом, middleware и загрузкой файлов."
+title: "Практическое руководство - CyberGo HTTPC | GitHub API на практике"
+description: "Практическое руководство на тридцать минут: демонстрация основных возможностей HTTPC на примерах GitHub API, охватывающее парсинг JSON-ответов, доменный клиент NewDomain, отправку данных WithJSON, композицию цепочки middleware, обработку ошибок ClientError и загрузку файлов."
 sidebar_position: 1
 ---
 
 # Практическое руководство: создание клиента GitHub API
 
-Путём создания клиента GitHub API вы освоите основные концепции HTTPC. Приблизительно 30 минут.
+Следующие примеры используют GitHub API для демонстрации основных возможностей HTTPC. Каждый пример независим и может рассматриваться отдельно.
 
 **Вы научитесь:**
 
@@ -18,7 +18,7 @@ sidebar_position: 1
 - Обрабатывать ошибки и повторные попытки
 - Объекты ответа Result и автоматическое управление
 
-## Шаг 1: Базовый запрос
+## Базовый запрос
 
 Установите зависимость и создайте `main.go`:
 
@@ -51,7 +51,7 @@ func main() {
 - Функция пакета `httpc.Get` не требует создания клиента, подходит для быстрой проверки
 - Result создаётся заново для каждого запроса, утилизируется GC, ручное освобождение не требуется
 
-## Шаг 2: Парсинг JSON-ответов
+## Парсинг JSON-ответов
 
 ```go
 type Repo struct {
@@ -80,12 +80,12 @@ fmt.Printf("Описание: %s\n", repo.Description)
 - `result.Unmarshal(&v)` напрямую разбирает JSON-ответ в структуру
 - Определите Go-структуру, соответствующую ответу API
 
-## Шаг 3: Создание доменного клиента
+## Создание доменного клиента
 
 Все эндпоинты GitHub API находятся под `https://api.github.com`, используйте доменный клиент, чтобы не повторять URL:
 
 ```go
-client, err := httpc.NewDomain("https://api.github.com")
+client, err := httpc.NewDomainDefault("https://api.github.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -110,7 +110,7 @@ if err != nil {
 - `WithHeader` как параметр запроса действует только для текущего запроса
 - Доменный клиент автоматически управляет Cookie
 
-## Шаг 4: Отправка данных (создание Issue)
+## Отправка данных (создание Issue)
 
 ```go
 type CreateIssueRequest struct {
@@ -146,7 +146,7 @@ fmt.Printf("Issue #%d создан: %s\n", created.Number, created.URL)
 - `WithJSON(data)` автоматически сериализует и устанавливает Content-Type
 - `result.IsSuccess()` проверяет код состояния 2xx
 
-## Шаг 5: Добавление промежуточного ПО
+## Добавление промежуточного ПО
 
 Добавьте логирование и Request ID к клиенту:
 
@@ -154,11 +154,11 @@ fmt.Printf("Issue #%d создан: %s\n", created.Number, created.URL)
 // Настройка промежуточного ПО
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(func(format string, args ...any) {
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
         log.Printf("[HTTP] "+format, args...)
-    }),
+    }}),
     httpc.RecoveryMiddleware(),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 }
 
 // Передайте конфигурацию в NewDomain для создания доменного клиента с промежуточным ПО
@@ -190,7 +190,7 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 - `RecoveryMiddleware` предотвращает падение процесса при panic
 - `RequestIDMiddleware` генерирует уникальный ID для каждого запроса
 
-## Шаг 6: Обработка ошибок и повторные попытки
+## Обработка ошибок и повторные попытки
 
 ```go
 result, err := client.Get("/repos/golang/go")
@@ -244,7 +244,7 @@ cfg.Retry.EnableJitter = true
 - `ClientError` предоставляет классификацию ошибок и определение повторяемости
 - По умолчанию автоматически повторяются запросы при 408, 429, 500, 502, 503, 504
 
-## Шаг 7: Загрузка файлов (скачивание релиза)
+## Загрузка файлов (скачивание релиза)
 
 ```go
 dlCfg := httpc.DefaultDownloadConfig()
@@ -270,7 +270,7 @@ fmt.Printf("\nЗагрузка завершена: %s (%d bytes)\n",
 )
 ```
 
-## Шаг 8: Параллельные запросы
+## Параллельные запросы
 
 Одновременное получение информации о нескольких репозиториях:
 
@@ -316,7 +316,7 @@ func fetchRepos(ctx context.Context, repos []string) error {
 
 ## Полный пример
 
-Объединённый код всех шагов:
+Объединённый код всех примеров:
 
 ```go
 package main
@@ -345,9 +345,9 @@ func main() {
     cfg.Retry.MaxRetries = 3
     cfg.Retry.Delay = 1 * time.Second
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         httpc.RecoveryMiddleware(),
     }
 
@@ -386,5 +386,5 @@ func main() {
 - [Запросы и ответы](./request-response) — полный справочник параметров запроса
 - [Цепочки промежуточного ПО](./middleware-chain) — разработка пользовательского промежуточного ПО
 - [Повторные попытки и отказоустойчивость](./retry-fault-tolerance) — продвинутые стратегии повторов
-- [Оптимизация производительности](../advanced/performance) — настройка для продакшена
+- [Оптимизация производительности](./performance) — настройка для продакшена
 - [Контрольный список для продакшена](../security/production-checklist) — лучшие практики безопасности

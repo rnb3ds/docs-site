@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Загрузка и скачивание файлов"
-title: "Загрузка и выгрузка файлов - CyberGo HTTPC | Resume & Hash"
-description: "Руководство по загрузке файлов HTTPC: выгрузка WithFile, мультизагрузка WithFormData, единый Download, возобновляемая загрузка и защита SHA-256."
+title: "Загрузка и скачивание файлов - CyberGo HTTPC | Загрузка и скачивание"
+description: "Руководство по загрузке и скачиванию файлов HTTPC: простая загрузка WithFile, мультизагрузка Multipart через WithFormData, единый вход Download, колбэк прогресса, возобновляемая загрузка ResumeDownload, проверка SHA-256 и защита, включая защиту от UNC-путей."
 sidebar_position: 4
 ---
 
@@ -189,7 +189,7 @@ if err != nil {
 Загрузки через доменный клиент автоматически фиксируют Cookie ответа в сессии:
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

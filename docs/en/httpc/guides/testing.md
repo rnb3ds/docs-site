@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Testing Guide"
 title: "Testing Guide - CyberGo HTTPC | httptest & Mocks"
-description: "HTTPC testing guide: TestingConfig for tests, net/http/httptest mock servers, error and redirect simulation, table-driven tests, and Cookie assertions."
-sidebar_position: 7
+description: "HTTPC testing guide: covers the TestingConfig test-specific configuration, net/http/httptest mock-server integration, simulating error responses/delays/redirects/file-upload scenarios, table-driven testing, cookie session assertion patterns, and context-timeout testing best practices."
+sidebar_position: 10
 ---
 
 # Testing Guide

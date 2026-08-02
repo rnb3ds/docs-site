@@ -12,7 +12,7 @@ sidebar_position: 3
 ## 创建域名客户端
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -122,7 +122,7 @@ if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
 可配置 Cookie 安全策略，仅接受符合安全标准的 Cookie：
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
 
 // 设置严格 Cookie 安全
 session := dc.Session()
@@ -155,7 +155,7 @@ import (
 
 func main() {
     // 创建域名客户端
-    dc, err := httpc.NewDomain("https://api.example.com")
+    dc, err := httpc.NewDomainDefault("https://api.example.com")
     if err != nil {
         log.Fatal(err)
     }

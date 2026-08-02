@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Advanced Usage"
 title: "Advanced Examples - CyberGo HTTPC | Production Code"
-description: "HTTPC advanced examples: a custom RetryPolicy, a complete middleware chain, a RESTful client wrapper, concurrent downloads, and HMAC-SHA256 signing, helping you build a high-performance, observable production HTTP client."
+description: "HTTPC advanced example collection: custom RetryPolicy retry strategies, complete middleware-chain configuration, RESTful API client wrappers, concurrent downloads with sync.WaitGroup, and HMAC-SHA256 request-signing middleware to help you build high-performance, observable production-grade HTTP clients."
 sidebar_position: 2
 ---
 
@@ -104,32 +104,32 @@ func main() {
 
     // Metrics collection
     metricsMiddleware := httpc.MetricsMiddleware(
-        func(method, url string, statusCode int, duration time.Duration, err error) {
+        &httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
             atomic.AddInt64(&requestCount, 1)
             log.Printf("[METRICS] %s %s -> %d (%v)", method, url, statusCode, duration)
-        },
+        }},
     )
 
     // Audit logging (JSON format)
-    auditCfg := &httpc.AuditMiddlewareConfig{
-        Format:         "json",
-        IncludeHeaders: true,
-        MaskHeaders:    []string{"Authorization", "Cookie"},
-        SanitizeError:  true,
-    }
-    auditMiddleware := httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
+    auditCfg := httpc.DefaultAuditConfig()
+    auditCfg.Format = "json"
+    auditCfg.IncludeHeaders = true
+    auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+    auditCfg.SanitizeError = true
+    auditCfg.OnAudit = func(event httpc.AuditEvent) {
         data, _ := json.Marshal(event)
         log.Printf("[AUDIT] %s", data)
-    }, auditCfg)
+    }
+    auditMiddleware := httpc.AuditMiddleware(auditCfg)
 
     cfg := httpc.DefaultConfig()
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
         httpc.RecoveryMiddleware(),                              // Panic recovery
-        httpc.TimeoutMiddleware(30 * time.Second),              // Enforced timeout
-        httpc.RequestIDMiddleware("X-Request-ID", nil),         // Request ID
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second}), // Enforced timeout
+        httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),                            // Request ID
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         metricsMiddleware,
         auditMiddleware,
     }
@@ -173,7 +173,7 @@ type User struct {
 }
 
 func NewAPIClient(baseURL, token string) (*APIClient, error) {
-    dc, err := httpc.NewDomain(baseURL)
+    dc, err := httpc.NewDomainDefault(baseURL)
     if err != nil {
         return nil, err
     }
@@ -273,7 +273,7 @@ func main() {
         "file3.zip": "https://example.com/files/file3.zip",
     }
 
-    client, _ := httpc.New()
+    client, _ := httpc.NewDefault()
     defer client.Close()
 
     var successCount int64
@@ -369,4 +369,4 @@ func main() {
 
 - [Middleware Chain](../guides/middleware-chain) - Middleware architecture in depth
 - [Retry and Fault Tolerance](../guides/retry-fault-tolerance) - Custom retry strategies
-- [Performance Optimization](../advanced/performance) - Performance tuning tips
+- [Performance Optimization](../guides/performance) - Performance tuning tips

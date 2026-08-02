@@ -45,7 +45,7 @@ func main() {
 需要自定义配置时，创建客户端实例：
 
 ```go
-client, err := httpc.New()
+client, err := httpc.NewDefault()
 if err != nil {
     log.Fatal(err)
 }
@@ -141,12 +141,13 @@ case result.IsServerError():
 ```
 
 :::tip
-4xx/5xx 不会作为 `error` 返回，需通过 `result.IsSuccess()` 等方法检查。详见 [错误处理](../advanced/error-handling)。
+4xx/5xx 不会作为 `error` 返回，需通过 `result.IsSuccess()` 等方法检查。详见 [错误处理](../guides/error-handling)。
 :::
 
 ## 下一步
 
 - **[实战教程](../guides/tutorial)** - 30 分钟构建 GitHub API 客户端
+- **[核心概念](./concepts)** - 双层架构、配置体系与设计决策
 - **[请求与响应](../guides/request-response)** - 完整的请求选项和响应处理
 - **[基础示例](../examples/basic-usage)** - GET/POST/中间件等实际用例
 - **[速查表](./cheatsheet)** - 常用操作快速参考

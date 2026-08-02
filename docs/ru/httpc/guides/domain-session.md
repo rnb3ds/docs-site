@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Доменный клиент и сессии"
-title: "Доменный клиент и сессии - CyberGo HTTPC | Сессии и домены"
-description: "Руководство по доменному клиенту и сессиям HTTPC: создание NewDomain, авто-сборка URL, заголовки SetHeader, проверка Cookie и пример обёртки REST API."
+title: "Доменный клиент и сессии - CyberGo HTTPC | Управление сессиями и доменами"
+description: "Руководство по доменному клиенту и управлению сессиями HTTPC: создание доменного клиента NewDomain, правила авто-сборки URL, поддержание заголовков сессии SetHeader, автоматическое управление Cookie и захват ответов, стратегии проверки безопасности CookieSecurity и практический пример обёртки клиента REST API."
 sidebar_position: 3
 ---
 
@@ -12,7 +12,7 @@ sidebar_position: 3
 ## Создание доменного клиента
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -122,7 +122,7 @@ if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
 Можно настроить стратегию безопасности Cookie, принимая только Cookie, соответствующие стандартам безопасности:
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
 
 // Установка строгой безопасности Cookie
 session := dc.Session()
@@ -155,7 +155,7 @@ import (
 
 func main() {
     // Создание доменного клиента
-    dc, err := httpc.NewDomain("https://api.example.com")
+    dc, err := httpc.NewDomainDefault("https://api.example.com")
     if err != nil {
         log.Fatal(err)
     }

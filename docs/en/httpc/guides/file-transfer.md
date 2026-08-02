@@ -1,7 +1,7 @@
 ---
 sidebar_label: "File Upload & Download"
 title: "File Upload and Download - CyberGo HTTPC | Upload & Get"
-description: "HTTPC file upload and download guide: WithFile upload, WithFormData multi-file upload, unified Download, progress callbacks, resumable ResumeDownload, SHA-256 checksums, and UNC path protection."
+description: "HTTPC file upload and download guide: simple upload with WithFile, multipart multi-file upload with WithFormData, the unified Download entry point, progress callbacks, resumable downloads with ResumeDownload, SHA-256 checksum verification, and security protections including UNC-path blocking."
 sidebar_position: 4
 ---
 
@@ -189,7 +189,7 @@ File downloads include multiple layers of built-in security:
 Domain client downloads automatically capture response cookies into the session:
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

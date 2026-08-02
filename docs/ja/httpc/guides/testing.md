@@ -1,8 +1,8 @@
 ---
 sidebar_label: "テストガイド"
 title: "テストガイド - CyberGo HTTPC | httptest とモック"
-description: "HTTPC テストガイド：TestingConfig テスト専用設定、net/http/httptest モックサーバー統合、エラー応答とリダイレクトのシミュレーション、テーブル駆動テスト、Cookie セッションアサーションのベストプラクティスを解説します。"
-sidebar_position: 7
+description: "HTTPC テストガイド：TestingConfig テスト専用設定、net/http/httptest モックサーバー統合、エラーレスポンス/遅延/リダイレクト/ファイルアップロードのシミュレーション、テーブル駆動テスト、Cookie セッションアサーションパターン、context タイムアウトテストのベストプラクティスを網羅。"
+sidebar_position: 10
 ---
 
 # テストガイド

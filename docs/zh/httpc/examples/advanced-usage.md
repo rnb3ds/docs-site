@@ -104,32 +104,32 @@ func main() {
 
     // 指标收集
     metricsMiddleware := httpc.MetricsMiddleware(
-        func(method, url string, statusCode int, duration time.Duration, err error) {
+        &httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
             atomic.AddInt64(&requestCount, 1)
             log.Printf("[METRICS] %s %s -> %d (%v)", method, url, statusCode, duration)
-        },
+        }},
     )
 
     // 审计日志（JSON 格式）
-    auditCfg := &httpc.AuditMiddlewareConfig{
-        Format:         "json",
-        IncludeHeaders: true,
-        MaskHeaders:    []string{"Authorization", "Cookie"},
-        SanitizeError:  true,
-    }
-    auditMiddleware := httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
+    auditCfg := httpc.DefaultAuditConfig()
+    auditCfg.Format = "json"
+    auditCfg.IncludeHeaders = true
+    auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+    auditCfg.SanitizeError = true
+    auditCfg.OnAudit = func(event httpc.AuditEvent) {
         data, _ := json.Marshal(event)
         log.Printf("[AUDIT] %s", data)
-    }, auditCfg)
+    }
+    auditMiddleware := httpc.AuditMiddleware(auditCfg)
 
     cfg := httpc.DefaultConfig()
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
         httpc.RecoveryMiddleware(),                              // panic 恢复
-        httpc.TimeoutMiddleware(30 * time.Second),              // 强制超时
-        httpc.RequestIDMiddleware("X-Request-ID", nil),         // 请求 ID
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second}), // 强制超时
+        httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),                            // 请求 ID
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         metricsMiddleware,
         auditMiddleware,
     }
@@ -173,7 +173,7 @@ type User struct {
 }
 
 func NewAPIClient(baseURL, token string) (*APIClient, error) {
-    dc, err := httpc.NewDomain(baseURL)
+    dc, err := httpc.NewDomainDefault(baseURL)
     if err != nil {
         return nil, err
     }
@@ -273,7 +273,7 @@ func main() {
         "file3.zip": "https://example.com/files/file3.zip",
     }
 
-    client, _ := httpc.New()
+    client, _ := httpc.NewDefault()
     defer client.Close()
 
     var successCount int64
@@ -369,4 +369,4 @@ func main() {
 
 - [中间件链](../guides/middleware-chain) - 中间件架构详解
 - [重试与容错](../guides/retry-fault-tolerance) - 自定义重试策略
-- [性能优化](../advanced/performance) - 性能调优建议
+- [性能优化](../guides/performance) - 性能调优建议

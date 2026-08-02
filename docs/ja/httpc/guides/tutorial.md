@@ -1,13 +1,13 @@
 ---
 sidebar_label: "チュートリアル"
 title: "チュートリアル - CyberGo HTTPC | GitHub API 実戦"
-description: "HTTPC 実践チュートリアル：httpc.Get から段階的に完全な GitHub REST API クライアントを構築し、JSON 解析、ドメインクライアント、ミドルウェアチェーン組み合わせ、ClientError エラー処理、ファイルダウンロードをカバーします。"
+description: "30 分の実践チュートリアル：GitHub API の例で HTTPC のコア機能を紹介。JSON レスポンス解析、NewDomain ドメインクライアント、WithJSON データ送信、ミドルウェアチェーン組み合わせ、ClientError エラー処理、ファイルダウンロード機能を網羅。"
 sidebar_position: 1
 ---
 
 # チュートリアル：GitHub API クライアントの構築
 
-GitHub API クライアントを構築しながら HTTPC のコアコンセプトを学びます。約 30 分で完了します。
+以下の例は GitHub API を題材に HTTPC の各コア機能を紹介します。各例は独立しており、必要に応じて参照できます。
 
 **学ぶこと：**
 
@@ -18,7 +18,7 @@ GitHub API クライアントを構築しながら HTTPC のコアコンセプ�
 - エラー処理とリトライ
 - Result レスポンスオブジェクトと自動管理
 
-## ステップ 1：基本的なリクエスト
+## 基本的なリクエスト
 
 依存関係をインストールして `main.go` を作成します：
 
@@ -51,7 +51,7 @@ func main() {
 - パッケージ関数 `httpc.Get` はクライアントの作成が不要で、素早く確認するのに適しています
 - Result はリクエストごとに新規作成され、GC が自動的に回収します。手動での解放は不要です
 
-## ステップ 2：JSON レスポンスの解析
+## JSON レスポンスの解析
 
 ```go
 type Repo struct {
@@ -80,12 +80,12 @@ fmt.Printf("説明: %s\n", repo.Description)
 - `result.Unmarshal(&v)` で JSON レスポンスを構造体に直接解析
 - API レスポンスに対応する Go 構造体を定義
 
-## ステップ 3：ドメインクライアントの作成
+## ドメインクライアントの作成
 
 GitHub API のすべてのエンドポイントは `https://api.github.com` にあるため、ドメインクライアントを使うと URL の重複を避けられます：
 
 ```go
-client, err := httpc.NewDomain("https://api.github.com")
+client, err := httpc.NewDomainDefault("https://api.github.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -110,7 +110,7 @@ if err != nil {
 - `WithHeader` はリクエストオプションとして渡し、現在のリクエストのみに適用
 - ドメインクライアントは Cookie を自動管理
 
-## ステップ 4：データの送信（Issue の作成）
+## データの送信（Issue の作成）
 
 ```go
 type CreateIssueRequest struct {
@@ -146,7 +146,7 @@ fmt.Printf("Issue #%d を作成しました: %s\n", created.Number, created.URL)
 - `WithJSON(data)` が自動的にシリアライズし、Content-Type を設定
 - `result.IsSuccess()` で 2xx ステータスコードを確認
 
-## ステップ 5：ミドルウェアの追加
+## ミドルウェアの追加
 
 クライアントにログとリクエスト ID を追加します：
 
@@ -154,11 +154,11 @@ fmt.Printf("Issue #%d を作成しました: %s\n", created.Number, created.URL)
 // ミドルウェアの設定
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(func(format string, args ...any) {
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
         log.Printf("[HTTP] "+format, args...)
-    }),
+    }}),
     httpc.RecoveryMiddleware(),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 }
 
 // 設定を NewDomain に渡して、ミドルウェア付きのドメインクライアントを作成
@@ -190,7 +190,7 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 - `RecoveryMiddleware` は panic によるクラッシュを防止
 - `RequestIDMiddleware` は各リクエストにユニーク ID を生成
 
-## ステップ 6：エラー処理とリトライ
+## エラー処理とリトライ
 
 ```go
 result, err := client.Get("/repos/golang/go")
@@ -244,7 +244,7 @@ cfg.Retry.EnableJitter = true
 - `ClientError` はエラー分類とリトライ可否の判定を提供
 - デフォルトで 408, 429, 500, 502, 503, 504 を自動リトライ
 
-## ステップ 7：ファイルダウンロード（リリースパッケージのダウンロード）
+## ファイルダウンロード（リリースパッケージのダウンロード）
 
 ```go
 dlCfg := httpc.DefaultDownloadConfig()
@@ -270,7 +270,7 @@ fmt.Printf("\nダウンロード完了: %s (%d bytes)\n",
 )
 ```
 
-## ステップ 8：並列リクエスト
+## 並列リクエスト
 
 複数のリポジトリ情報を同時に取得します：
 
@@ -316,7 +316,7 @@ func fetchRepos(ctx context.Context, repos []string) error {
 
 ## 完全な例
 
-上記のステップを統合した完全なコード：
+上記の例を統合した完全なコード：
 
 ```go
 package main
@@ -345,9 +345,9 @@ func main() {
     cfg.Retry.MaxRetries = 3
     cfg.Retry.Delay = 1 * time.Second
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         httpc.RecoveryMiddleware(),
     }
 
@@ -386,5 +386,5 @@ func main() {
 - [リクエストとレスポンス](./request-response) — 完全なリクエストオプションリファレンス
 - [ミドルウェアチェーン](./middleware-chain) — カスタムミドルウェア開発
 - [リトライとフォールトトレランス](./retry-fault-tolerance) — 高度なリトライポリシー
-- [パフォーマンス最適化](../advanced/performance) — 本番環境のチューニング
+- [パフォーマンス最適化](./performance) — 本番環境のチューニング
 - [本番チェックリスト](../security/production-checklist) — セキュリティベストプラクティス

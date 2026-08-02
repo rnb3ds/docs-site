@@ -1,7 +1,7 @@
 ---
-sidebar_label: "パッケージ関数とクライアントメソッド"
+sidebar_label: "関数とメソッド"
 title: "パッケージ関数とクライアントメソッド - CyberGo HTTPC | HTTP メソッド API"
-description: "HTTPC パッケージ関数とクライアントメソッド API リファレンス：Get/Post など 7 種類の HTTP メソッド、New クライアント作成、Download 統合ダウンロードエントリ、FormatBytes/FormatSpeed ツール、NewDomain ドメインクライアント作成の完全な使い方を提供し、リクエストオプションと組み合わせて柔軟な設定を実現します。"
+description: "HTTPC パッケージ関数 API リファレンス：Get/Post など 7 種の HTTP メソッド、New クライアント作成、Download 統合ダウンロードエントリ、FormatBytes/FormatSpeed ユーティリティ、NewDomain ドメインクライアント作成をリクエストオプションと組み合わせて柔軟な設定を実現。"
 sidebar_position: 1
 ---
 
@@ -72,19 +72,35 @@ Client インターフェースはパッケージレベル関数と同じ HTTP �
 ### New
 
 ```go
-func New(config ...*Config) (Client, error)
+func New(cfg Config) (Client, error)
 ```
 
-新しい HTTP クライアントを作成します。設定を渡さない、または `nil` を渡すと `DefaultConfig()` を使用します。
+新しい HTTP クライアントを作成します。`Config` 値を渡します（`DefaultConfig()` やプリセット関数で取得してから必要に応じて変更することを推奨）。設定が無効な場合はエラーを返します（例：無効な `SecurityConfig.SSRFExemptCIDRs`）。
 
 ```go
-client, err := httpc.New()
-client, err := httpc.New(nil)
+// デフォルト設定を使用（NewDefault() でも同じ）
+client, err := httpc.New(httpc.DefaultConfig())
+
+// プリセット設定を使用
 client, err := httpc.New(httpc.SecureConfig())
 
+// カスタム設定を使用
 cfg := httpc.DefaultConfig()
 cfg.Timeouts.Request = 60 * time.Second
 client, err := httpc.New(cfg)
+```
+
+### NewDefault
+
+```go
+func NewDefault() (Client, error)
+```
+
+便利なコンストラクタ。`New(DefaultConfig())` と同等です。設定なしのシナリオで推奨されるエントリポイントです。
+
+```go
+client, err := httpc.NewDefault()
+defer func() { _ = client.Close() }()
 ```
 
 ### クライアント HTTP メソッド
@@ -110,7 +126,7 @@ Close() error
 ```
 
 ```go
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 ```
 
@@ -124,8 +140,8 @@ func SetDefaultClient(client Client) error
 
 カスタムクライアントをデフォルトクライアントとして設定します。パッケージレベル関数で使用されます。古いデフォルトクライアントは自動的にクローズされます。
 
-:::warning
-`httpc.New()` で作成されたクライアントのみ受け付けます。クローズ済みのクライアントは設定できません。
+:::warning 警告
+`httpc.New()` または `httpc.NewDefault()` で作成されたクライアントのみ受け付けます。クローズ済みのクライアントは設定できません。
 :::
 
 ```go
@@ -177,8 +193,8 @@ result, err = client.Download(ctx, url, cfg)
 result, err = dc.Download(ctx, "/files/report.pdf", cfg)
 ```
 
-:::tip 移行に関する注意
-古い DownloadFile、DownloadWithOptions、DownloadFileWithContext、DownloadWithOptionsWithContext は v1.5.2 で削除されました。统一的に `Download(ctx, url, cfg, options...)` を使用し、パス、上書き、レジューム、チェックサムは `DownloadConfig` で設定してください。
+:::tip ヒント
+古いダウンロード関数（DownloadFile、DownloadWithOptions、DownloadFileWithContext、DownloadWithOptionsWithContext）は v1.5.2 で削除されました。統一的に `Download(ctx, url, cfg, options...)` を使用し、パス、上書き、レジューム、チェックサムは `DownloadConfig` で設定してください。
 :::
 
 ## ヘルパー関数
@@ -199,7 +215,7 @@ httpc.SetSecurityWarnOutput(io.Discard)
 httpc.SetSecurityWarnOutput(log.Writer())
 ```
 
-:::warning
+:::warning 警告
 この関数は主にテスト用です。本番環境では警告を抑制するのではなく、`SecureConfig()` または `DefaultConfig()` を使用してください。
 :::
 
@@ -255,7 +271,7 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 | `1536` | `1.50 KB/s` |
 | `1048576` | `1.00 MB/s` |
 
-:::tip
+:::tip ヒント
 両者ともバイナリ単位（1024 倍）を採用し、単位の並びは `B → KB → MB → GB → TB → PB → EB` です。
 :::
 
@@ -264,17 +280,30 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 ### NewDomain
 
 ```go
-func NewDomain(baseURL string, config ...*Config) (DomainClienter, error)
+func NewDomain(baseURL string, cfg Config) (DomainClienter, error)
 ```
 
-ドメインスコープクライアントを作成します。Cookie とヘッダーを自動管理します。
+ドメインスコープクライアントを作成します。Cookie とヘッダーを自動管理します。`Config` 値を渡します（Cookie は自動的に有効になります）。
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomain("https://api.example.com", httpc.DefaultConfig())
 defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
 result, err := dc.Get("/users")
+```
+
+### NewDomainDefault
+
+```go
+func NewDomainDefault(baseURL string) (DomainClienter, error)
+```
+
+便利なコンストラクタ。`NewDomain(baseURL, DefaultConfig())` と同等です。
+
+```go
+dc, err := httpc.NewDomainDefault("https://api.example.com")
+defer dc.Close()
 ```
 
 ## 関連項目

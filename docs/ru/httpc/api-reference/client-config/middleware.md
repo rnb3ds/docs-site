@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Промежуточное ПО"
-title: "Промежуточное ПО - CyberGo HTTPC | Встроенное ПО"
-description: "Справочник API middleware HTTPC: композиция Chain по луковой модели и восемь встроенных middleware (Recovery, Logging, Timeout, Metrics, Audit)."
+title: "Промежуточное ПО - CyberGo HTTPC | Семь встроенных middleware"
+description: "Справочник API middleware HTTPC: Chain по луковой модели и семь встроенных middleware (Recovery, Logging, RequestID, Timeout, Header, Metrics, Audit)."
 sidebar_position: 5
 ---
 
@@ -18,18 +18,18 @@ type MiddlewareFunc func(Handler) Handler
 type Handler func(ctx context.Context, req RequestMutator) (ResponseMutator, error)
 ```
 
-Промежуточное ПО настраивается в `MiddlewareConfig.Middlewares`, выполняется в порядке добавления:
+Промежуточное ПО настраивается в `MiddlewareConfig.Middlewares`, выполняется в порядке добавления. Каждый фабричный метод middleware принимает указатель на конфигурацию `*XxxConfig`; при передаче `nil` используется конфигурация по умолчанию:
 
 ```go
-client, _ := httpc.New(&httpc.Config{
-    Middleware: &httpc.MiddlewareConfig{
-        Middlewares: []httpc.MiddlewareFunc{
-            httpc.RecoveryMiddleware(),
-            httpc.LoggingMiddleware(log.Printf),
-            httpc.RequestIDMiddleware("X-Request-ID", nil),
-        },
-    },
-})
+cfg := httpc.DefaultConfig()
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.RecoveryMiddleware(),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{
+        LogFunc: log.Printf,
+    }),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+}
+client, err := httpc.New(cfg)
 ```
 
 ## Chain
@@ -43,7 +43,9 @@ func Chain(middlewares ...MiddlewareFunc) MiddlewareFunc
 ```go
 combined := httpc.Chain(
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{
+        LogFunc: log.Printf,
+    }),
 )
 ```
 
@@ -58,172 +60,307 @@ func RecoveryMiddleware() MiddlewareFunc
 Промежуточное ПО восстановления после panic. Перехватывает panic в цепочке обработки, преобразуя его в error с информацией о стеке вызовов.
 
 ```go
-client, _ := httpc.New(&httpc.Config{
-    Middleware: &httpc.MiddlewareConfig{
-        Middlewares: []httpc.MiddlewareFunc{
-            httpc.RecoveryMiddleware(),
-        },
-    },
-})
+cfg := httpc.DefaultConfig()
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.RecoveryMiddleware(),
+}
+client, _ := httpc.New(cfg)
 ```
 
 ### LoggingMiddleware
 
 ```go
-func LoggingMiddleware(log func(format string, args ...any)) MiddlewareFunc
+func LoggingMiddleware(config *LoggingConfig) MiddlewareFunc
 ```
 
-Промежуточное ПО логирования запросов. Записывает метод, URL, код состояния и время выполнения. URL автоматически маскируется (удаляется информация об учётных данных).
+Промежуточное ПО логирования запросов. Записывает метод, URL, код состояния и время выполнения. URL автоматически маскируется (удаляется информация об учётных данных). При передаче `nil` используется [`DefaultLoggingConfig()`](#defaultloggingconfig) (логирование отключено).
+
+#### LoggingConfig
 
 ```go
-client, _ := httpc.New(&httpc.Config{
-    Middleware: &httpc.MiddlewareConfig{
-        Middlewares: []httpc.MiddlewareFunc{
-            httpc.LoggingMiddleware(log.Printf),
-        },
-    },
-})
+type LoggingConfig struct {
+    // LogFunc принимает форматированные лог-сообщения (аналог log.Printf).
+    // При nil логирование отключается.
+    LogFunc func(format string, args ...any)
+}
+```
+
+| Поле | Значение по умолчанию | Описание |
+|------|----------------------|----------|
+| `LogFunc` | `nil` | Функция вывода логов, при nil логирование отключается |
+
+#### DefaultLoggingConfig
+
+```go
+func DefaultLoggingConfig() *LoggingConfig
+```
+
+Возвращает конфигурацию по умолчанию с отключённым логированием. Установите поле `LogFunc` для включения логирования.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{
+        LogFunc: log.Printf,
+    }),
+}
+client, _ := httpc.New(cfg)
 // Пример вывода: GET https://api.example.com/data -> 200 (125ms)
 ```
 
 ### RequestIDMiddleware
 
 ```go
-func RequestIDMiddleware(headerName string, generator func() string) MiddlewareFunc
+func RequestIDMiddleware(config *RequestIDConfig) MiddlewareFunc
 ```
 
-Добавляет уникальный ID каждому запросу. По умолчанию использует `crypto/rand` для генерации 32-символьного шестнадцатеричного ID; если в запросе уже есть заголовок с тем же именем, исходное значение сохраняется и не перезаписывается.
-
-| Параметр | Описание |
-|----------|----------|
-| `headerName` | Имя заголовка, например `"X-Request-ID"` |
-| `generator` | Пользовательская функция генерации ID, передайте `nil` для использования генератора по умолчанию |
-
-```go
-// С генератором по умолчанию
-middleware := httpc.RequestIDMiddleware("X-Request-ID", nil)
-
-// С пользовательским генератором
-middleware := httpc.RequestIDMiddleware("X-Request-ID", func() string {
-    return uuid.New().String()
-})
-```
+Добавляет уникальный ID каждому запросу. При передаче `nil` используется [`DefaultRequestIDConfig()`](#defaultrequestidconfig) (заголовок `"X-Request-ID"` + генератор `crypto/rand`). Если в запросе уже есть заголовок с тем же именем, исходное значение сохраняется и не перезаписывается.
 
 :::tip
 Генератор по умолчанию использует `crypto/rand`, генерируемые ID непредсказуемы, подходят для сценариев с повышенными требованиями к безопасности.
 :::
 
+#### RequestIDConfig
+
+```go
+type RequestIDConfig struct {
+    // HeaderName — имя HTTP-заголовка для request ID.
+    // По умолчанию: "X-Request-ID".
+    HeaderName string
+
+    // Generator генерирует строку request ID. При nil используется криптографически
+    // безопасный генератор случайных чисел (crypto/rand, 16-байтовое hex-кодирование).
+    Generator func() string
+}
+```
+
+| Поле | Значение по умолчанию | Описание |
+|------|----------------------|----------|
+| `HeaderName` | `"X-Request-ID"` | Имя заголовка запроса |
+| `Generator` | `nil` (crypto/rand) | Функция генерации ID, при nil используется криптостойкий генератор |
+
+#### DefaultRequestIDConfig
+
+```go
+func DefaultRequestIDConfig() *RequestIDConfig
+```
+
+Возвращает конфигурацию по умолчанию: `HeaderName` равен `"X-Request-ID"`, `Generator` равен nil (во время выполнения откатывается к `crypto/rand`).
+
+```go
+// С конфигурацией по умолчанию
+middleware := httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig())
+
+// С пользовательским именем заголовка
+middleware := httpc.RequestIDMiddleware(&httpc.RequestIDConfig{
+    HeaderName: "X-Correlation-ID",
+})
+
+// С пользовательским генератором
+middleware := httpc.RequestIDMiddleware(&httpc.RequestIDConfig{
+    Generator: func() string {
+        return uuid.New().String()
+    },
+})
+```
+
 ### TimeoutMiddleware
 
 ```go
-func TimeoutMiddleware(timeout time.Duration) MiddlewareFunc
+func TimeoutMiddleware(config *TimeoutMiddlewareConfig) MiddlewareFunc
 ```
 
-Управление таймаутом на уровне промежуточного ПО. Срабатывает до встроенного таймаута клиента, при истечении отменяет контекст и возвращает ошибку.
+Управление таймаутом на уровне промежуточного ПО. При передаче `nil` используется [`DefaultTimeoutMiddlewareConfig()`](#defaulttimeoutmiddlewareconfig) (таймаут отключён, middleware работает как прозрачный канал). При положительном значении срабатывает до встроенного таймаута клиента, при истечении отменяет контекст и возвращает ошибку.
 
 :::warning Не используйте для Download или потоковых запросов
 `defer cancel()` в `TimeoutMiddleware` срабатывает сразу после возврата обработчика (т.е. после получения заголовков ответа), поэтому для запросов `Download` или `WithStreamBody` контекст отменяется до чтения тела ответа, что проявляется как ошибка «context canceled». Для потоковых сценариев и загрузок используйте опцию [`WithTimeout`](../core/options#withtimeout).
 :::
 
+#### TimeoutMiddlewareConfig
+
 ```go
-client, _ := httpc.New(&httpc.Config{
-    Middleware: &httpc.MiddlewareConfig{
-        Middlewares: []httpc.MiddlewareFunc{
-            httpc.TimeoutMiddleware(10 * time.Second),
-        },
-    },
-})
+type TimeoutMiddlewareConfig struct {
+    // Duration — максимальное время, отведённое запросу. Нулевое или отрицательное значение
+    // отключает таймаут (middleware пропускает запрос как есть).
+    // По умолчанию: 0 (отключено).
+    Duration time.Duration
+}
+```
+
+| Поле | Значение по умолчанию | Описание |
+|------|----------------------|----------|
+| `Duration` | `0` | Время таймаута, нулевое или отрицательное значение отключает |
+
+Имя типа содержит `Middleware`, чтобы отличить от клиентского `TimeoutConfig` в `types.go`.
+
+#### DefaultTimeoutMiddlewareConfig
+
+```go
+func DefaultTimeoutMiddlewareConfig() *TimeoutMiddlewareConfig
+```
+
+Возвращает конфигурацию по умолчанию с отключённым таймаутом. Установите `Duration` в положительное значение для включения таймаута.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{
+        Duration: 10 * time.Second,
+    }),
+}
+client, _ := httpc.New(cfg)
 ```
 
 ### HeaderMiddleware
 
 ```go
-func HeaderMiddleware(headers map[string]string) MiddlewareFunc
+func HeaderMiddleware(config *HeaderConfig) MiddlewareFunc
 ```
 
-Добавляет статические заголовки каждому запросу. Безопасность заголовков проверяется при создании (защита от CRLF-инъекций); при конфликте с уже существующими заголовками с тем же именем они будут перезаписаны.
+Добавляет статические заголовки каждому запросу. При передаче `nil` используется [`DefaultHeaderConfig()`](#defaultheaderconfig) (без заголовков, middleware работает как прозрачный канал). Безопасность заголовков проверяется при создании (защита от CRLF-инъекций); при конфликте с уже существующими заголовками с тем же именем они будут перезаписаны.
+
+#### HeaderConfig
 
 ```go
-client, _ := httpc.New(&httpc.Config{
-    Middleware: &httpc.MiddlewareConfig{
-        Middlewares: []httpc.MiddlewareFunc{
-            httpc.HeaderMiddleware(map[string]string{
-                "X-API-Version": "v2",
-                "X-Client":      "myapp/1.0",
-            }),
+type HeaderConfig struct {
+    // Headers содержит статические заголовки, добавляемые к каждому запросу.
+    // Существующие заголовки с тем же ключом будут перезаписаны.
+    // Заголовки проходят проверку безопасности при создании middleware (защита от CRLF-инъекций).
+    // По умолчанию: пусто (заголовки не добавляются, middleware работает как прозрачный канал).
+    Headers map[string]string
+}
+```
+
+| Поле | Значение по умолчанию | Описание |
+|------|----------------------|----------|
+| `Headers` | `nil` (пусто) | Статические пары ключ-значение заголовков, безопасность проверяется при создании |
+
+#### DefaultHeaderConfig
+
+```go
+func DefaultHeaderConfig() *HeaderConfig
+```
+
+Возвращает конфигурацию по умолчанию без заголовков.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.HeaderMiddleware(&httpc.HeaderConfig{
+        Headers: map[string]string{
+            "X-API-Version": "v2",
+            "X-Client":      "myapp/1.0",
         },
-    },
-})
+    }),
+}
+client, _ := httpc.New(cfg)
 ```
 
 ### MetricsMiddleware
 
 ```go
-func MetricsMiddleware(onMetrics func(method, url string, statusCode int, duration time.Duration, err error)) MiddlewareFunc
+func MetricsMiddleware(config *MetricsConfig) MiddlewareFunc
 ```
 
-Промежуточное ПО сбора метрик. Вызывает обратный вызов после каждого запроса, передавая метод, URL, код состояния, время выполнения и информацию об ошибке.
+Промежуточное ПО сбора метрик. Вызывает обратный вызов после каждого запроса, передавая метод, URL, код состояния, время выполнения и информацию об ошибке. При передаче `nil` используется [`DefaultMetricsConfig()`](#defaultmetricsconfig) (сбор метрик отключён).
+
+#### MetricsConfig
 
 ```go
-client, _ := httpc.New(&httpc.Config{
-    Middleware: &httpc.MiddlewareConfig{
-        Middlewares: []httpc.MiddlewareFunc{
-            httpc.MetricsMiddleware(func(method, url string, status int, d time.Duration, err error) {
-                metrics.Record(method, status, d, err)
-            }),
+type MetricsConfig struct {
+    // OnMetrics вызывается после завершения каждого запроса, передавая метрики запроса.
+    // При nil сбор метрик отключается.
+    OnMetrics func(method, url string, statusCode int, duration time.Duration, err error)
+}
+```
+
+| Поле | Значение по умолчанию | Описание |
+|------|----------------------|----------|
+| `OnMetrics` | `nil` | Обратный вызов метрик, при nil отключается |
+
+#### DefaultMetricsConfig
+
+```go
+func DefaultMetricsConfig() *MetricsConfig
+```
+
+Возвращает конфигурацию по умолчанию с отключённым сбором метрик. Установите поле `OnMetrics` для включения сбора метрик.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{
+        OnMetrics: func(method, url string, status int, d time.Duration, err error) {
+            metrics.Record(method, status, d, err)
         },
-    },
-})
+    }),
+}
+client, _ := httpc.New(cfg)
 ```
 
 ### AuditMiddleware
 
 ```go
-func AuditMiddleware(onAudit func(event AuditEvent)) MiddlewareFunc
+func AuditMiddleware(config *AuditConfig) MiddlewareFunc
 ```
 
-Промежуточное ПО безопасности для аудита, подходит для финансовых, медицинских, государственных и других сценариях с требованиями соответствия. По умолчанию записывает метаданные запроса/ответа (метод, URL, код состояния, длительность, повторные попытки и т. д.), URL автоматически маскируется; для записи полных заголовков используйте [`AuditMiddlewareWithConfig`](#auditmiddlewarewithconfig) с `IncludeHeaders: true`.
+Промежуточное ПО безопасности для аудита, подходит для финансовых, медицинских, государственных и других сценариях с требованиями соответствия. Записывает метаданные запроса/ответа (метод, URL, код состояния, длительность, повторные попытки и т. д.), URL автоматически маскируется. Обратный вызов предоставляется через `config.OnAudit`; при nil middleware не выполняет никаких действий. При передаче `nil` используется [`DefaultAuditConfig()`](#defaultauditconfig).
+
+`SourceIP` и `UserID` извлекаются из контекста запроса через [`SourceIPKey`](#ключи-контекста-аудита) и [`UserIDKey`](#ключи-контекста-аудита).
+
+#### AuditConfig
 
 ```go
-client, _ := httpc.New(&httpc.Config{
-    Middleware: &httpc.MiddlewareConfig{
-        Middlewares: []httpc.MiddlewareFunc{
-            httpc.AuditMiddleware(func(event httpc.AuditEvent) {
-                log.Printf("[AUDIT] %s %s -> %d (%v) user=%s ip=%s",
-                    event.Method, event.URL, event.StatusCode,
-                    event.Duration, event.UserID, event.SourceIP)
-            }),
-        },
-    },
-})
-```
+type AuditConfig struct {
+    // OnAudit получает AuditEvent после завершения каждого цикла запрос/ответ.
+    // При nil middleware не выполняет никаких действий.
+    OnAudit func(event AuditEvent)
 
-### AuditMiddlewareWithConfig
+    // Format задаёт формат вывода: "text" (по умолчанию) или "json"
+    Format string
 
-```go
-func AuditMiddlewareWithConfig(onAudit func(event AuditEvent), config *AuditMiddlewareConfig) MiddlewareFunc
-```
+    // IncludeHeaders — включать ли заголовки запроса/ответа в журнал аудита
+    IncludeHeaders bool
 
-Промежуточное ПО безопасности для аудита с конфигурацией.
+    // MaskHeaders — список имён заголовков для маскировки (например, "Authorization", "Cookie")
+    MaskHeaders []string
 
-```go
-config := &httpc.AuditMiddlewareConfig{
-    Format:         "json",
-    IncludeHeaders: true,
-    MaskHeaders:    []string{"Authorization", "Cookie"},
-    SanitizeError:  true,
+    // SanitizeError удаляет конфиденциальную информацию из сообщений об ошибках
+    SanitizeError bool
 }
+```
 
-client, _ := httpc.New(&httpc.Config{
-    Middleware: &httpc.MiddlewareConfig{
-        Middlewares: []httpc.MiddlewareFunc{
-            httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
-                data, _ := json.Marshal(event)
-                auditLog.Write(data)
-            }, config),
-        },
-    },
-})
+| Поле | Значение по умолчанию | Описание |
+|------|----------------------|----------|
+| `OnAudit` | `nil` | Обратный вызов аудита, при nil middleware не выполняет никаких действий |
+| `Format` | `"text"` | Формат вывода |
+| `IncludeHeaders` | `false` | Записывать ли заголовки |
+| `MaskHeaders` | `["Authorization", "Cookie", ...]` | Стандартный список конфиденциальных заголовков |
+| `SanitizeError` | `true` | Информация об ошибках заменяется на `[sanitized]` |
+
+#### DefaultAuditConfig
+
+```go
+func DefaultAuditConfig() *AuditConfig
+```
+
+Возвращает конфигурацию аудита по умолчанию: `Format` равен `"text"`, `IncludeHeaders` равен `false`, `MaskHeaders` — стандартный список конфиденциальных заголовков, `SanitizeError` равен `true`. Установите поле `OnAudit` для включения обратного вызова аудита.
+
+```go
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
+    log.Printf("[AUDIT] %s %s -> %d (%v) user=%s ip=%s",
+        event.Method, event.URL, event.StatusCode,
+        event.Duration, event.UserID, event.SourceIP)
+}
+auditCfg.Format = "json"
+auditCfg.IncludeHeaders = true
+
+cfg := httpc.DefaultConfig()
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.AuditMiddleware(auditCfg),
+}
+client, _ := httpc.New(cfg)
 ```
 
 ## Типы аудита
@@ -273,32 +410,6 @@ data, _ := json.Marshal(event)
 // {"timestamp":"...","method":"GET","url":"...","statusCode":200,"duration":150000000,"attempts":0,"durationMs":150}
 ```
 
-### AuditMiddlewareConfig
-
-```go
-type AuditMiddlewareConfig struct {
-    Format         string   // "text" (по умолчанию) или "json"
-    IncludeHeaders bool     // Включать ли заголовки запроса/ответа
-    MaskHeaders    []string // Имена заголовков для маскировки
-    SanitizeError  bool     // Маскировать ли информацию об ошибках
-}
-```
-
-| Поле | Значение по умолчанию | Описание |
-|------|----------------------|----------|
-| Format | `"text"` | Формат вывода |
-| IncludeHeaders | `false` | Записывать ли заголовки |
-| MaskHeaders | `["Authorization", "Cookie", ...]` | Стандартный список конфиденциальных заголовков |
-| SanitizeError | `true` | Информация об ошибках заменяется на `[sanitized]` |
-
-### DefaultAuditMiddlewareConfig
-
-```go
-func DefaultAuditMiddlewareConfig() *AuditMiddlewareConfig
-```
-
-Возвращает конфигурацию аудита по умолчанию.
-
 ### Ключи контекста аудита
 
 Передача информации аудита через контекст запроса:
@@ -322,4 +433,4 @@ result, err := client.Request(ctx, "GET", url)
 
 - [Интерфейсы](../types/interfaces) - определения типов MiddlewareFunc, Handler
 - [Цепочки промежуточного ПО](../../guides/middleware-chain) - руководство по использованию промежуточного ПО
-- [Константы и типы](../types/constants) - типы AuditEvent, AuditMiddlewareConfig
+- [Константы и типы](../types/constants) - типы AuditEvent, AuditConfig

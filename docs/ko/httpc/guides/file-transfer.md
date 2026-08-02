@@ -1,7 +1,7 @@
 ---
 sidebar_label: "파일 업로드와 다운로드"
 title: "파일 업로드와 다운로드 - CyberGo HTTPC | 업로드와 다운로드"
-description: "HTTPC 파일 업로드와 다운로드 가이드: WithFile 간단 업로드, WithFormData Multipart 다중 파일 업로드, Download 통합 다운로드, 진행률 콜백, 이어받기 ResumeDownload, SHA-256 체크섬과 UNC 경로 등 보안 방어를 다룹니다."
+description: "HTTPC 파일 업로드와 다운로드 가이드: WithFile 업로드, WithFormData Multipart 다중 파일, Download 다운로드, 진행률 콜백, 이어받기와 체크섬 보안 방어를 다룹니다."
 sidebar_position: 4
 ---
 
@@ -189,7 +189,7 @@ if err != nil {
 도메인 클라이언트의 다운로드는 응답 Cookie 를 세션에 자동으로 캡처합니다:
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

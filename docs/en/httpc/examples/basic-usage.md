@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Basic Usage"
 title: "Basic Usage - CyberGo HTTPC | Runnable Examples"
-description: "HTTPC basic usage examples: authenticated GET requests, JSON/form/file POST, custom configuration, proxy, middleware, metrics, and file download code."
+description: "HTTPC basic usage example collection: GET requests with query parameters and authentication, JSON/form/file upload POST requests, FormData multi-field forms, DefaultConfig custom configuration, ProxyURL proxy, Recovery/Logging middleware, and complete code for file download with progress callbacks."
 sidebar_position: 1
 ---
 
@@ -156,9 +156,9 @@ client, _ := httpc.New(cfg)
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
-cfg.Middleware.UserAgent = "my-app/1.0"
+cfg.Defaults.UserAgent = "my-app/1.0"
 
 client, _ := httpc.New(cfg)
 ```
@@ -168,10 +168,10 @@ client, _ := httpc.New(cfg)
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
-    httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
         metrics.Record(method, statusCode, duration)
-    }),
+    }}),
 }
 
 client, _ := httpc.New(cfg)
@@ -180,7 +180,7 @@ client, _ := httpc.New(cfg)
 ## File Download
 
 ```go
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 
 cfg := httpc.DefaultDownloadConfig()
@@ -206,7 +206,7 @@ fmt.Printf("\nDownload complete: %d bytes, duration %v, average speed %.2f MB/s\
 ## Domain Client
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

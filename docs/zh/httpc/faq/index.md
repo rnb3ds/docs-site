@@ -7,147 +7,450 @@ sidebar_position: 1
 
 # 常见问题
 
-## 什么时候用包级函数，什么时候创建客户端？
+## 包级函数 vs Client 实例怎么选？
 
-**包级函数**适合简单场景：一次性请求、脚本、工具。
+**答：** 包级函数（`httpc.Get`/`httpc.Post` 等）内部使用一个全局共享的默认客户端（`defaultClient`），首次调用时懒加载，关闭后自动自愈重建。适合一次性请求、脚本、CLI 工具等不需要自定义配置的场景。
 
 ```go
-result, _ := httpc.Get("https://api.example.com/data")
+// 包级函数：简单快捷，共享默认客户端的连接池
+result, err := httpc.Get("https://api.example.com/data")
 ```
 
-**创建客户端**适合需要自定义配置、复用连接池、使用中间件的场景。
+需要以下任一场景时，应创建显式 Client 实例：
+
+- 自定义配置（超时、代理、重试、TLS 等）
+- 独立的连接池生命周期管理
+- 使用中间件链（日志/审计/指标/请求 ID）
+- 多个不同配置的客户端并存
 
 ```go
-client, _ := httpc.New(httpc.PerformanceConfig())
-defer client.Close()
+// 显式 Client：完全控制配置与生命周期
+client, err := httpc.New(httpc.PerformanceConfig())
+if err != nil {
+    log.Fatal(err)
+}
+defer func() { _ = client.Close() }()
+
+result, err := client.Get("https://api.example.com/data")
 ```
 
-## 如何选择配置预设？
-
-| 预设 | 适用场景 |
-|------|----------|
-| `DefaultConfig()` | 通用场景，安全默认值 |
-| `SecureConfig()` | 处理用户提供的 URL、金融/医疗场景 |
-| `PerformanceConfig()` | 内部微服务通信、高并发 API |
-| `TestingConfig()` | 单元测试、本地开发 |
-| `MinimalConfig()` | 一次性脚本、简单 HTTP 调用 |
-
-## 如何访问内部服务？
-
-默认 SSRF 防护阻止私有 IP 连接。如需访问内部服务：
+如需让包级函数使用自定义配置，用 `SetDefaultClient` 替换全局客户端（旧的会自动关闭）：
 
 ```go
+customClient, _ := httpc.New(httpc.SecureConfig())
+if err := httpc.SetDefaultClient(customClient); err != nil {
+    log.Fatal(err)
+}
+// 此后所有包级函数使用 customClient
+```
+
+:::tip 生产环境建议
+长运行服务优先使用显式 Client，避免全局状态带来的隐式耦合。包级函数仅适用于短生命周期程序或快速原型。
+:::
+
+## 五种配置预设怎么选？
+
+**答：** HTTPC 提供五种预设配置，按安全性与性能权衡排列：
+
+| 预设 | 超时 | 重试 | 重定向 | SSRF | 响应上限 | TLS 验证 | 适用场景 |
+|------|------|------|--------|------|----------|----------|----------|
+| `SecureConfig()` | 严格（15s） | 1 次 | 禁止 | 启用 | 5MB | 启用 | 处理用户提供的 URL、金融/医疗 |
+| `DefaultConfig()` | 适中（180s） | 3 次 | 允许 | 启用 | 10MB | 启用 | 通用场景 |
+| `PerformanceConfig()` | 较长（60s） | 3 次 | 允许 | 启用 | 50MB | 启用 | 内部微服务、高并发 API |
+| `MinimalConfig()` | 适中 | 0 次 | 禁止 | 启用 | 1MB | 启用 | 一次性脚本、简单调用 |
+| `TestingConfig()` | 短（5s Dial） | 1 次 | 允许 | **禁用** | 默认 | **跳过** | 单元测试、本地开发 |
+
+决策树：
+
+```
+是否处理用户提供的 URL？
+├── 是 → SecureConfig()
+└── 否 → 是否需要高吞吐？
+         ├── 是 → PerformanceConfig()
+         └── 否 → 是否一次性请求？
+                  ├── 是 → MinimalConfig()
+                  └── 否 → DefaultConfig()
+测试环境 → TestingConfig()
+```
+
+:::warning TestingConfig 安全风险
+`TestingConfig()` 禁用了 TLS 验证和 SSRF 防护，在非测试环境使用会打印警告。**严禁用于生产环境**，仅限 `*_test.go` 文件或本地开发。
+:::
+
+## 如何设置 HTTP/SOCKS5 代理？
+
+**答：** HTTPC 提供三种代理方式，按优先级排列：`ProxyURL` > `ProxyPool` > `EnableSystemProxy`。
+
+| 方式 | 字段 | 适用场景 | 特点 |
+|------|------|----------|------|
+| 单代理 | `ProxyURL` | 固定代理服务器 | 最高优先级，直接指定 |
+| 代理池 | `ProxyPool` | 多代理轮换、高可用 | 支持轮换策略与被动熔断 |
+| 系统代理 | `EnableSystemProxy` | 读取环境变量 | 最低优先级，跟随系统配置 |
+
+```go
+// 方式一：单代理（支持 http/https/socks5 协议）
 cfg := httpc.DefaultConfig()
-cfg.Security.AllowPrivateIPs = true // ⚠️ 完全禁用所有连接级 SSRF 拨号校验（非仅私有 IP）；生产环境宜用 SSRFExemptCIDRs 精确豁免
-
-// 或精确豁免
-cfg.Security.SSRFExemptCIDRs = []string{"10.0.0.0/8"}
-```
-
-## 如何设置代理？
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyURL = "http://proxy:8080"
+cfg.Connection.ProxyURL = "socks5://user:pass@proxy:1080"
 client, _ := httpc.New(cfg)
 
-// 使用系统代理
+// 方式二：系统代理（读取 HTTP_PROXY/HTTPS_PROXY 环境变量）
 cfg.Connection.EnableSystemProxy = true
+
+// 方式三：代理池（多代理轮换 + 被动熔断）
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "socks5://proxy3:1080",
+}
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
 ```
 
-## 如何处理 HTTP 错误码？
+## 代理池轮换原理是什么？
 
-HTTPC 不会将 4xx/5xx 视为 error，需要手动检查：
+**答：** 代理池通过两种机制实现 IP 轮换：
+
+**1. 策略轮换**（每次选择时）：`ProxyStrategyRoundRobin` 按顺序循环选择，每次选择前进到下一个代理，因此重试时**自然落到不同 IP**，无需额外配置。`ProxyStrategyRandom` 从健康代理中随机选取。
+
+**2. 状态码触发轮换**（响应时）：设置 `ProxyRotateOnStatus`（如 `[]int{403}`），当响应返回这些状态码且 `Retry.MaxRetries > 0` 时触发重试，重试时策略轮换确保换 IP。适用于绕过 CF/WAF 等 IP 维度封锁。
+
+**3. 被动熔断与自动恢复**：连续连接失败（dial/TLS）达到 `ProxyFailureThreshold`（默认 3）后，该代理被临时移出轮换池，经过 `ProxyCooldown`（默认 30s）后以半开探测方式恢复。注意 HTTP 状态码**不**触发熔断——因为封锁往往是目标站点特定的（在某站被封的代理在另一站可能正常）。
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
+cfg.Connection.ProxyFailureThreshold = 3   // 连续 3 次连接失败后熔断
+cfg.Connection.ProxyCooldown = 30 * time.Second // 30s 后半开探测恢复
+cfg.Connection.ProxyRotateOnStatus = []int{403} // 收到 403 时换 IP 重试
+cfg.Retry.MaxRetries = 3 // ProxyRotateOnStatus 需配合重试
+```
+
+## DoH 怎么配置？
+
+**答：** DNS-over-HTTPS（DoH）可减少 DNS 解析延迟、防止 DNS 劫持与缓存投毒。启用方式：
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.EnableDoH = true
+cfg.Connection.DoHCacheTTL = 5 * time.Minute // DNS 响应缓存时长（默认 5 分钟）
+```
+
+默认使用 Cloudflare、Google、AliDNS 三个提供商（按优先级回退）。如果所有 DoH 提供商不可用，会自动回退到系统 DNS，保证可用性。
+
+:::tip 何时使用 DoH
+DoH 适用于对 DNS 解析安全性有较高要求的场景（如防止 ISP DNS 劫持）。常规 API 调用无需开启——系统 DNS 通常已满足需求，且 DoH 会增加少量解析延迟（首次查询需 HTTPS 往返）。
+:::
+
+## Cookie 会话怎么管理？
+
+**答：** HTTPC 提供两层 Cookie 管理：
+
+**1. 自动管理（DomainClient）**：`NewDomain` 创建的 DomainClient 自动启用 Cookie（`EnableCookies=true`），并嵌入一个 SessionManager。每次请求后通过 `UpdateFromResult` 自动捕获响应中的 `Set-Cookie`，下次请求前通过 `prepareOptions` 自动注入。适合登录会话维持等场景。
+
+**2. 手动管理（SessionManager）**：需要更精细控制时，直接操作 `dc.Session()` 返回的 `*SessionManager`——设置/删除/查询 Cookie、运行时切换安全策略、从响应批量提取。
+
+```go
+// 自动管理：登录后会话自动维持
+dc, _ := httpc.NewDomain("https://api.example.com", httpc.DefaultConfig())
+defer func() { _ = dc.Close() }()
+
+// 登录（响应的 Set-Cookie 自动捕获）
+_, _ = dc.Request(ctx, "POST", "/login", httpc.WithJSON(loginData))
+
+// 后续请求自动携带会话 Cookie
+result, _ := dc.Request(ctx, "GET", "/profile")
+```
+
+对于普通 Client，设置 `cfg.Connection.EnableCookies = true` 可启用 cookie jar 自动管理，但不会自动提取到 SessionManager。
+
+详见 [会话管理](../api-reference/client-config/session)。
+
+## 重试怎么配置？
+
+**答：** HTTPC 默认重试 3 次，仅对**可重试的瞬时错误**重试：
+
+**默认重试条件**（无需配置即生效）：
+- 网络层错误：连接拒绝、连接重置、网络不可达等
+- 传输层超时：`net.OpError` 超时（**非**上下文截止）
+- 特定 HTTP 状态码：408（请求超时）、429（限流）、500、502、503、504
+
+**Retry-After 头解析**：收到 429/503 且响应包含 `Retry-After` 头时，HTTPC 自动按服务端指示的延迟等待（而非自行计算退避），避免加剧服务端压力。
+
+**自定义重试**：实现 `RetryPolicy` 接口（`ShouldRetry` + `GetDelay` 两个方法）替换内置逻辑，赋值到 `cfg.Retry.CustomPolicy`。详见 [重试与容错指南](../guides/retry-fault-tolerance)。
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Retry.MaxRetries = 5              // 最多重试 5 次（上限 10）
+cfg.Retry.Delay = 2 * time.Second     // 初始延迟
+cfg.Retry.BackoffFactor = 2.0         // 指数退避因子
+cfg.Retry.MaxRetryDelay = 60 * time.Second // 单次最大延迟
+cfg.Retry.EnableJitter = true         // 抖动（防惊群）
+```
+
+:::warning context 取消不重试
+由 `context.Canceled` 和 `context.DeadlineExceeded` 触发的失败**永不重试**——这是用户显式的取消/超时意图，重试会违背该意图。
+:::
+
+详见 [重试与容错](../guides/retry-fault-tolerance)。
+
+## 超时怎么选？
+
+**答：** HTTPC 提供四级超时体系，按作用范围从宽到窄：
+
+| 超时层 | 字段 | 默认值 | 作用域 | 可请求级覆盖 |
+|--------|------|--------|--------|:----------:|
+| 请求总超时 | `TimeoutConfig.Request` | 180s | 含重试的全过程 | `WithTimeout()` |
+| 拨号超时 | `TimeoutConfig.Dial` | 10s | TCP 连接建立 | 否 |
+| TLS 握手超时 | `TimeoutConfig.TLSHandshake` | 10s | TLS 握手（仅 HTTPS） | 否 |
+| 空闲连接超时 | `TimeoutConfig.IdleConn` | 90s | 连接保持空闲时长 | 否 |
+| 响应头超时 | `TimeoutConfig.ResponseHeader` | 0（禁用） | 等待响应头到达 | **不可**覆盖 |
+
+**ResponseHeader 特殊行为**：默认为 0（禁用），此时由 `TimeoutConfig.Request` 或 `WithTimeout()` 的上下文超时全权控制。设为正值时启用传输级硬上限（防御 slowloris），但该值会**覆盖** `WithTimeout`（若 ResponseHeader 更短），且作用于**共享同一 client 的所有请求**，无法逐请求覆盖。
+
+```go
+// 推荐：上下文超时（精细控制，可逐请求设置）
+ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+defer cancel()
+result, _ := client.Request(ctx, "GET", url)
+
+// 请求选项覆盖（内部转为上下文超时）
+result, _ := client.Get(url, httpc.WithTimeout(30*time.Second))
+```
+
+:::warning TimeoutMiddleware 不适用于 Download
+`TimeoutMiddleware` 在 handler 返回后立即取消上下文（`defer cancel()`），而 Download 的 handler 在收到响应头后即返回——此时 body 尚未消费，cancel 会在 body 第一字节触发"context canceled"。**不要**用 TimeoutMiddleware 包裹 Download，改用 `WithTimeout`（其截止时间作用于引擎的整体上下文，能覆盖 body 读取）。
+:::
+
+## 4xx/5xx 为什么不返回 error？
+
+**答：** 这是 HTTPC 的设计理念：HTTP 状态码是**应用层语义**，不是传输层错误。一个返回 404 的响应在网络层是完全成功的——TCP 连接建立、TLS 握手完成、HTTP 请求送达、响应正确返回。将其视为 error 会与网络层错误混淆，增加错误处理复杂度。
+
+因此 HTTPC 只在**网络层失败**时返回 error（连接拒绝、超时、DNS 失败等），HTTP 状态码通过 `Result` 检查：
 
 ```go
 result, err := client.Get(url)
 if err != nil {
-    // 网络层错误
+    // 网络层错误（连接失败、超时等）
+    var clientErr *httpc.ClientError
+    if errors.As(err, &clientErr) {
+        log.Printf("网络错误: %s", clientErr.Code())
+    }
     return err
 }
 
+// HTTP 状态码检查
 switch {
-case result.IsSuccess():
-    // 2xx 成功
-case result.IsClientError():
-    // 4xx 客户端错误
-    log.Printf("请求参数错误：%d", result.StatusCode())
-case result.IsServerError():
-    // 5xx 服务端错误
-    log.Printf("服务端故障：%d", result.StatusCode())
+case result.IsSuccess():      // 2xx
+    handleSuccess(result)
+case result.IsClientError():  // 4xx
+    log.Printf("客户端错误: %d", result.StatusCode())
+case result.IsServerError():  // 5xx
+    log.Printf("服务端错误: %d", result.StatusCode())
 }
 ```
 
-## 如何禁用重试？
+## 如何处理大文件下载？
+
+**答：** 使用 `Download` 方法进行流式下载，支持进度回调、断点续传、SHA-256 校验和路径安全检查：
 
 ```go
-// 全局禁用
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	client, err := httpc.NewDefault()
+	if err != nil {
+		log.Fatalf("创建客户端失败: %v", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	cfg := httpc.DefaultDownloadConfig()
+	cfg.FilePath = "/tmp/large-file.zip"
+	cfg.Overwrite = true
+	cfg.ResumeDownload = true // 断点续传：中断后重下会从断点继续
+	cfg.Checksum = "e3b0c44298fc1c149afbf4c8996fb924..." // 预期 SHA-256
+	cfg.ChecksumAlgorithm = httpc.ChecksumSHA256
+	cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
+		if total > 0 {
+			fmt.Printf("\r%.1f%% (%s / %s, %s)",
+				float64(downloaded)/float64(total)*100,
+				httpc.FormatBytes(downloaded),
+				httpc.FormatBytes(total),
+				httpc.FormatSpeed(speed))
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+	defer cancel()
+
+	result, err := client.Download(ctx, "https://example.com/large-file.zip", cfg)
+	if err != nil {
+		log.Fatalf("下载失败: %v", err)
+	}
+	fmt.Printf("\n下载完成: %s (%d 字节)\n", result.FilePath, result.BytesWritten)
+}
+```
+
+:::tip 路径安全
+Download 会校验 FilePath，拒绝目录路径（返回文件打开错误）和不支持的校验算法（在触碰目标文件之前拒绝）。断点续传依赖服务器支持 Range 请求——若服务器返回 200 而非 206，HTTPC 会正确处理（从头开始而非截断）。
+:::
+
+## 证书固定怎么做？
+
+**答：** 证书固定（Certificate Pinning）在 TLS 握手阶段验证服务器公钥是否匹配预置指纹，即使受信任 CA 被攻破也能防御中间人攻击。
+
+**SPKI 哈希生成步骤**（使用 OpenSSL）：
+
+```bash
+openssl x509 -in cert.pem -pubkey -noout | openssl pkey -pubin -outform der \
+  | openssl dgst -sha256 -binary | openssl enc -base64
+```
+
+**多哈希轮换**：传入多个哈希支持密钥轮换——只要服务器密钥匹配**任意一个**预置哈希即通过。建议始终配置一个备份哈希，以便服务端轮换密钥时客户端不会断连。
+
+```go
+pinner, err := httpc.NewSPKIHashPinner(
+    "YLh1dUR9y6Kja30RrAn7JKnbQG/uEtLMkBgFF2fuihg=", // 当前密钥
+    "C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=", // 备份密钥（轮换用）
+)
+if err != nil {
+    log.Fatal(err)
+}
+
 cfg := httpc.DefaultConfig()
-cfg.Retry.MaxRetries = 0
-
-// 或使用 MinimalConfig
-client, _ := httpc.New(httpc.MinimalConfig())
-
-// 单个请求禁用
-result, _ := client.Get(url, httpc.WithMaxRetries(0))
+cfg.Security.CertificatePinner = pinner
+client, _ := httpc.New(cfg)
 ```
 
-## 如何设置请求超时？
+Pinner 实例可安全地被多个 Client 共享（内部并发安全，且不会被深拷贝）。
 
-四种方式，优先级从高到低：
+## context 取消后请求会重试吗？
+
+**答：** **不会**。`context.Canceled` 和 `context.DeadlineExceeded` 是不可重试的——它们代表用户的显式取消或超时意图，重试会违背该意图。
+
+HTTPC 的 `IsRetryable()` 方法在所有判断之前**优先检查 context 错误**：只要 Cause 链中包含 `context.Canceled` 或 `context.DeadlineExceeded`，直接返回 false。即使错误被分类为 `ErrorTypeNetwork`（通常可重试），也会因 context 错误检查而被正确识别为不可重试。
 
 ```go
-// 1. 上下文超时（推荐）
-ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-result, _ := client.Request(ctx, "GET", url)
+ctx, cancel := context.WithCancel(context.Background())
+go func() {
+    time.Sleep(100 * time.Millisecond)
+    cancel() // 主动取消
+}()
 
-// 2. 请求选项
-result, _ := client.Get(url, httpc.WithTimeout(5*time.Second))
-
-// 3. 中间件强制超时
-middleware := httpc.TimeoutMiddleware(5 * time.Second)
-
-// 4. 客户端默认超时
-cfg.Timeouts.Request = 30 * time.Second
+_, err := client.Request(ctx, "GET", "https://example.com/slow")
+if err != nil {
+    var clientErr *httpc.ClientError
+    if errors.As(err, &clientErr) {
+        fmt.Println(clientErr.Type == httpc.ErrorTypeContextCanceled) // true
+        fmt.Println(clientErr.IsRetryable())                          // false
+    }
+}
 ```
+
+## MaxRedirects(0) 为什么不禁止重定向？
+
+**答：** `MaxRedirects = 0` 是"未设置"哨兵值，而非"禁止重定向"。`DefaultConfig()` 中 `MaxRedirects` 默认为 10。要真正禁止重定向，使用 `WithFollowRedirects(false)` 或设置 `Config.Defaults.FollowRedirects = false`：
+
+```go
+// 方式一：配置级禁止
+cfg := httpc.DefaultConfig()
+cfg.Defaults.FollowRedirects = false
+client, _ := httpc.New(cfg)
+
+// 方式二：请求级禁止
+result, _ := client.Get(url, httpc.WithFollowRedirects(false))
+```
+
+`SecureConfig()` 预设已默认禁止重定向（`FollowRedirects = false`），防止基于重定向的 SSRF 攻击。
+
+## io.Reader 请求体为什么不验证大小？
+
+**答：** `io.Reader` 是流式接口，无法预知数据长度——`Len()` 方法不存在，读取即消费。因此 HTTPC 对 `io.Reader` 类型的请求体**不做大小验证**，由调用方负责控制数据量。
+
+若需限制上传大小，用标准库 `io.LimitReader` 包装：
+
+```go
+// 限制最多上传 1MB
+limitedReader := io.LimitReader(unlimitedReader, 1024*1024)
+result, err := client.Post(url, httpc.WithBody(limitedReader))
+```
+
+或配置 `SecurityConfig.MaxRequestBodySize` 设置全局上传上限（默认 0 = 不限制）：
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Security.MaxRequestBodySize = 10 * 1024 * 1024 // 全局限制 10MB
+```
+
+## 如何抑制安全警告？
+
+**答：** `TestingConfig()` 等不安全配置在非测试环境使用时会通过 `log.Printf` 打印警告。如需抑制（如 CI 环境的特定场景），将警告输出重定向到 `io.Discard`：
+
+```go
+// 抑制所有安全警告输出
+httpc.SetSecurityWarnOutput(io.Discard)
+
+cfg := httpc.TestingConfig() // 不再打印警告
+```
+
+:::warning 仅限受控环境
+抑制安全警告只是静默输出，**不会**恢复被禁用的安全特性。务必仅在受控环境（CI、容器化测试）中使用，生产环境应使用 `SecureConfig()` 或 `DefaultConfig()`。
+:::
+
+## 如何访问内部服务？
+
+**答：** 默认 SSRF 防护阻止私有 IP 连接（127.0.0.1、10.x、192.168.x、169.254.x 等）。访问内部服务有两种方式：
+
+```go
+// 方式一：精确豁免（推荐）——仅允许指定 CIDR 范围
+cfg := httpc.DefaultConfig()
+cfg.Security.SSRFExemptCIDRs = []string{
+    "10.0.0.0/8",     // VPC 内网
+    "100.64.0.0/10",  // Tailscale/VPN
+}
+
+// 方式二：完全禁用（危险）——关闭所有连接级 SSRF 拨号校验
+cfg.Security.AllowPrivateIPs = true
+```
+
+:::warning AllowPrivateIPs 的风险
+`AllowPrivateIPs = true` 不仅允许私有 IP，还**完全绕过连接级 SSRF 拨号验证**（含 localhost/loopback/link-local 检查）。仅在连接受信任的内部服务时使用，处理用户输入的 URL 时**严禁**开启——改用 `SSRFExemptCIDRs` 精确豁免。
+:::
 
 ## 如何记录请求日志？
+
+**答：** 使用 `LoggingMiddleware` 添加请求日志，URL 会自动脱敏防止凭证泄漏：
 
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(func(format string, args ...any) {
-        log.Printf("[HTTP] "+format, args...)
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{
+        LogFunc: func(format string, args ...any) {
+            log.Printf("[HTTP] "+format, args...)
+        },
     }),
 }
 client, _ := httpc.New(cfg)
 ```
 
-## TestingConfig 为什么会打印警告？
-
-`TestingConfig` 禁用了安全特性（TLS 验证、SSRF 防护），在非测试环境使用存在安全风险。检测到非测试环境时会打印警告。
-
-仅用于 `*_test.go` 文件或本地开发。
-
-## 如何启用 DNS-over-HTTPS？
-
-DoH 可以减少 DNS 解析延迟并防止 DNS 劫持：
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.EnableDoH = true
-cfg.Connection.DoHCacheTTL = 5 * time.Minute
-```
-
-默认使用 Cloudflare、Google、AliDNS 三个提供商（按优先级回退）。如果所有 DoH 提供商不可用，会自动回退到系统 DNS。
-
-:::tip
-DoH 适用于对 DNS 解析安全性有要求的场景。常规 API 调用无需开启，默认 DNS 即可满足需求。
-:::
+如需合规级审计（记录请求/响应头、重定向链、源 IP、用户 ID），使用功能更完整的 `AuditMiddleware`。详见 [中间件参考](../api-reference/client-config/middleware)。
 
 ## 更多资源
 
 - [快速开始](../getting-started/) - 5 分钟快速上手
 - [实战教程](../guides/tutorial) - 循序渐进的完整示例
 - [配置 API](../api-reference/client-config/config) - 完整配置参考
-- [错误处理](../advanced/error-handling) - 错误处理指南
+- [错误类型](../api-reference/types/errors) - ClientError 与错误分类详解
+- [错误处理](../guides/error-handling) - 错误处理指南

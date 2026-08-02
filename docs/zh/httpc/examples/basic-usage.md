@@ -156,9 +156,9 @@ client, _ := httpc.New(cfg)
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
-cfg.Middleware.UserAgent = "my-app/1.0"
+cfg.Defaults.UserAgent = "my-app/1.0"
 
 client, _ := httpc.New(cfg)
 ```
@@ -168,10 +168,10 @@ client, _ := httpc.New(cfg)
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
-    httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
         metrics.Record(method, statusCode, duration)
-    }),
+    }}),
 }
 
 client, _ := httpc.New(cfg)
@@ -180,7 +180,7 @@ client, _ := httpc.New(cfg)
 ## 文件下载
 
 ```go
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 
 cfg := httpc.DefaultDownloadConfig()
@@ -206,7 +206,7 @@ fmt.Printf("\n下载完成: %d bytes, 耗时 %v, 平均速度 %.2f MB/s\n",
 ## 域名客户端
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

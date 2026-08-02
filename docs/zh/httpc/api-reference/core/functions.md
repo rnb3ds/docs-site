@@ -1,5 +1,5 @@
 ---
-sidebar_label: "包级函数与客户端方法"
+sidebar_label: "函数与方法"
 title: "包级函数与客户端方法 - CyberGo HTTPC | HTTP 方法 API"
 description: "HTTPC 包级函数与客户端方法 API 参考：Get/Post 等七种 HTTP 方法、New 客户端创建、Download 统一下载入口、FormatBytes/FormatSpeed 工具与 NewDomain 域名客户端创建，配合请求选项实现灵活配置。"
 sidebar_position: 1
@@ -72,19 +72,35 @@ Client 接口提供与包级函数相同的 HTTP 方法，加上带上下文的 
 ### New
 
 ```go
-func New(config ...*Config) (Client, error)
+func New(cfg Config) (Client, error)
 ```
 
-创建新的 HTTP 客户端。不传配置或传 `nil` 使用 `DefaultConfig()`。
+创建新的 HTTP 客户端。传入 `Config` 值（推荐用 `DefaultConfig()` 或预设函数获取后再按需修改）。配置无效时返回错误（如无效的 `SecurityConfig.SSRFExemptCIDRs`）。
 
 ```go
-client, err := httpc.New()
-client, err := httpc.New(nil)
+// 使用默认配置（或调用 NewDefault() 效果相同）
+client, err := httpc.New(httpc.DefaultConfig())
+
+// 使用预设配置
 client, err := httpc.New(httpc.SecureConfig())
 
+// 使用自定义配置
 cfg := httpc.DefaultConfig()
 cfg.Timeouts.Request = 60 * time.Second
 client, err := httpc.New(cfg)
+```
+
+### NewDefault
+
+```go
+func NewDefault() (Client, error)
+```
+
+便捷构造，等价于 `New(DefaultConfig())`。零配置场景的推荐入口。
+
+```go
+client, err := httpc.NewDefault()
+defer func() { _ = client.Close() }()
 ```
 
 ### 客户端 HTTP 方法
@@ -110,7 +126,7 @@ Close() error
 ```
 
 ```go
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 ```
 
@@ -125,7 +141,7 @@ func SetDefaultClient(client Client) error
 设置自定义客户端为默认客户端，供包级函数使用。旧的默认客户端会被自动关闭。
 
 :::warning 限制
-仅接受通过 `httpc.New()` 创建的客户端，不能设置已关闭的客户端。
+仅接受通过 `httpc.New()` 或 `httpc.NewDefault()` 创建的客户端，不能设置已关闭的客户端。
 :::
 
 ```go
@@ -264,17 +280,30 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 ### NewDomain
 
 ```go
-func NewDomain(baseURL string, config ...*Config) (DomainClienter, error)
+func NewDomain(baseURL string, cfg Config) (DomainClienter, error)
 ```
 
-创建域名作用域客户端，自动管理 Cookie 和请求头。
+创建域名作用域客户端，自动管理 Cookie 和请求头。传入 `Config` 值（Cookie 自动启用）。
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomain("https://api.example.com", httpc.DefaultConfig())
 defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
 result, err := dc.Get("/users")
+```
+
+### NewDomainDefault
+
+```go
+func NewDomainDefault(baseURL string) (DomainClienter, error)
+```
+
+便捷构造，等价于 `NewDomain(baseURL, DefaultConfig())`。
+
+```go
+dc, err := httpc.NewDomainDefault("https://api.example.com")
+defer dc.Close()
 ```
 
 ## 另见

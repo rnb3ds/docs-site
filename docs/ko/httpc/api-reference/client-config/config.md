@@ -1,7 +1,7 @@
 ---
 sidebar_label: "설정"
-title: "설정 - CyberGo HTTPC | Config 와 프리셋"
-description: "HTTPC 설정 시스템 API 레퍼런스: Config 구조체와 Timeouts, Connection, Security, Retry, Middleware 하위 설정, 다섯 가지 프리셋, ValidateConfig 검증의 완전한 필드 설명을 제공합니다."
+title: "설정 - CyberGo HTTPC | Config와 프리셋"
+description: "HTTPC 설정 시스템 API 레퍼런스: Config 구조체 및 Timeouts, Connection, Security, Retry, Middleware 하위 설정, DefaultConfig 등 5가지 프리셋과 ValidateConfig 검증의 완전한 필드 설명."
 sidebar_position: 1
 ---
 
@@ -11,19 +11,16 @@ sidebar_position: 1
 
 ```go
 type Config struct {
-    Timeouts   *TimeoutConfig
-    Connection *ConnectionConfig
-    Security   *SecurityConfig
-    Retry      *RetryConfig
-    Middleware *MiddlewareConfig
+    Timeouts   TimeoutConfig
+    Connection ConnectionConfig
+    Security   SecurityConfig
+    Retry      RetryConfig
+    Middleware MiddlewareConfig
+    Defaults   RequestDefaults
 }
 ```
 
-메인 설정 구조체로, `DefaultConfig()`를 통해 보안 기본값을 얻을 수 있습니다.
-
-:::tip 하위 설정은 포인터
-v1.5.1 부터 다섯 가지 하위 설정은 모두 **포인터 타입**입니다. `DefaultConfig()`와 모든 프리셋 함수 (`SecureConfig`, `PerformanceConfig` 등) 는 이 포인터들을 비어 있지 않은 구조체로 자동 초기화하므로, `cfg.Timeouts.Request`, `cfg.Security.AllowPrivateIPs` 등의 필드 접근을 직접 사용할 수 있습니다. `Config{}` 리터럴을 수동으로 구성할 때는 `&httpc.TimeoutConfig{...}` 형태로 할당해야 하며, 사용 전에 포인터가 nil 이 아닌지 확인해야 합니다.
-:::
+메인 설정 구조체로, 다섯 가지 하위 설정과 `Defaults`는 모두 **값 타입**입니다. `DefaultConfig()`를 통해 보안 기본값을 얻을 수 있으며, 반환된 Config 의 필드를 직접 수정할 수 있습니다.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -58,6 +55,24 @@ type TimeoutConfig struct {
 `ResponseHeader`는 기본값이 0(비활성화) 이며, 이때 `TimeoutConfig.Request` 또는 `WithTimeout()`이 유일한 타임아웃 메커니즘으로 작동하여 `WithTimeout()`이 요청 지속 시간을 완전히 제어합니다. 이 설계는 AI API 와 롱 폴링 등 응답 시간 연장이 필요한 시나리오에 적합합니다. 전송 계층의 엄격한 상한 (Slowloris 공격 방어 등) 이 필요한 경우에만 양수로 설정하되, 이는 `WithTimeout`을 덮어쓴다는 점에 유의하세요.
 :::
 
+## ProxyStrategy
+
+```go
+type ProxyStrategy = proxypool.Strategy
+
+const (
+    ProxyStrategyRoundRobin = proxypool.StrategyRoundRobin // 라운드 로빈 (기본값)
+    ProxyStrategyRandom     = proxypool.StrategyRandom     // 무작위
+)
+```
+
+프록시 풀 선택 전략.
+
+| 상수 | 설명 |
+|------|------|
+| `ProxyStrategyRoundRobin` | 라운드 로빈 (기본값), 매 선택마다 다음 프록시로 진행하여 재시도 시 자연스럽게 다른 IP 로 떨어짐 |
+| `ProxyStrategyRandom` | 무작위, 건강한 프록시 중에서 균일하게 무작위 선택 |
+
 ## ConnectionConfig
 
 ```go
@@ -66,12 +81,38 @@ type ConnectionConfig struct {
     MaxConnsPerHost        int           // 호스트당 최대 연결 수, 기본 10
     ProxyURL               string        // 프록시 주소, 예: "http://proxy:8080"
     EnableSystemProxy      bool          // 시스템 프록시 자동 감지, 기본 false
+    ProxyPool              []string      // 순환에 사용할 프록시 서버 목록
+    ProxyPoolStrategy      ProxyStrategy // 프록시 선택 전략, 기본 RoundRobin
+    ProxyFailureThreshold  int           // 연속 실패 임계값, 0 이면 기본값 3
+    ProxyCooldown          time.Duration // 서킷 브레이크 대기 시간, 0 이면 기본값 30s
+    ProxyRotateOnStatus    []int         // 프록시 순환을 트리거하는 HTTP 상태 코드
     EnableHTTP2            bool          // HTTP/2 활성화, 기본 true
     EnableCookies          bool          // Cookie 관리 활성화, 기본 false
     EnableDoH              bool          // DNS-over-HTTPS 활성화, 기본 false
     DoHCacheTTL            time.Duration // DoH 캐시 TTL, 기본 5min
     MaxResponseHeaderBytes int64         // 응답 헤더 최대 바이트 수, 기본 0 (Go 표준 라이브러리 기본값 10MB 사용)
 }
+```
+
+### 프록시 풀
+
+`ProxyPool`은 프록시 서버 집합을 지정하며, 요청은 `ProxyPoolStrategy`에 따라 프록시 간에 분배됩니다. 연결 실패 (dial/TLS) 시 수동 서킷 브레이킹이 트리거됩니다: `ProxyFailureThreshold` 횟수만큼 실패가 누적되면 해당 프록시는 일시적으로 순환에서 제거되고, `ProxyCooldown` 이후에 복구됩니다 (하프 오픈 프로빙).
+
+우선순위: `ProxyURL`보다 낮고, `EnableSystemProxy`보다 높습니다. `ProxyURL`과 `ProxyPool`을 동시에 설정하면 `ProxyURL`이 적용됩니다 (단일 프록시 모드).
+
+`ProxyRotateOnStatus`는 재시도 시 프록시 전환을 트리거하는 HTTP 상태 코드를 지정합니다 (예: CF/WAF 의 IP 기반 차단에 `[]int{403}`). 연결 실패와 달리 상태 코드 순환은 프록시를 서킷 브레이킹 **하지 않습니다** — 차단은 종종 타겟별로 발생하기 때문입니다 (한 프록시가 특정 사이트에서 차단되더라도 다른 사이트에서는 정상일 수 있음). 적용하려면 `Retry.MaxRetries > 0`이 필요합니다.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
+cfg.Connection.ProxyFailureThreshold = 3
+cfg.Connection.ProxyCooldown = 30 * time.Second
+cfg.Connection.ProxyRotateOnStatus = []int{403}
 ```
 
 ### DNS-over-HTTPS
@@ -84,7 +125,7 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-기본 DoH 제공자 (우선순위 순): Cloudflare → Google → AliDNS. 자세한 내용은 [연결 풀과 프록시](../../advanced/connection-pool)를 참조하세요.
+기본 DoH 제공자 (우선순위 순): Cloudflare → Google → AliDNS. 자세한 내용은 [연결 풀](../../guides/connection-pool)를 참조하세요.
 
 ## SecurityConfig
 
@@ -176,12 +217,30 @@ type RetryConfig struct {
 
 ```go
 type MiddlewareConfig struct {
-    Middlewares     []MiddlewareFunc // 미들웨어 목록
-    UserAgent       string           // User-Agent, 기본 "httpc/1.0"
-    Headers         map[string]string // 기본 요청 헤더
-    FollowRedirects bool             // 리다이렉트 따라가기, 기본 true
-    MaxRedirects    int              // 최대 리다이렉트 횟수, 기본 10
+    Middlewares []MiddlewareFunc // 미들웨어 목록, 기본 nil
 }
+```
+
+미들웨어 체인만 포함합니다. 요청 기본값 (User-Agent, 기본 요청 헤더, 리다이렉트 정책) 은 [`RequestDefaults`](#requestdefaults)로 이동했습니다.
+
+## RequestDefaults
+
+```go
+type RequestDefaults struct {
+    UserAgent       string            // User-Agent, 기본 "httpc/1.0"
+    Headers         map[string]string // 기본 요청 헤더, 기본 비어 있음
+    FollowRedirects bool              // 리다이렉트 따라가기, 기본 true
+    MaxRedirects    int               // 최대 리다이렉트 횟수, 기본 10
+}
+```
+
+요청별 기본값의 정규 위치: User-Agent, 기본 요청 헤더, 리다이렉트 정책. `DefaultConfig()`로 합리적인 기본값을 얻은 후 필요에 따라 수정합니다.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Defaults.UserAgent = "myapp/2.0"
+cfg.Defaults.Headers = map[string]string{"Accept": "application/json"}
+cfg.Defaults.MaxRedirects = 5
 ```
 
 ## 설정 프리셋
@@ -189,7 +248,7 @@ type MiddlewareConfig struct {
 ### DefaultConfig
 
 ```go
-func DefaultConfig() *Config
+func DefaultConfig() Config
 ```
 
 보안 기본 설정. SSRF 방어가 기본적으로 활성화되어 있습니다.
@@ -197,7 +256,7 @@ func DefaultConfig() *Config
 ### SecureConfig
 
 ```go
-func SecureConfig() *Config
+func SecureConfig() Config
 ```
 
 보안 우선 설정. 더 짧은 타임아웃, 자동 리다이렉트 비활성화, 엄격한 SSRF 방어.
@@ -220,7 +279,7 @@ func SecureConfig() *Config
 ### PerformanceConfig
 
 ```go
-func PerformanceConfig() *Config
+func PerformanceConfig() Config
 ```
 
 고처리량 설정. 더 큰 연결 풀, 더 긴 타임아웃, 보안 검증은 유지.
@@ -250,7 +309,7 @@ PerformanceConfig 은 보안을 위해 `ValidateURL`과 `ValidateHeaders`를 활
 ### TestingConfig
 
 ```go
-func TestingConfig() *Config
+func TestingConfig() Config
 ```
 
 테스트 환경 설정. 보안 검사 비활성화, 짧은 타임아웃.
@@ -281,7 +340,7 @@ func TestingConfig() *Config
 ### MinimalConfig
 
 ```go
-func MinimalConfig() *Config
+func MinimalConfig() Config
 ```
 
 경량 설정. 재시도와 리다이렉트 비활성화, 최소 연결 풀.
@@ -335,7 +394,7 @@ func ValidateConfig(cfg *Config) error
 cfg := httpc.DefaultConfig()
 cfg.Retry.MaxRetries = 100 // 범위 초과
 
-if err := httpc.ValidateConfig(cfg); err != nil {
+if err := httpc.ValidateConfig(&cfg); err != nil {
     log.Fatal(err) // invalid retry configuration: Retry.MaxRetries must be 0-10, got 100
 }
 ```

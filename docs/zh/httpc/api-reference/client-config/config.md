@@ -11,19 +11,16 @@ sidebar_position: 1
 
 ```go
 type Config struct {
-    Timeouts   *TimeoutConfig
-    Connection *ConnectionConfig
-    Security   *SecurityConfig
-    Retry      *RetryConfig
-    Middleware *MiddlewareConfig
+    Timeouts   TimeoutConfig
+    Connection ConnectionConfig
+    Security   SecurityConfig
+    Retry      RetryConfig
+    Middleware MiddlewareConfig
+    Defaults   RequestDefaults
 }
 ```
 
-主配置结构体，通过 `DefaultConfig()` 获取安全默认值。
-
-:::tip 子配置为指针
-自 v1.5.1 起，五个子配置均为**指针类型**。`DefaultConfig()` 及所有预设函数（`SecureConfig`、`PerformanceConfig` 等）会自动初始化这些指针为非空结构体，因此 `cfg.Timeouts.Request`、`cfg.Security.AllowPrivateIPs` 等字段访问可直接使用。若手动构造 `Config{}` 字面量，需用 `&httpc.TimeoutConfig{...}` 形式赋值，且使用前应确保指针非空。
-:::
+主配置结构体，五个子配置与 `Defaults` 均为**值类型**。通过 `DefaultConfig()` 获取安全默认值，返回的 Config 可直接修改字段。
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -58,6 +55,24 @@ type TimeoutConfig struct {
 `ResponseHeader` 默认为 0（禁用），此时使用 `TimeoutConfig.Request` 或 `WithTimeout()` 作为唯一的超时机制，确保 `WithTimeout()` 对请求持续时间有完全控制。此设计适合 AI API 和长轮询等需要扩展响应时间的场景。仅在需要传输层硬性上限（如防御 Slowloris 攻击）时设为正值，但需注意这会覆盖 `WithTimeout`。
 :::
 
+## ProxyStrategy
+
+```go
+type ProxyStrategy = proxypool.Strategy
+
+const (
+    ProxyStrategyRoundRobin = proxypool.StrategyRoundRobin // 轮询（默认）
+    ProxyStrategyRandom     = proxypool.StrategyRandom     // 随机
+)
+```
+
+代理池选择策略。
+
+| 常量 | 说明 |
+|------|------|
+| `ProxyStrategyRoundRobin` | 轮询（默认），每次选择推进到下一个代理，重试时自然落到不同 IP |
+| `ProxyStrategyRandom` | 随机，从健康代理中均匀随机选择 |
+
 ## ConnectionConfig
 
 ```go
@@ -66,12 +81,38 @@ type ConnectionConfig struct {
     MaxConnsPerHost        int           // 每主机最大连接数，默认 10
     ProxyURL               string        // 代理地址，如 "http://proxy:8080"
     EnableSystemProxy      bool          // 自动检测系统代理，默认 false
+    ProxyPool              []string      // 代理服务器列表，用于轮换
+    ProxyPoolStrategy      ProxyStrategy // 代理选择策略，默认 RoundRobin
+    ProxyFailureThreshold  int           // 连续失败次数阈值，0 默认为 3
+    ProxyCooldown          time.Duration // 断路冷却时间，0 默认为 30s
+    ProxyRotateOnStatus    []int         // 触发代理轮换的 HTTP 状态码
     EnableHTTP2            bool          // 启用 HTTP/2，默认 true
     EnableCookies          bool          // 启用 Cookie 管理，默认 false
     EnableDoH              bool          // 启用 DNS-over-HTTPS，默认 false
     DoHCacheTTL            time.Duration // DoH 缓存 TTL，默认 5min
     MaxResponseHeaderBytes int64         // 响应头最大字节数，默认 0（使用 Go 标准库默认 10MB）
 }
+```
+
+### 代理池
+
+`ProxyPool` 指定一组代理服务器，请求按 `ProxyPoolStrategy` 在代理间分发。连接失败（dial/TLS）会触发被动熔断：累计 `ProxyFailureThreshold` 次失败后，该代理临时移出轮换，`ProxyCooldown` 后恢复（半开探测）。
+
+优先级：低于 `ProxyURL`，高于 `EnableSystemProxy`。若同时设置 `ProxyURL` 和 `ProxyPool`，`ProxyURL` 生效（单代理模式）。
+
+`ProxyRotateOnStatus` 指定触发换代理重试的 HTTP 状态码（如 `[]int{403}` 用于 CF/WAF 基于 IP 的封锁）。与连接失败不同，状态码轮换**不会**熔断代理——封锁往往是目标特定的（一个代理在某站点被封，在另一站点可能正常）。需 `Retry.MaxRetries > 0` 才生效。
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
+cfg.Connection.ProxyFailureThreshold = 3
+cfg.Connection.ProxyCooldown = 30 * time.Second
+cfg.Connection.ProxyRotateOnStatus = []int{403}
 ```
 
 ### DNS-over-HTTPS
@@ -84,7 +125,7 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-默认 DoH 提供商（按优先级）：Cloudflare → Google → AliDNS。详见 [连接池与代理](../../advanced/connection-pool)。
+默认 DoH 提供商（按优先级）：Cloudflare → Google → AliDNS。详见 [连接池](../../guides/connection-pool)。
 
 ## SecurityConfig
 
@@ -176,12 +217,30 @@ type RetryConfig struct {
 
 ```go
 type MiddlewareConfig struct {
-    Middlewares     []MiddlewareFunc // 中间件列表
-    UserAgent       string           // User-Agent，默认 "httpc/1.0"
-    Headers         map[string]string // 默认请求头
-    FollowRedirects bool             // 跟随重定向，默认 true
-    MaxRedirects    int              // 最大重定向次数，默认 10
+    Middlewares []MiddlewareFunc // 中间件列表，默认 nil
 }
+```
+
+仅包含中间件链。请求默认值（User-Agent、默认请求头、重定向策略）已移至 [`RequestDefaults`](#requestdefaults)。
+
+## RequestDefaults
+
+```go
+type RequestDefaults struct {
+    UserAgent       string            // User-Agent，默认 "httpc/1.0"
+    Headers         map[string]string // 默认请求头，默认空
+    FollowRedirects bool              // 跟随重定向，默认 true
+    MaxRedirects    int               // 最大重定向次数，默认 10
+}
+```
+
+每请求默认值的规范位置：User-Agent、默认请求头、重定向策略。通过 `DefaultConfig()` 获取合理默认值后按需修改。
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Defaults.UserAgent = "myapp/2.0"
+cfg.Defaults.Headers = map[string]string{"Accept": "application/json"}
+cfg.Defaults.MaxRedirects = 5
 ```
 
 ## 配置预设
@@ -189,7 +248,7 @@ type MiddlewareConfig struct {
 ### DefaultConfig
 
 ```go
-func DefaultConfig() *Config
+func DefaultConfig() Config
 ```
 
 安全默认配置。SSRF 防护默认开启。
@@ -197,7 +256,7 @@ func DefaultConfig() *Config
 ### SecureConfig
 
 ```go
-func SecureConfig() *Config
+func SecureConfig() Config
 ```
 
 安全优先配置。更短的超时、禁用自动重定向、严格的 SSRF 防护。
@@ -220,7 +279,7 @@ func SecureConfig() *Config
 ### PerformanceConfig
 
 ```go
-func PerformanceConfig() *Config
+func PerformanceConfig() Config
 ```
 
 高吞吐配置。更大连接池、更长超时，保持安全验证。
@@ -250,7 +309,7 @@ PerformanceConfig 保持 `ValidateURL` 和 `ValidateHeaders` 开启以确保安�
 ### TestingConfig
 
 ```go
-func TestingConfig() *Config
+func TestingConfig() Config
 ```
 
 测试环境配置。禁用安全检查、短超时。
@@ -281,7 +340,7 @@ func TestingConfig() *Config
 ### MinimalConfig
 
 ```go
-func MinimalConfig() *Config
+func MinimalConfig() Config
 ```
 
 轻量级配置。禁用重试和重定向，最小连接池。
@@ -335,7 +394,7 @@ func ValidateConfig(cfg *Config) error
 cfg := httpc.DefaultConfig()
 cfg.Retry.MaxRetries = 100 // 超出范围
 
-if err := httpc.ValidateConfig(cfg); err != nil {
+if err := httpc.ValidateConfig(&cfg); err != nil {
     log.Fatal(err) // invalid retry configuration: Retry.MaxRetries must be 0-10, got 100
 }
 ```
