@@ -112,4 +112,4 @@ if !result.IsSuccess() {
 }
 ```
 
-See [Error Handling](./error-handling).
+See [Error Handling](../guides/error-handling).

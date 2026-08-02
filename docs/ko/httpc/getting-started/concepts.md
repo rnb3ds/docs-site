@@ -112,4 +112,4 @@ if !result.IsSuccess() {
 }
 ```
 
-자세한 내용은 [오류 처리](./error-handling)를 참조하세요.
+자세한 내용은 [오류 처리](../guides/error-handling)를 참조하세요.
