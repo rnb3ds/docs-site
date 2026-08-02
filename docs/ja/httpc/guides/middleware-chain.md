@@ -1,8 +1,8 @@
 ---
 sidebar_label: "ミドルウェアチェーン"
 title: "ミドルウェアチェーン - CyberGo HTTPC | オニオンモデル連鎖"
-description: "HTTPC ミドルウェアチェーンガイド：オニオンモデルの実行原理とリクエスト/レスポンス双方向処理、Recovery/Logging/RequestID など 8 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc 作成、サーキットブレーカー短路の実装例を通じて、可観測で回復力のあるリクエスト処理パイプラインの構築を支援します。"
-sidebar_position: 6
+description: "HTTPC ミドルウェアチェーンガイド：オニオンモデルの実行原理とリクエスト/レスポンス双方向処理フロー、Recovery/Logging/RequestID など 7 つの内蔵ミドルウェア設定、Chain 手動組み合わせ、カスタム MiddlewareFunc の記述、サーキットブレーカーショートサンプルで、可観測・可復旧なリクエスト処理パイプラインを構築。"
+sidebar_position: 7
 ---
 
 # ミドルウェアチェーン
@@ -20,9 +20,9 @@ HTTPC のミドルウェアはオニオンモデルを採用しています。�
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RecoveryMiddleware(),    // 最外層：panic リカバリ
-    httpc.LoggingMiddleware(log.Printf), // 第 2 層：ログ記録
-    httpc.RequestIDMiddleware("X-Request-ID", nil), // 最内層：リクエスト ID
+    httpc.RecoveryMiddleware(),                                      // 最外層：panic リカバリ
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}), // 第 2 層：ログ記録
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),          // 最内層：リクエスト ID
 }
 
 client, err := httpc.New(cfg)
@@ -47,9 +47,9 @@ httpc.RecoveryMiddleware()
 リクエスト/レスポンスログ。URL は自動的にマスク：
 
 ```go
-httpc.LoggingMiddleware(func(format string, args ...any) {
+httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
-})
+}})
 // 出力例：[HTTP] GET https://api.example.com/data -> 200 (150ms)（ステータスコードと所要時間は実測値、固定ではありません）
 ```
 
@@ -58,11 +58,14 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 各リクエストにユニーク ID を追加。`crypto/rand` で生成：
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // デフォルト 32 文字 hex
+httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()) // デフォルト 32 文字 hex
 
 // カスタムジェネレーター
-httpc.RequestIDMiddleware("X-Request-ID", func() string {
-    return uuid.New().String()
+httpc.RequestIDMiddleware(&httpc.RequestIDConfig{
+    HeaderName: "X-Request-ID",
+    Generator:  func() string {
+        return uuid.New().String()
+    },
 })
 ```
 
@@ -71,7 +74,7 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 ミドルウェア層のタイムアウト。クライアントタイムアウトより前に強制実行：
 
 ```go
-httpc.TimeoutMiddleware(30 * time.Second)
+httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second})
 ```
 
 :::warning Download やストリーミングリクエストには使用しないでください
@@ -83,10 +86,10 @@ httpc.TimeoutMiddleware(30 * time.Second)
 全リクエストに静的ヘッダーを追加：
 
 ```go
-httpc.HeaderMiddleware(map[string]string{
+httpc.HeaderMiddleware(&httpc.HeaderConfig{Headers: map[string]string{
     "X-App-Version": "1.0.0",
     "X-Platform":    "server",
-})
+}})
 ```
 
 ### MetricsMiddleware
@@ -94,13 +97,13 @@ httpc.HeaderMiddleware(map[string]string{
 リクエストメトリクスを収集：
 
 ```go
-httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
     metrics.IncrCounter("http.requests", 1)
     metrics.RecordTimer("http.latency", duration)
     if err != nil {
         metrics.IncrCounter("http.errors", 1)
     }
-})
+}})
 ```
 
 ### AuditMiddleware
@@ -108,32 +111,34 @@ httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.D
 セキュリティ監査。金融、医療などのコンプライアンスシナリオに使用：
 
 ```go
-httpc.AuditMiddleware(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     log.Printf("[AUDIT] %s %s -> %d (%v)",
         event.Method, event.URL, event.StatusCode, event.Duration)
-})
+}
+httpc.AuditMiddleware(auditCfg)
 ```
 
-### AuditMiddlewareWithConfig
+### 監査オプションの設定
 
-設定可能な監査ミドルウェア：
+`DefaultAuditConfig()` でデフォルト設定を取得してからフィールドを変更することで、出力フォーマット、ヘッダー記録、マスキングを制御できます：
 
 ```go
-auditCfg := &httpc.AuditMiddlewareConfig{
-    Format:         "json",
-    IncludeHeaders: true,
-    MaskHeaders:    []string{"Authorization", "Cookie"},
-    SanitizeError:  true,
-}
-
-httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.Format = "json"
+auditCfg.IncludeHeaders = true
+auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+auditCfg.SanitizeError = true
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     data, err := json.Marshal(event)
     if err != nil {
         log.Println("監査イベントのシリアライズ失敗：", err)
         return
     }
     log.Println(string(data))
-}, auditCfg)
+}
+
+httpc.AuditMiddleware(auditCfg)
 ```
 
 監査イベントはコンテキストから SourceIP と UserID の抽出をサポートします：
@@ -150,8 +155,8 @@ ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 ```go
 middleware := httpc.Chain(
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 )
 
 cfg := httpc.DefaultConfig()
@@ -213,16 +218,14 @@ func CircuitBreakerMiddleware(threshold int) httpc.MiddlewareFunc {
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Middleware = &httpc.MiddlewareConfig{
-    Middlewares: []httpc.MiddlewareFunc{
-        httpc.RecoveryMiddleware(),
-        httpc.LoggingMiddleware(log.Printf),
-    },
-    UserAgent:       "my-app/1.0",
-    Headers:         map[string]string{"X-App": "my-app"},
-    FollowRedirects: true,
-    MaxRedirects:    10,
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.RecoveryMiddleware(),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
+cfg.Defaults.UserAgent = "my-app/1.0"
+cfg.Defaults.Headers = map[string]string{"X-App": "my-app"}
+cfg.Defaults.FollowRedirects = true
+cfg.Defaults.MaxRedirects = 10
 
 client, err := httpc.New(cfg)
 if err != nil {

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Request & Response"
 title: "Request and Response - CyberGo HTTPC | Options & Responses"
-description: "HTTPC request and response guide: package functions and client requests, WithHeader/WithJSON options, Bearer auth, query parameters, and context control."
+description: "HTTPC request and response handling guide: package-level functions and client requests, request options such as WithHeader/WithJSON/WithForm, WithBearerToken authentication, WithQuery query parameters, cookie management, context control, and streaming response decompression size-limit configuration."
 sidebar_position: 2
 ---
 
@@ -28,7 +28,7 @@ Supported HTTP methods: `Get`, `Post`, `Put`, `Patch`, `Delete`, `Head`, `Option
 ### Client Instance
 
 ```go
-client, err := httpc.New()
+client, err := httpc.NewDefault()
 if err != nil {
     log.Fatal(err)
 }

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Request Options"
 title: "Request Options - CyberGo HTTPC | WithXxx Options"
-description: "HTTPC request options API reference: WithHeader, WithBearerToken authentication, WithJSON/WithForm bodies, WithQuery parameters, and callback functions."
+description: "HTTPC request options API reference: WithHeader headers, WithBearerToken authentication, WithJSON/WithForm request bodies, WithQuery query parameters, cookie options, and WithOnRequest/WithOnResponse callback functions."
 sidebar_position: 2
 ---
 
@@ -68,7 +68,7 @@ Sets the User-Agent header. This is a convenience wrapper for `WithHeader("User-
 func WithBasicAuth(username, password string) RequestOption
 ```
 
-Sets HTTP Basic authentication. Username cannot be empty, credentials length is limited.
+Sets HTTP Basic authentication. The username cannot be empty and credential length is limited.
 
 ```go
 result, err := client.Get(url,
@@ -82,7 +82,7 @@ result, err := client.Get(url,
 func WithBearerToken(token string) RequestOption
 ```
 
-Sets the `Authorization: Bearer <token>` header. Token cannot be empty.
+Sets the `Authorization: Bearer <token>` header. The token cannot be empty.
 
 ```go
 result, err := client.Get(url,
@@ -159,7 +159,7 @@ result, err := client.Post(url,
 func WithFile(fieldName, filename string, content []byte) RequestOption
 ```
 
-Convenient file upload. Automatically builds a multipart request body. Filename is processed for path traversal protection.
+Convenient file upload. Automatically builds a multipart request body. The filename is processed for path-traversal protection.
 
 ```go
 result, err := client.Post(url,
@@ -173,7 +173,7 @@ result, err := client.Post(url,
 func WithBinary(data []byte, contentType ...string) RequestOption
 ```
 
-Sets a binary request body. Default Content-Type is `application/octet-stream`, customizable.
+Sets a binary request body. The default Content-Type is `application/octet-stream`, customizable.
 
 ```go
 result, err := client.Post(url,
@@ -187,7 +187,7 @@ result, err := client.Post(url,
 func WithBody(data any, kind ...BodyKind) RequestOption
 ```
 
-Generic request body setting, supporting auto-detection and explicit type specification.
+Generic request-body setter, supporting auto-detection and explicit type specification.
 
 **Auto-detection rules** (default `BodyAuto`):
 
@@ -197,7 +197,7 @@ Generic request body setting, supporting auto-detection and explicit type specif
 | `[]byte` | application/octet-stream |
 | `map[string]string` | application/x-www-form-urlencoded |
 | `*FormData` | multipart/form-data |
-| `io.Reader` | Not set (handled by caller) |
+| `io.Reader` | Not set (handled by the caller) |
 | Other types | application/json |
 
 **Explicit type specification**:
@@ -279,7 +279,7 @@ result, err := client.Get(url,
 func WithCookies(cookies []http.Cookie) RequestOption
 ```
 
-Adds multiple cookies at once. More efficient than calling `WithCookie` multiple times -- pre-allocates capacity and validates all cookies in a single pass.
+Adds multiple cookies at once. More efficient than calling `WithCookie` multiple times — pre-allocates capacity and validates all cookies in a single pass.
 
 ```go
 cookies := []http.Cookie{
@@ -329,10 +329,10 @@ result, err := client.Get(url,
 func WithSecureCookie(securityConfig *CookieSecurityConfig) RequestOption
 ```
 
-Enforces validation of request cookie security attributes (Secure, HttpOnly, SameSite).
+Enforces validation of the security attributes (Secure, HttpOnly, SameSite) of request cookies.
 
-:::warning Option Order
-This option **only validates cookies that already exist at the time it is applied**. You must place `WithSecureCookie` **after** all `WithCookie`/`WithCookies`/`WithCookieMap`/`WithCookieString` calls; otherwise cookies added later will not be validated. For session-level cookie security validation that is not subject to ordering, use `SessionManager.SetCookieSecurity`.
+:::warning
+This option **only validates cookies that already exist at the time it is applied**. You must place `WithSecureCookie` **after** all `WithCookie`/`WithCookies`/`WithCookieMap`/`WithCookieString` calls; otherwise cookies added later will not be validated. For session-level cookie-security validation that is not subject to ordering, use `SessionManager.SetCookieSecurity`.
 :::
 
 ```go
@@ -352,7 +352,7 @@ result, err := client.Get(url,
 func WithContext(ctx context.Context) RequestOption
 ```
 
-Sets the request context, supporting timeout and cancellation. Context cannot be nil.
+Sets the request context, supporting timeout and cancellation. The context cannot be nil.
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -406,8 +406,8 @@ func WithMaxRedirects(maxRedirects int) RequestOption
 
 Sets the per-request maximum redirect count. Range: 0-50.
 
-:::warning 0 Value Semantics
-`0` does **not** disable redirects. The engine treats `0` as an "unset" sentinel value and falls back to the default cap (10), so `WithMaxRedirects(0)` is equivalent to omitting the option. To fully disable redirect following, use `WithFollowRedirects(false)` instead.
+:::warning
+`0` does **not** disable redirects. The engine treats `0` as an "unset" sentinel and falls back to the default cap (10), so `WithMaxRedirects(0)` is equivalent to omitting the option. To fully disable redirect following, use `WithFollowRedirects(false)` instead.
 :::
 
 ### WithAllowPrivateIPs
@@ -418,14 +418,14 @@ func WithAllowPrivateIPs(allow bool) RequestOption
 
 Overrides the client's SSRF policy for a single request. When `allow` is `true`, the request may access localhost and private/reserved IP ranges (127.0.0.0/8, 10.0.0.0/8, 192.168.0.0/16, 169.254.0.0/16, etc.) and follow redirects to such addresses; when `false`, SSRF protection is enforced for this request even if the client is configured with `Security.AllowPrivateIPs=true`.
 
-:::warning Security note
+:::warning
 This is a **per-request escape hatch** from SSRF protection, suited for cases where a default-secure client (`AllowPrivateIPs=false`) occasionally needs to reach internal services, loopback addresses, or a local dev server.
 
 Enable it only when the request URL is trusted and **not** derived from untrusted user input. To allow internal access for an entire client, set `Security.AllowPrivateIPs=true` on `Config` directly.
 :::
 
 ```go
-// Default client blocks private IPs; this call allows it per request
+// The default client blocks private IPs; this call allows it per request
 result, err := httpc.Get("http://localhost:8080/health",
     httpc.WithAllowPrivateIPs(true),
 )
@@ -439,8 +439,8 @@ func WithStreamBody(stream bool) RequestOption
 
 Enables streaming mode; the response body is not cached in memory.
 
-:::warning Important Limitation
-Streaming mode **only takes effect via [`Download`](./functions#download)**. When used with the standard request methods (`Get`/`Post`/`Put`/`Patch`/`Delete`/`Head`/`Options`/`Request`), the response body is read in full and converted into a `Result`, after which the underlying stream is closed -- the returned `Result` body is empty and the caller cannot consume the stream.
+:::warning
+Streaming mode **only takes effect via [`Download`](./functions#download)**. When used with the standard request methods (`Get`/`Post`/`Put`/`Patch`/`Delete`/`Head`/`Options`/`Request`), the response body is read in full and converted into a `Result`, after which the underlying stream is closed — the returned `Result` body is empty and the caller cannot consume the stream.
 
 To actually stream-download large files without caching them in memory, use `Download`.
 :::
@@ -453,7 +453,7 @@ To actually stream-download large files without caching them in memory, use `Dow
 func WithOnRequest(callback func(req RequestMutator) error) RequestOption
 ```
 
-Registers a pre-send callback. Multiple callbacks can be chained and execute in the order added. Returning an error aborts the request.
+Registers a pre-send callback. Multiple callbacks can be chained and execute in the order they are added. Returning an error aborts the request.
 
 ```go
 result, err := client.Get(url,
@@ -470,7 +470,7 @@ result, err := client.Get(url,
 func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
 ```
 
-Registers a post-receive callback. Multiple callbacks can be chained and execute in the order added.
+Registers a post-receive callback. Multiple callbacks can be chained and execute in the order they are added.
 
 ```go
 result, err := client.Get(url,

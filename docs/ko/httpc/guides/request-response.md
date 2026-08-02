@@ -1,7 +1,7 @@
 ---
 sidebar_label: "요청과 응답"
 title: "요청과 응답 - CyberGo HTTPC | 옵션과 응답"
-description: "HTTPC 요청과 응답 가이드: 패키지 함수와 클라이언트 요청, WithHeader/WithJSON 요청 옵션, Bearer 인증, 쿼리 매개변수, Cookie 관리, 컨텍스트 제어와 스트리밍 응답 모범 사례를 다룹니다."
+description: "HTTPC 요청과 응답 가이드: 패키지 함수와 클라이언트 요청, WithHeader/WithJSON 옵션, Bearer 인증, 쿼리 매개변수, Cookie 관리와 스트리밍 응답 모범 사례를 다룹니다."
 sidebar_position: 2
 ---
 
@@ -28,7 +28,7 @@ fmt.Println(result.Body())
 ### 클라이언트 인스턴스
 
 ```go
-client, err := httpc.New()
+client, err := httpc.NewDefault()
 if err != nil {
     log.Fatal(err)
 }

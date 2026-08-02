@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Цепочки промежуточного ПО"
-title: "Цепочки промежуточного ПО - CyberGo HTTPC | Луковые цепочки"
-description: "Руководство по цепочке middleware HTTPC: выполнение луковой модели и двусторонняя обработка запроса/ответа, настройка восьми встроенных middleware (Recovery/Logging/RequestID и др.), композиция Chain, написание собственного MiddlewareFunc и пример короткого замыкания размыкателем цепи — помогут построить наблюдаемый, отказоустойчивый конвейер обработки запросов."
-sidebar_position: 6
+title: "Цепочка middleware - CyberGo HTTPC | Луковая модель и композиция"
+description: "Руководство по цепочке middleware HTTPC: принцип выполнения луковой модели и двунаправленный поток обработки запроса/ответа, конфигурация семи встроенных middleware (Recovery/Logging/RequestID и др.), ручная композиция Chain, написание пользовательского MiddlewareFunc и пример короткого замыкания автомата защиты — поможет создать наблюдаемый и отказоустойчивый конвейер обработки запросов."
+sidebar_position: 7
 ---
 
 # Цепочки промежуточного ПО
@@ -20,12 +20,16 @@ sidebar_position: 6
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RecoveryMiddleware(),    // Внешний слой: восстановление после panic
-    httpc.LoggingMiddleware(log.Printf), // Второй слой: логирование
-    httpc.RequestIDMiddleware("X-Request-ID", nil), // Внутренний слой: Request ID
+    httpc.RecoveryMiddleware(),                                      // Внешний слой: восстановление после panic
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}), // Второй слой: логирование
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),          // Внутренний слой: Request ID
 }
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## Встроенное промежуточное ПО
@@ -43,9 +47,9 @@ httpc.RecoveryMiddleware()
 Логирование запросов/ответов, URL автоматически маскируется:
 
 ```go
-httpc.LoggingMiddleware(func(format string, args ...any) {
+httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
-})
+}})
 // Пример вывода: [HTTP] GET https://api.example.com/data -> 200 (150ms) (код состояния и длительность — фактические измерения, не фиксированные значения)
 ```
 
@@ -54,11 +58,14 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 Добавляет уникальный ID каждому запросу, генерируется с использованием `crypto/rand`:
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // 32-символьный hex по умолчанию
+httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()) // 32-символьный hex по умолчанию
 
 // Пользовательский генератор
-httpc.RequestIDMiddleware("X-Request-ID", func() string {
-    return uuid.New().String()
+httpc.RequestIDMiddleware(&httpc.RequestIDConfig{
+    HeaderName: "X-Request-ID",
+    Generator:  func() string {
+        return uuid.New().String()
+    },
 })
 ```
 
@@ -67,7 +74,7 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 Таймаут на уровне промежуточного ПО, принудительно срабатывает до таймаута клиента:
 
 ```go
-httpc.TimeoutMiddleware(30 * time.Second)
+httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second})
 ```
 
 :::warning Не используйте для Download или потоковых запросов
@@ -79,10 +86,10 @@ httpc.TimeoutMiddleware(30 * time.Second)
 Добавляет статические заголовки ко всем запросам:
 
 ```go
-httpc.HeaderMiddleware(map[string]string{
+httpc.HeaderMiddleware(&httpc.HeaderConfig{Headers: map[string]string{
     "X-App-Version": "1.0.0",
     "X-Platform":    "server",
-})
+}})
 ```
 
 ### MetricsMiddleware
@@ -90,13 +97,13 @@ httpc.HeaderMiddleware(map[string]string{
 Сбор метрик запросов:
 
 ```go
-httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
     metrics.IncrCounter("http.requests", 1)
     metrics.RecordTimer("http.latency", duration)
     if err != nil {
         metrics.IncrCounter("http.errors", 1)
     }
-})
+}})
 ```
 
 ### AuditMiddleware
@@ -104,32 +111,34 @@ httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.D
 Безопасность аудит для финансовых, медицинских и других сценариев с требованиями соответствия:
 
 ```go
-httpc.AuditMiddleware(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     log.Printf("[AUDIT] %s %s -> %d (%v)",
         event.Method, event.URL, event.StatusCode, event.Duration)
-})
+}
+httpc.AuditMiddleware(auditCfg)
 ```
 
-### AuditMiddlewareWithConfig
+### Настройка параметров аудита
 
-Настраиваемое промежуточное ПО аудита:
+Получите конфигурацию по умолчанию через `DefaultAuditConfig()` и измените поля, чтобы управлять форматом вывода, записью заголовков и маскировкой:
 
 ```go
-auditCfg := &httpc.AuditMiddlewareConfig{
-    Format:         "json",
-    IncludeHeaders: true,
-    MaskHeaders:    []string{"Authorization", "Cookie"},
-    SanitizeError:  true,
-}
-
-httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.Format = "json"
+auditCfg.IncludeHeaders = true
+auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+auditCfg.SanitizeError = true
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     data, err := json.Marshal(event)
     if err != nil {
         log.Println("Ошибка сериализации события аудита:", err)
         return
     }
     log.Println(string(data))
-}, auditCfg)
+}
+
+httpc.AuditMiddleware(auditCfg)
 ```
 
 События аудита поддерживают извлечение SourceIP и UserID из контекста:
@@ -146,8 +155,8 @@ ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 ```go
 middleware := httpc.Chain(
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 )
 
 cfg := httpc.DefaultConfig()
@@ -209,18 +218,20 @@ func CircuitBreakerMiddleware(threshold int) httpc.MiddlewareFunc {
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Middleware = &httpc.MiddlewareConfig{
-    Middlewares: []httpc.MiddlewareFunc{
-        httpc.RecoveryMiddleware(),
-        httpc.LoggingMiddleware(log.Printf),
-    },
-    UserAgent:       "my-app/1.0",
-    Headers:         map[string]string{"X-App": "my-app"},
-    FollowRedirects: true,
-    MaxRedirects:    10,
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.RecoveryMiddleware(),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
+cfg.Defaults.UserAgent = "my-app/1.0"
+cfg.Defaults.Headers = map[string]string{"X-App": "my-app"}
+cfg.Defaults.FollowRedirects = true
+cfg.Defaults.MaxRedirects = 10
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## Что дальше

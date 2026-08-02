@@ -1,13 +1,13 @@
 ---
 sidebar_label: "概览"
 title: "API 参考 - CyberGo HTTPC | API 总索引"
-description: "HTTPC API 参考索引：按核心、请求响应、高级功能三组分类导航，涵盖包级 HTTP 函数、28 个 WithXxx 请求选项、Config 配置系统与五种预设、八个内置中间件、域名客户端、文件下载与错误类型的完整查阅入口，帮助快速定位所需 API。"
+description: "HTTPC API 参考索引：按核心、请求响应、高级功能三组分类导航，涵盖包级 HTTP 函数、28 个 WithXxx 请求选项、Config 配置系统与五种预设、七个内置中间件、域名客户端、文件下载与错误类型的完整查阅入口，帮助快速定位所需 API。"
 sidebar_position: 1
 ---
 
 # API 参考
 
-HTTPC 提供 28 个请求选项函数、5 个配置预设、8 个内置中间件和完整的下载支持。
+HTTPC 提供 28 个请求选项函数、5 个配置预设、7 个内置中间件和完整的下载支持。
 
 ## 核心架构
 
@@ -41,7 +41,7 @@ HTTPC 双层架构
 | 模块 | 说明 |
 |------|------|
 | [请求选项](./core/options) | 28 个 WithXxx 请求选项函数（请求头、请求体、认证、Cookie、回调等） |
-| [中间件](./client-config/middleware) | Chain 组合、8 个内置中间件工厂和审计事件类型 |
+| [中间件](./client-config/middleware) | Chain 组合、7 个内置中间件工厂和审计事件类型 |
 | [错误类型](./types/errors) | ClientError、12 种 ErrorType 枚举和 12 个错误变量 |
 
 ### 高级功能
@@ -58,7 +58,7 @@ HTTPC 双层架构
 ### 创建客户端
 
 ```go
-client, err := httpc.New()                    // 默认配置
+client, err := httpc.NewDefault()             // 默认配置
 client, err := httpc.New(httpc.SecureConfig()) // 安全预设
 client, err := httpc.New(customConfig)         // 自定义配置
 ```

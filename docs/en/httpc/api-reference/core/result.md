@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Result"
 title: "Result - CyberGo HTTPC | Result Response Type"
-description: "HTTPC Result response type API reference: StatusCode/Body basic methods, status checks, cookie operations, Unmarshal JSON parsing, and SaveToFile file saving."
+description: "HTTPC Result response type API reference: StatusCode/Body basic methods, status checks, cookie operations, Unmarshal JSON parsing, SaveToFile file saving, and RequestInfo/ResponseInfo sub-types."
 sidebar_position: 3
 ---
 
 # Result
 
-Result wraps HTTP response and request metadata, providing convenient access methods. Obtained via `Client.Request()` or package-level functions.
+Result wraps the HTTP response and request metadata, providing convenient access methods. It is obtained via `Client.Request()` or package-level functions.
 
 ```go
 type Result struct {
@@ -28,7 +28,7 @@ fmt.Println(result.Body())       // {"id":1,"name":"test"}
 ```
 
 :::tip
-Result is created fresh for each request and automatically reclaimed by GC -- no manual release needed.
+Result is created fresh for each request and reclaimed automatically by GC — no manual release needed.
 :::
 
 ## Basic Methods
@@ -47,7 +47,7 @@ Returns the HTTP status code. Nil-safe, returns 0.
 func (r *Result) Body() string
 ```
 
-Returns the response body as a string. Nil-safe, returns empty string.
+Returns the response body as a string. Nil-safe, returns an empty string.
 
 ### RawBody
 
@@ -127,7 +127,7 @@ Returns all cookies from the response.
 func (r *Result) GetCookie(name string) *http.Cookie
 ```
 
-Gets a response cookie by name, returns nil if not found.
+Gets a response cookie by name; returns nil if not found.
 
 ```go
 cookie := result.GetCookie("session")
@@ -181,7 +181,7 @@ Parses the JSON response body into the target variable. Follows `json.Unmarshal`
 | Error | Trigger Condition |
 |-------|-------------------|
 | `ErrResponseBodyEmpty` | Response body is empty |
-| `ErrResponseBodyTooLarge` | Response body exceeds 50MB JSON parsing size limit |
+| `ErrResponseBodyTooLarge` | Response body exceeds the 50MB JSON-parsing size limit |
 
 ```go
 var user User
@@ -199,7 +199,7 @@ fmt.Println(user.Name)
 func (r *Result) SaveToFile(filePath string) error
 ```
 
-Saves the response body to a file. File path is security-validated (path traversal protection, symlink checking, system path protection).
+Saves the response body to a file. The file path is security-validated (path-traversal protection, symlink checking, system-path protection).
 
 | Error | Trigger Condition |
 |-------|-------------------|
@@ -221,7 +221,7 @@ if err := result.SaveToFile("/tmp/data.csv"); err != nil {
 func (r *Result) String() string
 ```
 
-Returns a human-readable string representation. Sensitive headers are automatically masked, response body is truncated to 200 characters.
+Returns a human-readable string representation. Sensitive headers are automatically masked, and the response body is truncated to 200 characters.
 
 ```go
 result, _ := client.Get(url)
@@ -242,7 +242,7 @@ type RequestInfo struct {
 }
 ```
 
-Request details. Access via `result.Request`.
+Request details. Accessed via `result.Request`.
 
 ### ResponseInfo
 
@@ -259,7 +259,7 @@ type ResponseInfo struct {
 }
 ```
 
-Response data. Access via `result.Response`.
+Response data. Accessed via `result.Response`.
 
 ### RequestMeta
 
@@ -272,7 +272,7 @@ type RequestMeta struct {
 }
 ```
 
-Request execution metadata. Access via `result.Meta`.
+Request-execution metadata. Accessed via `result.Meta`.
 
 ```go
 result, _ := client.Get(url)
@@ -286,4 +286,4 @@ fmt.Println(result.Meta.RedirectCount)  // 1 (followed one redirect)
 
 - [Package Functions](./functions) - Request methods that return Result
 - [Request Options](./options) - Configure request behavior
-- [File Download](../client-config/download) - Download result type DownloadResult
+- [File Download](../client-config/download) - The DownloadResult download-result type

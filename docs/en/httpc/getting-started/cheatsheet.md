@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Cheat Sheet"
-title: "Cheat Sheet - CyberGo HTTPC | Quick Reference"
-description: "HTTPC cheat sheet: client creation, seven request methods, WithXxx options, Result handling, middleware chains, and file download code snippets."
-sidebar_position: 2
+title: "Cheat Sheet - CyberGo HTTPC | Common Code Reference"
+description: "HTTPC cheat sheet: client creation and five configuration presets, seven request methods including Get/Post, 28 WithXxx request options, Result response handling, middleware chain composition, ClientError classification, file downloads, and domain-client operations as complete, reusable code snippets for quick lookup."
+sidebar_position: 3
 ---
 
 # Cheat Sheet
@@ -11,7 +11,7 @@ sidebar_position: 2
 
 ```go
 // Default configuration
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 
 // Custom configuration
@@ -24,7 +24,7 @@ client, _ = httpc.New(cfg)
 ## HTTP Methods
 
 ```go
-// Package-level functions (using default client)
+// Package-level functions (using the default client)
 result, _ := httpc.Get(url)
 result, _ := httpc.Post(url)
 result, _ := httpc.Put(url)
@@ -60,7 +60,7 @@ httpc.WithForm(map[string]string{...})  // x-www-form-urlencoded
 httpc.WithFormData(formData)            // multipart/form-data
 httpc.WithFile("file", "doc.pdf", data) // File upload
 httpc.WithBinary([]byte{...})           // application/octet-stream
-httpc.WithBinary([]byte{...}, "image/png") // With content type
+httpc.WithBinary([]byte{...}, "image/png") // With explicit content type
 httpc.WithBody(data)                    // Auto-detect type
 httpc.WithBody(data, httpc.BodyJSON)    // Explicit: BodyJSON/BodyXML/BodyForm/BodyBinary/BodyMultipart
 ```
@@ -125,13 +125,13 @@ result.IsRedirect()                    // 3xx
 result.IsClientError()                 // 4xx
 result.IsServerError()                 // 5xx
 result.Unmarshal(&data)                // JSON parsing
-result.GetCookie("name")               // Get response cookie
-result.HasCookie("name")               // Check response cookie
+result.GetCookie("name")               // Get a response cookie
+result.HasCookie("name")               // Check a response cookie
 result.ResponseCookies()               // All response cookies
 result.RequestCookies()                // All request cookies
-result.GetRequestCookie("name")        // Get request cookie
-result.HasRequestCookie("name")        // Check request cookie
-result.SaveToFile("/path/to/file")     // Save to file
+result.GetRequestCookie("name")        // Get a request cookie
+result.HasRequestCookie("name")        // Check a request cookie
+result.SaveToFile("/path/to/file")     // Save to a file
 result.String()                        // Human-readable representation (sensitive headers redacted)
 ```
 
@@ -172,15 +172,19 @@ cfg.Retry.EnableJitter = true
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
     httpc.RecoveryMiddleware(),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
-    httpc.TimeoutMiddleware(30 * time.Second),
-    httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
-        metrics.Record(method, statusCode, duration)
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+    httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second}),
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{
+        OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
+            metrics.Record(method, statusCode, duration)
+        },
     }),
-    httpc.AuditMiddleware(func(event httpc.AuditEvent) {
-        log.Printf("[AUDIT] %s %s -> %d", event.Method, event.URL, event.StatusCode)
+    httpc.AuditMiddleware(&httpc.AuditConfig{
+        OnAudit: func(event httpc.AuditEvent) {
+            log.Printf("[AUDIT] %s %s -> %d", event.Method, event.URL, event.StatusCode)
+        },
     }),
 }
 ```
@@ -208,7 +212,7 @@ if err != nil {
         case httpc.ErrorTypeValidation:
             // Request validation error
         case httpc.ErrorTypeHTTP:
-            // HTTP layer error
+            // HTTP-layer error
         // Others: ErrorTypeUnknown, ErrorTypeResponseRead,
         //         ErrorTypeTransport, ErrorTypeCertificate
         }
@@ -244,7 +248,7 @@ dlResult, err := client.Download(ctx, url, dlCfg)
 ## Domain Client
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
 defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "設定"
 title: "設定 - CyberGo HTTPC | Config とプリセット"
-description: "HTTPC 設定システム API リファレンス：Config 構造体と Timeouts、Connection、Security、Retry、Middleware サブ設定、5 種類のプリセット、ValidateConfig 検証の完全なフィールド説明を提供します。"
+description: "HTTPC 設定システム API リファレンス：Config 構造体と Timeouts、Connection、Security、Retry、Middleware サブ設定、DefaultConfig など 5 種のプリセット、ValidateConfig 検証の完全なフィールド説明。"
 sidebar_position: 1
 ---
 
@@ -11,19 +11,16 @@ sidebar_position: 1
 
 ```go
 type Config struct {
-    Timeouts   *TimeoutConfig
-    Connection *ConnectionConfig
-    Security   *SecurityConfig
-    Retry      *RetryConfig
-    Middleware *MiddlewareConfig
+    Timeouts   TimeoutConfig
+    Connection ConnectionConfig
+    Security   SecurityConfig
+    Retry      RetryConfig
+    Middleware MiddlewareConfig
+    Defaults   RequestDefaults
 }
 ```
 
-メイン設定構造体。`DefaultConfig()` で安全なデフォルト値を取得します。
-
-:::tip サブ設定はポインタ
-v1.5.1 以降、5 つのサブ設定はすべて**ポインタ型**です。`DefaultConfig()` およびすべてのプリセット関数（`SecureConfig`、`PerformanceConfig` など）はこれらのポインタを非 nil の構造体に自動初期化するため、`cfg.Timeouts.Request`、`cfg.Security.AllowPrivateIPs` などのフィールドアクセスはそのまま使用できます。手動で `Config{}` リテラルを構築する場合は `&httpc.TimeoutConfig{...}` の形式で代入し、使用前にポインタが非 nil であることを確認してください。
-:::
+メイン設定構造体。5 つのサブ設定と `Defaults` はすべて**値型**です。`DefaultConfig()` で安全なデフォルト値を取得し、返された Config のフィールドを直接変更できます。
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -36,11 +33,11 @@ client, err := httpc.New(cfg)
 
 ```go
 type TimeoutConfig struct {
-    Request        time.Duration // 総リクエストタイムアウト（リトライ含む）。デフォルト 180s
-    Dial           time.Duration // TCP 接続タイムアウト。デフォルト 10s
-    TLSHandshake   time.Duration // TLS ハンドシェイクライムアウト。デフォルト 10s
-    ResponseHeader time.Duration // レスポンスヘッダー待機タイムアウト。デフォルト 0（無効、コンテキストタイムアウトに依存）
-    IdleConn       time.Duration // アイドル接続維持時間。デフォルト 90s
+    Request        time.Duration // 総リクエストタイムアウト（リトライ含む）、デフォルト 180s
+    Dial           time.Duration // TCP 接続タイムアウト、デフォルト 10s
+    TLSHandshake   time.Duration // TLS ハンドシェイクタイムアウト、デフォルト 10s
+    ResponseHeader time.Duration // レスポンスヘッダー待機タイムアウト、デフォルト 0（無効、コンテキストタイムアウトに依存）
+    IdleConn       time.Duration // アイドル接続維持時間、デフォルト 90s
 }
 ```
 
@@ -58,20 +55,64 @@ type TimeoutConfig struct {
 `ResponseHeader` のデフォルトは 0（無効）です。この場合、`TimeoutConfig.Request` または `WithTimeout()` が唯一のタイムアウト機構として使用され、`WithTimeout()` がリクエストの所要時間を完全に制御できます。この設計は AI API やロングポーリングなど、レスポンス時間を延長する必要があるシナリオに適しています。トランスポート層のハードリミットが必要な場合（Slowloris 攻撃の防御など）のみ正の値を設定してください。ただし、これは `WithTimeout` をオーバーライドすることに注意してください。
 :::
 
+## ProxyStrategy
+
+```go
+type ProxyStrategy = proxypool.Strategy
+
+const (
+    ProxyStrategyRoundRobin = proxypool.StrategyRoundRobin // ラウンドロビン（デフォルト）
+    ProxyStrategyRandom     = proxypool.StrategyRandom     // ランダム
+)
+```
+
+プロキシプール選択戦略。
+
+| 定数 | 説明 |
+|------|------|
+| `ProxyStrategyRoundRobin` | ラウンドロビン（デフォルト）、毎回次のプロキシに進み、リトライ時に自然と別の IP に振られる |
+| `ProxyStrategyRandom` | ランダム、健全なプロキシから一様にランダム選択 |
+
 ## ConnectionConfig
 
 ```go
 type ConnectionConfig struct {
-    MaxIdleConns           int           // グローバル最大アイドル接続数。デフォルト 50
-    MaxConnsPerHost        int           // ホストあたりの最大接続数。デフォルト 10
+    MaxIdleConns           int           // グローバル最大アイドル接続数、デフォルト 50
+    MaxConnsPerHost        int           // ホストあたりの最大接続数、デフォルト 10
     ProxyURL               string        // プロキシアドレス（例："http://proxy:8080"）
-    EnableSystemProxy      bool          // システムプロキシの自動検出。デフォルト false
-    EnableHTTP2            bool          // HTTP/2 を有効化。デフォルト true
-    EnableCookies          bool          // Cookie 管理を有効化。デフォルト false
-    EnableDoH              bool          // DNS-over-HTTPS を有効化。デフォルト false
-    DoHCacheTTL            time.Duration // DoH キャッシュ TTL。デフォルト 5min
-    MaxResponseHeaderBytes int64         // レスポンスヘッダーの最大バイト数。デフォルト 0（Go 標準ライブラリのデフォルト 10MB を使用）
+    EnableSystemProxy      bool          // システムプロキシの自動検出、デフォルト false
+    ProxyPool              []string      // プロキシサーバーリスト、ローテーション用
+    ProxyPoolStrategy      ProxyStrategy // プロキシ選択戦略、デフォルト RoundRobin
+    ProxyFailureThreshold  int           // 連続失敗回数のしきい値、0 の場合はデフォルト 3
+    ProxyCooldown          time.Duration // サーキットブレーカの冷却時間、0 の場合はデフォルト 30s
+    ProxyRotateOnStatus    []int         // プロキシローテーションをトリガーする HTTP ステータスコード
+    EnableHTTP2            bool          // HTTP/2 を有効化、デフォルト true
+    EnableCookies          bool          // Cookie 管理を有効化、デフォルト false
+    EnableDoH              bool          // DNS-over-HTTPS を有効化、デフォルト false
+    DoHCacheTTL            time.Duration // DoH キャッシュ TTL、デフォルト 5min
+    MaxResponseHeaderBytes int64         // レスポンスヘッダーの最大バイト数、デフォルト 0（Go 標準ライブラリのデフォルト 10MB を使用）
 }
+```
+
+### プロキシプール
+
+`ProxyPool` はプロキシサーバーのリストを指定し、リクエストは `ProxyPoolStrategy` に従ってプロキシ間に分散されます。接続失敗（dial/TLS）はパッシブサーキットブレーカをトリガーします：`ProxyFailureThreshold` 回連続で失敗すると、そのプロキシは一時的にローテーションから外れ、`ProxyCooldown` 経過後に復旧します（ハーフオープンプローブ）。
+
+優先度：`ProxyURL` より低く、`EnableSystemProxy` より高いです。`ProxyURL` と `ProxyPool` を同時に設定した場合、`ProxyURL` が有効になります（単一プロキシモード）。
+
+`ProxyRotateOnStatus` はプロキシの切り替えと再試行をトリガーする HTTP ステータスコードを指定します（例：CF/WAF の IP ベースのブロックに対して `[]int{403}`）。接続失敗とは異なり、ステータスコードによるローテーションはプロキシを**サーキットブレークしません**——ブロックはターゲット固有であることが多いためです（あるプロキシがあるサイトでブロックされても、別のサイトでは正常な場合があります）。`Retry.MaxRetries > 0` が必要です。
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
+cfg.Connection.ProxyFailureThreshold = 3
+cfg.Connection.ProxyCooldown = 30 * time.Second
+cfg.Connection.ProxyRotateOnStatus = []int{403}
 ```
 
 ### DNS-over-HTTPS
@@ -84,26 +125,26 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-デフォルトの DoH プロバイダー（優先度順）：Cloudflare → Google → AliDNS。詳しくは [コネクションプールとプロキシ](../../advanced/connection-pool) をご覧ください。
+デフォルトの DoH プロバイダー（優先度順）：Cloudflare → Google → AliDNS。詳しくは [コネクションプール](../../guides/connection-pool) をご覧ください。
 
 ## SecurityConfig
 
 ```go
 type SecurityConfig struct {
     TLSConfig               *tls.Config           // カスタム TLS 設定
-    MinTLSVersion           uint16                // 最低 TLS バージョン。デフォルト TLS 1.2
-    MaxTLSVersion           uint16                // 最高 TLS バージョン。デフォルト TLS 1.3
+    MinTLSVersion           uint16                // 最低 TLS バージョン、デフォルト TLS 1.2
+    MaxTLSVersion           uint16                // 最高 TLS バージョン、デフォルト TLS 1.3
     InsecureSkipVerify      bool                  // 証明書検証をスキップ（テストのみ）
-    MaxResponseBodySize     int64                 // レスポンスボディサイズ制限。デフォルト 10MB
-    MaxRequestBodySize      int64                 // リクエストボディサイズ制限。デフォルト 0（リクエストボディサイズを制限しない。MaxResponseBodySize とは異なり自動フォールバックなし）
-    MaxDecompressedBodySize int64                 // 展開後サイズ制限。デフォルト 100MB
-    AllowPrivateIPs         bool                  // プライベート IP を許可。デフォルト false
+    MaxResponseBodySize     int64                 // レスポンスボディサイズ制限、デフォルト 10MB
+    MaxRequestBodySize      int64                 // リクエストボディサイズ制限、デフォルト 0（リクエストボディサイズを制限しない。MaxResponseBodySize とは異なり自動フォールバックなし）
+    MaxDecompressedBodySize int64                 // 展開後サイズ制限、デフォルト 100MB
+    AllowPrivateIPs         bool                  // プライベート IP を許可、デフォルト false
     SSRFExemptCIDRs         []string              // SSRF 免除 CIDR
-    ValidateURL             bool                  // URL 検証。デフォルト true
-    ValidateHeaders         bool                  // リクエストヘッダー検証。デフォルト true
-    StrictContentLength     bool                  // 厳格な Content-Length。デフォルト true
+    ValidateURL             bool                  // URL 検証、デフォルト true
+    ValidateHeaders         bool                  // リクエストヘッダー検証、デフォルト true
+    StrictContentLength     bool                  // 厳格な Content-Length、デフォルト true
     CookieSecurity          *CookieSecurityConfig // Cookie セキュリティ検証
-    CertificatePinner       CertificatePinner     // 証明書固定（SPKI ハッシュ/公開鍵）。デフォルト nil（無効）
+    CertificatePinner       CertificatePinner     // 証明書固定（SPKI ハッシュ/公開鍵）、デフォルト nil（無効）
     RedirectWhitelist       []string              // リダイレクトホワイトリストドメイン
 }
 ```
@@ -154,11 +195,11 @@ cfg.Security.SSRFExemptCIDRs = []string{
 
 ```go
 type RetryConfig struct {
-    MaxRetries    int           // 最大リトライ回数。デフォルト 3
-    Delay         time.Duration // 初期リトライ遅延。デフォルト 1s
-    BackoffFactor float64       // バックオフ倍数。デフォルト 2.0
-    EnableJitter  bool          // ジッターを有効化。デフォルト true
-    MaxRetryDelay time.Duration // 最大リトライ遅延上限。デフォルト 30s
+    MaxRetries    int           // 最大リトライ回数、デフォルト 3
+    Delay         time.Duration // 初期リトライ遅延、デフォルト 1s
+    BackoffFactor float64       // バックオフ倍数、デフォルト 2.0
+    EnableJitter  bool          // ジッターを有効化、デフォルト true
+    MaxRetryDelay time.Duration // 最大リトライ遅延上限、デフォルト 30s
     CustomPolicy  RetryPolicy   // カスタムリトライポリシー
 }
 ```
@@ -176,12 +217,30 @@ type RetryConfig struct {
 
 ```go
 type MiddlewareConfig struct {
-    Middlewares     []MiddlewareFunc // ミドルウェアリスト
-    UserAgent       string           // User-Agent。デフォルト "httpc/1.0"
-    Headers         map[string]string // デフォルトリクエストヘッダー
-    FollowRedirects bool             // リダイレクトに追従。デフォルト true
-    MaxRedirects    int              // 最大リダイレクト回数。デフォルト 10
+    Middlewares []MiddlewareFunc // ミドルウェアリスト、デフォルト nil
 }
+```
+
+ミドルウェアチェーンのみを含みます。リクエストのデフォルト値（User-Agent、デフォルトリクエストヘッダー、リダイレクト戦略）は [`RequestDefaults`](#requestdefaults) に移動されました。
+
+## RequestDefaults
+
+```go
+type RequestDefaults struct {
+    UserAgent       string            // User-Agent、デフォルト "httpc/1.0"
+    Headers         map[string]string // デフォルトリクエストヘッダー、デフォルト空
+    FollowRedirects bool              // リダイレクトに追従、デフォルト true
+    MaxRedirects    int               // 最大リダイレクト回数、デフォルト 10
+}
+```
+
+リクエストデフォルト値の正規の場所：User-Agent、デフォルトリクエストヘッダー、リダイレクト戦略。`DefaultConfig()` で適切なデフォルト値を取得し、必要に応じて変更します。
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Defaults.UserAgent = "myapp/2.0"
+cfg.Defaults.Headers = map[string]string{"Accept": "application/json"}
+cfg.Defaults.MaxRedirects = 5
 ```
 
 ## 設定プリセット
@@ -189,7 +248,7 @@ type MiddlewareConfig struct {
 ### DefaultConfig
 
 ```go
-func DefaultConfig() *Config
+func DefaultConfig() Config
 ```
 
 安全なデフォルト設定。SSRF 防護がデフォルトで有効です。
@@ -197,7 +256,7 @@ func DefaultConfig() *Config
 ### SecureConfig
 
 ```go
-func SecureConfig() *Config
+func SecureConfig() Config
 ```
 
 セキュリティ優先設定。短いタイムアウト、自動リダイレクト無効、厳格な SSRF 防護。
@@ -220,7 +279,7 @@ func SecureConfig() *Config
 ### PerformanceConfig
 
 ```go
-func PerformanceConfig() *Config
+func PerformanceConfig() Config
 ```
 
 高スループット設定。大規模コネクションプール、長いタイムアウト、セキュリティ検証を維持。
@@ -250,7 +309,7 @@ PerformanceConfig は安全性を確保するため `ValidateURL` と `ValidateH
 ### TestingConfig
 
 ```go
-func TestingConfig() *Config
+func TestingConfig() Config
 ```
 
 テスト環境設定。セキュリティチェック無効、短いタイムアウト。
@@ -281,7 +340,7 @@ func TestingConfig() *Config
 ### MinimalConfig
 
 ```go
-func MinimalConfig() *Config
+func MinimalConfig() Config
 ```
 
 軽量設定。リトライとリダイレクト無効、最小コネクションプール。
@@ -335,7 +394,7 @@ func ValidateConfig(cfg *Config) error
 cfg := httpc.DefaultConfig()
 cfg.Retry.MaxRetries = 100 // 範囲外
 
-if err := httpc.ValidateConfig(cfg); err != nil {
+if err := httpc.ValidateConfig(&cfg); err != nil {
     log.Fatal(err) // invalid retry configuration: Retry.MaxRetries must be 0-10, got 100
 }
 ```

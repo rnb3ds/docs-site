@@ -1,7 +1,7 @@
 ---
 sidebar_label: "リクエストとレスポンス"
 title: "リクエストとレスポンス - CyberGo HTTPC | オプションと応答"
-description: "HTTPC リクエストとレスポンスガイド：パッケージレベル関数とクライアントリクエスト、WithHeader/WithJSON などのリクエストオプション、Bearer 認証、クエリパラメータ、Cookie 管理、コンテキスト制御のベストプラクティスを解説します。"
+description: "HTTPC リクエストとレスポンス処理ガイド：パッケージレベル関数とクライアントリクエスト、WithHeader/WithJSON/WithForm などのリクエストオプション、WithBearerToken 認証、WithQuery クエリパラメータ、Cookie 管理、コンテキスト制御とストリーミングレスポンス解凍サイズ制限の設定。"
 sidebar_position: 2
 ---
 
@@ -28,7 +28,7 @@ fmt.Println(result.Body())
 ### クライアントインスタンス
 
 ```go
-client, err := httpc.New()
+client, err := httpc.NewDefault()
 if err != nil {
     log.Fatal(err)
 }

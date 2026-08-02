@@ -1,7 +1,7 @@
 ---
 sidebar_label: "ドメインクライアントとセッション"
 title: "ドメインクライアントとセッション - CyberGo HTTPC | セッションとドメイン"
-description: "HTTPC ドメインクライアントとセッションガイド：NewDomain によるドメインスコープクライアント作成、URL 自動結合、SetHeader ヘッダー維持、Cookie セキュリティ検証、REST API クライアントラッパーの実践例を解説します。"
+description: "HTTPC ドメインクライアントとセッション管理ガイド：NewDomain によるドメインスコープクライアント作成、URL 自動結合ルール、SetHeader セッションヘッダー維持、Cookie 自動管理とレスポンスキャプチャ、CookieSecurity セキュリティ検証ポリシー、REST API クライアントラッパーの実践例。"
 sidebar_position: 3
 ---
 
@@ -12,7 +12,7 @@ sidebar_position: 3
 ## ドメインクライアントの作成
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -122,7 +122,7 @@ if err := session.SetHeader("X-Trace-ID", traceID); err != nil {
 Cookie セキュリティポリシーを設定して、セキュリティ基準に準拠する Cookie のみを受け付けることができます：
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
 
 // 厳格な Cookie セキュリティを設定
 session := dc.Session()
@@ -155,7 +155,7 @@ import (
 
 func main() {
     // ドメインクライアントの作成
-    dc, err := httpc.NewDomain("https://api.example.com")
+    dc, err := httpc.NewDomainDefault("https://api.example.com")
     if err != nil {
         log.Fatal(err)
     }

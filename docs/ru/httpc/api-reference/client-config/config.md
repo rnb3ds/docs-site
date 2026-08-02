@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Конфигурация"
 title: "Конфигурация - CyberGo HTTPC | Конфиг и пресеты"
-description: "Справочник API конфигурации HTTPC: структура Config с подконфигурациями Timeouts, Connection, Security, Retry, Middleware, пять пресетов и ValidateConfig."
+description: "Справочник API системы конфигурации HTTPC: структура Config и подконфигурации Timeouts, Connection, Security, Retry, Middleware, пять пресетов (DefaultConfig и др.) и проверка ValidateConfig — полное описание полей."
 sidebar_position: 1
 ---
 
@@ -11,19 +11,16 @@ sidebar_position: 1
 
 ```go
 type Config struct {
-    Timeouts   *TimeoutConfig
-    Connection *ConnectionConfig
-    Security   *SecurityConfig
-    Retry      *RetryConfig
-    Middleware *MiddlewareConfig
+    Timeouts   TimeoutConfig
+    Connection ConnectionConfig
+    Security   SecurityConfig
+    Retry      RetryConfig
+    Middleware MiddlewareConfig
+    Defaults   RequestDefaults
 }
 ```
 
-Основная структура конфигурации. Получите безопасные значения по умолчанию через `DefaultConfig()`.
-
-:::tip Подконфигурации как указатели
-Начиная с v1.5.1 все пять подконфигураций являются **типами-указателями**. `DefaultConfig()` и все функции предустановок (`SecureConfig`, `PerformanceConfig` и др.) автоматически инициализируют эти указатели непустыми структурами, поэтому обращения к полям вида `cfg.Timeouts.Request`, `cfg.Security.AllowPrivateIPs` и т. п. можно использовать напрямую. При ручном конструировании литерала `Config{}` значения нужно присваивать в виде `&httpc.TimeoutConfig{...}`, а перед использованием убедиться, что указатель не равен nil.
-:::
+Основная структура конфигурации. Все пять подконфигураций и `Defaults` являются **типами значений**. Получите безопасные значения по умолчанию через `DefaultConfig()` и изменяйте поля возвращённого Config напрямую.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -58,6 +55,24 @@ type TimeoutConfig struct {
 `ResponseHeader` по умолчанию равен 0 (отключен), при этом используется `TimeoutConfig.Request` или `WithTimeout()` как единственный механизм таймаута, что обеспечивает полный контроль `WithTimeout()` над длительностью запроса. Этот дизайн подходит для AI API и long-polling, где требуется увеличенное время ответа. Устанавливайте положительное значение только при необходимости жёсткого ограничения транспортного уровня (например, для защиты от атак Slowloris), но учтите, что это переопределит `WithTimeout`.
 :::
 
+## ProxyStrategy
+
+```go
+type ProxyStrategy = proxypool.Strategy
+
+const (
+    ProxyStrategyRoundRobin = proxypool.StrategyRoundRobin // Round-robin (по умолчанию)
+    ProxyStrategyRandom     = proxypool.StrategyRandom     // Случайный
+)
+```
+
+Стратегия выбора пула прокси.
+
+| Константа | Описание |
+|-----------|----------|
+| `ProxyStrategyRoundRobin` | Round-robin (по умолчанию), каждый раз переходит к следующему прокси, при повторе естественно попадает на другой IP |
+| `ProxyStrategyRandom` | Случайный, равномерный случайный выбор из здоровых прокси |
+
 ## ConnectionConfig
 
 ```go
@@ -66,12 +81,38 @@ type ConnectionConfig struct {
     MaxConnsPerHost        int           // Максимум соединений на хост, по умолчанию 10
     ProxyURL               string        // Адрес прокси, например "http://proxy:8080"
     EnableSystemProxy      bool          // Автообнаружение системного прокси, по умолчанию false
+    ProxyPool              []string      // Список прокси-серверов для ротации
+    ProxyPoolStrategy      ProxyStrategy // Стратегия выбора прокси, по умолчанию RoundRobin
+    ProxyFailureThreshold  int           // Порог последовательных сбоев, при 0 по умолчанию 3
+    ProxyCooldown          time.Duration // Время охлаждения автомата защиты, при 0 по умолчанию 30s
+    ProxyRotateOnStatus    []int         // HTTP-коды состояния, запускающие ротацию прокси
     EnableHTTP2            bool          // Включить HTTP/2, по умолчанию true
     EnableCookies          bool          // Включить управление Cookie, по умолчанию false
     EnableDoH              bool          // Включить DNS-over-HTTPS, по умолчанию false
     DoHCacheTTL            time.Duration // TTL кэша DoH, по умолчанию 5min
     MaxResponseHeaderBytes int64         // Максимальный размер заголовков ответа в байтах, по умолчанию 0 (используется стандартное значение Go 10MB)
 }
+```
+
+### Пул прокси
+
+`ProxyPool` задаёт список прокси-серверов; запросы распределяются между ними согласно `ProxyPoolStrategy`. Сбой соединения (dial/TLS) запускает пассивный автомат защиты: после `ProxyFailureThreshold` последовательных неудач прокси временно исключается из ротации и восстанавливается после `ProxyCooldown` (полуоткрытое тестирование).
+
+Приоритет: ниже `ProxyURL`, выше `EnableSystemProxy`. Если заданы одновременно `ProxyURL` и `ProxyPool`, действует `ProxyURL` (режим одиночного прокси).
+
+`ProxyRotateOnStatus` задаёт HTTP-коды состояния, запускающие смену прокси и повтор (например, `[]int{403}` для IP-блокировок CF/WAF). В отличие от сбоев соединения, ротация по кодам состояния **не** отключает прокси в автомате защиты — блокировки часто специфичны для цели (прокси может быть заблокирован на одном сайте, но работать на другом). Требуется `Retry.MaxRetries > 0`.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
+cfg.Connection.ProxyFailureThreshold = 3
+cfg.Connection.ProxyCooldown = 30 * time.Second
+cfg.Connection.ProxyRotateOnStatus = []int{403}
 ```
 
 ### DNS-over-HTTPS
@@ -84,13 +125,13 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-Провайдеры DoH по умолчанию (по приоритету): Cloudflare → Google → AliDNS. Подробнее см. [Пул соединений и прокси](../../advanced/connection-pool).
+Провайдеры DoH по умолчанию (по приоритету): Cloudflare → Google → AliDNS. Подробнее см. [Пул соединений](../../guides/connection-pool).
 
 ## SecurityConfig
 
 ```go
 type SecurityConfig struct {
-    TLSConfig               *tls.Config    // Пользовательская конфигурация TLS
+    TLSConfig               *tls.Config           // Пользовательская конфигурация TLS
     MinTLSVersion           uint16                // Минимальная версия TLS, по умолчанию TLS 1.2
     MaxTLSVersion           uint16                // Максимальная версия TLS, по умолчанию TLS 1.3
     InsecureSkipVerify      bool                  // Пропуск проверки сертификата (только для тестов)
@@ -176,12 +217,30 @@ type RetryConfig struct {
 
 ```go
 type MiddlewareConfig struct {
-    Middlewares     []MiddlewareFunc // Список промежуточного ПО
-    UserAgent       string           // User-Agent, по умолчанию "httpc/1.0"
-    Headers         map[string]string // Заголовки по умолчанию
-    FollowRedirects bool             // Следовать перенаправлениям, по умолчанию true
-    MaxRedirects    int              // Максимальное число перенаправлений, по умолчанию 10
+    Middlewares []MiddlewareFunc // Список промежуточного ПО, по умолчанию nil
 }
+```
+
+Содержит только цепочку промежуточного ПО. Значения запроса по умолчанию (User-Agent, заголовки по умолчанию, стратегия перенаправления) перенесены в [`RequestDefaults`](#requestdefaults).
+
+## RequestDefaults
+
+```go
+type RequestDefaults struct {
+    UserAgent       string            // User-Agent, по умолчанию "httpc/1.0"
+    Headers         map[string]string // Заголовки по умолчанию, по умолчанию пусто
+    FollowRedirects bool              // Следовать перенаправлениям, по умолчанию true
+    MaxRedirects    int               // Максимальное число перенаправлений, по умолчанию 10
+}
+```
+
+Каноническое место для значений запроса по умолчанию: User-Agent, заголовки по умолчанию, стратегия перенаправления. Получите разумные значения по умолчанию через `DefaultConfig()` и изменяйте при необходимости.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Defaults.UserAgent = "myapp/2.0"
+cfg.Defaults.Headers = map[string]string{"Accept": "application/json"}
+cfg.Defaults.MaxRedirects = 5
 ```
 
 ## Предустановки конфигурации
@@ -189,7 +248,7 @@ type MiddlewareConfig struct {
 ### DefaultConfig
 
 ```go
-func DefaultConfig() *Config
+func DefaultConfig() Config
 ```
 
 Безопасная конфигурация по умолчанию. Защита SSRF включена по умолчанию.
@@ -197,7 +256,7 @@ func DefaultConfig() *Config
 ### SecureConfig
 
 ```go
-func SecureConfig() *Config
+func SecureConfig() Config
 ```
 
 Конфигурация с приоритетом безопасности. Более короткие таймауты, отключены автоматические перенаправления, строгая защита SSRF.
@@ -220,7 +279,7 @@ func SecureConfig() *Config
 ### PerformanceConfig
 
 ```go
-func PerformanceConfig() *Config
+func PerformanceConfig() Config
 ```
 
 Конфигурация для высокой пропускной способности. Увеличенный пул соединений, более длинные таймауты, с сохранением проверок безопасности.
@@ -250,7 +309,7 @@ PerformanceConfig сохраняет включёнными `ValidateURL` и `Va
 ### TestingConfig
 
 ```go
-func TestingConfig() *Config
+func TestingConfig() Config
 ```
 
 Конфигурация для тестовой среды. Отключены проверки безопасности, короткие таймауты.
@@ -281,7 +340,7 @@ func TestingConfig() *Config
 ### MinimalConfig
 
 ```go
-func MinimalConfig() *Config
+func MinimalConfig() Config
 ```
 
 Лёгкая конфигурация. Отключены повторные попытки и перенаправления, минимальный пул соединений.
@@ -335,7 +394,7 @@ func ValidateConfig(cfg *Config) error
 cfg := httpc.DefaultConfig()
 cfg.Retry.MaxRetries = 100 // вне диапазона
 
-if err := httpc.ValidateConfig(cfg); err != nil {
+if err := httpc.ValidateConfig(&cfg); err != nil {
     log.Fatal(err) // invalid retry configuration: Retry.MaxRetries must be 0-10, got 100
 }
 ```

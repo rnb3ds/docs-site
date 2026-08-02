@@ -1,13 +1,13 @@
 ---
 sidebar_label: "실전 튜토리얼"
 title: "실전 튜토리얼 - CyberGo HTTPC | GitHub API 실전"
-description: "HTTPC 실전 튜토리얼: httpc.Get 에서 단계적으로 완전한 GitHub REST API 클라이언트를 구축하며, JSON 파싱, 도메인 클라이언트, 미들웨어 체인 조합, ClientError 오류 처리와 파일 다운로드를 다룹니다."
+description: "HTTPC 실전 튜토리얼: GitHub API 예제로 HTTPC 핵심 기능을 소개하며, JSON 파싱, 미들웨어 체인, 오류 처리와 파일 다운로드를 다룹니다."
 sidebar_position: 1
 ---
 
 # 실전 튜토리얼: GitHub API 클라이언트 구축
 
-GitHub API 클라이언트를 구축하면서 HTTPC 의 핵심 개념을 연결해 봅니다. 약 30 분이 소요됩니다.
+다음 예제는 GitHub API 를 주제로 HTTPC 의 핵심 기능을 소개합니다. 각 예제는 서로 독립적이며 필요에 따라 참고할 수 있습니다.
 
 **배울 내용:**
 
@@ -18,7 +18,7 @@ GitHub API 클라이언트를 구축하면서 HTTPC 의 핵심 개념을 연결�
 - 오류 처리와 재시도
 - Result 응답 객체와 자동 관리
 
-## 1 단계: 기본 요청
+## 기본 요청
 
 의존성을 설치하고 `main.go`를 생성합니다:
 
@@ -51,7 +51,7 @@ func main() {
 - 패키지 함수 `httpc.Get`은 클라이언트 생성 없이 사용 가능, 빠른 검증에 적합
 - Result 는 매 요청마다 새로 생성, GC 가 자동 회수, 수동 해제 불필요
 
-## 2 단계: JSON 응답 파싱
+## JSON 응답 파싱
 
 ```go
 type Repo struct {
@@ -80,12 +80,12 @@ fmt.Printf("설명: %s\n", repo.Description)
 - `result.Unmarshal(&v)`로 JSON 응답을 구조체에 직접 파싱
 - API 응답에 대응하는 Go 구조체를 정의
 
-## 3 단계: 도메인 클라이언트 생성
+## 도메인 클라이언트 생성
 
 GitHub API 의 모든 엔드포인트는 `https://api.github.com`에 있으므로, 도메인 클라이언트를 사용하여 URL 반복 작성을 피합니다:
 
 ```go
-client, err := httpc.NewDomain("https://api.github.com")
+client, err := httpc.NewDomainDefault("https://api.github.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -110,7 +110,7 @@ if err != nil {
 - `WithHeader`는 요청 옵션으로 전달, 현재 요청에만 적용
 - 도메인 클라이언트는 Cookie 를 자동 관리
 
-## 4 단계: 데이터 전송 (Issue 생성)
+## 데이터 전송 (Issue 생성)
 
 ```go
 type CreateIssueRequest struct {
@@ -146,7 +146,7 @@ fmt.Printf("Issue #%d 생성됨: %s\n", created.Number, created.URL)
 - `WithJSON(data)`는 자동 직렬화 및 Content-Type 설정
 - `result.IsSuccess()`로 2xx 상태 코드 확인
 
-## 5 단계: 미들웨어 추가
+## 미들웨어 추가
 
 클라이언트에 로깅과 요청 ID 를 추가합니다:
 
@@ -154,11 +154,11 @@ fmt.Printf("Issue #%d 생성됨: %s\n", created.Number, created.URL)
 // 미들웨어 설정
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(func(format string, args ...any) {
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
         log.Printf("[HTTP] "+format, args...)
-    }),
+    }}),
     httpc.RecoveryMiddleware(),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 }
 
 // 설정을 NewDomain 에 전달하여 미들웨어가 포함된 도메인 클라이언트 생성
@@ -190,7 +190,7 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 - `RecoveryMiddleware`는 panic 으로 인한 크래시 방지
 - `RequestIDMiddleware`는 각 요청에 고유 ID 생성
 
-## 6 단계: 오류 처리와 재시도
+## 오류 처리와 재시도
 
 ```go
 result, err := client.Get("/repos/golang/go")
@@ -244,7 +244,7 @@ cfg.Retry.EnableJitter = true
 - `ClientError`는 오류 분류와 재시도 가능 여부 판단 제공
 - 기본적으로 408, 429, 500, 502, 503, 504 에 대해 자동 재시도
 
-## 7 단계: 파일 다운로드 (릴리스 패키지 다운로드)
+## 파일 다운로드 (릴리스 패키지 다운로드)
 
 ```go
 dlCfg := httpc.DefaultDownloadConfig()
@@ -270,7 +270,7 @@ fmt.Printf("\n다운로드 완료: %s (%d bytes)\n",
 )
 ```
 
-## 8 단계: 동시 요청
+## 동시 요청
 
 여러 리포지토리 정보를 동시에 가져옵니다:
 
@@ -316,7 +316,7 @@ func fetchRepos(ctx context.Context, repos []string) error {
 
 ## 완전한 예제
 
-위 단계들을 통합한 완전한 코드:
+위 예제들을 통합한 완전한 코드:
 
 ```go
 package main
@@ -345,9 +345,9 @@ func main() {
     cfg.Retry.MaxRetries = 3
     cfg.Retry.Delay = 1 * time.Second
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         httpc.RecoveryMiddleware(),
     }
 
@@ -386,5 +386,5 @@ func main() {
 - [요청과 응답](./request-response) — 완전한 요청 옵션 참조
 - [미들웨어 체인](./middleware-chain) — 커스텀 미들웨어 개발
 - [재시도와 장애 허용](./retry-fault-tolerance) — 고급 재시도 전략
-- [성능 최적화](../advanced/performance) — 프로덕션 환경 튜닝
+- [성능 최적화](./performance) — 프로덕션 환경 튜닝
 - [프로덕션 체크리스트](../security/production-checklist) — 보안 모범 사례

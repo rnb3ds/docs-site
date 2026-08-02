@@ -1,7 +1,7 @@
 ---
 sidebar_label: "インターフェース"
 title: "インターフェース定義 - CyberGo HTTPC | コアインターフェース"
-description: "HTTPC コアインターフェース API リファレンス：Client 全機能インターフェース、Doer 最小実行インターフェース、DomainClienter、RetryPolicy リトライポリシー、ミドルウェアインターフェース定義の完全な説明を提供します。"
+description: "HTTPC コアインターフェース API リファレンス：Client 全機能インターフェース、Doer 最小実行インターフェース、DomainClienter ドメインクライアント、RetryPolicy リトライポリシー、RequestMutator/ResponseMutator ミドルウェアインターフェース定義の完全な説明。"
 sidebar_position: 1
 ---
 

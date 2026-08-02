@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Configuration"
 title: "Configuration - CyberGo HTTPC | Config & Presets"
-description: "HTTPC configuration API reference: the Config struct with Timeouts, Connection, Security, Retry, and Middleware sub-configs, five presets, and ValidateConfig."
+description: "HTTPC configuration system API reference: the Config struct with its Timeouts, Connection, Security, Retry, and Middleware sub-configs, five presets including DefaultConfig, and ValidateConfig validation with complete field descriptions."
 sidebar_position: 1
 ---
 
@@ -11,19 +11,16 @@ sidebar_position: 1
 
 ```go
 type Config struct {
-    Timeouts   *TimeoutConfig
-    Connection *ConnectionConfig
-    Security   *SecurityConfig
-    Retry      *RetryConfig
-    Middleware *MiddlewareConfig
+    Timeouts   TimeoutConfig
+    Connection ConnectionConfig
+    Security   SecurityConfig
+    Retry      RetryConfig
+    Middleware MiddlewareConfig
+    Defaults   RequestDefaults
 }
 ```
 
-Main configuration struct. Use `DefaultConfig()` to get secure defaults.
-
-:::tip Sub-configs are pointers
-Since v1.5.1, the five sub-configs are all **pointer types**. `DefaultConfig()` and all preset functions (`SecureConfig`, `PerformanceConfig`, etc.) automatically initialize these pointers to non-nil structs, so field accesses like `cfg.Timeouts.Request` and `cfg.Security.AllowPrivateIPs` can be used directly. If you construct a `Config{}` literal manually, assign values using the `&httpc.TimeoutConfig{...}` form, and ensure the pointer is non-nil before use.
-:::
+The main configuration struct. The five sub-configs and `Defaults` are all **value types**. Use `DefaultConfig()` to obtain secure defaults; the returned Config can have its fields modified directly.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -39,8 +36,8 @@ type TimeoutConfig struct {
     Request        time.Duration // Total request timeout (including retries), default 180s
     Dial           time.Duration // TCP connection timeout, default 10s
     TLSHandshake   time.Duration // TLS handshake timeout, default 10s
-    ResponseHeader time.Duration // Wait for response header timeout, default 0 (disabled, relies on context timeout)
-    IdleConn       time.Duration // Idle connection keep-alive time, default 90s
+    ResponseHeader time.Duration // Wait-for-response-header timeout, default 0 (disabled, relies on context timeout)
+    IdleConn       time.Duration // Idle-connection keep-alive time, default 90s
 }
 ```
 
@@ -52,11 +49,29 @@ type TimeoutConfig struct {
 | ResponseHeader | 0 | 30min |
 | IdleConn | 90s | 30min |
 
-Setting to 0 means no timeout (not recommended for production).
+Setting a field to 0 means no timeout (not recommended for production).
 
-:::tip ResponseHeader Design
-`ResponseHeader` defaults to 0 (disabled). In this case, `TimeoutConfig.Request` or `WithTimeout()` serves as the sole timeout mechanism, ensuring `WithTimeout()` has full control over request duration. This design is suitable for AI APIs and long-polling scenarios that require extended response times. Only set a positive value when you need a transport-layer hard cap (e.g., to defend against Slowloris attacks), but note that this will override `WithTimeout`.
+:::tip
+`ResponseHeader` defaults to 0 (disabled). In this case, `TimeoutConfig.Request` or `WithTimeout()` serves as the sole timeout mechanism, ensuring `WithTimeout()` has full control over request duration. This design suits AI APIs and long-polling scenarios that require extended response times. Set it to a positive value only when you need a transport-layer hard cap (e.g. to defend against Slowloris attacks), but note that this overrides `WithTimeout`.
 :::
+
+## ProxyStrategy
+
+```go
+type ProxyStrategy = proxypool.Strategy
+
+const (
+    ProxyStrategyRoundRobin = proxypool.StrategyRoundRobin // Round-robin (default)
+    ProxyStrategyRandom     = proxypool.StrategyRandom     // Random
+)
+```
+
+Proxy-pool selection strategy.
+
+| Constant | Description |
+|----------|-------------|
+| `ProxyStrategyRoundRobin` | Round-robin (default); each selection advances to the next proxy, so retries naturally land on different IPs |
+| `ProxyStrategyRandom` | Random; uniformly selects from healthy proxies |
 
 ## ConnectionConfig
 
@@ -66,12 +81,38 @@ type ConnectionConfig struct {
     MaxConnsPerHost        int           // Max connections per host, default 10
     ProxyURL               string        // Proxy address, e.g. "http://proxy:8080"
     EnableSystemProxy      bool          // Auto-detect system proxy, default false
+    ProxyPool              []string      // List of proxy servers for rotation
+    ProxyPoolStrategy      ProxyStrategy // Proxy selection strategy, default RoundRobin
+    ProxyFailureThreshold  int           // Consecutive-failure threshold, 0 defaults to 3
+    ProxyCooldown          time.Duration // Circuit-break cooldown, 0 defaults to 30s
+    ProxyRotateOnStatus    []int         // HTTP status codes that trigger proxy rotation
     EnableHTTP2            bool          // Enable HTTP/2, default true
     EnableCookies          bool          // Enable cookie management, default false
     EnableDoH              bool          // Enable DNS-over-HTTPS, default false
     DoHCacheTTL            time.Duration // DoH cache TTL, default 5min
-    MaxResponseHeaderBytes int64         // Max response header bytes, default 0 (uses Go stdlib default 10MB)
+    MaxResponseHeaderBytes int64         // Max response-header bytes, default 0 (uses Go stdlib default 10MB)
 }
+```
+
+### Proxy Pool
+
+`ProxyPool` specifies a set of proxy servers; requests are distributed among them according to `ProxyPoolStrategy`. Connection failures (dial/TLS) trigger passive circuit breaking: after accumulating `ProxyFailureThreshold` failures, the proxy is temporarily removed from rotation and recovers after `ProxyCooldown` (half-open probing).
+
+Priority: lower than `ProxyURL`, higher than `EnableSystemProxy`. If both `ProxyURL` and `ProxyPool` are set, `ProxyURL` takes effect (single-proxy mode).
+
+`ProxyRotateOnStatus` specifies HTTP status codes that trigger a proxy switch on retry (e.g. `[]int{403}` for CF/WAF IP-based blocking). Unlike connection failures, status-code rotation does **not** circuit-break the proxy — blocking is often target-specific (a proxy blocked on one site may work fine on another). Requires `Retry.MaxRetries > 0` to take effect.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
+cfg.Connection.ProxyFailureThreshold = 3
+cfg.Connection.ProxyCooldown = 30 * time.Second
+cfg.Connection.ProxyRotateOnStatus = []int{403}
 ```
 
 ### DNS-over-HTTPS
@@ -84,7 +125,7 @@ cfg.Connection.EnableDoH = true
 cfg.Connection.DoHCacheTTL = 5 * time.Minute
 ```
 
-Default DoH providers (by priority): Cloudflare -> Google -> AliDNS. See [Connection Pool and Proxy](../../advanced/connection-pool) for details.
+Default DoH providers (by priority): Cloudflare -> Google -> AliDNS. See [Connection Pool](../../guides/connection-pool) for details.
 
 ## SecurityConfig
 
@@ -98,13 +139,13 @@ type SecurityConfig struct {
     MaxRequestBodySize      int64                 // Request body size limit, default 0 (no limit on request body size; unlike MaxResponseBodySize, no automatic fallback)
     MaxDecompressedBodySize int64                 // Decompressed body size limit, default 100MB
     AllowPrivateIPs         bool                  // Allow private IPs, default false
-    SSRFExemptCIDRs         []string              // SSRF exempt CIDRs
+    SSRFExemptCIDRs         []string              // SSRF-exempt CIDRs
     ValidateURL             bool                  // URL validation, default true
     ValidateHeaders         bool                  // Header validation, default true
     StrictContentLength     bool                  // Strict Content-Length, default true
     CookieSecurity          *CookieSecurityConfig // Cookie security validation
     CertificatePinner       CertificatePinner     // Certificate pinning (SPKI hash/public key), default nil (disabled)
-    RedirectWhitelist       []string              // Redirect whitelist domains
+    RedirectWhitelist       []string              // Redirect-whitelist domains
 }
 ```
 
@@ -132,12 +173,12 @@ cfg.Security.CertificatePinner = pinner
 client, err := httpc.New(cfg)
 ```
 
-:::warning Maintenance cost
+:::warning
 Certificate pinning requires the pinned value to be updated in sync when the server rotates its certificate (e.g. Let's Encrypt renewal). Pin multiple hashes (current + backup) and establish an update workflow to avoid connection outages caused by key rotation.
 :::
 
-:::warning SSRF Protection
-`AllowPrivateIPs` defaults to `false`, blocking connections to private/reserved IPs (127.0.0.1, 10.x, 192.168.x, etc.). Only set to `true` when connecting to internal services.
+:::warning
+`AllowPrivateIPs` defaults to `false`, blocking connections to private/reserved IPs (127.0.0.1, 10.x, 192.168.x, etc.). Only set it to `true` when connecting to internal services.
 :::
 
 ### SSRF Exemption Example
@@ -158,7 +199,7 @@ type RetryConfig struct {
     Delay         time.Duration // Initial retry delay, default 1s
     BackoffFactor float64       // Backoff multiplier, default 2.0
     EnableJitter  bool          // Enable jitter, default true
-    MaxRetryDelay time.Duration // Max retry delay cap, default 30s
+    MaxRetryDelay time.Duration // Max retry-delay cap, default 30s
     CustomPolicy  RetryPolicy   // Custom retry policy
 }
 ```
@@ -170,18 +211,36 @@ type RetryConfig struct {
 | BackoffFactor | 2.0 | 1.0-10.0 |
 | MaxRetryDelay | 30s | 0-30min |
 
-Retry delay formula: `min(Delay * BackoffFactor^attempt + jitter, MaxRetryDelay)`
+Retry-delay formula: `min(Delay * BackoffFactor^attempt + jitter, MaxRetryDelay)`
 
 ## MiddlewareConfig
 
 ```go
 type MiddlewareConfig struct {
-    Middlewares     []MiddlewareFunc // Middleware list
-    UserAgent       string           // User-Agent, default "httpc/1.0"
-    Headers         map[string]string // Default request headers
-    FollowRedirects bool             // Follow redirects, default true
-    MaxRedirects    int              // Max redirect count, default 10
+    Middlewares []MiddlewareFunc // Middleware list, default nil
 }
+```
+
+Contains only the middleware chain. Request defaults (User-Agent, default headers, redirect policy) have been moved to [`RequestDefaults`](#requestdefaults).
+
+## RequestDefaults
+
+```go
+type RequestDefaults struct {
+    UserAgent       string            // User-Agent, default "httpc/1.0"
+    Headers         map[string]string // Default request headers, default empty
+    FollowRedirects bool              // Follow redirects, default true
+    MaxRedirects    int               // Max redirect count, default 10
+}
+```
+
+The canonical location for per-request defaults: User-Agent, default headers, and redirect policy. Obtain sensible defaults via `DefaultConfig()` and modify as needed.
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Defaults.UserAgent = "myapp/2.0"
+cfg.Defaults.Headers = map[string]string{"Accept": "application/json"}
+cfg.Defaults.MaxRedirects = 5
 ```
 
 ## Configuration Presets
@@ -189,7 +248,7 @@ type MiddlewareConfig struct {
 ### DefaultConfig
 
 ```go
-func DefaultConfig() *Config
+func DefaultConfig() Config
 ```
 
 Secure default configuration. SSRF protection enabled by default.
@@ -197,7 +256,7 @@ Secure default configuration. SSRF protection enabled by default.
 ### SecureConfig
 
 ```go
-func SecureConfig() *Config
+func SecureConfig() Config
 ```
 
 Security-first configuration. Shorter timeouts, auto-redirect disabled, strict SSRF protection.
@@ -220,13 +279,13 @@ Security-first configuration. Shorter timeouts, auto-redirect disabled, strict S
 ### PerformanceConfig
 
 ```go
-func PerformanceConfig() *Config
+func PerformanceConfig() Config
 ```
 
-High throughput configuration. Larger connection pool, longer timeouts, security validation preserved.
+High-throughput configuration. Larger connection pool, longer timeouts, security validation preserved.
 
 :::tip
-PerformanceConfig keeps `ValidateURL` and `ValidateHeaders` enabled for security. For maximum performance in trusted environments, you can manually disable them: `cfg.Security.ValidateURL = false`, but be aware of security risks (injection attacks, SSRF).
+PerformanceConfig keeps `ValidateURL` and `ValidateHeaders` enabled for security. For maximum performance in trusted environments, you can manually disable them: `cfg.Security.ValidateURL = false`, but be aware of the security risks (injection attacks, SSRF).
 :::
 
 | Setting | Value |
@@ -250,10 +309,10 @@ PerformanceConfig keeps `ValidateURL` and `ValidateHeaders` enabled for security
 ### TestingConfig
 
 ```go
-func TestingConfig() *Config
+func TestingConfig() Config
 ```
 
-Testing environment configuration. Security checks disabled, short timeouts.
+Testing-environment configuration. Security checks disabled, short timeouts.
 
 | Setting | Value |
 |---------|-------|
@@ -275,13 +334,13 @@ Testing environment configuration. Security checks disabled, short timeouts.
 | UserAgent | httpc-test/1.0 |
 
 :::danger
-This configuration disables TLS verification and SSRF protection. **For testing only**. Using it outside test environments will print a security warning (see [Security Warning Output](#setsecuritywarnoutput)).
+This configuration disables TLS verification and SSRF protection. **For testing only.** Using it outside test environments will print a security warning (see [Security Warning Output](#setsecuritywarnoutput)).
 :::
 
 ### MinimalConfig
 
 ```go
-func MinimalConfig() *Config
+func MinimalConfig() Config
 ```
 
 Lightweight configuration. Retries and redirects disabled, minimal connection pool.
@@ -309,7 +368,7 @@ Lightweight configuration. Retries and redirects disabled, minimal connection po
 func SetSecurityWarnOutput(w io.Writer)
 ```
 
-Redirects the destination of security warning output. When you use `TestingConfig()` or set `SecurityConfig.InsecureSkipVerify` (`Config.Security`) to `true`, httpc prints a `[SECURITY WARNING]`-level alert to this writer (each type of warning is printed at most once per process). The default output is `os.Stderr`; pass `io.Discard` to fully suppress warnings, useful for silencing them in tests or known-safe internal scenarios.
+Redirects the destination of security-warning output. When you use `TestingConfig()` or set `SecurityConfig.InsecureSkipVerify` (`Config.Security`) to `true`, httpc prints a `[SECURITY WARNING]`-level alert to this writer (each type of warning is printed at most once per process). The default output is `os.Stderr`; pass `io.Discard` to fully suppress warnings, useful for silencing them in tests or known-safe internal scenarios.
 
 ```go
 // Suppress security warnings in tests
@@ -317,7 +376,7 @@ httpc.SetSecurityWarnOutput(io.Discard)
 cfg := httpc.TestingConfig()
 ```
 
-:::tip Scope
+:::tip
 This setting is process-level global state that affects all subsequently created clients. The `TestingConfig` and `InsecureSkipVerify` warnings are each counted independently (neither affects the other's triggering), but they share the same output writer.
 :::
 
@@ -335,7 +394,7 @@ Validates configuration. Called automatically by `New()`, but can also be called
 cfg := httpc.DefaultConfig()
 cfg.Retry.MaxRetries = 100 // Out of range
 
-if err := httpc.ValidateConfig(cfg); err != nil {
+if err := httpc.ValidateConfig(&cfg); err != nil {
     log.Fatal(err) // invalid retry configuration: Retry.MaxRetries must be 0-10, got 100
 }
 ```
@@ -346,7 +405,7 @@ if err := httpc.ValidateConfig(cfg); err != nil {
 func (c *Config) String() string
 ```
 
-Returns a safe string representation. ProxyURL credentials are masked, TLSConfig displays as `<configured>` or `<default>`, Headers are not output.
+Returns a safe string representation. ProxyURL credentials are masked, TLSConfig displays as `<configured>` or `<default>`, and Headers are not output.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -368,15 +427,15 @@ type CookieSecurityConfig struct {
 }
 ```
 
-Cookie security attribute validation configuration.
+Cookie security-attribute validation configuration.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| RequireSecure | `bool` | Require Cookie to have Secure attribute |
-| RequireHttpOnly | `bool` | Require Cookie to have HttpOnly attribute |
+| RequireSecure | `bool` | Require the cookie to have the Secure attribute |
+| RequireHttpOnly | `bool` | Require the cookie to have the HttpOnly attribute |
 | RequireSameSite | `string` | Required SameSite value, e.g. `"Strict"`, `"Lax"`; empty string means no check |
-| AllowSameSiteNone | `bool` | Whether to allow SameSite=None |
-| RequireSecureForSameSiteNone | `bool` | Require Secure attribute when SameSite=None (default `true`) |
+| AllowSameSiteNone | `bool` | Whether SameSite=None is allowed |
+| RequireSecureForSameSiteNone | `bool` | Require the Secure attribute when SameSite=None (default `true`) |
 
 ### DefaultCookieSecurityConfig
 

@@ -1,23 +1,23 @@
 ---
 sidebar_label: "Overview"
-title: "HTTP Client - CyberGo HTTPC | Secure Go Client"
-description: "CyberGo HTTPC is a secure Go HTTP client with TLS 1.2+, SSRF protection, exponential backoff retry, middleware chains, and connection pooling for microservices."
+title: "HTTP Client - CyberGo HTTPC | Secure High-Performance"
+description: "CyberGo HTTPC is a secure, high-performance HTTP client library for Go with TLS 1.2+ enforcement, SSRF protection, smart exponential-backoff retries, onion-model middleware chains, connection pooling, and automatic Result lifecycle management for microservice and high-concurrency API scenarios."
 ---
 
 # HTTPC
 
-A secure HTTP client library with secure defaults, built-in smart retries, middleware chain, and object pool reuse.
+A secure HTTP client library that is secure by default, with built-in smart retries, a middleware chain, and object-pool reuse.
 
 ## Features
 
-- **TLS 1.2+** - Enforces minimum TLS version, defaults to TLS 1.2-1.3
-- **SSRF Protection** - Blocks private IP connections by default, configurable CIDR exemptions
-- **Smart Retries** - Exponential backoff with jitter, customizable retry policies
-- **Connection Pool Management** - High-performance connection reuse, HTTP/2 support
-- **Middleware Chain** - Logging, audit, metrics, recovery, request ID, and other built-in middleware
-- **File Download** - Resumable downloads, progress callbacks, checksum verification
-- **DNS-over-HTTPS** - Built-in DoH resolution, reducing DNS hijacking risk
-- **Object Pool Reuse** - Internal response objects and string builders are reused via sync.Pool, reducing GC pressure
+- **TLS 1.2+** - Enforces a minimum TLS version, defaults to TLS 1.2-1.3
+- **SSRF Protection** - Blocks private IP connections by default, with configurable CIDR exemptions
+- **Smart Retries** - Exponential backoff with jitter and customizable retry strategies
+- **Connection Pool Management** - High-performance connection reuse with HTTP/2 support
+- **Middleware Chain** - Built-in middleware for logging, audit, metrics, recovery, request IDs, and more
+- **File Downloads** - Resumable downloads, progress callbacks, and checksum verification
+- **DNS-over-HTTPS** - Built-in DoH resolution to reduce DNS hijacking risk
+- **Object Pool Reuse** - Internal response objects and string builders are pooled via sync.Pool to reduce GC pressure
 
 ## Installation
 
@@ -25,7 +25,7 @@ A secure HTTP client library with secure defaults, built-in smart retries, middl
 go get github.com/cybergodev/httpc
 ```
 
-## 30-Second Quick Start
+## 30-Second Experience
 
 ```go
 package main
@@ -45,34 +45,34 @@ func main() {
 }
 ```
 
-## Getting Started
+## Where to Start
 
-Choose your reading path based on your goal:
+Choose a reading path based on your goal:
 
 | Goal | Recommended |
 |------|-------------|
-| 5-minute setup | [Quick Start](./getting-started/) |
-| 30-minute hands-on | [Tutorial](./guides/tutorial) |
-| Look up a specific usage | [Cheat Sheet](./getting-started/cheatsheet) |
-| Learn about security | [Security Overview](./security/) |
-| Check API signatures | [API Reference](./api-reference/) |
+| Get started in 5 minutes | [Quick Start](./getting-started/) |
+| Hands-on tutorial in 30 minutes | [Tutorial](./guides/tutorial) |
+| Look up a usage pattern | [Cheat Sheet](./getting-started/cheatsheet) |
+| Understand security features | [Security Overview](./security/) |
+| Look up API signatures | [API Reference](./api-reference/) |
 
 ## Core Concepts
 
-HTTPC provides three usage patterns, from simple to flexible:
+HTTPC offers three usage modes, from simple to flexible:
 
 ```text
-Package-level functions    Client instance              Domain client
-httpc.Get()         →  client, _ := httpc.New()  →  dc, _ := httpc.NewDomain(url)
-One-off requests       Custom config/middleware    Session management/Auto Cookie maintenance
+Package-level functions    Client instance               Domain client
+httpc.Get()  →  client, _ := httpc.NewDefault()  →  dc, _ := httpc.NewDomainDefault(url)
+One-off requests       Custom config/middleware       Session management/automatic cookie handling
 ```
 
 ### Configuration Presets
 
 | Preset | Use Case |
 |--------|----------|
-| `DefaultConfig()` | General purpose, secure defaults |
-| `SecureConfig()` | Security-sensitive scenarios, strict timeouts |
-| `PerformanceConfig()` | High throughput, large connection pool |
-| `TestingConfig()` | Test environments, security checks disabled |
-| `MinimalConfig()` | Lightweight scripts, no retries or redirects |
+| `DefaultConfig()` | General scenarios with secure defaults |
+| `SecureConfig()` | Security-sensitive scenarios with strict timeouts |
+| `PerformanceConfig()` | High throughput with a large connection pool |
+| `TestingConfig()` | Test environments with security checks disabled |
+| `MinimalConfig()` | Lightweight scripts with no retries or redirects |

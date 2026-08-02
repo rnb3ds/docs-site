@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Middleware Chain"
 title: "Middleware Chain - CyberGo HTTPC | Onion-Model Chains"
-description: "HTTPC middleware chain guide: onion-model execution and bidirectional request/response processing, eight built-in middleware like Recovery/Logging/RequestID, Chain composition, custom MiddlewareFunc, and a circuit-breaker short-circuit example, helping you build observable, resilient request-processing pipelines."
-sidebar_position: 6
+description: "HTTPC middleware chain guide: onion-model execution principle and bidirectional request/response processing flow, configuration of seven built-in middleware (Recovery/Logging/RequestID etc.), manual Chain composition, writing custom MiddlewareFunc, and a circuit-breaker short-circuit example to help you build observable, resilient request-processing pipelines."
+sidebar_position: 7
 ---
 
 # Middleware Chain
@@ -20,12 +20,16 @@ Response <-  Recovery  <-  Logging  <-  RequestID  <- Response
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RecoveryMiddleware(),    // Outermost: panic recovery
-    httpc.LoggingMiddleware(log.Printf), // Second layer: logging
-    httpc.RequestIDMiddleware("X-Request-ID", nil), // Innermost: request ID
+    httpc.RecoveryMiddleware(),                                      // Outermost: panic recovery
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}), // Second layer: logging
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),          // Innermost: request ID
 }
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## Built-in Middleware
@@ -43,9 +47,9 @@ httpc.RecoveryMiddleware()
 Request/response logging with automatic URL masking:
 
 ```go
-httpc.LoggingMiddleware(func(format string, args ...any) {
+httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
-})
+}})
 // Output example: [HTTP] GET https://api.example.com/data -> 200 (150ms) (status code and duration are measured values, not fixed)
 ```
 
@@ -54,11 +58,14 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 Adds a unique ID to each request, generated with `crypto/rand`:
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // Default 32-char hex
+httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()) // Default 32-char hex
 
 // Custom generator
-httpc.RequestIDMiddleware("X-Request-ID", func() string {
-    return uuid.New().String()
+httpc.RequestIDMiddleware(&httpc.RequestIDConfig{
+    HeaderName: "X-Request-ID",
+    Generator:  func() string {
+        return uuid.New().String()
+    },
 })
 ```
 
@@ -67,7 +74,7 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 Middleware-level timeout enforced before the client timeout:
 
 ```go
-httpc.TimeoutMiddleware(30 * time.Second)
+httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second})
 ```
 
 :::warning Do not use for Download or streaming requests
@@ -79,10 +86,10 @@ httpc.TimeoutMiddleware(30 * time.Second)
 Adds static headers to all requests:
 
 ```go
-httpc.HeaderMiddleware(map[string]string{
+httpc.HeaderMiddleware(&httpc.HeaderConfig{Headers: map[string]string{
     "X-App-Version": "1.0.0",
     "X-Platform":    "server",
-})
+}})
 ```
 
 ### MetricsMiddleware
@@ -90,13 +97,13 @@ httpc.HeaderMiddleware(map[string]string{
 Collects request metrics:
 
 ```go
-httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
     metrics.IncrCounter("http.requests", 1)
     metrics.RecordTimer("http.latency", duration)
     if err != nil {
         metrics.IncrCounter("http.errors", 1)
     }
-})
+}})
 ```
 
 ### AuditMiddleware
@@ -104,28 +111,34 @@ httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.D
 Security auditing for financial, medical, and other compliance scenarios:
 
 ```go
-httpc.AuditMiddleware(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     log.Printf("[AUDIT] %s %s -> %d (%v)",
         event.Method, event.URL, event.StatusCode, event.Duration)
-})
+}
+httpc.AuditMiddleware(auditCfg)
 ```
 
-### AuditMiddlewareWithConfig
+### Configuring Audit Options
 
-Configurable audit middleware:
+Use `DefaultAuditConfig()` to get the default configuration, then modify fields to control output format, header logging, and masking:
 
 ```go
-auditCfg := &httpc.AuditMiddlewareConfig{
-    Format:         "json",
-    IncludeHeaders: true,
-    MaskHeaders:    []string{"Authorization", "Cookie"},
-    SanitizeError:  true,
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.Format = "json"
+auditCfg.IncludeHeaders = true
+auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+auditCfg.SanitizeError = true
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
+    data, err := json.Marshal(event)
+    if err != nil {
+        log.Println("failed to serialize audit event:", err)
+        return
+    }
+    log.Println(string(data))
 }
 
-httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
-    data, _ := json.Marshal(event)
-    log.Println(string(data))
-}, auditCfg)
+httpc.AuditMiddleware(auditCfg)
 ```
 
 Audit events support extracting SourceIP and UserID from context:
@@ -142,8 +155,8 @@ Use the `Chain` function to compose middleware:
 ```go
 middleware := httpc.Chain(
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 )
 
 cfg := httpc.DefaultConfig()
@@ -205,18 +218,20 @@ func CircuitBreakerMiddleware(threshold int) httpc.MiddlewareFunc {
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Middleware = &httpc.MiddlewareConfig{
-    Middlewares: []httpc.MiddlewareFunc{
-        httpc.RecoveryMiddleware(),
-        httpc.LoggingMiddleware(log.Printf),
-    },
-    UserAgent:       "my-app/1.0",
-    Headers:         map[string]string{"X-App": "my-app"},
-    FollowRedirects: true,
-    MaxRedirects:    10,
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.RecoveryMiddleware(),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
+cfg.Defaults.UserAgent = "my-app/1.0"
+cfg.Defaults.Headers = map[string]string{"X-App": "my-app"}
+cfg.Defaults.FollowRedirects = true
+cfg.Defaults.MaxRedirects = 10
 
-client, _ := httpc.New(cfg)
+client, err := httpc.New(cfg)
+if err != nil {
+    log.Fatal(err)
+}
+defer client.Close()
 ```
 
 ## Next Steps

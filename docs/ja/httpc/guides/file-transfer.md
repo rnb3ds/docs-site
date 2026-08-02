@@ -1,7 +1,7 @@
 ---
 sidebar_label: "ファイルアップロードとダウンロード"
 title: "ファイルアップロードとダウンロード - CyberGo HTTPC | アップロードと取得"
-description: "HTTPC ファイルアップロードとダウンロードガイド：WithFile アップロード、WithFormData マルチファイル、Download 統合ダウンロード、レジューム ResumeDownload、SHA-256 チェックサムなどセキュリティ防護を解説します。"
+description: "HTTPC ファイル転送ガイド：WithFile によるシンプルなアップロード、WithFormData による Multipart 複数ファイルアップロード、Download 統合ダウンロード、進捗コールバック、ResumeDownload レジューム継続ダウンロード、SHA-256 チェックサム検証、UNC パスなどのセキュリティ防護。"
 sidebar_position: 4
 ---
 
@@ -189,7 +189,7 @@ if err != nil {
 ドメインクライアントのダウンロードでは、レスポンス Cookie が自動的にセッションにキャプチャされます：
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

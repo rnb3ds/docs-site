@@ -1,7 +1,7 @@
 ---
 sidebar_label: "クイックスタート"
 title: "クイックスタート - CyberGo HTTPC | 5 分ガイド"
-description: "HTTPC クイックスタート：go get インストールと初期化、GET/POST リクエストとレスポンス処理、5 つの設定プリセット選択、JSON 解析、Bearer Token 認証で 5 分で安全な HTTP クライアントを始め、最初のリクエストを完成させます。"
+description: "HTTPC クイックスタートガイド：go get インストールとプロジェクト初期化、GET/POST リクエスト送信とレスポンス処理、5 種の設定プリセット選択、JSON 解析と型バインディング、Bearer Token 認証と ClientError エラー分類処理で、5 分で安全な HTTP クライアントライブラリに習熟します。"
 sidebar_position: 1
 ---
 
@@ -45,7 +45,7 @@ func main() {
 カスタム設定が必要な場合は、クライアントインスタンスを作成します：
 
 ```go
-client, err := httpc.New()
+client, err := httpc.NewDefault()
 if err != nil {
     log.Fatal(err)
 }
@@ -140,13 +140,14 @@ case result.IsServerError():
 }
 ```
 
-:::tip
-4xx/5xx は `error` として返されません。`result.IsSuccess()` などのメソッドで確認してください。詳しくは [エラー処理](../advanced/error-handling) をご覧ください。
+:::tip ヒント
+4xx/5xx は `error` として返されません。`result.IsSuccess()` などのメソッドで確認してください。詳しくは [エラー処理](../guides/error-handling) をご覧ください。
 :::
 
 ## 次のステップ
 
 - **[チュートリアル](../guides/tutorial)** - 30 分で GitHub API クライアントを構築
+- **[コア概念](./concepts)** - 2 層アーキテクチャ、設定体系、設計判断
 - **[リクエストとレスポンス](../guides/request-response)** - 完全なリクエストオプションとレスポンス処理
 - **[基本例](../examples/basic-usage)** - GET/POST/ミドルウェアなどの実例
 - **[チートシート](./cheatsheet)** - よく使う操作のクイックリファレンス

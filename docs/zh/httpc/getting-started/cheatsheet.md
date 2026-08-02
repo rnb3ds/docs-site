@@ -2,7 +2,7 @@
 sidebar_label: "速查表"
 title: "速查表 - CyberGo HTTPC | 常用代码速查"
 description: "HTTPC 速查表：客户端创建与五种配置预设、Get/Post 等七种请求方法、28 个常用 WithXxx 请求选项、Result 响应处理、中间件链组合、ClientError 错误分类、文件下载与域名客户端操作的完整可复用代码片段，方便开发者快速查阅。"
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # 速查表
@@ -11,7 +11,7 @@ sidebar_position: 2
 
 ```go
 // 默认配置
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 
 // 自定义配置
@@ -172,15 +172,19 @@ cfg.Retry.EnableJitter = true
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
     httpc.RecoveryMiddleware(),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
-    httpc.TimeoutMiddleware(30 * time.Second),
-    httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
-        metrics.Record(method, statusCode, duration)
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+    httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second}),
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{
+        OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
+            metrics.Record(method, statusCode, duration)
+        },
     }),
-    httpc.AuditMiddleware(func(event httpc.AuditEvent) {
-        log.Printf("[AUDIT] %s %s -> %d", event.Method, event.URL, event.StatusCode)
+    httpc.AuditMiddleware(&httpc.AuditConfig{
+        OnAudit: func(event httpc.AuditEvent) {
+            log.Printf("[AUDIT] %s %s -> %d", event.Method, event.URL, event.StatusCode)
+        },
     }),
 }
 ```
@@ -244,7 +248,7 @@ dlResult, err := client.Download(ctx, url, dlCfg)
 ## 域名客户端
 
 ```go
-dc, _ := httpc.NewDomain("https://api.example.com")
+dc, _ := httpc.NewDomainDefault("https://api.example.com")
 defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)

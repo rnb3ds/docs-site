@@ -189,7 +189,7 @@ if err != nil {
 域名客户端的下载会自动捕获响应 Cookie 到会话：
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

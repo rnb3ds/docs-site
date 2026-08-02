@@ -1,13 +1,13 @@
 ---
 sidebar_label: "实战教程"
 title: "实战教程 - CyberGo HTTPC | GitHub API 实战"
-description: "三十分钟实战教程：从 httpc.Get 逐步构建完整的 GitHub REST API 客户端，涵盖 JSON 响应解析、NewDomain 域名客户端、WithJSON 发送数据、中间件链组合、ClientError 错误处理与文件下载功能。"
+description: "三十分钟实战教程：通过 GitHub API 示例演示 HTTPC 核心功能，涵盖 JSON 响应解析、NewDomain 域名客户端、WithJSON 发送数据、中间件链组合、ClientError 错误处理与文件下载功能。"
 sidebar_position: 1
 ---
 
 # 实战教程：构建 GitHub API 客户端
 
-通过构建一个 GitHub API 客户端，串联 HTTPC 的核心概念。约 30 分钟完成。
+以下示例以 GitHub API 为场景，演示 HTTPC 的各项核心功能。每个示例相互独立，可按需查阅。
 
 **你将学到：**
 
@@ -18,7 +18,7 @@ sidebar_position: 1
 - 处理错误与重试
 - Result 响应对象与自动管理
 
-## 第 1 步：基本请求
+## 基本请求
 
 安装依赖并创建 `main.go`：
 
@@ -51,7 +51,7 @@ func main() {
 - 包级函数 `httpc.Get` 无需创建客户端，适合快速验证
 - Result 每次请求新建，GC 自动回收，无需手动释放
 
-## 第 2 步：解析 JSON 响应
+## 解析 JSON 响应
 
 ```go
 type Repo struct {
@@ -80,12 +80,12 @@ fmt.Printf("描述: %s\n", repo.Description)
 - `result.Unmarshal(&v)` 直接将 JSON 响应解析到结构体
 - 定义与 API 响应对应的 Go 结构体
 
-## 第 3 步：创建域名客户端
+## 创建域名客户端
 
 GitHub API 所有端点都在 `https://api.github.com` 下，使用域名客户端避免重复写 URL：
 
 ```go
-client, err := httpc.NewDomain("https://api.github.com")
+client, err := httpc.NewDomainDefault("https://api.github.com")
 if err != nil {
     log.Fatal(err)
 }
@@ -110,7 +110,7 @@ if err != nil {
 - `WithHeader` 作为请求选项传入，仅对当前请求生效
 - 域名客户端自动管理 Cookie
 
-## 第 4 步：发送数据（创建 Issue）
+## 发送数据（创建 Issue）
 
 ```go
 type CreateIssueRequest struct {
@@ -146,7 +146,7 @@ fmt.Printf("Issue #%d 已创建: %s\n", created.Number, created.URL)
 - `WithJSON(data)` 自动序列化并设置 Content-Type
 - `result.IsSuccess()` 检查 2xx 状态码
 
-## 第 5 步：添加中间件
+## 添加中间件
 
 为客户端添加日志和请求 ID：
 
@@ -154,11 +154,11 @@ fmt.Printf("Issue #%d 已创建: %s\n", created.Number, created.URL)
 // 配置中间件
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.LoggingMiddleware(func(format string, args ...any) {
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
         log.Printf("[HTTP] "+format, args...)
-    }),
+    }}),
     httpc.RecoveryMiddleware(),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 }
 
 // 将配置传入 NewDomain，创建带中间件的域名客户端
@@ -190,7 +190,7 @@ fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 - `RecoveryMiddleware` 防止 panic 崩溃
 - `RequestIDMiddleware` 为每个请求生成唯一 ID
 
-## 第 6 步：错误处理与重试
+## 错误处理与重试
 
 ```go
 result, err := client.Get("/repos/golang/go")
@@ -244,7 +244,7 @@ cfg.Retry.EnableJitter = true
 - `ClientError` 提供错误分类和是否可重试判断
 - 默认对 408, 429, 500, 502, 503, 504 自动重试
 
-## 第 7 步：文件下载（下载发布包）
+## 文件下载（下载发布包）
 
 ```go
 dlCfg := httpc.DefaultDownloadConfig()
@@ -270,7 +270,7 @@ fmt.Printf("\n下载完成: %s (%d bytes)\n",
 )
 ```
 
-## 第 8 步：并发请求
+## 并发请求
 
 同时获取多个仓库信息：
 
@@ -316,7 +316,7 @@ func fetchRepos(ctx context.Context, repos []string) error {
 
 ## 完整示例
 
-将以上步骤整合的完整代码：
+将以上示例整合的完整代码：
 
 ```go
 package main
@@ -345,9 +345,9 @@ func main() {
     cfg.Retry.MaxRetries = 3
     cfg.Retry.Delay = 1 * time.Second
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         httpc.RecoveryMiddleware(),
     }
 
@@ -386,5 +386,5 @@ func main() {
 - [请求与响应](./request-response) — 完整的请求选项参考
 - [中间件链](./middleware-chain) — 自定义中间件开发
 - [重试与容错](./retry-fault-tolerance) — 高级重试策略
-- [性能优化](../advanced/performance) — 生产环境调优
+- [性能优化](./performance) — 生产环境调优
 - [生产检查清单](../security/production-checklist) — 安全最佳实践

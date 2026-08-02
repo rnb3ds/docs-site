@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Параметры запроса"
 title: "Параметры запроса - CyberGo HTTPC | Опции WithXxx"
-description: "Справочник API параметров запроса HTTPC: заголовки WithHeader, аутентификация WithBearerToken, тело WithJSON/WithForm, параметры WithQuery и колбэки."
+description: "Справочник API опций запроса HTTPC: заголовки WithHeader, аутентификация WithBearerToken, тело запроса WithJSON/WithForm, параметры WithQuery, опции Cookie и функции обратного вызова WithOnRequest/WithOnResponse."
 sidebar_position: 2
 ---
 

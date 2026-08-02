@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Запросы и ответы"
-title: "Запросы и ответы - CyberGo HTTPC | Опции и ответы"
-description: "Руководство по запросам и ответам HTTPC: функции пакета и клиентские запросы, параметры WithHeader/WithJSON, аутентификация Bearer, параметры и контекст."
+title: "Запросы и ответы - CyberGo HTTPC | Опции запроса и ответ"
+description: "Руководство по обработке запросов и ответов HTTPC: функции пакета и клиентские запросы, опции запроса WithHeader/WithJSON/WithForm, аутентификация WithBearerToken, параметры запроса WithQuery, управление Cookie, управление контекстом и настройка ограничения размера распаковки потокового ответа."
 sidebar_position: 2
 ---
 
@@ -28,7 +28,7 @@ fmt.Println(result.Body())
 ### Экземпляр клиента
 
 ```go
-client, err := httpc.New()
+client, err := httpc.NewDefault()
 if err != nil {
     log.Fatal(err)
 }

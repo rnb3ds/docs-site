@@ -1,7 +1,7 @@
 ---
-sidebar_label: "Функции пакета и методы клиента"
+sidebar_label: "Функции и методы"
 title: "Функции пакета и методы клиента - CyberGo HTTPC | HTTP API"
-description: "Справочник API функций пакета HTTPC: семь HTTP-методов Get/Post, создание клиента New, вход загрузки Download, инструменты форматирования и NewDomain, в сочетании с параметрами запроса для гибкой настройки."
+description: "Справочник API функций пакета и методов клиента HTTPC: семь HTTP-методов Get/Post и др., создание клиента New, единый вход загрузки Download, инструменты FormatBytes/FormatSpeed и создание доменного клиента NewDomain — гибкая настройка через опции запроса."
 sidebar_position: 1
 ---
 
@@ -72,19 +72,35 @@ result, err := httpc.Request(ctx, "GET", "https://api.example.com/data")
 ### New
 
 ```go
-func New(config ...*Config) (Client, error)
+func New(cfg Config) (Client, error)
 ```
 
-Создаёт новый HTTP-клиент. Без передачи конфигурации или с `nil` используется `DefaultConfig()`.
+Создаёт новый HTTP-клиент. Передаёт значение `Config` (рекомендуется получить через `DefaultConfig()` или функцию пресета, затем изменить при необходимости). При недопустимой конфигурации возвращает ошибку (например, недопустимый `SecurityConfig.SSRFExemptCIDRs`).
 
 ```go
-client, err := httpc.New()
-client, err := httpc.New(nil)
+// С конфигурацией по умолчанию (эквивалентно NewDefault())
+client, err := httpc.New(httpc.DefaultConfig())
+
+// С пресетом
 client, err := httpc.New(httpc.SecureConfig())
 
+// С пользовательской конфигурацией
 cfg := httpc.DefaultConfig()
 cfg.Timeouts.Request = 60 * time.Second
 client, err := httpc.New(cfg)
+```
+
+### NewDefault
+
+```go
+func NewDefault() (Client, error)
+```
+
+Удобный конструктор, эквивалент `New(DefaultConfig())`. Рекомендуемая точка входа для сценариев без конфигурации.
+
+```go
+client, err := httpc.NewDefault()
+defer func() { _ = client.Close() }()
 ```
 
 ### HTTP-методы клиента
@@ -110,7 +126,7 @@ Close() error
 ```
 
 ```go
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 ```
 
@@ -125,7 +141,7 @@ func SetDefaultClient(client Client) error
 Устанавливает пользовательский клиент как клиент по умолчанию для функций пакета. Предыдущий клиент по умолчанию будет автоматически закрыт.
 
 :::warning Ограничение
-Принимает только клиентов, созданных через `httpc.New()`. Нельзя установить закрытый клиент.
+Принимает только клиентов, созданных через `httpc.New()` или `httpc.NewDefault()`. Нельзя установить закрытый клиент.
 :::
 
 ```go
@@ -264,17 +280,30 @@ cfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 ### NewDomain
 
 ```go
-func NewDomain(baseURL string, config ...*Config) (DomainClienter, error)
+func NewDomain(baseURL string, cfg Config) (DomainClienter, error)
 ```
 
-Создаёт клиент с областью действия домена, автоматически управляющий Cookie и заголовками запросов.
+Создаёт клиент с областью действия домена, автоматически управляющий Cookie и заголовками запросов. Передаёт значение `Config` (Cookie автоматически включается).
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomain("https://api.example.com", httpc.DefaultConfig())
 defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
 result, err := dc.Get("/users")
+```
+
+### NewDomainDefault
+
+```go
+func NewDomainDefault(baseURL string) (DomainClienter, error)
+```
+
+Удобный конструктор, эквивалент `NewDomain(baseURL, DefaultConfig())`.
+
+```go
+dc, err := httpc.NewDomainDefault("https://api.example.com")
+defer dc.Close()
 ```
 
 ## См. также

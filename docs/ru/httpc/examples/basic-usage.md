@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Базовые примеры"
-title: "Базовые примеры - CyberGo HTTPC | Рабочие примеры"
-description: "Базовые примеры HTTPC: GET-запросы с аутентификацией, POST JSON/форма/файлы, пользовательская конфигурация, прокси, middleware, метрики и загрузка файлов."
+title: "Базовое использование - CyberGo HTTPC | Запускаемые примеры"
+description: "Коллекция примеров базового использования HTTPC: GET-запросы с параметрами запроса и аутентификацией, POST-запросы с JSON/формой/файлами, мультиполевая форма FormData, пользовательская конфигурация DefaultConfig, прокси ProxyURL, middleware Recovery/Logging и полные примеры кода загрузки файлов с колбэком прогресса."
 sidebar_position: 1
 ---
 
@@ -156,9 +156,9 @@ client, _ := httpc.New(cfg)
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
-cfg.Middleware.UserAgent = "my-app/1.0"
+cfg.Defaults.UserAgent = "my-app/1.0"
 
 client, _ := httpc.New(cfg)
 ```
@@ -168,10 +168,10 @@ client, _ := httpc.New(cfg)
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
-    httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
+    httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
         metrics.Record(method, statusCode, duration)
-    }),
+    }}),
 }
 
 client, _ := httpc.New(cfg)
@@ -180,7 +180,7 @@ client, _ := httpc.New(cfg)
 ## Загрузка файлов
 
 ```go
-client, _ := httpc.New()
+client, _ := httpc.NewDefault()
 defer client.Close()
 
 cfg := httpc.DefaultDownloadConfig()
@@ -206,7 +206,7 @@ fmt.Printf("\nЗагрузка завершена: %d bytes, время %v, ср
 ## Доменный клиент
 
 ```go
-dc, err := httpc.NewDomain("https://api.example.com")
+dc, err := httpc.NewDomainDefault("https://api.example.com")
 if err != nil {
     log.Fatal(err)
 }

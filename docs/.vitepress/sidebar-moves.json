@@ -188,6 +188,18 @@
     "to": "httpc/getting-started/cheatsheet"
   },
   {
+    "from": "httpc/advanced/connection-pool",
+    "to": "httpc/guides/connection-pool"
+  },
+  {
+    "from": "httpc/advanced/error-handling",
+    "to": "httpc/guides/error-handling"
+  },
+  {
+    "from": "httpc/advanced/performance",
+    "to": "httpc/guides/performance"
+  },
+  {
     "from": "json/api-reference/custom-encoder",
     "to": "json/extensions/custom-encoder"
   },

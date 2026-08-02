@@ -1,8 +1,8 @@
 ---
 sidebar_label: "中间件链"
 title: "中间件链 - CyberGo HTTPC | 洋葱模型与链组合"
-description: "HTTPC 中间件链指南：洋葱模型执行原理与请求/响应双向处理流程、Recovery/Logging/RequestID 等八个内置中间件配置、Chain 手动组合、自定义 MiddlewareFunc 编写与断路器短路示例，助您构建可观测、可恢复的请求处理管道。"
-sidebar_position: 6
+description: "HTTPC 中间件链指南：洋葱模型执行原理与请求/响应双向处理流程、Recovery/Logging/RequestID 等七个内置中间件配置、Chain 手动组合、自定义 MiddlewareFunc 编写与断路器短路示例，助您构建可观测、可恢复的请求处理管道。"
+sidebar_position: 7
 ---
 
 # 中间件链
@@ -20,9 +20,9 @@ HTTPC 中间件采用洋葱模型，请求从外到内，响应从内到外：
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-    httpc.RecoveryMiddleware(),    // 最外层：panic 恢复
-    httpc.LoggingMiddleware(log.Printf), // 第二层：日志记录
-    httpc.RequestIDMiddleware("X-Request-ID", nil), // 最内层：请求 ID
+    httpc.RecoveryMiddleware(),                                      // 最外层：panic 恢复
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}), // 第二层：日志记录
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),          // 最内层：请求 ID
 }
 
 client, err := httpc.New(cfg)
@@ -47,9 +47,9 @@ httpc.RecoveryMiddleware()
 请求/响应日志，URL 自动脱敏：
 
 ```go
-httpc.LoggingMiddleware(func(format string, args ...any) {
+httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
     log.Printf("[HTTP] "+format, args...)
-})
+}})
 // 输出示例：[HTTP] GET https://api.example.com/data -> 200 (150ms)（状态码与耗时为实际测量值，非固定）
 ```
 
@@ -58,11 +58,14 @@ httpc.LoggingMiddleware(func(format string, args ...any) {
 为每个请求添加唯一 ID，使用 `crypto/rand` 生成：
 
 ```go
-httpc.RequestIDMiddleware("X-Request-ID", nil) // 默认 32 字符 hex
+httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()) // 默认 32 字符 hex
 
 // 自定义生成器
-httpc.RequestIDMiddleware("X-Request-ID", func() string {
-    return uuid.New().String()
+httpc.RequestIDMiddleware(&httpc.RequestIDConfig{
+    HeaderName: "X-Request-ID",
+    Generator:  func() string {
+        return uuid.New().String()
+    },
 })
 ```
 
@@ -71,7 +74,7 @@ httpc.RequestIDMiddleware("X-Request-ID", func() string {
 中间件层超时，在客户端超时之前强制执行：
 
 ```go
-httpc.TimeoutMiddleware(30 * time.Second)
+httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second})
 ```
 
 :::warning 不要用于 Download 或流式请求
@@ -83,10 +86,10 @@ httpc.TimeoutMiddleware(30 * time.Second)
 为所有请求添加静态头：
 
 ```go
-httpc.HeaderMiddleware(map[string]string{
+httpc.HeaderMiddleware(&httpc.HeaderConfig{Headers: map[string]string{
     "X-App-Version": "1.0.0",
     "X-Platform":    "server",
-})
+}})
 ```
 
 ### MetricsMiddleware
@@ -94,13 +97,13 @@ httpc.HeaderMiddleware(map[string]string{
 收集请求指标：
 
 ```go
-httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.Duration, err error) {
+httpc.MetricsMiddleware(&httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
     metrics.IncrCounter("http.requests", 1)
     metrics.RecordTimer("http.latency", duration)
     if err != nil {
         metrics.IncrCounter("http.errors", 1)
     }
-})
+}})
 ```
 
 ### AuditMiddleware
@@ -108,32 +111,34 @@ httpc.MetricsMiddleware(func(method, url string, statusCode int, duration time.D
 安全审计，用于金融、医疗等合规场景：
 
 ```go
-httpc.AuditMiddleware(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     log.Printf("[AUDIT] %s %s -> %d (%v)",
         event.Method, event.URL, event.StatusCode, event.Duration)
-})
+}
+httpc.AuditMiddleware(auditCfg)
 ```
 
-### AuditMiddlewareWithConfig
+### 配置审计选项
 
-可配置的审计中间件：
+通过 `DefaultAuditConfig()` 获取默认配置后修改字段，可控制输出格式、头部记录与脱敏：
 
 ```go
-auditCfg := &httpc.AuditMiddlewareConfig{
-    Format:         "json",
-    IncludeHeaders: true,
-    MaskHeaders:    []string{"Authorization", "Cookie"},
-    SanitizeError:  true,
-}
-
-httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
+auditCfg := httpc.DefaultAuditConfig()
+auditCfg.Format = "json"
+auditCfg.IncludeHeaders = true
+auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+auditCfg.SanitizeError = true
+auditCfg.OnAudit = func(event httpc.AuditEvent) {
     data, err := json.Marshal(event)
     if err != nil {
         log.Println("序列化审计事件失败：", err)
         return
     }
     log.Println(string(data))
-}, auditCfg)
+}
+
+httpc.AuditMiddleware(auditCfg)
 ```
 
 审计事件支持从上下文提取 SourceIP 和 UserID：
@@ -150,8 +155,8 @@ ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 ```go
 middleware := httpc.Chain(
     httpc.RecoveryMiddleware(),
-    httpc.LoggingMiddleware(log.Printf),
-    httpc.RequestIDMiddleware("X-Request-ID", nil),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
+    httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 )
 
 cfg := httpc.DefaultConfig()
@@ -213,16 +218,14 @@ func CircuitBreakerMiddleware(threshold int) httpc.MiddlewareFunc {
 
 ```go
 cfg := httpc.DefaultConfig()
-cfg.Middleware = &httpc.MiddlewareConfig{
-    Middlewares: []httpc.MiddlewareFunc{
-        httpc.RecoveryMiddleware(),
-        httpc.LoggingMiddleware(log.Printf),
-    },
-    UserAgent:       "my-app/1.0",
-    Headers:         map[string]string{"X-App": "my-app"},
-    FollowRedirects: true,
-    MaxRedirects:    10,
+cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+    httpc.RecoveryMiddleware(),
+    httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: log.Printf}),
 }
+cfg.Defaults.UserAgent = "my-app/1.0"
+cfg.Defaults.Headers = map[string]string{"X-App": "my-app"}
+cfg.Defaults.FollowRedirects = true
+cfg.Defaults.MaxRedirects = 10
 
 client, err := httpc.New(cfg)
 if err != nil {

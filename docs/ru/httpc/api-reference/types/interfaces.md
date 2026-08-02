@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Интерфейсы"
 title: "Интерфейсы - CyberGo HTTPC | Основные интерфейсы"
-description: "Справочник API интерфейсов HTTPC: полнофункциональный Client, интерфейс выполнения Doer, DomainClienter, стратегия RetryPolicy и интерфейсы middleware."
+description: "Справочник API основных интерфейсов HTTPC: полнофункциональный интерфейс Client, минимальный интерфейс выполнения Doer, доменный клиент DomainClienter, стратегия повторов RetryPolicy и интерфейсы middleware RequestMutator/ResponseMutator."
 sidebar_position: 1
 ---
 

@@ -28,7 +28,7 @@ fmt.Println(result.Body())
 ### 客户端实例
 
 ```go
-client, err := httpc.New()
+client, err := httpc.NewDefault()
 if err != nil {
     log.Fatal(err)
 }

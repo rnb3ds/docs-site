@@ -1,13 +1,13 @@
 ---
 sidebar_label: "요청 옵션"
 title: "요청 옵션 - CyberGo HTTPC | WithXxx 옵션"
-description: "HTTPC 요청 옵션 API 레퍼런스: WithHeader 헤더, WithBearerToken 인증, WithJSON/WithForm 요청 본문, WithQuery 매개변수와 콜백 함수의 완전한 사용법을 제공합니다."
+description: "HTTPC 요청 옵션 API 레퍼런스: WithHeader 요청 헤더, WithBearerToken 인증, WithJSON/WithForm 요청 본문, WithQuery 쿼리 매개변수, Cookie 옵션과 WithOnRequest/WithOnResponse 콜백 함수."
 sidebar_position: 2
 ---
 
 # 요청 옵션
 
-요청 옵션은 함수형 설정 항목으로, `RequestOption` 타입을 통해 요청 메서드에 전달하여 세밀한 요청 제어를 구현합니다.
+요청 옵션은 함수형 설정 항목으로, `RequestOption` 타입을 통해 요청 메서드에 전달되어 세밀한 요청 제어를 구현합니다.
 
 ```go
 result, err := client.Post(url,
@@ -17,7 +17,7 @@ result, err := client.Post(url,
 )
 ```
 
-모든 옵션은 자유롭게 조합할 수 있으며, 전달된 순서대로 적용됩니다.
+모든 옵션은 자유롭게 조합할 수 있으며, 전달된 순서대로 순차적으로 적용됩니다.
 
 ## 요청 헤더
 
@@ -27,7 +27,7 @@ result, err := client.Post(url,
 func WithHeader(key, value string) RequestOption
 ```
 
-단일 요청 헤더를 설정합니다. 키와 값은 보안 검증을 거칩니다 (CRLF 주입 방지).
+단일 요청 헤더를 설정합니다. 키와 값은 보안 검증을 거칩니다(CRLF 주입 방어).
 
 ```go
 result, err := client.Get(url,
@@ -82,7 +82,7 @@ result, err := client.Get(url,
 func WithBearerToken(token string) RequestOption
 ```
 
-`Authorization: Bearer <token>` 헤더를 설정합니다. Token 은 비워둘 수 없습니다.
+`Authorization: Bearer <token>` 헤더를 설정합니다. Token은 비워둘 수 없습니다.
 
 ```go
 result, err := client.Get(url,
@@ -173,7 +173,7 @@ result, err := client.Post(url,
 func WithBinary(data []byte, contentType ...string) RequestOption
 ```
 
-바이너리 요청 본문을 설정합니다. 기본 Content-Type 은 `application/octet-stream`이며, 커스텀할 수 있습니다.
+바이너리 요청 본문을 설정합니다. 기본 Content-Type은 `application/octet-stream`이며, 사용자 정의할 수 있습니다.
 
 ```go
 result, err := client.Post(url,
@@ -189,7 +189,7 @@ func WithBody(data any, kind ...BodyKind) RequestOption
 
 범용 요청 본문 설정으로, 자동 감지와 명시적 타입 지정을 지원합니다.
 
-**자동 감지 규칙** (기본값 `BodyAuto`):
+**자동 감지 규칙**(기본값 `BodyAuto`):
 
 | 입력 타입 | Content-Type |
 |-----------|-------------|
@@ -197,13 +197,13 @@ func WithBody(data any, kind ...BodyKind) RequestOption
 | `[]byte` | application/octet-stream |
 | `map[string]string` | application/x-www-form-urlencoded |
 | `*FormData` | multipart/form-data |
-| `io.Reader` | 설정하지 않음 (호출자가 처리) |
+| `io.Reader` | 설정하지 않음(호출자가 처리) |
 | 기타 타입 | application/json |
 
 **명시적 타입 지정**:
 
 ```go
-// 자동 감지 (기본값)
+// 자동 감지(기본값)
 result, _ := client.Post(url, httpc.WithBody(data))
 
 // JSON 강제
@@ -215,12 +215,12 @@ result, _ := client.Post(url, httpc.WithBody(data, httpc.BodyXML))
 
 | 상수 | 의미 |
 |------|------|
-| `BodyAuto` | 자동 감지 (기본값) |
+| `BodyAuto` | 자동 감지(기본값) |
 | `BodyJSON` | JSON 강제 |
 | `BodyXML` | XML 강제 |
 | `BodyForm` | 폼 강제 |
 | `BodyBinary` | 바이너리 강제 |
-| `BodyMultipart` | multipart 강제 (`*FormData` 필요) |
+| `BodyMultipart` | multipart 강제(`*FormData` 필요) |
 
 ## 쿼리 매개변수
 
@@ -265,7 +265,7 @@ result, err := client.Get(url,
 func WithCookie(cookie http.Cookie) RequestOption
 ```
 
-단일 Cookie 를 추가하며, 보안 검증을 거칩니다.
+단일 Cookie를 추가하며, 보안 검증을 거칩니다.
 
 ```go
 result, err := client.Get(url,
@@ -279,7 +279,7 @@ result, err := client.Get(url,
 func WithCookies(cookies []http.Cookie) RequestOption
 ```
 
-Cookie 를 일괄 추가합니다. `WithCookie`를 여러 번 호출하는 것보다 효율적입니다 — 용량을 미리 할당하고 단일 순회에서 모든 Cookie 를 검증합니다.
+Cookie를 일괄 추가합니다. `WithCookie`를 여러 번 호출하는 것보다 효율적입니다 — 용량을 미리 할당하고 단일 순회에서 모든 Cookie를 검증합니다.
 
 ```go
 cookies := []http.Cookie{
@@ -298,7 +298,7 @@ result, err := client.Get("https://api.example.com",
 func WithCookieMap(cookies map[string]string) RequestOption
 ```
 
-간단한 Cookie 를 일괄 추가합니다. name-value 만 필요한 시나리오에 적합합니다.
+간단한 Cookie를 일괄 추가합니다. name-value만 필요한 시나리오에 적합합니다.
 
 ```go
 result, err := client.Get(url,
@@ -315,7 +315,7 @@ result, err := client.Get(url,
 func WithCookieString(cookieString string) RequestOption
 ```
 
-원시 Cookie 헤더 문자열에서 Cookie 를 추가합니다.
+원시 Cookie 헤더 문자열에서 Cookie를 추가합니다.
 
 ```go
 result, err := client.Get(url,
@@ -329,14 +329,14 @@ result, err := client.Get(url,
 func WithSecureCookie(securityConfig *CookieSecurityConfig) RequestOption
 ```
 
-요청 Cookie 의 보안 속성 (Secure, HttpOnly, SameSite) 을 강제 검증합니다.
+요청 Cookie의 보안 속성(Secure, HttpOnly, SameSite)을 강제 검증합니다.
 
-:::warning 옵션 순서
-이 옵션은 **적용 시점에 이미 존재하는 Cookie 만** 검증합니다. `WithSecureCookie`는 반드시 모든 `WithCookie`/`WithCookies`/`WithCookieMap`/`WithCookieString` **뒤에** 배치해야 하며, 그렇지 않으면 나중에 추가된 Cookie 가 검증되지 않습니다. 순서에 제약받지 않는 세션 수준의 Cookie 보안 검증이 필요하다면 `SessionManager.SetCookieSecurity`를 사용하세요.
+:::warning 경고 옵션 순서
+이 옵션은 **적용 시점에 이미 존재하는 Cookie만** 검증합니다. `WithSecureCookie`는 반드시 모든 `WithCookie`/`WithCookies`/`WithCookieMap`/`WithCookieString` **뒤에** 배치해야 하며, 그렇지 않으면 나중에 추가된 Cookie가 검증되지 않습니다. 순서에 제약받지 않는 세션 수준의 Cookie 보안 검증이 필요하다면 `SessionManager.SetCookieSecurity`를 사용하세요.
 :::
 
 ```go
-// 올바른 순서: 먼저 Cookie 를 추가한 후 검증
+// 올바른 순서: 먼저 Cookie를 추가한 후 검증
 result, err := client.Get(url,
     httpc.WithCookie(sessionCookie),
     httpc.WithCookieMap(otherCookies),
@@ -352,7 +352,7 @@ result, err := client.Get(url,
 func WithContext(ctx context.Context) RequestOption
 ```
 
-요청 컨텍스트를 설정하여 타임아웃과 취소를 지원합니다. 컨텍스트는 nil 일 수 없습니다.
+요청 컨텍스트를 설정하여 타임아웃과 취소를 지원합니다. 컨텍스트는 nil일 수 없습니다.
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -367,7 +367,7 @@ result, err := client.Get(url, httpc.WithContext(ctx))
 func WithTimeout(timeout time.Duration) RequestOption
 ```
 
-단일 요청 타임아웃을 설정하여 클라이언트 기본 타임아웃을 덮어씁니다. 범위: 0 ~ 30 분.
+단일 요청 타임아웃을 설정하여 클라이언트 기본 타임아웃을 덮어씁니다. 범위: 0 ~ 30분.
 
 ```go
 result, err := client.Get(url, httpc.WithTimeout(5*time.Second))
@@ -406,8 +406,8 @@ func WithMaxRedirects(maxRedirects int) RequestOption
 
 단일 요청의 최대 리다이렉트 횟수를 설정합니다. 범위: 0-50.
 
-:::warning 0 값의 의미
-`0`은 리다이렉트를 **비활성화하지 않습니다**. 엔진은 `0`을 "명시적으로 설정되지 않음"을 나타내는 센티널 값으로 처리하여 기본 상한 (10) 으로 폴백하므로, `WithMaxRedirects(0)`은 이 옵션을 생략하는 것과 같습니다. 리다이렉트 따라가기를 완전히 비활성화하려면 대신 `WithFollowRedirects(false)`를 사용하세요.
+:::warning 경고 0 값의 의미
+`0`은 리다이렉트를 **비활성화하지 않습니다**. 엔진은 `0`을 "명시적으로 설정되지 않음"을 나타내는 센티널 값으로 처리하여 기본 상한(10)으로 폴백하므로, `WithMaxRedirects(0)`은 이 옵션을 생략하는 것과 같습니다. 리다이렉트 따라가기를 완전히 비활성화하려면 대신 `WithFollowRedirects(false)`를 사용하세요.
 :::
 
 ### WithAllowPrivateIPs
@@ -416,16 +416,16 @@ func WithMaxRedirects(maxRedirects int) RequestOption
 func WithAllowPrivateIPs(allow bool) RequestOption
 ```
 
-단일 요청에 대해 클라이언트의 SSRF 정책을 재정의합니다. `allow`가 `true`이면 해당 요청은 localhost 와 사설/예약 IP 대역 (127.0.0.0/8, 10.0.0.0/8, 192.168.0.0/16, 169.254.0.0/16 등) 에 접근할 수 있으며, 이러한 주소로의 리다이렉트를 따를 수 있습니다. `false`이면 클라이언트가 `Security.AllowPrivateIPs=true`로 설정되어 있더라도 이 요청에 대해서는 SSRF 방어를 강제로 활성화합니다.
+단일 요청에 대해 클라이언트의 SSRF 정책을 재정의합니다. `allow`가 `true`이면 해당 요청은 localhost와 사설/예약 IP 대역(127.0.0.0/8, 10.0.0.0/8, 192.168.0.0/16, 169.254.0.0/16 등)에 접근할 수 있으며, 이러한 주소로의 리다이렉트를 따를 수 있습니다. `false`이면 클라이언트가 `Security.AllowPrivateIPs=true`로 설정되어 있더라도 이 요청에 대해서는 SSRF 방어를 강제로 활성화합니다.
 
-:::warning 보안 안내
-이것은 SSRF 방어의 **단일 요청 이스케이프 해치**로, 기본적으로 안전한 클라이언트 (`AllowPrivateIPs=false`) 가 드물게 내부 서비스, 루프백 주소 또는 로컬 개발 서버에 접근해야 하는 시나리오를 위한 것입니다.
+:::warning 경고 보안 안내
+이것은 SSRF 방어의 **단일 요청 이스케이프 해치**로, 기본적으로 안전한 클라이언트(`AllowPrivateIPs=false`)가 드물게 내부 서비스, 루프백 주소 또는 로컬 개발 서버에 접근해야 하는 시나리오를 위한 것입니다.
 
-요청 URL 이 신뢰할 수 있고 신뢰할 수 없는 사용자 입력에서 오지 **않은** 경우에만 활성화하세요. 클라이언트 전체가 내부 서비스에 접근해야 한다면 `Config`에서 직접 `Security.AllowPrivateIPs=true`를 설정하세요.
+요청 URL이 신뢰할 수 있고 신뢰할 수 없는 사용자 입력에서 오지 **않은** 경우에만 활성화하세요. 클라이언트 전체가 내부 서비스에 접근해야 한다면 `Config`에서 직접 `Security.AllowPrivateIPs=true`를 설정하세요.
 :::
 
 ```go
-// 기본 클라이언트는 사설 IP 를 차단; 이 호출은 요청별로 허용
+// 기본 클라이언트는 사설 IP를 차단; 이 호출은 요청별로 허용
 result, err := httpc.Get("http://localhost:8080/health",
     httpc.WithAllowPrivateIPs(true),
 )
@@ -439,8 +439,8 @@ func WithStreamBody(stream bool) RequestOption
 
 스트리밍 모드를 활성화하면 응답 본문이 메모리에 캐시되지 않습니다.
 
-:::warning 중요한 제한
-스트리밍 모드는 **[`Download`](./functions#download)를 통해서만** 적용됩니다. 표준 요청 메서드 (`Get`/`Post`/`Put`/`Patch`/`Delete`/`Head`/`Options`/`Request`) 와 함께 사용하면 응답 본문이 완전히 읽혀 `Result`로 변환되고 그 후 기저의 스트림이 닫힙니다 — 반환된 `Result`의 응답 본문은 비어 있으며 호출자는 해당 스트림을 소비할 수 없습니다.
+:::warning 경고 중요한 제한
+스트리밍 모드는 **[`Download`](./functions#download)를 통해서만** 적용됩니다. 표준 요청 메서드(`Get`/`Post`/`Put`/`Patch`/`Delete`/`Head`/`Options`/`Request`)와 함께 사용하면 응답 본문이 완전히 읽혀 `Result`로 변환되고 그 후 기저의 스트림이 닫힙니다 — 반환된 `Result`의 응답 본문은 비어 있으며 호출자는 해당 스트림을 소비할 수 없습니다.
 
 대용량 파일을 메모리에 캐시하지 않고 진정으로 스트리밍 다운로드하려면 `Download`를 사용하세요.
 :::

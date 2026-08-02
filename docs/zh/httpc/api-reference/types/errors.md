@@ -7,13 +7,15 @@ sidebar_position: 3
 
 # 错误类型
 
+HTTPC 采用两层错误模型：底层是标准 `error` 接口，上层是分类的 `ClientError` 结构体。所有请求失败（网络层）都会被 `classifyError` 映射为携带上下文的 `ClientError`，提供错误类型、可重试判断和结构化字段。HTTP 层错误（4xx/5xx）不返回 error，而是通过 `Result.StatusCode()` 检查。
+
 ## ClientError
 
 ```go
 type ClientError = engine.ClientError
 ```
 
-分类的 HTTP 客户端错误，通过 `errors.As` 提取。
+分类的 HTTP 客户端错误，通过 `errors.As` 提取。是内部 `engine.ClientError` 的类型别名。
 
 ### 结构体字段
 
@@ -30,37 +32,105 @@ type ClientError struct {
 }
 ```
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| Type | `ErrorType` | 错误分类，用于 switch 判断 |
-| Message | `string` | 错误描述信息 |
-| Cause | `error` | 底层错误，可通过 `Unwrap()` 获取 |
-| `URL` | `string` | 请求 URL（凭据已脱敏） |
-| `Method` | `string` | HTTP 方法（GET、POST 等） |
-| `Attempts` | `int` | 已尝试次数（含首次请求） |
-| `StatusCode` | `int` | HTTP 状态码（非 HTTP 错误时为 0） |
-| Host | `string` | 请求主机名 |
+| 字段 | 类型 | 说明 | 典型值 |
+|------|------|------|--------|
+| Type | `ErrorType` | 错误分类，用于 switch 判断 | `ErrorTypeNetwork`、`ErrorTypeTimeout` |
+| Message | `string` | 错误描述信息 | `"network operation failed"` |
+| Cause | `error` | 底层错误，可通过 `Unwrap()` 获取 | `*net.OpError`、`*net.DNSError` |
+| `URL` | `string` | 请求 URL（凭据已脱敏） | `"https://example.com/path"` |
+| `Method` | `string` | HTTP 方法 | `"GET"`、`"POST"` |
+| `Attempts` | `int` | 已尝试次数（含首次请求） | `1`（首次失败）、`4`（重试 3 次后） |
+| `StatusCode` | `int` | HTTP 状态码（非 HTTP 错误时为 0） | `0`（网络错误）、`503`（服务端错误） |
+| Host | `string` | 请求主机名（用于断路器） | `"example.com"` |
 
 ### 方法
 
 | 方法 | 返回值 | 说明 |
 |------|--------|------|
-| `Error()` | `string` | 格式化为 `METHOD URL: Message: Cause (attempt N)` |
-| `Code()` | `string` | 可读错误码，如 `"NETWORK_ERROR"`、`"TIMEOUT"` |
-| `IsRetryable()` | `bool` | 是否可重试 |
-| `Unwrap()` | `error` | 解包底层错误 |
-| `WithType(t ErrorType)` | `*ClientError` | 返回设置错误类型的副本（不修改原始） |
+| `Error()` | `string` | 格式化为 `"METHOD url: message: cause (attempt N)"` |
+| `Code()` | `string` | 返回短错误码，如 `"NETWORK_ERROR"`、`"TIMEOUT"` |
+| `IsRetryable()` | `bool` | 判断该错误是否值得重试 |
+| `Unwrap()` | `error` | 返回 Cause，支持 `errors.Is`/`errors.As` 遍历错误链 |
+| `WithType(t ErrorType)` | `*ClientError` | 返回设置错误类型的**副本**（不修改原始） |
+
+### Error() 格式化
+
+`Error()` 方法将错误格式化为可读字符串：
+
+- 同时有 URL 和 Method：`"GET https://example.com: network operation failed: dial tcp ... (attempt 1)"`
+- 仅有 Message：直接输出 Message
+- 有 Cause：追加 `": " + Cause.Error()`
+- 有 Attempts（>0）：追加 `" (attempt N)"`
+
+URL 在输出前自动经过内部 `validation.SanitizeURL` 脱敏（移除凭证）。引擎分类路径产生的错误已预脱敏（`urlSanitized=true`），跳过冗余的 url.Parse 调用以避免分配。
+
+### Code() 错误码
+
+`Code()` 返回标识错误类型的短字符串，便于日志分类和监控告警：
+
+| ErrorType | Code() 返回值 |
+|-----------|---------------|
+| `ErrorTypeNetwork` | `"NETWORK_ERROR"` |
+| `ErrorTypeTimeout` | `"TIMEOUT"` |
+| `ErrorTypeContextCanceled` | `"CONTEXT_CANCELED"` |
+| `ErrorTypeResponseRead` | `"RESPONSE_READ_ERROR"` |
+| `ErrorTypeTransport` | `"TRANSPORT_ERROR"` |
+| `ErrorTypeRetryExhausted` | `"RETRY_EXHAUSTED"` |
+| `ErrorTypeTLS` | `"TLS_ERROR"` |
+| `ErrorTypeCertificate` | `"CERTIFICATE_ERROR"` |
+| `ErrorTypeDNS` | `"DNS_ERROR"` |
+| `ErrorTypeValidation` | `"VALIDATION_ERROR"` |
+| `ErrorTypeHTTP` | `"HTTP_ERROR"` |
+| `ErrorTypeUnknown`（及其他） | `"UNKNOWN_ERROR"` |
 
 ```go
 var clientErr *httpc.ClientError
 if errors.As(err, &clientErr) {
-    fmt.Println("错误类型：", clientErr.Code())
-    fmt.Println("请求 URL:", clientErr.URL)
-    fmt.Println("重试次数：", clientErr.Attempts)
-    fmt.Println("可重试：", clientErr.IsRetryable())
-    fmt.Println("底层错误：", clientErr.Unwrap())
+    log.Printf("错误码: %s, URL: %s, 尝试次数: %d, 可重试: %v",
+        clientErr.Code(), clientErr.URL, clientErr.Attempts, clientErr.IsRetryable())
 }
 ```
+
+## IsRetryable 判断逻辑
+
+`IsRetryable()` 是 HTTPC 重试机制的核心决策方法。判断流程：
+
+1. **优先检查上下文错误**：若 Cause 是 `context.Canceled` 或 `context.DeadlineExceeded`，直接返回 false（永不重试）
+2. **按 ErrorType 分发**：
+
+| ErrorType | 是否可重试 | 判断逻辑 |
+|-----------|:----------:|----------|
+| `ErrorTypeNetwork` | 视情况 | 检查 Cause：包装的 ClientError → 递归判断；`*net.OpError` → 超时或可重试 syscall（ECONNREFUSED/ECONNRESET/EPIPE/ETIMEDOUT/ENETUNREACH/EHOSTUNREACH）；`net.Error` → 默认可重试；消息匹配（"connection reset"/"eof"/"broken pipe" 等） |
+| `ErrorTypeTimeout` | 是 | 所有传输层超时均可重试 |
+| `ErrorTypeTransport` | 是 | HTTP 传输层错误 |
+| `ErrorTypeResponseRead` | 视情况 | 仅读操作（`Op == "read"` 或 `"readfrom"`）可重试；写操作不重试 |
+| `ErrorTypeDNS` | 视情况 | Cause 是 `*net.DNSError` 时，其 IsTemporary 或 IsTimeout 为 true 才重试 |
+| `ErrorTypeHTTP` | 视情况 | StatusCode 命中 `retryableStatusCodes`（408/429/500/502/503/504）可重试 |
+| `ErrorTypeContextCanceled` | 否 | 用户主动取消 |
+| `ErrorTypeValidation` | 否 | 请求本身不合法，重试无意义 |
+| `ErrorTypeTLS` | 否 | TLS 协议错误，通常不会自愈 |
+| `ErrorTypeCertificate` | 否 | 证书验证失败，重试无意义 |
+| `ErrorTypeRetryExhausted` | 否 | 已耗尽重试次数 |
+| `ErrorTypeUnknown` | 否 | 未知错误，保守不重试 |
+
+### retryableStatusCodes
+
+```go
+var retryableStatusCodes = map[int]bool{
+    408: true, // Request Timeout
+    429: true, // Too Many Requests
+    500: true, // Internal Server Error
+    502: true, // Bad Gateway
+    503: true, // Service Unavailable
+    504: true, // Gateway Timeout
+}
+```
+
+这是 HTTP 状态码触发重试的唯一真相源，同时被重试逻辑和 `IsRetryable()` 使用。
+
+:::tip 超时类型的细微区别
+`ErrorTypeTimeout` 可重试，但**由上下文截止触发的超时不可重试**——因为 `context.DeadlineExceeded` 会在第 1 步被拦截（返回 false）。仅传输层超时（如 `net.OpError.Timeout()`）才会到达第 2 步被判定为可重试。这确保用户设置的 `WithTimeout` 不会被重试突破。
+:::
 
 ## ErrorType
 
@@ -68,24 +138,25 @@ if errors.As(err, &clientErr) {
 type ErrorType = engine.ErrorType
 ```
 
-错误分类枚举。
+错误分类枚举（`int` 类型）。
 
-| 常量 | 说明 | 可重试 |
-|------|------|--------|
-| `ErrorTypeUnknown` | 未知/未分类错误 | 否 |
-| `ErrorTypeNetwork` | 网络错误（连接拒绝、连接重置等） | 视情况 |
-| `ErrorTypeTimeout` | 请求超时 | 视情况¹ |
-| `ErrorTypeContextCanceled` | 上下文取消 | 否 |
-| `ErrorTypeResponseRead` | 响应体读取错误 | 视情况 |
-| `ErrorTypeTransport` | 传输层错误 | 是 |
-| `ErrorTypeRetryExhausted` | 重试耗尽 | 否 |
-| `ErrorTypeTLS` | TLS 错误 | 否 |
-| `ErrorTypeCertificate` | 证书验证错误 | 否 |
-| `ErrorTypeDNS` | DNS 解析错误 | 视情况 |
-| `ErrorTypeValidation` | 请求验证错误 | 否 |
-| `ErrorTypeHTTP` | HTTP 层错误 | 视情况 |
+| 常量 | 值 | 含义 | 典型触发场景 | 可重试 |
+|------|-----|------|-------------|:------:|
+| `ErrorTypeUnknown` | 0 | 未知/未分类 | 无法匹配任何已知模式 | 否 |
+| `ErrorTypeNetwork` | 1 | 网络层错误 | 连接拒绝、连接重置、网络不可达 | 视情况 |
+| `ErrorTypeTimeout` | 2 | 超时 | `net.OpError` 超时、上下文截止¹ | 视情况² |
+| `ErrorTypeContextCanceled` | 3 | 上下文取消 | `context.Cancel` 触发 | 否 |
+| `ErrorTypeResponseRead` | 4 | 响应体读取错误 | 读取响应体时 EOF/连接中断 | 视情况 |
+| `ErrorTypeTransport` | 5 | 传输层错误 | HTTP 协议错误、传输失败 | 是 |
+| `ErrorTypeRetryExhausted` | 6 | 重试耗尽 | 达到 MaxRetries 仍未成功 | 否 |
+| `ErrorTypeTLS` | 7 | TLS 错误 | TLS 握手失败、协议不匹配 | 否 |
+| `ErrorTypeCertificate` | 8 | 证书验证错误 | x509 证书过期/不受信任 | 否 |
+| `ErrorTypeDNS` | 9 | DNS 解析错误 | 域名不存在、DNS 超时 | 视情况 |
+| `ErrorTypeValidation` | 10 | 请求验证错误 | URL 格式错误、重定向超限、CRLF 注入 | 否 |
+| `ErrorTypeHTTP` | 11 | HTTP 层错误 | 4xx/5xx 响应（仅重试场景产生） | 视情况 |
 
 > ¹ 由上下文截止（`WithTimeout`、`TimeoutConfig.Request`）触发的超时**不会**重试；仅传输层超时（如 `net.OpError` 超时）才会重试。
+> ² 详见上方 [IsRetryable 判断逻辑](#isretryable-判断逻辑)。
 
 ### 类型判断
 
@@ -98,7 +169,7 @@ if err != nil {
         case httpc.ErrorTypeTimeout:
             log.Println("请求超时")
         case httpc.ErrorTypeNetwork:
-            log.Println("网络错误")
+            log.Println("网络错误:", clientErr.Message)
         case httpc.ErrorTypeTLS:
             log.Println("TLS 错误")
         case httpc.ErrorTypeCertificate:
@@ -106,7 +177,7 @@ if err != nil {
         case httpc.ErrorTypeDNS:
             log.Println("DNS 解析失败")
         case httpc.ErrorTypeRetryExhausted:
-            log.Println("重试耗尽")
+            log.Println("重试耗尽，共尝试", clientErr.Attempts, "次")
         case httpc.ErrorTypeContextCanceled:
             log.Println("请求已取消")
         case httpc.ErrorTypeValidation:
@@ -116,58 +187,124 @@ if err != nil {
 }
 ```
 
+## URL 脱敏机制
+
+`ClientError.Error()` 在格式化时自动调用 `validation.SanitizeURL` 移除 URL 中的凭证信息（`user:pass@host` → `***:***@host`），防止敏感信息泄漏到日志和错误消息中。
+
+```go
+// 原始 URL: https://admin:secret@api.example.com/data
+// Error() 输出: GET https://***:***@api.example.com/data: ...
+```
+
+引擎分类路径（`classifyErrorWithSanitizedURL`）在首次分类时即完成脱敏并设置 `urlSanitized=true`，后续 `Error()` 调用跳过冗余的 url.Parse，避免每次日志输出都产生分配。
+
+:::tip 回调中的错误脱敏
+`MetricsMiddleware` 和 `LoggingMiddleware` 等中间件的回调中，HTTPC 会额外检查非 ClientError 类型的错误消息，将其中的原始 URL 替换为脱敏版本，确保回调不会泄漏凭证。
+:::
+
+## 错误分类流程
+
+`classifyError` 是将底层 `error` 映射为 `*ClientError` 的核心函数，按以下顺序逐层判断：
+
+1. **context 错误**：`context.Canceled` → `ErrorTypeContextCanceled`；`context.DeadlineExceeded` → `ErrorTypeTimeout`
+2. **连接池耗尽**：`connection.ErrPoolExhausted` → `ErrorTypeNetwork`
+3. **`*url.Error` 解包**：HTTP/2 无效头、URL 解析失败 → `ErrorTypeValidation`；否则解包内层错误继续判断
+4. **`*net.DNSError`**：`ErrorTypeDNS`，区分超时与失败
+5. **`*net.OpError`**：`ErrorTypeNetwork`，区分超时与操作失败
+6. **`net.Error`**：超时 → `ErrorTypeTimeout`；其他 → `ErrorTypeNetwork`
+7. **消息模式匹配**（fallback）：按错误消息关键词匹配 TLS/certificate/timeout/connection refused 等 20+ 模式
+8. **兜底**：`url.Error` 的内层未匹配任何模式时 → `ErrorTypeNetwork`；否则 → `ErrorTypeUnknown`
+
 ## 错误变量
 
 ### 配置错误
 
-| 变量 | 说明 |
-|------|------|
-| `ErrNilConfig` | 配置为 nil |
-| `ErrInvalidTimeout` | 超时值无效 |
-| `ErrInvalidRetry` | 重试配置无效 |
-| `ErrInvalidConnection` | 连接配置无效 |
-| `ErrInvalidSecurity` | 安全配置无效 |
-| `ErrInvalidMiddleware` | 中间件配置无效 |
+| 变量 | 错误消息 | 触发条件 |
+|------|----------|----------|
+| `ErrNilConfig` | `"config cannot be nil"` | 传入 nil Config 给 `New`/`ValidateConfig` |
+| `ErrInvalidTimeout` | `"invalid timeout"` | 超时值为负或超过 30 分钟上限 |
+| `ErrInvalidRetry` | `"invalid retry configuration"` | MaxRetries 不在 0–10、BackoffFactor 不在 1.0–10.0 |
+| `ErrInvalidConnection` | `"invalid connection configuration"` | MaxIdleConns/MaxConnsPerHost 超范围、ProxyURL 格式错误 |
+| `ErrInvalidSecurity` | `"invalid security configuration"` | MaxResponseBodySize 超出 0–1GB 范围 |
+| `ErrInvalidMiddleware` | `"invalid middleware configuration"` | MaxRedirects 不在 0–50、UserAgent 过长或含控制字符 |
+| `ErrInvalidHeader` | `"invalid header"` | 请求头键值含控制字符或超过大小限制 |
 
-### 请求错误
+### 请求与响应错误
 
-| 变量 | 说明 |
-|------|------|
-| `ErrInvalidHeader` | 请求头验证失败 |
-
-### 响应错误
-
-| 变量 | 说明 |
-|------|------|
-| `ErrResponseBodyEmpty` | 响应体为空 |
-| `ErrResponseBodyTooLarge` | 响应体超出大小限制 |
-
-### 文件错误
-
-| 变量 | 说明 |
-|------|------|
-| `ErrEmptyFilePath` | 文件路径为空 |
-| `ErrFileExists` | 文件已存在 |
+| 变量 | 错误消息 | 触发条件 |
+|------|----------|----------|
+| `ErrEmptyFilePath` | `"file path cannot be empty"` | DownloadConfig.FilePath 为空 |
+| `ErrFileExists` | `"file already exists"` | 文件已存在且 Overwrite=false 且 ResumeDownload=false |
+| `ErrResponseBodyEmpty` | `"response body is empty"` | 对空响应体调用 Unmarshal 等解析方法 |
+| `ErrResponseBodyTooLarge` | `"response body too large"` | 响应体超过 MaxResponseBodySize |
 
 ### 客户端错误
 
-| 变量 | 说明 |
-|------|------|
-| `ErrClientClosed` | 客户端已关闭 |
+| 变量 | 错误消息 | 触发条件 |
+|------|----------|----------|
+| `ErrClientClosed` | `"client is closed"` | 在 Close() 之后使用客户端 |
 
-### 变量匹配
+## 实用匹配模式
+
+### errors.As 提取 ClientError
 
 ```go
-if errors.Is(err, httpc.ErrClientClosed) {
-    // 客户端已关闭
-}
-if errors.Is(err, httpc.ErrResponseBodyEmpty) {
-    // 响应体为空
+result, err := client.Get(url)
+if err != nil {
+    var clientErr *httpc.ClientError
+    if errors.As(err, &clientErr) {
+        // 访问结构化字段
+        fmt.Printf("错误码: %s\n", clientErr.Code())
+        fmt.Printf("错误类型: %d\n", clientErr.Type)
+        fmt.Printf("请求: %s %s\n", clientErr.Method, clientErr.URL)
+        fmt.Printf("尝试次数: %d\n", clientErr.Attempts)
+        if clientErr.StatusCode != 0 {
+            fmt.Printf("状态码: %d\n", clientErr.StatusCode)
+        }
+    }
 }
 ```
 
+### errors.Is 匹配哨兵错误
+
+```go
+if errors.Is(err, httpc.ErrClientClosed) {
+    // 客户端已关闭，需重新创建
+}
+if errors.Is(err, httpc.ErrResponseBodyEmpty) {
+    // 响应体为空，跳过解析
+}
+if errors.Is(err, httpc.ErrFileExists) {
+    // 文件已存在，提示用户或设置 Overwrite=true
+}
+```
+
+### errors.Unwrap 遍历错误链
+
+```go
+var clientErr *httpc.ClientError
+if errors.As(err, &clientErr) {
+    // Cause 是底层错误（如 *net.OpError）
+    cause := clientErr.Unwrap()
+    if cause != nil {
+        var opErr *net.OpError
+        if errors.As(cause, &opErr) {
+            fmt.Println("操作:", opErr.Op)
+            fmt.Println("网络:", opErr.Net)
+            fmt.Println("地址:", opErr.Addr)
+        }
+    }
+}
+```
+
+:::tip 三种匹配方式的选择
+- `errors.As`：需要访问 ClientError 的结构化字段（Type/Code/URL/Attempts 等）
+- `errors.Is`：匹配哨兵错误（ErrClientClosed 等配置/文件错误）
+- `errors.Unwrap`：需要到达最底层的 net/error 以获取系统级诊断信息
+:::
+
 ## 另见
 
-- [错误处理](../../advanced/error-handling) - 完整错误处理指南
-- [常量与枚举](./constants) - BodyKind 等常量参考
+- [错误处理](../../guides/error-handling) - 完整错误处理指南
+- [常量与类型](./constants) - BodyKind 等常量参考
 - [重试与容错](../../guides/retry-fault-tolerance) - 重试策略指南

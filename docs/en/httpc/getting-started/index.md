@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Quick Start"
-title: "Quick Start - CyberGo HTTPC | 5-Minute Guide"
-description: "HTTPC quick start: install, send GET/POST requests, handle responses, pick a preset, parse JSON, and authenticate with Bearer Token in five minutes."
+title: "Quick Start - CyberGo HTTPC | 5-Minute Setup"
+description: "HTTPC quick start guide: go get installation and project setup, sending GET/POST requests and handling responses, choosing among five configuration presets, JSON parsing and type binding, Bearer Token authentication and ClientError classification, and getting started with the secure HTTP client library in five minutes."
 sidebar_position: 1
 ---
 
@@ -15,7 +15,7 @@ go get github.com/cybergodev/httpc
 
 ## Basic Requests
 
-No need to create a client - use package-level functions directly:
+Use package-level functions directly without creating a client:
 
 ```go
 package main
@@ -45,7 +45,7 @@ Supported HTTP methods: `Get`, `Post`, `Put`, `Patch`, `Delete`, `Head`, `Option
 When you need custom configuration, create a client instance:
 
 ```go
-client, err := httpc.New()
+client, err := httpc.NewDefault()
 if err != nil {
     log.Fatal(err)
 }
@@ -56,12 +56,12 @@ result, err := client.Get("https://httpbin.org/get")
 
 ### Configuration Presets
 
-| Configuration | Purpose | Features |
-|---------------|---------|----------|
-| `DefaultConfig()` | General purpose | Secure defaults, SSRF protection enabled |
-| `SecureConfig()` | Security-sensitive scenarios | Disables auto-redirect, strict timeouts |
-| `PerformanceConfig()` | High throughput scenarios | Large connection pool, long timeouts, cookies enabled |
-| `TestingConfig()` | Test environments | Disables security checks and HTTP/2, enables cookies |
+| Config | Use Case | Characteristics |
+|--------|----------|-----------------|
+| `DefaultConfig()` | General scenarios | Secure defaults, SSRF protection enabled |
+| `SecureConfig()` | Security-sensitive scenarios | Disables auto-redirects, strict timeouts |
+| `PerformanceConfig()` | High-throughput scenarios | Large connection pool, long timeouts, cookies enabled |
+| `TestingConfig()` | Test environments | Disables security checks and HTTP/2, cookies enabled |
 | `MinimalConfig()` | Lightweight requests | No retries, no redirects |
 
 ```go
@@ -79,7 +79,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-// Status check
+// Status checks
 result.StatusCode()     // 200
 result.IsSuccess()      // true (2xx)
 result.IsClientError()  // false (4xx)
@@ -117,7 +117,7 @@ result, err := client.Get("https://api.example.com/data",
 
 ## Error Handling
 
-HTTPC distinguishes between **network-level errors** and **HTTP status codes**:
+HTTPC distinguishes between **network-layer errors** and **HTTP status codes**:
 
 ```go
 result, err := client.Get("https://api.example.com/data")
@@ -129,7 +129,7 @@ if err != nil {
     log.Fatal(err)
 }
 
-// HTTP status codes need manual checking
+// HTTP status codes must be checked manually
 switch {
 case result.IsSuccess():
     // 2xx success
@@ -141,13 +141,14 @@ case result.IsServerError():
 ```
 
 :::tip
-4xx/5xx are not returned as `error`. Check them via `result.IsSuccess()` and similar methods. See [Error Handling](../advanced/error-handling) for details.
+4xx/5xx responses are not returned as `error`; check them via methods like `result.IsSuccess()`. See [Error Handling](../guides/error-handling) for details.
 :::
 
 ## Next Steps
 
 - **[Tutorial](../guides/tutorial)** - Build a GitHub API client in 30 minutes
+- **[Core Concepts](./concepts)** - The two-layer architecture, configuration system, and design decisions
 - **[Request & Response](../guides/request-response)** - Complete request options and response handling
-- **[Basic Examples](../examples/basic-usage)** - Practical examples for GET/POST/middleware
+- **[Basic Examples](../examples/basic-usage)** - Real-world use cases like GET/POST/middleware
 - **[Cheat Sheet](./cheatsheet)** - Quick reference for common operations
 - **[Security](../security/)** - Security best practices

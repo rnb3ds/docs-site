@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Продвинутые примеры"
-title: "Расширенные примеры - CyberGo HTTPC | Production-код"
-description: "Расширенные примеры HTTPC: пользовательский RetryPolicy, полная цепочка middleware, обёртка RESTful-клиента, параллельные загрузки и подпись HMAC-SHA256 — помогут построить высокопроизводительный, наблюдаемый HTTP-клиент продакшен-уровня."
+title: "Расширенные примеры - CyberGo HTTPC | Код производственного уровня"
+description: "Коллекция расширенных примеров HTTPC: пользовательская стратегия повторов RetryPolicy, полная конфигурация цепочки middleware, обёртка клиента RESTful API, параллельная загрузка через sync.WaitGroup и middleware подписи запросов HMAC-SHA256 — поможет создать высокопроизводительный, наблюдаемый HTTP-клиент производственного уровня."
 sidebar_position: 2
 ---
 
@@ -104,32 +104,32 @@ func main() {
 
     // Сбор метрик
     metricsMiddleware := httpc.MetricsMiddleware(
-        func(method, url string, statusCode int, duration time.Duration, err error) {
+        &httpc.MetricsConfig{OnMetrics: func(method, url string, statusCode int, duration time.Duration, err error) {
             atomic.AddInt64(&requestCount, 1)
             log.Printf("[METRICS] %s %s -> %d (%v)", method, url, statusCode, duration)
-        },
+        }},
     )
 
     // Лог аудита (формат JSON)
-    auditCfg := &httpc.AuditMiddlewareConfig{
-        Format:         "json",
-        IncludeHeaders: true,
-        MaskHeaders:    []string{"Authorization", "Cookie"},
-        SanitizeError:  true,
-    }
-    auditMiddleware := httpc.AuditMiddlewareWithConfig(func(event httpc.AuditEvent) {
+    auditCfg := httpc.DefaultAuditConfig()
+    auditCfg.Format = "json"
+    auditCfg.IncludeHeaders = true
+    auditCfg.MaskHeaders = []string{"Authorization", "Cookie"}
+    auditCfg.SanitizeError = true
+    auditCfg.OnAudit = func(event httpc.AuditEvent) {
         data, _ := json.Marshal(event)
         log.Printf("[AUDIT] %s", data)
-    }, auditCfg)
+    }
+    auditMiddleware := httpc.AuditMiddleware(auditCfg)
 
     cfg := httpc.DefaultConfig()
     cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
         httpc.RecoveryMiddleware(),                              // восстановление после panic
-        httpc.TimeoutMiddleware(30 * time.Second),              // принудительный таймаут
-        httpc.RequestIDMiddleware("X-Request-ID", nil),         // Request ID
-        httpc.LoggingMiddleware(func(format string, args ...any) {
+        httpc.TimeoutMiddleware(&httpc.TimeoutMiddlewareConfig{Duration: 30 * time.Second}), // принудительный таймаут
+        httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),                            // Request ID
+        httpc.LoggingMiddleware(&httpc.LoggingConfig{LogFunc: func(format string, args ...any) {
             log.Printf("[HTTP] "+format, args...)
-        }),
+        }}),
         metricsMiddleware,
         auditMiddleware,
     }
@@ -173,7 +173,7 @@ type User struct {
 }
 
 func NewAPIClient(baseURL, token string) (*APIClient, error) {
-    dc, err := httpc.NewDomain(baseURL)
+    dc, err := httpc.NewDomainDefault(baseURL)
     if err != nil {
         return nil, err
     }
@@ -273,7 +273,7 @@ func main() {
         "file3.zip": "https://example.com/files/file3.zip",
     }
 
-    client, _ := httpc.New()
+    client, _ := httpc.NewDefault()
     defer client.Close()
 
     var successCount int64
@@ -369,4 +369,4 @@ func main() {
 
 - [Цепочки промежуточного ПО](../guides/middleware-chain) - подробное описание архитектуры промежуточного ПО
 - [Повторные попытки и отказоустойчивость](../guides/retry-fault-tolerance) - пользовательские стратегии повторов
-- [Оптимизация производительности](../advanced/performance) - рекомендации по настройке производительности
+- [Оптимизация производительности](../guides/performance) - рекомендации по настройке производительности
