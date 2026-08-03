@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Продвинутые примеры"
 title: "Продвинутые примеры - CyberGo JWT | Асимметрия и хранилище"
-description: "Продвинутые примеры CyberGo JWT: подпись RSA и ECDSA, реализация CustomClaims, чёрный список на Redis, FixedClock для тестов и интеграция с веб-сервисом."
+description: "Сборник продвинутых примеров: асимметричная подпись RSA, RSA-PSS и ECDSA, межсервисная проверка с разделением ключей, загрузка ключей из PEM, пользовательские Claims CustomClaims, чёрный список на Redis, внедрение FixedClock и разбор непроверенных токенов."
 sidebar_position: 20
 ---
 
@@ -57,6 +57,60 @@ func main() {
 }
 ```
 
+## Подпись RSA-PSS
+
+RSA-PSS (современная замена RS256/384/512) использует заполнение вероятностной схемы подписи (PSS), безопаснее PKCS#1 v1.5. Ключи полностью идентичны RSA, дополнительная генерация не требуется.
+
+```go
+package main
+
+import (
+    "crypto/rand"
+    "crypto/rsa"
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // Генерация пары RSA-ключей (RSA-PSS и RSA используют один тип ключей)
+    privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    cfg := jwt.DefaultConfig()
+    cfg.SigningMethod = jwt.SigningMethodPS256
+    cfg.SigningKey = privateKey
+    cfg.VerificationKey = &privateKey.PublicKey
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    claims := &jwt.Claims{UserID: "user_ps", Username: "diana"}
+    token, err := processor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("RSA-PSS Token:", token)
+
+    parsed, valid, err := processor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Valid:", valid) // Вывод: Valid: true
+    fmt.Println("UserID:", parsed.UserID)
+}
+```
+
+:::tip Рекомендуемая замена RSA
+В новых проектах рекомендуется отдавать приоритет RSA-PSS (PS256/384/512). Заполнение PSS обеспечивает более сильную доказуемую безопасность, чем PKCS#1 v1.5, а ключи полностью совместимы с RSA.
+:::
+
 ## Асимметричная подпись ECDSA
 
 Использование ECDSA на эллиптических кривых — более короткие ключи и лучшая производительность.
@@ -99,6 +153,164 @@ func main() {
     fmt.Println("ECDSA Token:", token)
 }
 ```
+
+## Режим разделения ключей
+
+Имитация межсервисной проверки токенов в микросервисной архитектуре: сервис аутентификации держит приватный ключ и выпускает токены, API-сервис проверяет токен через публичный ключ.
+
+```go
+package main
+
+import (
+    "crypto/rand"
+    "crypto/rsa"
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // Генерация пары RSA-ключей
+    privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+    if err != nil {
+        log.Fatal(err)
+    }
+    publicKey := &privateKey.PublicKey
+
+    // --- Сервис аутентификации: держит приватный ключ, выпускает токены ---
+    authCfg := jwt.DefaultConfig()
+    authCfg.SigningMethod = jwt.SigningMethodRS256
+    authCfg.SigningKey = privateKey
+    authCfg.Issuer = "auth-service"
+
+    authProcessor, err := jwt.New(authCfg)
+    if err != nil {
+        panic(err)
+    }
+    defer authProcessor.Close()
+
+    claims := &jwt.Claims{UserID: "user_dist", Username: "charlie"}
+    token, err := authProcessor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Сервис аутентификации выпустил токен (приватный ключ)")
+
+    // --- API-сервис: проверяет токен через публичный ключ ---
+    apiCfg := jwt.DefaultConfig()
+    apiCfg.SigningMethod = jwt.SigningMethodRS256
+    apiCfg.SigningKey = privateKey     // Текущий API требует SigningKey непустым
+    apiCfg.VerificationKey = publicKey // При проверке фактически используется этот публичный ключ
+    apiCfg.Issuer = "auth-service"     // Должен совпадать с издателем
+
+    apiProcessor, err := jwt.New(apiCfg)
+    if err != nil {
+        panic(err)
+    }
+    defer apiProcessor.Close()
+
+    parsed, valid, err := apiProcessor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("API-сервис проверка пройдена (публичный ключ):", valid) // Вывод: API-сервис проверка пройдена (публичный ключ): true
+    fmt.Println("UserID:", parsed.UserID)
+}
+```
+
+:::warning SigningKey обязателен
+Текущий API требует, чтобы `SigningKey` было непустым (принудительная проверка на этапе валидации), поэтому в конфигурации API-сервиса приватный ключ всё равно должен быть записан. Но после установки `VerificationKey` процесс проверки использует только публичный ключ. Processor, настроенный только на проверку, не должен вызывать `Create` / `CreateRefresh`.
+:::
+
+## Загрузка ключей из PEM-файла
+
+В production асимметричные ключи обычно хранятся в PEM-файлах. Следующий пример показывает, как загрузить приватный ключ через `pem.Decode` + `x509.ParsePKCS8PrivateKey` и публичный через `x509.ParsePKIXPublicKey`.
+
+<!-- check-code: skip -->
+```go
+package main
+
+import (
+    "crypto/rsa"
+    "crypto/x509"
+    "encoding/pem"
+    "fmt"
+    "os"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // --- Загрузка приватного RSA-ключа ---
+    keyData, err := os.ReadFile("private_key.pem")
+    if err != nil {
+        fmt.Println("Ошибка чтения приватного ключа:", err)
+        return
+    }
+
+    block, _ := pem.Decode(keyData)
+    if block == nil {
+        fmt.Println("Ошибка декодирования PEM приватного ключа")
+        return
+    }
+
+    parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+    if err != nil {
+        fmt.Println("Ошибка разбора приватного ключа:", err)
+        return
+    }
+    privateKey, ok := parsedKey.(*rsa.PrivateKey)
+    if !ok {
+        fmt.Println("Тип ключа не RSA")
+        return
+    }
+
+    // --- Загрузка публичного RSA-ключа ---
+    pubData, err := os.ReadFile("public_key.pem")
+    if err != nil {
+        fmt.Println("Ошибка чтения публичного ключа:", err)
+        return
+    }
+
+    pubBlock, _ := pem.Decode(pubData)
+    if pubBlock == nil {
+        fmt.Println("Ошибка декодирования PEM публичного ключа")
+        return
+    }
+
+    parsedPub, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
+    if err != nil {
+        fmt.Println("Ошибка разбора публичного ключа:", err)
+        return
+    }
+    publicKey, ok := parsedPub.(*rsa.PublicKey)
+    if !ok {
+        fmt.Println("Тип публичного ключа не RSA")
+        return
+    }
+
+    // --- Настройка Processor ---
+    cfg := jwt.DefaultConfig()
+    cfg.SigningMethod = jwt.SigningMethodRS256
+    cfg.SigningKey = privateKey
+    cfg.VerificationKey = publicKey
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        fmt.Println("Ошибка инициализации:", err)
+        return
+    }
+    defer processor.Close()
+    fmt.Println("Ключи загружены из PEM-файла") // Вывод: Ключи загружены из PEM-файла
+}
+```
+
+:::tip Формат ключей
+- Заголовок PEM приватного ключа — `-----BEGIN PRIVATE KEY-----` (PKCS#8) или `-----BEGIN RSA PRIVATE KEY-----` (PKCS#1). PKCS#8 разбирается через `x509.ParsePKCS8PrivateKey`, PKCS#1 — через `x509.ParsePKCS1PrivateKey`.
+- Заголовок PEM публичного ключа — `-----BEGIN PUBLIC KEY-----`, разбирается через `x509.ParsePKIXPublicKey`.
+- `ParsePKCS8PrivateKey` / `ParsePKIXPublicKey` возвращают `any` и требуют приведения типа к `*rsa.PrivateKey` / `*rsa.PublicKey` (для ECDSA аналогично — к `*ecdsa.PrivateKey` / `*ecdsa.PublicKey`).
+:::
 
 ## Пользовательские Claims
 
@@ -329,80 +541,7 @@ func main() {
 }
 ```
 
-## Полный пример веб-сервиса
+## Дополнительные примеры
 
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-
-    "github.com/cybergodev/jwt"
-)
-
-var processor *jwt.Processor
-
-func main() {
-    cfg := jwt.DefaultConfig()
-    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-    cfg.Issuer = "my-web-service"
-    cfg.ExpectedAudience = "my-app"
-
-    var err error
-    processor, err = jwt.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    defer processor.Close()
-
-    http.HandleFunc("/login", handleLogin)
-    http.HandleFunc("/protected", handleProtected)
-
-    fmt.Println("Server running on :8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func handleLogin(w http.ResponseWriter, r *http.Request) {
-    // В реальном сценарии проверка имени пользователя и пароля
-    claims := &jwt.Claims{
-        UserID:   "user123",
-        Username: "alice",
-        Role:     "admin",
-    }
-
-    accessToken, err := processor.Create(claims)
-    if err != nil {
-        http.Error(w, err.Error(), 500)
-        return
-    }
-
-    refreshToken, err := processor.CreateRefresh(claims)
-    if err != nil {
-        http.Error(w, err.Error(), 500)
-        return
-    }
-
-    fmt.Fprintf(w, `{"access_token":"%s","refresh_token":"%s"}`, accessToken, refreshToken)
-}
-
-func handleProtected(w http.ResponseWriter, r *http.Request) {
-    auth := r.Header.Get("Authorization")
-    if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
-        http.Error(w, "missing token", http.StatusUnauthorized)
-        return
-    }
-
-    tokenString := strings.TrimPrefix(auth, "Bearer ")
-    claims, valid, err := processor.Validate(tokenString)
-    if err != nil || !valid {
-        http.Error(w, "invalid token", http.StatusUnauthorized)
-        return
-    }
-
-    fmt.Fprintf(w, "Hello, %s (ID: %s, Role: %s)",
-        claims.Username, claims.UserID, claims.Role)
-}
-```
+- [Интеграция с веб-сервером](./web-server) — промежуточное ПО аутентификации, RBAC, обновление, выход, плавное завершение
+- [Базовые примеры](./basic) — HMAC, пары токенов, отзыв, rate limiting

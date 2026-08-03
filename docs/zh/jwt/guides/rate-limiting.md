@@ -17,6 +17,31 @@ sidebar_position: 40
 Create(claims) → 提取限流 key → 检查 RateLimitProvider → 允许/拒绝
 ```
 
+### 令牌桶算法详解
+
+内置 [`RateLimiter`](../api-reference/types#ratelimiter) 采用令牌桶（token bucket）算法，而非简单的固定窗口计数器。每个限流 key 对应一个独立的桶，桶内记录剩余令牌数 `tokens` 和上次补充时间 `lastRefill`。
+
+**按比例补充令牌**：每次请求时，根据自上次补充以来经过的时间按比例计算应补充的令牌数：
+
+```text
+tokensToAdd = (maxRate × elapsed) / window
+```
+
+其中 `elapsed` 是自上次补充以来的纳秒数，`window` 是限流窗口。补充后令牌数不超过 `maxRate`（上限），保证不会超出配置速率。
+
+**残余时间保留**：补充令牌后，`lastRefill` 并非重置为当前时间，而是只前进与所补充令牌对应的「已消耗」时间：
+
+```text
+consumedNano = (tokensToAdd × window) / maxRate
+lastRefill += consumedNano
+```
+
+这种机制避免了令牌补充不均匀——若每次都将 `lastRefill` 重置为 `now`，未计入的残余时间会被丢弃，导致实际补充速率偏高。
+
+:::tip 令牌桶 vs 固定窗口
+固定窗口计数器在窗口边界处会突发放行 `maxRate` 个请求（如第 59 秒放行 100 次、第 1 秒又放行 100 次，瞬间 200 次）。令牌桶按比例持续补充令牌，流量曲线更平滑，更适合 API 限流场景。
+:::
+
 ## 配置
 
 ```go
@@ -61,6 +86,51 @@ func (c *MyClaims) RateLimitKey() string {
 }
 ```
 
+## 批量检查 AllowN
+
+[`Allow`](../api-reference/types#ratelimiter) 检查单次请求，而具体类型 [`*RateLimiter`](../api-reference/types#ratelimiter) 的扩展方法 `AllowN` 一次性判断 `n` 次请求是否可用：
+
+```go
+func (rl *RateLimiter) AllowN(key string, n int) bool
+```
+
+`AllowN` 的行为如下：
+
+| 条件 | 返回值 |
+|------|--------|
+| `n < 0` | `false` |
+| `n == 0` | `true` |
+| `n > maxRate` | `false`（单次批量不可能超过窗口上限） |
+| `key == ""` | `false` |
+| 桶内令牌 ≥ `n` | `true`（消耗 `n` 个令牌） |
+| 桶内令牌 < `n` | `false` |
+
+适用场景：一次操作需要消耗多个配额（如批量签发、加权计费）时，用一次 `AllowN` 替代多次 `Allow`，既减少锁竞争又能保证原子性。
+
+```go
+package main
+
+import (
+    "fmt"
+    "time"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    limiter := jwt.NewRateLimiter(100, time.Minute)
+    defer limiter.Close()
+
+    // 一次性申请 10 个配额（如批量签发 10 个令牌）
+    if limiter.AllowN("user:123", 10) {
+        fmt.Println("允许批量操作") // 输出：允许批量操作
+    }
+
+    // 剩余 90 个令牌，申请 95 个则拒绝
+    fmt.Println(limiter.AllowN("user:123", 95)) // 输出：false
+}
+```
+
 ## 内置 RateLimiter
 
 使用 `NewRateLimiter` 创建独立的限流器：
@@ -77,6 +147,17 @@ if limiter.Allow("user:123") {
 limiter.Reset("user:123") // 重置计数
 defer limiter.Close()
 ```
+
+### 容量与驱逐
+
+内置 `RateLimiter` 最多跟踪 10000 个不同的限流 key（`maxBuckets = 10000`），防止恶意构造海量 key 导致内存耗尽。当桶数量达到上限时，按以下策略驱逐：
+
+1. **过期驱逐**：先清理 `lastRefill` 距今超过 2 倍窗口时间的桶（视为过期，不再活跃）。
+2. **批量驱逐最旧 10%**：若仍满，则扫描所有桶，驱逐 `lastRefill` 最旧的约 10%（至少 1 个），为新 key 腾出空间。
+
+:::tip 为什么批量驱逐
+每次只驱逐 1 个桶需要每次插入都全量扫描（O(n)），而一次性驱逐约 10% 意味着后续约 1000 次插入无需再扫描。这让满容量时的单次驱逐均摊成本从 O(n) 降到约 O(n/1000)，显著减少锁持有时间。
+:::
 
 ## 自定义限流器
 
@@ -99,6 +180,85 @@ type RateLimitProvider interface {
 ```go
 cfg.RateLimiter = &RedisRateLimiter{client: rdb}
 ```
+
+### Redis 分布式限流器示例
+
+内置 `RateLimiter` 是进程内的，多实例部署时各实例计数独立、无法共享。以下是一个基于 Redis 的分布式限流器，使用固定窗口 + INCR 原子计数方案，适合多实例场景：
+
+<!-- check-code: skip -->
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+
+    "github.com/cybergodev/jwt"
+    "github.com/redis/go-redis/v9"
+)
+
+// RedisRateLimiter 基于 Redis 的分布式限流器（固定窗口 + INCR 原子计数）。
+type RedisRateLimiter struct {
+    client *redis.Client
+    rate   int
+    window time.Duration
+}
+
+func NewRedisRateLimiter(client *redis.Client, rate int, window time.Duration) *RedisRateLimiter {
+    return &RedisRateLimiter{client: client, rate: rate, window: window}
+}
+
+// Allow 使用 Redis INCR 原子自增计数，首次自增时设置过期时间作为窗口。
+func (r *RedisRateLimiter) Allow(key string) bool {
+    ctx := context.Background()
+    fullKey := "ratelimit:" + key
+
+    count, err := r.client.Incr(ctx, fullKey).Result()
+    if err != nil {
+        return false // Redis 故障时拒绝，保护后端
+    }
+    if count == 1 {
+        // 首次请求，设置窗口过期
+        r.client.Expire(ctx, fullKey, r.window)
+    }
+    return count <= int64(r.rate)
+}
+
+// Reset 清除指定 key 的计数。
+func (r *RedisRateLimiter) Reset(key string) {
+    r.client.Del(context.Background(), "ratelimit:"+key)
+}
+
+// Close 释放资源（Redis 连接由调用方管理，此处为空实现）。
+func (r *RedisRateLimiter) Close() {}
+
+func main() {
+    rdb := redis.NewClient(&redis.Options{Addr: "localhost:6379"})
+
+    limiter := NewRedisRateLimiter(rdb, 100, time.Minute)
+    if limiter.Allow("user:123") {
+        fmt.Println("允许") // 输出：允许
+    }
+
+    // 注入 JWT 配置，替换内置进程内限流器
+    cfg := jwt.DefaultConfig()
+    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
+    cfg.EnableRateLimit = true
+    cfg.RateLimiter = limiter
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+    fmt.Println("处理器创建成功") // 输出：处理器创建成功
+}
+```
+
+:::warning 注意
+此示例使用固定窗口算法（Redis INCR + EXPIRE），与内置 `RateLimiter` 的令牌桶算法行为略有不同：固定窗口在边界处可能有突发，但对分布式场景足够实用。如需严格的令牌桶语义，可用 Lua 脚本实现令牌桶的补充逻辑。
+:::
 
 ## 超出限流
 

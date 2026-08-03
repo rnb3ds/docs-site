@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Advanced Examples"
 title: "Advanced Examples - CyberGo JWT | Asymmetric"
-description: "Advanced examples: RSA and ECDSA asymmetric signing, CustomClaims business claims, Redis blacklist backends, FixedClock testing, and full web integration."
+description: "Advanced examples: RSA and ECDSA asymmetric signing, key separation cross-service verification, PEM key loading, CustomClaims business claims, Redis blacklist backends, FixedClock testing, and unverified token parsing."
 sidebar_position: 20
 ---
 
@@ -57,6 +57,60 @@ func main() {
 }
 ```
 
+## RSA-PSS Signing
+
+RSA-PSS (the modern replacement for RS256/384/512) uses Probabilistic Signature Scheme (PSS) padding, offering better security than PKCS#1 v1.5. The keys are identical to RSA — no additional key generation needed.
+
+```go
+package main
+
+import (
+    "crypto/rand"
+    "crypto/rsa"
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // Generate RSA key pair (RSA-PSS shares the same key type as RSA)
+    privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    cfg := jwt.DefaultConfig()
+    cfg.SigningMethod = jwt.SigningMethodPS256
+    cfg.SigningKey = privateKey
+    cfg.VerificationKey = &privateKey.PublicKey
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    claims := &jwt.Claims{UserID: "user_ps", Username: "diana"}
+    token, err := processor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("RSA-PSS Token:", token)
+
+    parsed, valid, err := processor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Valid:", valid) // Output: Valid: true
+    fmt.Println("UserID:", parsed.UserID)
+}
+```
+
+:::tip Recommended Replacement for RSA
+New projects should prefer RSA-PSS (PS256/384/512). PSS padding offers stronger provable security than PKCS#1 v1.5, and the keys are fully interchangeable with RSA.
+:::
+
 ## ECDSA Asymmetric Signing
 
 Sign with ECDSA elliptic curve — shorter keys, better performance.
@@ -99,6 +153,164 @@ func main() {
     fmt.Println("ECDSA Token:", token)
 }
 ```
+
+## Key Separation Mode
+
+Simulates cross-service token verification in a microservice architecture: the auth service holds the private key to issue tokens, and the API service verifies them via the public key.
+
+```go
+package main
+
+import (
+    "crypto/rand"
+    "crypto/rsa"
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // Generate RSA key pair
+    privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+    if err != nil {
+        log.Fatal(err)
+    }
+    publicKey := &privateKey.PublicKey
+
+    // --- Auth service: holds the private key, issues tokens ---
+    authCfg := jwt.DefaultConfig()
+    authCfg.SigningMethod = jwt.SigningMethodRS256
+    authCfg.SigningKey = privateKey
+    authCfg.Issuer = "auth-service"
+
+    authProcessor, err := jwt.New(authCfg)
+    if err != nil {
+        panic(err)
+    }
+    defer authProcessor.Close()
+
+    claims := &jwt.Claims{UserID: "user_dist", Username: "charlie"}
+    token, err := authProcessor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Auth service issued token (private key)")
+
+    // --- API service: verifies tokens via the public key ---
+    apiCfg := jwt.DefaultConfig()
+    apiCfg.SigningMethod = jwt.SigningMethodRS256
+    apiCfg.SigningKey = privateKey     // Current API requires SigningKey to be non-empty
+    apiCfg.VerificationKey = publicKey // This public key is actually used for verification
+    apiCfg.Issuer = "auth-service"     // Must match the issuer
+
+    apiProcessor, err := jwt.New(apiCfg)
+    if err != nil {
+        panic(err)
+    }
+    defer apiProcessor.Close()
+
+    parsed, valid, err := apiProcessor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("API service verified (public key):", valid) // Output: API service verified (public key): true
+    fmt.Println("UserID:", parsed.UserID)
+}
+```
+
+:::warning SigningKey Is Required
+The current API requires `SigningKey` to be non-empty (enforced during validation), so the API service's config must still include the private key. However, once `VerificationKey` is set, the verification flow uses only the public key. A verify-only Processor must not call `Create` / `CreateRefresh`.
+:::
+
+## Loading Keys from PEM Files
+
+In production, asymmetric keys are usually stored as PEM files. The example below shows how to load a private key with `pem.Decode` + `x509.ParsePKCS8PrivateKey` and a public key with `x509.ParsePKIXPublicKey`.
+
+<!-- check-code: skip -->
+```go
+package main
+
+import (
+    "crypto/rsa"
+    "crypto/x509"
+    "encoding/pem"
+    "fmt"
+    "os"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // --- Load RSA private key ---
+    keyData, err := os.ReadFile("private_key.pem")
+    if err != nil {
+        fmt.Println("Failed to read private key:", err)
+        return
+    }
+
+    block, _ := pem.Decode(keyData)
+    if block == nil {
+        fmt.Println("Private key PEM decode failed")
+        return
+    }
+
+    parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+    if err != nil {
+        fmt.Println("Failed to parse private key:", err)
+        return
+    }
+    privateKey, ok := parsedKey.(*rsa.PrivateKey)
+    if !ok {
+        fmt.Println("Key type is not RSA")
+        return
+    }
+
+    // --- Load RSA public key ---
+    pubData, err := os.ReadFile("public_key.pem")
+    if err != nil {
+        fmt.Println("Failed to read public key:", err)
+        return
+    }
+
+    pubBlock, _ := pem.Decode(pubData)
+    if pubBlock == nil {
+        fmt.Println("Public key PEM decode failed")
+        return
+    }
+
+    parsedPub, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
+    if err != nil {
+        fmt.Println("Failed to parse public key:", err)
+        return
+    }
+    publicKey, ok := parsedPub.(*rsa.PublicKey)
+    if !ok {
+        fmt.Println("Public key type is not RSA")
+        return
+    }
+
+    // --- Configure Processor ---
+    cfg := jwt.DefaultConfig()
+    cfg.SigningMethod = jwt.SigningMethodRS256
+    cfg.SigningKey = privateKey
+    cfg.VerificationKey = publicKey
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        fmt.Println("Initialization failed:", err)
+        return
+    }
+    defer processor.Close()
+    fmt.Println("Keys loaded from PEM files") // Output: Keys loaded from PEM files
+}
+```
+
+:::tip Key Formats
+- The private key PEM header is `-----BEGIN PRIVATE KEY-----` (PKCS#8) or `-----BEGIN RSA PRIVATE KEY-----` (PKCS#1). Use `x509.ParsePKCS8PrivateKey` for PKCS#8 and `x509.ParsePKCS1PrivateKey` for PKCS#1.
+- The public key PEM header is `-----BEGIN PUBLIC KEY-----`, parsed with `x509.ParsePKIXPublicKey`.
+- `ParsePKCS8PrivateKey` / `ParsePKIXPublicKey` return `any` and must be type-asserted to `*rsa.PrivateKey` / `*rsa.PublicKey` (similarly for ECDSA, assert to `*ecdsa.PrivateKey` / `*ecdsa.PublicKey`).
+:::
 
 ## Custom Claims
 
@@ -329,80 +541,7 @@ func main() {
 }
 ```
 
-## Complete Web Service Example
+## More Examples
 
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-
-    "github.com/cybergodev/jwt"
-)
-
-var processor *jwt.Processor
-
-func main() {
-    cfg := jwt.DefaultConfig()
-    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-    cfg.Issuer = "my-web-service"
-    cfg.ExpectedAudience = "my-app"
-
-    var err error
-    processor, err = jwt.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    defer processor.Close()
-
-    http.HandleFunc("/login", handleLogin)
-    http.HandleFunc("/protected", handleProtected)
-
-    fmt.Println("Server running on :8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func handleLogin(w http.ResponseWriter, r *http.Request) {
-    // In production, validate username and password
-    claims := &jwt.Claims{
-        UserID:   "user123",
-        Username: "alice",
-        Role:     "admin",
-    }
-
-    accessToken, err := processor.Create(claims)
-    if err != nil {
-        http.Error(w, err.Error(), 500)
-        return
-    }
-
-    refreshToken, err := processor.CreateRefresh(claims)
-    if err != nil {
-        http.Error(w, err.Error(), 500)
-        return
-    }
-
-    fmt.Fprintf(w, `{"access_token":"%s","refresh_token":"%s"}`, accessToken, refreshToken)
-}
-
-func handleProtected(w http.ResponseWriter, r *http.Request) {
-    auth := r.Header.Get("Authorization")
-    if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
-        http.Error(w, "missing token", http.StatusUnauthorized)
-        return
-    }
-
-    tokenString := strings.TrimPrefix(auth, "Bearer ")
-    claims, valid, err := processor.Validate(tokenString)
-    if err != nil || !valid {
-        http.Error(w, "invalid token", http.StatusUnauthorized)
-        return
-    }
-
-    fmt.Fprintf(w, "Hello, %s (ID: %s, Role: %s)",
-        claims.Username, claims.UserID, claims.Role)
-}
-```
+- [Web Server Integration](./web-server) — auth middleware, RBAC, refresh, logout, graceful shutdown
+- [Basic Examples](./basic) — HMAC, token pairs, revocation, rate limiting

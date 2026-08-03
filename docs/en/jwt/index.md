@@ -92,8 +92,12 @@ func main() {
 
 ## Next Steps
 
+- [Core Concepts](./getting-started/concepts) — Processor, token model, Claims architecture
 - [Getting Started](./getting-started/) — Detailed installation and configuration guide
 - [Signing Algorithms](./guides/signing-algorithms) — HMAC, RSA, ECDSA selection guide
+- [Token Refresh & Rotation](./guides/token-refresh) — Two-tier tokens and rotation strategies
+- [Configuration](./guides/configuration) — Security config and input validation
 - [Custom Claims](./guides/custom-claims) — Define business fields
 - [API Reference](./api-reference/) — Complete API reference
 - [Basic Examples](./examples/basic) — HMAC, token pair, validation examples
+- [Web Server Integration](./examples/web-server) — Auth middleware and RBAC in practice

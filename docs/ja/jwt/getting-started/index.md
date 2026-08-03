@@ -1,7 +1,7 @@
 ---
 sidebar_label: "クイックスタート"
 title: "クイックスタート - CyberGo JWT | 5 分で始める入門ガイド"
-description: "CyberGo JWT クイックスタート：インストールと Processor 生成、アクセス・リフレッシュトークンの発行・検証・リフレッシュ・失効、4 種アルゴリズム選択・カスタム Claims・内蔵ブラックリスト・トークンバケットレート制限の核心用法を網羅。"
+description: "CyberGo JWT クイックスタート：インストールと Processor 生成、アクセス・リフレッシュトークンの発行・検証・リフレッシュ・失効の核心用法と高度な機能へのナビゲーション。"
 sidebar_position: 2
 ---
 
@@ -23,6 +23,7 @@ Go 1.25+ が必要です。
 package main
 
 import (
+    "fmt"
     "time"
 
     "github.com/cybergodev/jwt"
@@ -107,183 +108,26 @@ if err != nil {
 fmt.Println("Revoked:", revoked) // true
 ```
 
-## 署名アルゴリズム
+## その他の機能
 
-### HMAC（対称鍵）
+上記の手順はトークンライフサイクルの核心操作をカバーしています。CyberGo JWT は以下の機能も提供しています — 各ガイドをクリックして詳細な使用方法を確認してください：
 
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-cfg.SigningMethod = jwt.SigningMethodHS256 // デフォルト
-```
-
-| メソッド | アルゴリズム |
-|----------|-------------|
-| `SigningMethodHS256` | HMAC-SHA256 |
-| `SigningMethodHS384` | HMAC-SHA384 |
-| `SigningMethodHS512` | HMAC-SHA512 |
-
-### RSA（非対称鍵）
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodRS256
-cfg.SigningKey = rsaPrivateKey        // *rsa.PrivateKey
-cfg.VerificationKey = rsaPublicKey    // *rsa.PublicKey（省略可、デフォルトは SigningKey を使用）
-```
-
-| メソッド | アルゴリズム |
-|----------|-------------|
-| `SigningMethodRS256` | RSA-SHA256 |
-| `SigningMethodRS384` | RSA-SHA384 |
-| `SigningMethodRS512` | RSA-SHA512 |
-
-### RSA-PSS（非対称鍵、推奨）
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodPS256
-cfg.SigningKey = rsaPrivateKey        // *rsa.PrivateKey
-cfg.VerificationKey = rsaPublicKey    // *rsa.PublicKey（省略可）
-```
-
-| メソッド | アルゴリズム |
-|----------|-------------|
-| `SigningMethodPS256` | RSA-PSS-SHA256 |
-| `SigningMethodPS384` | RSA-PSS-SHA384 |
-| `SigningMethodPS512` | RSA-PSS-SHA512 |
-
-### ECDSA（非対称鍵）
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodES256
-cfg.SigningKey = ecdsaPrivateKey      // *ecdsa.PrivateKey
-cfg.VerificationKey = ecdsaPublicKey  // *ecdsa.PublicKey（省略可）
-```
-
-| メソッド | アルゴリズム |
-|----------|-------------|
-| `SigningMethodES256` | ECDSA-SHA256 |
-| `SigningMethodES384` | ECDSA-SHA384 |
-| `SigningMethodES512` | ECDSA-SHA512 |
-
-## カスタム Claims
-
-`CustomClaims` インターフェースを実装して独自の Claims 構造体を定義します：
-
-```go
-type MyClaims struct {
-    UserID string `json:"user_id"`
-    Role   string `json:"role"`
-    jwt.RegisteredClaims
-}
-
-func (c *MyClaims) GetRegisteredClaims() *jwt.RegisteredClaims {
-    return &c.RegisteredClaims
-}
-
-func (c *MyClaims) Validate() error {
-    if c.UserID == "" {
-        return errors.New("user_id is required")
-    }
-    return nil
-}
-```
-
-カスタム Claims の使用：
-
-```go
-claims := &MyClaims{UserID: "123", Role: "admin"}
-
-// トークンの作成
-token, err := processor.Create(claims)
-
-// カスタム構造体に検証
-result := &MyClaims{}
-parsed, valid, err := processor.ValidateInto(token, result)
-
-// カスタム構造体にリフレッシュ
-newToken, err := processor.RefreshInto(refreshToken, claims)
-```
-
-## ブラックリスト設定
-
-### 内蔵メモリストアの使用（デフォルト）
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-// 内蔵ブラックリストは自動的に有効
-```
-
-### カスタムストアバックエンド
-
-`BlacklistStore` インターフェースを実装（例：Redis）：
-
-```go
-type RedisStore struct {
-    client *redis.Client
-}
-
-func (s *RedisStore) Add(tokenID string, expiresAt time.Time) error {
-    return s.client.Set(ctx, "blacklist:"+tokenID, "1", time.Until(expiresAt)).Err()
-}
-
-func (s *RedisStore) Contains(tokenID string) (bool, error) {
-    n, err := s.client.Exists(ctx, "blacklist:"+tokenID).Result()
-    return n > 0, err
-}
-
-func (s *RedisStore) Close() error {
-    return s.client.Close()
-}
-
-// 使用
-cfg.Blacklist.Store = &RedisStore{client: rdb}
-```
-
-## レート制限の設定
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-cfg.EnableRateLimit = true
-cfg.RateLimitRate = 100          // ウィンドウあたりの最大リクエスト数
-cfg.RateLimitWindow = time.Minute // ウィンドウ時間
-```
-
-## エラー処理
-
-```go
-import "errors"
-
-claims, valid, err := processor.Validate(tokenString)
-if err != nil {
-    switch {
-    case errors.Is(err, jwt.ErrTokenExpired):
-        // トークン有効期限切れ
-    case errors.Is(err, jwt.ErrTokenRevoked):
-        // トークンが失効済み
-    case errors.Is(err, jwt.ErrTokenInvalidIssuer):
-        // 発行者が一致しない
-    case errors.Is(err, jwt.ErrTokenInvalidAudience):
-        // オーディエンスが一致しない
-    case errors.Is(err, jwt.ErrInvalidToken):
-        // 署名無効またはフォーマットエラー
-    case errors.Is(err, jwt.ErrProcessorClosed):
-        // Processor がクローズ済み
-    default:
-        // その他のエラー
-    }
-}
-```
+| 機能 | 説明 | ガイド |
+|------|------|--------|
+| 署名アルゴリズム | HMAC、RSA、RSA-PSS、ECDSA — 4種12アルゴリズム | [署名アルゴリズム](../guides/signing-algorithms) |
+| カスタム Claims | `CustomClaims` インターフェースでビジネスフィールドを定義 | [カスタム Claims](../guides/custom-claims) |
+| トークンリフレッシュとローテーション | 2層トークン TTL 設計、再利用 vs 一回限りローテーション戦略 | [トークンリフレッシュとローテーション](../guides/token-refresh) |
+| トークンブラックリスト | 失効、内蔵メモリストア、Redis カスタムバックエンド | [トークンブラックリスト](../guides/blacklist) |
+| レート制限 | トークンバケットアルゴリズムで発行エンドポイントの悪用を防止 | [レート制限](../guides/rate-limiting) |
+| 設定詳細 | 発行者/オーディエンス検証、クロックスキュー、必須有効期限、入力バリデーション | [設定詳細](../guides/configuration) |
+| エラー処理 | 19個のセンチネルエラー分類と `errors.Is` マッチング | [エラー処理](../guides/error-handling) |
+| テストとクロック注入 | `FixedClock`で決定的かつ sleep 不要の時間制御 | [テストとクロック注入](../guides/testing) |
 
 ## 次のステップ
 
 - [署名アルゴリズム](../guides/signing-algorithms) — アルゴリズムの選択と鍵の設定
-- [カスタム Claims](../guides/custom-claims) — ビジネスフィールドの定義
-- [トークンブラックリスト](../guides/blacklist) — 失効とカスタムストア
-- [レート制限](../guides/rate-limiting) — レート制限の設定
-- [エラー処理](../guides/error-handling) — エラーの分類と処理パターン
+- [トークンリフレッシュとローテーション](../guides/token-refresh) — 2層トークンとローテーション戦略
+- [設定詳細](../guides/configuration) — セキュリティ設定と入力バリデーション
 - [API リファレンス](../api-reference/) — 完全な API リファレンス
+- [基本サンプル](../examples/basic) — 実行可能な完全なサンプル
+- [Web サーバー統合](../examples/web-server) — 認証ミドルウェアと RBAC の実践

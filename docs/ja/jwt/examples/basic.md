@@ -194,6 +194,137 @@ func main() {
 }
 ```
 
+## オーディエンスの分離
+
+`ExpectedAudience` を設定すると、`aud` クレームにこの値が含まれるトークンのみが検証を通過します。マイクロサービスアーキテクチャでサービス間のトークン分離を実現し——あるサービスで発行されたトークンが別のサービスで受け入れられないようにします。
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    cfg := jwt.DefaultConfig()
+    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
+    cfg.ExpectedAudience = "billing-api" // billing-api 宛のトークンのみ受け入れ
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    // オーディエンスが一致するトークン
+    validClaims := &jwt.Claims{
+        UserID: "user1",
+        RegisteredClaims: jwt.RegisteredClaims{
+            Audience: jwt.StringOrSlice{"billing-api"},
+        },
+    }
+    validToken, err := processor.Create(validClaims)
+    if err != nil {
+        panic(err)
+    }
+
+    _, valid, err := processor.Validate(validToken)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Matching audience valid:", valid) // 出力：true
+
+    // オーディエンスが不一致のトークンは拒否される
+    wrongClaims := &jwt.Claims{
+        UserID: "user2",
+        RegisteredClaims: jwt.RegisteredClaims{
+            Audience: jwt.StringOrSlice{"admin-api"},
+        },
+    }
+    wrongToken, err := processor.Create(wrongClaims)
+    if err != nil {
+        panic(err)
+    }
+
+    _, valid, err = processor.Validate(wrongToken)
+    fmt.Println("Wrong audience valid:", valid) // 出力：false
+    fmt.Println("Wrong audience error:", err)   // 出力：token invalid audience
+    fmt.Println("Is audience error:",
+        errors.Is(err, jwt.ErrTokenInvalidAudience)) // 出力：true
+}
+```
+
+::: tip マイクロサービスシーン
+マイクロサービスアーキテクチャでは、各サービスに異なる `ExpectedAudience`（例：`billing-api`、`user-api`）を設定し、各サービスが自身宛のトークンのみを受け入れるようにすることで、トークンのクロスサービス乱用を防止します。
+:::
+
+## Extra 拡張フィールド
+
+内蔵 `Claims.Extra` は `map[string]any` で、少数のオプション追加情報を保存するために使用します。Processor はトークン作成時に Extra に深層検証（長さ、インジェクション検出）を実行するため、カスタム Claims フィールドより手軽です。
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    cfg := jwt.DefaultConfig()
+    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    // Extra で追加ビジネスフィールドを保存（string と []string 値のみサポート）
+    claims := &jwt.Claims{
+        UserID:   "user123",
+        Username: "alice",
+        Role:     "engineer",
+        Extra: map[string]any{
+            "team_id": "team-backend",
+            "level":   "senior",
+            "tags":    []string{"onboarding", "mentor"},
+        },
+    }
+    token, err := processor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+
+    // 検証後に Extra フィールドを読み取り
+    parsed, valid, err := processor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Valid:", valid)            // 出力：true
+    fmt.Println("UserID:", parsed.UserID)   // 出力：user123
+
+    // 型アサーションで Extra 値を読み取り
+    if teamID, ok := parsed.Extra["team_id"].(string); ok {
+        fmt.Println("TeamID:", teamID) // 出力：team-backend
+    }
+    if level, ok := parsed.Extra["level"].(string); ok {
+        fmt.Println("Level:", level) // 出力：senior
+    }
+    if tags, ok := parsed.Extra["tags"].([]string); ok {
+        fmt.Println("Tags:", tags) // 出力：[onboarding mentor]
+    }
+}
+```
+
+::: warning Extra の制限
+`Extra` は最大 50 キーで、値は `string` と `[]string` 型のみ許可され、ネスト map はサポートされません。より複雑な構造やカスタム検証が必要な場合は、[カスタム Claims 型](../guides/custom-claims#extra-フィールド-vs-カスタム型)を使用してください。
+:::
+
 ## その他のサンプル
 
-- [高度なサンプル](./advanced) — RSA、ECDSA、カスタム Claims、Redis ブラックリスト、Web サービス
+- [Web サーバー統合](./web-server) — 認証ミドルウェア、RBAC、リフレッシュ、ログアウト、グレースフルシャットダウン
+- [高度なサンプル](./advanced) — RSA、ECDSA、カスタム Claims、Redis ブラックリスト、クロック注入

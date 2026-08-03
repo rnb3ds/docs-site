@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Типы и константы"
 title: "Типы - CyberGo JWT | Сериализация и часы"
-description: "Справочник типов CyberGo JWT: NumericDate и StringOrSlice, SigningMethod, ValidationError, RateLimiter, SystemClock и FixedClock, плюс константы 12 алгоритмов."
+description: "Справочник типов и констант: NumericDate и StringOrSlice для сериализации, SigningMethod для алгоритмов, ValidationError для ошибок уровня поля, RateLimiter, SystemClock и FixedClock для часов и константы 12 алгоритмов."
 sidebar_position: 60
 ---
 
@@ -89,6 +89,10 @@ type RateLimiter struct { ... }
 ```
 
 Ограничитель скорости на основе алгоритма корзины токенов, реализует интерфейс [`RateLimitProvider`](./interfaces#ratelimitprovider).
+
+Использует алгоритм корзины токенов: токены **пополняются пропорционально** прошедшему времени (а не сбросом фиксированного окна); после пополнения остаточное время сохраняется для равномерной скорости; каждый запрос потребляет токен, при нехватке — отказ.
+
+Внутренне отслеживается до 10000 ключей ограничения (`maxBuckets`). При достижении лимита сначала вытесняются просроченные корзины (неактивные свыше 2 окон), а при заполнении — пакетно вытесняются около 10% самых старых, амортизируя стоимость сканирования O(n).
 
 <Badge type="info" text="struct" />
 
