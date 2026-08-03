@@ -109,6 +109,10 @@ type Config struct {
 `CacheSharedResults` を `true` にすると、キャッシュヒット時の `Get`/`GetFromParsed` は**キャッシュ値をそのまま返し**、防御的ディープコピーを省略します（より高速、より少ないアロケーション）。このとき**呼び出し側は返された** `map[string]any`/`[]any` **を変更してはなりません**。変更すると共有キャッシュが破損し、以降の読み取りに影響します。プリミティブ値（`bool`、`float64`、`string`、`json.Number`、`nil`）は不変であり、常に安全です。デフォルトの `false` は安全な「読み取り時コピー」動作を維持します。結果を読み取り専用として扱う場合のみ有効化してください（例：同じ大きなサブツリーを繰り返し読み取る読み取り専用ワークロード）。
 :::
 
+::: warning 拡張フィールド予約状態
+`CustomEncoder`、`CustomTypeEncoders`、`CustomValidators` の 3 つのフィールドは現在のバージョンで宣言されていますが、**エンコード/操作パイプラインにはまだ接続されていません**。設定しても効果はなく、将来のバージョンのために予約されたインターフェースです。現在利用可能なエンコードのカスタマイズ方法は `json.Marshaler` または `encoding.TextMarshaler` インターフェースの実装です（[カスタムエンコーダ](../extensions/custom-encoder) を参照）。利用可能な検証方法は `ValidateSchema` です（[バリデータ](../extensions/validator) を参照）。
+:::
+
 ## 設定プリセット
 
 ### DefaultConfig

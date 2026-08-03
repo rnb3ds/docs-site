@@ -1,13 +1,17 @@
 ---
 sidebar_label: "JSONL"
 title: "JSONL 처리 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON JSONL 함수: ParseJSONL/ToJSONL/ToJSONLString 변환, StreamJSONL/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL 스트리밍 처리, StreamLinesInto[T] 제네릭 스트림과 NewJSONLWriter 쓰기."
+description: "CyberGo JSON JSONL 함수: ParseJSONL/ToJSONL/ToJSONLString 변환, StreamJSONL/ForeachJSONL 스트리밍, StreamLinesInto[T] 제네릭 스트림과 NewJSONLWriter 쓰기."
 sidebar_position: 8
 ---
 
 # JSONL 처리 함수
 
 json 패키지가 제공하는 JSONL(JSON Lines) 처리 함수로, 줄바꿈으로 구분된 JSON 데이터의 파싱, 스트리밍 읽기, 변환 및 쓰기를 지원합니다.
+
+::: tip 전체 튜토리얼
+JSONL/NDJSON 의 개념, 스트리밍 처리 패턴, 실전 사용법이 필요하신가요? [JSONL 프로세서](../../streaming/jsonl) 전체 튜토리얼을 참조하세요.
+:::
 
 ## JSONL 처리 함수
 

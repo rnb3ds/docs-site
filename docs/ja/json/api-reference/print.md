@@ -1,11 +1,15 @@
 ---
-sidebar_label: "出力関数"
-title: "出力関数 - CyberGo JSON | API リファレンス"
+sidebar_label: "フォーマットガイド"
+title: "フォーマットガイド - CyberGo JSON | API リファレンス"
 description: "CyberGo JSON 出力とフォーマット：Encode、EncodePretty、Prettify と標準 fmt パッケージで JSON を出力し、カスタムインデントとプレフィックスに対応、廃止された Print シリーズを置き換えます。"
 sidebar_position: 11
 ---
 
 # 出力関数
+
+::: info 移行リファレンス
+このページは Print シリーズ関数（以前のバージョンで削除済み）の移行ガイドです。JSON をフォーマットするには、[`Prettify`](../api-reference#フォーマット) または標準ライブラリ互換の `MarshalIndent` を使用してください。
+:::
 
 ::: warning API 変更のお知らせ
 Print、PrintPretty、PrintE、PrintPrettyE はライブラリから削除され、提供されなくなりました。以下の代替案を使用してください。

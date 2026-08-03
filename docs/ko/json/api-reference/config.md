@@ -109,6 +109,10 @@ type Config struct {
 `CacheSharedResults`가 `true`이면, 캐시 적중 시 `Get`/`GetFromParsed`는 방어적 딥카피를 건너뛰고 **캐시 값을 직접 반환**합니다 (더 빠르고 할당이 적음). 이때 **호출자는 반환된 `map[string]any`/`[]any`를 수정해서는 안 됩니다**. 수정하면 공유 캐시가 훼손되어 이후 읽기에 영향을 줍니다. 원시 값 (`bool`, `float64`, `string`, `json.Number`, `nil`) 은 불변이므로 항상 안전합니다. 기본값 `false`는 안전한 "읽기 시 복사" 동작을 유지하며, 호출자가 결과를 읽기 전용으로 취급할 때만 활성화하세요 (예: 동일한 대형 하위 트리를 반복적으로 읽는 읽기 전용 워크로드).
 :::
 
+::: warning 확장 필드 예약 상태
+`CustomEncoder`, `CustomTypeEncoders`, `CustomValidators` 세 필드는 현재 버전에서 선언되었지만 **인코딩/작업 파이프라인에 아직 연결되지 않았습니다**. 설정해도 효과가 없으며 향후 버전을 위해 예약된 인터페이스입니다. 현재 사용 가능한 인코딩 커스터마이징 방법은 `json.Marshaler` 또는 `encoding.TextMarshaler` 인터페이스를 구현하는 것입니다 ([커스텀 인코더](../extensions/custom-encoder) 참조). 사용 가능한 검증 방법은 `ValidateSchema`입니다 ([검증기](../extensions/validator) 참조).
+:::
+
 ## 설정 프리셋
 
 ### DefaultConfig

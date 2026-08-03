@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Руководство по работе с большими файлами"
 title: "Большие файлы - CyberGo JSON | Гайд"
-description: "Большие файлы CyberGo JSON: сигнатуры методов ForeachFile*, управление памятью и потоковая обработка."
+description: "Обработка больших файлов CyberGo JSON: ForeachFile, ForeachFileChunked, ForeachFileWithPath и ForeachFileNested — потоковые методы для анализа логов и ETL."
 sidebar_position: 1
 ---
 

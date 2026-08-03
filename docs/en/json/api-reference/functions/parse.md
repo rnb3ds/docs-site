@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Parse & Validate"
 title: "Parse and Validate Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON parse and validate: Parse/ParseAny into target pointers, Processor.Parse/ParseAny methods, and Valid/ValidWithConfig/ValidateSchema with JSON Schema."
+description: "CyberGo JSON parse and validate: Parse/ParseAny into target pointers and Valid/ValidWithConfig/ValidateSchema with JSON Schema support."
 sidebar_position: 6
 ---
 

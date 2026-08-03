@@ -1,49 +1,318 @@
 ---
 sidebar_label: "Delete Operations"
 title: "Processor Delete Methods - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor delete methods: Delete removes a value at a path, DeleteClean removes and auto-cleans empty values and arrays, both chainable."
+description: "CyberGo JSON Processor delete methods: Delete removes by path, DeleteClean removes and auto-cleans empty values and empty arrays, preserving chaining."
 sidebar_position: 4
 ---
 
 # Delete Methods
 
-Processor provides methods to delete values at a path, returning the modified JSON string.
+The Processor provides data deletion methods that delete the value at a specified path and return the modified JSON string. All methods are **immutable** — they return a new string while the original input remains unchanged; on error they return the original input. The behavior is consistent with the [package-level delete functions](../functions/delete); the difference is that instance methods work in concert with the processor's own configuration, cache, and hooks.
 
 ## Delete
 
-Signature: `func (p *Processor) Delete(jsonStr, path string, cfg ...Config) (string, error)`
+Signature: `func (p *Processor) Delete(jsonStr, path string, cfg ...Config) (result string, err error)`
 
 Deletes the value at the specified path and returns the modified JSON string.
 
+<!-- check-code: skip -->
 ```go
+p, err := json.New()
+if err != nil {
+    panic(err)
+}
+defer p.Close()
+
 result, err := p.Delete(data, "user.temporary")
+```
+
+### Full Example: Object Properties, Array Elements, and Nested Paths
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	// Delete an object property
+	r1, err := p.Delete(`{"user":{"name":"Alice","temp":"x"}}`, "user.temp")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r1)
+	// Output: {"user":{"name":"Alice"}}
+
+	// Delete an array element (removed and reordered, no gaps)
+	r2, err := p.Delete(`{"items":["a","b","c"]}`, "items[1]")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r2)
+	// Output: {"items":["a","c"]}
+
+	// Nested path deletion
+	r3, err := p.Delete(`{"a":{"b":{"c":1,"d":2}}}`, "a.b.c")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r3)
+	// Output: {"a":{"b":{"d":2}}}
+}
+```
+
+### Advanced Paths: Wildcards and Slices
+
+`Delete` reuses the same path engine as Get/Set, supporting wildcards, slice ranges, and multi-field extraction. Batch paths (containing `*`, `{}`, `:`) silently skip missing targets without error.
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	data := `{"users":[{"name":"Alice","pwd":"x"},{"name":"Bob","pwd":"y"}],"tags":[1,2,3,4]}`
+
+	// Wildcard: delete each user's pwd
+	r1, err := p.Delete(data, "users[*].pwd")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r1)
+	// Output: {"tags":[1,2,3,4],"users":[{"name":"Alice"},{"name":"Bob"}]}
+
+	// Slice range: delete tags[0:2] (half-open interval, left-closed right-open)
+	r2, err := p.Delete(data, "tags[0:2]")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r2)
+	// Output: {"tags":[3,4],"users":[{"name":"Alice","pwd":"x"},{"name":"Bob","pwd":"y"}]}
+}
+```
+
+### Error Handling
+
+When the target of an exact path does not exist, an error wrapping `ErrPathNotFound` is returned and the original input is unchanged. Use `errors.Is` to check:
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, _ := json.New()
+	defer p.Close()
+
+	result, err := p.Delete(`{"a":1}`, "nonexistent.path")
+	if err != nil {
+		if errors.Is(err, json.ErrPathNotFound) {
+			fmt.Println("Path not found, skipped")
+		}
+	}
+	fmt.Println(result) // Original data unchanged: {"a":1}
+	// Output:
+	// Path not found, skipped
+	// {"a":1}
+}
 ```
 
 ## DeleteClean
 
 Signature: `func (p *Processor) DeleteClean(jsonStr, path string, cfg ...Config) (string, error)`
 
-Deletes the specified path and automatically cleans up null values and empty arrays.
+Deletes the specified path and **recursively cleans up** `null` values and empty objects/empty arrays resulting from the deletion. Equivalent to `Delete` with `CleanupNulls: true` + `CompactArrays: true` forcibly enabled.
+
+### Cascade Cleanup: Empty Parent Objects Removed Automatically
 
 ```go
-result, err := p.DeleteClean(data, "user.temporary")
-// After deletion, null values and empty arrays are cleaned up
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, _ := json.New()
+	defer p.Close()
+
+	// temp is the only property of user
+	data := `{"user":{"temp":"value"}}`
+
+	// Plain delete: user becomes {}, but is retained
+	r1, _ := p.Delete(data, "user.temp")
+	fmt.Println(r1) // Output: {"user":{}}
+
+	// DeleteClean: after user becomes empty, the user key is cleaned up too, cascading upward
+	r2, err := p.DeleteClean(data, "user.temp")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r2) // Output: {}
+}
 ```
 
-**Difference between Delete and DeleteClean**:
+### Cleaning API Responses
+
+While deleting the target field, also sweep other `null` values and residual empty containers across the entire tree:
 
 ```go
-// Original data: {"user": {"temp": "value", "name": "test"}}
+package main
 
-// After Delete: {"user": {"name": "test"}}
-result, _ := p.Delete(data, "user.temp")
+import (
+	"fmt"
 
-// DeleteClean also removes user.temp; here user still contains name and does not become empty
-// Result: {"user": {"name": "test"}}
-result, _ = p.DeleteClean(data, "user.temp")
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, _ := json.New()
+	defer p.Close()
+
+	apiResp := `{"data":{"id":1,"name":"Product","desc":null,"price":29.99}}`
+
+	cleaned, err := p.DeleteClean(apiResp, "data.desc")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(cleaned)
+	// Output: {"data":{"id":1,"name":"Product","price":29.99}}
+}
 ```
+
+::: warning DeleteClean sweeps nulls across the entire tree
+`DeleteClean` cleanup is **global**: it recursively runs cleanup across the entire JSON tree, so it removes **all** pre-existing `null` values and empty containers, not just the one produced at the deletion point. Use plain `Delete` when you only want to remove a specific field and keep other `null`s.
+:::
+
+## Delete vs DeleteClean Comparison
+
+| Feature | Delete | DeleteClean |
+|---------|--------|-------------|
+| Deletes the target node | Yes | Yes |
+| Array elements removed and reordered (no gaps) | Yes | Yes |
+| Errors on missing exact path | Yes (`ErrPathNotFound`) | Yes (`ErrPathNotFound`) |
+| Cleans `null` produced by deletion | No | Yes |
+| Cleans empty objects/empty arrays (cascade) | No | Yes (upward level by level) |
+| Sweeps pre-existing `null` across the tree | No | Yes (global cleanup) |
+| Equivalent configuration | Default | `CleanupNulls+CompactArrays` |
+| Relative overhead | Lower | Slightly higher (one extra full-tree cleanup traversal) |
+
+## Effect of Config on Deletion Behavior
+
+The cleanup behavior of delete methods is determined by the **union of the call argument `cfg` and the processor's own configuration**. That is, if the processor was created with `CleanupNulls` enabled, then subsequent plain `p.Delete(...)` calls will also clean up automatically:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// Create a processor with cleanup enabled by default
+	cfg := json.DefaultConfig()
+	cfg.CleanupNulls = true
+	cfg.CompactArrays = true
+	p, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	data := `{"user":{"temp":"value"}}`
+
+	// Plain Delete also cleans up, because the processor's own config has it enabled
+	result, err := p.Delete(data, "user.temp")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result) // Output: {}
+}
+```
+
+`Config` fields that affect deletion behavior:
+
+| Field | Default | Effect on deletion |
+|-------|---------|--------------------|
+| `CleanupNulls` | `false` | Recursively removes `null` values and empty objects/empty arrays from the result (cascade) |
+| `CompactArrays` | `false` | Removes `null`/empty elements from arrays; enabling implies `CleanupNulls` |
+| `CreatePaths` | `true` | **Does not affect deletion** (deletion never creates paths) |
+
+> Therefore `DeleteClean(s, p)` is equivalent to calling `Delete(s, p)` on a processor with `CleanupNulls+CompactArrays` — choose whichever is clearer to read.
+
+## Chained Deletion
+
+Delete methods return a new string, which can be fed directly into the next call to compose a chained modification flow:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, _ := json.New()
+	defer p.Close()
+
+	data := `{"user":{"name":"Alice","temp":"x","version":"1.0.0"}}`
+
+	// Chain: first set, then delete, each step based on the previous result
+	r1, _ := p.Set(data, "user.name", "CyberGo")
+	r2, _ := p.Delete(r1, "user.temp")
+	final, _ := p.Delete(r2, "user.version")
+
+	fmt.Println(final)
+	// Output: {"user":{"name":"CyberGo"}}
+}
+```
+
+## Common Pitfalls
+
+::: warning Array deletion leaves no gaps
+When `Delete` removes an array element, the element is **entirely removed** and subsequent elements shift forward automatically, leaving no `null` placeholder or gap. If you need "indices remain unchanged after deletion, leaving holes" semantics, use `Set` to set that position to `null` instead.
+:::
+
+::: warning DeleteClean may remove legitimately empty data
+`DeleteClean` cascade cleanup treats all empty objects `{}` and empty arrays `[]` as things to clean up. If in your business "empty array" is a meaningful state (e.g. `"tags":[]` means "no tags"), `DeleteClean` will remove it along with its key. Use plain `Delete` when you need to keep such fields.
+:::
+
+::: warning Batch deletion is fault-tolerant
+Wildcard/slice/multi-field paths **silently skip** missing targets without returning an error. When you need "target must exist" strict validation semantics, use an exact path instead (e.g. `items[1]` rather than `items[*]`).
+:::
 
 ## See Also
 
-- [Modify](./modify) - Set/SetCreate chained modifications
-- [Delete Functions](../functions/delete) - Package-level Delete functions
+- [Modify Operations](./modify) - Set/SetCreate chained modification
+- [Delete Functions](../functions/delete) - Package-level Delete/DeleteClean functions (with full path syntax reference)
+- [Config Reference](../config) - Details on CleanupNulls / CompactArrays and other fields

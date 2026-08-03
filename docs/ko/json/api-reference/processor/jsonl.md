@@ -9,6 +9,10 @@ sidebar_position: 8
 
 Processor 는 JSONL(JSON Lines) 스트림 처리 기능을 완벽하게 제공하며, 행 단위 처리, 병렬 처리, 배치 처리 및 함수형 작업을 지원합니다.
 
+::: tip 전체 튜토리얼
+JSONL/NDJSON 의 개념 설명과 스트리밍 처리 실전이 필요하신가요? [JSONL 프로세서](../../streaming/jsonl) 전체 튜토리얼을 참조하세요.
+:::
+
 ## 스트림 읽기 메서드
 
 ### StreamJSONL

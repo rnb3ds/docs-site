@@ -103,6 +103,7 @@ func main() {
 |--------|-------------|
 | [Getting Started](./getting-started/) | Installation, basic usage, core concepts |
 | [Path Expression Syntax](./getting-started/path-syntax) | Path queries, slicing, wildcards, field extraction |
+| [Processor Guide](./getting-started/processor-guide) | When to use a Processor, PreParse optimization, lifecycle |
 | [API Reference](./api-reference/) | Complete API reference |
 | [Large File Processing](./streaming/large-files) | Stream processing, chunked read/write, memory optimization |
 | [Usage Examples](./examples/) | Practical code examples |
@@ -143,5 +144,6 @@ func main() {
 ## Next Steps
 
 - [Getting Started](./getting-started/) — Get up and running in 5 minutes
+- [Processor Guide](./getting-started/processor-guide) — When to use a processor
 - [Path Expression Syntax](./getting-started/path-syntax) — Complete path syntax reference
 - [Usage Examples](./examples/) — More practical examples

@@ -1,6 +1,6 @@
 ---
-sidebar_label: "迭代器类型"
-title: "迭代器类型 - CyberGo JSON | API 参考"
+sidebar_label: "迭代器与 IterableValue"
+title: "迭代器与 IterableValue - CyberGo JSON | API 参考"
 description: "CyberGo JSON 迭代器类型：Iterator 顺序遍历、IterableValue 数据访问、StreamIterator/StreamObjectIterator 流式、BatchIterator 批量与 ParallelIterator 并行迭代器构造与方法。"
 sidebar_position: 9
 ---

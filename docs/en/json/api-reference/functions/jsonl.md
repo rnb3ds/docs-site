@@ -1,13 +1,17 @@
 ---
 sidebar_label: "JSONL"
 title: "JSONL Processing Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON JSONL processing functions: ParseJSONL/ToJSONL/ToJSONLString conversion, StreamJSONL/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL streaming, StreamLinesInto[T] generics, and NewJSONLWriter writer."
+description: "CyberGo JSON JSONL functions: ParseJSONL/ToJSONL conversion, StreamJSONL/ForeachJSONL streaming, StreamLinesInto[T] generics and NewJSONLWriter writer."
 sidebar_position: 8
 ---
 
 # JSONL Processing Functions
 
 The json package provides JSONL (JSON Lines) processing functions, supporting parsing, streaming reads, conversion, and writing of newline-delimited JSON data.
+
+::: tip Full Tutorial
+Need the concepts behind JSONL/NDJSON, streaming patterns, and practical usage? See the [JSONL Processor](../../streaming/jsonl) tutorial.
+:::
 
 ## JSONL Processing Functions
 

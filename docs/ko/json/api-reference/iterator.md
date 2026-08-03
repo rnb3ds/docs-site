@@ -1,6 +1,6 @@
 ---
-sidebar_label: "반복기 타입"
-title: "반복기 타입 - CyberGo JSON | API 레퍼런스"
+sidebar_label: "이터레이터와 IterableValue"
+title: "이터레이터와 IterableValue - CyberGo JSON | API 레퍼런스"
 description: "CyberGo JSON 반복기 타입: Iterator 순차 순회, IterableValue 데이터 접근, StreamIterator/StreamObjectIterator 스트림, BatchIterator 배치와 ParallelIterator 병렬 반복기 생성 및 메서드."
 sidebar_position: 9
 ---

@@ -2,7 +2,7 @@
 sidebar_label: "チートシート"
 title: "チートシート - CyberGo JSON | クイック参照"
 description: "CyberGo JSON API チートシート：GetString/GetInt パスクエリ、Set/Delete 変更、Marshal/Unmarshal シリアライズ、設定とセキュリティ関数を素早く参照できます。"
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 # チートシート

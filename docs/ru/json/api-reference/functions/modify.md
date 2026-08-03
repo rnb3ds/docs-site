@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Модификация"
 title: "Функции изменения - CyberGo JSON | API"
-description: "Функции изменения CyberGo JSON: Set/SetMultiple, MergeJSON/MergeMany с авто-созданием путей и MergeMode."
+description: "Функции изменения CyberGo JSON: Set/SetMultiple установка, MergeJSON/MergeMany слияние, авто-создание путей, атомарные операции и стратегии MergeMode."
 sidebar_position: 3
 ---
 

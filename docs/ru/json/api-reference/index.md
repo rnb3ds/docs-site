@@ -9,26 +9,47 @@ sidebar_position: 1
 
 В этом разделе представлен полный справочник API библиотеки `github.com/cybergodev/json`.
 
+::: tip Два стиля API
+Библиотека предоставляет **функции пакета** (например, `json.GetString(data, "path")`, без создания экземпляра) и **методы Processor** (например, `p.GetString(data, "path")`, с повторным использованием конфигурации, кэшем предпарсинга и системой хуков). Не уверены, что выбрать? См. дерево решений в [Руководстве по Processor](../getting-started/processor-guide).
+:::
+
 ## Индекс модулей
 
+### API функций
+
 | Модуль | Описание |
-|--------|----------|
-| [Функции пакета](./functions/) | Справочник функций уровня пакета: запросы по пути, типизированное получение, кодирование/декодирование |
-| [Processor](./processor/) | Методы процессора и конфигурация |
-| [Config](./config) | Подробное описание параметров конфигурации |
-| [Определения типов](./types) | Основные определения типов (включая Encoder/Decoder) |
-| [Обобщённые операции](./generics) | Справочник обобщённых API |
-| [Определения интерфейсов](./interfaces) | Расширяемые интерфейсы |
-| [Потоковая обработка](../streaming/large-files) | Справочник потокового процессора |
-| [Обработка NDJSON](../streaming/jsonl) | Обработчик JSONL/NDJSON |
-| [Итератор](./iterator) | API итерации и обхода |
-| [Вспомогательные функции](./helpers) | Преобразование типов и утилиты |
-| [Форматированный вывод](./print) | Форматирование и красивый вывод |
-| [Безопасность](../security/security-mode) | API, связанное с безопасностью |
-| [Валидатор](../extensions/validator) | Schema-валидатор |
-| [Система хуков](../extensions/hooks) | Хуки перехвата операций |
-| [Пользовательский кодировщик](../extensions/custom-encoder) | Пользовательские кодировщики |
+|------|------|
+| [Функции пакета](./functions/) | Справочник функций уровня пакета (запросы/модификация/удаление/кодирование/парсинг/пакетная обработка/JSONL/файлы/итерация) |
+| [Processor](./processor/) | Методы процессора (зеркальная классификация с функциями пакета, дополнительно жизненный цикл и предпарсинг) |
+
+### Типы и интерфейсы
+
+| Модуль | Описание |
+|------|------|
+| [Config](./config) | Подробное описание параметров конфигурации (DefaultConfig / SecurityConfig / PrettyConfig) |
+| [Определения типов](./types) | Основные типы (Config / Schema / Stats / AccessResult, включая Encoder / Decoder) |
+| [Определения интерфейсов](./interfaces) | Расширяемые интерфейсы (CustomEncoder / Validator / Hook / PathParser) |
+| [Итераторы и IterableValue](./iterator) | Типы Iterator / BatchIterator / ParallelIterator / StreamIterator |
+| [Обобщённые операции](./generics) | Обобщённый API (GetTyped[T] / StreamLinesInto[T] / Result[T]) |
 | [Константы и ошибки](./constants) | Константы и типы ошибок |
+
+### Инструменты и утилиты
+
+| Модуль | Описание |
+|------|------|
+| [Сервисные функции](./helpers) | CompareJSON / MergeJSON, управление кэшем, глобальный процессор, SafeError / RedactedPath, методы AccessResult |
+| [Руководство по форматированию](./print) | Руководство по миграции серии Print (альтернативы для удалённых API) |
+
+### Межмодульные темы
+
+| Модуль | Описание |
+|------|------|
+| [Потоковая обработка](../streaming/large-files) | Руководство по потоковой обработке больших файлов |
+| [Обработка JSONL / NDJSON](../streaming/jsonl) | Обработчик JSONL (StreamJSONL / NDJSONProcessor / JSONLWriter) |
+| [Проверка безопасности](../security/security-mode) | API безопасного режима (SecurityConfig / DangerousPattern / RegisterDangerousPattern) |
+| [Schema-валидатор](../extensions/validator) | Валидация Schema (ValidateSchema / DefaultSchema / NewSchemaWithConfig) |
+| [Система хуков Hook](../extensions/hooks) | Хуки перехвата операций (LoggingHook / TimingHook / ValidationHook / ErrorHook) |
+| [Пользовательский кодировщик](../extensions/custom-encoder) | Пользовательские кодировщики (CustomEncoder / TypeEncoder) |
 
 ## Быстрый поиск
 
@@ -113,6 +134,7 @@ sidebar_position: 1
 ## Связанные разделы
 
 - [Быстрый старт](../getting-started/) -- Установка и базовое использование
+- [Руководство по Processor](../getting-started/processor-guide) -- Когда использовать процессор
 - [Синтаксис выражений пути](../getting-started/path-syntax) -- Синтаксис запросов по пути
 - [Примеры использования](../examples/) -- Практические примеры кода
 - [Обработка больших файлов](../streaming/large-files) -- Руководство по потоковой обработке

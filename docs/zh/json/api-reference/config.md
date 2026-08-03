@@ -106,7 +106,11 @@ type Config struct {
 ```
 
 ::: warning CacheSharedResults 契约
-`CacheSharedResults` 为 `true` 时，缓存命中的 `Get`/`GetFromParsed` 会**直接返回缓存值**，跳过防御性深拷贝（更快、更少分配）。此时**调用方不得修改**返回的 `map[string]any`/`[]any`，否则会破坏共享缓存、影响后续读取；原始值（`bool`、`float64`、`string`、`json.Number`、`nil`）不可变，始终安全。默认 `false` 保留安全的“读时拷贝”行为，仅在调用方将结果视为只读时启用（例如反复读取同一大型子树的只读工作负载）。
+`CacheSharedResults` 为 `true` 时，缓存命中的 `Get`/`GetFromParsed` 会**直接返回缓存值**，跳过防御性深拷贝（更快、更少分配）。此时**调用方不得修改**返回的 `map[string]any`/`[]any`，否则会破坏共享缓存、影响后续读取；原始值（`bool`、`float64`、`string`、`json.Number`、`nil`）不可变，始终安全。默认 `false` 保留安全的”读时拷贝”行为，仅在调用方将结果视为只读时启用（例如反复读取同一大型子树的只读工作负载）。
+:::
+
+::: warning 扩展字段预留状态
+`CustomEncoder`、`CustomTypeEncoders`、`CustomValidators` 三个字段当前版本已声明但**尚未在编码/操作流水线中挂接**，设置后不会产生效果，是为未来版本预留的接口。当前可用的编码自定义方式是实现 `json.Marshaler` 或 `encoding.TextMarshaler` 接口（见[自定义编码器](../extensions/custom-encoder)）；可用的验证方式是 `ValidateSchema`（见[验证器](../extensions/validator)）。
 :::
 
 ## 配置预设

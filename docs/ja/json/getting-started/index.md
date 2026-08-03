@@ -269,6 +269,7 @@ err := json.ForeachWithPath(data, "users", func(key any, item *json.IterableValu
 ## 次のステップ
 
 - [パス式の構文](./path-syntax) — 完全なパスクエリ構文を学ぶ
+- [Processor ガイド](./processor-guide) — いつ Processor を使うか、事前解析最適化
 - [大規模ファイル処理](../streaming/large-files) — 大型 JSON ファイルの処理
 - [API ドキュメント](../api-reference/) — 完全な API リファレンスを参照
 - [使用例](../examples/) — より多くの実践的なサンプルを閲覧

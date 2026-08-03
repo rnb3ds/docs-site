@@ -9,26 +9,47 @@ sidebar_position: 1
 
 This section provides the complete API reference for the `github.com/cybergodev/json` library.
 
+::: tip Two API Styles
+This library offers **package-level functions** (e.g., `json.GetString(data, "path")`, no instance needed) and **Processor methods** (e.g., `p.GetString(data, "path")`, with config reuse, pre-parse caching, and hooks). Not sure which to use? See the decision tree in the [Processor Guide](../getting-started/processor-guide).
+:::
+
 ## Module Index
+
+### Function APIs
 
 | Module | Description |
 |--------|-------------|
-| [Package Functions](./functions/) | Package-level function reference, including path queries, type getters, encoding/decoding, etc. |
-| [Processor](./processor/) | Processor methods and configuration |
-| [Config](./config) | Configuration options in detail |
-| [Type Definitions](./types) | Core type definitions (including Encoder/Decoder) |
-| [Generic Operations](./generics) | Generic API reference |
-| [Interface Definitions](./interfaces) | Extension interface definitions |
-| [Stream Processing](../streaming/large-files) | Stream processor reference |
-| [NDJSON Processing](../streaming/jsonl) | JSONL/NDJSON processor |
-| [Iterator](./iterator) | Iteration traversal API |
-| [Helper Functions](./helpers) | Type conversion and utility functions |
-| [Pretty Print](./print) | Formatting and pretty-print output |
-| [Security](../security/security-mode) | Security-related API |
-| [Validator](../extensions/validator) | Schema validator |
-| [Hook System](../extensions/hooks) | Operation interception hooks |
-| [Custom Encoder](../extensions/custom-encoder) | Custom encoders |
+| [Package Functions](./functions/) | Package-level function reference (query/modify/delete/encode/parse/batch/JSONL/file/iterate) |
+| [Processor](./processor/) | Processor methods (mirrors package functions by category, plus lifecycle and pre-parse) |
+
+### Types & Interfaces
+
+| Module | Description |
+|--------|-------------|
+| [Config](./config) | Configuration options in detail (DefaultConfig / SecurityConfig / PrettyConfig) |
+| [Type Definitions](./types) | Core types (Config / Schema / Stats / AccessResult, including Encoder / Decoder) |
+| [Interface Definitions](./interfaces) | Extension interfaces (CustomEncoder / Validator / Hook / PathParser) |
+| [Iterators & IterableValue](./iterator) | Iterator / BatchIterator / ParallelIterator / StreamIterator types |
+| [Generic Operations](./generics) | Generic API (GetTyped[T] / StreamLinesInto[T] / Result[T]) |
 | [Constants & Errors](./constants) | Constants and error types |
+
+### Utilities
+
+| Module | Description |
+|--------|-------------|
+| [Utility Functions](./helpers) | CompareJSON / MergeJSON, cache management, global processor, SafeError / RedactedPath, AccessResult methods |
+| [Formatting Guide](./print) | Print series migration guide (alternatives for removed APIs) |
+
+### Cross-cutting Topics
+
+| Module | Description |
+|--------|-------------|
+| [Stream Processing](../streaming/large-files) | Large file stream processing guide |
+| [NDJSON Processing](../streaming/jsonl) | JSONL processor (StreamJSONL / NDJSONProcessor / JSONLWriter) |
+| [Security](../security/security-mode) | Security mode API (SecurityConfig / DangerousPattern / RegisterDangerousPattern) |
+| [Validator](../extensions/validator) | Schema validation (ValidateSchema / DefaultSchema / NewSchemaWithConfig) |
+| [Hook System](../extensions/hooks) | Operation interception hooks (LoggingHook / TimingHook / ValidationHook / ErrorHook) |
+| [Custom Encoder](../extensions/custom-encoder) | Custom encoders (CustomEncoder / TypeEncoder) |
 
 ## Quick Find
 
@@ -113,6 +134,7 @@ The library follows these naming conventions:
 ## Related
 
 - [Getting Started](../getting-started/) -- Installation and basic usage
+- [Processor Guide](../getting-started/processor-guide) -- When to use a Processor
 - [Path Expression Syntax](../getting-started/path-syntax) -- Path query syntax
 - [Usage Examples](../examples/) -- Practical code examples
 - [Large File Processing](../streaming/large-files) -- Stream processing guide

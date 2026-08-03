@@ -103,6 +103,7 @@ func main() {
 |------|------|
 | [빠른 시작](./getting-started/) | 설치, 기본 사용법, 핵심 개념 |
 | [경로 표현식 문법](./getting-started/path-syntax) | 경로 쿼리, 슬라이스, 와일드카드, 필드 추출 |
+| [Processor 가이드](./getting-started/processor-guide) | 언제 Processor 를 사용할까, 사전 파싱 최적화, 수명 주기 |
 | [API 문서](./api-reference/) | 완전한 API 참조 |
 | [대용량 파일 처리](./streaming/large-files) | 스트림 처리, 청크 읽기/쓰기, 메모리 최적화 |
 | [사용 예제](./examples/) | 실전 코드 예제 |
@@ -143,5 +144,6 @@ func main() {
 ## 다음 단계
 
 - [빠른 시작](./getting-started/) — 5 분 안에 시작하기
+- [Processor 가이드](./getting-started/processor-guide) — 언제 프로세서를 사용할까
 - [경로 표현식 문법](./getting-started/path-syntax) — 완전한 경로 문법
 - [사용 예제](./examples/) — 더 많은 실전 예제

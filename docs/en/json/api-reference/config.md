@@ -109,6 +109,10 @@ type Config struct {
 When `CacheSharedResults` is `true`, a cache-hit `Get`/`GetFromParsed` returns the cached value **directly**, skipping the defensive deep copy (faster, fewer allocations). The caller **must not mutate** the returned `map[string]any`/`[]any`, since doing so corrupts the shared cache and affects subsequent reads. Primitives (`bool`, `float64`, `string`, `json.Number`, `nil`) are immutable and always safe. The default `false` preserves the safe copy-on-read behavior; enable it only when callers treat results as read-only (for example, read-heavy workloads that `Get` the same large subtrees repeatedly).
 :::
 
+::: warning Extension field reservation status
+The `CustomEncoder`, `CustomTypeEncoders`, and `CustomValidators` fields are declared in the current version but **not yet wired into the encoding/operation pipeline**. Setting them has no effect; they are reserved for future versions. The currently available way to customize encoding is to implement the `json.Marshaler` or `encoding.TextMarshaler` interface (see [Custom Encoder](../extensions/custom-encoder)); the available validation method is `ValidateSchema` (see [Validator](../extensions/validator)).
+:::
+
 ## Configuration Presets
 
 ### DefaultConfig

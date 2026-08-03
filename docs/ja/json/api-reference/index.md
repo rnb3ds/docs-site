@@ -9,26 +9,47 @@ sidebar_position: 1
 
 本セクションでは `github.com/cybergodev/json` ライブラリの完全な API リファレンスを提供します。
 
+::: tip 2 つの API スタイル
+本ライブラリは **パッケージ関数**（例: `json.GetString(data, "path")`、インスタンス作成不要）と **Processor メソッド**（例: `p.GetString(data, "path")`、設定の再利用、事前解析キャッシュ、フックシステム対応）の 2 つの API を提供します。どちらを使うべきか迷ったら [Processor ガイド](../getting-started/processor-guide)の選択デシジョンツリーを参照してください。
+:::
+
 ## モジュール索引
+
+### 関数 API
 
 | モジュール | 説明 |
 |------|------|
-| [パッケージ関数](./functions/) | パッケージレベル関数リファレンス（パスクエリ、型取得、エンコード・デコードなど） |
-| [Processor](./processor/) | プロセッサメソッドと設定 |
-| [Config](./config) | 設定オプション詳細 |
-| [型定義](./types) | コア型定義（Encoder/Decoder 含む） |
-| [ジェネリクス操作](./generics) | ジェネリック API リファレンス |
-| [インターフェース定義](./interfaces) | 拡張インターフェース定義 |
-| [ストリーミング処理](../streaming/large-files) | ストリーミングプロセッサリファレンス |
-| [NDJSON 処理](../streaming/jsonl) | JSONL/NDJSON プロセッサ |
-| [イテレータ](./iterator) | 反復走査 API |
-| [ヘルパー関数](./helpers) | 型変換とユーティリティ関数 |
-| [フォーマット出力](./print) | フォーマットと整形出力 |
-| [セキュリティ検証](../security/security-mode) | セキュリティ関連 API |
-| [バリデータ](../extensions/validator) | Schema バリデータ |
-| [フックシステム](../extensions/hooks) | 操作インターセプトフック |
-| [カスタムエンコーダ](../extensions/custom-encoder) | カスタムエンコーダ |
+| [パッケージ関数](./functions/) | パッケージレベル関数リファレンス（クエリ/変更/削除/エンコード/パース/バッチ/JSONL/ファイル/イテレーション） |
+| [Processor](./processor/) | プロセッサメソッド（パッケージ関数とミラーリング分類、加えてライフサイクルと事前解析） |
+
+### 型とインターフェース
+
+| モジュール | 説明 |
+|------|------|
+| [Config](./config) | 設定オプション詳細（DefaultConfig / SecurityConfig / PrettyConfig） |
+| [型定義](./types) | コア型（Config / Schema / Stats / AccessResult、Encoder / Decoder 含む） |
+| [インターフェース定義](./interfaces) | 拡張インターフェース（CustomEncoder / Validator / Hook / PathParser） |
+| [イテレータと IterableValue](./iterator) | Iterator / BatchIterator / ParallelIterator / StreamIterator 型 |
+| [ジェネリクス操作](./generics) | ジェネリック API（GetTyped[T] / StreamLinesInto[T] / Result[T]） |
 | [定数とエラー](./constants) | 定数とエラー型 |
+
+### ツールと補助
+
+| モジュール | 説明 |
+|------|------|
+| [ユーティリティ関数](./helpers) | CompareJSON / MergeJSON、キャッシュ管理、グローバルプロセッサ、SafeError / RedactedPath、AccessResult メソッド |
+| [フォーマットガイド](./print) | Print シリーズ移行ガイド（削除された API の代替案） |
+
+### クロスモジュールトピック
+
+| モジュール | 説明 |
+|------|------|
+| [ストリーミング処理](../streaming/large-files) | 大ファイルストリーミング処理ガイド |
+| [JSONL / NDJSON 処理](../streaming/jsonl) | JSONL プロセッサ（StreamJSONL / NDJSONProcessor / JSONLWriter） |
+| [セキュリティ検証](../security/security-mode) | セキュリティモード API（SecurityConfig / DangerousPattern / RegisterDangerousPattern） |
+| [Schema バリデータ](../extensions/validator) | Schema 検証（ValidateSchema / DefaultSchema / NewSchemaWithConfig） |
+| [Hook フックシステム](../extensions/hooks) | 操作インターセプトフック（LoggingHook / TimingHook / ValidationHook / ErrorHook） |
+| [カスタムエンコーダ](../extensions/custom-encoder) | カスタムエンコーダ（CustomEncoder / TypeEncoder） |
 
 ## クイック検索
 
@@ -113,6 +134,7 @@ sidebar_position: 1
 ## 関連
 
 - [クイックスタート](../getting-started/) -- インストールと基本的な使い方
+- [Processor ガイド](../getting-started/processor-guide) -- いつプロセッサを使うか
 - [パス式の構文](../getting-started/path-syntax) -- パスクエリ構文
 - [使用例](../examples/) -- 実践的なコード例
 - [大規模ファイル処理](../streaming/large-files) -- ストリーミング処理ガイド

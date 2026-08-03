@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Методы итерации"
-title: "Функции итерации уровня пакета - CyberGo JSON | Справочник API"
-description: "Функции итерации уровня пакета CyberGo JSON: Foreach, ForeachWithPath, рекурсивный ForeachNested, обработка ошибок ForeachWithError и доступ к данным IterableValue, включая файловую итерацию ForeachFile."
+title: "Итерация уровня пакета - CyberGo JSON | API"
+description: "Итерация уровня пакета CyberGo JSON: Foreach, ForeachWithPath, ForeachNested, ForeachWithError и IterableValue, включая файловую итерацию ForeachFile."
 sidebar_position: 10
 ---
 

@@ -11,6 +11,10 @@ json パッケージは複数の拡張インターフェースを提供し、JSO
 
 ## エンコーダインターフェース
 
+::: warning 未接続の拡張フィールド
+`CustomEncoder` と `TypeEncoder` インターフェースは現在のバージョンで宣言されていますが、**エンコードパイプラインにはまだ接続されていません**。`Config.CustomEncoder` / `Config.CustomTypeEncoders` で設定しても効果はなく、将来のバージョンのために予約されています。現在利用可能なエンコードのカスタマイズ方法は `json.Marshaler` または `encoding.TextMarshaler` インターフェースの実装です（[カスタムエンコーダ](../extensions/custom-encoder) を参照）。
+:::
+
 ### CustomEncoder
 
 カスタム JSON エンコーダインターフェース。
@@ -89,6 +93,10 @@ if err != nil {
 ```
 
 ## バリデータインターフェース
+
+::: warning 未接続の拡張フィールド
+`Validator` インターフェースは現在のバージョンで宣言されていますが、**操作パイプラインにはまだ接続されていません**。`Config.CustomValidators` または `Config.AddValidator()` で設定しても効果はなく、将来のバージョンのために予約されています。現在利用可能な検証方法は `ValidateSchema` です（[バリデータ](../extensions/validator) を参照）。
+:::
 
 ### Validator
 

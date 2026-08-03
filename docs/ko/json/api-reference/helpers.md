@@ -1,13 +1,13 @@
 ---
-sidebar_label: "헬퍼 함수"
-title: "보조 함수 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 보조 함수: CompareJSON 비교, ClearCache/GetStats 캐시 관리, 전역 프로세서, 보안 헬퍼로 일상적인 Go JSON 작업을 단순화합니다."
+sidebar_label: "유틸리티 함수"
+title: "유틸리티 함수 - CyberGo JSON | API 레퍼런스"
+description: "CyberGo JSON 유틸리티 함수: CompareJSON 비교, ClearCache/GetStats 캐시 관리, 전역 프로세서, 보안 헬퍼로 일상적인 Go JSON 작업을 단순화합니다."
 sidebar_position: 8
 ---
 
-# 보조 함수
+# 유틸리티 함수
 
-json 패키지는 JSON 비교, 캐시 관리 및 유틸리티 처리를 위한 풍부한 보조 함수를 제공합니다.
+json 패키지는 JSON 비교, 캐시 관리 및 유틸리티 처리를 위한 풍부한 유틸리티 함수를 제공합니다.
 
 ## JSON 비교 함수
 
@@ -176,55 +176,16 @@ fmt.Printf("%d개 경로 웜업 성공\n", result.Successful)
 
 ## 전역 프로세서 관리
 
-전역 프로세서는 모든 패키지 레벨 함수 (예: `Get`, `GetString` 등) 에 사용됩니다.
+패키지 레벨 함수는 내부적으로 전역 프로세서를 사용합니다. 다음 함수로 커스터마이즈하거나 종료할 수 있습니다:
 
-### SetGlobalProcessor
+| 함수 | 시그니처 | 설명 |
+|------|------|------|
+| `SetGlobalProcessor` | `func SetGlobalProcessor(p *Processor)` | 커스텀 전역 프로세서 설정 |
+| `ShutdownGlobalProcessor` | `func ShutdownGlobalProcessor()` | 전역 프로세서 종료 및 리소스 해제 |
 
-시그니처: `func SetGlobalProcessor(processor *Processor)`
-
-커스텀 전역 프로세서를 설정합니다.
-
-```go
-cfg := json.SecurityConfig()
-p, err := json.New(cfg)
-if err != nil {
-    panic(err)
-}
-
-json.SetGlobalProcessor(p)
-
-// 이후 모든 패키지 레벨 함수가 이 프로세서를 사용합니다
-val := json.GetString(data, "user.name")
-```
-
----
-
-### ShutdownGlobalProcessor
-
-시그니처: `func ShutdownGlobalProcessor()`
-
-전역 프로세서를 종료하고 리소스를 해제합니다.
-
-```go
-package main
-
-import (
-    "github.com/cybergodev/json"
-)
-
-func main() {
-    cfg := json.DefaultConfig()
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    json.SetGlobalProcessor(p)
-
-    defer json.ShutdownGlobalProcessor()
-
-    // 애플리케이션 로직...
-}
-```
+::: tip 자세한 사용법
+전역 프로세서의 전체 사용 예제와 수명 주기 관리는 [Processor 개요](./processor/#전역-프로세서-관리) 및 [Processor 가이드](../getting-started/processor-guide#전역-프로세서)를 참조하세요.
+:::
 
 ---
 
@@ -238,44 +199,7 @@ Print, PrintPretty, PrintE, PrintPrettyE 는 라이브러리에서 제거되어 
 
 ## Buffer 호환 함수
 
-:::tip 안내
-다음 함수는 `encoding/json` 표준 라이브러리와 완전히 호환되며, `cfg` 매개변수를 통해 추가 설정을 지원합니다.
-:::
-
-### Compact
-
-시그니처: `func Compact(dst *bytes.Buffer, src []byte, cfg ...Config) error`
-
-JSON 을 압축하여 Buffer 에 씁니다. `encoding/json.Compact`과 100% 호환됩니다.
-
-```go
-var buf bytes.Buffer
-err := json.Compact(&buf, []byte(`{"name": "test"}`))
-```
-
-### Indent
-
-시그니처: `func Indent(dst *bytes.Buffer, src []byte, prefix, indent string, cfg ...Config) error`
-
-JSON 을 포맷하여 Buffer 에 씁니다. `encoding/json.Indent`와 100% 호환됩니다.
-
-```go
-var buf bytes.Buffer
-err := json.Indent(&buf, []byte(`{"name":"test"}`), "", "  ")
-```
-
----
-
-### HTMLEscape
-
-시그니처: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
-
-JSON 을 HTML 이스케이프하여 Buffer 에 씁니다. `encoding/json.HTMLEscape`와 100% 호환됩니다.
-
-```go
-var buf bytes.Buffer
-json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
-```
+`Compact`, `Indent`, `HTMLEscape` 는 `encoding/json` 표준 라이브러리와 완전히 호환되며, `cfg` 매개변수를 통해 추가 설정을 지원합니다. 전체 시그니처, 예제 및 Processor 동등 메서드는 [인코딩 출력 함수](./functions/output#compact)를 참조하세요.
 
 ---
 

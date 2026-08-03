@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Overview"
 title: "Package Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON package functions: Get/GetString/GetInt path queries, Set/Delete/MergeJSON modification, Marshal/Unmarshal encoding, and ParseJSONL/ProcessBatch batch processing."
+description: "CyberGo JSON package functions: Get/GetString path queries, Set/Delete modification, Marshal/Unmarshal encoding and ParseJSONL/ProcessBatch batch processing."
 sidebar_position: 1
 ---
 

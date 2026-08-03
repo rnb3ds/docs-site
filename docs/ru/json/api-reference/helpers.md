@@ -1,13 +1,13 @@
 ---
-sidebar_label: "Вспомогательные функции"
-title: "Вспомогательные функции - CyberGo JSON | API"
-description: "Вспомогательные функции CyberGo JSON: CompareJSON, ClearCache/GetStats, управление Processor и помощники безопасности."
+sidebar_label: "Сервисные функции"
+title: "Сервисные функции - CyberGo JSON | API"
+description: "Сервисные функции CyberGo JSON: CompareJSON сравнение, ClearCache/GetStats управление кэшем, глобальный процессор и помощники безопасного режима."
 sidebar_position: 8
 ---
 
-# Вспомогательные функции
+# Сервисные функции
 
-Пакет json предоставляет богатый набор вспомогательных функций для сравнения JSON, управления кэшем и утилит обработки.
+Пакет json предоставляет богатый набор сервисных функций для сравнения JSON, управления кэшем и утилит обработки.
 
 ## Функции сравнения JSON
 
@@ -176,55 +176,16 @@ fmt.Printf("Успешно прогрето %d путей\n", result.Successful)
 
 ## Управление глобальным процессором
 
-Глобальный процессор используется всеми функциями уровня пакета (такими как `Get`, `GetString` и т.д.).
+Функции уровня пакета внутри используют глобальный процессор. Настроить или завершить его работу можно следующими функциями:
 
-### SetGlobalProcessor
+| Функция | Сигнатура | Описание |
+|------|------|------|
+| `SetGlobalProcessor` | `func SetGlobalProcessor(p *Processor)` | Устанавливает пользовательский глобальный процессор |
+| `ShutdownGlobalProcessor` | `func ShutdownGlobalProcessor()` | Завершает работу глобального процессора и освобождает ресурсы |
 
-Сигнатура: `func SetGlobalProcessor(processor *Processor)`
-
-Устанавливает пользовательский глобальный процессор.
-
-```go
-cfg := json.SecurityConfig()
-p, err := json.New(cfg)
-if err != nil {
-    panic(err)
-}
-
-json.SetGlobalProcessor(p)
-
-// Теперь все функции уровня пакета используют этот процессор
-val := json.GetString(data, "user.name")
-```
-
----
-
-### ShutdownGlobalProcessor
-
-Сигнатура: `func ShutdownGlobalProcessor()`
-
-Завершает работу глобального процессора и освобождает ресурсы.
-
-```go
-package main
-
-import (
-    "github.com/cybergodev/json"
-)
-
-func main() {
-    cfg := json.DefaultConfig()
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    json.SetGlobalProcessor(p)
-
-    defer json.ShutdownGlobalProcessor()
-
-    // Логика приложения...
-}
-```
+::: tip Подробное использование
+Полные примеры использования глобального процессора и управление жизненным циклом см. в [Обзор Processor](./processor/#управление-глобальным-процессором) и [Руководство по Processor](../getting-started/processor-guide#глобальный-процессор).
+:::
 
 ---
 
@@ -238,44 +199,7 @@ Print, PrintPretty, PrintE, PrintPrettyE удалены из библиотек�
 
 ## Функции совместимости с Buffer
 
-::: tip
-Следующие функции полностью совместимы со стандартной библиотекой `encoding/json` и при этом поддерживают дополнительную конфигурацию через параметр `cfg`.
-:::
-
-### Compact
-
-Сигнатура: `func Compact(dst *bytes.Buffer, src []byte, cfg ...Config) error`
-
-Сжимает JSON и записывает в Buffer. На 100% совместима с `encoding/json.Compact`.
-
-```go
-var buf bytes.Buffer
-err := json.Compact(&buf, []byte(`{"name": "test"}`))
-```
-
-### Indent
-
-Сигнатура: `func Indent(dst *bytes.Buffer, src []byte, prefix, indent string, cfg ...Config) error`
-
-Форматирует JSON и записывает в Buffer. На 100% совместима с `encoding/json.Indent`.
-
-```go
-var buf bytes.Buffer
-err := json.Indent(&buf, []byte(`{"name":"test"}`), "", "  ")
-```
-
----
-
-### HTMLEscape
-
-Сигнатура: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
-
-Экранирует HTML-символы в JSON и записывает в Buffer. На 100% совместима с `encoding/json.HTMLEscape`.
-
-```go
-var buf bytes.Buffer
-json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
-```
+`Compact`, `Indent`, `HTMLEscape` полностью совместимы со стандартной библиотекой `encoding/json` и при этом поддерживают дополнительную конфигурацию через параметр `cfg`. Полные сигнатуры, примеры и эквивалентные методы Processor см. в [Функции кодирования и вывода](./functions/output#compact).
 
 ---
 

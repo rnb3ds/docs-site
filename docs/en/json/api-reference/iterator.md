@@ -1,7 +1,7 @@
 ---
-sidebar_label: "Iterator Types"
-title: "Iterator Types - CyberGo JSON | API Reference"
-description: "CyberGo JSON iterator types: Iterator sequential traversal, IterableValue data access, StreamIterator/StreamObjectIterator streaming, BatchIterator batch, and ParallelIterator parallel iterator constructors and methods."
+sidebar_label: "Iterators & IterableValue"
+title: "Iterators & IterableValue - CyberGo JSON | API Reference"
+description: "CyberGo JSON iterator types: Iterator and IterableValue traversal, StreamIterator streaming, BatchIterator batch and ParallelIterator parallel."
 sidebar_position: 9
 ---
 

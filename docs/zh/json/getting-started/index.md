@@ -292,6 +292,7 @@ err := json.ForeachWithPath(data, "users", func(key any, item *json.IterableValu
 ## 下一步
 
 - [路径表达式语法](./path-syntax) — 学习完整的路径查询语法
+- [Processor 入门](./processor-guide) — 何时使用处理器、预解析优化
 - [大文件处理](../streaming/large-files) — 处理大型 JSON 文件
 - [API 文档](../api-reference/) — 查看完整 API 参考
 - [使用示例](../examples/) — 浏览更多实战示例

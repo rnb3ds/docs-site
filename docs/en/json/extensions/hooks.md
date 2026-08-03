@@ -9,6 +9,10 @@ sidebar_position: 1
 
 Hooks allow inserting custom logic before and after JSON operations, enabling logging, performance monitoring, validation, and more.
 
+::: tip Interface Signature Reference
+For the complete type signatures of the Hook interface (`Hook`, `HookContext`, `HookFunc`), see [Interface Definitions](../api-reference/interfaces#hook-interface). This page focuses on usage guides and best practices.
+:::
+
 ## Hook Interface
 
 ```go

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Iteration Methods"
 title: "Package Iteration Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON package-level iteration functions: Foreach, ForeachWithPath, ForeachNested recursion, ForeachWithError error handling, IterableValue data access, and ForeachFile file iteration."
+description: "CyberGo JSON package-level iteration: Foreach/ForeachWithPath traversal, ForeachWithError handling, IterableValue access and ForeachFile file iteration."
 sidebar_position: 10
 ---
 

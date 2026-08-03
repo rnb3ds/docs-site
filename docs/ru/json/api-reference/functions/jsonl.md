@@ -1,13 +1,17 @@
 ---
 sidebar_label: "JSONL"
 title: "Функции обработки JSONL - CyberGo JSON | Справочник API"
-description: "Функции обработки JSONL CyberGo JSON: преобразование ParseJSONL/ToJSONL/ToJSONLString, потоковая обработка StreamJSONL/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL, обобщённый поток StreamLinesInto[T] и писатель NewJSONLWriter."
+description: "Обработка JSONL в CyberGo JSON: ParseJSONL/ToJSONL/ToJSONLString преобразование, StreamJSONL/ForeachJSONL/MapJSONL потоковая обработка и StreamLinesInto[T]."
 sidebar_position: 8
 ---
 
 # Функции обработки JSONL
 
 Пакет json предоставляет функции обработки JSONL (JSON Lines), поддерживающие парсинг, потоковое чтение, преобразование и запись данных JSON с разделением строками.
+
+::: tip Полный учебник
+Нужны понятия JSONL/NDJSON, паттерны потоковой обработки и практическое применение? См. полный учебник [Обработчик JSONL](../../streaming/jsonl).
+:::
 
 ## Функции обработки JSONL
 

@@ -1,11 +1,15 @@
 ---
-sidebar_label: "출력 함수"
-title: "출력 함수 - CyberGo JSON | API 레퍼런스"
+sidebar_label: "포맷팅 가이드"
+title: "포맷팅 가이드 - CyberGo JSON | API 레퍼런스"
 description: "CyberGo JSON 출력과 포맷: Encode, EncodePretty, Prettify 와 fmt 패키지로 들여쓰기 JSON 출력을 구현하고 제거된 Print 계열을 대체합니다."
 sidebar_position: 11
 ---
 
 # 출력 함수
+
+::: info 마이그레이션 참조
+이 페이지는 Print 계열 함수(이전 버전에서 제거됨)의 마이그레이션 가이드입니다. JSON 을 포맷하려면 [`Prettify`](../api-reference#포맷팅) 또는 표준 라이브러리 호환 `MarshalIndent` 를 사용하세요.
+:::
 
 :::warning API 변경 안내
 Print, PrintPretty, PrintE, PrintPrettyE 는 라이브러리에서 제거되어 더 이상 제공되지 않습니다. 다음 대안을 사용하십시오.

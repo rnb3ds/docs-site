@@ -9,26 +9,47 @@ sidebar_position: 1
 
 이 섹션은 `github.com/cybergodev/json` 라이브러리의 전체 API 참조를 제공합니다.
 
+::: tip 두 가지 API 스타일
+이 라이브러리는 **패키지 함수**(예: `json.GetString(data, "path")`, 인스턴스 생성 불필요)와 **Processor 메서드**(예: `p.GetString(data, "path")`, 설정 재사용, 사전 파싱 캐시, 훅 시스템 지원) 두 가지 API를 제공합니다. 어느 것을 사용할지 잘 모르시나요? [Processor 가이드](../getting-started/processor-guide)의 선택 의사결정 트리를 참조하세요.
+:::
+
 ## 모듈 인덱스
+
+### 함수 API
 
 | 모듈 | 설명 |
 |------|------|
-| [패키지 함수](./functions/) | 패키지 레벨 함수 참조, 경로 쿼리, 타입 가져오기, 인코딩/디코딩 등 |
-| [Processor](./processor/) | 프로세서 메서드와 설정 |
-| [Config](./config) | 설정 옵션 상세 설명 |
-| [타입 정의](./types) | 핵심 타입 정의 (Encoder/Decoder 포함) |
-| [제네릭 작업](./generics) | 제네릭 API 참조 |
-| [인터페이스 정의](./interfaces) | 확장 인터페이스 정의 |
-| [스트림 처리](../streaming/large-files) | 스트림 프로세서 참조 |
-| [NDJSON 처리](../streaming/jsonl) | JSONL/NDJSON 프로세서 |
-| [반복자](./iterator) | 반복 순회 API |
-| [보조 함수](./helpers) | 타입 변환과 유틸리티 함수 |
-| [포맷 출력](./print) | 포맷팅과 미화 출력 |
-| [보안 검증](../security/security-mode) | 보안 관련 API |
-| [검증기](../extensions/validator) | Schema 검증기 |
-| [훅 시스템](../extensions/hooks) | 작업 가로채기 훅 |
-| [커스텀 인코더](../extensions/custom-encoder) | 커스텀 인코더 |
+| [패키지 함수](./functions/) | 패키지 레벨 함수 참조 (쿼리/수정/삭제/인코딩/파싱/배치/JSONL/파일/반복) |
+| [Processor](./processor/) | 프로세서 메서드 (패키지 함수와 미러 분류, 추가로 수명 주기와 사전 파싱 포함) |
+
+### 타입과 인터페이스
+
+| 모듈 | 설명 |
+|------|------|
+| [Config](./config) | 설정 옵션 상세 (DefaultConfig / SecurityConfig / PrettyConfig) |
+| [타입 정의](./types) | 핵심 타입 (Config / Schema / Stats / AccessResult, Encoder / Decoder 포함) |
+| [인터페이스 정의](./interfaces) | 확장 인터페이스 (CustomEncoder / Validator / Hook / PathParser) |
+| [이터레이터와 IterableValue](./iterator) | Iterator / BatchIterator / ParallelIterator / StreamIterator 타입 |
+| [제네릭 작업](./generics) | 제네릭 API (GetTyped[T] / StreamLinesInto[T] / Result[T]) |
 | [상수와 오류](./constants) | 상수와 오류 타입 |
+
+### 유틸리티와 보조
+
+| 모듈 | 설명 |
+|------|------|
+| [유틸리티 함수](./helpers) | CompareJSON / MergeJSON, 캐시 관리, 전역 프로세서, SafeError / RedactedPath, AccessResult 메서드 |
+| [포맷팅 가이드](./print) | Print 계열 마이그레이션 가이드 (제거된 API 의 대안) |
+
+### 크로스 모듈 주제
+
+| 모듈 | 설명 |
+|------|------|
+| [스트림 처리](../streaming/large-files) | 대용량 파일 스트림 처리 가이드 |
+| [JSONL / NDJSON 처리](../streaming/jsonl) | JSONL 프로세서 (StreamJSONL / NDJSONProcessor / JSONLWriter) |
+| [보안 검증](../security/security-mode) | 보안 모드 API (SecurityConfig / DangerousPattern / RegisterDangerousPattern) |
+| [Schema 검증기](../extensions/validator) | Schema 검증 (ValidateSchema / DefaultSchema / NewSchemaWithConfig) |
+| [Hook 훅 시스템](../extensions/hooks) | 작업 가로채기 훅 (LoggingHook / TimingHook / ValidationHook / ErrorHook) |
+| [커스텀 인코더](../extensions/custom-encoder) | 커스텀 인코더 (CustomEncoder / TypeEncoder) |
 
 ## 빠른 찾기
 
@@ -113,6 +134,7 @@ sidebar_position: 1
 ## 관련 문서
 
 - [빠른 시작](../getting-started/) -- 설치와 기본 사용법
+- [Processor 가이드](../getting-started/processor-guide) -- Processor 를 언제 사용할까
 - [경로 표현식 문법](../getting-started/path-syntax) -- 경로 쿼리 문법
 - [사용 예제](../examples/) -- 실전 코드 예제
 - [대용량 파일 처리](../streaming/large-files) -- 스트림 처리 가이드

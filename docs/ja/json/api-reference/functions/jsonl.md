@@ -1,13 +1,17 @@
 ---
 sidebar_label: "JSONL"
 title: "JSONL 処理関数 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON JSONL 処理関数：ParseJSONL/ToJSONL/ToJSONLString 変換、StreamJSONL/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL ストリーミング処理、StreamLinesInto[T] ジェネリックストリームと NewJSONLWriter ライタ。"
+description: "CyberGo JSON JSONL 関数：ParseJSONL/ToJSONL/ToJSONLString 変換、StreamJSONL/ForeachJSONL ストリーミング、StreamLinesInto[T] ジェネリックと NewJSONLWriter ライタ。"
 sidebar_position: 8
 ---
 
 # JSONL 処理関数
 
 json パッケージが提供する JSONL（JSON Lines）処理関数。改行区切りの JSON データのパース、ストリーミング読み込み、変換、書き込みをサポートします。
+
+::: tip 完全チュートリアル
+JSONL/NDJSON の概念、ストリーミング処理パターン、実戦的な使い方を知りたいですか？[JSONL プロセッサ](../../streaming/jsonl) の完全チュートリアルを参照してください。
+:::
 
 ## JSONL 処理関数
 

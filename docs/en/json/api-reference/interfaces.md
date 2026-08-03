@@ -11,6 +11,10 @@ The json package provides multiple extension interfaces for customizing JSON pro
 
 ## Encoder Interfaces
 
+::: warning Unwired extension fields
+The `CustomEncoder` and `TypeEncoder` interfaces are declared in the current version but **not yet wired into the encoding pipeline**. Setting them via `Config.CustomEncoder` / `Config.CustomTypeEncoders` has no effect; they are reserved for future versions. The currently available way to customize encoding is to implement the `json.Marshaler` or `encoding.TextMarshaler` interface (see [Custom Encoder](../extensions/custom-encoder)).
+:::
+
 ### CustomEncoder
 
 Custom JSON encoder interface.
@@ -89,6 +93,10 @@ if err != nil {
 ```
 
 ## Validator Interface
+
+::: warning Unwired extension fields
+The `Validator` interface is declared in the current version but **not yet wired into the operation pipeline**. Setting it via `Config.CustomValidators` or `Config.AddValidator()` has no effect; it is reserved for future versions. The currently available validation method is `ValidateSchema` (see [Validator](../extensions/validator)).
+:::
 
 ### Validator
 
