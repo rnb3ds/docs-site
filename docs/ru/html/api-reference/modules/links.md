@@ -64,6 +64,25 @@ type LinkResource struct {
 }
 ```
 
+## Подробное описание типов ссылок
+
+Каждое значение `Type` соответствует определённым HTML-тегам-источникам:
+
+| Значение Type | HTML-тег-источник | Управляющий переключатель |
+|---------|---------------|----------|
+| `link` | `<a href>` | `IncludeContentLinks` / `IncludeExternalLinks` |
+| `image` | `<img src>` | `IncludeImages` |
+| `video` | `<video src>`, `<source type="video/*">`, `<iframe>`/`<embed>`/`<object>` (видео-URL) | `IncludeVideos` |
+| `audio` | `<audio src>`, `<source type="audio/*">` | `IncludeAudios` |
+| `media` | `<source>`, когда невозможно определить video/audio | `IncludeVideos` / `IncludeAudios` |
+| `css` | `<link rel="stylesheet">` | `IncludeCSS` |
+| `js` | `<script src>` | `IncludeJS` |
+| `icon` | `<link rel="icon">`, `<link rel="apple-touch-icon">` и др. | `IncludeIcons` |
+
+:::info Особая обработка embed-ссылок
+`src`/`data` у `<iframe>`, `<embed>`, `<object>` извлекаются только тогда, когда они определяются как **видео-URL** (включая встраивание YouTube, Vimeo, Dailymotion и др.), тип фиксируется как `video`. Не-видео URL не попадают в результат.
+:::
+
 ## Конфигурация
 
 Поведение извлечения ссылок настраивается через поля фильтрации ссылок в `Config`:
@@ -78,7 +97,40 @@ cfg.ResolveRelativeURLs = true
 cfg.BaseURL = "https://example.com"
 ```
 
-:::tip Подсказка
+### Разрешение относительных URL
+
+Когда `ResolveRelativeURLs=true` (по умолчанию), все типы относительных URL разрешаются в абсолютные на основе `BaseURL` единообразно:
+
+- Логика разрешения централизована в `resolveURLIfEnabled` и **одинаково** обрабатывает контентные ссылки, изображения, медиа, source, script, embed и link-теги
+- Явное задание `BaseURL` **пропускает автоопределение** и напрямую использует значение, предоставленное вызывающей стороной
+- Если `BaseURL` пуст, а `ResolveRelativeURLs=true`, BaseURL автоматически выводится из документа (см. подсказку ниже)
+
+### Внутренние и внешние ссылки
+
+Контентные ссылки (`<a href>`) управляются двумя группами переключателей — отдельно для внутренних и внешних ссылок:
+
+| Переключатель | Область управления | Способ определения |
+|------|----------|----------|
+| `IncludeContentLinks` | Внутренние ссылки | URL является относительным путём или расположен в том же домене, что и `BaseURL` |
+| `IncludeExternalLinks` | Внешние ссылки | URL является абсолютным путём и расположен в другом домене, отличном от `BaseURL` (`IsDifferentDomain`) |
+
+По умолчанию оба значения `true` (извлекаются все контентные ссылки). Остальные типы ресурсов (изображения, CSS, JS и т. д.) не подчиняются разделению внутренние/внешние и управляются только соответствующими переключателями `Include*`.
+
+### Обработка preload / prefetch
+
+`<link rel="preload" as="...">` и `rel="prefetch"` маршрутизируются в разные типы в зависимости от атрибута `as`:
+
+| Значение `as` | Тип | Управляющий переключатель |
+|-------------|----------|----------|
+| `style` | `css` | `IncludeCSS` |
+| `script` | `js` | `IncludeJS` |
+| `image` | `image` | `IncludeImages` |
+| `video` | `video` | `IncludeVideos` |
+| `audio` | `audio` | `IncludeAudios` |
+
+`dns-prefetch` и `preconnect` проходят через ту же маршрутизацию, но обычно не содержат атрибут `as`, поэтому не попадают в результат.
+
+:::tip Автоопределение BaseURL
 Если `ResolveRelativeURLs=true` и `BaseURL` **пуст**, библиотека автоматически выводит BaseURL из самого HTML-документа, перебирая следующие источники **в порядке приоритета** и возвращая первое совпадение:
 
 1. тег `<base href>`;
@@ -88,3 +140,44 @@ cfg.BaseURL = "https://example.com"
 
 Явное задание `BaseURL` **пропускает автоопределение** и использует значение, предоставленное вызывающей стороной.
 :::
+
+## Пример
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/html"
+)
+
+func main() {
+	data := []byte(`<html><head>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="icon" href="/favicon.ico">
+<script src="/js/app.js"></script>
+</head><body>
+<a href="/about">О нас</a>
+<img src="/img/logo.png" alt="Logo">
+<video src="/media/intro.mp4"></video>
+</body></html>`)
+
+	cfg := html.DefaultConfig()
+	cfg.BaseURL = "https://example.com"
+	links, err := html.ExtractAllLinks(data, cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// Группировка по типам и построчный вывод
+	groups := html.GroupLinksByType(links)
+	for typ, items := range groups {
+		fmt.Printf("%s (%d шт.):\n", typ, len(items))
+		for _, l := range items {
+			fmt.Printf("  - %s [%s]\n", l.URL, l.Title)
+		}
+	}
+}
+```

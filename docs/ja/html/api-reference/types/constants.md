@@ -1,7 +1,7 @@
 ---
 sidebar_label: "定数とエラー"
 title: "定数とエラー - CyberGo html | 既定値とエラー型"
-description: "CyberGo html 定数とエラー型：既定値定数、センチネルエラー、InputError・ConfigError・FileError の構造化エラーで errors.Is/As 判定をサポートします。"
+description: "CyberGo html 定数とエラー型リファレンス：既定値定数、センチネルエラー、InputError・ConfigError・FileError の構造化エラーで errors.Is/As 判定をサポートし、監査イベントタイプやデフォルト値の一覧も提供します。"
 sidebar_position: 3
 ---
 
@@ -113,6 +113,39 @@ func (e *FileError) MarshalJSON() ([]byte, error) // JSON シリアライズ時�
 
 :::tip 安全なパス
 `FileError.Error()` と `SafePath()` はどちらも切り詰められた安全なパス（ファイル名のみ）を返し、パスの漏洩を防止します。デバッグ時に完全なパスが必要な場合は `Path` フィールドに直接アクセスできます。
+:::
+
+## 内部制限定数
+
+以下の定数はライブラリの実行時ハード上限を定義します。これらは**非エクスポート**（小文字始まり）で直接参照できませんが、実行時の動作に影響します——これらの値を理解すると、ライブラリの境界条件とエラーシナリオの把握に役立ちます。
+
+### 設定上限
+
+| 定数 | 値 | 説明 |
+|------|----|------|
+| `maxConfigInputSize` | `52428800` (50MB) | `MaxInputSize` の設定上限；より大きな値を設定しても `Validate()` で拒否されます |
+| `maxConfigWorkerSize` | `256` | `WorkerPoolSize` の設定上限 |
+| `maxConfigDepth` | `500` | `MaxDepth` の設定上限 |
+| `maxConfigCacheEntries` | `100000` | `MaxCacheEntries` の設定上限（≈100MB、エントリ 1KB で試算） |
+
+### 処理制限
+
+| 定数 | 値 | 説明 |
+|------|----|------|
+| `maxBatchSize` | `10000` | 1 回のバッチ最大項目数；超過するとバッチ全体がエラーを返します（panic ではない） |
+| `maxTimeoutGoroutines` | `1000` | グローバルな並行タイムアウト goroutine の上限；超過すると新規リクエストは直接 `ErrProcessingTimeout` を返します |
+| `maxHTMLForRegex` | `1000000` (1MB) | メディア URL 正規表現スキャン対象の HTML サイズ上限；この値を超えると正規表現のフォールバックをスキップします（ReDoS 防御） |
+| `maxRegexMatches` | `1000` | 1 回の正規表現スキャンの最大マッチ数；メディア密集体での過剰割り当てを防止します |
+
+### キャッシュキー生成
+
+| 定数 | 値 | 説明 |
+|------|----|------|
+| `maxCacheKeySize` | `65536` (64KB) | 完全ハッシュ対象のコンテンツサイズ閾値；この値を超えると 5 点サンプリングに切り替えます |
+| `cacheKeySample` | `4096` | 大規模ドキュメントのサンプリング総バイト予算（5 点 × ~820 バイト/点） |
+
+:::tip なぜこれらを知る必要があるのか
+これらの定数はいくつかの「なぜ」を説明します：なぜ 1MB を超える HTML では素の動画リンクが抽出されないのか（ReDoS 防護）、なぜバッチが 10000 項目を超えると全体が失敗するのか（OOM 防護）、なぜ 64KB がキャッシュキー戦略の境界線なのか（ハッシュコスト vs 衝突リスク）。
 :::
 
 ## エラー処理パターン

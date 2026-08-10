@@ -1,11 +1,11 @@
 ---
-sidebar_label: "输出格式选择"
-title: "输出格式选择 - CyberGo html | 格式对比指南"
-description: "CyberGo html 输出格式选择：对比纯文本、Markdown、JSON 的特点与适用场景，含 InlineImageFormat 与 InlineLinkFormat 选项配置。"
-sidebar_position: 2
+sidebar_label: "输出格式实战"
+title: "输出格式实战 - CyberGo html | 格式对比指南"
+description: "CyberGo html 输出格式实战指南：对比纯文本、Markdown、JSON 三种格式的特点与适用场景（搜索索引、博客文档、API 传输），含 InlineImageFormat 与 InlineLinkFormat 内联格式选项配置。"
+sidebar_position: 3
 ---
 
-# 输出格式选择
+# 输出格式实战
 
 本指南帮助你在纯文本、Markdown、JSON 三种输出格式中做出正确选择。
 
@@ -200,5 +200,5 @@ md, err := html.ExtractToMarkdownWithContext(ctx, data)
 ## 下一步
 
 - [API 参考：输出格式](../../api-reference/modules/output) - 完整 API 签名
-- [链接提取与分组](./link-extraction) - 提取页面资源链接
+- [链接提取实战](./link-extraction) - 提取页面资源链接
 - [配置详解](../../api-reference/core/config) - 所有配置选项

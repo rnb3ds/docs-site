@@ -302,4 +302,4 @@ func main() {
 
 - [测试模式](./testing-patterns) -- 在测试中使用 LoggerRecorder
 - [安全与审计实战](./security-audit) -- 安全过滤和审计日志
-- [分布式追踪](../guides/context-tracing) -- 请求追踪集成
+- [分布式追踪](../guides/integration/context-tracing) -- 请求追踪集成

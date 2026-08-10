@@ -1,6 +1,6 @@
 ---
 sidebar_label: "概要"
-title: "html - CyberGo html | HTML 抽出・クリーニング Go ライブラリ"
+title: "HTML 抽出ライブラリ - CyberGo html | コンテンツ抽出・クリーニング"
 description: "CyberGo html は高性能な HTML 抽出・クリーニング Go ライブラリで、スマート記事認識、自動エンコーディング検出、コンテンツクリーニング、マルチフォーマット出力を提供し、Web スクレイピングやドキュメント分析に適しています。"
 ---
 
@@ -102,10 +102,15 @@ HTML ライブラリは 3 つのコアタイプを中心に構築されていま
 |------|------|----------|
 | 入門 | [クイックスタート](./getting-started/) | インストール、基本的な使い方、2 つの呼び出し方 |
 | コア | [コンテンツ抽出](./guides/core-features/content-extraction) | Extract ファミリー、Config 設定、Result の読み方 |
-| フォーマット | [出力フォーマット](./guides/core-features/output-formats) | Markdown / JSON 出力、カスタムテンプレート |
-| パフォーマンス | [キャッシュと再利用](./guides/advanced-patterns/processor-cache) | Processor ライフサイクル、キャッシュチューニング、バッチ処理 |
-| 拡張 | [リンク抽出](./guides/core-features/link-extraction) | リンク抽出、グループ化、リソース発見 |
-| セキュリティ | [監査パイプライン](./guides/advanced-patterns/audit-pipeline) | 監査システム、カスタム Sink、セキュリティモニタリング |
+| メディア | [メディア抽出](./guides/core-features/media-extraction) | 動画、音声、埋め込みコンテンツの抽出 |
+| フォーマット | [出力フォーマット](./guides/core-features/output-formats) | Markdown / JSON 出力、フォーマット設定 |
+| リンク | [リンク抽出](./guides/core-features/link-extraction) | リンク抽出、グループ化、リソース発見 |
+| エンコーディング | [エンコーディング検出](./guides/core-features/encoding-detection) | 自動検出、手動指定、15+ エンコーディング対応 |
+| 設定 | [設定ガイド](./guides/core-features/configuration) | 4 つのプリセット、6 分野のフィールド、よくある組み合わせ |
+| エラー | [エラー処理](./guides/error-handling) | 5 種のエラー、errors.Is/As、context キャンセル |
+| パフォーマンス | [キャッシュと再利用](./guides/performance/processor-cache) | Processor ライフサイクル、キャッシュチューニング |
+| バッチ | [バッチ処理](./guides/performance/batch-processing) | 並行バッチ抽出、WorkerPool チューニング |
+| セキュリティ | [セキュリティ概要](./guides/security/) | セキュリティ機能、監査システム、本番チェックリスト |
 | 応用 | [テストとカスタマイズ](./guides/integration/testing-custom) | カスタム Scorer、ContentNode、テストモード |
 | リファレンス | [チートシート](./getting-started/cheatsheet) | よく使う API 一覧 |
 

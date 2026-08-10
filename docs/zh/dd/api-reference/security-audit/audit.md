@@ -7,6 +7,8 @@ sidebar_position: 3
 
 # 审计日志
 
+> 🔧 **API 参考** · 使用教程见 [审计日志](../../guides/security/audit-logging)
+
 DD 提供异步审计日志功能，记录安全相关事件，支持完整性签名和条目序列号追踪。
 
 ## AuditLogger
@@ -207,4 +209,4 @@ if result != nil && result.Valid {
 
 - [完整性签名](./integrity) -- IntegritySigner 详解
 - [安全过滤](./security) -- 敏感数据过滤
-- [钩子系统](./hooks) -- OnError 钩子
+- [钩子系统](../core/hooks) -- OnError 钩子

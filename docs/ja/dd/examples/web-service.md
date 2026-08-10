@@ -302,4 +302,4 @@ func main() {
 
 - [テストパターン](./testing-patterns) -- テストで LoggerRecorder を使用
 - [セキュリティと監査実践](./security-audit) -- セキュリティフィルタリングと監査ログ
-- [分散トレーシング](../guides/context-tracing) -- リクエストトレーシング統合
+- [分散トレーシング](../guides/integration/context-tracing) -- リクエストトレーシング統合

@@ -87,7 +87,7 @@ func (fw *FileWriter) SetOnRotateCallback(fn func(path string))
 Sets a callback invoked **after** a successful file rotation. The callback parameter `path` is the base path of the current log file (the path stored by `NewFileWriter` after path normalization — for absolute-path inputs it is typically equal to the input, while relative paths are resolved to absolute). At this point the old log has been archived as a backup file and a new file has been reopened at the same path. Setting the callback takes an internal mutex to avoid racing with an in-progress rotation.
 
 :::info Internal Use
-This method is primarily used internally by `Logger` — when the `FileWriter` is an output target of the Logger, the Logger triggers the `HookOnRotate` hook event through it (see [Hook System](../security-audit/hooks)). Ordinary users typically do not need to call it manually; if you want to customize post-rotation behavior, you may also set it directly.
+This method is primarily used internally by `Logger` — when the `FileWriter` is an output target of the Logger, the Logger triggers the `HookOnRotate` hook event through it (see [Hook System](../core/hooks)). Ordinary users typically do not need to call it manually; if you want to customize post-rotation behavior, you may also set it directly.
 :::
 
 <!-- check-code: skip -->

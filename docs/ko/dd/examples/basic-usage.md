@@ -267,4 +267,4 @@ func SetupLogger(env string) (*dd.Logger, error) {
 
 - [빠른 시작](../getting-started/) -- 기본 입문
 - [API 레퍼런스](../api-reference/) -- 완전한 API
-- [보안](../security/) -- 보안 구성
+- [보안](../guides/security/) -- 보안 구성

@@ -8,7 +8,7 @@ sidebar_position: 11
 # 출력 함수
 
 ::: info 마이그레이션 참조
-이 페이지는 Print 계열 함수(이전 버전에서 제거됨)의 마이그레이션 가이드입니다. JSON 을 포맷하려면 [`Prettify`](../api-reference#포맷팅) 또는 표준 라이브러리 호환 `MarshalIndent` 를 사용하세요.
+이 페이지는 Print 계열 함수(이전 버전에서 제거됨)의 마이그레이션 가이드입니다. JSON 을 포맷하려면 [`Prettify`](./index#포맷팅) 또는 표준 라이브러리 호환 `MarshalIndent` 를 사용하세요.
 :::
 
 :::warning API 변경 안내

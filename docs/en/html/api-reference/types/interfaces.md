@@ -66,6 +66,77 @@ type StatsProvider interface {
 }
 ```
 
+`Processor` implements both `Extractor` and `StatsProvider`. By referencing the `Processor` through interface types, you can inject "extraction capability" and "monitoring capability" into separate consumers:
+
+```go
+type ExtractionService struct {
+    extractor     html.Extractor     // only needs extraction capability
+    statsProvider html.StatsProvider // only needs monitoring capability
+}
+
+func NewService(p *html.Processor) *ExtractionService {
+    return &ExtractionService{
+        extractor:     p, // *Processor satisfies Extractor
+        statsProvider: p, // *Processor satisfies StatsProvider
+    }
+}
+```
+
+## Dependency Injection & Mock Testing
+
+The `Extractor` interface decouples the extraction logic, making it easy to inject mock implementations in unit tests:
+
+```go
+// mockExtractor implements html.Extractor, for testing
+type mockExtractor struct {
+    result *html.Result
+    err    error
+}
+
+func (m *mockExtractor) Extract([]byte) (*html.Result, error) { return m.result, m.err }
+func (m *mockExtractor) ExtractWithContext(ctx context.Context, b []byte) (*html.Result, error) {
+    return m.result, m.err
+}
+func (m *mockExtractor) ExtractFromFile(string) (*html.Result, error)         { return m.result, m.err }
+func (m *mockExtractor) ExtractFromFileWithContext(context.Context, string) (*html.Result, error) {
+    return m.result, m.err
+}
+func (m *mockExtractor) ExtractText([]byte) (string, error)                   { return m.result.Text, m.err }
+func (m *mockExtractor) ExtractTextFromFile(string) (string, error)           { return m.result.Text, m.err }
+func (m *mockExtractor) ExtractTextWithContext(context.Context, []byte) (string, error) {
+    return m.result.Text, m.err
+}
+func (m *mockExtractor) ExtractTextFromFileWithContext(context.Context, string) (string, error) {
+    return m.result.Text, m.err
+}
+// ... remaining methods return zero values
+
+// Business code depends on the interface, not the concrete type
+type ArticleService struct {
+    extractor html.Extractor
+}
+
+func (s *ArticleService) GetTitle(htmlBytes []byte) (string, error) {
+    result, err := s.extractor.Extract(htmlBytes)
+    if err != nil {
+        return "", err
+    }
+    return result.Title, nil
+}
+
+// Inject the mock in tests
+func TestGetTitle(t *testing.T) {
+    svc := &ArticleService{
+        extractor: &mockExtractor{
+            result: &html.Result{Title: "Test Title"},
+        },
+    }
+    title, err := svc.GetTitle([]byte("<html></html>"))
+    assert.NoError(t, err)
+    assert.Equal(t, "Test Title", title)
+}
+```
+
 ## ContentNode
 
 Abstract interface for HTML nodes, used in content scoring algorithms.
@@ -117,6 +188,27 @@ func (s *MyScorer) ShouldRemove(node html.ContentNode) bool {
 cfg := html.DefaultConfig()
 cfg.Scorer = &MyScorer{}
 ```
+
+### ContentNode and Internal Types
+
+`ContentNode` is an **abstract interface** that hides the underlying `golang.org/x/net/html.Node` type. Internally, the library wraps `*html.Node` as `ContentNode` via `contentNodeAdapter`:
+
+```text
+Caller's Scorer.Score(ContentNode)
+                          │
+                    contentNodeAdapter (adapter)
+                          │
+                  Internal *html.Node (golang.org/x/net/html)
+```
+
+This two-layer interface design achieves:
+- **Clean public API** — users implementing custom Scorers never need to import `golang.org/x/net/html`
+- **High internal performance** — the library's internal `DefaultScorer` operates directly on `*html.Node` (via the internal `Scorer` interface), avoiding the adapter overhead
+- **Adaptation is automatic** — `scorerAdapter` converts bidirectionally between the public `Scorer` and the internal `Scorer`, transparent to the user
+
+:::tip ContentNode nil convention
+`FirstChild()`/`NextSibling()`/`Parent()` return `nil` when there is no corresponding node. Custom Scorers traversing subtrees must do nil checks, otherwise they will panic.
+:::
 
 ## AuditSink
 

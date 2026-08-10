@@ -1,11 +1,11 @@
 ---
-sidebar_label: "链接提取与分组"
-title: "链接提取与分组 - CyberGo html | 资源收集指南"
-description: "CyberGo html 链接提取与分组：ExtractAllLinks 提取资源链接、类型分组、Include 过滤、URL 解析与 BaseURL 检测，适用爬虫。"
-sidebar_position: 3
+sidebar_label: "链接提取实战"
+title: "链接提取实战 - CyberGo html | 资源收集指南"
+description: "CyberGo html 链接提取实战指南：ExtractAllLinks 提取脚本、样式与图片等资源链接、GroupLinksByType 按类型分组、Include 字段过滤、URL 规范化解析与 BaseURL 自动检测，结果去重排序，适用于爬虫与资源收集场景。"
+sidebar_position: 4
 ---
 
-# 链接提取与分组
+# 链接提取实战
 
 独立于内容提取，库提供了专门的链接提取 API，适合爬虫和资源收集场景。
 

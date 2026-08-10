@@ -207,4 +207,4 @@ if result != nil && result.Valid {
 
 - [Integrity Signing](./integrity) -- IntegritySigner in depth
 - [Security Filtering](./security) -- Sensitive-data filtering
-- [Hook System](./hooks) -- OnError hook
+- [Hook System](../core/hooks) -- OnError hook

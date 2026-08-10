@@ -140,7 +140,7 @@ type AuditSink interface {
 
 ### LoggerAuditSink
 
-Вывод в стандартный поток ошибок с префиксом `[AUDIT]`.
+Вывод через стандартный `log.Logger` с префиксом `[AUDIT]`. `NewLoggerAuditSink()` **по умолчанию выводит в стандартный поток ошибок** (`os.Stderr`); для перенаправления в файл, сетевое соединение и т. п. используйте `NewLoggerAuditSinkWithWriter(w)` с произвольным `io.Writer`.
 
 ```go
 func NewLoggerAuditSink() *LoggerAuditSink
@@ -149,13 +149,14 @@ func NewLoggerAuditSinkWithWriter(w io.Writer) *LoggerAuditSink
 
 ### ChannelAuditSink
 
-Отправка в буферизованный канал, подходит для асинхронной обработки.
+Отправка в буферизованный канал, подходит для асинхронной обработки или интеграции с внешними лог-системами. `Write` **неблокирующий**: при заполненном буфере **отбрасывает запись** и увеличивает счётчик отброшенных (без блокировки и без ошибки). Вызывающая сторона может запросить количество отброшенных записей через `DroppedCount()` и использовать это для триггера алертов или масштабирования в мониторинге.
 
 ```go
 func NewChannelAuditSink(bufferSize int) *ChannelAuditSink
 
 func (s *ChannelAuditSink) Channel() <-chan AuditEntry
 func (s *ChannelAuditSink) DroppedCount() int64
+func (s *ChannelAuditSink) Close() error // Идемпотентно: безопасно вызывать многократно, только первый вызов действительно закрывает channel
 ```
 
 ```go
@@ -177,7 +178,7 @@ func NewWriterAuditSink(w io.Writer) *WriterAuditSink
 
 ### MultiSink
 
-Разветвление на несколько Sink.
+Веерная рассылка в несколько Sink. `Close` использует `errors.Join` из Go 1.20+ для **агрегирования ошибок закрытия всех дочерних Sink** (а не только последней) — для подсистемы аудита потеря ошибки доставки раннего Sink скрыла бы реальную проблему.
 
 ```go
 func NewMultiSink(sinks ...AuditSink) *MultiSink

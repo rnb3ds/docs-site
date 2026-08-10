@@ -8,7 +8,7 @@ sidebar_position: 11
 # 出力関数
 
 ::: info 移行リファレンス
-このページは Print シリーズ関数（以前のバージョンで削除済み）の移行ガイドです。JSON をフォーマットするには、[`Prettify`](../api-reference#フォーマット) または標準ライブラリ互換の `MarshalIndent` を使用してください。
+このページは Print シリーズ関数（以前のバージョンで削除済み）の移行ガイドです。JSON をフォーマットするには、[`Prettify`](./index#フォーマット) または標準ライブラリ互換の `MarshalIndent` を使用してください。
 :::
 
 ::: warning API 変更のお知らせ

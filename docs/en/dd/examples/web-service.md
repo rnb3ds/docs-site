@@ -302,4 +302,4 @@ func main() {
 
 - [Testing Patterns](./testing-patterns) -- Using LoggerRecorder in tests
 - [Security & Audit in Practice](./security-audit) -- Security filtering and audit logging
-- [Distributed Tracing](../guides/context-tracing) -- Request tracing integration
+- [Distributed Tracing](../guides/integration/context-tracing) -- Request tracing integration

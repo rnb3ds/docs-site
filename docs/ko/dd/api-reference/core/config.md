@@ -403,5 +403,5 @@ logger, _ := dd.New(dd.Config{
 - [Logger](./logger) -- 구성으로 로거 생성
 - [출력 대상](../output-integration/writers) -- FileWriter, BufferedWriter, MultiWriter
 - [보안 필터](../security-audit/security) -- SecurityConfig 상세
-- [훅 시스템](../security-audit/hooks) -- HooksConfig 상세
+- [훅 시스템](../core/hooks) -- HooksConfig 상세
 - [감사 로그](../security-audit/audit) -- AuditConfig 상세

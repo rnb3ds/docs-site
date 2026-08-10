@@ -1,7 +1,7 @@
 ---
 sidebar_label: "HTTP 集成"
 title: "HTTP 集成 - CyberGo html | Web 服务实战"
-description: "CyberGo html 与 net/http 集成实战：单页抓取、并发批量抓取、Processor 单例 Web 服务、指数退避重试与生产部署实践。"
+description: "CyberGo html 与标准库 net/http 集成实战指南：单页抓取与内容提取、并发批量抓取处理、Processor 单例复用 Web 服务模式、指数退避重试策略、超时控制与优雅关闭等生产级 HTTP 网页内容采集与服务部署最佳实践。"
 sidebar_position: 1
 ---
 
@@ -329,7 +329,7 @@ result, _ := html.Extract(body, cfg)
 
 ## 下一步
 
-- [缓存与复用](../advanced-patterns/processor-cache) - Processor 生命周期管理
-- [审计系统实战](../advanced-patterns/audit-pipeline) - 生产环境安全监控
+- [缓存与复用](../performance/processor-cache) - Processor 生命周期管理
+- [审计系统实战](../security/audit-pipeline) - 生产环境安全监控
 - [API 参考：批量处理](../../api-reference/modules/batch) - 完整批量 API
-- [性能优化](../../advanced/performance) - 性能调优技巧
+- [性能优化](../performance/performance) - 性能调优技巧

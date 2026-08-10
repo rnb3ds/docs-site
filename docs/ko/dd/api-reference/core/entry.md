@@ -132,5 +132,5 @@ dbLog.ErrorWith("쿼리 실패", dd.Err(err))
 ## 다음 단계
 
 - [Logger](./logger) -- Logger 인스턴스 메서드
-- [구조화 필드](../output-integration/fields) -- Field 생성자
+- [구조화 필드](../core/fields) -- Field 생성자
 - [패키지 함수](./functions) -- 전역 로그 함수

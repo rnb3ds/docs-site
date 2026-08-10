@@ -93,7 +93,7 @@ extractors := logger.GetContextExtractors()
 ```
 
 :::warning 上下文限制（重要）
-日志方法（`Info`/`InfoWith` 等）不接受 `context.Context` 参数，`ContextExtractor` 内部以 `context.Background()` 调用，因此**无法自动从请求作用域提取** TraceID/SpanID。下方 OTel 示例仅在存在全局 span 时才会产出字段；要为每次请求附加追踪 ID，请用 `WithFields()` 手动传递（见[分布式追踪集成](../../guides/context-tracing)）。
+日志方法（`Info`/`InfoWith` 等）不接受 `context.Context` 参数，`ContextExtractor` 内部以 `context.Background()` 调用，因此**无法自动从请求作用域提取** TraceID/SpanID。下方 OTel 示例仅在存在全局 span 时才会产出字段；要为每次请求附加追踪 ID，请用 `WithFields()` 手动传递（见[分布式追踪集成](../../guides/integration/context-tracing)）。
 :::
 
 ### OpenTelemetry 示例
@@ -159,5 +159,5 @@ func loggingInterceptor(
 ## 下一步
 
 - [Logger](../core/logger) -- `AddContextExtractor` / `SetContextExtractors` / `GetContextExtractors`
-- [结构化字段](./fields) -- `Field` 构造器与字段校验
+- [结构化字段](../core/fields) -- `Field` 构造器与字段校验
 - [配置](../core/config) -- `Config.ContextExtractors`

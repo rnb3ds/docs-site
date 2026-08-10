@@ -257,4 +257,4 @@ func TestLogLevel_Behavior(t *testing.T) {
 
 - [Web 服务集成](./web-service) -- HTTP 服务日志集成
 - [API 参考 - Recorder](../api-reference/dev-tools/recorder) -- LoggerRecorder 完整 API
-- [钩子系统](../guides/hooks) -- 生命周期钩子
+- [钩子系统](../guides/operations/hooks) -- 生命周期钩子

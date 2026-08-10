@@ -173,4 +173,4 @@ if !rec.ContainsMessage("test") {
 
 - [빠른 시작](../getting-started/) -- 입문 가이드
 - [API 레퍼런스](../api-reference/) -- 완전한 API
-- [프로덕션 체크리스트](../security/production-checklist) -- 출시 검사
+- [프로덕션 체크리스트](../guides/security/production-checklist) -- 출시 검사

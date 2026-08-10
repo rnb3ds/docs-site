@@ -1,7 +1,7 @@
 ---
 sidebar_label: "設定"
 title: "設定 - CyberGo html | Config フィールド詳解"
-description: "CyberGo html Config 設定詳解：リソース管理、セキュリティ、コンテンツ抽出、出力フォーマット、リンクフィルタに、Validate 検証メソッドを含めて解説します。"
+description: "CyberGo html Config 設定詳解：リソース管理、セキュリティ、コンテンツ抽出、出力フォーマット、リンクフィルタの全フィールドとデフォルト値、Validate 検証メソッドによる設定エラーの事前検出と HighSecurityConfig などのプリセットを解説します。"
 sidebar_position: 3
 ---
 

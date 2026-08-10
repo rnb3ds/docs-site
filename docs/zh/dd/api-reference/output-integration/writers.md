@@ -7,6 +7,8 @@ sidebar_position: 1
 
 # 输出目标
 
+> 🔧 **API 参考** · 使用教程见 [文件输出与轮换](../../guides/basics/file-output)
+
 DD 提供 3 种输出写入器，支持文件轮换、缓冲写入和多目标输出。
 
 ## FileWriter
@@ -87,7 +89,7 @@ func (fw *FileWriter) SetOnRotateCallback(fn func(path string))
 设置一个在文件轮换**成功后**调用的回调函数。回调参数 `path` 为当前日志文件的基准路径（`NewFileWriter` 构造时经路径规范化后存储的路径——对绝对路径输入通常等于入参，对相对路径会被解析为绝对路径）：此时旧日志已被归档为备份文件，新文件已在该路径重新打开。设置时会取内部互斥锁以避免与正在进行的轮换竞争。
 
 :::info 内部用途
-该方法主要供 `Logger` 内部使用——当 `FileWriter` 作为 Logger 的输出目标时，Logger 通过它触发 `HookOnRotate` 钩子事件（详见[钩子系统](../security-audit/hooks)）。普通用户通常无需手动调用；若需自定义轮换后的行为，也可直接设置。
+该方法主要供 `Logger` 内部使用——当 `FileWriter` 作为 Logger 的输出目标时，Logger 通过它触发 `HookOnRotate` 钩子事件（详见[钩子系统](../core/hooks)）。普通用户通常无需手动调用；若需自定义轮换后的行为，也可直接设置。
 :::
 
 <!-- check-code: skip -->

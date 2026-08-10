@@ -1,7 +1,7 @@
 ---
 sidebar_label: "内容提取实战"
 title: "内容提取实战 - CyberGo html | 提取流程指南"
-description: "CyberGo html 内容提取实战：提取流程、文章智能识别与候选评分、Result 字段解读、自定义 Scorer 与编码自动检测。"
+description: "CyberGo html 内容提取实战指南：详解完整提取流程（输入校验、编码检测、DOM 解析、安全清洗、文章智能识别与格式化）、候选节点评分算法原理、Result 结构体各字段含义、自定义 Scorer 评分器与编码自动检测机制及最佳实践。"
 sidebar_position: 1
 ---
 
@@ -121,6 +121,30 @@ fmt.Println("标题：", result.Title)
 2. **选择最佳候选**：选取得分最高的节点作为文章容器
 3. **回退机制**：如果没有找到合适的候选，回退到 `<body>` 节点
 
+### 默认评分器的信号维度
+
+内置 `DefaultScorer` 基于多维信号综合打分，选取得分最高的容器：
+
+| 维度 | 正面信号 | 负面信号 |
+|------|----------|----------|
+| **标签语义** | `<article>`(+1000)、`<main>`(+900)、`<section>`(+300)、`<body>`(+100) | `nav`/`aside`/`footer`/`header`/`script`/`style` 直接返回 0 |
+| **class/id 模式** | `content`/`article`/`post`/`main`/`entry`/`story`（强正面）；`blog`/`news`/`detail`/`page`（中等正面） | `comment`/`sidebar`/`nav`/`ad`/`menu`（强负面）；`widget`/`share`/`social`/`related`（中等负面）；`promo`/`banner`/`sponsor`（弱负面） |
+| **段落密度** | 子树中 `<p>` 数量乘以倍率加分（段落越多越可能为正文） | — |
+| **文本长度** | 超过阈值的长文本加分；低于阈值的短文本扣分 | — |
+| **内容密度** | 文本/标签比例高时乘以放大系数 | 比例低时乘以衰减系数 |
+| **链接密度** | — | 文本短且链接密集时施加惩罚（可能是导航栏或站点地图） |
+| **标点特征** | 逗号密集（含中文逗号 `，`）暗示散文体，加分 | — |
+| **ARIA role** | `role="main"`/`role="article"`(+500) | `role="navigation"`/`role="complementary"`(-400) |
+| **隐藏元素** | — | `style="display:none"`/`visibility:hidden` 或 `hidden` 属性的节点被移除 |
+
+:::tip 布局包装器的豁免
+当 class/id 同时含内容信号（`content`/`article`）和移除信号（如 `sidebar`）时——典型如 CSS 布局类 `content-sidebar`——评分器**不会**移除该节点，因为它包裹着主内容。语义标签 `<article>`/`<main>`（或 `role="main"`/`role="article"`）一律豁免 class/id 移除启发式，确保 `<article class="post-with-sidebar">` 不会被误删。
+:::
+
+:::warning 文章识别不是万能的
+文章识别最适合新闻、博客、文档等有明确"正文区域"的页面。对于导航页、列表页、图库等非文章型页面，可能无法准确定位正文——此时可设 `ExtractArticle = false` 提取整个 `<body>` 内容。
+:::
+
 :::tip 适用场景
 文章识别最适合新闻、博客、文档等有明确"正文区域"的页面。对于导航页、列表页，可能无法准确定位正文。
 :::
@@ -168,6 +192,61 @@ fmt.Println(text)
 
 这在文本分析、搜索索引构建等场景中非常实用。
 
+## 表格渲染
+
+HTML 中的 `<table>` 会按 `TableFormat` 配置渲染到提取的文本中：
+
+```go
+cfg := html.DefaultConfig()
+cfg.TableFormat = "markdown" // 默认；或 "html"
+```
+
+| 格式 | 渲染效果 | 适用场景 |
+|------|----------|----------|
+| `"markdown"` | Markdown 表格（含表头分隔行）；`colspan` 展开为重复单元格；仅含宽度定义的结构行被跳略 | 人类阅读、Markdown 消费 |
+| `"html"` | 保留原始 HTML `<table>` 标签（`colspan`/`rowspan` 原样保留）；结构行保留 | 需精确表格结构的下游处理 |
+
+:::tip 格式大小写不敏感
+`TableFormat` 值大小写不敏感（`"Markdown"` 与 `"markdown"` 等效），空值回退到 `"markdown"`。
+:::
+
+示例——提取包含表格的 HTML：
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<html><body><article>
+        <h1>价格表</h1>
+        <table>
+            <tr><th>产品</th><th>价格</th></tr>
+            <tr><td>基础版</td><td>免费</td></tr>
+            <tr><td>专业版</td><td>¥99/月</td></tr>
+        </table>
+    </article></body></html>`)
+
+    result, err := html.Extract(data)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(result.Text)
+    // 输出（TableFormat = "markdown" 时）：
+    // 价格表
+    //
+    // | 产品   | 价格    |
+    // |--------|---------|
+    // | 基础版 | 免费    |
+    // | 专业版 | ¥99/月  |
+}
+```
+
 ## 处理非 UTF-8 编码
 
 库自动检测 15+ 种字符编码（包括 UTF-8、GBK、Shift_JIS、Windows-1252 等），并自动转换为 UTF-8。
@@ -198,6 +277,6 @@ if errors.Is(err, html.ErrProcessingTimeout) {
 
 ## 下一步
 
-- [输出格式选择](./output-formats) - 选择适合场景的输出格式
-- [Processor 复用与缓存](../advanced-patterns/processor-cache) - 高频调用的性能优化
+- [输出格式实战](./output-formats) - 选择适合场景的输出格式
+- [Processor 复用与缓存](../performance/processor-cache) - 高频调用的性能优化
 - [API 参考：包函数](../../api-reference/core/functions) - 完整函数签名

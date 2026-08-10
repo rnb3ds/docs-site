@@ -329,7 +329,7 @@ result, _ := html.Extract(body, cfg)
 
 ## Next Steps
 
-- [Cache & Reuse](../advanced-patterns/processor-cache) - Processor lifecycle management
-- [Audit Pipeline](../advanced-patterns/audit-pipeline) - Production security monitoring
+- [Cache & Reuse](../performance/processor-cache) - Processor lifecycle management
+- [Audit Pipeline](../security/audit-pipeline) - Production security monitoring
 - [API Reference: Batch Processing](../../api-reference/modules/batch) - Complete batch API
-- [Performance](../../advanced/performance) - Performance tuning tips
+- [Performance](../performance/performance) - Performance tuning tips

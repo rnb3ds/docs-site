@@ -1,7 +1,7 @@
 ---
 sidebar_label: "링크 추출"
 title: "링크 추출 - CyberGo html | 리소스 링크 추출 API"
-description: "CyberGo html 링크 추출 API: ExtractAllLinks 계열과 GroupLinksByType 으로 리소스 링크를 추출해 유형별로 그룹화하며 필터 설정이 가능합니다."
+description: "CyberGo html 링크 추출 API: ExtractAllLinks 계열과 GroupLinksByType 으로 이미지·스크립트·CSS 리소스 링크를 추출해 유형별로 그룹화하며 URL 정렬·중복 제거와 필터 설정이 가능합니다."
 sidebar_position: 2
 ---
 
@@ -64,6 +64,25 @@ type LinkResource struct {
 }
 ```
 
+## 링크 유형 상세
+
+각 `Type`은 특정 HTML 태그 출처에 대응합니다:
+
+| Type 값 | 출처 HTML 태그 | 제어 스위치 |
+|---------|---------------|----------|
+| `link` | `<a href>` | `IncludeContentLinks` / `IncludeExternalLinks` |
+| `image` | `<img src>` | `IncludeImages` |
+| `video` | `<video src>`, `<source type="video/*">`, `<iframe>`/`<embed>`/`<object>`(비디오 URL) | `IncludeVideos` |
+| `audio` | `<audio src>`, `<source type="audio/*">` | `IncludeAudios` |
+| `media` | `<source>`가 video/audio 인지 판정할 수 없을 때 | `IncludeVideos` / `IncludeAudios` |
+| `css` | `<link rel="stylesheet">` | `IncludeCSS` |
+| `js` | `<script src>` | `IncludeJS` |
+| `icon` | `<link rel="icon">`, `<link rel="apple-touch-icon">` 등 | `IncludeIcons` |
+
+:::info embed 링크의 특수 처리
+`<iframe>`, `<embed>`, `<object>`의 `src`/`data`는 **비디오 URL**로 판정될 때만 (YouTube, Vimeo, Dailymotion 등 임베드 패턴 포함) 추출되며, 유형은 `video`로 기록됩니다. 비디오가 아닌 URL 은 수집되지 않습니다.
+:::
+
 ## 설정
 
 링크 추출 동작은 `Config`의 링크 필터링 필드로 제어할 수 있습니다:
@@ -78,7 +97,40 @@ cfg.ResolveRelativeURLs = true
 cfg.BaseURL = "https://example.com"
 ```
 
-:::tip 팁
+### 상대 URL 해석
+
+`ResolveRelativeURLs=true`(기본값)일 때, 모든 유형의 상대 URL 은 `BaseURL`을 기준으로 절대 URL 로 통일하여 해석됩니다:
+
+- 해석 로직은 `resolveURLIfEnabled`가 중앙에서 처리하며, 콘텐츠 링크, 이미지, 미디어, source, script, embed, link 태그를 **동일하게 취급**합니다
+- `BaseURL`을 명시적으로 설정하면 **자동 감지를 건너뛰고** 호출자가 제공한 값을 직접 사용합니다
+- `BaseURL`이 비어 있고 `ResolveRelativeURLs=true`일 때, 문서에서 BaseURL 을 자동으로 유추합니다 (아래 팁 참조)
+
+### 내부와 외부 링크
+
+콘텐츠 링크(`<a href>`)는 두 그룹의 스위치로 내부와 외부 링크를 각각 제어합니다:
+
+| 스위치 | 제어 범위 | 판정 방식 |
+|------|----------|----------|
+| `IncludeContentLinks` | 내부 링크 | URL 자체가 상대 경로이거나, `BaseURL`과 같은 도메인 |
+| `IncludeExternalLinks` | 외부 링크 | URL 이 절대 경로이고 `BaseURL`과 다른 도메인(`IsDifferentDomain`) |
+
+기본값은 둘 다 `true`입니다 (모든 콘텐츠 링크 추출). 나머지 리소스 유형(이미지, CSS, JS 등)은 내/외부 구분의 영향을 받지 않으며, 각자의 `Include*` 스위치로만 제어됩니다.
+
+### preload / prefetch 처리
+
+`<link rel="preload" as="...">`와 `rel="prefetch"`는 `as` 속성에 따라 다른 유형으로 라우팅됩니다:
+
+| `as` 속성값 | 분류 유형 | 제어 스위치 |
+|-------------|----------|----------|
+| `style` | `css` | `IncludeCSS` |
+| `script` | `js` | `IncludeJS` |
+| `image` | `image` | `IncludeImages` |
+| `video` | `video` | `IncludeVideos` |
+| `audio` | `audio` | `IncludeAudios` |
+
+`dns-prefetch`, `preconnect`도 같은 라우팅을 거치지만, 보통 `as` 속성을 가지지 않으므로 수집되지 않습니다.
+
+:::tip BaseURL 자동 감지
 `ResolveRelativeURLs=true`이고 `BaseURL`이 **비어 있을 때**, 라이브러리는 HTML 문서 자체에서 BaseURL 을 자동으로 유추합니다. 다음 **우선순위** 순서대로 시도하여, 일치하는 항목이 있으면 그 즉시 반환합니다:
 
 1. `<base href>` 태그;
@@ -88,3 +140,44 @@ cfg.BaseURL = "https://example.com"
 
 `BaseURL`을 명시적으로 설정하면 **자동 감지를 건너뛰고** 호출자가 제공한 값을 우선 사용합니다.
 :::
+
+## 예시
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/html"
+)
+
+func main() {
+	data := []byte(`<html><head>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="icon" href="/favicon.ico">
+<script src="/js/app.js"></script>
+</head><body>
+<a href="/about">소개</a>
+<img src="/img/logo.png" alt="Logo">
+<video src="/media/intro.mp4"></video>
+</body></html>`)
+
+	cfg := html.DefaultConfig()
+	cfg.BaseURL = "https://example.com"
+	links, err := html.ExtractAllLinks(data, cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 유형별로 그룹화한 뒤 순회하며 출력
+	groups := html.GroupLinksByType(links)
+	for typ, items := range groups {
+		fmt.Printf("%s(%d개):\n", typ, len(items))
+		for _, l := range items {
+			fmt.Printf("  - %s [%s]\n", l.URL, l.Title)
+		}
+	}
+}
+```

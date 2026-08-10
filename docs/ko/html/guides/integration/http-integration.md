@@ -1,7 +1,7 @@
 ---
 sidebar_label: "HTTP 통합"
 title: "HTTP 통합 - CyberGo html | 웹 서비스 실전"
-description: "CyberGo html HTTP 통합 실전: net/http 단일 페이지 스크래핑, 동시성 배치 최적화, 컨텍스트 타임아웃, 웹 서비스 통합과 프로덕션 배포 실전을 다룹니다."
+description: "CyberGo html HTTP 통합 실전: net/http 단일 페이지 스크래핑, 동시성 배치 처리 최적화, 컨텍스트 타임아웃 설정, Processor 싱글톤 패턴 웹 서비스 통합과 프로덕션 배포 모범 사례를 다룹니다."
 sidebar_position: 1
 ---
 
@@ -329,7 +329,7 @@ result, _ := html.Extract(body, cfg)
 
 ## 다음 단계
 
-- [캐시와 재사용](../advanced-patterns/processor-cache) - Processor 라이프사이클 관리
-- [감사 시스템 실전](../advanced-patterns/audit-pipeline) - 프로덕션 환경 보안 모니터링
+- [캐시와 재사용](../performance/processor-cache) - Processor 라이프사이클 관리
+- [감사 시스템 실전](../security/audit-pipeline) - 프로덕션 환경 보안 모니터링
 - [API 레퍼런스: 배치 처리](../../api-reference/modules/batch) - 전체 배치 API
-- [성능 최적화](../../advanced/performance) - 성능 튜닝 팁
+- [성능 최적화](../performance/performance) - 성능 튜닝 팁

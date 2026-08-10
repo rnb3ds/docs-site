@@ -156,5 +156,5 @@ type LogEntry struct {
 ## Next Steps
 
 - [Logger](../core/logger) -- Full Logger methods
-- [Structured Fields](../output-integration/fields) -- Field constructors
-- [Constants & Errors](./constants) -- LogLevel constants
+- [Structured Fields](../core/fields) -- Field constructors
+- [Constants & Errors](../core/constants) -- LogLevel constants

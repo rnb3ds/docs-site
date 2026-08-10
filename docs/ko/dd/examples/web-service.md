@@ -302,4 +302,4 @@ func main() {
 
 - [테스트 패턴](./testing-patterns) -- 테스트에서 LoggerRecorder 사용
 - [보안과 감사 실전](./security-audit) -- 보안 필터와 감사 로그
-- [분산 추적](../guides/context-tracing) -- 요청 추적 통합
+- [분산 추적](../guides/integration/context-tracing) -- 요청 추적 통합

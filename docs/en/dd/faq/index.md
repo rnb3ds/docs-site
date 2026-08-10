@@ -173,4 +173,4 @@ See [Test Helper](../api-reference/dev-tools/recorder).
 
 - [Quick Start](../getting-started/) -- Getting started guide
 - [API Reference](../api-reference/) -- Complete API
-- [Production Checklist](../security/production-checklist) -- Pre-launch checks
+- [Production Checklist](../guides/security/production-checklist) -- Pre-launch checks

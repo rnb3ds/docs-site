@@ -1,7 +1,7 @@
 ---
 sidebar_label: "快速开始"
 title: "快速开始 - CyberGo html | 5 分钟入门指南"
-description: "CyberGo html 快速入门：安装、内容提取、四种 Config 预设、文本/Markdown/JSON 输出与并发安全，5 分钟上手 HTML 内容提取。"
+description: "CyberGo html 快速入门指南：5 分钟掌握 Go 1.25+ 环境下的安装、基本内容提取、DefaultConfig 等四种 Config 预设选择，以及纯文本、Markdown、JSON 三种输出格式与 Processor 并发安全调用实践。"
 sidebar_position: 2
 ---
 
@@ -172,6 +172,6 @@ cfg.Encoding = "gbk"
 ## 下一步
 
 - [内容提取实战](../guides/core-features/content-extraction) - 深入理解提取流程和文章识别
-- [输出格式选择](../guides/core-features/output-formats) - 选择适合场景的输出格式
-- [Processor 复用与缓存](../guides/advanced-patterns/processor-cache) - 高频调用的性能优化
+- [输出格式实战](../guides/core-features/output-formats) - 选择适合场景的输出格式
+- [Processor 复用与缓存](../guides/performance/processor-cache) - 高频调用的性能优化
 - [速查表](./cheatsheet) - 常用 API 速查

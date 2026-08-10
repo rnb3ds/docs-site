@@ -1,11 +1,11 @@
 ---
-sidebar_label: "出力形式の選択"
-title: "出力フォーマット選択 - CyberGo html | フォーマット比較ガイド"
-description: "CyberGo html 出力フォーマット選択：テキスト、Markdown、JSON の 3 形式の特徴と適用シーンを比較し、フォーマットオプション設定も解説します。"
-sidebar_position: 2
+sidebar_label: "出力フォーマット実践"
+title: "出力フォーマット実践 - CyberGo html | フォーマット比較ガイド"
+description: "CyberGo html 出力フォーマット実践ガイド：プレーンテキスト、Markdown、JSON の 3 種類の出力形式の特徴と適用シーンを比較し、InlineImageFormat や InlineLinkFormat などのフォーマットオプション設定も詳しく解説します。"
+sidebar_position: 3
 ---
 
-# 出力フォーマットの選択
+# 出力フォーマット実践
 
 このガイドは、プレーンテキスト、Markdown、JSON の 3 種類の出力フォーマットから正しく選ぶのに役立ちます。
 
@@ -200,5 +200,5 @@ md, err := html.ExtractToMarkdownWithContext(ctx, data)
 ## 次のステップ
 
 - [API リファレンス：出力フォーマット](../../api-reference/modules/output) - 完全な API シグネチャ
-- [リンク抽出とグループ化](./link-extraction) - ページのリソースリンクを抽出
+- [リンク抽出実践](./link-extraction) - ページのリソースリンクを抽出
 - [設定詳細](../../api-reference/core/config) - すべての設定オプション

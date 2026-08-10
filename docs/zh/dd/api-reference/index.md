@@ -18,6 +18,7 @@ DD 日志库提供丰富的 API 接口，按功能模块组织如下：
 | **LoggerEntry** | 预设字段的日志 Entry | [LoggerEntry](./core/entry) |
 | **Config** | 配置结构体和预设配置 | [配置](./core/config) |
 | **接口** | CoreLogger、LogProvider 等接口 | [接口定义](./core/interfaces) |
+| **Constants** | 日志级别、格式、错误码 | [常量与错误](./core/constants) |
 
 ## 输出与写入
 
@@ -26,12 +27,17 @@ DD 日志库提供丰富的 API 接口，按功能模块组织如下：
 | **Writers** | FileWriter、BufferedWriter、MultiWriter | [输出目标](./output-integration/writers) |
 | **上下文** | Context 集成和 ContextExtractor | [上下文集成](./output-integration/context) |
 
-## 扩展功能
+## 扩展机制
 
 | 模块 | 说明 | 文档 |
 |------|------|------|
-| **Fields** | 结构化字段构造器（20 种） | [结构化字段](./output-integration/fields) |
-| **Hooks** | 生命周期钩子系统 | [钩子系统](./security-audit/hooks) |
+| **Fields** | 结构化字段构造器（20 种） | [结构化字段](./core/fields) |
+| **Hooks** | 生命周期钩子系统 | [钩子系统](./core/hooks) |
+
+## 安全与审计
+
+| 模块 | 说明 | 文档 |
+|------|------|------|
 | **Security** | 敏感数据过滤和安全配置 | [安全过滤](./security-audit/security) |
 | **Audit** | 审计日志和审计事件 | [审计日志](./security-audit/audit) |
 | **Integrity** | 日志完整性签名和验证 | [完整性签名](./security-audit/integrity) |
@@ -42,7 +48,6 @@ DD 日志库提供丰富的 API 接口，按功能模块组织如下：
 |------|------|------|
 | **Debug Visual** | Print/JSON/Text/Exit 调试函数 | [调试输出](./dev-tools/debug-visual) |
 | **Recorder** | 测试辅助日志记录器 | [测试辅助](./dev-tools/recorder) |
-| **Constants** | 日志级别、格式、错误码 | [常量与错误](./dev-tools/constants) |
 
 ## 快速定位
 

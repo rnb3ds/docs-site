@@ -258,4 +258,4 @@ func TestLogLevel_Behavior(t *testing.T) {
 
 - [Интеграция с Web-сервисом](./web-service) -- интеграция логирования HTTP-сервиса
 - [Справочник API - Recorder](../api-reference/dev-tools/recorder) -- полный API LoggerRecorder
-- [Система хуков](../guides/hooks) -- хуки жизненного цикла
+- [Система хуков](../guides/operations/hooks) -- хуки жизненного цикла

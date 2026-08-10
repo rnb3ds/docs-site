@@ -7,6 +7,8 @@ sidebar_position: 4
 
 # 配置
 
+> 🔧 **API 参考** · 使用教程见 [配置详解](../../guides/basics/configuration)
+
 DD 通过 `Config` 结构体配置日志记录器的行为，并提供多个预设配置工厂函数。
 
 ## 预设配置工厂
@@ -403,5 +405,5 @@ logger, _ := dd.New(dd.Config{
 - [Logger](./logger) -- 使用配置创建日志记录器
 - [输出目标](../output-integration/writers) -- FileWriter、BufferedWriter、MultiWriter
 - [安全过滤](../security-audit/security) -- SecurityConfig 详解
-- [钩子系统](../security-audit/hooks) -- HooksConfig 详解
+- [钩子系统](../core/hooks) -- HooksConfig 详解
 - [审计日志](../security-audit/audit) -- AuditConfig 详解

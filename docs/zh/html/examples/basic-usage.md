@@ -1,7 +1,7 @@
 ---
 sidebar_label: "基础用法"
 title: "基础用法 - CyberGo html | 可运行示例集"
-description: "CyberGo html 基础用法示例：内容提取、文件提取、纯文本、Markdown/JSON 输出、链接分组与 Processor 复用等可运行代码。"
+description: "CyberGo html 基础用法可运行示例集：涵盖从字节与文件提取内容、纯文本输出、Markdown 与 JSON 格式转换、链接按类型分组、媒体资源提取与 Processor 实例复用等典型场景，每段代码均可直接编译运行并附详细预期输出。"
 sidebar_position: 1
 ---
 
@@ -167,4 +167,182 @@ if err != nil {
     log.Fatal(err)
 }
 fmt.Println(string(jsonBytes))
+```
+
+## 编码自动检测
+
+库自动识别 15+ 种编码（GBK、Shift_JIS、Windows-1252 等），无需手动处理：
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+    "golang.org/x/text/encoding/simplifiedchinese"
+)
+
+func main() {
+    // 构造 GBK 编码的中文 HTML
+    utf8HTML := `<html><head><meta charset="gbk"><title>中文网页</title></head>
+<body><article><h1>你好世界</h1><p>这是一段中文内容。</p></article></body></html>`
+    gbkBytes, err := simplifiedchinese.GBK.NewEncoder().Bytes([]byte(utf8HTML))
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 自动检测编码并提取
+    result, err := html.Extract(gbkBytes)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("标题：", result.Title)
+    // 标题：中文网页
+    fmt.Println("正文：", result.Text)
+    // 正文：你好世界
+    //       这是一段中文内容。
+}
+```
+
+## 媒体提取
+
+提取视频和音频资源信息：
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<html><body><article>
+        <h1>多媒体页面</h1>
+        <p>视频和音频提取示例。</p>
+        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" width="560" height="315"></iframe>
+        <video poster="cover.jpg" width="640">
+            <source src="https://example.com/video.mp4" type="video/mp4">
+        </video>
+        <audio>
+            <source src="https://example.com/audio.mp3" type="audio/mpeg">
+        </audio>
+    </article></body></html>`)
+
+    result, err := html.Extract(data)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 视频信息
+    fmt.Printf("视频数量：%d\n", len(result.Videos))
+    for i, v := range result.Videos {
+        fmt.Printf("  [%d] %s (Type: %s", i+1, v.URL, v.Type)
+        if v.Poster != "" {
+            fmt.Printf(", Poster: %s", v.Poster)
+        }
+        if v.Width != "" {
+            fmt.Printf(", W: %s", v.Width)
+        }
+        fmt.Println(")")
+    }
+
+    // 音频信息
+    fmt.Printf("音频数量：%d\n", len(result.Audios))
+    for i, a := range result.Audios {
+        fmt.Printf("  [%d] %s (Type: %s)\n", i+1, a.URL, a.Type)
+    }
+}
+```
+
+## 图片与链接字段访问
+
+完整访问 `Result` 中的结构化字段：
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<html><body><article>
+        <h1>字段访问示例</h1>
+        <p>正文段落。<a href="https://go.dev" title="Go 官网">Go</a></p>
+        <img src="logo.png" alt="Logo" width="200" height="100">
+        <a href="/about" rel="nofollow">关于</a>
+    </article></body></html>`)
+
+    result, err := html.Extract(data)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 图片字段
+    for _, img := range result.Images {
+        fmt.Printf("图片: url=%s, alt=%s, %sx%s, decorative=%v, pos=%d\n",
+            img.URL, img.Alt, img.Width, img.Height, img.IsDecorative, img.Position)
+    }
+
+    // 链接字段
+    for _, link := range result.Links {
+        fmt.Printf("链接: url=%s, text=%s, external=%v, nofollow=%v, pos=%d\n",
+            link.URL, link.Text, link.IsExternal, link.IsNoFollow, link.Position)
+    }
+
+    // 统计信息
+    fmt.Printf("字数：%d，阅读时间：%v，处理耗时：%v\n",
+        result.WordCount, result.ReadingTime, result.ProcessingTime)
+}
+```
+
+## 统计监控
+
+使用 Processor 实例监控处理统计：
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    p, _ := html.New(html.DefaultConfig())
+    defer p.Close()
+
+    pages := [][]byte{
+        []byte(`<html><body><article><h1>页面一</h1><p>内容 A。</p></article></body></html>`),
+        []byte(`<html><body><article><h1>页面二</h1><p>内容 B。</p></article></body></html>`),
+        []byte(`<html><body><article><h1>页面一</h1><p>内容 A。</p></article></body></html>`), // 重复，命中缓存
+    }
+
+    for _, page := range pages {
+        p.Extract(page)
+    }
+
+    stats := p.GetStatistics()
+    fmt.Printf("总处理：%d\n", stats.TotalProcessed)
+    fmt.Printf("缓存命中：%d\n", stats.CacheHits)
+    fmt.Printf("缓存未命中：%d\n", stats.CacheMisses)
+    fmt.Printf("错误数：%d\n", stats.ErrorCount)
+    fmt.Printf("平均耗时：%v\n", stats.AverageProcessTime)
+
+    hitRate := float64(0)
+    if stats.TotalProcessed > 0 {
+        hitRate = float64(stats.CacheHits) / float64(stats.TotalProcessed) * 100
+    }
+    fmt.Printf("命中率：%.1f%%\n", hitRate)
+}
 ```

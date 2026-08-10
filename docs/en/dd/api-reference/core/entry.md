@@ -132,5 +132,5 @@ dbLog.ErrorWith("query failed", dd.Err(err))
 ## Next Steps
 
 - [Logger](./logger) -- Logger instance methods
-- [Structured Fields](../output-integration/fields) -- Field constructors
+- [Structured Fields](../core/fields) -- Field constructors
 - [Package Functions](./functions) -- Global log functions

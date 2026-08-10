@@ -121,6 +121,30 @@ When `ExtractArticle` is `true` (default), the library automatically identifies 
 2. **Best Candidate Selection**: Selects the highest-scoring node as the article container
 3. **Fallback Mechanism**: Falls back to the `<body>` node if no suitable candidate is found
 
+### Default Scorer Signal Dimensions
+
+The built-in `DefaultScorer` scores based on multiple signals, selecting the highest-scoring container:
+
+| Dimension | Positive signals | Negative signals |
+|-----------|-----------------|------------------|
+| **Tag semantics** | `<article>`(+1000), `<main>`(+900), `<section>`(+300), `<body>`(+100) | `nav`/`aside`/`footer`/`header`/`script`/`style` return 0 directly |
+| **class/id patterns** | `content`/`article`/`post`/`main`/`entry`/`story` (strong positive); `blog`/`news`/`detail`/`page` (moderate positive) | `comment`/`sidebar`/`nav`/`ad`/`menu` (strong negative); `widget`/`share`/`social`/`related` (moderate negative); `promo`/`banner`/`sponsor` (weak negative) |
+| **Paragraph density** | `<p>` count in subtree multiplied by a rate bonus (more paragraphs = more likely body content) | — |
+| **Text length** | Long text above a threshold gets bonus; short text below threshold gets penalized | — |
+| **Content density** | High text/tag ratio gets a multiplier boost | Low ratio gets a decay factor |
+| **Link density** | — | Short text with dense links gets penalized (likely navigation or sitemap) |
+| **Punctuation features** | Dense commas (including CJK comma `，`) indicate prose, gets bonus | — |
+| **ARIA role** | `role="main"`/`role="article"`(+500) | `role="navigation"`/`role="complementary"`(-400) |
+| **Hidden elements** | — | Nodes with `style="display:none"`/`visibility:hidden` or `hidden` attribute are removed |
+
+:::tip Layout wrapper exemption
+When class/id contains both content signals (`content`/`article`) and removal signals (e.g. `sidebar`) — typically seen with CSS layout classes like `content-sidebar` — the scorer does **not** remove the node, because it wraps the main content. Semantic tags `<article>`/`<main>` (or `role="main"`/`role="article"`) are always exempt from class/id removal heuristics, ensuring `<article class="post-with-sidebar">` is not mistakenly deleted.
+:::
+
+:::warning Article recognition is not omnipotent
+Article recognition works best for news, blogs, documentation, and other pages with a clear "body area." For navigation pages, list pages, image galleries, and other non-article pages, it may not accurately locate the body — in that case, set `ExtractArticle = false` to extract the entire `<body>` content.
+:::
+
 :::tip Use Cases
 Article recognition works best for news, blogs, documentation, and other pages with a clear "body area." For navigation pages and list pages, it may not accurately locate the body content.
 :::
@@ -168,6 +192,61 @@ fmt.Println(text)
 
 This is useful for text analysis, search index building, and similar scenarios.
 
+## Table Rendering
+
+HTML `<table>` elements are rendered into the extracted text according to the `TableFormat` config:
+
+```go
+cfg := html.DefaultConfig()
+cfg.TableFormat = "markdown" // default; or "html"
+```
+
+| Format | Rendering | Use case |
+|--------|-----------|----------|
+| `"markdown"` | Markdown table (with header separator row); `colspan` expanded into repeated cells; structure-only rows with width definitions are skipped | Human reading, Markdown consumption |
+| `"html"` | Preserves the original HTML `<table>` tags (`colspan`/`rowspan` kept as-is); structure rows preserved | Downstream processing that needs exact table structure |
+
+:::tip Format is case-insensitive
+The `TableFormat` value is case-insensitive (`"Markdown"` and `"markdown"` are equivalent); an empty value falls back to `"markdown"`.
+:::
+
+Example — extracting HTML containing a table:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<html><body><article>
+        <h1>Price List</h1>
+        <table>
+            <tr><th>Product</th><th>Price</th></tr>
+            <tr><td>Basic</td><td>Free</td></tr>
+            <tr><td>Pro</td><td>$99/mo</td></tr>
+        </table>
+    </article></body></html>`)
+
+    result, err := html.Extract(data)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(result.Text)
+    // Output (when TableFormat = "markdown"):
+    // Price List
+    //
+    // | Product | Price   |
+    // |---------|---------|
+    // | Basic   | Free    |
+    // | Pro     | $99/mo  |
+}
+```
+
 ## Handling Non-UTF-8 Encoding
 
 The library automatically detects 15+ character encodings (including UTF-8, GBK, Shift_JIS, Windows-1252, etc.) and converts to UTF-8.
@@ -199,5 +278,5 @@ if errors.Is(err, html.ErrProcessingTimeout) {
 ## Next Steps
 
 - [Output Formats](./output-formats) - Choose the right output format
-- [Processor Cache & Reuse](../advanced-patterns/processor-cache) - Performance optimization for high-frequency calls
+- [Processor Cache & Reuse](../performance/processor-cache) - Performance optimization for high-frequency calls
 - [API Reference: Functions](../../api-reference/core/functions) - Complete function signatures

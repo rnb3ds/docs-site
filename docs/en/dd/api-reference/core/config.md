@@ -403,5 +403,5 @@ logger, _ := dd.New(dd.Config{
 - [Logger](./logger) -- Create loggers from configuration
 - [Output Targets](../output-integration/writers) -- FileWriter, BufferedWriter, MultiWriter
 - [Security Filtering](../security-audit/security) -- SecurityConfig in depth
-- [Hook System](../security-audit/hooks) -- HooksConfig in depth
+- [Hook System](../core/hooks) -- HooksConfig in depth
 - [Audit Logging](../security-audit/audit) -- AuditConfig in depth

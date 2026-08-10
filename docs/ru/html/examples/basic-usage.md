@@ -168,3 +168,181 @@ if err != nil {
 }
 fmt.Println(string(jsonBytes))
 ```
+
+## Автоопределение кодировки
+
+Библиотека автоматически распознаёт 15+ кодировок (GBK, Shift_JIS, Windows-1252 и др.), ручная обработка не требуется:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+    "golang.org/x/text/encoding/simplifiedchinese"
+)
+
+func main() {
+    // Создание HTML на китайском в кодировке GBK
+    utf8HTML := `<html><head><meta charset="gbk"><title>中文网页</title></head>
+<body><article><h1>你好世界</h1><p>这是一段中文内容。</p></article></body></html>`
+    gbkBytes, err := simplifiedchinese.GBK.NewEncoder().Bytes([]byte(utf8HTML))
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Автоопределение кодировки и извлечение
+    result, err := html.Extract(gbkBytes)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Println("Заголовок:", result.Title)
+    // Заголовок: 中文网页
+    fmt.Println("Текст:", result.Text)
+    // Текст: 你好世界
+    //       这是一段中文内容。
+}
+```
+
+## Извлечение медиа
+
+Извлечение информации о видео- и аудиоресурсах:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<html><body><article>
+        <h1>Мультимедийная страница</h1>
+        <p>Пример извлечения видео и аудио.</p>
+        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" width="560" height="315"></iframe>
+        <video poster="cover.jpg" width="640">
+            <source src="https://example.com/video.mp4" type="video/mp4">
+        </video>
+        <audio>
+            <source src="https://example.com/audio.mp3" type="audio/mpeg">
+        </audio>
+    </article></body></html>`)
+
+    result, err := html.Extract(data)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Информация о видео
+    fmt.Printf("Видео: %d\n", len(result.Videos))
+    for i, v := range result.Videos {
+        fmt.Printf("  [%d] %s (Type: %s", i+1, v.URL, v.Type)
+        if v.Poster != "" {
+            fmt.Printf(", Poster: %s", v.Poster)
+        }
+        if v.Width != "" {
+            fmt.Printf(", W: %s", v.Width)
+        }
+        fmt.Println(")")
+    }
+
+    // Информация об аудио
+    fmt.Printf("Аудио: %d\n", len(result.Audios))
+    for i, a := range result.Audios {
+        fmt.Printf("  [%d] %s (Type: %s)\n", i+1, a.URL, a.Type)
+    }
+}
+```
+
+## Доступ к полям изображений и ссылок
+
+Полный доступ к структурированным полям `Result`:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<html><body><article>
+        <h1>Пример доступа к полям</h1>
+        <p>Абзац текста. <a href="https://go.dev" title="Сайт Go">Go</a></p>
+        <img src="logo.png" alt="Logo" width="200" height="100">
+        <a href="/about" rel="nofollow">О нас</a>
+    </article></body></html>`)
+
+    result, err := html.Extract(data)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // Поля изображений
+    for _, img := range result.Images {
+        fmt.Printf("Изображение: url=%s, alt=%s, %sx%s, decorative=%v, pos=%d\n",
+            img.URL, img.Alt, img.Width, img.Height, img.IsDecorative, img.Position)
+    }
+
+    // Поля ссылок
+    for _, link := range result.Links {
+        fmt.Printf("Ссылка: url=%s, text=%s, external=%v, nofollow=%v, pos=%d\n",
+            link.URL, link.Text, link.IsExternal, link.IsNoFollow, link.Position)
+    }
+
+    // Статистика
+    fmt.Printf("Слов: %d, время чтения: %v, время обработки: %v\n",
+        result.WordCount, result.ReadingTime, result.ProcessingTime)
+}
+```
+
+## Мониторинг статистики
+
+Мониторинг статистики обработки с использованием экземпляра Processor:
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    p, _ := html.New(html.DefaultConfig())
+    defer p.Close()
+
+    pages := [][]byte{
+        []byte(`<html><body><article><h1>Страница 1</h1><p>Содержимое A.</p></article></body></html>`),
+        []byte(`<html><body><article><h1>Страница 2</h1><p>Содержимое B.</p></article></body></html>`),
+        []byte(`<html><body><article><h1>Страница 1</h1><p>Содержимое A.</p></article></body></html>`), // повтор — попадание в кэш
+    }
+
+    for _, page := range pages {
+        p.Extract(page)
+    }
+
+    stats := p.GetStatistics()
+    fmt.Printf("Всего обработано: %d\n", stats.TotalProcessed)
+    fmt.Printf("Попаданий в кэш: %d\n", stats.CacheHits)
+    fmt.Printf("Промахов кэша: %d\n", stats.CacheMisses)
+    fmt.Printf("Ошибок: %d\n", stats.ErrorCount)
+    fmt.Printf("Среднее время: %v\n", stats.AverageProcessTime)
+
+    hitRate := float64(0)
+    if stats.TotalProcessed > 0 {
+        hitRate = float64(stats.CacheHits) / float64(stats.TotalProcessed) * 100
+    }
+    fmt.Printf("Доля попаданий: %.1f%%\n", hitRate)
+}
+```

@@ -132,5 +132,5 @@ dbLog.ErrorWith("クエリ失敗", dd.Err(err))
 ## 次のステップ
 
 - [Logger](./logger) -- Logger インスタンスメソッド
-- [構造化フィールド](../output-integration/fields) -- Field コンストラクタ
+- [構造化フィールド](../core/fields) -- Field コンストラクタ
 - [パッケージ関数](./functions) -- グローバルログ関数

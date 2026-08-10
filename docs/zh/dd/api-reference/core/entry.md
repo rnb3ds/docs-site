@@ -132,5 +132,5 @@ dbLog.ErrorWith("查询失败", dd.Err(err))
 ## 下一步
 
 - [Logger](./logger) -- Logger 实例方法
-- [结构化字段](../output-integration/fields) -- Field 构造器
+- [结构化字段](../core/fields) -- Field 构造器
 - [包函数](./functions) -- 全局日志函数

@@ -8,7 +8,7 @@ sidebar_position: 11
 # Print Functions
 
 ::: info Migration Reference
-This page is a migration guide for the Print functions (removed in an earlier version). To format JSON, use [`Prettify`](../api-reference#formatting) or the stdlib-compatible `MarshalIndent`.
+This page is a migration guide for the Print functions (removed in an earlier version). To format JSON, use [`Prettify`](./index#formatting) or the stdlib-compatible `MarshalIndent`.
 :::
 
 ::: warning API Change Notice

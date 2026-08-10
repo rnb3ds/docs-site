@@ -1,7 +1,7 @@
 ---
 sidebar_label: "配置"
 title: "配置 - CyberGo html | Config 字段详解"
-description: "CyberGo html Config 配置详解：资源、安全、内容、输出与链接字段，含四种预设配置、取值约束与 Validate 验证方法。"
+description: "CyberGo html Config 配置结构体字段详解：覆盖资源管理、安全防护、内容提取、输出格式与链接过滤六大类共 30+ 字段，含 DefaultConfig 等四种预设配置、取值约束、零值语义与 Validate 验证方法，便于精准定制提取行为。"
 sidebar_position: 3
 ---
 

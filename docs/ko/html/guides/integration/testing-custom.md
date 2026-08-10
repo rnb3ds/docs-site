@@ -1,11 +1,11 @@
 ---
-sidebar_label: "테스트와 커스텀 확장"
-title: "테스트와 커스텀 확장 - CyberGo html | 테스트 체계 가이드"
-description: "CyberGo html 테스트와 커스텀 확장: 커스텀 Scorer 구현, ContentNode 순회, 테스트 모드, mock 데이터와 Extractor 인터페이스 mock 예제를 설명합니다."
+sidebar_label: "테스트와 사용자 정의 확장"
+title: "테스트와 사용자 정의 확장 - CyberGo html | 테스트 체계 가이드"
+description: "CyberGo html 테스트와 사용자 정의 확장: 커스텀 Scorer 구현으로 본문 식별 로직 커스터마이즈, ContentNode 순회, 테스트 모드, mock 데이터와 Extractor 인터페이스 mock 작성 예제를 설명합니다."
 sidebar_position: 2
 ---
 
-# 테스트와 커스텀 확장
+# 테스트와 사용자 정의 확장
 
 이 가이드는 콘텐츠 평가 알고리즘을 커스터마이즈하는 방법과 HTML 라이브러리를 사용하는 코드의 테스트 작성 방법을 소개합니다.
 

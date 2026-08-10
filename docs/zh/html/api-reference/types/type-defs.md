@@ -1,7 +1,7 @@
 ---
 sidebar_label: "数据类型"
 title: "类型定义 - CyberGo html | 数据类型参考"
-description: "CyberGo html 数据类型：Result、ImageInfo、LinkInfo、LinkResource、Statistics、BatchResult 等核心类型字段说明。"
+description: "CyberGo html 核心数据类型参考：Result、ImageInfo、LinkInfo、LinkResource、VideoInfo、AudioInfo、Statistics、BatchResult 等结构体字段说明，含自定义 MarshalJSON 序列化行为。"
 sidebar_position: 2
 ---
 
@@ -55,6 +55,21 @@ type ImageInfo struct {
 }
 ```
 
+### 字段语义
+
+| 字段 | 说明 |
+|------|------|
+| `URL` | 图片的 `src` 属性值；仅包含合法 URL（通过 `IsValidURL` 校验），无效 URL 的 `<img>` 不会出现在结果中 |
+| `Alt` | `alt` 属性原文；为空时 `IsDecorative` 为 `true` |
+| `Title` | `title` 属性原文（非页面标题） |
+| `Width`/`Height` | HTML 属性中的**原始字符串**（如 `"640"`、`"50%"`），未解析为数字——不同页面的写法可能不一致 |
+| `IsDecorative` | `Alt` 为空时为 `true`，可用于识别装饰性图片并跳过 |
+| `Position` | 在文档中的 1-based 序号；当 `PreserveImages = false` 时整个 `Images` 切片为空 |
+
+:::warning Width/Height 非数值类型
+`Width` 和 `Height` 是 `string` 类型而非 `int`，保留 HTML 源码中的原始表示（可能含单位、百分比等）。需要数值时由调用方自行解析。
+:::
+
 ## LinkInfo
 
 链接信息。
@@ -69,6 +84,17 @@ type LinkInfo struct {
     Position   int    `json:"position"`    // 在文档中的位置
 }
 ```
+
+### 字段语义
+
+| 字段 | 说明 |
+|------|------|
+| `URL` | `href` 属性值；仅包含合法 URL（通过 `IsValidURL` 校验），无效 URL 的 `<a>` 消耗 Position 但不加入切片 |
+| `Text` | `<a>` 标签内所有文本节点的拼接（递归 `GetTextContent`） |
+| `Title` | `title` 属性原文（非链接文本） |
+| `IsExternal` | 基于 URL 本身是否为绝对外部地址判定，**不与 `BaseURL` 做域名比较**——这与 `ExtractAllLinks` 中的内外链判定不同 |
+| `IsNoFollow` | `rel` 属性中包含 `nofollow`（大小写不敏感，ASCII 折叠匹配）时为 `true` |
+| `Position` | 在文档中的 1-based 序号；无效 `<a>`（href 非法或缺失）仍消耗序号但不加入切片，因此 Position 可能不连续 |
 
 ## VideoInfo
 
@@ -85,6 +111,18 @@ type VideoInfo struct {
 }
 ```
 
+### Type 字段取值规则
+
+| Type 值 | 含义 | 产生场景 |
+|---------|------|----------|
+| `"embed"` | iframe 引用的视频页面 | YouTube、Vimeo、优酷、Bilibili 等嵌入式播放器 |
+| MIME 类型（如 `"video/mp4"`） | 视频文件容器 | `<source type="video/mp4">` 属性值 |
+| 空字符串 | 未检测到类型 | `<video src="...">` 直接指定源且无 `<source>` 子元素 |
+
+:::tip 视频提取的三来源
+视频提取按原始 HTML 扫描 → DOM 遍历 → 正则兜底三步执行，每步去重。详见 [媒体提取实战](../../guides/core-features/media-extraction)。
+:::
+
 ## AudioInfo
 
 音频信息。
@@ -96,6 +134,17 @@ type AudioInfo struct {
     Duration string `json:"duration"` // 时长
 }
 ```
+
+### Type 字段取值规则
+
+| Type 值 | 产生场景 |
+|---------|----------|
+| MIME 类型（如 `"audio/mpeg"`） | `<source type="audio/mpeg">` 属性值 |
+| 空字符串 | `<audio src="...">` 直接指定源且无 `<source>` 子元素 |
+
+:::warning .ogg 扩展名的双重性
+OGG 容器可承载视频或音频，`.ogg` URL 会同时出现在 `Videos` 和 `Audios` 中。仅音频变体 `.oga` 只出现在 `Audios`。
+:::
 
 ## LinkResource
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "감사 시스템"
 title: "감사 시스템 - CyberGo html | 플러그형 감사 API"
-description: "CyberGo html 플러그형 감사 API: AuditConfig 설정, 8 가지 감사 이벤트, 3 개 수준, AuditEntry 구조와 6 종 내장 Sink 를 제공합니다."
+description: "CyberGo html 플러그형 감사 API: AuditConfig 설정, 8가지 감사 이벤트, Info·Warn·Error 3개 수준, AuditEntry 구조와 Console·JSON·Channel 등 6종 내장 Sink 를 제공합니다."
 sidebar_position: 4
 ---
 
@@ -140,7 +140,7 @@ type AuditSink interface {
 
 ### LoggerAuditSink
 
-표준 오류로 출력하며 `[AUDIT]` 접두사가 붙습니다.
+표준 라이브러리 `log.Logger`로 출력하며, `[AUDIT]` 접두사가 붙습니다. `NewLoggerAuditSink()`는 **기본적으로 표준 오류**(`os.Stderr`)로 출력합니다; 파일이나 네트워크 연결 등으로 리다이렉트하려면 `NewLoggerAuditSinkWithWriter(w)`로 임의의 `io.Writer`를 지정하세요.
 
 ```go
 func NewLoggerAuditSink() *LoggerAuditSink
@@ -149,13 +149,14 @@ func NewLoggerAuditSinkWithWriter(w io.Writer) *LoggerAuditSink
 
 ### ChannelAuditSink
 
-버퍼링된 채널로 전송하며, 비동기 처리에 적합합니다.
+버퍼링된 channel 로 전송하며, 비동기 처리나 외부 로깅 시스템과의 통합에 적합합니다. `Write`는 **비차단**입니다: 버퍼가 가득 찼을 때 해당 항목을 **버리고** 버려진 카운트를 증가시킵니다 (차단하지 않음, 오류 보고하지 않음). 호출자는 `DroppedCount()`로 버려진 수를 조회할 수 있으며, 모니터링에서 이를 기반으로 알림이나 스케일아웃을 트리거할 수 있습니다.
 
 ```go
 func NewChannelAuditSink(bufferSize int) *ChannelAuditSink
 
 func (s *ChannelAuditSink) Channel() <-chan AuditEntry
 func (s *ChannelAuditSink) DroppedCount() int64
+func (s *ChannelAuditSink) Close() error // 멱등: 여러 번 안전하게 호출 가능, 최초 1회만 실제로 channel 을 닫음
 ```
 
 ```go
@@ -177,7 +178,7 @@ func NewWriterAuditSink(w io.Writer) *WriterAuditSink
 
 ### MultiSink
 
-여러 Sink 로 팬아웃합니다.
+여러 Sink 로 팬아웃합니다. `Close`는 Go 1.20+의 `errors.Join`으로 **모든 하위 Sink 가 반환한 닫기 오류를 집계**합니다(마지막 것만 유지하지 않음) — 감사 하위 시스템에서 초기 Sink 의 전달 실패를 버리면 실제 문제가 가려질 수 있기 때문입니다.
 
 ```go
 func NewMultiSink(sinks ...AuditSink) *MultiSink

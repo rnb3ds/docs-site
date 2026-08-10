@@ -18,6 +18,7 @@ The DD logging library provides a rich API surface, organized by functional modu
 | **LoggerEntry** | Log Entry with preset fields | [LoggerEntry](./core/entry) |
 | **Config** | Configuration struct and presets | [Config](./core/config) |
 | **Interfaces** | CoreLogger, LogProvider, and other interfaces | [Interfaces](./core/interfaces) |
+| **Constants** | Log levels, formats, error codes | [Constants & Errors](./core/constants) |
 
 ## Output & Writers
 
@@ -26,12 +27,17 @@ The DD logging library provides a rich API surface, organized by functional modu
 | **Writers** | FileWriter, BufferedWriter, MultiWriter | [Output Targets](./output-integration/writers) |
 | **Context** | Context integration and ContextExtractor | [Context Integration](./output-integration/context) |
 
-## Extension Features
+## Extensions
 
 | Module | Description | Docs |
 |--------|-------------|------|
-| **Fields** | Structured field constructors (20 kinds) | [Structured Fields](./output-integration/fields) |
-| **Hooks** | Lifecycle hook system | [Hook System](./security-audit/hooks) |
+| **Fields** | Structured field constructors (20 kinds) | [Structured Fields](./core/fields) |
+| **Hooks** | Lifecycle hook system | [Hook System](./core/hooks) |
+
+## Security & Audit
+
+| Module | Description | Docs |
+|--------|-------------|------|
 | **Security** | Sensitive-data filtering and security config | [Security Filtering](./security-audit/security) |
 | **Audit** | Audit logging and audit events | [Audit Logging](./security-audit/audit) |
 | **Integrity** | Log integrity signing and verification | [Integrity Signing](./security-audit/integrity) |
@@ -42,7 +48,6 @@ The DD logging library provides a rich API surface, organized by functional modu
 |--------|-------------|------|
 | **Debug Visual** | Print/JSON/Text/Exit debug functions | [Debug Output](./dev-tools/debug-visual) |
 | **Recorder** | Test-helper log recorder | [Test Helper](./dev-tools/recorder) |
-| **Constants** | Log levels, formats, error codes | [Constants & Errors](./dev-tools/constants) |
 
 ## Quick Locator
 

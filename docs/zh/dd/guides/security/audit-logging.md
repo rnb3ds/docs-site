@@ -1,0 +1,246 @@
+---
+sidebar_label: "审计日志"
+title: "审计日志 - CyberGo DD | 安全审计实战指南"
+description: "CyberGo DD 审计日志实战指南，涵盖 AuditLogger 异步事件记录机制、11 种内置审计事件类型、严重等级过滤与分级、HMAC 完整性签名集成方案、审计统计与实时监控、日志验证与防篡改策略，帮助开发者构建符合合规要求的企业级安全审计系统。"
+sidebar_position: 4
+---
+
+# 审计日志
+
+> 📖 **使用教程** · 完整 API 签名见 [审计日志 - AuditLogger](../../api-reference/security-audit/audit)
+
+审计日志独立于业务日志，专门记录安全相关事件（如敏感数据脱敏、ReDoS 攻击尝试等），适合合规审计和安全分析。
+
+## 概述
+
+```text
+业务日志（Logger）审计日志（AuditLogger）
+    │                           │
+    ├─ Info/Debug/Warn...       ├─ SensitiveDataRedacted
+    ├─ 结构化字段               ├─ RateLimitExceeded
+    └─ 文件/控制台输出          ├─ ReDoSAttempt
+                                ├─ SecurityViolation
+                                └─ IntegrityViolation
+```
+
+审计日志通过缓冲通道异步写入，不阻塞业务流程。
+
+## 创建 AuditLogger
+
+### 基本用法
+
+```go
+auditLogger, err := dd.NewAuditLogger(dd.DefaultAuditConfig())
+if err != nil {
+    log.Fatal(err)
+}
+defer auditLogger.Close()
+
+// AuditLogger 既可独立创建（如本例），也可通过 Config.Audit 与 Logger 自动集成
+// 这里演示独立用法：另建 logger 且未设 Config.Audit
+logger, err := dd.New(dd.Config{
+    Security: dd.DefaultSecurityConfig(),
+    Targets:  []dd.OutputTarget{dd.ConsoleOutput()},
+})
+if err != nil {
+    log.Fatal(err)
+}
+defer logger.Close()
+```
+
+### 自定义配置
+
+```go
+auditLogger, err := dd.NewAuditLogger(dd.AuditConfig{
+    Enabled:          true,
+    Output:           os.Stderr,               // 输出目标 (*os.File)
+    BufferSize:       2000,                    // 缓冲通道大小
+    IncludeTimestamp: true,                    // 包含时间戳
+    JSONFormat:       true,                    // JSON 格式
+    MinimumSeverity:  dd.AuditSeverityWarning, // 最低严重等级
+})
+if err != nil {
+    log.Fatal(err)
+}
+defer auditLogger.Close()
+```
+
+## 审计事件类型
+
+AuditLogger 记录 11 种安全事件：
+
+| 事件类型 | 说明 | 默认严重等级 |
+|----------|------|-------------|
+| `AuditEventSensitiveDataRedacted` | 敏感数据被脱敏 | Info |
+| `AuditEventRateLimitExceeded` | 速率限制触发 | Warning |
+| `AuditEventReDoSAttempt` | ReDoS 攻击尝试 | Critical |
+| `AuditEventSecurityViolation` | 安全违规 | Error |
+| `AuditEventIntegrityViolation` | 日志完整性被破坏 | Critical |
+| `AuditEventInputSanitized` | 输入被清洗 | <Badge type="info" text="由调用者指定" /> |
+| `AuditEventPathTraversalAttempt` | 路径穿越尝试 | Critical |
+| `AuditEventLog4ShellAttempt` | Log4Shell 攻击尝试 | <Badge type="info" text="由调用者指定" /> |
+| `AuditEventNullByteInjection` | 空字节注入尝试 | <Badge type="info" text="由调用者指定" /> |
+| `AuditEventOverlongEncoding` | 超长编码攻击 | <Badge type="info" text="由调用者指定" /> |
+| `AuditEventHomographAttack` | 同形字攻击 | <Badge type="info" text="由调用者指定" /> |
+
+## 与 HMAC 签名集成
+
+审计日志与完整性签名结合，可防止日志被篡改：
+
+```go
+// 创建签名器
+integrityCfg, err := dd.DefaultIntegrityConfigSafe()
+if err != nil {
+    log.Fatal(err)
+}
+signer, err := dd.NewIntegritySigner(integrityCfg)
+if err != nil {
+    log.Fatal(err)
+}
+
+// 创建带签名的审计 Logger
+auditLogger, err := dd.NewAuditLogger(dd.AuditConfig{
+    Enabled:          true,
+    Output:           auditFile,
+    JSONFormat:       true,
+    BufferSize:       1000,
+    MinimumSeverity:  dd.AuditSeverityInfo,
+    IntegritySigner:  signer, // HMAC 签名
+})
+```
+
+## 审计统计
+
+```go
+stats := auditLogger.Stats()
+fmt.Printf("总事件数：%d\n", stats.TotalEvents)
+fmt.Printf("丢弃事件：%d\n", stats.Dropped)
+fmt.Printf("缓冲区使用率：%.1f%%\n",
+    float64(stats.BufferUsage)/float64(stats.BufferSize)*100)
+
+// 按类型统计
+for eventType, count := range stats.ByType {
+    fmt.Printf("  %s: %d\n", eventType, count)
+}
+```
+
+:::tip 监控建议
+定期检查 `Dropped` 计数。如果丢弃事件数量增长，说明缓冲区不足，需要增大 `BufferSize` 或提高消费速度。
+:::
+
+## 日志验证
+
+验证审计日志条目的完整性：
+
+```go
+// 验证单条审计日志
+result := dd.VerifyAuditEvent(logLine, signer)
+if result.Valid {
+    fmt.Printf("已验证: %s\n", result.RawEvent)
+    if result.Event != nil {
+        fmt.Printf("  类型: %s, 消息: %s\n", result.Event.Type, result.Event.Message)
+    }
+} else {
+    fmt.Printf("验证失败: %s\n", result.Error)
+}
+```
+
+## 严重等级过滤
+
+审计事件按严重等级过滤，低于 `MinimumSeverity` 的事件被忽略：
+
+```go
+// 只记录 Warning 及以上
+auditLogger, err := dd.NewAuditLogger(dd.AuditConfig{
+    MinimumSeverity: dd.AuditSeverityWarning,
+})
+if err != nil {
+    log.Fatal(err)
+}
+defer auditLogger.Close()
+```
+
+| 等级 | 数值 | 适用场景 |
+|------|------|----------|
+| `AuditSeverityInfo` | 0 | 记录所有事件（开发/调试） |
+| `AuditSeverityWarning` | 1 | 生产环境推荐 |
+| `AuditSeverityError` | 2 | 高安全要求 |
+| `AuditSeverityCritical` | 3 | 仅记录严重事件 |
+
+## 完整示例
+
+```go
+package main
+
+import (
+    "log"
+    "os"
+
+    "github.com/cybergodev/dd"
+)
+
+func main() {
+    // 创建审计文件
+    auditFile, err := os.Create("logs/audit.json")
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer auditFile.Close()
+
+    // 创建签名器
+    integrityCfg, err := dd.DefaultIntegrityConfigSafe()
+    if err != nil {
+        log.Fatal(err)
+    }
+    signer, err := dd.NewIntegritySigner(integrityCfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // 创建审计 Logger
+    auditLogger, err := dd.NewAuditLogger(dd.AuditConfig{
+        Enabled:          true,
+        Output:           auditFile,
+        JSONFormat:       true,
+        BufferSize:       1000,
+        MinimumSeverity:  dd.AuditSeverityInfo,
+        IntegritySigner:  signer,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer auditLogger.Close()
+
+    // 创建业务 Logger（带安全过滤）
+    logger, err := dd.New(dd.Config{
+        Format:   dd.FormatJSON,
+        Security: dd.DefaultSecureConfig(),
+        Targets:  []dd.OutputTarget{dd.ConsoleOutput()},
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer logger.Close()
+
+    // 正常业务日志（敏感数据自动脱敏）
+    logger.InfoWith("用户操作",
+        dd.String("username", "alice"),
+        dd.String("password", "secret123"), // → [REDACTED]
+    )
+
+    // 注：本示例中 Logger 未设 Config.Audit，因此脱敏等安全事件不会自动入审计。
+    // 若要让业务 logger 的安全事件自动转发到 AuditLogger，需在该 logger 的
+    // Config.Audit 中配置（启用后会自动把脱敏、速率限制等事件转入审计流）。
+}
+```
+
+:::info 自动集成 vs 独立使用
+AuditLogger **既可独立创建**（`dd.NewAuditLogger`，本节示例的用法），**也可通过 `Config.Audit` 与 Logger 自动集成**。后者会在 `Config.Audit`（类型 `AuditConfig`）的 `Enabled` 字段为 true 时，自动把敏感数据脱敏事件、速率限制事件等转发到 AuditLogger，无需手动连接钩子。
+:::
+
+## 下一步
+
+- [HMAC 签名实战](./integrity) -- 完整性签名详解
+- [行业合规配置](../security/compliance) -- HIPAA/PCI-DSS 审计要求
+- [API 参考 - Audit](../../api-reference/security-audit/audit) -- AuditLogger 完整 API
+- [API 参考 - Integrity](../../api-reference/security-audit/integrity) -- IntegritySigner API

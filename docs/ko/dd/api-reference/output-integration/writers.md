@@ -87,7 +87,7 @@ func (fw *FileWriter) SetOnRotateCallback(fn func(path string))
 파일 로테이션 **성공 후** 호출되는 콜백 함수를 설정합니다. 콜백 매개변수 `path`는 현재 로그 파일의 기준 경로입니다 (`NewFileWriter` 생성 시 경로 정규화 후 저장된 경로 - 절대 경로 입력의 경우 대개 입력과 동일하며, 상대 경로는 절대 경로로 해석됨). 이때 이전 로그는 이미 백업 파일로 보관 처리되었으며, 새 파일이 해당 경로에서 다시 열립니다. 설정 시 내부 뮤텍스 락을 획득하여 진행 중인 로테이션과 경쟁하지 않습니다.
 
 :::info 정보 내부 용도
-이 메서드는 주로 `Logger` 내부에서 사용됩니다 - `FileWriter`가 Logger 의 출력 대상일 때 Logger 는 이를 통해 `HookOnRotate` 훅 이벤트를 트리거합니다 ([훅 시스템](../security-audit/hooks) 참조). 일반 사용자는 직접 호출할 필요가 없으며, 로테이션 후 동작을 커스터마이징하려면 직접 설정해도 됩니다.
+이 메서드는 주로 `Logger` 내부에서 사용됩니다 - `FileWriter`가 Logger 의 출력 대상일 때 Logger 는 이를 통해 `HookOnRotate` 훅 이벤트를 트리거합니다 ([훅 시스템](../core/hooks) 참조). 일반 사용자는 직접 호출할 필요가 없으며, 로테이션 후 동작을 커스터마이징하려면 직접 설정해도 됩니다.
 :::
 
 <!-- check-code: skip -->

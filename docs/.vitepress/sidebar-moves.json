@@ -113,7 +113,7 @@
   },
   {
     "from": "html/guides/audit-pipeline",
-    "to": "html/guides/advanced-patterns/audit-pipeline"
+    "to": "html/guides/security/audit-pipeline"
   },
   {
     "from": "html/guides/content-extraction",
@@ -133,7 +133,35 @@
   },
   {
     "from": "html/guides/processor-cache",
-    "to": "html/guides/advanced-patterns/processor-cache"
+    "to": "html/guides/performance/processor-cache"
+  },
+  {
+    "from": "html/guides/advanced-patterns/audit-pipeline",
+    "to": "html/guides/security/audit-pipeline"
+  },
+  {
+    "from": "html/guides/advanced-patterns/processor-cache",
+    "to": "html/guides/performance/processor-cache"
+  },
+  {
+    "from": "html/advanced/performance",
+    "to": "html/guides/performance/performance"
+  },
+  {
+    "from": "html/advanced/error-handling",
+    "to": "html/guides/error-handling"
+  },
+  {
+    "from": "html/guides/performance/error-handling",
+    "to": "html/guides/error-handling"
+  },
+  {
+    "from": "html/security",
+    "to": "html/guides/security"
+  },
+  {
+    "from": "html/security/production-checklist",
+    "to": "html/guides/security/production-checklist"
   },
   {
     "from": "html/guides/testing-custom",
@@ -250,5 +278,25 @@
   {
     "from": "json/streaming/large-file",
     "to": "json/streaming/large-files"
+  },
+  {
+    "from": "dd/advanced/error-handling",
+    "to": "dd/guides/error-handling"
+  },
+  {
+    "from": "dd/api-reference/security-audit/hooks",
+    "to": "dd/api-reference/extensions/hooks"
+  },
+  {
+    "from": "dd/advanced/integrity",
+    "to": "dd/guides/security/integrity"
+  },
+  {
+    "from": "dd/api-reference/output-integration/fields",
+    "to": "dd/api-reference/core/fields"
+  },
+  {
+    "from": "dd/api-reference/extensions/hooks",
+    "to": "dd/api-reference/core/hooks"
   }
 ]

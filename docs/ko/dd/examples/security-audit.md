@@ -233,4 +233,4 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
 - [API 레퍼런스 - Security](../api-reference/security-audit/security) -- 보안 필터의 완전한 API
 - [API 레퍼런스 - Audit](../api-reference/security-audit/audit) -- 감사 로그의 완전한 API
 - [API 레퍼런스 - Integrity](../api-reference/security-audit/integrity) -- 무결성 서명 API
-- [프로덕션 체크리스트](../security/production-checklist) -- 출시 보안 검사
+- [프로덕션 체크리스트](../guides/security/production-checklist) -- 출시 보안 검사

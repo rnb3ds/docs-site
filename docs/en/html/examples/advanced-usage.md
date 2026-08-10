@@ -309,3 +309,188 @@ func main() {
     }
 }
 ```
+
+## Context Cancellation & Graceful Shutdown
+
+Use context to control extraction timeouts in an HTTP service, supporting request-level cancellation:
+
+```go
+package main
+
+import (
+    "context"
+    "errors"
+    "fmt"
+    "log"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/cybergodev/html"
+)
+
+var processor *html.Processor
+
+func init() {
+    cfg := html.DefaultConfig()
+    cfg.ProcessingTimeout = 10 * time.Second
+    cfg.MaxCacheEntries = 5000
+    var err error
+    processor, err = html.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
+func extractHandler(w http.ResponseWriter, r *http.Request) {
+    // Request-level timeout (5s), stacked with ProcessingTimeout (10s); whichever fires first wins
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    body := make([]byte, 0)
+    buf := make([]byte, 4096)
+    for {
+        n, err := r.Body.Read(buf)
+        body = append(body, buf[:n]...)
+        if err != nil {
+            break
+        }
+        if len(body) > 10*1024*1024 {
+            http.Error(w, "request body too large", http.StatusRequestEntityTooLarge)
+            return
+        }
+    }
+
+    result, err := processor.ExtractWithContext(ctx, body)
+    if err != nil {
+        switch {
+        case errors.Is(err, html.ErrProcessingTimeout):
+            http.Error(w, "processing timeout", http.StatusGatewayTimeout)
+        case errors.Is(err, html.ErrInputTooLarge):
+            http.Error(w, "input too large", http.StatusRequestEntityTooLarge)
+        default:
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+        }
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    fmt.Fprintf(w, `{"title":"%s","word_count":%d}`, result.Title, result.WordCount)
+}
+
+func main() {
+    defer processor.Close()
+
+    server := &http.Server{Addr: ":8080"}
+    http.HandleFunc("/extract", extractHandler)
+
+    // Graceful shutdown: close the Processor and HTTP server on signal
+    go func() {
+        sigChan := make(chan os.Signal, 1)
+        signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+        <-sigChan
+        log.Println("Shutting down...")
+        processor.Close()
+        server.Shutdown(context.Background())
+    }()
+
+    log.Println("Server started on :8080")
+    log.Fatal(server.ListenAndServe())
+}
+```
+
+## Secure File Processing
+
+Use the `AllowedBaseDir` sandbox to process user-supplied file paths:
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    cfg := html.HighSecurityConfig()
+    // Restrict file reading to this directory and its subdirectories
+    // Resolves real paths via OS file handle, preventing symlink/junction bypass
+    cfg.AllowedBaseDir = "/var/www/uploads"
+
+    p, err := html.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer p.Close()
+
+    // Simulated user-supplied file paths
+    userFiles := []string{
+        "/var/www/uploads/article1.html",  // ✅ Allowed
+        "/var/www/uploads/sub/page.html",  // ✅ Allowed (subdirectory)
+        "../../../etc/passwd",             // ❌ Path traversal
+        "/etc/shadow",                     // ❌ Outside directory
+    }
+
+    for _, file := range userFiles {
+        _, err := p.ExtractFromFile(file)
+        if err != nil {
+            var fileErr *html.FileError
+            if errors.As(err, &fileErr) {
+                // SafePath returns only the file name, not the full path
+                fmt.Printf("❌ Rejected %s: %s\n", fileErr.SafePath(), fileErr.FileErr)
+            } else {
+                fmt.Printf("❌ Error: %v\n", err)
+            }
+            continue
+        }
+        fmt.Printf("✅ Processed successfully: %s\n", file)
+    }
+}
+```
+
+## Encoding Detection Fallback
+
+Fall back to a manually specified encoding when auto-detection fails:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "strings"
+
+    "github.com/cybergodev/html"
+)
+
+// extractWithFallback tries auto-detection first, then retries with a specified encoding on failure
+func extractWithFallback(data []byte, fallback string) (*html.Result, error) {
+    result, err := html.Extract(data)
+    if err == nil {
+        return result, nil
+    }
+    if strings.Contains(err.Error(), "encoding detection failed") {
+        cfg := html.DefaultConfig()
+        cfg.Encoding = fallback
+        return html.Extract(data, cfg)
+    }
+    return nil, err
+}
+
+func main() {
+    // Simulate GBK-encoded HTML of unknown origin (no meta charset)
+    data := []byte{0xbb, 0xb9, 0xca, 0xc7, 0xd3, 0xd0, 0xd2, 0xbb, 0xb8, 0xf6}
+
+    result, err := extractWithFallback(data, "gbk")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Title: %s\nText length: %d\n", result.Title, len(result.Text))
+}
+```

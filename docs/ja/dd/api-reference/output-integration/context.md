@@ -93,7 +93,7 @@ extractors := logger.GetContextExtractors()
 ```
 
 :::warning コンテキストの制限（重要）
-ログメソッド（`Info`/`InfoWith` 等）は `context.Context` を受け取らず、`ContextExtractor` は内部で `context.Background()` で呼ばれるため、リクエストスコープの TraceID/SpanID を**自動抽出できません**。下記の OTel 例はグローバル span が存在する場合のみフィールドを出力します。リクエストごとのトレース ID を付与するには `WithFields()` で手動渡してください（[分散トレーシング統合](../../guides/context-tracing) を参照）。
+ログメソッド（`Info`/`InfoWith` 等）は `context.Context` を受け取らず、`ContextExtractor` は内部で `context.Background()` で呼ばれるため、リクエストスコープの TraceID/SpanID を**自動抽出できません**。下記の OTel 例はグローバル span が存在する場合のみフィールドを出力します。リクエストごとのトレース ID を付与するには `WithFields()` で手動渡してください（[分散トレーシング統合](../../guides/integration/context-tracing) を参照）。
 :::
 
 ### OpenTelemetry 例
@@ -159,5 +159,5 @@ func loggingInterceptor(
 ## 次のステップ
 
 - [Logger](../core/logger) -- `AddContextExtractor` / `SetContextExtractors` / `GetContextExtractors`
-- [構造化フィールド](./fields) -- `Field` コンストラクタとフィールド検証
+- [構造化フィールド](../core/fields) -- `Field` コンストラクタとフィールド検証
 - [設定](../core/config) -- `Config.ContextExtractors`

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "高级示例"
 title: "高级示例 - CyberGo html | 进阶场景示例"
-description: "CyberGo html 高级示例：自定义 Scorer、多 Sink 审计管道、批量文件处理、Processor 池化与 Web 服务单例等进阶可运行代码。"
+description: "CyberGo html 高级进阶可运行示例集：自定义 Scorer 内容评分算法、多 Sink 审计管道构建、批量文件并发处理、Processor 池化复用、缓存命中率优化与 Web 服务单例模式等复杂场景代码，助你应对生产级内容采集需求。"
 sidebar_position: 2
 ---
 
@@ -307,5 +307,190 @@ func main() {
         }
         fmt.Printf("✓ %s → %s\n", path, outPath)
     }
+}
+```
+
+## 上下文取消与优雅关闭
+
+在 HTTP 服务中使用 context 控制提取超时，支持请求级取消：
+
+```go
+package main
+
+import (
+    "context"
+    "errors"
+    "fmt"
+    "log"
+    "net/http"
+    "os"
+    "os/signal"
+    "syscall"
+    "time"
+
+    "github.com/cybergodev/html"
+)
+
+var processor *html.Processor
+
+func init() {
+    cfg := html.DefaultConfig()
+    cfg.ProcessingTimeout = 10 * time.Second
+    cfg.MaxCacheEntries = 5000
+    var err error
+    processor, err = html.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
+func extractHandler(w http.ResponseWriter, r *http.Request) {
+    // 请求级超时（5s），与 ProcessingTimeout（10s）叠加，先到先生效
+    ctx, cancel := context.WithTimeout(r.Context(), 5*time.Second)
+    defer cancel()
+
+    body := make([]byte, 0)
+    buf := make([]byte, 4096)
+    for {
+        n, err := r.Body.Read(buf)
+        body = append(body, buf[:n]...)
+        if err != nil {
+            break
+        }
+        if len(body) > 10*1024*1024 {
+            http.Error(w, "请求体过大", http.StatusRequestEntityTooLarge)
+            return
+        }
+    }
+
+    result, err := processor.ExtractWithContext(ctx, body)
+    if err != nil {
+        switch {
+        case errors.Is(err, html.ErrProcessingTimeout):
+            http.Error(w, "处理超时", http.StatusGatewayTimeout)
+        case errors.Is(err, html.ErrInputTooLarge):
+            http.Error(w, "输入过大", http.StatusRequestEntityTooLarge)
+        default:
+            http.Error(w, err.Error(), http.StatusInternalServerError)
+        }
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    fmt.Fprintf(w, `{"title":"%s","word_count":%d}`, result.Title, result.WordCount)
+}
+
+func main() {
+    defer processor.Close()
+
+    server := &http.Server{Addr: ":8080"}
+    http.HandleFunc("/extract", extractHandler)
+
+    // 优雅关闭：收到信号后关闭 Processor 和 HTTP 服务
+    go func() {
+        sigChan := make(chan os.Signal, 1)
+        signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+        <-sigChan
+        log.Println("正在关闭...")
+        processor.Close()
+        server.Shutdown(context.Background())
+    }()
+
+    log.Println("服务启动于 :8080")
+    log.Fatal(server.ListenAndServe())
+}
+```
+
+## 安全文件处理
+
+使用 `AllowedBaseDir` 沙箱处理用户提供的文件路径：
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    cfg := html.HighSecurityConfig()
+    // 限制文件读取到此目录及其子目录
+    // 通过 OS 文件句柄解析真实路径，防 symlink/junction 绕过
+    cfg.AllowedBaseDir = "/var/www/uploads"
+
+    p, err := html.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer p.Close()
+
+    // 模拟用户提供的文件路径
+    userFiles := []string{
+        "/var/www/uploads/article1.html",  // ✅ 允许
+        "/var/www/uploads/sub/page.html",  // ✅ 允许（子目录）
+        "../../../etc/passwd",             // ❌ 路径遍历
+        "/etc/shadow",                     // ❌ 目录外
+    }
+
+    for _, file := range userFiles {
+        _, err := p.ExtractFromFile(file)
+        if err != nil {
+            var fileErr *html.FileError
+            if errors.As(err, &fileErr) {
+                // SafePath 只返回文件名，不泄露完整路径
+                fmt.Printf("❌ 拒绝 %s: %s\n", fileErr.SafePath(), fileErr.FileErr)
+            } else {
+                fmt.Printf("❌ 错误: %v\n", err)
+            }
+            continue
+        }
+        fmt.Printf("✅ 处理成功: %s\n", file)
+    }
+}
+```
+
+## 编码检测回退
+
+自动检测失败时回退到手动指定编码：
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "strings"
+
+    "github.com/cybergodev/html"
+)
+
+// extractWithFallback 先自动检测，失败后用指定编码重试
+func extractWithFallback(data []byte, fallback string) (*html.Result, error) {
+    result, err := html.Extract(data)
+    if err == nil {
+        return result, nil
+    }
+    if strings.Contains(err.Error(), "encoding detection failed") {
+        cfg := html.DefaultConfig()
+        cfg.Encoding = fallback
+        return html.Extract(data, cfg)
+    }
+    return nil, err
+}
+
+func main() {
+    // 模拟来源未知的 GBK 编码 HTML（无 meta charset）
+    data := []byte{0xbb, 0xb9, 0xca, 0xc7, 0xd3, 0xd0, 0xd2, 0xbb, 0xb8, 0xf6}
+
+    result, err := extractWithFallback(data, "gbk")
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("标题：%s\n文本长度：%d\n", result.Title, len(result.Text))
 }
 ```

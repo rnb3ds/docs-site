@@ -251,4 +251,4 @@ fmt.Printf("algorithm: %s, sequence: %d\n", stats.Algorithm, stats.Sequence)
 
 - [Audit Logging](./audit) -- AuditLogger in depth
 - [Security Filtering](./security) -- Sensitive-data filtering
-- [Constants & Errors](../dev-tools/constants) -- Error codes
+- [Constants & Errors](../core/constants) -- Error codes

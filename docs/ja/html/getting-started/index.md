@@ -1,7 +1,7 @@
 ---
 sidebar_label: "クイックスタート"
 title: "クイックスタート - CyberGo html | 5 分スタートガイド"
-description: "CyberGo html クイックスタート：インストール、基本コンテンツ抽出、4 種の Config プリセット、テキスト・Markdown・JSON 出力で、5 分で HTML コンテンツ抽出を始められます。"
+description: "CyberGo html クイックスタートガイド：インストール手順、基本コンテンツ抽出、4 種の Config プリセット、テキスト・Markdown・JSON 出力形式、Processor の再利用まで、5 分で HTML コンテンツ抽出を始められます。"
 sidebar_position: 2
 ---
 
@@ -172,6 +172,6 @@ UTF-8、GBK、GB18030、Shift_JIS、EUC-JP、Windows-1252 など 15+ エンコ�
 ## 次のステップ
 
 - [コンテンツ抽出の実践](../guides/core-features/content-extraction) - 抽出フローと記事認識の深い理解
-- [出力フォーマットの選択](../guides/core-features/output-formats) - 用途に合った出力フォーマットの選択
-- [Processor 再利用とキャッシュ](../guides/advanced-patterns/processor-cache) - 高頻度呼び出しのパフォーマンス最適化
+- [出力フォーマット実践](../guides/core-features/output-formats) - 用途に合った出力フォーマットの選択
+- [Processor 再利用とキャッシュ](../guides/performance/processor-cache) - 高頻度呼び出しのパフォーマンス最適化
 - [チートシート](./cheatsheet) - よく使う API クイックリファレンス

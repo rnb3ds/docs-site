@@ -251,4 +251,4 @@ fmt.Printf("알고리즘: %s, 시퀀스 번호: %d\n", stats.Algorithm, stats.Se
 
 - [감사 로그](./audit) -- AuditLogger 상세
 - [보안 필터](./security) -- 민감 데이터 필터
-- [상수와 오류](../dev-tools/constants) -- 오류 코드
+- [상수와 오류](../core/constants) -- 오류 코드

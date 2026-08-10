@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Processor"
 title: "Processor - CyberGo html | 使い方・パラメータ・サンプル"
-description: "CyberGo html Processor API：New 生成、Extract メソッド群と GetStatistics、ClearCache、Close などのライフサイクル管理で、高頻度再利用に適しています。"
+description: "CyberGo html Processor API リファレンス：New による生成、Extract メソッド群と GetStatistics、ClearCache、Close などのライフサイクル管理で、キャッシュと内部リソースを再利用し高頻度呼び出しに適しています。"
 sidebar_position: 2
 ---
 
@@ -29,7 +29,43 @@ if err != nil {
 defer p.Close()
 ```
 
+**内部の初期化**：
+
+`New` は単なる代入ではなく、以下のステップを実行して返された Processor が即座に使えるようにします：
+
+1. **設定の検証**：`Config.Validate()` を呼び出し、無効な設定なら `*ConfigError` を返します（`errors.Is(err, ErrInvalidConfig)` が真）。検証範囲には数値の境界（`MaxInputSize`、`MaxCacheEntries`、`WorkerPoolSize`、`MaxDepth` が負や上限超過でないか）とフォーマット文字列（`InlineImageFormat`/`InlineLinkFormat`/`TableFormat` の値が合法か）を含みます。
+2. **Scorer の設定**：カスタム `Scorer` が設定されていれば `scorerAdapter` で内部インターフェースに適合させ、そうでなければ `SharedDefaultScorer`（読み取り専用、並行安全）を使います。
+3. **フォーマット文字列の事前計算**：`InlineImageFormat`/`InlineLinkFormat` を正規化（小文字化+空白削除、空文字列は `"none"` にマッピング）して `imageFormat`/`linkFormat` フィールドにキャッシュし、ホットパスでの `strings.ToLower` の繰り返しを避けます。
+4. **キャッシュクリーンアップの起動**：`CacheTTL>0` **かつ** `CacheCleanup>0` の場合にのみバックグラウンドクリーンアップ goroutine を起動し、どちらかが 0 なら起動しません。
+
+## 並行安全性
+
+:::tip 並行利用
+`Processor` は複数の goroutine 間で安全に共有でき、追加のロックは不要です。並行性の保証は以下から：
+
+- **設定の不変性**：`config` は `New()` 後に不変です（`*Config` ポインタは再代入も変更もされません）。そのため `ExtractToMarkdown` などのフォーマットメソッドは、ロックなしで安全に値コピーを行い一時 Processor を生成できます——フォーマットの上書きが共有設定に書き戻されることはありません。
+- **統計カウンタ**：`TotalProcessed`/`CacheHits`/`CacheMisses`/`ErrorCount`/`totalProcessTime` はすべて `atomic` 操作を使います。
+- **キャッシュ**：内部 `Cache` が独自のロックを持ち、読み書きともに安全です。
+- **Scorer**：組み込みの `DefaultScorer` は読み取り専用です。**カスタム `Scorer` は自前で並行安全を保証する必要があります**（内部でロックを持つなど）。1 つの Processor が並行 `Extract` を行うと、複数の goroutine からその `Score`/`ShouldRemove` が呼ばれるためです。
+:::
+
 ## コンテンツ抽出
+
+### エラー戻り値
+
+`Extract` メソッド群は処理の各段階で明確なセンチネルエラーを返し、`errors.Is` で正確に判定できます：
+
+| エラー | トリガ条件 | 備考 |
+|------|----------|------|
+| `ErrProcessorClosed` | `p` が `nil` または既に `Close` 済み | すべてのメソッドに共通 |
+| `ErrInputTooLarge` | 入力バイト数が `MaxInputSize` を超過 | `*InputError` にラップ、実際のサイズ/上限を含む |
+| エンコーディング検出エラー | エンコーディング検出または UTF-8 変換の失敗 | 元のエラーがラップされる |
+| `ErrInvalidHTML` | バイトが HTML として解析できない | 底層の解析エラーも合わせてラップ |
+| `ErrMaxDepthExceeded` | 要素のネスト深度が `MaxDepth` を超過 | 反復式の検証でスタックオーバーフローを防止 |
+| `ErrProcessingTimeout` | 処理時間が `ProcessingTimeout` を超過 | `ProcessingTimeout=0` は時間無制限を意味 |
+| `ErrInternalPanic` | 内部の予期しない panic がリカバリされた | 最後の砦の保護で、通常使用では出現しないはず |
+
+`context` 付きの版はさらに `context.Canceled`（ユーザーキャンセル）や `context.DeadlineExceeded`（コンテキストのタイムアウト、`ErrProcessingTimeout` に正規化済み）を返すことがあります。
 
 ### Extract
 
@@ -92,6 +128,15 @@ func (p *Processor) ExtractToJSONWithContext(ctx context.Context, htmlBytes []by
 func (p *Processor) ExtractToJSONFromFileWithContext(ctx context.Context, filePath string) ([]byte, error)
 ```
 
+:::warning キャッシュ動作の違い
+両者はキャッシュの扱いがまったく異なります：
+
+- **`ExtractToMarkdown`** は一時 Processor を構築し（不変の `config` をコピーするが、`MaxCacheEntries` はゼロ、監査は無効化）、**主キャッシュの読み書きをしない**ため、主 Processor のキャッシュを汚染もヒットもしません。Markdown フォーマットの結果もキャッシュされません。
+- **`ExtractToJSON`** は直接 `p.Extract` を呼び出し、**通常のキャッシュ経路**を通ります——主キャッシュにヒット/書き込みし、統計カウンタも更新されます。
+
+Markdown 出力もキャッシュを利用したい場合は、`MarkdownConfig()` で専用 Processor を作って `Extract` を呼ぶか、出力を自分でキャッシュしてください。
+:::
+
 ## リンク抽出
 
 ```go
@@ -112,6 +157,14 @@ func (p *Processor) ExtractBatchFilesWithContext(ctx context.Context, filePaths 
 
 ## 統計とキャッシュ
 
+### キャッシュ動作の詳細
+
+`MaxCacheEntries > 0` の場合、`Extract` はキャッシュを有効化します：
+
+- **ヒット経路**：キャッシュ項目を検出した後、`CacheHits` と `TotalProcessed` をそれぞれ +1 し、返すのは `cloneResult`——`Images`/`Links`/`Videos`/`Audios` などのスライスに `copy` を行うディープコピーです。呼び出し側が戻り値を変更してもキャッシュ内のエントリには**影響せず**、並行ヒット時の読み取りでのデータ競合も回避できます。
+- **ミス経路**：処理完了後に結果をキャッシュへ書き込み、それから `cloneResult`（同じくディープコピー）を返します。そのためキャッシュエントリと戻り値はエイリアスしません。
+- **キャッシュ無効化**：`MaxCacheEntries = 0` の場合、`Extract` はキャッシュキーの生成と `Get/Set` をスキップ（ショートサーキット）し、キャッシュのオーバーヘッドは一切ありません。
+
 ### GetStatistics
 
 現在の処理統計情報を返します。
@@ -119,6 +172,16 @@ func (p *Processor) ExtractBatchFilesWithContext(ctx context.Context, filePaths 
 ```go
 func (p *Processor) GetStatistics() Statistics
 ```
+
+`Statistics` の各フィールドの意味：
+
+| フィールド | 説明 |
+|------|------|
+| `TotalProcessed` | エラーなく完了した抽出回数、**キャッシュヒットを含む** |
+| `CacheHits` | キャッシュで直接ヒットした回数 |
+| `CacheMisses` | ミスして完全な処理が必要だった回数 |
+| `ErrorCount` | エラーを返した抽出回数 |
+| `AverageProcessTime` | 1 回あたりの抽出の平均実時間（`TotalProcessed` が 0 の場合は 0） |
 
 ```go
 stats := p.GetStatistics()
@@ -175,3 +238,9 @@ p, _ := html.New(cfg)
 defer p.Close()
 // ... p を使って抽出処理
 ```
+
+:::tip ライフサイクルのベストプラクティス
+- **シングルトン再利用**：長稼働サービス（HTTP handler、worker）では Processor を 1 つ作成して並行リクエスト間で共有し、キャッシュと組み合わせて恩恵を最大化します。Processor 自体が並行安全なので、リクエストごとに新設する必要はありません。
+- **`defer Close()`**：作成直後に `defer p.Close()` を置き、異常パスでもバックグラウンドのクリーンアップ goroutine と監査リソースを解放できるようにします。`Close` はキャッシュクリーンアップ goroutine を停止し、キャッシュをクリアし、監査 sink を閉じます。
+- **クローズ後に使わない**：`Close` 後にどのメソッドを呼び出しても `ErrProcessorClosed` を返します。`Close` は `CompareAndSwap` で冪等性を保証し、重複呼び出しは安全ですが無意味です。
+:::

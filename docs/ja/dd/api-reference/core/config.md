@@ -403,5 +403,5 @@ logger, _ := dd.New(dd.Config{
 - [Logger](./logger) -- 設定を使用してロガーを作成
 - [出力先](../output-integration/writers) -- FileWriter、BufferedWriter、MultiWriter
 - [セキュリティフィルタ](../security-audit/security) -- SecurityConfig 詳解
-- [フックシステム](../security-audit/hooks) -- HooksConfig 詳解
+- [フックシステム](../core/hooks) -- HooksConfig 詳解
 - [監査ログ](../security-audit/audit) -- AuditConfig 詳解

@@ -8,7 +8,7 @@ sidebar_position: 11
 # 打印函数
 
 ::: info 迁移参考
-本页为 Print 系列函数（已在早期版本移除）的迁移指南。如需格式化 JSON，请使用 [`Prettify`](../api-reference#格式化) 或标准库兼容的 `MarshalIndent`。
+本页为 Print 系列函数（已在早期版本移除）的迁移指南。如需格式化 JSON，请使用 [`Prettify`](./index#格式化) 或标准库兼容的 `MarshalIndent`。
 :::
 
 ::: warning API 变更说明

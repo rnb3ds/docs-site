@@ -267,4 +267,4 @@ func SetupLogger(env string) (*dd.Logger, error) {
 
 - [Быстрый старт](../getting-started/) -- базовое введение
 - [Справочник API](../api-reference/) -- полный API
-- [Безопасность](../security/) -- конфигурация безопасности
+- [Безопасность](../guides/security/) -- конфигурация безопасности

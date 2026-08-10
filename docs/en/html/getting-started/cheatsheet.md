@@ -160,6 +160,41 @@ if err != nil {
 }
 ```
 
+## Encoding Detection
+
+```go
+// Auto-detect encoding (default, supports 15+ encodings)
+result, err := html.Extract(gbkData)
+
+// Manually specify encoding
+cfg := html.DefaultConfig()
+cfg.Encoding = "shift_jis"
+```
+
+Supports UTF-8, GBK, Shift_JIS, EUC-JP, Windows-1252, and 15+ encodings.
+
+## Media Extraction
+
+```go
+result, err := html.Extract(data)
+
+// Videos
+for _, v := range result.Videos {
+    fmt.Println(v.URL, v.Type)
+}
+
+// Audio
+for _, a := range result.Audios {
+    fmt.Println(a.URL, a.Type)
+}
+
+// Disable media extraction
+cfg := html.TextOnlyConfig()
+// Or control individually
+cfg.PreserveVideos = false
+cfg.PreserveAudios = false
+```
+
 ## Audit System
 
 ```go
@@ -176,4 +211,35 @@ defer p.Close()
 
 // Get audit log after processing
 entries := p.GetAuditLog()
+```
+
+### Audit Sink Quick Reference
+
+```go
+// Built-in Sink constructors
+html.NewLoggerAuditSink()                   // stderr, [AUDIT] prefix
+html.NewLoggerAuditSinkWithWriter(w)        // custom Writer
+html.NewWriterAuditSink(w)                  // JSON Lines to io.Writer
+html.NewChannelAuditSink(bufSize)           // buffered channel
+html.NewMultiSink(sinks...)                 // fan-out to multiple Sinks
+html.NewFilteredSink(sink, filterFunc)      // predicate filtering
+html.NewLevelFilteredSink(sink, minLevel)   // filter by level
+
+// Channel Sink helper methods
+sink.Channel()       // <-chan AuditEntry, consume events
+sink.DroppedCount()  // int64, number of dropped events
+sink.Close()         // idempotent channel close
+```
+
+### Processor Lifecycle
+
+```go
+p, _ := html.New(html.DefaultConfig())
+defer p.Close()               // release resources (idempotent)
+
+stats := p.GetStatistics()    // Statistics{TotalProcessed, CacheHits, ...}
+entries := p.GetAuditLog()    // []AuditEntry
+p.ClearAuditLog()             // clear in-memory audit log
+p.ClearCache()                // clear cache (preserves statistics)
+p.ResetStatistics()           // reset stat counters (preserves cache)
 ```

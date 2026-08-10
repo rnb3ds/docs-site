@@ -257,4 +257,4 @@ func TestLogLevel_Behavior(t *testing.T) {
 
 - [Web Service Integration](./web-service) -- HTTP service log integration
 - [API Reference - Recorder](../api-reference/dev-tools/recorder) -- Complete LoggerRecorder API
-- [Hook System](../guides/hooks) -- Lifecycle hooks
+- [Hook System](../guides/operations/hooks) -- Lifecycle hooks
