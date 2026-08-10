@@ -194,6 +194,137 @@ func main() {
 }
 ```
 
+## 受众隔离
+
+设置 `ExpectedAudience` 后，只有 `aud` 声明包含该值的令牌才通过验证。这在微服务架构中实现服务间令牌隔离——一个服务签发的令牌无法被另一个服务接受。
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    cfg := jwt.DefaultConfig()
+    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
+    cfg.ExpectedAudience = "billing-api" // 仅接受面向 billing-api 的令牌
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    // 受众匹配的令牌
+    validClaims := &jwt.Claims{
+        UserID: "user1",
+        RegisteredClaims: jwt.RegisteredClaims{
+            Audience: jwt.StringOrSlice{"billing-api"},
+        },
+    }
+    validToken, err := processor.Create(validClaims)
+    if err != nil {
+        panic(err)
+    }
+
+    _, valid, err := processor.Validate(validToken)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Matching audience valid:", valid) // 输出：true
+
+    // 受众不匹配的令牌会被拒绝
+    wrongClaims := &jwt.Claims{
+        UserID: "user2",
+        RegisteredClaims: jwt.RegisteredClaims{
+            Audience: jwt.StringOrSlice{"admin-api"},
+        },
+    }
+    wrongToken, err := processor.Create(wrongClaims)
+    if err != nil {
+        panic(err)
+    }
+
+    _, valid, err = processor.Validate(wrongToken)
+    fmt.Println("Wrong audience valid:", valid) // 输出：false
+    fmt.Println("Wrong audience error:", err)   // 输出：token invalid audience
+    fmt.Println("Is audience error:",
+        errors.Is(err, jwt.ErrTokenInvalidAudience)) // 输出：true
+}
+```
+
+::: tip 微服务场景
+在微服务架构中，为不同服务设置不同的 `ExpectedAudience`（如 `billing-api`、`user-api`），使各服务只接受面向自己的令牌，防止令牌跨服务滥用。
+:::
+
+## Extra 扩展字段
+
+内置 `Claims.Extra` 是 `map[string]any`，用于存储少量可选附加信息。Processor 会在创建令牌时对 Extra 执行深度验证（长度、注入检测），因此比自定义 Claims 字段更省心。
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    cfg := jwt.DefaultConfig()
+    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    // 用 Extra 存储附加业务字段（仅支持 string 和 []string 值）
+    claims := &jwt.Claims{
+        UserID:   "user123",
+        Username: "alice",
+        Role:     "engineer",
+        Extra: map[string]any{
+            "team_id": "team-backend",
+            "level":   "senior",
+            "tags":    []string{"onboarding", "mentor"},
+        },
+    }
+    token, err := processor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+
+    // 验证后读取 Extra 字段
+    parsed, valid, err := processor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Valid:", valid)            // 输出：true
+    fmt.Println("UserID:", parsed.UserID)   // 输出：user123
+
+    // 类型断言读取 Extra 值
+    if teamID, ok := parsed.Extra["team_id"].(string); ok {
+        fmt.Println("TeamID:", teamID) // 输出：team-backend
+    }
+    if level, ok := parsed.Extra["level"].(string); ok {
+        fmt.Println("Level:", level) // 输出：senior
+    }
+    if tags, ok := parsed.Extra["tags"].([]string); ok {
+        fmt.Println("Tags:", tags) // 输出：[onboarding mentor]
+    }
+}
+```
+
+::: warning Extra 的限制
+`Extra` 最多 50 个键，值仅允许 `string` 和 `[]string` 类型，不支持嵌套 map。如果需要更复杂的结构或自定义验证，请改用[自定义 Claims 类型](../guides/custom-claims#extra-字段-vs-自定义类型)。
+:::
+
 ## 更多示例
 
-- [高级示例](./advanced) — RSA、ECDSA、自定义 Claims、Redis 黑名单、Web 服务
+- [Web 服务器集成](./web-server) — 认证中间件、RBAC、刷新、登出、优雅关闭
+- [高级示例](./advanced) — RSA、ECDSA、自定义 Claims、Redis 黑名单、时钟注入

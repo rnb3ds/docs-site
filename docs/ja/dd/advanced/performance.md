@@ -151,4 +151,4 @@ logger.Shutdown(ctx)
 
 - [出力先](../api-reference/output-integration/writers) -- FileWriter、BufferedWriter API
 - [設定](../api-reference/core/config) -- パフォーマンス関連の設定項目
-- [本番チェックリスト](../security/production-checklist) -- リリース前チェック
+- [本番チェックリスト](../guides/security/production-checklist) -- リリース前チェック

@@ -156,5 +156,5 @@ type LogEntry struct {
 ## Следующие шаги
 
 - [Logger](../core/logger) -- полные методы Logger
-- [Структурированные поля](../output-integration/fields) -- конструкторы Field
-- [Константы и ошибки](./constants) -- константы LogLevel
+- [Структурированные поля](../core/fields) -- конструкторы Field
+- [Константы и ошибки](../core/constants) -- константы LogLevel

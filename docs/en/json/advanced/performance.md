@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Performance"
 title: "Performance - CyberGo JSON | High Performance Guide"
-description: "CyberGo JSON performance optimization: EnableCache/CacheTTL caching, ParallelThreshold parallelism, PreParse pre-parsing and WarmupCache warmup to improve high-frequency JSON processing performance."
+description: "CyberGo JSON performance optimization: EnableCache/CacheTTL caching, PreParse pre-parsing and WarmupCache warmup to improve high-frequency JSON processing."
 sidebar_position: 1
 ---
 

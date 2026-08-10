@@ -92,8 +92,12 @@ func main() {
 
 ## 次のステップ
 
+- [コア概念](./getting-started/concepts) — Processor、トークンモデル、Claims アーキテクチャ
 - [クイックスタート](./getting-started/) — 詳細なインストールと設定ガイド
 - [署名アルゴリズム](./guides/signing-algorithms) — HMAC、RSA、ECDSA 選択ガイド
+- [トークンリフレッシュとローテーション](./guides/token-refresh) — 2層トークンとローテーション戦略
+- [設定詳細](./guides/configuration) — セキュリティ設定と入力バリデーション
 - [カスタム Claims](./guides/custom-claims) — ビジネスフィールドの定義
 - [API リファレンス](./api-reference/) — 完全な API リファレンス
 - [基本サンプル](./examples/basic) — HMAC、トークンペア、検証の例
+- [Web サーバー統合](./examples/web-server) — 認証ミドルウェアと RBAC の実践

@@ -93,7 +93,7 @@ extractors := logger.GetContextExtractors()
 ```
 
 :::warning Context limitation (important)
-Log methods (`Info`/`InfoWith`, etc.) do not accept a `context.Context` parameter; `ContextExtractor` is invoked internally with `context.Background()`, so it **cannot automatically extract** TraceID/SpanID from the request scope. The OTel example below only emits fields when a global span exists; to attach tracing IDs to each request, pass them manually via `WithFields()` (see [Distributed Tracing Integration](../../guides/context-tracing)).
+Log methods (`Info`/`InfoWith`, etc.) do not accept a `context.Context` parameter; `ContextExtractor` is invoked internally with `context.Background()`, so it **cannot automatically extract** TraceID/SpanID from the request scope. The OTel example below only emits fields when a global span exists; to attach tracing IDs to each request, pass them manually via `WithFields()` (see [Distributed Tracing Integration](../../guides/integration/context-tracing)).
 :::
 
 ### OpenTelemetry Example
@@ -159,5 +159,5 @@ func loggingInterceptor(
 ## Next Steps
 
 - [Logger](../core/logger) -- `AddContextExtractor` / `SetContextExtractors` / `GetContextExtractors`
-- [Structured Fields](./fields) -- `Field` constructors and field validation
+- [Structured Fields](../core/fields) -- `Field` constructors and field validation
 - [Config](../core/config) -- `Config.ContextExtractors`

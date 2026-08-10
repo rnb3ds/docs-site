@@ -90,6 +90,10 @@ type RateLimiter struct { ... }
 
 令牌桶限流器，实现 [`RateLimitProvider`](./interfaces#ratelimitprovider) 接口。
 
+采用令牌桶算法：令牌按经过时间**按比例补充**（而非固定窗口重置），补充后保留残余时间以保证速率均匀；每次请求消耗令牌，令牌不足时拒绝。
+
+内部最多跟踪 10000 个限流 key（`maxBuckets`）。达到上限时先驱逐过期桶（超过 2 倍窗口未活动），仍满则批量驱逐最旧的约 10%，分摊 O(n) 扫描成本。
+
 <Badge type="info" text="struct" />
 
 ### 方法

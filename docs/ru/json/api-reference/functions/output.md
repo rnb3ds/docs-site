@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Кодирование и вывод"
 title: "Функции кодирования и вывода - CyberGo JSON | Справочник API"
-description: "Функции кодирования и вывода CyberGo JSON: Marshal/Unmarshal сериализация, Compact/Indent/HTMLEscape форматирование и Encode/EncodePretty/Prettify настраиваемое кодирование, 100% совместимость со стандартной библиотекой."
+description: "Кодирование CyberGo JSON: Marshal/Unmarshal сериализация, Compact/Indent, Encode/EncodePretty/Prettify, совместимо со стандартной библиотекой."
 sidebar_position: 5
 ---
 

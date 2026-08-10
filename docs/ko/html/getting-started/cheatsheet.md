@@ -1,7 +1,7 @@
 ---
 sidebar_label: "치트시트"
 title: "치트시트 - CyberGo html | API 한눈에 보기"
-description: "CyberGo html 주요 API 치트시트: 패키지 함수, Processor 메서드, Config 프리셋, 주요 설정 항목, 오류 판별, 감사 설정을 한 페이지에 함수 시그니처와 함께 정리합니다."
+description: "CyberGo html 주요 API 치트시트: 패키지 함수 Extract·ExtractText, Processor 메서드, Config 프리셋, 주요 설정 항목, errors.Is 오류 판별, 감사 설정을 함수 시그니처와 함께 한 페이지에 정리합니다."
 sidebar_position: 3
 ---
 
@@ -160,6 +160,41 @@ if err != nil {
 }
 ```
 
+## 인코딩 감지
+
+```go
+// 자동 감지 (기본값, 15+ 인코딩 지원)
+result, err := html.Extract(gbkData)
+
+// 수동으로 인코딩 지정
+cfg := html.DefaultConfig()
+cfg.Encoding = "shift_jis"
+```
+
+UTF-8, GBK, Shift_JIS, EUC-JP, Windows-1252 등 15+ 인코딩을 지원합니다.
+
+## 미디어 추출
+
+```go
+result, err := html.Extract(data)
+
+// 비디오
+for _, v := range result.Videos {
+    fmt.Println(v.URL, v.Type)
+}
+
+// 오디오
+for _, a := range result.Audios {
+    fmt.Println(a.URL, a.Type)
+}
+
+// 미디어 추출 비활성화
+cfg := html.TextOnlyConfig()
+// 또는 개별 제어
+cfg.PreserveVideos = false
+cfg.PreserveAudios = false
+```
+
 ## 감사 시스템
 
 ```go
@@ -176,4 +211,35 @@ defer p.Close()
 
 // 처리 후 감사 로그 가져오기
 entries := p.GetAuditLog()
+```
+
+### 감사 Sink 치트시트
+
+```go
+// 내장 Sink 생성자
+html.NewLoggerAuditSink()                   // stderr, [AUDIT] 접두사
+html.NewLoggerAuditSinkWithWriter(w)        // 커스텀 Writer
+html.NewWriterAuditSink(w)                  // JSON Lines 를 io.Writer 에 기록
+html.NewChannelAuditSink(bufSize)           // 버퍼링된 channel
+html.NewMultiSink(sinks...)                 // 여러 Sink 로 팬아웃
+html.NewFilteredSink(sink, filterFunc)      // 조건자 필터링
+html.NewLevelFilteredSink(sink, minLevel)   // 레벨별 필터링
+
+// Channel Sink 보조 메서드
+sink.Channel()       // <-chan AuditEntry, 이벤트 소비
+sink.DroppedCount()  // int64, 버려진 이벤트 수
+sink.Close()         // 멱등 channel 닫기
+```
+
+### Processor 라이프사이클
+
+```go
+p, _ := html.New(html.DefaultConfig())
+defer p.Close()               // 리소스 해제 (멱등)
+
+stats := p.GetStatistics()    // Statistics{TotalProcessed, CacheHits, ...}
+entries := p.GetAuditLog()    // []AuditEntry
+p.ClearAuditLog()             // 메모리 감사 로그 비우기
+p.ClearCache()                // 캐시 비우기 (통계 유지)
+p.ResetStatistics()           // 통계 카운터 재설정 (캐시 유지)
 ```

@@ -173,5 +173,5 @@ Supports UTF-8, GBK, GB18030, Shift_JIS, EUC-JP, Windows-1252, and 15+ encodings
 
 - [Content Extraction Guide](../guides/core-features/content-extraction) - Deep dive into extraction and article recognition
 - [Output Formats](../guides/core-features/output-formats) - Choose the right output format for your use case
-- [Processor Cache & Reuse](../guides/advanced-patterns/processor-cache) - Performance optimization for high-frequency calls
+- [Processor Cache & Reuse](../guides/performance/processor-cache) - Performance optimization for high-frequency calls
 - [Cheat Sheet](./cheatsheet) - Common API quick reference

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "高级示例"
 title: "高级示例 - CyberGo JWT | 非对称签名与自定义存储"
-description: "高级示例集：RSA 与 ECDSA 非对称签名验证、实现 CustomClaims 自定义业务声明、对接 Redis 自定义黑名单后端、FixedClock 时钟注入测试及完整 Web 服务集成。"
+description: "高级示例集：RSA、RSA-PSS 与 ECDSA 非对称签名、密钥分离跨服务验证、PEM 密钥加载、CustomClaims 自定义声明、Redis 黑名单后端、FixedClock 时钟注入及未验证令牌解析。"
 sidebar_position: 20
 ---
 
@@ -57,6 +57,60 @@ func main() {
 }
 ```
 
+## RSA-PSS 签名
+
+RSA-PSS（RS256/384/512 的现代替代）使用概率签名方案（PSS）填充，安全性优于 PKCS#1 v1.5。密钥与 RSA 完全相同，无需额外生成。
+
+```go
+package main
+
+import (
+    "crypto/rand"
+    "crypto/rsa"
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // 生成 RSA 密钥对（RSA-PSS 与 RSA 共用同一密钥类型）
+    privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    cfg := jwt.DefaultConfig()
+    cfg.SigningMethod = jwt.SigningMethodPS256
+    cfg.SigningKey = privateKey
+    cfg.VerificationKey = &privateKey.PublicKey
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    claims := &jwt.Claims{UserID: "user_ps", Username: "diana"}
+    token, err := processor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("RSA-PSS Token:", token)
+
+    parsed, valid, err := processor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Valid:", valid) // 输出：Valid: true
+    fmt.Println("UserID:", parsed.UserID)
+}
+```
+
+:::tip 推荐替代 RSA
+新项目建议优先使用 RSA-PSS（PS256/384/512）。PSS 填充比 PKCS#1 v1.5 具备更强的可证明安全性，且密钥与 RSA 完全通用。
+:::
+
 ## ECDSA 非对称签名
 
 使用 ECDSA 椭圆曲线签名，密钥更短、性能更好。
@@ -99,6 +153,164 @@ func main() {
     fmt.Println("ECDSA Token:", token)
 }
 ```
+
+## 密钥分离模式
+
+模拟微服务架构中的跨服务令牌验证：认证服务持有私钥签发令牌，API 服务通过公钥验证。
+
+```go
+package main
+
+import (
+    "crypto/rand"
+    "crypto/rsa"
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // 生成 RSA 密钥对
+    privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+    if err != nil {
+        log.Fatal(err)
+    }
+    publicKey := &privateKey.PublicKey
+
+    // --- 认证服务：持有私钥，签发令牌 ---
+    authCfg := jwt.DefaultConfig()
+    authCfg.SigningMethod = jwt.SigningMethodRS256
+    authCfg.SigningKey = privateKey
+    authCfg.Issuer = "auth-service"
+
+    authProcessor, err := jwt.New(authCfg)
+    if err != nil {
+        panic(err)
+    }
+    defer authProcessor.Close()
+
+    claims := &jwt.Claims{UserID: "user_dist", Username: "charlie"}
+    token, err := authProcessor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("认证服务签发令牌（私钥）")
+
+    // --- API 服务：通过公钥验证令牌 ---
+    apiCfg := jwt.DefaultConfig()
+    apiCfg.SigningMethod = jwt.SigningMethodRS256
+    apiCfg.SigningKey = privateKey     // 当前 API 要求 SigningKey 非空
+    apiCfg.VerificationKey = publicKey // 验证时实际使用此公钥
+    apiCfg.Issuer = "auth-service"     // 必须与签发方一致
+
+    apiProcessor, err := jwt.New(apiCfg)
+    if err != nil {
+        panic(err)
+    }
+    defer apiProcessor.Close()
+
+    parsed, valid, err := apiProcessor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("API 服务验证通过（公钥）：", valid) // 输出：API 服务验证通过（公钥）： true
+    fmt.Println("UserID:", parsed.UserID)
+}
+```
+
+:::warning SigningKey 必填
+当前 API 要求 `SigningKey` 非空（校验阶段强制检查），因此 API 服务的配置中仍需写入私钥。但验证流程在设置了 `VerificationKey` 后只使用公钥。仅验证的 Processor 不应调用 `Create` / `CreateRefresh`。
+:::
+
+## 从 PEM 文件加载密钥
+
+生产环境通常将非对称密钥以 PEM 文件存储。以下示例展示如何用 `pem.Decode` + `x509.ParsePKCS8PrivateKey` 加载私钥、`x509.ParsePKIXPublicKey` 加载公钥。
+
+<!-- check-code: skip -->
+```go
+package main
+
+import (
+    "crypto/rsa"
+    "crypto/x509"
+    "encoding/pem"
+    "fmt"
+    "os"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    // --- 加载 RSA 私钥 ---
+    keyData, err := os.ReadFile("private_key.pem")
+    if err != nil {
+        fmt.Println("读取私钥失败：", err)
+        return
+    }
+
+    block, _ := pem.Decode(keyData)
+    if block == nil {
+        fmt.Println("私钥 PEM 解码失败")
+        return
+    }
+
+    parsedKey, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+    if err != nil {
+        fmt.Println("解析私钥失败：", err)
+        return
+    }
+    privateKey, ok := parsedKey.(*rsa.PrivateKey)
+    if !ok {
+        fmt.Println("密钥类型不是 RSA")
+        return
+    }
+
+    // --- 加载 RSA 公钥 ---
+    pubData, err := os.ReadFile("public_key.pem")
+    if err != nil {
+        fmt.Println("读取公钥失败：", err)
+        return
+    }
+
+    pubBlock, _ := pem.Decode(pubData)
+    if pubBlock == nil {
+        fmt.Println("公钥 PEM 解码失败")
+        return
+    }
+
+    parsedPub, err := x509.ParsePKIXPublicKey(pubBlock.Bytes)
+    if err != nil {
+        fmt.Println("解析公钥失败：", err)
+        return
+    }
+    publicKey, ok := parsedPub.(*rsa.PublicKey)
+    if !ok {
+        fmt.Println("公钥类型不是 RSA")
+        return
+    }
+
+    // --- 配置 Processor ---
+    cfg := jwt.DefaultConfig()
+    cfg.SigningMethod = jwt.SigningMethodRS256
+    cfg.SigningKey = privateKey
+    cfg.VerificationKey = publicKey
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        fmt.Println("初始化失败：", err)
+        return
+    }
+    defer processor.Close()
+    fmt.Println("密钥已从 PEM 文件加载") // 输出：密钥已从 PEM 文件加载
+}
+```
+
+:::tip 密钥格式
+- 私钥 PEM 标头为 `-----BEGIN PRIVATE KEY-----`（PKCS#8）或 `-----BEGIN RSA PRIVATE KEY-----`（PKCS#1）。PKCS#8 用 `x509.ParsePKCS8PrivateKey`，PKCS#1 用 `x509.ParsePKCS1PrivateKey`。
+- 公钥 PEM 标头为 `-----BEGIN PUBLIC KEY-----`，用 `x509.ParsePKIXPublicKey` 解析。
+- `ParsePKCS8PrivateKey` / `ParsePKIXPublicKey` 返回 `any`，需类型断言为 `*rsa.PrivateKey` / `*rsa.PublicKey`（ECDSA 同理，断言为 `*ecdsa.PrivateKey` / `*ecdsa.PublicKey`）。
+:::
 
 ## 自定义 Claims
 
@@ -329,80 +541,7 @@ func main() {
 }
 ```
 
-## 完整 Web 服务示例
+## 更多示例
 
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-    "net/http"
-    "strings"
-
-    "github.com/cybergodev/jwt"
-)
-
-var processor *jwt.Processor
-
-func main() {
-    cfg := jwt.DefaultConfig()
-    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-    cfg.Issuer = "my-web-service"
-    cfg.ExpectedAudience = "my-app"
-
-    var err error
-    processor, err = jwt.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    defer processor.Close()
-
-    http.HandleFunc("/login", handleLogin)
-    http.HandleFunc("/protected", handleProtected)
-
-    fmt.Println("Server running on :8080")
-    log.Fatal(http.ListenAndServe(":8080", nil))
-}
-
-func handleLogin(w http.ResponseWriter, r *http.Request) {
-    // 实际场景中验证用户名密码
-    claims := &jwt.Claims{
-        UserID:   "user123",
-        Username: "alice",
-        Role:     "admin",
-    }
-
-    accessToken, err := processor.Create(claims)
-    if err != nil {
-        http.Error(w, err.Error(), 500)
-        return
-    }
-
-    refreshToken, err := processor.CreateRefresh(claims)
-    if err != nil {
-        http.Error(w, err.Error(), 500)
-        return
-    }
-
-    fmt.Fprintf(w, `{"access_token":"%s","refresh_token":"%s"}`, accessToken, refreshToken)
-}
-
-func handleProtected(w http.ResponseWriter, r *http.Request) {
-    auth := r.Header.Get("Authorization")
-    if auth == "" || !strings.HasPrefix(auth, "Bearer ") {
-        http.Error(w, "missing token", http.StatusUnauthorized)
-        return
-    }
-
-    tokenString := strings.TrimPrefix(auth, "Bearer ")
-    claims, valid, err := processor.Validate(tokenString)
-    if err != nil || !valid {
-        http.Error(w, "invalid token", http.StatusUnauthorized)
-        return
-    }
-
-    fmt.Fprintf(w, "Hello, %s (ID: %s, Role: %s)",
-        claims.Username, claims.UserID, claims.Role)
-}
-```
+- [Web 服务器集成](./web-server) — 认证中间件、RBAC、刷新、登出、优雅关闭
+- [基础示例](./basic) — HMAC、令牌对、吊销、限流

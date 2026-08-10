@@ -1,7 +1,7 @@
 ---
 sidebar_label: "개요"
-title: "html - CyberGo html | HTML 콘텐츠 추출·정제 Go 라이브러리"
-description: "CyberGo html 은 고성능 HTML 콘텐츠 추출·정제 Go 라이브러리로, 문서 인식, 인코딩 감지, 콘텐츠 정제, 다중 포맷 출력을 제공해 웹 스크래핑과 문서 분석에 적합합니다."
+title: "HTML 추출 라이브러리 - CyberGo html | HTML 콘텐츠 추출·정제"
+description: "CyberGo html 은 고성능 HTML 콘텐츠 추출·정제 Go 라이브러리로, 스마트 문서 인식, 15종 자동 인코딩 감지, XSS 정제, 배치 처리, 다중 포맷 출력을 제공해 웹 스크래핑과 문서 분석에 적합합니다."
 ---
 
 # HTML
@@ -102,10 +102,15 @@ HTML 라이브러리는 세 가지 핵심 타입을 중심으로 구축됩니다
 |------|------|----------|
 | 입문 | [빠른 시작](./getting-started/) | 설치, 기본 사용법, 두 가지 호출 방식 |
 | 핵심 | [콘텐츠 추출](./guides/core-features/content-extraction) | Extract 전체 패밀리, Config 설정, Result 해석 |
-| 형식 | [출력 형식](./guides/core-features/output-formats) | Markdown / JSON 출력, 커스텀 템플릿 |
-| 성능 | [캐시와 재사용](./guides/advanced-patterns/processor-cache) | Processor 라이프사이클, 캐시 튜닝, 배치 처리 |
-| 확장 | [링크 추출](./guides/core-features/link-extraction) | 링크 추출, 그룹화, 리소스 발견 |
-| 보안 | [감사 파이프라인](./guides/advanced-patterns/audit-pipeline) | 감사 시스템, 커스텀 Sink, 보안 모니터링 |
+| 미디어 | [미디어 추출](./guides/core-features/media-extraction) | 비디오, 오디오, 임베디드 콘텐츠 추출 |
+| 형식 | [출력 형식](./guides/core-features/output-formats) | Markdown / JSON 출력, 형식 설정 |
+| 링크 | [링크 추출](./guides/core-features/link-extraction) | 링크 추출, 그룹화, 리소스 발견 |
+| 인코딩 | [인코딩 감지](./guides/core-features/encoding-detection) | 자동 감지, 수동 지정, 15+ 인코딩 지원 |
+| 설정 | [설정 가이드](./guides/core-features/configuration) | 네 가지 프리셋, 6대 필드, 일반 조합 |
+| 오류 | [오류 처리](./guides/error-handling) | 5가지 오류, errors.Is/As, context 취소 |
+| 성능 | [캐시와 재사용](./guides/performance/processor-cache) | Processor 라이프사이클, 캐시 튜닝 |
+| 배치 | [배치 처리](./guides/performance/batch-processing) | 동시 배치 추출, WorkerPool 튜닝 |
+| 보안 | [보안 개요](./guides/security/) | 보안 기능, 감사 시스템, 프로덕션 체크리스트 |
 | 고급 | [테스트와 커스터마이징](./guides/integration/testing-custom) | 커스텀 Scorer, ContentNode, 테스트 모드 |
 | 참조 | [치트시트](./getting-started/cheatsheet) | 자주 사용하는 API 한눈에 보기 |
 

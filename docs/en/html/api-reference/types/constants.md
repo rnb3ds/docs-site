@@ -115,6 +115,39 @@ func (e *FileError) MarshalJSON() ([]byte, error) // also truncates the path dur
 Both `FileError.Error()` and `SafePath()` return truncated paths (filename only) to prevent path leakage. Access the `Path` field directly for internal debugging when the full path is needed.
 :::
 
+## Internal Limit Constants
+
+The following constants define the library's runtime hard limits. They are **unexported** (lowercase) and cannot be referenced directly, but they affect runtime behavior — understanding these values helps you reason about the library's boundary conditions and error scenarios.
+
+### Configuration Upper Bounds
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `maxConfigInputSize` | `52428800` (50MB) | Upper bound for `MaxInputSize`; even if a larger value is set, `Validate()` rejects it |
+| `maxConfigWorkerSize` | `256` | Upper bound for `WorkerPoolSize` |
+| `maxConfigDepth` | `500` | Upper bound for `MaxDepth` |
+| `maxConfigCacheEntries` | `100000` | Upper bound for `MaxCacheEntries` (~100MB, estimated at 1KB per entry) |
+
+### Processing Limits
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `maxBatchSize` | `10000` | Maximum items per batch; exceeding this fails the entire batch (not a panic) |
+| `maxTimeoutGoroutines` | `1000` | Global concurrent timeout goroutine limit; exceeding it causes new requests to immediately return `ErrProcessingTimeout` |
+| `maxHTMLForRegex` | `1000000` (1MB) | Upper bound on HTML size for media-URL regex scanning; above this the regex fallback is skipped (ReDoS prevention) |
+| `maxRegexMatches` | `1000` | Maximum matches per regex scan; prevents excessive allocations on media-dense pages |
+
+### Cache Key Generation
+
+| Constant | Value | Description |
+|----------|-------|-------------|
+| `maxCacheKeySize` | `65536` (64KB) | Content size threshold for full hashing; above this, switches to 5-point sampling |
+| `cacheKeySample` | `4096` | Total byte budget for large-document sampling (5 points x ~820 bytes/point) |
+
+:::tip
+These constants explain some "whys": why HTML over 1MB stops extracting bare video links (ReDoS protection), why batches over 10000 items fail entirely (OOM protection), and why 64KB is the cache-key strategy boundary (hash cost vs collision risk).
+:::
+
 ## Error Handling Patterns
 
 ```go

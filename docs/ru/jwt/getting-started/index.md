@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Быстрый старт"
 title: "Быстрый старт - CyberGo JWT | Введение за 5 минут"
-description: "Руководство по быстрому старту CyberGo JWT: установка, создание Processor, выпуск и проверка токенов, обновление и отзыв, Claims, алгоритмы и чёрный список."
+description: "Руководство по быстрому старту CyberGo JWT: установка, создание Processor, выпуск, проверка, обновление и отзыв токенов, навигация по дополнительным возможностям."
 sidebar_position: 2
 ---
 
@@ -23,6 +23,7 @@ go get github.com/cybergodev/jwt
 package main
 
 import (
+    "fmt"
     "time"
 
     "github.com/cybergodev/jwt"
@@ -107,183 +108,26 @@ if err != nil {
 fmt.Println("Revoked:", revoked) // true
 ```
 
-## Алгоритмы подписи
+## Дополнительные возможности
 
-### HMAC (симметричный ключ)
+Описанные выше шаги охватывают основной жизненный цикл токена. CyberGo JWT также предоставляет следующие возможности — перейдите в соответствующее руководство для подробного описания:
 
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-cfg.SigningMethod = jwt.SigningMethodHS256 // По умолчанию
-```
-
-| Метод | Алгоритм |
-|-------|----------|
-| `SigningMethodHS256` | HMAC-SHA256 |
-| `SigningMethodHS384` | HMAC-SHA384 |
-| `SigningMethodHS512` | HMAC-SHA512 |
-
-### RSA (асимметричный ключ)
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodRS256
-cfg.SigningKey = rsaPrivateKey        // *rsa.PrivateKey
-cfg.VerificationKey = rsaPublicKey    // *rsa.PublicKey (необязательно, по умолчанию используется SigningKey)
-```
-
-| Метод | Алгоритм |
-|-------|----------|
-| `SigningMethodRS256` | RSA-SHA256 |
-| `SigningMethodRS384` | RSA-SHA384 |
-| `SigningMethodRS512` | RSA-SHA512 |
-
-### RSA-PSS (асимметричный ключ, рекомендуется)
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodPS256
-cfg.SigningKey = rsaPrivateKey        // *rsa.PrivateKey
-cfg.VerificationKey = rsaPublicKey    // *rsa.PublicKey (необязательно)
-```
-
-| Метод | Алгоритм |
-|-------|----------|
-| `SigningMethodPS256` | RSA-PSS-SHA256 |
-| `SigningMethodPS384` | RSA-PSS-SHA384 |
-| `SigningMethodPS512` | RSA-PSS-SHA512 |
-
-### ECDSA (асимметричный ключ)
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodES256
-cfg.SigningKey = ecdsaPrivateKey      // *ecdsa.PrivateKey
-cfg.VerificationKey = ecdsaPublicKey  // *ecdsa.PublicKey (необязательно)
-```
-
-| Метод | Алгоритм |
-|-------|----------|
-| `SigningMethodES256` | ECDSA-SHA256 |
-| `SigningMethodES384` | ECDSA-SHA384 |
-| `SigningMethodES512` | ECDSA-SHA512 |
-
-## Пользовательские Claims
-
-Реализуйте интерфейс `CustomClaims` для определения собственной структуры Claims:
-
-```go
-type MyClaims struct {
-    UserID string `json:"user_id"`
-    Role   string `json:"role"`
-    jwt.RegisteredClaims
-}
-
-func (c *MyClaims) GetRegisteredClaims() *jwt.RegisteredClaims {
-    return &c.RegisteredClaims
-}
-
-func (c *MyClaims) Validate() error {
-    if c.UserID == "" {
-        return errors.New("user_id is required")
-    }
-    return nil
-}
-```
-
-Использование пользовательских Claims:
-
-```go
-claims := &MyClaims{UserID: "123", Role: "admin"}
-
-// Создание токена
-token, err := processor.Create(claims)
-
-// Проверка в пользовательскую структуру
-result := &MyClaims{}
-parsed, valid, err := processor.ValidateInto(token, result)
-
-// Обновление в пользовательскую структуру
-newToken, err := processor.RefreshInto(refreshToken, claims)
-```
-
-## Настройка чёрного списка
-
-### Использование встроенного хранилища в памяти (по умолчанию)
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-// Встроенный чёрный список уже автоматически включён
-```
-
-### Пользовательский бэкенд хранилища
-
-Реализуйте интерфейс `BlacklistStore` (например, Redis):
-
-```go
-type RedisStore struct {
-    client *redis.Client
-}
-
-func (s *RedisStore) Add(tokenID string, expiresAt time.Time) error {
-    return s.client.Set(ctx, "blacklist:"+tokenID, "1", time.Until(expiresAt)).Err()
-}
-
-func (s *RedisStore) Contains(tokenID string) (bool, error) {
-    n, err := s.client.Exists(ctx, "blacklist:"+tokenID).Result()
-    return n > 0, err
-}
-
-func (s *RedisStore) Close() error {
-    return s.client.Close()
-}
-
-// Использование
-cfg.Blacklist.Store = &RedisStore{client: rdb}
-```
-
-## Настройка ограничения скорости
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-cfg.EnableRateLimit = true
-cfg.RateLimitRate = 100          // Максимальное количество запросов в окне
-cfg.RateLimitWindow = time.Minute // Временное окно
-```
-
-## Обработка ошибок
-
-```go
-import "errors"
-
-claims, valid, err := processor.Validate(tokenString)
-if err != nil {
-    switch {
-    case errors.Is(err, jwt.ErrTokenExpired):
-        // Токен истёк
-    case errors.Is(err, jwt.ErrTokenRevoked):
-        // Токен отозван
-    case errors.Is(err, jwt.ErrTokenInvalidIssuer):
-        // Издатель не совпадает
-    case errors.Is(err, jwt.ErrTokenInvalidAudience):
-        // Аудитория не совпадает
-    case errors.Is(err, jwt.ErrInvalidToken):
-        // Подпись недействительна или формат ошибочен
-    case errors.Is(err, jwt.ErrProcessorClosed):
-        // Processor закрыт
-    default:
-        // Другие ошибки
-    }
-}
-```
+| Возможность | Описание | Руководство |
+|-------------|----------|-------------|
+| Алгоритмы подписи | HMAC, RSA, RSA-PSS, ECDSA — 12 алгоритмов в 4 семействах | [Алгоритмы подписи](../guides/signing-algorithms) |
+| Пользовательские Claims | Определение бизнес-полей через интерфейс `CustomClaims` | [Пользовательские Claims](../guides/custom-claims) |
+| Обновление и ротация токенов | Двухуровневый TTL, стратегии повторного использования и одноразовой ротации | [Обновление и ротация токенов](../guides/token-refresh) |
+| Чёрный список токенов | Отзыв, встроенное хранилище в памяти, пользовательские бэкенды Redis | [Чёрный список токенов](../guides/blacklist) |
+| Ограничение скорости | Алгоритм token bucket для защиты конечных точек выпуска | [Ограничение скорости](../guides/rate-limiting) |
+| Подробная конфигурация | Проверка издателя/аудитории, допуск часов, обязательный срок, проверка ввода | [Подробная конфигурация](../guides/configuration) |
+| Обработка ошибок | 19 категорий ошибок-сигналов и сопоставление `errors.Is` | [Обработка ошибок](../guides/error-handling) |
+| Тестирование и внедрение часов | `FixedClock` для детерминированного управления временем без sleep | [Тестирование и внедрение часов](../guides/testing) |
 
 ## Дальнейшие шаги
 
 - [Алгоритмы подписи](../guides/signing-algorithms) — выбор алгоритма и настройка ключей
-- [Пользовательские Claims](../guides/custom-claims) — определение бизнес-полей
-- [Чёрный список токенов](../guides/blacklist) — отзыв и пользовательское хранилище
-- [Ограничение скорости](../guides/rate-limiting) — настройка ограничения
-- [Обработка ошибок](../guides/error-handling) — классификация ошибок и шаблоны обработки
+- [Обновление и ротация токенов](../guides/token-refresh) — двухуровневые токены и стратегии ротации
+- [Подробная конфигурация](../guides/configuration) — настройки безопасности и проверка ввода
 - [Справочник API](../api-reference/) — полная документация API
+- [Базовые примеры](../examples/basic) — готовые к запуску примеры
+- [Интеграция с веб-сервером](../examples/web-server) — Middleware аутентификации и RBAC на практике

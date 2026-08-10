@@ -194,6 +194,137 @@ func main() {
 }
 ```
 
+## Audience Isolation
+
+When `ExpectedAudience` is set, only tokens whose `aud` claim contains that value pass validation. This achieves inter-service token isolation in a microservice architecture — tokens issued by one service cannot be accepted by another.
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    cfg := jwt.DefaultConfig()
+    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
+    cfg.ExpectedAudience = "billing-api" // Only accept tokens for billing-api
+
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    // Token with matching audience
+    validClaims := &jwt.Claims{
+        UserID: "user1",
+        RegisteredClaims: jwt.RegisteredClaims{
+            Audience: jwt.StringOrSlice{"billing-api"},
+        },
+    }
+    validToken, err := processor.Create(validClaims)
+    if err != nil {
+        panic(err)
+    }
+
+    _, valid, err := processor.Validate(validToken)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Matching audience valid:", valid) // Output: true
+
+    // Token with wrong audience is rejected
+    wrongClaims := &jwt.Claims{
+        UserID: "user2",
+        RegisteredClaims: jwt.RegisteredClaims{
+            Audience: jwt.StringOrSlice{"admin-api"},
+        },
+    }
+    wrongToken, err := processor.Create(wrongClaims)
+    if err != nil {
+        panic(err)
+    }
+
+    _, valid, err = processor.Validate(wrongToken)
+    fmt.Println("Wrong audience valid:", valid) // Output: false
+    fmt.Println("Wrong audience error:", err)   // Output: token invalid audience
+    fmt.Println("Is audience error:",
+        errors.Is(err, jwt.ErrTokenInvalidAudience)) // Output: true
+}
+```
+
+::: tip Microservice Scenarios
+In a microservice architecture, set different `ExpectedAudience` values for different services (e.g. `billing-api`, `user-api`) so each service only accepts tokens intended for itself, preventing tokens from being abused across services.
+:::
+
+## Extra Extension Fields
+
+The built-in `Claims.Extra` is a `map[string]any` for storing a small amount of optional additional information. The Processor performs deep validation on Extra during token creation (length, injection detection), so it is more convenient than custom Claims fields.
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/jwt"
+)
+
+func main() {
+    cfg := jwt.DefaultConfig()
+    cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
+    processor, err := jwt.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer processor.Close()
+
+    // Store additional business fields in Extra (only string and []string values supported)
+    claims := &jwt.Claims{
+        UserID:   "user123",
+        Username: "alice",
+        Role:     "engineer",
+        Extra: map[string]any{
+            "team_id": "team-backend",
+            "level":   "senior",
+            "tags":    []string{"onboarding", "mentor"},
+        },
+    }
+    token, err := processor.Create(claims)
+    if err != nil {
+        panic(err)
+    }
+
+    // Read Extra fields after validation
+    parsed, valid, err := processor.Validate(token)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Valid:", valid)            // Output: true
+    fmt.Println("UserID:", parsed.UserID)   // Output: user123
+
+    // Type-assert to read Extra values
+    if teamID, ok := parsed.Extra["team_id"].(string); ok {
+        fmt.Println("TeamID:", teamID) // Output: team-backend
+    }
+    if level, ok := parsed.Extra["level"].(string); ok {
+        fmt.Println("Level:", level) // Output: senior
+    }
+    if tags, ok := parsed.Extra["tags"].([]string); ok {
+        fmt.Println("Tags:", tags) // Output: [onboarding mentor]
+    }
+}
+```
+
+::: warning Extra Limitations
+`Extra` allows at most 50 keys; values must be of type `string` or `[]string`; nested maps are not supported. If you need more complex structures or custom validation, use a [custom Claims type](../guides/custom-claims#extra-field-vs-custom-type) instead.
+:::
+
 ## More Examples
 
-- [Advanced Examples](./advanced) — RSA, ECDSA, custom Claims, Redis blacklist, web service
+- [Web Server Integration](./web-server) — auth middleware, RBAC, refresh, logout, graceful shutdown
+- [Advanced Examples](./advanced) — RSA, ECDSA, custom Claims, Redis blacklist, clock injection

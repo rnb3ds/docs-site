@@ -26,12 +26,17 @@ DD ログライブラリは豊富な API インターフェースを提供し、
 | **Writers** | FileWriter、BufferedWriter、MultiWriter | [出力先](./output-integration/writers) |
 | **コンテキスト** | Context 統合と ContextExtractor | [コンテキスト統合](./output-integration/context) |
 
-## 拡張機能
+## 拡張
 
 | モジュール | 説明 | ドキュメント |
 |------|------|------|
-| **Fields** | 構造化フィールドコンストラクタ（20+ 型） | [構造化フィールド](./output-integration/fields) |
-| **Hooks** | ライフサイクルフックシステム | [フックシステム](./security-audit/hooks) |
+| **Fields** | 構造化フィールドコンストラクタ（20+ 型） | [構造化フィールド](./core/fields) |
+| **Hooks** | ライフサイクルフックシステム | [フックシステム](./core/hooks) |
+
+## セキュリティと監査
+
+| モジュール | 説明 | ドキュメント |
+|------|------|------|
 | **Security** | 機密データフィルタリングとセキュリティ設定 | [セキュリティフィルタ](./security-audit/security) |
 | **Audit** | 監査ログと監査イベント | [監査ログ](./security-audit/audit) |
 | **Integrity** | ログ整合性署名と検証 | [整合性署名](./security-audit/integrity) |
@@ -42,7 +47,7 @@ DD ログライブラリは豊富な API インターフェースを提供し、
 |------|------|------|
 | **Debug Visual** | Print/JSON/Text/Exit デバッグ関数 | [デバッグ出力](./dev-tools/debug-visual) |
 | **Recorder** | テスト補助ログレコーダー | [テスト補助](./dev-tools/recorder) |
-| **Constants** | ログレベル、フォーマット、エラーコード | [定数とエラー](./dev-tools/constants) |
+| **Constants** | ログレベル、フォーマット、エラーコード | [定数とエラー](./core/constants) |
 
 ## クイック検索
 

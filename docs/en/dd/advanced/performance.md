@@ -151,4 +151,4 @@ logger.Shutdown(ctx)
 
 - [Output Targets](../api-reference/output-integration/writers) -- FileWriter, BufferedWriter API
 - [Config](../api-reference/core/config) -- Performance-related config options
-- [Production Checklist](../security/production-checklist) -- Pre-launch checks
+- [Production Checklist](../guides/security/production-checklist) -- Pre-launch checks

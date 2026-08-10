@@ -173,4 +173,4 @@ if !rec.ContainsMessage("test") {
 
 - [快速开始](../getting-started/) -- 入门指南
 - [API 参考](../api-reference/) -- 完整 API
-- [生产检查清单](../security/production-checklist) -- 上线检查
+- [生产检查清单](../guides/security/production-checklist) -- 上线检查

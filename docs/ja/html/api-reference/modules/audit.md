@@ -1,7 +1,7 @@
 ---
 sidebar_label: "監査システム"
 title: "監査システム - CyberGo html | プラグイン監査 API"
-description: "CyberGo html プラグイン監査 API：AuditConfig 設定、8 種の監査イベント、3 段階のレベル、AuditEntry 構造体、6 種の内蔵 Sink を提供します。"
+description: "CyberGo html プラグイン監査 API リファレンス：AuditConfig 設定、8 種の監査イベント、3 段階のレベルフィルタ、AuditEntry 構造体、6 種の内蔵 Sink とカスタム Sink 実装によるセキュリティイベント記録を提供します。"
 sidebar_position: 4
 ---
 
@@ -140,7 +140,7 @@ type AuditSink interface {
 
 ### LoggerAuditSink
 
-標準エラーに出力、`[AUDIT]` プレフィックス付き。
+標準ライブラリ `log.Logger` 経由で出力、`[AUDIT]` プレフィックス付き。`NewLoggerAuditSink()` は**デフォルトで標準エラー**（`os.Stderr`）に出力します。ファイルやネットワーク接続などにリダイレクトしたい場合は、`NewLoggerAuditSinkWithWriter(w)` で任意の `io.Writer` を指定してください。
 
 ```go
 func NewLoggerAuditSink() *LoggerAuditSink
@@ -149,13 +149,14 @@ func NewLoggerAuditSinkWithWriter(w io.Writer) *LoggerAuditSink
 
 ### ChannelAuditSink
 
-バッファ付きチャネルに送信、非同期処理に適しています。
+バッファ付き channel に送信、非同期処理や外部ログシステムとの統合に適しています。`Write` は**非ブロッキング**です：バッファが満杯の場合、そのエントリを**破棄**しドロップカウントをインクリメントします（ブロックもエラーも返しません）。呼び出し側は `DroppedCount()` で破棄された数を照会でき、監視でアラートやスケールアウトのトリガに利用できます。
 
 ```go
 func NewChannelAuditSink(bufferSize int) *ChannelAuditSink
 
 func (s *ChannelAuditSink) Channel() <-chan AuditEntry
 func (s *ChannelAuditSink) DroppedCount() int64
+func (s *ChannelAuditSink) Close() error // べき等：複数回の呼び出しが安全、初回のみ実際に channel をクローズ
 ```
 
 ```go
@@ -177,7 +178,7 @@ func NewWriterAuditSink(w io.Writer) *WriterAuditSink
 
 ### MultiSink
 
-複数の Sink にファンアウトします。
+複数の Sink にファンアウトします。`Close` は Go 1.20+ の `errors.Join` で**すべての子 Sink のクローズエラーを集約**します（最後の 1 つだけ保持しない）——監査サブシステムにおいて、早期の Sink の配送失敗を見落とすと本当の問題が隠れてしまうためです。
 
 ```go
 func NewMultiSink(sinks ...AuditSink) *MultiSink

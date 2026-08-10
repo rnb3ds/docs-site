@@ -1,7 +1,7 @@
 ---
 sidebar_label: "速查表"
 title: "速查表 - CyberGo html | API 一页速查"
-description: "CyberGo html 常用 API 一页速查表：包级函数、Processor 方法、配置预设、错误判断与审计设置，覆盖函数签名与用法。"
+description: "CyberGo html 常用 API 一页速查表：汇总 Extract、ExtractText、ExtractToMarkdown 等包级函数与 Processor 方法、四种 Config 预设、errors.Is 错误判断及 AuditConfig 审计配置，覆盖核心函数签名与典型用法。"
 sidebar_position: 3
 ---
 
@@ -160,6 +160,41 @@ if err != nil {
 }
 ```
 
+## 编码检测
+
+```go
+// 自动检测编码（默认行为，支持 15+ 编码）
+result, err := html.Extract(gbkData)
+
+// 手动指定编码
+cfg := html.DefaultConfig()
+cfg.Encoding = "shift_jis"
+```
+
+支持 UTF-8、GBK、Shift_JIS、EUC-JP、Windows-1252 等 15+ 编码。
+
+## 媒体提取
+
+```go
+result, err := html.Extract(data)
+
+// 视频
+for _, v := range result.Videos {
+    fmt.Println(v.URL, v.Type)
+}
+
+// 音频
+for _, a := range result.Audios {
+    fmt.Println(a.URL, a.Type)
+}
+
+// 禁用媒体提取
+cfg := html.TextOnlyConfig()
+// 或单独控制
+cfg.PreserveVideos = false
+cfg.PreserveAudios = false
+```
+
 ## 审计系统
 
 ```go
@@ -176,4 +211,35 @@ defer p.Close()
 
 // 处理后获取审计日志
 entries := p.GetAuditLog()
+```
+
+### 审计 Sink 速查
+
+```go
+// 内置 Sink 构造函数
+html.NewLoggerAuditSink()                   // stderr，[AUDIT] 前缀
+html.NewLoggerAuditSinkWithWriter(w)        // 自定义 Writer
+html.NewWriterAuditSink(w)                  // JSON Lines 写入 io.Writer
+html.NewChannelAuditSink(bufSize)           // 带缓冲 channel
+html.NewMultiSink(sinks...)                 // 扇出到多个 Sink
+html.NewFilteredSink(sink, filterFunc)      // 谓词过滤
+html.NewLevelFilteredSink(sink, minLevel)   // 按级别过滤
+
+// Channel Sink 辅助方法
+sink.Channel()       // <-chan AuditEntry，消费事件
+sink.DroppedCount()  // int64，被丢弃的事件数
+sink.Close()         // 幂等关闭 channel
+```
+
+### Processor 生命周期
+
+```go
+p, _ := html.New(html.DefaultConfig())
+defer p.Close()               // 释放资源（幂等）
+
+stats := p.GetStatistics()    // Statistics{TotalProcessed, CacheHits, ...}
+entries := p.GetAuditLog()    // []AuditEntry
+p.ClearAuditLog()             // 清空内存审计日志
+p.ClearCache()                // 清空缓存（保留统计）
+p.ResetStatistics()           // 重置统计计数器（保留缓存）
 ```

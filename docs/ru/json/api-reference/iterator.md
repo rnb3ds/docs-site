@@ -1,6 +1,6 @@
 ---
-sidebar_label: "Типы итераторов"
-title: "Типы итераторов - CyberGo JSON | Справочник API"
+sidebar_label: "Итераторы и IterableValue"
+title: "Итераторы и IterableValue - CyberGo JSON | Справочник API"
 description: "Типы итераторов CyberGo JSON: Iterator, IterableValue, потоковые StreamIterator/StreamObjectIterator, BatchIterator и конструкторы/методы ParallelIterator."
 sidebar_position: 9
 ---

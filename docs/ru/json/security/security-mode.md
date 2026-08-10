@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Режим безопасности"
 title: "Режим безопасности - CyberGo JSON | Справочник API"
-description: "API безопасности CyberGo JSON: безопасная конфигурация, опасные паттерны AddDangerousPattern и валидация входных данных — защита от JSON-инъекций, загрязнения прототипа и XSS."
+description: "API безопасности CyberGo JSON: безопасная конфигурация, AddDangerousPattern и валидация входных данных — защита от JSON-инъекций, загрязнения прототипа и XSS."
 sidebar_position: 2
 ---
 

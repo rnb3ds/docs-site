@@ -1,7 +1,7 @@
 ---
 sidebar_label: "빠른 시작"
 title: "빠른 시작 - CyberGo html | 5 분 입문 가이드"
-description: "CyberGo html 빠른 시작 안내: 설치, 기본 콘텐츠 추출, 4 종 Config 프리셋, 텍스트·Markdown·JSON 출력으로 5 분 만에 HTML 콘텐츠 추출을 시작합니다."
+description: "CyberGo html 빠른 시작 안내: 설치, 기본 콘텐츠 추출, DefaultConfig·HighSecurityConfig·TextOnlyConfig·MarkdownConfig 4종 프리셋과 텍스트·Markdown·JSON 출력으로 5분 만에 추출을 시작합니다."
 sidebar_position: 2
 ---
 
@@ -172,6 +172,6 @@ UTF-8, GBK, GB18030, Shift_JIS, EUC-JP, Windows-1252 등 15+ 인코딩을 지원
 ## 다음 단계
 
 - [콘텐츠 추출 실전](../guides/core-features/content-extraction) - 추출 프로세스와 문서 인식 심층 이해
-- [출력 형식 선택](../guides/core-features/output-formats) - 시나리오에 맞는 출력 형식 선택
-- [Processor 재사용과 캐시](../guides/advanced-patterns/processor-cache) - 고빈도 호출의 성능 최적화
+- [출력 형식 실전](../guides/core-features/output-formats) - 시나리오에 맞는 출력 형식 선택
+- [Processor 재사용과 캐시](../guides/performance/processor-cache) - 고빈도 호출의 성능 최적화
 - [치트시트](./cheatsheet) - 자주 사용하는 API 빠른 참조

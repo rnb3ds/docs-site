@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Оптимизация производительности"
-title: "Оптимизация производительности - CyberGo JSON | Руководство по высокой производительности"
-description: "Оптимизация производительности CyberGo JSON: кэширование EnableCache/CacheTTL, параллелизм ParallelThreshold, предпарсинг PreParse и прогрев WarmupCache — повышение производительности высокочастотной обработки JSON."
+title: "Производительность - CyberGo JSON | Оптимизация Go JSON"
+description: "Производительность CyberGo JSON: кэш EnableCache/CacheTTL, ParallelThreshold, предпарсинг PreParse и прогрев WarmupCache для высокочастотной обработки."
 sidebar_position: 1
 ---
 

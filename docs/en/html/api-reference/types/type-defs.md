@@ -55,6 +55,21 @@ type ImageInfo struct {
 }
 ```
 
+### Field Semantics
+
+| Field | Description |
+|-------|-------------|
+| `URL` | The `src` attribute value of the image; only valid URLs (passing `IsValidURL` validation) are included — `<img>` with an invalid URL does not appear in the result |
+| `Alt` | The original `alt` attribute; when empty, `IsDecorative` is `true` |
+| `Title` | The original `title` attribute (not the page title) |
+| `Width`/`Height` | The **raw strings** from the HTML attributes (e.g. `"640"`, `"50%"`), not parsed into numbers — different pages may use inconsistent formats |
+| `IsDecorative` | `true` when `Alt` is empty; can be used to identify and skip decorative images |
+| `Position` | 1-based index in the document; when `PreserveImages = false`, the entire `Images` slice is empty |
+
+:::warning Width/Height are string types
+`Width` and `Height` are `string` types, not `int`. They preserve the original representation from the HTML source (which may include units, percentages, etc.). Parse them into numbers yourself when needed.
+:::
+
 ## LinkInfo
 
 Link information.
@@ -69,6 +84,17 @@ type LinkInfo struct {
     Position   int    `json:"position"`    // Position in the document
 }
 ```
+
+### Field Semantics
+
+| Field | Description |
+|-------|-------------|
+| `URL` | The `href` attribute value; only valid URLs (passing `IsValidURL` validation) are included — an `<a>` with an invalid URL still consumes a Position but is not added to the slice |
+| `Text` | Concatenation of all text nodes inside the `<a>` tag (recursive `GetTextContent`) |
+| `Title` | The original `title` attribute (not the link text) |
+| `IsExternal` | Determined by whether the URL itself is an absolute external address, **not by domain comparison with `BaseURL`** — this differs from the internal/external link determination in `ExtractAllLinks` |
+| `IsNoFollow` | `true` when the `rel` attribute contains `nofollow` (case-insensitive, ASCII-fold matching) |
+| `Position` | 1-based index in the document; invalid `<a>` (illegal or missing href) still consume index numbers but are not added to the slice, so Position values may be non-contiguous |
 
 ## VideoInfo
 
@@ -85,6 +111,18 @@ type VideoInfo struct {
 }
 ```
 
+### Type Field Value Rules
+
+| Type value | Meaning | When it occurs |
+|-----------|---------|----------------|
+| `"embed"` | A video page referenced by an iframe | Embedded players such as YouTube, Vimeo, Youku, Bilibili |
+| MIME type (e.g. `"video/mp4"`) | Video file container | Attribute value from `<source type="video/mp4">` |
+| Empty string | No type detected | `<video src="...">` specifying the source directly with no `<source>` child element |
+
+:::tip Three sources of video extraction
+Video extraction runs in three steps — raw HTML scan, DOM traversal, regex fallback — with deduplication at each step. See [Media Extraction Guide](../../guides/core-features/media-extraction).
+:::
+
 ## AudioInfo
 
 Audio information.
@@ -96,6 +134,17 @@ type AudioInfo struct {
     Duration string `json:"duration"` // Duration
 }
 ```
+
+### Type Field Value Rules
+
+| Type value | When it occurs |
+|-----------|----------------|
+| MIME type (e.g. `"audio/mpeg"`) | Attribute value from `<source type="audio/mpeg">` |
+| Empty string | `<audio src="...">` specifying the source directly with no `<source>` child element |
+
+:::warning Duality of the .ogg extension
+An OGG container can carry video or audio; a `.ogg` URL will appear in both `Videos` and `Audios`. The audio-only variant `.oga` appears only in `Audios`.
+:::
 
 ## LinkResource
 

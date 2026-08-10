@@ -207,4 +207,4 @@ if result != nil && result.Valid {
 
 - [무결성 서명](./integrity) -- IntegritySigner 상세
 - [보안 필터](./security) -- 민감 데이터 필터
-- [훅 시스템](./hooks) -- OnError 훅
+- [훅 시스템](../core/hooks) -- OnError 훅

@@ -1,11 +1,11 @@
 ---
 sidebar_label: "Link Extraction"
-title: "Link Extraction & Grouping - CyberGo html | Crawler Guide"
+title: "Link Extraction - CyberGo html | Crawler Guide"
 description: "CyberGo html link extraction and grouping: ExtractAllLinks to extract resource links, group by type, Include filters, relative-URL resolution, crawler tips."
-sidebar_position: 3
+sidebar_position: 4
 ---
 
-# Link Extraction & Grouping
+# Link Extraction
 
 Independent from content extraction, the library provides a dedicated link extraction API for crawlers and resource collection scenarios.
 

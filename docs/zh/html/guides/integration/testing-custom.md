@@ -1,7 +1,7 @@
 ---
 sidebar_label: "测试与自定义扩展"
 title: "测试与自定义扩展 - CyberGo html | 测试体系指南"
-description: "CyberGo html 测试与自定义扩展：自定义 Scorer 实现、ContentNode 遍历、测试模式、mock 数据与 Extractor 接口 mock 示例。"
+description: "CyberGo html 测试与自定义扩展指南：自定义 Scorer 内容评分算法实现、ContentNode 节点遍历、测试组织模式与 mock 数据构造、Extractor 接口 mock 示例，助你定制内容识别逻辑与编写可靠的单元测试。"
 sidebar_position: 2
 ---
 

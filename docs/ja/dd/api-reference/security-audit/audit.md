@@ -207,4 +207,4 @@ if result != nil && result.Valid {
 
 - [整合性署名](./integrity) -- IntegritySigner 詳解
 - [セキュリティフィルタ](./security) -- 機密データフィルタリング
-- [フックシステム](./hooks) -- OnError フック
+- [フックシステム](../core/hooks) -- OnError フック

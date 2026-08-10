@@ -151,4 +151,4 @@ logger.Shutdown(ctx)
 
 - [Цели вывода](../api-reference/output-integration/writers) -- API FileWriter, BufferedWriter
 - [Конфигурация](../api-reference/core/config) -- параметры конфигурации производительности
-- [Контрольный список для продакшена](../security/production-checklist) -- проверка перед развёртыванием
+- [Контрольный список для продакшена](../guides/security/production-checklist) -- проверка перед развёртыванием

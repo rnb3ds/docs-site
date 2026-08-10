@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Error Handling"
 title: "Error Handling - CyberGo JSON | Best Practices"
-description: "CyberGo JSON error handling: JsonsError type checking, errors.Is/As matching, SafeError safe output and RedactedPath redacted logging to build a robust exception mechanism."
+description: "CyberGo JSON error handling: JsonsError type checking, errors.Is/As matching, SafeError safe output and RedactedPath for robust exception handling."
 sidebar_position: 2
 ---
 

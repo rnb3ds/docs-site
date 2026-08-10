@@ -1,7 +1,7 @@
 ---
 sidebar_label: "常量与错误"
 title: "常量与错误 - CyberGo html | 默认值与错误类型"
-description: "CyberGo html 常量与错误类型：默认值常量、哨兵错误及 InputError、ConfigError、FileError 结构化错误，支持 errors.Is/As 判断。"
+description: "CyberGo html 常量与错误类型参考：默认值常量（MaxInputSize、CacheTTL 等）、审计事件常量、哨兵错误及 InputError、ConfigError、FileError 结构化错误，支持 errors.Is/As 精准判断。"
 sidebar_position: 3
 ---
 
@@ -113,6 +113,39 @@ func (e *FileError) MarshalJSON() ([]byte, error) // 专为 HTTP API 响应场�
 
 :::tip 安全路径
 `FileError.Error()` 和 `SafePath()` 都返回截断后的安全路径（仅文件名），防止路径泄露。内部调试需要完整路径时可直接访问 `Path` 字段。
+:::
+
+## 内部限制常量
+
+以下常量定义了库的运行时硬上限。它们**非导出**（小写开头），不可直接引用，但影响运行时行为——了解这些值有助于理解库的边界条件和错误场景。
+
+### 配置上限
+
+| 常量 | 值 | 说明 |
+|------|----|------|
+| `maxConfigInputSize` | `52428800` (50MB) | `MaxInputSize` 配置上限；即便设置更大值也会被 `Validate()` 拒绝 |
+| `maxConfigWorkerSize` | `256` | `WorkerPoolSize` 配置上限 |
+| `maxConfigDepth` | `500` | `MaxDepth` 配置上限 |
+| `maxConfigCacheEntries` | `100000` | `MaxCacheEntries` 配置上限（≈100MB，按每条 1KB 估算） |
+
+### 处理限制
+
+| 常量 | 值 | 说明 |
+|------|----|------|
+| `maxBatchSize` | `10000` | 单次批量最大项数；超限整批返回错误（非 panic） |
+| `maxTimeoutGoroutines` | `1000` | 全局并发超时 goroutine 上限；超限新请求直接返回 `ErrProcessingTimeout` |
+| `maxHTMLForRegex` | `1000000` (1MB) | 媒体 URL 正则扫描的 HTML 大小上限；超过此值跳过正则兜底（防 ReDoS） |
+| `maxRegexMatches` | `1000` | 单次正则扫描的最大匹配数；防止媒体密集页面产生过量分配 |
+
+### 缓存 Key 生成
+
+| 常量 | 值 | 说明 |
+|------|----|------|
+| `maxCacheKeySize` | `65536` (64KB) | 完整哈希的内容大小阈值；超出此值切换到 5 点采样 |
+| `cacheKeySample` | `4096` | 大文档采样的总字节预算（5 点 × ~820 字节/点） |
+
+:::tip 为什么需要了解这些
+这些常量解释了一些「为什么」：为什么超过 1MB 的 HTML 不再提取裸视频链接（ReDoS 防护）、为什么批量超过 10000 项整批失败（OOM 防护）、为什么 64KB 是缓存 Key 策略的分界线（哈希成本 vs 碰撞风险）。
 :::
 
 ## 错误处理模式

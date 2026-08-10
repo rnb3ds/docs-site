@@ -1,11 +1,11 @@
 ---
-sidebar_label: "辅助函数"
-title: "辅助函数 - CyberGo JSON | API 参考"
+sidebar_label: "工具函数"
+title: "工具函数 - CyberGo JSON | API 参考"
 description: "CyberGo JSON 辅助函数：CompareJSON 比较、ClearCache/GetStats 缓存管理、全局处理器管理与安全模式辅助，简化 Go 日常 JSON 操作。"
 sidebar_position: 8
 ---
 
-# 辅助函数
+# 工具函数
 
 json 包提供丰富的辅助函数，用于 JSON 比较、缓存管理和工具处理。
 
@@ -176,55 +176,16 @@ fmt.Printf("成功预热 %d 个路径\n", result.Successful)
 
 ## 全局处理器管理
 
-全局处理器用于所有包级函数（如 `Get`、`GetString` 等）。
+包级函数内部使用全局处理器。可通过以下函数自定义或关闭：
 
-### SetGlobalProcessor
+| 函数 | 签名 | 说明 |
+|------|------|------|
+| `SetGlobalProcessor` | `func SetGlobalProcessor(p *Processor)` | 设置自定义全局处理器 |
+| `ShutdownGlobalProcessor` | `func ShutdownGlobalProcessor()` | 关闭全局处理器并释放资源 |
 
-签名：`func SetGlobalProcessor(processor *Processor)`
-
-设置自定义全局处理器。
-
-```go
-cfg := json.SecurityConfig()
-p, err := json.New(cfg)
-if err != nil {
-    panic(err)
-}
-
-json.SetGlobalProcessor(p)
-
-// 之后所有包级函数都使用这个处理器
-val := json.GetString(data, "user.name")
-```
-
----
-
-### ShutdownGlobalProcessor
-
-签名：`func ShutdownGlobalProcessor()`
-
-关闭全局处理器并释放资源。
-
-```go
-package main
-
-import (
-    "github.com/cybergodev/json"
-)
-
-func main() {
-    cfg := json.DefaultConfig()
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    json.SetGlobalProcessor(p)
-
-    defer json.ShutdownGlobalProcessor()
-
-    // 应用逻辑...
-}
-```
+::: tip 详细用法
+全局处理器的完整使用示例和生命周期管理详见 [Processor 概述](./processor/#全局处理器管理) 和 [Processor 入门指南](../getting-started/processor-guide#全局处理器)。
+:::
 
 ---
 
@@ -238,44 +199,7 @@ Print、PrintPretty、PrintE、PrintPrettyE 已从库中移除，不再提供。
 
 ## Buffer 兼容函数
 
-::: tip 说明
-以下函数与 `encoding/json` 标准库完全兼容，同时通过 `cfg` 参数支持额外配置。
-:::
-
-### Compact
-
-签名：`func Compact(dst *bytes.Buffer, src []byte, cfg ...Config) error`
-
-将 JSON 压缩后写入 Buffer。100% 兼容 `encoding/json.Compact`。
-
-```go
-var buf bytes.Buffer
-err := json.Compact(&buf, []byte(`{"name": "test"}`))
-```
-
-### Indent
-
-签名：`func Indent(dst *bytes.Buffer, src []byte, prefix, indent string, cfg ...Config) error`
-
-将 JSON 格式化后写入 Buffer。100% 兼容 `encoding/json.Indent`。
-
-```go
-var buf bytes.Buffer
-err := json.Indent(&buf, []byte(`{"name":"test"}`), "", "  ")
-```
-
----
-
-### HTMLEscape
-
-签名：`func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
-
-将 JSON 进行 HTML 转义后写入 Buffer。100% 兼容 `encoding/json.HTMLEscape`。
-
-```go
-var buf bytes.Buffer
-json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
-```
+`Compact`、`Indent`、`HTMLEscape` 与 `encoding/json` 标准库完全兼容，同时通过 `cfg` 参数支持额外配置。完整签名、示例和 Processor 等价方法详见 [编码输出函数](./functions/output#compact)。
 
 ---
 

@@ -1,11 +1,11 @@
 ---
-sidebar_label: "ヘルパー関数"
-title: "ヘルパー関数 - CyberGo JSON | API リファレンス"
+sidebar_label: "ユーティリティ関数"
+title: "ユーティリティ関数 - CyberGo JSON | API リファレンス"
 description: "CyberGo JSON ヘルパー関数：CompareJSON 比較、ClearCache/GetStats キャッシュ管理、グローバルプロセッサ管理とセキュリティモードヘルパーで、Go の日常 JSON 操作を簡素化します。"
 sidebar_position: 8
 ---
 
-# ヘルパー関数
+# ユーティリティ関数
 
 json パッケージは JSON 比較、キャッシュ管理、ユーティリティ処理のための豊富なヘルパー関数を提供します。
 
@@ -176,55 +176,16 @@ fmt.Printf("%d 個のパスのウォームアップに成功\n", result.Successf
 
 ## グローバルプロセッサ管理
 
-グローバルプロセッサはすべてのパッケージレベル関数（`Get`、`GetString` など）で使用されます。
+パッケージレベル関数は内部でグローバルプロセッサを使用します。以下の関数でカスタマイズまたはシャットダウンできます：
 
-### SetGlobalProcessor
+| 関数 | シグネチャ | 説明 |
+|------|------|------|
+| `SetGlobalProcessor` | `func SetGlobalProcessor(p *Processor)` | カスタムグローバルプロセッサを設定 |
+| `ShutdownGlobalProcessor` | `func ShutdownGlobalProcessor()` | グローバルプロセッサをシャットダウンし、リソースを解放 |
 
-シグネチャ：`func SetGlobalProcessor(processor *Processor)`
-
-カスタムグローバルプロセッサを設定します。
-
-```go
-cfg := json.SecurityConfig()
-p, err := json.New(cfg)
-if err != nil {
-    panic(err)
-}
-
-json.SetGlobalProcessor(p)
-
-// 以降、すべてのパッケージレベル関数がこのプロセッサを使用
-val := json.GetString(data, "user.name")
-```
-
----
-
-### ShutdownGlobalProcessor
-
-シグネチャ：`func ShutdownGlobalProcessor()`
-
-グローバルプロセッサをシャットダウンし、リソースを解放します。
-
-```go
-package main
-
-import (
-    "github.com/cybergodev/json"
-)
-
-func main() {
-    cfg := json.DefaultConfig()
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    json.SetGlobalProcessor(p)
-
-    defer json.ShutdownGlobalProcessor()
-
-    // アプリケーションロジック...
-}
-```
+::: tip 詳細な使い方
+グローバルプロセッサの完全な使用例とライフサイクル管理については [Processor 概要](./processor/#グローバルプロセッサ管理) と [Processor ガイド](../getting-started/processor-guide#グローバルプロセッサ) を参照してください。
+:::
 
 ---
 
@@ -238,44 +199,7 @@ Print、PrintPretty、PrintE、PrintPrettyE はライブラリから削除され
 
 ## Buffer 互換関数
 
-::: tip 説明
-以下の関数は `encoding/json` 標準ライブラリと完全に互換性があり、`cfg` パラメータを通じて追加設定をサポートします。
-:::
-
-### Compact
-
-シグネチャ：`func Compact(dst *bytes.Buffer, src []byte, cfg ...Config) error`
-
-JSON を圧縮して Buffer に書き込みます。`encoding/json.Compact` と 100% 互換。
-
-```go
-var buf bytes.Buffer
-err := json.Compact(&buf, []byte(`{"name": "test"}`))
-```
-
-### Indent
-
-シグネチャ：`func Indent(dst *bytes.Buffer, src []byte, prefix, indent string, cfg ...Config) error`
-
-JSON をフォーマットして Buffer に書き込みます。`encoding/json.Indent` と 100% 互換。
-
-```go
-var buf bytes.Buffer
-err := json.Indent(&buf, []byte(`{"name":"test"}`), "", "  ")
-```
-
----
-
-### HTMLEscape
-
-シグネチャ：`func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
-
-JSON を HTML エスケープして Buffer に書き込みます。`encoding/json.HTMLEscape` と 100% 互換。
-
-```go
-var buf bytes.Buffer
-json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
-```
+`Compact`、`Indent`、`HTMLEscape` は `encoding/json` 標準ライブラリと完全に互換性があり、`cfg` パラメータで追加設定をサポートします。完全なシグネチャ、サンプル、Processor の同等メソッドについては [エンコード出力関数](./functions/output#compact) を参照。
 
 ---
 

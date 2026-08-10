@@ -11,6 +11,10 @@ json 包提供多个扩展接口，允许自定义 JSON 处理行为。
 
 ## 编码器接口
 
+::: warning 未连接的扩展字段
+`CustomEncoder` 和 `TypeEncoder` 接口当前版本**已声明但尚未在编码流水线中挂接**。通过 `Config.CustomEncoder` / `Config.CustomTypeEncoders` 设置后不会产生效果，是为未来版本预留的。当前可用的编码自定义方式是实现 `json.Marshaler` 或 `encoding.TextMarshaler` 接口（见[自定义编码器](../extensions/custom-encoder)）。
+:::
+
 ### CustomEncoder
 
 自定义 JSON 编码器接口。
@@ -89,6 +93,10 @@ if err != nil {
 ```
 
 ## 验证器接口
+
+::: warning 未连接的扩展字段
+`Validator` 接口当前版本**已声明但尚未在操作流水线中挂接**。通过 `Config.CustomValidators` 或 `Config.AddValidator()` 设置后不会产生效果，是为未来版本预留的。当前可用的验证方式是 `ValidateSchema`（见[验证器](../extensions/validator)）。
+:::
 
 ### Validator
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Обзор"
 title: "Processor процессор - CyberGo JSON | Справочник API"
-description: "CyberGo JSON Processor процессор: создание New, операции GetString/Set/Delete, итерация Foreach, кодирование Encode и жизненный цикл Close — подходит для высокочастотного повторного использования."
+description: "CyberGo JSON Processor: New создание, GetString/Set/Delete операции, Foreach итерация, Encode кодирование и Close — для повторного использования."
 sidebar_position: 1
 ---
 

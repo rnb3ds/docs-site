@@ -1,11 +1,15 @@
 ---
-sidebar_label: "打印函数"
-title: "打印函数 - CyberGo JSON | API 参考"
+sidebar_label: "格式化输出指南"
+title: "格式化输出指南 - CyberGo JSON | API 参考"
 description: "CyberGo JSON 打印与格式化：使用 Encode、EncodePretty、Prettify 与标准 fmt 包输出 JSON，支持自定义缩进与前缀，替代已移除的 Print 系列。"
 sidebar_position: 11
 ---
 
 # 打印函数
+
+::: info 迁移参考
+本页为 Print 系列函数（已在早期版本移除）的迁移指南。如需格式化 JSON，请使用 [`Prettify`](./index#格式化) 或标准库兼容的 `MarshalIndent`。
+:::
 
 ::: warning API 变更说明
 Print、PrintPretty、PrintE、PrintPrettyE 已从库中移除，不再提供。请使用以下替代方案。

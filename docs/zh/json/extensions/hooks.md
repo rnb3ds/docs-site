@@ -9,6 +9,10 @@ sidebar_position: 1
 
 Hook 允许在 JSON 操作前后插入自定义逻辑，实现日志记录、性能监控、验证等功能。
 
+::: tip 接口签名参考
+Hook 接口的完整类型签名（`Hook`、`HookContext`、`HookFunc`）参阅 [接口定义](../api-reference/interfaces#钩子接口)。本页侧重使用指南与最佳实践。
+:::
+
 ## Hook 接口
 
 ```go

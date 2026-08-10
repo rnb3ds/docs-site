@@ -1,7 +1,7 @@
 ---
 sidebar_label: "データ型"
 title: "型定義 - CyberGo html | データ型リファレンス"
-description: "CyberGo html データ型：Result、ImageInfo、LinkInfo、LinkResource、Statistics、BatchResult などコア型のフィールドを説明します。"
+description: "CyberGo html データ型リファレンス：Result、ImageInfo、LinkInfo、LinkResource、Statistics、BatchResult などコア型のフィールド定義と JSON タグ、VideoInfo や AudioInfo などのメディア型について詳しく説明します。"
 sidebar_position: 2
 ---
 
@@ -55,6 +55,21 @@ type ImageInfo struct {
 }
 ```
 
+### フィールドの意味
+
+| フィールド | 説明 |
+|------|------|
+| `URL` | 画像の `src` 属性値；有効な URL のみ（`IsValidURL` で検証）、無効な URL の `<img>` は結果に含まれません |
+| `Alt` | `alt` 属性の原文；空の場合 `IsDecorative` が `true` になります |
+| `Title` | `title` 属性の原文（ページタイトルではありません） |
+| `Width`/`Height` | HTML 属性の**元の文字列**（`"640"`、`"50%"` など）、数値には解析されていません——ページによって表記が異なる場合があります |
+| `IsDecorative` | `Alt` が空の場合 `true`、装飾画像の識別とスキップに利用できます |
+| `Position` | ドキュメント内の 1 始まりの序数；`PreserveImages = false` の場合 `Images` スライス全体が空になります |
+
+:::warning Width/Height は数値型ではない
+`Width` と `Height` は `int` ではなく `string` 型で、HTML ソースの元の表現（単位、パーセンテージなどを含む可能性）を保持します。数値が必要な場合は呼び出し側で解析してください。
+:::
+
 ## LinkInfo
 
 リンク情報。
@@ -69,6 +84,17 @@ type LinkInfo struct {
     Position   int    `json:"position"`    // ドキュメント内の位置
 }
 ```
+
+### フィールドの意味
+
+| フィールド | 説明 |
+|------|------|
+| `URL` | `href` 属性値；有効な URL のみ（`IsValidURL` で検証）、無効な URL の `<a>` は Position を消費しますがスライスには追加されません |
+| `Text` | `<a>` タグ内の全テキストノードの結合（再帰的 `GetTextContent`） |
+| `Title` | `title` 属性の原文（リンクテキストではありません） |
+| `IsExternal` | URL 自体が絶対外部アドレスかで判定し、**`BaseURL` とのドメイン比較は行いません**——これは `ExtractAllLinks` の内部/外部判定とは異なります |
+| `IsNoFollow` | `rel` 属性に `nofollow` が含まれる（大文字小文字を区別しない、ASCII フォールディングマッチ）場合 `true` |
+| `Position` | ドキュメント内の 1 始まりの序数；無効な `<a>`（href が不正または欠落）も序数を消費しますがスライスには追加されないため、Position は連続しない場合があります |
 
 ## VideoInfo
 
@@ -85,6 +111,18 @@ type VideoInfo struct {
 }
 ```
 
+### Type フィールドの値の規則
+
+| Type 値 | 意味 | 生成されるシナリオ |
+|---------|------|----------|
+| `"embed"` | iframe が参照する動画ページ | YouTube、Vimeo、優酷、Bilibili などの組み込みプレーヤー |
+| MIME タイプ（例 `"video/mp4"`） | 動画ファイルコンテナ | `<source type="video/mp4">` 属性値 |
+| 空文字列 | タイプ未検出 | `<video src="...">` で直接ソース指定かつ `<source>` 子要素がない場合 |
+
+:::tip 動画抽出の 3 つのソース
+動画抽出は生 HTML スキャン → DOM 走査 → 正規表現フォールバックの 3 ステップで実行され、各ステップで重複排除されます。詳細は [メディア抽出ガイド](../../guides/core-features/media-extraction) を参照してください。
+:::
+
 ## AudioInfo
 
 音声情報。
@@ -96,6 +134,17 @@ type AudioInfo struct {
     Duration string `json:"duration"` // 再生時間
 }
 ```
+
+### Type フィールドの値の規則
+
+| Type 値 | 生成されるシナリオ |
+|---------|----------|
+| MIME タイプ（例 `"audio/mpeg"`） | `<source type="audio/mpeg">` 属性値 |
+| 空文字列 | `<audio src="...">` で直接ソース指定かつ `<source>` 子要素がない場合 |
+
+:::warning .ogg 拡張子の二重性
+OGG コンテナは動画または音声を格納できるため、`.ogg` URL は `Videos` と `Audios` の両方に現れます。音声専用の派生拡張子 `.oga` は `Audios` のみに現れます。
+:::
 
 ## LinkResource
 

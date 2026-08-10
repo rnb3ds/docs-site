@@ -207,4 +207,4 @@ if result != nil && result.Valid {
 
 - [Подписи целостности](./integrity) -- подробное описание IntegritySigner
 - [Фильтрация безопасности](./security) -- фильтрация конфиденциальных данных
-- [Система хуков](./hooks) -- хук OnError
+- [Система хуков](../core/hooks) -- хук OnError

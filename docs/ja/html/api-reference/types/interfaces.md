@@ -1,7 +1,7 @@
 ---
 sidebar_label: "インターフェース定義"
 title: "インターフェース定義 - CyberGo html | コアインターフェース参照"
-description: "CyberGo html コアインターフェース：Extractor、StatsProvider、ContentNode、Scorer、AuditSink。機能拡張や統合テストに活用します。"
+description: "CyberGo html コアインターフェース定義：Extractor、StatsProvider、ContentNode、Scorer、AuditSink の 5 つのインターフェースで、カスタムスコアリング、監査 Sink 実装、機能拡張や統合テストに活用します。"
 sidebar_position: 1
 ---
 
@@ -66,6 +66,77 @@ type StatsProvider interface {
 }
 ```
 
+`Processor` は `Extractor` と `StatsProvider` の両方を実装しています。インターフェース型で `Processor` を参照することで、「抽出能力」と「監視能力」を別々のコンシューマーに注入できます：
+
+```go
+type ExtractionService struct {
+    extractor     html.Extractor     // 抽出能力のみ必要
+    statsProvider html.StatsProvider // 監視能力のみ必要
+}
+
+func NewService(p *html.Processor) *ExtractionService {
+    return &ExtractionService{
+        extractor:     p, // *Processor は Extractor を満たす
+        statsProvider: p, // *Processor は StatsProvider を満たす
+    }
+}
+```
+
+## 依存性注入と Mock テスト
+
+`Extractor` インターフェースにより抽出ロジックを疎結合にでき、単体テストで mock 実装を注入しやすくなります：
+
+```go
+// mockExtractor は html.Extractor インターフェースを実装し、テストに使用
+type mockExtractor struct {
+    result *html.Result
+    err    error
+}
+
+func (m *mockExtractor) Extract([]byte) (*html.Result, error) { return m.result, m.err }
+func (m *mockExtractor) ExtractWithContext(ctx context.Context, b []byte) (*html.Result, error) {
+    return m.result, m.err
+}
+func (m *mockExtractor) ExtractFromFile(string) (*html.Result, error)         { return m.result, m.err }
+func (m *mockExtractor) ExtractFromFileWithContext(context.Context, string) (*html.Result, error) {
+    return m.result, m.err
+}
+func (m *mockExtractor) ExtractText([]byte) (string, error)                   { return m.result.Text, m.err }
+func (m *mockExtractor) ExtractTextFromFile(string) (string, error)           { return m.result.Text, m.err }
+func (m *mockExtractor) ExtractTextWithContext(context.Context, []byte) (string, error) {
+    return m.result.Text, m.err
+}
+func (m *mockExtractor) ExtractTextFromFileWithContext(context.Context, string) (string, error) {
+    return m.result.Text, m.err
+}
+// ... 残りのメソッドはゼロ値を返す
+
+// ビジネスコードは具象型ではなくインターフェースに依存
+type ArticleService struct {
+    extractor html.Extractor
+}
+
+func (s *ArticleService) GetTitle(htmlBytes []byte) (string, error) {
+    result, err := s.extractor.Extract(htmlBytes)
+    if err != nil {
+        return "", err
+    }
+    return result.Title, nil
+}
+
+// テストで mock を注入
+func TestGetTitle(t *testing.T) {
+    svc := &ArticleService{
+        extractor: &mockExtractor{
+            result: &html.Result{Title: "テストタイトル"},
+        },
+    }
+    title, err := svc.GetTitle([]byte("<html></html>"))
+    assert.NoError(t, err)
+    assert.Equal(t, "テストタイトル", title)
+}
+```
+
 ## ContentNode
 
 HTML ノードの抽象インターフェース、コンテンツスコアリングアルゴリズムで使用されます。
@@ -117,6 +188,27 @@ func (s *MyScorer) ShouldRemove(node html.ContentNode) bool {
 cfg := html.DefaultConfig()
 cfg.Scorer = &MyScorer{}
 ```
+
+### ContentNode と内部型の関係
+
+`ContentNode` は**抽象インターフェース**で、底層の `golang.org/x/net/html.Node` 型を隠蔽します。ライブラリ内部では `contentNodeAdapter` が `*html.Node` を `ContentNode` にラップします：
+
+```text
+呼び出し側 Scorer.Score(ContentNode)
+                          │
+                    contentNodeAdapter（アダプタ）
+                          │
+                  内部 *html.Node（golang.org/x/net/html）
+```
+
+この二層インターフェース設計により以下を実現します：
+- **クリーンな公開 API**——ユーザーがカスタム Scorer を実装する際に `golang.org/x/net/html` をインポートする必要がありません
+- **内部の高性能**——ライブラリ内部の `DefaultScorer` は `*html.Node` を直接操作し（内部 `Scorer` インターフェース経由）、アダプタ層のオーバーヘッドを回避します
+- **アダプションはライブラリが自動完結**——`scorerAdapter` が公開 `Scorer` と内部 `Scorer` の間で双方向変換を行い、ユーザーは意識しません
+
+:::tip ContentNode が nil を返す規約
+`FirstChild()`/`NextSibling()`/`Parent()` は対応するノードが存在しない場合に `nil` を返します。カスタム Scorer でサブツリーを走査する際は必ず nil チェックを行ってください。そうしないと panic が発生します。
+:::
 
 ## AuditSink
 

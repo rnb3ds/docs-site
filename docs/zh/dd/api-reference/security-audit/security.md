@@ -7,6 +7,8 @@ sidebar_position: 2
 
 # 安全过滤
 
+> 🔧 **API 参考** · 使用教程见 [敏感数据过滤](../../guides/security/sensitive-filtering)
+
 DD 内置敏感数据过滤功能，可自动检测和脱敏日志中的密码、密钥、Token 等敏感信息。
 
 ## SensitiveDataFilter

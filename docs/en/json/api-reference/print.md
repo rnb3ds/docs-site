@@ -1,11 +1,15 @@
 ---
-sidebar_label: "Print Functions"
-title: "Print Functions - CyberGo JSON | API Reference"
+sidebar_label: "Formatting Guide"
+title: "Formatting Guide - CyberGo JSON | API Reference"
 description: "CyberGo JSON print and formatting: Encode, EncodePretty, Prettify, and the standard fmt package for JSON output, replacing the removed Print functions."
 sidebar_position: 11
 ---
 
 # Print Functions
+
+::: info Migration Reference
+This page is a migration guide for the Print functions (removed in an earlier version). To format JSON, use [`Prettify`](./index#formatting) or the stdlib-compatible `MarshalIndent`.
+:::
 
 ::: warning API Change Notice
 Print, PrintPretty, PrintE, PrintPrettyE have been removed from the library and are no longer available. Please use the following alternatives.

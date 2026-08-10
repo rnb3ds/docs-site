@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Обобщённые функции"
 title: "Обобщённые операции - CyberGo JSON | Справочник API"
-description: "CyberGo JSON обобщённый API: обобщённое получение GetTyped[T], тип результата Result[T], динамический доступ AccessResult — типобезопасность на этапе компиляции через обобщения Go 1.18+."
+description: "Обобщённый API CyberGo JSON: GetTyped[T] получение, Result[T] тип результата, AccessResult динамический доступ — типобезопасность через обобщения Go 1.18+."
 sidebar_position: 10
 ---
 

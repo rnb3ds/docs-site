@@ -155,5 +155,5 @@ type LogEntry struct {
 ## 다음 단계
 
 - [Logger](../core/logger) -- Logger 의 완전한 메서드
-- [구조화 필드](../output-integration/fields) -- Field 생성자
-- [상수와 오류](./constants) -- LogLevel 상수
+- [구조화 필드](../core/fields) -- Field 생성자
+- [상수와 오류](../core/constants) -- LogLevel 상수

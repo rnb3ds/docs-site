@@ -2,7 +2,7 @@
 sidebar_label: "빠른 시작"
 title: "빠른 시작 - CyberGo DD | 5 분 입문 가이드"
 description: "고성능 구조화 로그 라이브러리 CyberGo DD 의 완전한 입문 튜토리얼입니다. 의존성 설치부터 첫 로그 출력까지, 로거 생성, 출력 대상 및 파일 로테이션 정책 구성, 구조화 필드로 요청 컨텍스트 정보 기록, 훅 시스템 확장까지 단계별로 학습합니다. 5 분이면 핵심 사용법을 익혀 실제 프로젝트에 적용할 수 있습니다."
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # 빠른 시작
@@ -193,8 +193,8 @@ logger.InfoWith("사용자 로그인",
 
 ## 다음 단계
 
-- [핵심 개념](../guides/core-concepts) -- Logger 체계와 처리 파이프라인 이해
-- [구조화 로그](../guides/structured-logging) -- 필드 사용 상세
-- [파일 출력과 로테이션](../guides/file-output) -- FileWriter 상세
-- [민감 데이터 필터링](../guides/sensitive-filtering) -- 보안 필터 실전
+- [핵심 개념](../guides/basics/core-concepts) -- Logger 체계와 처리 파이프라인 이해
+- [구조화 로그](../guides/basics/structured-logging) -- 필드 사용 상세
+- [파일 출력과 로테이션](../guides/basics/file-output) -- FileWriter 상세
+- [민감 데이터 필터링](../guides/security/sensitive-filtering) -- 보안 필터 실전
 - [치트시트](./cheatsheet) -- 자주 사용하는 API 빠른 참조

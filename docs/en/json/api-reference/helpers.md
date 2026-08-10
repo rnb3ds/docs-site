@@ -1,11 +1,11 @@
 ---
-sidebar_label: "Helpers"
-title: "Helper Functions - CyberGo JSON | API Reference"
+sidebar_label: "Utility Functions"
+title: "Utility Functions - CyberGo JSON | API Reference"
 description: "CyberGo JSON helper functions: CompareJSON, ClearCache/GetStats cache management, global processor control, and security helpers for everyday Go JSON."
 sidebar_position: 8
 ---
 
-# Helper Functions
+# Utility Functions
 
 The json package provides a rich set of helper functions for JSON comparison, cache management, and utility processing.
 
@@ -176,55 +176,16 @@ fmt.Printf("Successfully warmed up %d paths\n", result.Successful)
 
 ## Global Processor Management
 
-The global processor is used by all package-level functions (such as `Get`, `GetString`, etc.).
+Package-level functions internally use the global processor. You can customize or shut it down via the following functions:
 
-### SetGlobalProcessor
+| Function | Signature | Description |
+|------|------|------|
+| `SetGlobalProcessor` | `func SetGlobalProcessor(p *Processor)` | Set a custom global processor |
+| `ShutdownGlobalProcessor` | `func ShutdownGlobalProcessor()` | Shut down the global processor and release resources |
 
-Signature: `func SetGlobalProcessor(processor *Processor)`
-
-Sets a custom global processor.
-
-```go
-cfg := json.SecurityConfig()
-p, err := json.New(cfg)
-if err != nil {
-    panic(err)
-}
-
-json.SetGlobalProcessor(p)
-
-// All subsequent package-level functions use this processor
-val := json.GetString(data, "user.name")
-```
-
----
-
-### ShutdownGlobalProcessor
-
-Signature: `func ShutdownGlobalProcessor()`
-
-Shuts down the global processor and releases resources.
-
-```go
-package main
-
-import (
-    "github.com/cybergodev/json"
-)
-
-func main() {
-    cfg := json.DefaultConfig()
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    json.SetGlobalProcessor(p)
-
-    defer json.ShutdownGlobalProcessor()
-
-    // Application logic...
-}
-```
+::: tip Detailed Usage
+For complete usage examples and lifecycle management of the global processor, see [Processor Overview](./processor/#global-processor-management) and [Processor Guide](../getting-started/processor-guide#global-processor).
+:::
 
 ---
 
@@ -238,44 +199,7 @@ Print, PrintPretty, PrintE, PrintPrettyE have been removed from the library and 
 
 ## Buffer Compatible Functions
 
-::: tip Note
-The following functions are fully compatible with the `encoding/json` standard library while supporting additional configuration via the `cfg` parameter.
-:::
-
-### Compact
-
-Signature: `func Compact(dst *bytes.Buffer, src []byte, cfg ...Config) error`
-
-Writes compressed JSON to a Buffer. 100% compatible with `encoding/json.Compact`.
-
-```go
-var buf bytes.Buffer
-err := json.Compact(&buf, []byte(`{"name": "test"}`))
-```
-
-### Indent
-
-Signature: `func Indent(dst *bytes.Buffer, src []byte, prefix, indent string, cfg ...Config) error`
-
-Writes formatted JSON to a Buffer. 100% compatible with `encoding/json.Indent`.
-
-```go
-var buf bytes.Buffer
-err := json.Indent(&buf, []byte(`{"name":"test"}`), "", "  ")
-```
-
----
-
-### HTMLEscape
-
-Signature: `func HTMLEscape(dst *bytes.Buffer, src []byte, cfg ...Config)`
-
-Writes HTML-escaped JSON to a Buffer. 100% compatible with `encoding/json.HTMLEscape`.
-
-```go
-var buf bytes.Buffer
-json.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
-```
+`Compact`, `Indent`, and `HTMLEscape` are fully compatible with the `encoding/json` standard library, with additional configuration supported via the `cfg` parameter. For complete signatures, examples, and Processor-equivalent methods, see [Encoding & Output Functions](./functions/output#compact).
 
 ---
 

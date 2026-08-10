@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Константы и ошибки"
 title: "Константы и ошибки - CyberGo JSON | API"
-description: "Константы и ошибки CyberGo JSON: DefaultMaxJSONSize, DefaultMaxNestingDepth, ErrPathNotFound и MergeMode."
+description: "Константы и ошибки CyberGo JSON: DefaultMaxJSONSize, DefaultMaxNestingDepth — ограничения, ErrPathNotFound и режимы MergeMode для настройки Go."
 sidebar_position: 7
 ---
 

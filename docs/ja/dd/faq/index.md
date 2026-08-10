@@ -173,4 +173,4 @@ if !rec.ContainsMessage("test") {
 
 - [クイックスタート](../getting-started/) -- 入門ガイド
 - [API リファレンス](../api-reference/) -- 完全 API
-- [本番チェックリスト](../security/production-checklist) -- リリース前チェック
+- [本番チェックリスト](../guides/security/production-checklist) -- リリース前チェック

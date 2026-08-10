@@ -403,5 +403,5 @@ logger, _ := dd.New(dd.Config{
 - [Logger](./logger) -- создание логгера с конфигурацией
 - [Цели вывода](../output-integration/writers) -- FileWriter, BufferedWriter, MultiWriter
 - [Фильтрация безопасности](../security-audit/security) -- подробное описание SecurityConfig
-- [Система хуков](../security-audit/hooks) -- подробное описание HooksConfig
+- [Система хуков](../core/hooks) -- подробное описание HooksConfig
 - [Журнал аудита](../security-audit/audit) -- подробное описание AuditConfig

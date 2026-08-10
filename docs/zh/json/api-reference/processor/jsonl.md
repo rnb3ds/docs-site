@@ -9,6 +9,10 @@ sidebar_position: 8
 
 Processor 提供完整的 JSONL（JSON Lines）流式处理能力，支持逐行处理、并行处理、批量处理和函数式操作。
 
+::: tip 完整教程
+需要 JSONL/NDJSON 的概念说明和流式处理实战？参阅 [JSONL 处理器](../../streaming/jsonl) 完整教程。
+:::
+
 ## 流式读取方法
 
 ### StreamJSONL

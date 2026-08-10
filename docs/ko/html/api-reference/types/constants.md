@@ -1,7 +1,7 @@
 ---
 sidebar_label: "상수와 오류"
 title: "상수와 오류 - CyberGo html | 기본값과 오류 타입"
-description: "CyberGo html 상수와 오류 타입: 기본값 상수, 센티넬 오류와 InputError, ConfigError, FileError 구조화 오류로 errors.Is/As 판별을 지원합니다."
+description: "CyberGo html 상수와 오류 타입: MaxInputSize·MaxDepth 등 기본값 상수, 센티넬 오류와 InputError·ConfigError·FileError·ProcessingError 구조화 오류로 errors.Is/As 판별을 지원합니다."
 sidebar_position: 3
 ---
 
@@ -113,6 +113,39 @@ func (e *FileError) MarshalJSON() ([]byte, error) // JSON 직렬화 시에도 �
 
 :::tip 안전한 경로
 `FileError.Error()`와 `SafePath()`는 모두 잘라낸 안전한 경로 (파일명만) 를 반환하여 경로 노출을 방지합니다. 내부 디버깅으로 전체 경로가 필요한 경우 `Path` 필드에 직접 접근할 수 있습니다.
+:::
+
+## 내부 제한 상수
+
+다음 상수들은 라이브러리의 런타임 하드 상한을 정의합니다. 이들은 **비내보내기**(소문자 시작)이므로 직접 참조할 수 없지만, 런타임 동작에 영향을 줍니다 — 이 값을 이해하면 라이브러리의 경계 조건과 오류 시나리오를 파악하는 데 도움이 됩니다.
+
+### 설정 상한
+
+| 상수 | 값 | 설명 |
+|------|----|------|
+| `maxConfigInputSize` | `52428800` (50MB) | `MaxInputSize` 설정 상한; 더 큰 값을 설정해도 `Validate()`에서 거부됨 |
+| `maxConfigWorkerSize` | `256` | `WorkerPoolSize` 설정 상한 |
+| `maxConfigDepth` | `500` | `MaxDepth` 설정 상한 |
+| `maxConfigCacheEntries` | `100000` | `MaxCacheEntries` 설정 상한(약 100MB, 항목당 1KB 로 추정) |
+
+### 처리 제한
+
+| 상수 | 값 | 설명 |
+|------|----|------|
+| `maxBatchSize` | `10000` | 단일 배치 최대 항목 수; 초과 시 전체 배치 오류 반환(panic 아님) |
+| `maxTimeoutGoroutines` | `1000` | 전역 동시 타임아웃 goroutine 상한; 초과 시 새 요청은 즉시 `ErrProcessingTimeout` 반환 |
+| `maxHTMLForRegex` | `1000000` (1MB) | 미디어 URL 정규식 스캔의 HTML 크기 상한; 이 값을 초과하면 정규식 폴백 건너뜀(ReDoS 방지) |
+| `maxRegexMatches` | `1000` | 단일 정규식 스캔의 최대 매치 수; 미디어 집약적 페이지에서 과도한 할당 방지 |
+
+### 캐시 Key 생성
+
+| 상수 | 값 | 설명 |
+|------|----|------|
+| `maxCacheKeySize` | `65536` (64KB) | 전체 해시의 콘텐츠 크기 임계값; 이 값을 초과하면 5점 샘플링으로 전환 |
+| `cacheKeySample` | `4096` | 대형 문서 샘플링의 총 바이트 예산(5점 × 약 820바이트/점) |
+
+:::tip 왜 이들을 알아야 하나요
+이 상수들은 몇 가지 「왜」를 설명합니다: 1MB 를 초과하는 HTML 에서 더 이상 리터럴 비디오 링크를 추출하지 않는 이유(ReDoS 방지), 배치가 10000항을 초과하면 전체가 실패하는 이유(OOM 방지), 64KB 가 캐시 Key 전략의 분기점인 이유(해시 비용 vs 충돌 위험).
 :::
 
 ## 오류 처리 패턴

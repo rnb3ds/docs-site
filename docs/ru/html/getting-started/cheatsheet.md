@@ -160,6 +160,41 @@ if err != nil {
 }
 ```
 
+## Определение кодировки
+
+```go
+// Автоопределение (по умолчанию, поддерживает 15+ кодировок)
+result, err := html.Extract(gbkData)
+
+// Указать кодировку вручную
+cfg := html.DefaultConfig()
+cfg.Encoding = "shift_jis"
+```
+
+Поддерживаются UTF-8, GBK, Shift_JIS, EUC-JP, Windows-1252 и более 15 кодировок.
+
+## Извлечение медиа
+
+```go
+result, err := html.Extract(data)
+
+// Видео
+for _, v := range result.Videos {
+    fmt.Println(v.URL, v.Type)
+}
+
+// Аудио
+for _, a := range result.Audios {
+    fmt.Println(a.URL, a.Type)
+}
+
+// Отключить извлечение медиа
+cfg := html.TextOnlyConfig()
+// Или управлять индивидуально
+cfg.PreserveVideos = false
+cfg.PreserveAudios = false
+```
+
 ## Система аудита
 
 ```go
@@ -176,4 +211,35 @@ defer p.Close()
 
 // Получение журнала аудита после обработки
 entries := p.GetAuditLog()
+```
+
+### Шпаргалка по Audit Sink
+
+```go
+// Встроенные конструкторы Sink
+html.NewLoggerAuditSink()                   // stderr, префикс [AUDIT]
+html.NewLoggerAuditSinkWithWriter(w)        // Пользовательский Writer
+html.NewWriterAuditSink(w)                  // JSON Lines в io.Writer
+html.NewChannelAuditSink(bufSize)           // Буферизованный channel
+html.NewMultiSink(sinks...)                 // Веерная рассылка в несколько Sink
+html.NewFilteredSink(sink, filterFunc)      // Фильтрация предикатом
+html.NewLevelFilteredSink(sink, minLevel)   // Фильтрация по уровню
+
+// Вспомогательные методы Channel Sink
+sink.Channel()       // <-chan AuditEntry, потребление событий
+sink.DroppedCount()  // int64, количество отброшенных событий
+sink.Close()         // Идемпотентное закрытие channel
+```
+
+### Жизненный цикл Processor
+
+```go
+p, _ := html.New(html.DefaultConfig())
+defer p.Close()               // Освобождение ресурсов (идемпотентно)
+
+stats := p.GetStatistics()    // Statistics{TotalProcessed, CacheHits, ...}
+entries := p.GetAuditLog()    // []AuditEntry
+p.ClearAuditLog()             // Очистка журнала аудита в памяти
+p.ClearCache()                // Очистка кэша (статистика сохраняется)
+p.ResetStatistics()           // Сброс счётчиков статистики (кэш сохраняется)
 ```

@@ -269,6 +269,7 @@ err := json.ForeachWithPath(data, "users", func(key any, item *json.IterableValu
 ## 다음 단계
 
 - [경로 표현식 문법](./path-syntax) — 완전한 경로 쿼리 문법 배우기
+- [Processor 가이드](./processor-guide) — 언제 프로세서를 사용할까, 사전 파싱 최적화
 - [대용량 파일 처리](../streaming/large-files) — 대형 JSON 파일 처리하기
 - [API 문서](../api-reference/) — 완전한 API 참조 확인하기
 - [사용 예제](../examples/) — 더 많은 실전 예제 살펴보기

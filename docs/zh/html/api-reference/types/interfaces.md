@@ -1,7 +1,7 @@
 ---
 sidebar_label: "接口定义"
 title: "接口定义 - CyberGo html | 核心接口参考"
-description: "CyberGo html 核心接口：Extractor、StatsProvider、ContentNode、Scorer、AuditSink，用于功能扩展与集成测试。"
+description: "CyberGo html 核心接口参考：Extractor 提取主接口、StatsProvider 统计接口、ContentNode 节点接口、Scorer 内容评分接口与 AuditSink 审计输出接口，用于功能扩展、自定义实现、单元测试与第三方集成。"
 sidebar_position: 1
 ---
 
@@ -66,6 +66,77 @@ type StatsProvider interface {
 }
 ```
 
+`Processor` 同时实现了 `Extractor` 和 `StatsProvider`。通过接口类型引用 `Processor`，可以将「提取能力」与「监控能力」分别注入不同的消费者：
+
+```go
+type ExtractionService struct {
+    extractor     html.Extractor     // 只需要提取能力
+    statsProvider html.StatsProvider // 只需要监控能力
+}
+
+func NewService(p *html.Processor) *ExtractionService {
+    return &ExtractionService{
+        extractor:     p, // *Processor 满足 Extractor
+        statsProvider: p, // *Processor 满足 StatsProvider
+    }
+}
+```
+
+## 依赖注入与 Mock 测试
+
+`Extractor` 接口使提取逻辑可解耦，便于单元测试中注入 mock 实现：
+
+```go
+// mockExtractor 实现 html.Extractor 接口，用于测试
+type mockExtractor struct {
+    result *html.Result
+    err    error
+}
+
+func (m *mockExtractor) Extract([]byte) (*html.Result, error) { return m.result, m.err }
+func (m *mockExtractor) ExtractWithContext(ctx context.Context, b []byte) (*html.Result, error) {
+    return m.result, m.err
+}
+func (m *mockExtractor) ExtractFromFile(string) (*html.Result, error)         { return m.result, m.err }
+func (m *mockExtractor) ExtractFromFileWithContext(context.Context, string) (*html.Result, error) {
+    return m.result, m.err
+}
+func (m *mockExtractor) ExtractText([]byte) (string, error)                   { return m.result.Text, m.err }
+func (m *mockExtractor) ExtractTextFromFile(string) (string, error)           { return m.result.Text, m.err }
+func (m *mockExtractor) ExtractTextWithContext(context.Context, []byte) (string, error) {
+    return m.result.Text, m.err
+}
+func (m *mockExtractor) ExtractTextFromFileWithContext(context.Context, string) (string, error) {
+    return m.result.Text, m.err
+}
+// ... 其余方法返回零值
+
+// 业务代码依赖接口而非具体类型
+type ArticleService struct {
+    extractor html.Extractor
+}
+
+func (s *ArticleService) GetTitle(htmlBytes []byte) (string, error) {
+    result, err := s.extractor.Extract(htmlBytes)
+    if err != nil {
+        return "", err
+    }
+    return result.Title, nil
+}
+
+// 测试中注入 mock
+func TestGetTitle(t *testing.T) {
+    svc := &ArticleService{
+        extractor: &mockExtractor{
+            result: &html.Result{Title: "测试标题"},
+        },
+    }
+    title, err := svc.GetTitle([]byte("<html></html>"))
+    assert.NoError(t, err)
+    assert.Equal(t, "测试标题", title)
+}
+```
+
 ## ContentNode
 
 HTML 节点的抽象接口，用于内容评分算法。
@@ -117,6 +188,27 @@ func (s *MyScorer) ShouldRemove(node html.ContentNode) bool {
 cfg := html.DefaultConfig()
 cfg.Scorer = &MyScorer{}
 ```
+
+### ContentNode 与内部类型的关系
+
+`ContentNode` 是一个**抽象接口**，屏蔽了底层 `golang.org/x/net/html.Node` 类型。库内部通过 `contentNodeAdapter` 将 `*html.Node` 包装为 `ContentNode`：
+
+```text
+调用方 Scorer.Score(ContentNode)
+                          │
+                    contentNodeAdapter（适配器）
+                          │
+                  内部 *html.Node（golang.org/x/net/html）
+```
+
+这种双层接口设计实现了：
+- **公共 API 干净**——用户实现自定义 Scorer 无需导入 `golang.org/x/net/html`
+- **内部高性能**——库内部的 `DefaultScorer` 直接操作 `*html.Node`（通过内部 `Scorer` 接口），避免适配层开销
+- **适配由库自动完成**——`scorerAdapter` 在公共 `Scorer` 和内部 `Scorer` 之间双向转换，用户无感知
+
+:::tip ContentNode 返回 nil 的约定
+`FirstChild()`/`NextSibling()`/`Parent()` 在没有对应节点时返回 `nil`。自定义 Scorer 遍历子树时务必做 nil 检查，否则会 panic。
+:::
 
 ## AuditSink
 

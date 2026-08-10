@@ -1,13 +1,17 @@
 ---
 sidebar_label: "JSONL"
 title: "JSONL 处理函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON JSONL 处理函数：ParseJSONL/ToJSONL/ToJSONLString 转换、StreamJSONL/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL 流式处理、StreamLinesInto[T] 泛型流与 NewJSONLWriter 写入器。"
+description: "CyberGo JSON JSONL 处理函数：ParseJSONL/ToJSONL/ToJSONLString 转换、StreamJSONL/ForeachJSONL 流式处理、StreamLinesInto[T] 泛型流与 NewJSONLWriter 写入器。"
 sidebar_position: 8
 ---
 
 # JSONL 处理函数
 
 json 包提供的 JSONL（JSON Lines）处理函数，支持解析、流式读取、转换和写入换行分隔的 JSON 数据。
+
+::: tip 完整教程
+需要了解 JSONL/NDJSON 的概念、流式处理模式和实战用法？参阅 [JSONL 处理器](../../streaming/jsonl) 完整教程。
+:::
 
 ## JSONL 处理函数
 

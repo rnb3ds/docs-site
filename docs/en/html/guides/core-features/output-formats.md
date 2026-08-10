@@ -2,7 +2,7 @@
 sidebar_label: "Output Formats"
 title: "Output Format Guide - CyberGo html | Format Comparison"
 description: "CyberGo html output format guide: comparing the features and use cases of plain text, Markdown, and JSON output, including format option configuration."
-sidebar_position: 2
+sidebar_position: 3
 ---
 
 # Output Formats
@@ -200,5 +200,5 @@ Need format preservation?── yes ──→ Markdown
 ## Next Steps
 
 - [API Reference: Output Formats](../../api-reference/modules/output) - Complete API signatures
-- [Link Extraction & Grouping](./link-extraction) - Extract page resource links
+- [Link Extraction](./link-extraction) - Extract page resource links
 - [Configuration](../../api-reference/core/config) - All configuration options

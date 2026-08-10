@@ -90,6 +90,10 @@ type RateLimiter struct { ... }
 
 Token bucket rate limiter, implements [`RateLimitProvider`](./interfaces#ratelimitprovider).
 
+Uses the token bucket algorithm: tokens are **refilled proportionally** to elapsed time (rather than reset on a fixed window), and residual time is retained after refilling to keep the rate uniform; each request consumes a token, and requests are denied when tokens are insufficient.
+
+Internally tracks at most 10,000 rate limit keys (`maxBuckets`). When the limit is reached, it first evicts expired buckets (inactive for more than 2× the window); if still full, it batch-evicts the approximately oldest 10%, amortizing the O(n) scan cost.
+
 <Badge type="info" text="struct" />
 
 ### Methods

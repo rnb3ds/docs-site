@@ -1,11 +1,11 @@
 ---
-sidebar_label: "링크 추출과 그룹화"
-title: "링크 추출과 그룹화 - CyberGo html | 리소스 수집 가이드"
-description: "CyberGo html 링크 추출과 그룹화: ExtractAllLinks 로 리소스 링크 추출, 유형별 그룹화, Include 필터, 상대 URL 해석, 크롤러 모범 사례를 설명합니다."
-sidebar_position: 3
+sidebar_label: "링크 추출 실전"
+title: "링크 추출 실전 - CyberGo html | 리소스 수집 가이드"
+description: "CyberGo html 링크 추출 실전: ExtractAllLinks 로 이미지·스크립트·CSS 리소스 링크를 추출하고 GroupLinksByType 으로 유형별 그룹화, Include 필터, 상대 URL 해석, 크롤러 모범 사례를 설명합니다."
+sidebar_position: 4
 ---
 
-# 링크 추출과 그룹화
+# 링크 추출 실전
 
 콘텐츠 추출과 독립적으로, 라이브러리는 전용 링크 추출 API 를 제공하여 크롤러와 리소스 수집 시나리오에 적합합니다.
 

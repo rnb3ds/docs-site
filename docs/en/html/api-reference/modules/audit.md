@@ -140,7 +140,7 @@ type AuditSink interface {
 
 ### LoggerAuditSink
 
-Outputs to stderr with `[AUDIT]` prefix.
+Outputs via the standard library `log.Logger` with an `[AUDIT]` prefix. `NewLoggerAuditSink()` **defaults to stderr** (`os.Stderr`); to redirect to a file, network connection, etc., use `NewLoggerAuditSinkWithWriter(w)` to specify any `io.Writer`.
 
 ```go
 func NewLoggerAuditSink() *LoggerAuditSink
@@ -149,13 +149,14 @@ func NewLoggerAuditSinkWithWriter(w io.Writer) *LoggerAuditSink
 
 ### ChannelAuditSink
 
-Sends to a buffered channel, suitable for async processing.
+Sends to a buffered channel, suitable for async processing or integration with external logging systems. `Write` is **non-blocking**: when the buffer is full, the entry is **dropped** and the drop count is incremented (no blocking, no error). The caller can query the number of dropped entries via `DroppedCount()` and trigger alerts or scale-up in monitoring.
 
 ```go
 func NewChannelAuditSink(bufferSize int) *ChannelAuditSink
 
 func (s *ChannelAuditSink) Channel() <-chan AuditEntry
 func (s *ChannelAuditSink) DroppedCount() int64
+func (s *ChannelAuditSink) Close() error // idempotent: safe to call multiple times; only the first call actually closes the channel
 ```
 
 ```go
@@ -177,7 +178,7 @@ func NewWriterAuditSink(w io.Writer) *WriterAuditSink
 
 ### MultiSink
 
-Fans out to multiple Sinks.
+Fans out to multiple Sinks. `Close` uses Go 1.20+'s `errors.Join` to **aggregate close errors from all child Sinks** (rather than keeping only the last one) — for an audit subsystem, discarding an earlier Sink's delivery failure would mask real problems.
 
 ```go
 func NewMultiSink(sinks ...AuditSink) *MultiSink

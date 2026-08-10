@@ -235,4 +235,4 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
 - [Справочник API - Security](../api-reference/security-audit/security) -- полный API фильтрации безопасности
 - [Справочник API - Audit](../api-reference/security-audit/audit) -- полный API аудитных логов
 - [Справочник API - Integrity](../api-reference/security-audit/integrity) -- API подписей целостности
-- [Контрольный список для продакшена](../security/production-checklist) -- проверка безопасности перед развёртыванием
+- [Контрольный список для продакшена](../guides/security/production-checklist) -- проверка безопасности перед развёртыванием

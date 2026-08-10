@@ -1,7 +1,7 @@
 ---
 sidebar_label: "审计系统"
 title: "审计系统 - CyberGo html | 可插拔审计 API"
-description: "CyberGo html 可插拔审计 API：AuditConfig 配置、8 种审计事件、3 个级别、AuditEntry 结构、六种内置 Sink 与级别过滤管道。"
+description: "CyberGo html 可插拔审计系统 API 参考：AuditConfig 全字段配置、8 种审计事件类型（阻止标签、属性、URL、输入违规等）、Info/Warn/Error 三级、AuditEntry 结构与 Stderr/File 等六种内置 Sink 及级别过滤管道。"
 sidebar_position: 4
 ---
 

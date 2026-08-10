@@ -1,7 +1,7 @@
 ---
 sidebar_label: "概述"
 title: "HTML 提取工具库 - CyberGo html | 内容提取与清洗"
-description: "CyberGo html 是高性能 HTML 提取与清洗库，提供智能文章识别、编码检测、多格式输出与链接提取，适用于 Web 抓取。"
+description: "CyberGo html 是高性能 Go 语言 HTML 提取与清洗库，集成智能文章识别、15+ 编码自动检测、Markdown/JSON 多格式输出、链接与媒体提取、批量并发处理、可插拔审计管道与多层安全防护，适用于 Web 抓取、爬虫与内容采集场景。"
 ---
 
 # HTML
@@ -102,10 +102,15 @@ HTML 库围绕三个核心类型构建：
 |------|------|----------|
 | 入门 | [快速开始](./getting-started/) | 安装、基本用法、两种调用方式 |
 | 核心 | [内容提取](./guides/core-features/content-extraction) | Extract 全家族、Config 配置、Result 解读 |
+| 媒体 | [媒体提取](./guides/core-features/media-extraction) | 视频、音频、嵌入内容提取 |
 | 格式 | [输出格式](./guides/core-features/output-formats) | Markdown / JSON 输出、格式配置 |
-| 性能 | [缓存与复用](./guides/advanced-patterns/processor-cache) | Processor 生命周期、缓存调优、批量处理 |
-| 扩展 | [链接提取](./guides/core-features/link-extraction) | 链接提取、分组、资源发现 |
-| 安全 | [审计管道](./guides/advanced-patterns/audit-pipeline) | 审计系统、自定义 Sink、安全监控 |
+| 链接 | [链接提取](./guides/core-features/link-extraction) | 链接提取、分组、资源发现 |
+| 编码 | [编码检测](./guides/core-features/encoding-detection) | 自动检测、手动指定、15+ 编码支持 |
+| 配置 | [配置指南](./guides/core-features/configuration) | 四种预设、六大类字段、常见组合 |
+| 错误 | [错误处理](./guides/error-handling) | 五类错误、errors.Is/As、context 取消 |
+| 性能 | [缓存与复用](./guides/performance/processor-cache) | Processor 生命周期、缓存调优 |
+| 批量 | [批量处理](./guides/performance/batch-processing) | 并发批量提取、WorkerPool 调优 |
+| 安全 | [安全防护](./guides/security/) | 安全特性、审计系统、生产检查 |
 | 高级 | [测试与自定义](./guides/integration/testing-custom) | 自定义 Scorer、ContentNode、测试模式 |
 | 参考 | [速查表](./getting-started/cheatsheet) | 常用 API 一览 |
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Запрос и получение"
 title: "Processor: запросы - CyberGo JSON | API"
-description: "Запросы Processor CyberGo JSON: Get/GetString/GetInt, GetMultiple, SafeGet с AccessResult и GetTyped[T] с JSONPath."
+description: "Запросы Processor CyberGo JSON: Get/GetString/GetInt типизированное получение, GetMultiple пакет, SafeGet с AccessResult и GetTyped[T], поддержка JSONPath."
 sidebar_position: 2
 ---
 

@@ -103,6 +103,7 @@ func main() {
 |------|------|
 | [クイックスタート](./getting-started/) | インストール、基本操作、コア概念 |
 | [パス式の構文](./getting-started/path-syntax) | パスクエリ、スライス、ワイルドカード、フィールド抽出 |
+| [Processor ガイド](./getting-started/processor-guide) | いつ Processor を使うか、事前解析最適化、ライフサイクル |
 | [API ドキュメント](./api-reference/) | 完全な API リファレンス |
 | [大規模ファイル処理](./streaming/large-files) | ストリーミング処理、チャンク読み書き、メモリ最適化 |
 | [使用例](./examples/) | 実践的なコードサンプル |
@@ -143,5 +144,6 @@ func main() {
 ## 次のステップ
 
 - [クイックスタート](./getting-started/) — 5 分で始める
+- [Processor ガイド](./getting-started/processor-guide) — いつ Processor を使うか
 - [パス式の構文](./getting-started/path-syntax) — 完全なパス構文
 - [使用例](./examples/) — より多くの実践的なサンプル

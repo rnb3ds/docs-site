@@ -267,4 +267,4 @@ func SetupLogger(env string) (*dd.Logger, error) {
 
 - [クイックスタート](../getting-started/) -- 基礎入門
 - [API リファレンス](../api-reference/) -- 完全 API
-- [セキュリティ](../security/) -- セキュリティ設定
+- [セキュリティ](../guides/security/) -- セキュリティ設定

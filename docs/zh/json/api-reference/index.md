@@ -9,26 +9,47 @@ sidebar_position: 1
 
 本节提供 `github.com/cybergodev/json` 库的完整 API 参考。
 
+::: tip 两种 API 风格
+本库提供 **包级函数**（如 `json.GetString(data, "path")`，无需创建实例）和 **Processor 方法**（如 `p.GetString(data, "path")`，支持配置复用、预解析缓存与钩子系统）两套 API。不确定该用哪个？参阅 [Processor 入门](../getting-started/processor-guide) 的选择决策树。
+:::
+
 ## 模块索引
+
+### 函数 API
 
 | 模块 | 说明 |
 |------|------|
-| [包函数](./functions/) | 包级函数参考，包括路径查询、类型获取、编解码等 |
-| [Processor](./processor/) | 处理器方法和配置 |
-| [Config](./config) | 配置选项详解 |
-| [类型定义](./types) | 核心类型定义（含 Encoder/Decoder） |
-| [泛型操作](./generics) | 泛型 API 参考 |
-| [接口定义](./interfaces) | 扩展接口定义 |
-| [流式处理](../streaming/large-files) | 流式处理器参考 |
-| [NDJSON 处理](../streaming/jsonl) | JSONL/NDJSON 处理器 |
-| [迭代器](./iterator) | 迭代遍历 API |
-| [辅助函数](./helpers) | 类型转换和工具函数 |
-| [格式化输出](./print) | 格式化和美化输出 |
-| [安全验证](../security/security-mode) | 安全相关 API |
-| [验证器](../extensions/validator) | Schema 验证器 |
-| [钩子系统](../extensions/hooks) | 操作拦截钩子 |
-| [自定义编码器](../extensions/custom-encoder) | 自定义编码器 |
+| [包函数](./functions/) | 包级函数参考（查询/修改/删除/编码/解析/批量/JSONL/文件/迭代） |
+| [Processor](./processor/) | 处理器方法（与包函数镜像分类，额外含生命周期与预解析） |
+
+### 类型与接口
+
+| 模块 | 说明 |
+|------|------|
+| [Config](./config) | 配置选项详解（DefaultConfig / SecurityConfig / PrettyConfig） |
+| [类型定义](./types) | 核心类型（Config / Schema / Stats / AccessResult，含 Encoder / Decoder） |
+| [接口定义](./interfaces) | 扩展接口（CustomEncoder / Validator / Hook / PathParser） |
+| [迭代器与 IterableValue](./iterator) | Iterator / BatchIterator / ParallelIterator / StreamIterator 类型 |
+| [泛型操作](./generics) | 泛型 API（GetTyped[T] / StreamLinesInto[T] / Result[T]） |
 | [常量与错误](./constants) | 常量和错误类型 |
+
+### 工具与辅助
+
+| 模块 | 说明 |
+|------|------|
+| [工具函数](./helpers) | CompareJSON / MergeJSON、缓存管理、全局处理器、SafeError / RedactedPath、AccessResult 方法 |
+| [格式化输出指南](./print) | Print 系列迁移指南（已移除 API 的替代方案） |
+
+### 跨模块专题
+
+| 模块 | 说明 |
+|------|------|
+| [流式处理](../streaming/large-files) | 大文件流式处理指南 |
+| [JSONL / NDJSON 处理](../streaming/jsonl) | JSONL 处理器（StreamJSONL / NDJSONProcessor / JSONLWriter） |
+| [安全验证](../security/security-mode) | 安全模式 API（SecurityConfig / DangerousPattern / RegisterDangerousPattern） |
+| [Schema 验证器](../extensions/validator) | Schema 验证（ValidateSchema / DefaultSchema / NewSchemaWithConfig） |
+| [Hook 钩子系统](../extensions/hooks) | 操作拦截钩子（LoggingHook / TimingHook / ValidationHook / ErrorHook） |
+| [自定义编码器](../extensions/custom-encoder) | 自定义编码器（CustomEncoder / TypeEncoder） |
 
 ## 快速查找
 
@@ -113,6 +134,7 @@ sidebar_position: 1
 ## 相关
 
 - [快速开始](../getting-started/) -- 安装和基本用法
+- [Processor 入门](../getting-started/processor-guide) -- 何时使用处理器
 - [路径表达式语法](../getting-started/path-syntax) -- 路径查询语法
 - [使用示例](../examples/) -- 实战代码示例
 - [大文件处理](../streaming/large-files) -- 流式处理指南

@@ -26,12 +26,17 @@ DD 로그 라이브러리는 풍부한 API 를 제공하며, 기능 모듈별로
 | **Writers** | FileWriter, BufferedWriter, MultiWriter | [출력 대상](./output-integration/writers) |
 | **컨텍스트** | Context 통합과 ContextExtractor | [컨텍스트 통합](./output-integration/context) |
 
-## 확장 기능
+## 확장
 
 | 모듈 | 설명 | 문서 |
 |------|------|------|
-| **Fields** | 구조화 필드 생성자 (20 종) | [구조화 필드](./output-integration/fields) |
-| **Hooks** | 라이프사이클 훅 시스템 | [훅 시스템](./security-audit/hooks) |
+| **Fields** | 구조화 필드 생성자 (20 종) | [구조화 필드](./core/fields) |
+| **Hooks** | 라이프사이클 훅 시스템 | [훅 시스템](./core/hooks) |
+
+## 보안 및 감사
+
+| 모듈 | 설명 | 문서 |
+|------|------|------|
 | **Security** | 민감 데이터 필터와 보안 구성 | [보안 필터](./security-audit/security) |
 | **Audit** | 감사 로그와 감사 이벤트 | [감사 로그](./security-audit/audit) |
 | **Integrity** | 로그 무결성 서명과 검증 | [무결성 서명](./security-audit/integrity) |
@@ -42,7 +47,7 @@ DD 로그 라이브러리는 풍부한 API 를 제공하며, 기능 모듈별로
 |------|------|------|
 | **Debug Visual** | Print/JSON/Text/Exit 디버그 함수 | [디버그 출력](./dev-tools/debug-visual) |
 | **Recorder** | 테스트 보조 로거 | [테스트 보조](./dev-tools/recorder) |
-| **Constants** | 로그 레벨, 형식, 오류 코드 | [상수와 오류](./dev-tools/constants) |
+| **Constants** | 로그 레벨, 형식, 오류 코드 | [상수와 오류](./core/constants) |
 
 ## 빠른 참조
 

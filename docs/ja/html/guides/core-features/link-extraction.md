@@ -1,11 +1,11 @@
 ---
-sidebar_label: "リンク抽出とグループ化"
-title: "リンク抽出とグループ化 - CyberGo html | リソース収集ガイド"
-description: "CyberGo html リンク抽出とグループ化：ExtractAllLinks でリソースリンクを抽出しタイプ別にグループ化、Include フィルタ、相対 URL 解決、クローラーのベストプラクティスを解説。"
-sidebar_position: 3
+sidebar_label: "リンク抽出実践"
+title: "リンク抽出実践 - CyberGo html | リソース収集ガイド"
+description: "CyberGo html リンク抽出実践ガイド：ExtractAllLinks でリソースリンクを抽出し GroupLinksByType でタイプ別にグループ化、Include フィルタ設定、相対 URL 解決、クローラー構築のベストプラクティスを解説します。"
+sidebar_position: 4
 ---
 
-# リンク抽出とグループ化
+# リンク抽出実践
 
 コンテンツ抽出とは独立して、ライブラリは専用のリンク抽出 API を提供し、クローラーやリソース収集のシーンに適しています。
 

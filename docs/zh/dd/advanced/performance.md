@@ -151,4 +151,4 @@ logger.Shutdown(ctx)
 
 - [输出目标](../api-reference/output-integration/writers) -- FileWriter、BufferedWriter API
 - [配置](../api-reference/core/config) -- 性能相关配置项
-- [生产检查清单](../security/production-checklist) -- 上线前检查
+- [生产检查清单](../guides/security/production-checklist) -- 上线前检查

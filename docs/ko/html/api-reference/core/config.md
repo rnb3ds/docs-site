@@ -1,7 +1,7 @@
 ---
 sidebar_label: "설정"
 title: "설정 - CyberGo html | Config 필드 상세"
-description: "CyberGo html Config 설정 상세: 리소스 관리, 보안, 콘텐츠 추출, 출력 형식, 링크 필터와 Validate 검증 메서드를 다룹니다."
+description: "CyberGo html Config 설정 상세: 리소스 관리, 보안 제한, 콘텐츠 추출, 출력 형식, 링크 필터링 필드와 Validate 검증 메서드를 통해 30개 이상의 설정 항목과 기본값, 4종 프리셋을 다룹니다."
 sidebar_position: 3
 ---
 

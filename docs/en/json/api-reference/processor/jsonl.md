@@ -9,6 +9,10 @@ sidebar_position: 8
 
 Processor provides complete JSONL (JSON Lines) stream processing capabilities, supporting line-by-line processing, parallel processing, batch processing, and functional operations.
 
+::: tip Full Tutorial
+Looking for the JSONL/NDJSON concepts and a streaming walkthrough? See the [JSONL Processor](../../streaming/jsonl) tutorial.
+:::
+
 ## Stream Read Methods
 
 ### StreamJSONL

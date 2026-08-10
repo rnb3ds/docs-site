@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Quick Start"
-title: "Getting Started - CyberGo JWT | Quick Start"
-description: "Install CyberGo JWT and create a Processor to issue, validate, refresh, and revoke tokens with algorithm choice, custom Claims, and rate limiting."
+title: "Getting Started - CyberGo JWT | Quick Start Guide"
+description: "Install CyberGo JWT and create a Processor to issue, validate, refresh, and revoke access and refresh tokens, with a guide to advanced features."
 sidebar_position: 2
 ---
 
@@ -23,6 +23,7 @@ Requires Go 1.25+.
 package main
 
 import (
+    "fmt"
     "time"
 
     "github.com/cybergodev/jwt"
@@ -107,183 +108,26 @@ if err != nil {
 fmt.Println("Revoked:", revoked) // true
 ```
 
-## Signing Algorithms
+## More Features
 
-### HMAC (Symmetric Key)
+The steps above cover the core token lifecycle. CyberGo JWT also provides the following features — click into each guide for detailed usage:
 
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-cfg.SigningMethod = jwt.SigningMethodHS256 // Default
-```
-
-| Method | Algorithm |
-|--------|-----------|
-| `SigningMethodHS256` | HMAC-SHA256 |
-| `SigningMethodHS384` | HMAC-SHA384 |
-| `SigningMethodHS512` | HMAC-SHA512 |
-
-### RSA (Asymmetric Key)
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodRS256
-cfg.SigningKey = rsaPrivateKey        // *rsa.PrivateKey
-cfg.VerificationKey = rsaPublicKey    // *rsa.PublicKey (optional, defaults to SigningKey)
-```
-
-| Method | Algorithm |
-|--------|-----------|
-| `SigningMethodRS256` | RSA-SHA256 |
-| `SigningMethodRS384` | RSA-SHA384 |
-| `SigningMethodRS512` | RSA-SHA512 |
-
-### RSA-PSS (Asymmetric Key, Recommended)
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodPS256
-cfg.SigningKey = rsaPrivateKey        // *rsa.PrivateKey
-cfg.VerificationKey = rsaPublicKey    // *rsa.PublicKey (optional)
-```
-
-| Method | Algorithm |
-|--------|-----------|
-| `SigningMethodPS256` | RSA-PSS-SHA256 |
-| `SigningMethodPS384` | RSA-PSS-SHA384 |
-| `SigningMethodPS512` | RSA-PSS-SHA512 |
-
-### ECDSA (Asymmetric Key)
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SigningMethod = jwt.SigningMethodES256
-cfg.SigningKey = ecdsaPrivateKey      // *ecdsa.PrivateKey
-cfg.VerificationKey = ecdsaPublicKey  // *ecdsa.PublicKey (optional)
-```
-
-| Method | Algorithm |
-|--------|-----------|
-| `SigningMethodES256` | ECDSA-SHA256 |
-| `SigningMethodES384` | ECDSA-SHA384 |
-| `SigningMethodES512` | ECDSA-SHA512 |
-
-## Custom Claims
-
-Implement the `CustomClaims` interface to define your own Claims structure:
-
-```go
-type MyClaims struct {
-    UserID string `json:"user_id"`
-    Role   string `json:"role"`
-    jwt.RegisteredClaims
-}
-
-func (c *MyClaims) GetRegisteredClaims() *jwt.RegisteredClaims {
-    return &c.RegisteredClaims
-}
-
-func (c *MyClaims) Validate() error {
-    if c.UserID == "" {
-        return errors.New("user_id is required")
-    }
-    return nil
-}
-```
-
-Using custom Claims:
-
-```go
-claims := &MyClaims{UserID: "123", Role: "admin"}
-
-// Create token
-token, err := processor.Create(claims)
-
-// Validate into custom structure
-result := &MyClaims{}
-parsed, valid, err := processor.ValidateInto(token, result)
-
-// Refresh into custom structure
-newToken, err := processor.RefreshInto(refreshToken, claims)
-```
-
-## Blacklist Configuration
-
-### Using Built-in Memory Store (Default)
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-// Built-in blacklist is automatically enabled
-```
-
-### Custom Storage Backend
-
-Implement the `BlacklistStore` interface (e.g., Redis):
-
-```go
-type RedisStore struct {
-    client *redis.Client
-}
-
-func (s *RedisStore) Add(tokenID string, expiresAt time.Time) error {
-    return s.client.Set(ctx, "blacklist:"+tokenID, "1", time.Until(expiresAt)).Err()
-}
-
-func (s *RedisStore) Contains(tokenID string) (bool, error) {
-    n, err := s.client.Exists(ctx, "blacklist:"+tokenID).Result()
-    return n > 0, err
-}
-
-func (s *RedisStore) Close() error {
-    return s.client.Close()
-}
-
-// Usage
-cfg.Blacklist.Store = &RedisStore{client: rdb}
-```
-
-## Rate Limiting Configuration
-
-```go
-cfg := jwt.DefaultConfig()
-cfg.SecretKey = "hmac-key-that-has-at-least-32-bytes!"
-cfg.EnableRateLimit = true
-cfg.RateLimitRate = 100          // Max requests per window
-cfg.RateLimitWindow = time.Minute // Window duration
-```
-
-## Error Handling
-
-```go
-import "errors"
-
-claims, valid, err := processor.Validate(tokenString)
-if err != nil {
-    switch {
-    case errors.Is(err, jwt.ErrTokenExpired):
-        // Token expired
-    case errors.Is(err, jwt.ErrTokenRevoked):
-        // Token revoked
-    case errors.Is(err, jwt.ErrTokenInvalidIssuer):
-        // Issuer mismatch
-    case errors.Is(err, jwt.ErrTokenInvalidAudience):
-        // Audience mismatch
-    case errors.Is(err, jwt.ErrInvalidToken):
-        // Invalid signature or format
-    case errors.Is(err, jwt.ErrProcessorClosed):
-        // Processor closed
-    default:
-        // Other error
-    }
-}
-```
+| Feature | Description | Guide |
+|---------|-------------|-------|
+| Signing Algorithms | HMAC, RSA, RSA-PSS, ECDSA — 12 algorithms across 4 families | [Signing Algorithms](../guides/signing-algorithms) |
+| Custom Claims | Define business-specific fields via the `CustomClaims` interface | [Custom Claims](../guides/custom-claims) |
+| Token Refresh & Rotation | Two-tier token TTL design, reuse vs. one-time rotation strategies | [Token Refresh & Rotation](../guides/token-refresh) |
+| Token Blacklist | Revocation, built-in memory store, and Redis custom backends | [Token Blacklist](../guides/blacklist) |
+| Rate Limiting | Token bucket algorithm to prevent abuse of issuance endpoints | [Rate Limiting](../guides/rate-limiting) |
+| Configuration | Issuer/audience validation, clock skew, mandatory expiration, input validation | [Configuration](../guides/configuration) |
+| Error Handling | 19 sentinel error categories and `errors.Is` matching | [Error Handling](../guides/error-handling) |
+| Testing & Clock Injection | `FixedClock` for deterministic, sleep-free time control in tests | [Testing & Clock Injection](../guides/testing) |
 
 ## Next Steps
 
 - [Signing Algorithms](../guides/signing-algorithms) — Algorithm selection and key configuration
-- [Custom Claims](../guides/custom-claims) — Define business fields
-- [Token Blacklist](../guides/blacklist) — Revocation and custom storage
-- [Rate Limiting](../guides/rate-limiting) — Rate limiting configuration
-- [Error Handling](../guides/error-handling) — Error classification and handling patterns
+- [Token Refresh & Rotation](../guides/token-refresh) — Two-tier tokens and rotation strategies
+- [Configuration](../guides/configuration) — Security config and input validation
 - [API Reference](../api-reference/) — Complete API reference
+- [Basic Examples](../examples/basic) — Runnable complete examples
+- [Web Server Integration](../examples/web-server) — Auth middleware and RBAC in practice

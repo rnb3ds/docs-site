@@ -251,4 +251,4 @@ fmt.Printf("算法: %s, 序列号: %d\n", stats.Algorithm, stats.Sequence)
 
 - [审计日志](./audit) -- AuditLogger 详解
 - [安全过滤](./security) -- 敏感数据过滤
-- [常量与错误](../dev-tools/constants) -- 错误码
+- [常量与错误](../core/constants) -- 错误码

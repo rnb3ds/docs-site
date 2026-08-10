@@ -11,6 +11,10 @@ json 패키지는 커스텀 JSON 처리 동작을 허용하는 여러 확장 인
 
 ## 인코더 인터페이스
 
+::: warning 연결되지 않은 확장 필드
+`CustomEncoder`와 `TypeEncoder` 인터페이스는 현재 버전에서 선언되었지만 **인코딩 파이프라인에 아직 연결되지 않았습니다**. `Config.CustomEncoder` / `Config.CustomTypeEncoders`로 설정해도 효과가 없으며 향후 버전을 위해 예약되었습니다. 현재 사용 가능한 인코딩 커스터마이징 방법은 `json.Marshaler` 또는 `encoding.TextMarshaler` 인터페이스를 구현하는 것입니다 ([커스텀 인코더](../extensions/custom-encoder) 참조).
+:::
+
 ### CustomEncoder
 
 커스텀 JSON 인코더 인터페이스입니다.
@@ -89,6 +93,10 @@ if err != nil {
 ```
 
 ## 검증기 인터페이스
+
+::: warning 연결되지 않은 확장 필드
+`Validator` 인터페이스는 현재 버전에서 선언되었지만 **작업 파이프라인에 아직 연결되지 않았습니다**. `Config.CustomValidators` 또는 `Config.AddValidator()`로 설정해도 효과가 없으며 향후 버전을 위해 예약되었습니다. 현재 사용 가능한 검증 방법은 `ValidateSchema`입니다 ([검증기](../extensions/validator) 참조).
+:::
 
 ### Validator
 

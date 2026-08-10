@@ -1,7 +1,7 @@
 ---
 sidebar_label: "链接提取"
 title: "链接提取 - CyberGo html | 资源链接提取 API"
-description: "CyberGo html 链接提取 API：ExtractAllLinks 系列与 GroupLinksByType，提取各类资源链接并按类型分组，可配置过滤。"
+description: "CyberGo html 链接提取 API 参考：ExtractAllLinks 系列与 GroupLinksByType 详解，提取脚本、样式、图片等资源链接并按类型分组，支持配置过滤，结果自动按 URL 排序去重，适用于爬虫与资源收集场景。"
 sidebar_position: 2
 ---
 
@@ -64,6 +64,25 @@ type LinkResource struct {
 }
 ```
 
+## 链接类型详解
+
+每种 `Type` 对应特定的 HTML 标签来源：
+
+| Type 值 | 来源 HTML 标签 | 控制开关 |
+|---------|---------------|----------|
+| `link` | `<a href>` | `IncludeContentLinks` / `IncludeExternalLinks` |
+| `image` | `<img src>` | `IncludeImages` |
+| `video` | `<video src>`、`<source type="video/*">`、`<iframe>`/`<embed>`/`<object>`（视频 URL） | `IncludeVideos` |
+| `audio` | `<audio src>`、`<source type="audio/*">` | `IncludeAudios` |
+| `media` | `<source>` 无法判定 video/audio 时 | `IncludeVideos` / `IncludeAudios` |
+| `css` | `<link rel="stylesheet">` | `IncludeCSS` |
+| `js` | `<script src>` | `IncludeJS` |
+| `icon` | `<link rel="icon">`、`<link rel="apple-touch-icon">` 等 | `IncludeIcons` |
+
+:::info embed 链接的特殊处理
+`<iframe>`、`<embed>`、`<object>` 的 `src`/`data` 只有在判定为**视频 URL**（含 YouTube、Vimeo、Dailymotion 等嵌入模式）时才会被提取，类型记为 `video`。非视频 URL 不会被收录。
+:::
+
 ## 配置
 
 链接提取行为可通过 `Config` 的链接过滤字段控制：
@@ -78,6 +97,39 @@ cfg.ResolveRelativeURLs = true
 cfg.BaseURL = "https://example.com"
 ```
 
+### 相对 URL 解析
+
+当 `ResolveRelativeURLs=true`（默认）时，所有类型的相对 URL 会基于 `BaseURL` 统一解析为绝对 URL：
+
+- 解析逻辑由 `resolveURLIfEnabled` 集中处理，对内容链接、图片、媒体、source、script、embed、link 标签**一视同仁**
+- 显式设置 `BaseURL` 会**跳过自动检测**，直接使用调用方提供的值
+- `BaseURL` 为空且 `ResolveRelativeURLs=true` 时，从文档自动推导 BaseURL（见下方提示）
+
+### 内部与外部链接
+
+内容链接（`<a href>`）通过两组开关分别控制内部与外部链接：
+
+| 开关 | 控制范围 | 判定方式 |
+|------|----------|----------|
+| `IncludeContentLinks` | 内部链接 | URL 本身为相对路径，或与 `BaseURL` 同域 |
+| `IncludeExternalLinks` | 外部链接 | URL 为绝对路径且与 `BaseURL` 不同域（`IsDifferentDomain`） |
+
+默认两者均为 `true`（提取全部内容链接）。其余资源类型（图片、CSS、JS 等）不受内/外区分，仅由各自的 `Include*` 开关控制。
+
+### preload / prefetch 处理
+
+`<link rel="preload" as="...">` 与 `rel="prefetch"` 会根据 `as` 属性路由到不同类型：
+
+| `as` 属性值 | 归入类型 | 控制开关 |
+|-------------|----------|----------|
+| `style` | `css` | `IncludeCSS` |
+| `script` | `js` | `IncludeJS` |
+| `image` | `image` | `IncludeImages` |
+| `video` | `video` | `IncludeVideos` |
+| `audio` | `audio` | `IncludeAudios` |
+
+`dns-prefetch`、`preconnect` 同样走此路由，但通常不带 `as` 属性，故不会被收录。
+
 :::tip BaseURL 自动检测
 当 `ResolveRelativeURLs=true` 且 `BaseURL` **为空**时，库会从 HTML 文档本身自动推导 BaseURL，按以下**优先级**逐项尝试，命中即返回：
 
@@ -88,3 +140,44 @@ cfg.BaseURL = "https://example.com"
 
 显式设置 `BaseURL` 会**跳过自动检测**，优先使用调用方提供的值。
 :::
+
+## 示例
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/html"
+)
+
+func main() {
+	data := []byte(`<html><head>
+<link rel="stylesheet" href="/css/main.css">
+<link rel="icon" href="/favicon.ico">
+<script src="/js/app.js"></script>
+</head><body>
+<a href="/about">关于我们</a>
+<img src="/img/logo.png" alt="Logo">
+<video src="/media/intro.mp4"></video>
+</body></html>`)
+
+	cfg := html.DefaultConfig()
+	cfg.BaseURL = "https://example.com"
+	links, err := html.ExtractAllLinks(data, cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// 按类型分组后遍历输出
+	groups := html.GroupLinksByType(links)
+	for typ, items := range groups {
+		fmt.Printf("%s（%d 个）:\n", typ, len(items))
+		for _, l := range items {
+			fmt.Printf("  - %s [%s]\n", l.URL, l.Title)
+		}
+	}
+}
+```

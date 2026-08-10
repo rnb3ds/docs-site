@@ -1,11 +1,11 @@
 ---
-sidebar_label: "출력 형식 선택"
-title: "출력 형식 선택 - CyberGo html | 형식 비교 가이드"
-description: "CyberGo html 출력 형식 선택: 순수 텍스트, Markdown, JSON 세 출력의 특징과 적용 시나리오를 비교하고 형식 옵션 설정을 다룹니다."
-sidebar_position: 2
+sidebar_label: "출력 형식 실전"
+title: "출력 형식 실전 - CyberGo html | 형식 비교 가이드"
+description: "CyberGo html 출력 형식 실전: 순수 텍스트, Markdown, JSON 세 출력의 특징과 적용 시나리오를 비교하고 InlineImageFormat·InlineLinkFormat 형식 옵션 설정과 캐시 동작 차이를 다룹니다."
+sidebar_position: 3
 ---
 
-# 출력 형식 선택
+# 출력 형식 실전
 
 이 가이드는 순수 텍스트, Markdown, JSON 세 가지 출력 형식 중 올바른 것을 선택하는 데 도움을 줍니다.
 
@@ -200,5 +200,5 @@ md, err := html.ExtractToMarkdownWithContext(ctx, data)
 ## 다음 단계
 
 - [API 레퍼런스: 출력 형식](../../api-reference/modules/output) - 전체 API 시그니처
-- [링크 추출과 그룹화](./link-extraction) - 페이지 리소스 링크 추출
+- [링크 추출 실전](./link-extraction) - 페이지 리소스 링크 추출
 - [설정 상세](../../api-reference/core/config) - 모든 설정 옵션

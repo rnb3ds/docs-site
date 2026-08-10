@@ -269,6 +269,7 @@ err := json.ForeachWithPath(data, "users", func(key any, item *json.IterableValu
 ## Что дальше
 
 - [Синтаксис выражений пути](./path-syntax) — изучите полный синтаксис запросов по пути
+- [Руководство по Processor](./processor-guide) — когда использовать процессор, оптимизация предпарсинга
 - [Обработка больших файлов](../streaming/large-files) — работа с большими JSON-файлами
 - [Документация API](../api-reference/) — полный справочник API
 - [Примеры использования](../examples/) — больше практических примеров

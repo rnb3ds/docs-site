@@ -9,6 +9,10 @@ sidebar_position: 8
 
 Processor は JSONL（JSON Lines）のストリーミング処理機能を完全に提供し、行単位処理、並列処理、バッチ処理、関数型操作をサポートします。
 
+::: tip 完全チュートリアル
+JSONL/NDJSON の概念説明とストリーミング処理の実戦例が必要ですか？[JSONL プロセッサ](../../streaming/jsonl) の完全チュートリアルを参照してください。
+:::
+
 ## ストリーミング読み込みメソッド
 
 ### StreamJSONL

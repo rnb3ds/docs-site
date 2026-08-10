@@ -1,7 +1,7 @@
 ---
 sidebar_label: "テストとカスタム拡張"
 title: "テストとカスタム拡張 - CyberGo html | テスト体系ガイド"
-description: "CyberGo html テストとカスタム拡張：カスタム Scorer 実装、ContentNode 走査、テストモード、mock データ、Extractor インターフェースの mock サンプル。"
+description: "CyberGo html テストとカスタム拡張ガイド：カスタム Scorer の実装による記事認識の調整、ContentNode 走査、テストモードと mock データの活用、Extractor インターフェースを利用した mock サンプルとテスト手法を解説します。"
 sidebar_position: 2
 ---
 

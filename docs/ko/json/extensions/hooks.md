@@ -9,6 +9,10 @@ sidebar_position: 1
 
 Hook 은 JSON 작업 전후에 커스텀 로직을 삽입하여 로그 기록, 성능 모니터링, 검증 등의 기능을 구현할 수 있습니다.
 
+::: tip 인터페이스 시그니처 참조
+Hook 인터페이스의 전체 타입 시그니처 (`Hook`, `HookContext`, `HookFunc`) 는 [인터페이스 정의](../api-reference/interfaces#훅-인터페이스)를 참조하세요. 이 페이지는 사용 가이드와 모범 사례에 중점을 둡니다.
+:::
+
 ## Hook 인터페이스
 
 ```go

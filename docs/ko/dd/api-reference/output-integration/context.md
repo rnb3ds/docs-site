@@ -93,7 +93,7 @@ extractors := logger.GetContextExtractors()
 ```
 
 :::warning 경고 컨텍스트 제한 (중요)
-로그 메서드 (`Info`/`InfoWith` 등) 는 `context.Context` 매개변수를 받지 않으며, `ContextExtractor` 내부적으로 `context.Background()`로 호출되므로 **요청 스코프에서 TraceID/SpanID를 자동으로 추출할 수 없습니다**. 아래 OTel 예제는 글로벌 span 이 존재할 때만 필드를 생성하며, 매 요청마다 추적 ID 를 추가하려면 `WithFields()`로 수동 전달하세요 ([분산 추적 통합](../../guides/context-tracing) 참조).
+로그 메서드 (`Info`/`InfoWith` 등) 는 `context.Context` 매개변수를 받지 않으며, `ContextExtractor` 내부적으로 `context.Background()`로 호출되므로 **요청 스코프에서 TraceID/SpanID를 자동으로 추출할 수 없습니다**. 아래 OTel 예제는 글로벌 span 이 존재할 때만 필드를 생성하며, 매 요청마다 추적 ID 를 추가하려면 `WithFields()`로 수동 전달하세요 ([분산 추적 통합](../../guides/integration/context-tracing) 참조).
 :::
 
 ### OpenTelemetry 예제
@@ -159,5 +159,5 @@ func loggingInterceptor(
 ## 다음 단계
 
 - [Logger](../core/logger) -- `AddContextExtractor` / `SetContextExtractors` / `GetContextExtractors`
-- [구조화 필드](./fields) -- `Field` 생성자와 필드 검증
+- [구조화 필드](../core/fields) -- `Field` 생성자와 필드 검증
 - [설정](../core/config) -- `Config.ContextExtractors`

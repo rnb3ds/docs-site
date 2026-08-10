@@ -151,4 +151,4 @@ logger.Shutdown(ctx)
 
 - [출력 대상](../api-reference/output-integration/writers) -- FileWriter, BufferedWriter API
 - [설정](../api-reference/core/config) -- 성능 관련 구성 항목
-- [프로덕션 체크리스트](../security/production-checklist) -- 출시 전 검사
+- [프로덕션 체크리스트](../guides/security/production-checklist) -- 출시 전 검사

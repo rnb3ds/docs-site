@@ -173,4 +173,4 @@ if !rec.ContainsMessage("test") {
 
 - [Быстрый старт](../getting-started/) -- руководство для начала работы
 - [Справочник API](../api-reference/) -- полный API
-- [Контрольный список для продакшена](../security/production-checklist) -- проверка перед развёртыванием
+- [Контрольный список для продакшена](../guides/security/production-checklist) -- проверка перед развёртыванием

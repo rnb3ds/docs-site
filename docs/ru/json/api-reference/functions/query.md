@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Запрос и получение"
 title: "Функции запросов и получения - CyberGo JSON | Справочник API"
-description: "Функции запросов и получения CyberGo JSON: Get/GetString/GetInt типобезопасное получение, GetTyped[T] обобщённое, GetMultiple массовое и SafeGet безопасный доступ, поддержка JSONPath."
+description: "Функции запросов CyberGo JSON: Get/GetString/GetInt получение, GetTyped[T], GetMultiple массовое и SafeGet безопасный доступ, поддержка JSONPath."
 sidebar_position: 2
 ---
 

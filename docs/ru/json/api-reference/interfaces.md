@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Интерфейсы"
 title: "Определения интерфейсов - CyberGo JSON | Справочник API"
-description: "Расширяемые интерфейсы CyberGo JSON: CustomEncoder, TypeEncoder, Validator, Hook, PathParser и DangerousPattern — гибкое расширение возможностей кодирования, валидации и защиты безопасности."
+description: "Интерфейсы CyberGo JSON: CustomEncoder, TypeEncoder, Validator, Hook, PathParser и DangerousPattern — расширение кодирования, валидации и защиты."
 sidebar_position: 6
 ---
 
@@ -10,6 +10,10 @@ sidebar_position: 6
 Пакет json предоставляет несколько расширяемых интерфейсов для пользовательского поведения обработки JSON.
 
 ## Интерфейсы кодировщика
+
+::: warning Неподключённые поля расширения
+Интерфейсы `CustomEncoder` и `TypeEncoder` объявлены в текущей версии, но **ещё не подключены к конвейеру кодирования**. Их установка через `Config.CustomEncoder` / `Config.CustomTypeEncoders` не даёт эффекта — они зарезервированы для будущих версий. Доступный в настоящее время способ настройки кодирования — реализация интерфейса `json.Marshaler` или `encoding.TextMarshaler` (см. [Пользовательский кодировщик](../extensions/custom-encoder)).
+:::
 
 ### CustomEncoder
 
@@ -89,6 +93,10 @@ if err != nil {
 ```
 
 ## Интерфейс валидатора
+
+::: warning Неподключённые поля расширения
+Интерфейс `Validator` объявлен в текущей версии, но **ещё не подключён к конвейеру операций**. Его установка через `Config.CustomValidators` или `Config.AddValidator()` не даёт эффекта — он зарезервирован для будущих версий. Доступный в настоящее время метод валидации — `ValidateSchema` (см. [Валидатор](../extensions/validator)).
+:::
 
 ### Validator
 

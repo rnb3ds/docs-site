@@ -92,8 +92,12 @@ func main() {
 
 ## 下一步
 
+- [核心概念](./getting-started/concepts) — Processor、令牌模型、Claims 架构
 - [快速开始](./getting-started/) — 详细的安装和配置指南
 - [签名算法](./guides/signing-algorithms) — HMAC、RSA、ECDSA 选择指南
+- [令牌刷新与轮换](./guides/token-refresh) — 双层令牌与轮换策略
+- [配置详解](./guides/configuration) — 安全配置与输入校验
 - [自定义 Claims](./guides/custom-claims) — 定义业务字段
 - [API 参考](./api-reference/) — 完整 API 参考文档
 - [基础示例](./examples/basic) — HMAC、令牌对、验证示例
+- [Web 服务器集成](./examples/web-server) — 认证中间件与 RBAC 实战

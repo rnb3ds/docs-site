@@ -251,4 +251,4 @@ fmt.Printf("アルゴリズム: %s, シリアル番号: %d\n", stats.Algorithm, 
 
 - [監査ログ](./audit) -- AuditLogger 詳解
 - [セキュリティフィルタ](./security) -- 機密データフィルタリング
-- [定数とエラー](../dev-tools/constants) -- エラーコード
+- [定数とエラー](../core/constants) -- エラーコード

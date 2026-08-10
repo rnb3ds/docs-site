@@ -1,11 +1,15 @@
 ---
-sidebar_label: "Функции вывода"
-title: "Функции печати - CyberGo JSON | API"
-description: "Печать и форматирование CyberGo JSON: Encode, EncodePretty, Prettify и fmt для вывода JSON."
+sidebar_label: "Руководство по форматированию"
+title: "Руководство по форматированию - CyberGo JSON | API"
+description: "Печать и форматирование CyberGo JSON: Encode, EncodePretty, Prettify и fmt для вывода JSON с настраиваемыми отступами и префиксами, замена серии Print."
 sidebar_position: 11
 ---
 
 # Функции печати
+
+::: info Справочник по миграции
+Эта страница — руководство по миграции для функций серии Print (удалённых в более ранней версии). Для форматирования JSON используйте [`Prettify`](./index#форматирование) или совместимый со стандартной библиотекой `MarshalIndent`.
+:::
 
 ::: warning
 Print, PrintPretty, PrintE, PrintPrettyE удалены из библиотеки и больше не предоставляются. Используйте следующие альтернативы.

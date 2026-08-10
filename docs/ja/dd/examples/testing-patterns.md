@@ -257,4 +257,4 @@ func TestLogLevel_Behavior(t *testing.T) {
 
 - [Web サービス統合](./web-service) -- HTTP サービスログ統合
 - [API リファレンス - Recorder](../api-reference/dev-tools/recorder) -- LoggerRecorder 完全 API
-- [フックシステム](../guides/hooks) -- ライフサイクルフック
+- [フックシステム](../guides/operations/hooks) -- ライフサイクルフック

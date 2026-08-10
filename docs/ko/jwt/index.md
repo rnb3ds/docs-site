@@ -92,8 +92,12 @@ func main() {
 
 ## 다음 단계
 
+- [핵심 개념](./getting-started/concepts) — Processor, 토큰 모델, Claims 아키텍처
 - [빠른 시작](./getting-started/) — 상세 설치 및 설정 가이드
 - [서명 알고리즘](./guides/signing-algorithms) — HMAC, RSA, ECDSA 선택 가이드
+- [토큰 갱신 및 교체](./guides/token-refresh) — 2계층 토큰과 교체 전략
+- [설정 상세](./guides/configuration) — 보안 설정 및 입력 검증
 - [커스텀 Claims](./guides/custom-claims) — 비즈니스 필드 정의
 - [API 레퍼런스](./api-reference/) — 전체 API 참조 문서
 - [기본 예제](./examples/basic) — HMAC, 토큰 쌍, 검증 예제
+- [웹 서버 통합](./examples/web-server) — 인증 미들웨어와 RBAC 실전

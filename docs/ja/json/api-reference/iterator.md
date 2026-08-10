@@ -1,6 +1,6 @@
 ---
-sidebar_label: "イテレータ型"
-title: "イテレータ型 - CyberGo JSON | API リファレンス"
+sidebar_label: "イテレータと IterableValue"
+title: "イテレータと IterableValue - CyberGo JSON | API リファレンス"
 description: "CyberGo JSON イテレータ型：Iterator 順次走査、IterableValue データアクセス、StreamIterator/StreamObjectIterator ストリーミング、BatchIterator バッチと ParallelIterator 並列イテレータの構築とメソッド。"
 sidebar_position: 9
 ---

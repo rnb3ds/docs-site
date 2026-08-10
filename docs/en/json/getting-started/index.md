@@ -269,6 +269,7 @@ err := json.ForeachWithPath(data, "users", func(key any, item *json.IterableValu
 ## Next Steps
 
 - [Path Expression Syntax](./path-syntax) -- Learn the complete path query syntax
+- [Processor Guide](./processor-guide) -- When to use a processor, PreParse optimization
 - [Large File Processing](../streaming/large-files) -- Process large JSON files
 - [API Reference](../api-reference/) -- View the complete API reference
 - [Usage Examples](../examples/) -- Browse more practical examples

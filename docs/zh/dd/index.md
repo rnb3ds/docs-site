@@ -14,6 +14,7 @@ DD（源码注释中读作 "data-driven" 或 "distributed debugger"）是 CyberG
 - **多输出目标** -- 同时输出到控制台、文件、自定义 `io.Writer`
 - **文件轮换** -- 按大小自动轮换，支持备份数量限制和时间保留策略
 - **敏感数据过滤** -- 内置正则模式，自动脱敏密码、密钥、Token 等敏感信息
+- **字段验证** -- 字段键命名约定校验（snake_case/camelCase 等）与 Log4Shell 注入防护
 - **审计日志** -- 异步审计事件记录，支持 HMAC 完整性签名与序列号
 - **钩子系统** -- BeforeLog、AfterLog、OnRotate 等生命周期钩子
 - **上下文集成** -- 提供 TraceID/SpanID/RequestID 的 context 工具与 ContextExtractor 扩展点（日志方法不接收 ctx，需通过 WithFields 传入字段）
@@ -60,18 +61,26 @@ func main() {
 
 | 模块 | 说明 |
 |------|------|
-| [核心概念](./guides/core-concepts) | Logger 体系、处理管道、接口层次 |
-| [结构化日志](./guides/structured-logging) | 字段构造器、链式调用 |
-| [文件输出与轮换](./guides/file-output) | FileWriter、BufferedWriter |
-| [敏感数据过滤](./guides/sensitive-filtering) | 自动脱敏、安全等级 |
-| [审计日志](./guides/audit-logging) | 异步审计事件、完整性签名 |
-| [钩子系统](./guides/hooks) | 生命周期钩子扩展 |
+| [核心概念](./guides/basics/core-concepts) | Logger 体系、处理管道、接口层次 |
+| [配置详解](./guides/basics/configuration) | Config 结构体、预设方案、输出目标 |
+| [结构化日志](./guides/basics/structured-logging) | 字段构造器、链式调用 |
+| [文件输出与轮换](./guides/basics/file-output) | FileWriter、BufferedWriter |
+| [敏感数据过滤](./guides/security/sensitive-filtering) | 自动脱敏、安全等级 |
+| [字段验证](./guides/security/field-validation) | 命名约定校验、Log4Shell 防护 |
+| [日志采样](./guides/operations/sampling) | 高吞吐场景日志降量策略 |
+| [审计日志](./guides/security/audit-logging) | 异步审计事件、完整性签名 |
+| [钩子系统](./guides/operations/hooks) | 生命周期钩子扩展 |
+| [错误处理](./guides/operations/error-handling) | 结构化错误、哨兵错误、errors.Is |
+| [分布式追踪集成](./guides/integration/context-tracing) | TraceID/SpanID/RequestID |
+| [迁移指南](./guides/integration/migration) | 从 log/slog/zap/logrus 迁移 |
 
 ## 下一步
 
+- [安装](./getting-started/installation) -- 环境要求与依赖集成
 - [快速开始](./getting-started/) -- 5 分钟入门指南
-- [核心概念](./guides/core-concepts) -- 理解 DD 架构
-- [迁移指南](./guides/migration) -- 从 log/slog/zap/logrus 迁移
+- [核心概念](./guides/basics/core-concepts) -- 理解 DD 架构
+- [配置详解](./guides/basics/configuration) -- Config 全字段与预设方案
 - [速查表](./getting-started/cheatsheet) -- 常用 API 速查
 - [API 参考](./api-reference/) -- 完整 API 文档
 - [基础示例](./examples/basic-usage) -- 实用代码示例
+- [迁移指南](./guides/integration/migration) -- 从 log/slog/zap/logrus 迁移

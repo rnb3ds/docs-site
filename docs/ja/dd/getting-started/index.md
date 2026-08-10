@@ -2,7 +2,7 @@
 sidebar_label: "クイックスタート"
 title: "クイックスタート - CyberGo DD | 5 分入門ガイド"
 description: "CyberGo DD 高性能構造化ログライブラリの完全な入門チュートリアル。依存関係のインストールから初回ログ出力まで、ロガーの作成、出力先とファイルローテーションポリシーの設定、構造化フィールドによるリクエストコンテキスト記録、フックシステム拡張機能の使用方法を段階的に学び、5 分でコア機能を習得できます。"
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # クイックスタート
@@ -193,8 +193,8 @@ logger.InfoWith("ユーザーログイン",
 
 ## 次のステップ
 
-- [コア概念](../guides/core-concepts) -- Logger 体系と処理パイプラインを理解する
-- [構造化ログ](../guides/structured-logging) -- フィールドの使い方詳細
-- [ファイル出力とローテーション](../guides/file-output) -- FileWriter 詳解
-- [機密データフィルタリング](../guides/sensitive-filtering) -- セキュリティフィルタリング実践
+- [コア概念](../guides/basics/core-concepts) -- Logger 体系と処理パイプラインを理解する
+- [構造化ログ](../guides/basics/structured-logging) -- フィールドの使い方詳細
+- [ファイル出力とローテーション](../guides/basics/file-output) -- FileWriter 詳解
+- [機密データフィルタリング](../guides/security/sensitive-filtering) -- セキュリティフィルタリング実践
 - [チートシート](./cheatsheet) -- よく使う API クイックリファレンス

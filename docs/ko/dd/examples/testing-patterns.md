@@ -257,4 +257,4 @@ func TestLogLevel_Behavior(t *testing.T) {
 
 - [웹 서비스 통합](./web-service) -- HTTP 서비스 로그 통합
 - [API 레퍼런스 - Recorder](../api-reference/dev-tools/recorder) -- LoggerRecorder 완전한 API
-- [훅 시스템](../guides/hooks) -- 라이프사이클 훅
+- [훅 시스템](../guides/operations/hooks) -- 라이프사이클 훅

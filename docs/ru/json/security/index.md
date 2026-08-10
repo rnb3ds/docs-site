@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Обзор безопасности"
-title: "Обзор безопасности - CyberGo JSON | Лучшие практики безопасности"
-description: "Лучшие практики безопасности CyberGo JSON: валидация входных данных, ограничения ресурсов MaxNestingDepthSecurity/MaxMemory, защита от обхода пути и JSON-инъекций, фильтрация конфиденциальных данных."
+title: "Безопасность - CyberGo JSON | Лучшие практики"
+description: "Безопасность CyberGo JSON: валидация входных данных, ограничения MaxNestingDepthSecurity/MaxMemory, защита от обхода пути и JSON-инъекций, фильтрация данных."
 sidebar_position: 1
 ---
 

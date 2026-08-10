@@ -1,7 +1,7 @@
 ---
 sidebar_label: "チートシート"
 title: "チートシート - CyberGo html | API 一覧"
-description: "CyberGo html 主要 API チートシート：パッケージ関数、Processor メソッド、設定プリセット、主要設定項目、エラー判定、監査設定を 1 ページで素早く参照できます。"
+description: "CyberGo html 主要 API チートシート：パッケージ関数、Processor メソッド、4 種の設定プリセット、主要設定項目、エラー判定パターン、監査設定、リンク抽出など、日常的に必要な API を 1 ページで素早く参照できるクイックリファレンスです。"
 sidebar_position: 3
 ---
 
@@ -160,6 +160,41 @@ if err != nil {
 }
 ```
 
+## エンコーディング検出
+
+```go
+// 自動検出（デフォルト、15+ エンコーディング対応）
+result, err := html.Extract(gbkData)
+
+// 手動でエンコーディング指定
+cfg := html.DefaultConfig()
+cfg.Encoding = "shift_jis"
+```
+
+UTF-8、GBK、Shift_JIS、EUC-JP、Windows-1252 など 15+ エンコーディングに対応しています。
+
+## メディア抽出
+
+```go
+result, err := html.Extract(data)
+
+// 動画
+for _, v := range result.Videos {
+    fmt.Println(v.URL, v.Type)
+}
+
+// 音声
+for _, a := range result.Audios {
+    fmt.Println(a.URL, a.Type)
+}
+
+// メディア抽出を無効化
+cfg := html.TextOnlyConfig()
+// または個別に制御
+cfg.PreserveVideos = false
+cfg.PreserveAudios = false
+```
+
 ## 監査システム
 
 ```go
@@ -176,4 +211,35 @@ defer p.Close()
 
 // 処理後に監査ログを取得
 entries := p.GetAuditLog()
+```
+
+### 監査 Sink クイックリファレンス
+
+```go
+// 組み込み Sink コンストラクタ
+html.NewLoggerAuditSink()                   // stderr、[AUDIT] プレフィックス
+html.NewLoggerAuditSinkWithWriter(w)        // カスタム Writer
+html.NewWriterAuditSink(w)                  // JSON Lines を io.Writer に書き込み
+html.NewChannelAuditSink(bufSize)           // バッファ付き channel
+html.NewMultiSink(sinks...)                 // 複数の Sink にファンアウト
+html.NewFilteredSink(sink, filterFunc)      // 述語フィルタリング
+html.NewLevelFilteredSink(sink, minLevel)   // レベル別フィルタリング
+
+// Channel Sink ヘルパーメソッド
+sink.Channel()       // <-chan AuditEntry、イベントを消費
+sink.DroppedCount()  // int64、破棄されたイベント数
+sink.Close()         // べき等な channel クローズ
+```
+
+### Processor ライフサイクル
+
+```go
+p, _ := html.New(html.DefaultConfig())
+defer p.Close()               // リソース解放（べき等）
+
+stats := p.GetStatistics()    // Statistics{TotalProcessed, CacheHits, ...}
+entries := p.GetAuditLog()    // []AuditEntry
+p.ClearAuditLog()             // メモリ内監査ログをクリア
+p.ClearCache()                // キャッシュをクリア（統計は保持）
+p.ResetStatistics()           // 統計カウンタをリセット（キャッシュは保持）
 ```

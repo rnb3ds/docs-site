@@ -155,5 +155,5 @@ type LogEntry struct {
 ## 次のステップ
 
 - [Logger](../core/logger) -- Logger 完全メソッド
-- [構造化フィールド](../output-integration/fields) -- Field コンストラクタ
-- [定数とエラー](./constants) -- LogLevel 定数
+- [構造化フィールド](../core/fields) -- Field コンストラクタ
+- [定数とエラー](../core/constants) -- LogLevel 定数

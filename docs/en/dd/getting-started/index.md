@@ -2,7 +2,7 @@
 sidebar_label: "Quick Start"
 title: "Quick Start - CyberGo DD | 5-Minute Guide"
 description: "A complete getting-started tutorial for the CyberGo DD high-performance structured logging library. From installing the dependency to your first log line, learn step by step how to create loggers, configure output targets and file rotation, log request context with structured fields, and extend behavior with hooks. Master the essentials in 5 minutes and apply them to real projects."
-sidebar_position: 1
+sidebar_position: 2
 ---
 
 # Quick Start
@@ -193,8 +193,8 @@ logger.InfoWith("user login",
 
 ## Next Steps
 
-- [Core Concepts](../guides/core-concepts) -- Understand the Logger hierarchy and processing pipeline
-- [Structured Logging](../guides/structured-logging) -- Field usage in depth
-- [File Output & Rotation](../guides/file-output) -- FileWriter in depth
-- [Sensitive Data Filtering](../guides/sensitive-filtering) -- Security filtering in practice
+- [Core Concepts](../guides/basics/core-concepts) -- Understand the Logger hierarchy and processing pipeline
+- [Structured Logging](../guides/basics/structured-logging) -- Field usage in depth
+- [File Output & Rotation](../guides/basics/file-output) -- FileWriter in depth
+- [Sensitive Data Filtering](../guides/security/sensitive-filtering) -- Security filtering in practice
 - [Cheat Sheet](./cheatsheet) -- Common API quick reference

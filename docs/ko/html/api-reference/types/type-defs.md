@@ -1,7 +1,7 @@
 ---
 sidebar_label: "데이터 타입"
 title: "타입 정의 - CyberGo html | 데이터 타입 참조"
-description: "CyberGo html 데이터 타입: Result, ImageInfo, LinkInfo, LinkResource, Statistics, BatchResult 등 핵심 타입의 필드를 설명합니다."
+description: "CyberGo html 데이터 타입: Result 추출 결과, ImageInfo·LinkInfo·VideoInfo·AudioInfo 미디어, LinkResource, Statistics 통계, BatchResult 배치 결과 등 핵심 타입의 필드와 직렬화를 설명합니다."
 sidebar_position: 2
 ---
 
@@ -55,6 +55,21 @@ type ImageInfo struct {
 }
 ```
 
+### 필드 의미
+
+| 필드 | 설명 |
+|------|------|
+| `URL` | 이미지의 `src` 속성값; 유효한 URL 만 포함(`IsValidURL`로 검증), 유효하지 않은 URL 의 `<img>`는 결과에 나타나지 않음 |
+| `Alt` | `alt` 속성 원문; 비어 있으면 `IsDecorative`가 `true` |
+| `Title` | `title` 속성 원문(페이지 제목이 아님) |
+| `Width`/`Height` | HTML 속성의 **원본 문자열**(예: `"640"`, `"50%"`), 숫자로 파싱되지 않음 — 페이지마다 표기가 다를 수 있음 |
+| `IsDecorative` | `Alt`가 비어 있으면 `true`, 장식용 이미지 식별 및 건너뛰기에 사용 |
+| `Position` | 문서 내 1-based 순번; `PreserveImages = false`일 때 `Images` 슬라이스 전체가 비어 있음 |
+
+:::warning Width/Height 는 숫자 타입이 아님
+`Width`와 `Height`는 `int`가 아닌 `string` 타입이며, HTML 소스의 원본 표현을 보존합니다(단위, 백분율 등 포함 가능). 숫자가 필요할 때는 호출자가 직접 파싱해야 합니다.
+:::
+
 ## LinkInfo
 
 링크 정보입니다.
@@ -69,6 +84,17 @@ type LinkInfo struct {
     Position   int    `json:"position"`    // 문서 내 위치
 }
 ```
+
+### 필드 의미
+
+| 필드 | 설명 |
+|------|------|
+| `URL` | `href` 속성값; 유효한 URL 만 포함(`IsValidURL`로 검증), 유효하지 않은 URL 의 `<a>`는 Position 을 소비하지만 슬라이스에 추가되지 않음 |
+| `Text` | `<a>` 태그 내 모든 텍스트 노드의 연결(재귀적 `GetTextContent`) |
+| `Title` | `title` 속성 원문(링크 텍스트가 아님) |
+| `IsExternal` | URL 자체가 절대 외부 주소인지로 판정, **`BaseURL`과의 도메인 비교를 하지 않음** — 이는 `ExtractAllLinks`의 내/외부 링크 판정과 다름 |
+| `IsNoFollow` | `rel` 속성에 `nofollow` 포함 시(대소문자 구분 없음, ASCII 폴딩 매칭) `true` |
+| `Position` | 문서 내 1-based 순번; 유효하지 않은 `<a>`(href 가 유효하지 않거나 누락)도 순번을 소비하지만 슬라이스에 추가되지 않으므로 Position 이 불연속일 수 있음 |
 
 ## VideoInfo
 
@@ -85,6 +111,18 @@ type VideoInfo struct {
 }
 ```
 
+### Type 필드값 규칙
+
+| Type 값 | 의미 | 발생 시나리오 |
+|---------|------|----------|
+| `"embed"` | iframe 이 참조하는 비디오 페이지 | YouTube, Vimeo, Youku, Bilibili 등 임베드 플레이어 |
+| MIME 타입(예: `"video/mp4"`) | 비디오 파일 컨테이너 | `<source type="video/mp4">` 속성값 |
+| 빈 문자열 | 유형 미감지 | `<video src="...">`로 직접 소스 지정, `<source>` 자식 요소 없음 |
+
+:::tip 비디오 추출의 세 출처
+비디오 추출은 원본 HTML 스캔 → DOM 순회 → 정규식 폴백 순으로 실행되며, 각 단계에서 중복 제거. 자세한 내용은 [미디어 추출 가이드](../../guides/core-features/media-extraction)를 참조하세요.
+:::
+
 ## AudioInfo
 
 오디오 정보입니다.
@@ -96,6 +134,17 @@ type AudioInfo struct {
     Duration string `json:"duration"` // 재생 시간
 }
 ```
+
+### Type 필드값 규칙
+
+| Type 값 | 발생 시나리오 |
+|---------|----------|
+| MIME 타입(예: `"audio/mpeg"`) | `<source type="audio/mpeg">` 속성값 |
+| 빈 문자열 | `<audio src="...">`로 직접 소스 지정, `<source>` 자식 요소 없음 |
+
+:::warning .ogg 확장자의 이중성
+OGG 컨테이너는 비디오 또는 오디오를 담을 수 있으며, `.ogg` URL은 `Videos`와 `Audios`에 모두 나타납니다. 오디오 전용 변형인 `.oga`는 `Audios`에만 나타납니다.
+:::
 
 ## LinkResource
 

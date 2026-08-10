@@ -1,7 +1,7 @@
 ---
 sidebar_label: "HTTP 統合"
 title: "HTTP 統合 - CyberGo html | Web サービス実践"
-description: "CyberGo html と HTTP の統合実践：net/http 単一ページスクレイピング、並行バッチ最適化、コンテキストタイムアウト、Web サービス統合、本番デプロイ運用。"
+description: "CyberGo html と net/http の統合実践ガイド：単一ページスクレイピング、並行バッチ抽出の最適化、コンテキストタイムアウト設定、Web サービスへの組み込み、Processor シングルトン運用、本番デプロイ時のベストプラクティスを解説します。"
 sidebar_position: 1
 ---
 
@@ -329,7 +329,7 @@ result, _ := html.Extract(body, cfg)
 
 ## 次のステップ
 
-- [キャッシュと再利用](../advanced-patterns/processor-cache) - Processor ライフサイクル管理
-- [監査システム実践](../advanced-patterns/audit-pipeline) - プロダクション環境のセキュリティモニタリング
+- [キャッシュと再利用](../performance/processor-cache) - Processor ライフサイクル管理
+- [監査システム実践](../security/audit-pipeline) - プロダクション環境のセキュリティモニタリング
 - [API リファレンス：バッチ処理](../../api-reference/modules/batch) - 完全なバッチ API
-- [パフォーマンス最適化](../../advanced/performance) - パフォーマンスチューニングのヒント
+- [パフォーマンス最適化](../performance/performance) - パフォーマンスチューニングのヒント

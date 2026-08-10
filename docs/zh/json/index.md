@@ -103,6 +103,7 @@ func main() {
 |------|------|
 | [快速开始](./getting-started/) | 安装、基本用法、核心概念 |
 | [路径表达式语法](./getting-started/path-syntax) | 路径查询、切片、通配符、字段提取 |
+| [Processor 入门](./getting-started/processor-guide) | 何时使用 Processor、预解析优化、生命周期 |
 | [API 文档](./api-reference/) | 完整 API 参考 |
 | [大文件处理](./streaming/large-files) | 流式处理、分块读写、内存优化 |
 | [使用示例](./examples/) | 实战代码示例 |
@@ -143,5 +144,6 @@ func main() {
 ## 下一步
 
 - [快速开始](./getting-started/) — 5 分钟上手
+- [Processor 入门](./getting-started/processor-guide) — 何时使用处理器
 - [路径表达式语法](./getting-started/path-syntax) — 完整路径语法
 - [使用示例](./examples/) — 更多实战示例

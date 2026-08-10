@@ -102,10 +102,15 @@ The HTML library is built around three core types:
 |--------|------|-------------------|
 | Getting Started | [Quick Start](./getting-started/) | Installation, basic usage, two calling modes |
 | Core | [Content Extraction](./guides/core-features/content-extraction) | Extract family, Config, Result interpretation |
-| Formats | [Output Formats](./guides/core-features/output-formats) | Markdown / JSON output, custom templates |
-| Performance | [Cache & Reuse](./guides/advanced-patterns/processor-cache) | Processor lifecycle, cache tuning, batch processing |
-| Extensions | [Link Extraction](./guides/core-features/link-extraction) | Link extraction, grouping, resource discovery |
-| Security | [Audit Pipeline](./guides/advanced-patterns/audit-pipeline) | Audit system, custom Sinks, security monitoring |
+| Media | [Media Extraction](./guides/core-features/media-extraction) | Video, audio, and embedded content extraction |
+| Formats | [Output Formats](./guides/core-features/output-formats) | Markdown / JSON output, format configuration |
+| Links | [Link Extraction](./guides/core-features/link-extraction) | Link extraction, grouping, resource discovery |
+| Encoding | [Encoding Detection](./guides/core-features/encoding-detection) | Auto-detection, manual override, 15+ encodings |
+| Configuration | [Configuration Guide](./guides/core-features/configuration) | Four presets, six field categories, common combos |
+| Errors | [Error Handling](./guides/error-handling) | Five error types, errors.Is/As, context cancellation |
+| Performance | [Cache & Reuse](./guides/performance/processor-cache) | Processor lifecycle, cache tuning |
+| Batch | [Batch Processing](./guides/performance/batch-processing) | Concurrent batch extraction, WorkerPool tuning |
+| Security | [Security Overview](./guides/security/) | Security features, audit system, production checklist |
 | Advanced | [Testing & Custom](./guides/integration/testing-custom) | Custom Scorer, ContentNode, test mode |
 | Reference | [Cheat Sheet](./getting-started/cheatsheet) | Common API quick reference |
 

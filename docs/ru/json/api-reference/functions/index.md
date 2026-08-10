@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Обзор"
 title: "Функции пакета - CyberGo JSON | Справочник API"
-description: "Функции пакета CyberGo JSON: Get/GetString/GetInt запросы по пути, Set/Delete/MergeJSON модификация, Marshal/Unmarshal кодирование и ParseJSONL/ProcessBatch пакетная обработка."
+description: "Функции пакета CyberGo JSON: Get/GetString/GetInt запросы, Set/Delete/MergeJSON модификация, Marshal/Unmarshal кодирование и ProcessBatch пакетная обработка."
 sidebar_position: 1
 ---
 

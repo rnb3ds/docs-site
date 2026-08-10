@@ -233,4 +233,4 @@ func NewSecureLogger() (*dd.Logger, *dd.AuditLogger, error) {
 - [API 参考 - Security](../api-reference/security-audit/security) -- 安全过滤完整 API
 - [API 参考 - Audit](../api-reference/security-audit/audit) -- 审计日志完整 API
 - [API 参考 - Integrity](../api-reference/security-audit/integrity) -- 完整性签名 API
-- [生产检查清单](../security/production-checklist) -- 上线安全检查
+- [生产检查清单](../guides/security/production-checklist) -- 上线安全检查

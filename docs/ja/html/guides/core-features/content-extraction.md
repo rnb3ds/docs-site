@@ -1,7 +1,7 @@
 ---
 sidebar_label: "コンテンツ抽出実践"
 title: "コンテンツ抽出実践 - CyberGo html | 抽出フローガイド"
-description: "CyberGo html コンテンツ抽出実践：抽出フロー、スマート記事認識、Result フィールド解読、カスタム Scorer、エンコーディング検出処理を解説します。"
+description: "CyberGo html コンテンツ抽出実践ガイド：入力から Result までの抽出フロー、スマート記事認識メカニズム、Result 構造体の各フィールド解読、カスタム Scorer の実装、エンコーディング検出処理について詳しく解説します。"
 sidebar_position: 1
 ---
 
@@ -121,6 +121,30 @@ fmt.Println("タイトル：", result.Title)
 2. **最良候補の選択**：最もスコアの高いノードを記事コンテナとして選択
 3. **フォールバック**：適切な候補が見つからない場合、`<body>` ノードにフォールバック
 
+### デフォルトスコアラーのシグナル次元
+
+組み込みの `DefaultScorer` は多次元シグナルに基づいて総合的にスコアリングし、最もスコアの高いコンテナを選択します：
+
+| 次元 | 正のシグナル | 負のシグナル |
+|------|----------|----------|
+| **タグセマンティクス** | `<article>`(+1000)、`<main>`(+900)、`<section>`(+300)、`<body>`(+100) | `nav`/`aside`/`footer`/`header`/`script`/`style` は直接 0 を返す |
+| **class/id パターン** | `content`/`article`/`post`/`main`/`entry`/`story`（強い正）；`blog`/`news`/`detail`/`page`（中程度の正） | `comment`/`sidebar`/`nav`/`ad`/`menu`（強い負）；`widget`/`share`/`social`/`related`（中程度の負）；`promo`/`banner`/`sponsor`（弱い負） |
+| **段落密度** | サブツリー内の `<p>` 数に倍率を乗じて加点（段落が多いほど本文である可能性が高い） | — |
+| **テキスト長** | 閾値を超える長いテキストで加点；閾値未満の短いテキストで減点 | — |
+| **コンテンツ密度** | テキスト/タグ比が高い場合に増幅係数を乗算 | 比が低い場合に減衰係数を乗算 |
+| **リンク密度** | — | テキストが短くリンクが密集している場合にペナルティ（ナビゲーションバーやサイトマップの可能性） |
+| **句読点特徴** | カンマ密集（中国語のカンマ `，` を含む）は散文体を示唆し、加点 | — |
+| **ARIA role** | `role="main"`/`role="article"`(+500) | `role="navigation"`/`role="complementary"`(-400) |
+| **非表示要素** | — | `style="display:none"`/`visibility:hidden` または `hidden` 属性のノードは削除 |
+
+:::tip レイアウトラッパーの特別扱い
+class/id がコンテンツシグナル（`content`/`article`）と削除シグナル（`sidebar` など）を同時に含む場合——典型的なのが CSS レイアウトクラス `content-sidebar`——スコアラーはそのノードを**削除しません**。メインコンテンツを内包しているためです。セマンティックタグ `<article>`/`<main>`（または `role="main"`/`role="article"`）は class/id 削除ヒューリスティックから一律に除外され、`<article class="post-with-sidebar">` が誤って削除されないようにします。
+:::
+
+:::warning 記事認識は万能ではない
+記事認識はニュース、ブログ、ドキュメントなど明確な「本文領域」があるページに最も適しています。ナビゲーションページ、リストページ、ギャラリーなどの非記事型ページでは本文を正確に特定できない場合があります——その場合は `ExtractArticle = false` を設定して `<body>` 全体のコンテンツを抽出できます。
+:::
+
 :::tip 適用シーン
 記事認識は、ニュース、ブログ、ドキュメントなど明確な「本文領域」があるページに最適です。ナビゲーションページやリストページでは、本文を正確に特定できない場合があります。
 :::
@@ -168,6 +192,61 @@ fmt.Println(text)
 
 これはテキスト分析や検索インデックス構築などのシーンで非常に実用的です。
 
+## テーブルレンダリング
+
+HTML 中の `<table>` は `TableFormat` 設定に従って抽出テキストにレンダリングされます：
+
+```go
+cfg := html.DefaultConfig()
+cfg.TableFormat = "markdown" // デフォルト、または "html"
+```
+
+| フォーマット | レンダリング効果 | 適用シーン |
+|------|----------|----------|
+| `"markdown"` | Markdown テーブル（ヘッダー区切り行を含む）；`colspan` は繰り返しセルに展開；幅定義のみの構造行はスキップ | 人間の閲覧、Markdown 消費 |
+| `"html"` | 元の HTML `<table>` タグを保持（`colspan`/`rowspan` はそのまま保持）；構造行も保持 | 正確なテーブル構造が必要な下流処理 |
+
+:::tip フォーマットは大文字小文字を区別しない
+`TableFormat` の値は大文字小文字を区別しません（`"Markdown"` と `"markdown"` は同等）。空の値は `"markdown"` にフォールバックします。
+:::
+
+例——テーブルを含む HTML の抽出：
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<html><body><article>
+        <h1>価格表</h1>
+        <table>
+            <tr><th>製品</th><th>価格</th></tr>
+            <tr><td>ベーシック版</td><td>無料</td></tr>
+            <tr><td>プロ版</td><td>¥99/月</td></tr>
+        </table>
+    </article></body></html>`)
+
+    result, err := html.Extract(data)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(result.Text)
+    // 出力（TableFormat = "markdown" の場合）：
+    // 価格表
+    //
+    // | 製品       | 価格    |
+    // |------------|---------|
+    // | ベーシック版 | 無料    |
+    // | プロ版      | ¥99/月  |
+}
+```
+
 ## 非 UTF-8 エンコーディングの処理
 
 ライブラリは 15+ 種類の文字エンコーディング（UTF-8、GBK、Shift_JIS、Windows-1252 など）を自動検出し、自動的に UTF-8 に変換します。
@@ -198,6 +277,6 @@ if errors.Is(err, html.ErrProcessingTimeout) {
 
 ## 次のステップ
 
-- [出力フォーマットの選択](./output-formats) - 用途に合った出力フォーマットの選択
-- [Processor 再利用とキャッシュ](../advanced-patterns/processor-cache) - 高頻度呼び出しのパフォーマンス最適化
+- [出力フォーマット実践](./output-formats) - 用途に合った出力フォーマットの選択
+- [Processor 再利用とキャッシュ](../performance/processor-cache) - 高頻度呼び出しのパフォーマンス最適化
 - [API リファレンス：パッケージ関数](../../api-reference/core/functions) - 完全な関数シグネチャ
