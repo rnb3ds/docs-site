@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Connection Pool & Proxy"
 title: "Connection Pool & Proxy - CyberGo HTTPC | Pool Tuning"
-description: "HTTPC connection pool and proxy configuration guide: MaxIdleConns pool parameter tuning with scenario recommendations, manual ProxyURL proxy and SOCKS5, EnableSystemProxy system-proxy detection, ProxyPool proxy rotation and passive circuit breaking, ProxyRotateOnStatus status-code rotation, and DoH and HTTP/2 configuration practices."
+description: "HTTPC connection pool and proxy configuration guide: MaxIdleConns pool parameter tuning with scenario recommendations, manual ProxyURL proxy and SOCKS5, EnableSystemProxy system-proxy detection, ProxyPool proxy rotation and passive circuit breaking, ProxyRotatePerRequest per-request rotation, ProxyRotateOnStatus status-code rotation, and DoH and HTTP/2 configuration practices."
 sidebar_position: 8
 ---
 
@@ -117,6 +117,7 @@ Each request automatically selects a proxy from the pool. Supports `http`, `http
 | `ProxyPoolStrategy` | `ProxyStrategy` | `RoundRobin` | Selection strategy |
 | `ProxyFailureThreshold` | `int` | `3` (0 falls back) | Consecutive failure threshold for circuit breaking |
 | `ProxyCooldown` | `time.Duration` | `30s` (0 falls back) | Cooldown for circuit-broken proxies |
+| `ProxyRotatePerRequest` | `bool` | `false` | Force a different proxy for each independent request (disables idle connection reuse) |
 | `ProxyRotateOnStatus` | `[]int` | `nil` | Status codes that trigger proxy rotation |
 
 #### Selection Strategy
@@ -174,6 +175,30 @@ client, err := httpc.New(cfg)
 
 When `ProxyRotateOnStatus` is set and the pool has multiple proxies, the retry budget is automatically raised to `len(ProxyPool) - 1` (capped at `MaxRetries` limit of 10), ensuring every proxy gets a chance.
 :::
+
+#### Per-Request Rotation
+
+`ProxyRotatePerRequest` solves the problem of **connection reuse** causing proxy-tunnel pinning: HTTP connection pools reuse established TCP connections, including their proxy tunnels. This means consecutive requests to the same host reuse the previous request's proxy, even when `ProxyPoolStrategy` has already rotated the selector cursor.
+
+When enabled, all idle connections are closed at the start of each request, forcing the Transport to re-evaluate the proxy pool — the trade-off is no connection reuse (each request establishes a new connection + proxy tunnel), but it guarantees per-request rotation:
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyRotatePerRequest = true  // Rotate proxy on each request
+
+client, err := httpc.New(cfg)
+```
+
+:::tip
+Suited for scraping/data collection targeting the same host — each request has a different source IP, reducing the risk of being IP-blocked by the target site. For requests to different hosts, connection reuse does not pin the same proxy, so it is typically unnecessary to enable.
+:::
+
+Like `ProxyRotateOnStatus`, `ProxyRotatePerRequest` also automatically raises the retry budget to `len(ProxyPool) - 1` when the pool has multiple proxies, ensuring each proxy is tried at least once.
 
 ### Proxy Priority
 

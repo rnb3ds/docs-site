@@ -350,7 +350,7 @@ func main() {
 
 ## Proxy Pool and Retry Interaction
 
-When `ProxyRotateOnStatus` is configured, HTTPC automatically raises `MaxRetries` to ensure every proxy in the pool is tried at least once. This is implemented by `calculateMaxRetries`:
+When `ProxyRotateOnStatus` or `ProxyRotatePerRequest` is configured, HTTPC automatically raises `MaxRetries` to ensure every proxy in the pool is tried at least once. This is implemented by `calculateMaxRetries`:
 
 ```
 effective MaxRetries = max(configured MaxRetries, len(ProxyPool) - 1)
@@ -361,7 +361,7 @@ effective MaxRetries = max(configured MaxRetries, len(ProxyPool) - 1)
 
 ```
 ProxyPool = [proxy1, proxy2, proxy3, proxy4, proxy5]
-ProxyRotateOnStatus = [403]
+ProxyRotateOnStatus = [403]   // or ProxyRotatePerRequest = true
 configured MaxRetries = 3
 
 -> Auto-adjusted to 4 (= 5 - 1), ensuring all 5 proxies are each tried once

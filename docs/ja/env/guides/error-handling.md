@@ -1,13 +1,14 @@
 ---
 sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo env | センチネルエラーと復旧戦略"
-description: "CyberGo env エラー処理ガイド。16 個のセンチネルエラーの errors.Is 検査、ParseError/FileError/SecurityError 構造化エラーの errors.As 抽出、復旧・グレードダウン戦略、エラーチェーン追跡をプロダクション観点で解説します。"
-sidebar_position: 2
+description: "CyberGo env エラー処理ガイド。16 個のセンチネルエラーの errors.Is 精密マッチング、ParseError/FileError/SecurityError などの構造化エラーの errors.As コンテキスト抽出、復旧・デグラデーション戦略とエラーチェーン Unwrap 追跡を詳解。本番環境のエラー分類プラクティスを付属。"
+sidebar_position: 5
+sidebar_icon: "🛡️"
 ---
 
 # エラー処理
 
-env ライブラリは構造化されたエラー処理メカニズムを提供し、`errors.Is` と `errors.As` パターンをサポートしています。
+env ライブラリは構造化されたエラー処理機構を提供し、`errors.Is` と `errors.As` パターンをサポートします。
 
 ## センチネルエラー
 
@@ -52,12 +53,12 @@ var (
 )
 ```
 
-**禁止キーのチェック（実際は `*SecurityError` を返し、`ErrSecurityViolation` に一致）：**
+**禁止キーのチェック（実際は `*SecurityError` を返し、`ErrSecurityViolation` にマッチ）：**
 
 ```go
 err := loader.Set("PATH", "/malicious")
 if errors.Is(err, env.ErrSecurityViolation) {
-    log.Println("禁止キーの設定を試みました")
+    log.Println("禁止キーの設定を試行")
 }
 ```
 
@@ -73,7 +74,7 @@ var ErrExpansionDepth = errors.New("variable expansion depth exceeded")
 var ErrMaxVariables = errors.New("maximum number of variables exceeded")
 ```
 
-### ステータスエラー
+### 状態エラー
 
 ```go
 var (
@@ -85,25 +86,25 @@ var (
 )
 ```
 
-**確認方法：**
+**チェック方法：**
 
 ```go
-// ローダーがクローズ済みか確認
+// ローダーがクローズ済みかチェック
 if errors.Is(err, env.ErrClosed) {
-    // ローダークローズ済み
+    // ローダーはクローズ済み
 }
 
-// デフォルトローダーが初期化済みか確認
+// デフォルトローダーが初期化済みかチェック
 if errors.Is(err, env.ErrAlreadyInitialized) {
-    // デフォルトローダーが既に存在し、Load を繰り返し呼び出せません
+    // デフォルトローダーが既存、Load() を繰り返し呼び出せない
 }
 
-// デフォルトローダーが未初期化か確認
+// デフォルトローダーが未初期化かチェック
 if errors.Is(err, env.ErrNotInitialized) {
     // 先に env.Load() または env.LoadWithConfig() を呼び出す必要がある
 }
 
-// 必須キーが不足していないか確認（実際は *ValidationError、Rule=="required"）
+// 必須キーが不足しているかチェック（実際は *ValidationError、Rule=="required" を返す）
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
     // 必須キーが不足：valErr.Message に不足キーのリストを含む
@@ -119,26 +120,26 @@ var ErrValidateRequiredUnsupported = errors.New(
 )
 ```
 
-カスタムバリデーターが `KeyValidator` インターフェースのみを実装し、完全な `Validator` インターフェースを実装していない場合、`ValidateRequired` を呼び出すとこのエラーが返されます。
+カスタムバリデーターが `KeyValidator` インターフェースのみを実装し、完全な `Validator` インターフェースを実装していない場合、`ValidateRequired` を呼び出すとこのエラーを返します。
 
-**確認方法：**
+**チェック方法：**
 
 ```go
 if errors.Is(err, env.ErrValidateRequiredUnsupported) {
-    // カスタムバリデーターは必須キー検証をサポートしていません
+    // カスタムバリデーターは必須キー検証をサポートしない
     // 完全な Validator インターフェースを実装する必要がある
 }
 ```
 
 ::: tip 解決方法
-`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の 3 つのメソッドを含む）を実装してください。
+`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の 3 メソッドを含む）を実装してください。
 :::
 
 ## 構造化エラー型
 
 ### ParseError
 
-解析エラー、位置情報を含む：
+解析エラー。位置情報を含みます：
 
 ```go
 type ParseError struct {
@@ -182,7 +183,7 @@ type FileError struct {
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
     if fileErr.Size > 0 {
-        log.Printf("ファイル %s のサイズ %d が制限 %d を超過\n",
+        log.Printf("ファイル %s サイズ %d が制限 %d を超過\n",
             fileErr.Path, fileErr.Size, fileErr.Limit)
     }
 }
@@ -240,10 +241,10 @@ if errors.As(err, &valErr) {
 ```go
 type ExpansionError struct {
     Key   string             // キー名
-    Depth int                // 現在の深度
+    Depth int                // 現在の深さ
     Limit int                // 制限
     Chain string             // 展開チェーン
-    Kind  ExpansionErrorKind // エラー原因の分類（ゼロ値 = 深度/循環）
+    Kind  ExpansionErrorKind // エラー原因カテゴリ（ゼロ値 = 深さ/循環）
 }
 ```
 
@@ -252,7 +253,7 @@ type ExpansionError struct {
 ```go
 var expErr *env.ExpansionError
 if errors.As(err, &expErr) {
-    log.Printf("展開深度超過: %s (チェーン: %s)\n", expErr.Key, expErr.Chain)
+    log.Printf("展開深さ超過: %s (チェーン: %s)\n", expErr.Key, expErr.Chain)
 }
 ```
 
@@ -324,7 +325,7 @@ if err != nil && env.IsMarshalError(err) {
 }
 ```
 
-## エラー処理模式
+## エラー処理パターン
 
 ### errors.Is パターン
 
@@ -336,10 +337,10 @@ err := loader.LoadFiles(".env")
 switch {
 case errors.Is(err, env.ErrFileNotFound):
     // ファイルが存在しない
-    log.Println("設定ファイルが存在しません。デフォルト値を使用します")
+    log.Println("設定ファイルが存在しません、デフォルト値を使用します")
 
 case errors.Is(err, env.ErrFileTooLarge):
-    // ファイルが大きすぎます
+    // ファイルが大きすぎる
     log.Fatal("設定ファイルが大きすぎます")
 
 case errors.Is(err, env.ErrSecurityViolation):
@@ -351,7 +352,7 @@ case err != nil:
     log.Fatalf("読み込み失敗: %v", err)
 }
 
-// キー形式が不正（実際は *ValidationError、Field=="key"）
+// キー形式不正（実際は *ValidationError、Field=="key" を返す）
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Field == "key" {
     log.Fatalf("無効なキーを検出: %s", valErr.Message)
@@ -371,7 +372,7 @@ if err == nil {
 // 解析エラーの抽出を試行
 var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
-    log.Fatalf("解析エラー %s 第 %d 行: %v",
+    log.Fatalf("解析エラー %s の %d 行目: %v",
         parseErr.File, parseErr.Line, parseErr.Err)
 }
 
@@ -388,7 +389,7 @@ if errors.As(err, &secErr) {
 }
 
 // その他のエラー
-log.Fatalf("不明なエラー: %v", err)
+log.Fatalf("未知のエラー: %v", err)
 ```
 
 ### 組み合わせ処理
@@ -412,7 +413,7 @@ func handleLoadError(err error) {
             fileErr.Path, fileErr.Size, fileErr.Limit)
     }
 
-    // 次に構造化エラーをチェック
+    // その後構造化エラーをチェック
     var parseErr *env.ParseError
     if errors.As(err, &parseErr) {
         log.Fatalf("解析エラー %s:%d - %v",
@@ -424,7 +425,7 @@ func handleLoadError(err error) {
         log.Fatalf("セキュリティエラー: %s", secErr.Reason)
     }
 
-    // 不明なエラー
+    // 未知のエラー
     log.Fatalf("エラー: %v", err)
 }
 ```
@@ -439,7 +440,7 @@ func loadConfig() *Config {
     cfg.Filenames = nil
     loader, err := env.New(cfg)
     if err != nil {
-        log.Printf("設定エラー: %v，デフォルト設定を使用", err)
+        log.Printf("設定エラー: %v、デフォルト設定を使用", err)
         return defaultConfig()
     }
     defer loader.Close()
@@ -447,7 +448,7 @@ func loadConfig() *Config {
     err = loader.LoadFiles(".env")
     if err != nil {
         if errors.Is(err, env.ErrFileNotFound) {
-            log.Println("設定ファイルが存在しません。デフォルト値を使用します")
+            log.Println("設定ファイルが存在しません、デフォルト値を使用")
             return defaultConfig()
         }
         log.Fatalf("読み込み失敗: %v", err)
@@ -524,7 +525,7 @@ func main() {
         handleValidationError(err)
     }
 
-    log.Println("設定の読み込みに成功")
+    log.Println("設定の読み込みに成功しました")
 }
 
 func handleLoadError(err error) {
@@ -573,5 +574,5 @@ func handleValidationError(err error) {
 ## 関連ドキュメント
 
 - [定数とエラー](/ja/env/api-reference/constants) - 完全なエラーリスト
-- [Config API](/ja/env/api-reference/config) - 制限設定
-- [セキュリティ概要](/ja/env/security/) - セキュリティエラー処理
+- [Config API](/ja/env/api-reference/config) - 設定制限の設定
+- [セキュリティ概要](/ja/env/security/) - セキュリティエラーの処理

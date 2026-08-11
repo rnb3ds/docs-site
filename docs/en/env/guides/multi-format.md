@@ -1,13 +1,14 @@
 ---
 sidebar_label: "Multi-format Config"
 title: "Multi-format Config - CyberGo env | .env/JSON/YAML"
-description: "CyberGo env multi-format: load .env/JSON/YAML, auto-detect, flatten nested keys, merge priority, Marshal/UnmarshalMap, RegisterParser for containers."
+description: "Multi-format configuration loading guide for CyberGo env, supporting .env, JSON, and YAML auto-detection and mixed loading, covering nested object and array flattening to key names, key-value merge priority, Marshal/UnmarshalMap format conversion, and RegisterParser for custom formats, suitable for microservices and containerized scenarios."
 sidebar_position: 3
+sidebar_icon: "🔧"
 ---
 
 # Multi-format Config
 
-The env library supports `.env`, JSON, and YAML configuration formats with automatic format detection and loading.
+The env library supports three configuration formats: `.env`, JSON, and YAML, with automatic format detection and loading.
 
 ## Format Detection
 
@@ -51,7 +52,7 @@ loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 
 ### Override Order
 
-Files loaded later override earlier ones:
+Later-loaded files overwrite earlier ones:
 
 ```go
 // Order: base -> env -> json -> yaml
@@ -78,13 +79,13 @@ loader.LoadFiles(
 }
 ```
 
-::: tip Note
+:::tip
 Nested objects are flattened to `DATABASE_HOST`, `DATABASE_PORT`.
 :::
 
-### Key Name Resolution
+### Key Resolution
 
-Nested structures in JSON/YAML are flattened for storage. The library supports multiple key name access methods:
+Nested JSON/YAML structures are flattened for storage. The library supports multiple key access methods:
 
 ```go
 loader.LoadFiles("config.json")
@@ -92,7 +93,7 @@ loader.LoadFiles("config.json")
 // JSON: {"database": {"host": "localhost", "port": 5432}}
 // Stored as: DATABASE_HOST=localhost, DATABASE_PORT=5432
 
-// Method 1: Flattened key name (recommended)
+// Method 1: Flat key (recommended)
 host := loader.GetString("DATABASE_HOST")   // localhost
 port := loader.GetInt("DATABASE_PORT")      // 5432
 
@@ -104,23 +105,23 @@ port := loader.GetInt("database.port")      // 5432
 host := loader.GetString("DATABASE.HOST")   // localhost
 ```
 
-**Resolution Rules:**
+**Resolution rules:**
 
-| Input Key | Converted To |
-|-----------|-------------|
+| Input Key | Converted to |
+|-----------|---------------|
 | `"DATABASE_HOST"` | `"DATABASE_HOST"` (exact match) |
-| `"database.host"` | `"DATABASE_HOST"` (dot to underscore) |
+| `"database.host"` | `"DATABASE_HOST"` (dots to underscores) |
 | `"app.config.name"` | `"APP_CONFIG_NAME"` |
 | `"servers.0.host"` | `"SERVERS_0_HOST"` (array index) |
 
-::: tip Recommended Usage
-- **Use flattened key names in code**: `GetString("DATABASE_HOST")` - clear and efficient
-- **Readable paths in config files**: JSON/YAML uses natural nested structures
+:::tip
+- **Use flat keys in code**: `GetString("DATABASE_HOST")` - explicit and efficient
+- **Readable paths in config files**: JSON/YAML uses natural nested structure
 :::
 
-**Flattening Rules:**
+**Flattening rules:**
 
-| JSON Path | Storage Key |
+| JSON Path | Stored Key |
 |-----------|------------|
 | `database.host` | `DATABASE_HOST` |
 | `database.port` | `DATABASE_PORT` |
@@ -141,7 +142,7 @@ JSON arrays are flattened to indexed keys:
 ```
 
 ```go
-// Access array elements using flattened key names
+// Access array elements using flat keys
 host0 := loader.GetString("SERVERS_0_HOST")  // server1.example.com
 port0 := loader.GetInt("SERVERS_0_PORT")     // 8080
 host1 := loader.GetString("SERVERS_1_HOST")  // server2.example.com
@@ -163,20 +164,20 @@ for i := 0; ; i++ {
 ```go
 cfg := env.DefaultConfig()
 
-// Convert null values to empty strings (default: true)
+// null values convert to empty strings (default true)
 cfg.JSONNullAsEmpty = true
 
-// Convert numbers to strings (default: true)
+// numbers convert to strings (default true)
 cfg.JSONNumberAsString = true
 
-// Convert booleans to strings (default: true)
+// booleans convert to strings (default true)
 cfg.JSONBoolAsString = true
 
-// Maximum nesting depth (default: 10)
+// Max nesting depth (default 10)
 cfg.JSONMaxDepth = 20
 ```
 
-### Type Conversion Examples
+### Type Conversion Example
 
 ```json
 {
@@ -220,14 +221,14 @@ ALLOWED_HOSTS:
   - example.com
 ```
 
-### Key Name Resolution
+### Key Resolution
 
 YAML nested structures use the same flattening rules as JSON:
 
 ```go
 loader.LoadFiles("config.yaml")
 
-// Access using flattened key names
+// Access using flat keys
 host := loader.GetString("DATABASE_HOST")        // localhost
 user := loader.GetString("DATABASE_USER")        // postgres
 ```
@@ -245,7 +246,7 @@ servers:
 ```
 
 ```go
-// Access using flattened key names
+// Access using flat keys
 host0 := loader.GetString("SERVERS_0_HOST")  // server1.example.com
 port0 := loader.GetInt("SERVERS_0_PORT")     // 8080
 host1 := loader.GetString("SERVERS_1_HOST")  // server2.example.com
@@ -259,20 +260,20 @@ hosts := env.GetSliceFrom[string](loader, "ALLOWED_HOSTS") // ["localhost", "exa
 ```go
 cfg := env.DefaultConfig()
 
-// Convert null/~ values to empty strings (default: true)
+// null/~ values convert to empty strings (default true)
 cfg.YAMLNullAsEmpty = true
 
-// Convert numbers to strings (default: true)
+// numbers convert to strings (default true)
 cfg.YAMLNumberAsString = true
 
-// Convert booleans to strings (default: true)
+// booleans convert to strings (default true)
 cfg.YAMLBoolAsString = true
 
-// Maximum nesting depth (default: 10)
+// Max nesting depth (default 10)
 cfg.YAMLMaxDepth = 15
 ```
 
-### Type Conversion Examples
+### Type Conversion Example
 
 ```yaml
 PORT: 8080
@@ -302,7 +303,7 @@ rates := env.GetSliceFrom[float64](loader, "RATES")  // [0.1, 0.2, 0.3]
 ### File Structure
 
 ```bash
-# Comments
+# Comment
 APP_NAME=myapp
 APP_PORT=8080
 DEBUG=true
@@ -340,8 +341,8 @@ apiURL := loader.GetString("API_URL")
 
 | Syntax | Description |
 |--------|-------------|
-| `${VAR}` | Reference variable |
-| `${VAR:-default}` | Use default value when variable does not exist |
+| `${VAR}` | Reference a variable |
+| `${VAR:-default}` | Use default if variable doesn't exist |
 
 ```bash
 # Expansion examples
@@ -351,7 +352,7 @@ PORT=8080
 # Reference other variables
 URL=http://${HOST}:${PORT}
 
-# Default values (reference another variable, use default when undefined)
+# Default value (reference other variables, use default when undefined)
 TIMEOUT_VALUE=${TIMEOUT:-30s}
 DEBUG_VALUE=${DEBUG:-false}
 ```
@@ -359,7 +360,7 @@ DEBUG_VALUE=${DEBUG:-false}
 ### export Syntax
 
 ```bash
-# export prefix supported (when AllowExportPrefix = true)
+# Supports export prefix (when AllowExportPrefix = true)
 export DATABASE_HOST=localhost
 export DATABASE_PORT=5432
 ```
@@ -368,7 +369,7 @@ export DATABASE_PORT=5432
 
 ```go
 cfg := env.DefaultConfig()
-cfg.AllowYamlSyntax = true  // Enable YAML-style syntax
+cfg.AllowYamlSyntax = true  // Enable YAML style
 ```
 
 ```bash
@@ -377,7 +378,7 @@ KEY: value
 ANOTHER_KEY: "quoted value"
 ```
 
-## Mixed Configuration Patterns
+## Mixed Configuration Modes
 
 ### Development/Production Separation
 
@@ -446,14 +447,14 @@ loader.LoadFiles(
 ### Configuration Priority
 
 ```text
-CLI flags > Environment variables > Local config > Environment config > Base config
+Command-line args > Environment variables > local config > environment config > base config
 ```
 
 ## Serialization
 
 ### Marshal
 
-Serialize configuration to a specified format:
+Serializes configuration to the specified format. Prepare data first, then call `env.Marshal` with the target format:
 
 ```go
 data := map[string]string{
@@ -499,15 +500,15 @@ cfg := Config{Host: "localhost", Port: 8080}
 
 ::: code-group
 
-```go [to .env]
+```go [To .env]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
 ```
 
-```go [to JSON]
+```go [To JSON]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
 ```
 
-```go [to YAML]
+```go [To YAML]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
 
@@ -515,34 +516,34 @@ yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 
 ### UnmarshalMap
 
-Deserialize to a map:
+Deserialize to map:
 
 ::: code-group
 
-```go [from .env]
+```go [From .env]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
 ```
 
-```go [from JSON]
+```go [From JSON]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
 ```
 
-```go [from YAML]
+```go [From YAML]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
 ```
 
 :::
 
-::: tip Auto-detect format
-Pass `env.FormatAuto` to let the library determine the format from content: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`.
+:::tip
+Pass `env.FormatAuto` to let the library auto-detect the format from content: `data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`.
 :::
 
 ### UnmarshalStruct
 
-Deserialize to a struct:
+Deserialize to struct:
 
 ```go
 type Config struct {
@@ -555,29 +556,29 @@ var cfg Config
 
 ::: code-group
 
-```go [from .env]
+```go [From .env]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
 ```
 
-```go [from JSON]
+```go [From JSON]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
 ```
 
-```go [from YAML]
+```go [From YAML]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
 
 :::
 
-## Custom Formats
+## Custom Format
 
-### Register a Parser
+### Register Parser
 
 ```go
 // Define format constant
 const FormatTOML env.FileFormat = 100
 
-// Implement the EnvParser interface
+// Implement EnvParser interface
 type TOMLParser struct {
     cfg       env.Config
     validator env.Validator
@@ -591,7 +592,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// Register the parser
+// Register parser
 func init() {
     env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &TOMLParser{
@@ -603,7 +604,7 @@ func init() {
 }
 ```
 
-See [Custom Parser](/en/env/guides/custom-parser) for details.
+See [Custom Parser](/en/env/guides/custom-parser).
 
 ## Complete Example
 
@@ -653,7 +654,7 @@ func main() {
 
 ## Related Documentation
 
-- [Serialization](/en/env/guides/serialization) - Serialization/deserialization details
+- [Serialization](/en/env/guides/serialization) - Serialization/deserialization in depth
 - [ComponentFactory API](/en/env/api-reference/factory) - Format detection and parser registration
 - [Custom Parser](/en/env/guides/custom-parser) - Adding custom formats
 - [Config API](/en/env/api-reference/config) - JSON/YAML parsing configuration

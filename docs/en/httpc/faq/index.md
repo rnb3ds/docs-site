@@ -107,13 +107,15 @@ cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
 
 ## How does proxy-pool rotation work?
 
-**Answer:** The proxy pool rotates IPs through two mechanisms:
+**Answer:** The proxy pool rotates IPs through three mechanisms:
 
 **1. Strategy rotation** (on each selection): `ProxyStrategyRoundRobin` selects proxies in sequential order, advancing to the next each time, so retries **naturally land on different IPs** with no extra configuration. `ProxyStrategyRandom` picks uniformly at random from healthy proxies.
 
-**2. Status-code-triggered rotation** (on response): set `ProxyRotateOnStatus` (e.g. `[]int{403}`); when the response returns one of these status codes and `Retry.MaxRetries > 0`, a retry is triggered and strategy rotation ensures an IP switch. Useful for bypassing CF/WAF-style IP-level blocking.
+**2. Per-request rotation** (on request start): set `ProxyRotatePerRequest = true`; at the start of each independent request, all idle connections are closed, forcing the Transport to re-evaluate the proxy pool. When disabled, HTTP connection reuse causes consecutive requests to the same host to reuse the previous request's proxy tunnel, bypassing strategy rotation. The trade-off is no connection reuse (each request establishes a new connection), but it guarantees per-request rotation. Useful for scraping/data collection targeting the same host — each request has a different source IP.
 
-**3. Passive circuit-breaking and auto-recovery**: after consecutive connection failures (dial/TLS) reach `ProxyFailureThreshold` (default 3), the proxy is temporarily removed from the rotation pool and restored via half-open probing after `ProxyCooldown` (default 30s). Note that HTTP status codes do **not** trigger circuit-breaking — because blocking is often target-site-specific (a proxy blocked on one site may work fine on another).
+**3. Status-code-triggered rotation** (on response): set `ProxyRotateOnStatus` (e.g. `[]int{403}`); when the response returns one of these status codes and `Retry.MaxRetries > 0`, a retry is triggered and strategy rotation ensures an IP switch. Useful for bypassing CF/WAF-style IP-level blocking.
+
+In addition, the proxy pool has built-in **passive circuit-breaking and auto-recovery**: after consecutive connection failures (dial/TLS) reach `ProxyFailureThreshold` (default 3), the proxy is temporarily removed from the rotation pool and restored via half-open probing after `ProxyCooldown` (default 30s). Note that HTTP status codes do **not** trigger circuit-breaking — because blocking is often target-site-specific (a proxy blocked on one site may work fine on another).
 
 ```go
 cfg := httpc.DefaultConfig()

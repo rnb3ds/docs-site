@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Overview"
-title: "API Reference - CyberGo env | Interface Docs"
-description: "CyberGo env API reference index: package functions, Config, Loader, SecureValue, interfaces, ComponentFactory, constants/errors with method-signature lookup."
+title: "API Reference - CyberGo env | Complete Interface Docs"
+description: "Complete API reference navigation for CyberGo env, covering seven modules: package-level convenience functions, Config configuration, Loader, SecureValue, core interface definitions, ComponentFactory, and constants/errors with detailed entry points and method signature indices."
 sidebar_position: 1
 ---
 
@@ -18,10 +18,10 @@ Complete API reference documentation for the env library.
 - [Config API](./config) - Configuration options and presets
 - [SecureValue API](./secure-value) - Secure value handling
 
-## Types & Interfaces
+## Types and Interfaces
 
 - [Interfaces](./interfaces) - All interface type definitions
 - [Constants & Errors](./constants) - Constants, sentinel errors, and error types
-- [ComponentFactory](./factory) - ComponentFactory and extension points
+- [Component Factory](./factory) - ComponentFactory and extension points
 
 </div>

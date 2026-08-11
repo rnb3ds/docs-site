@@ -1,6 +1,6 @@
 ---
 sidebar_label: "概述"
-title: "环境变量管理 - CyberGo env | Go 配置库"
+title: "环境变量管理 - CyberGo env | 安全环境变量配置"
 description: "CyberGo env 是高安全 Go 环境变量管理库，支持 .env、JSON、YAML 多格式自动检测加载与类型安全转换，内置 SecureValue 内存锁定与自动清零、分片锁线程安全、${VAR} 变量展开、env 标签结构体映射和完整审计日志，适用于微服务与云原生配置管理。"
 ---
 
@@ -17,6 +17,28 @@ description: "CyberGo env 是高安全 Go 环境变量管理库，支持 .env、
 - **审计日志** - 完整操作追踪
 - **变量展开** - `${VAR}` 语法支持
 - **结构体映射** - 标签驱动的配置绑定
+
+## 按场景导航
+
+不知道从哪开始？按你的需求选择：
+
+| 我想要... | 去哪里看 |
+|-----------|---------|
+| 5 分钟快速上手 | [快速开始](/zh/env/getting-started/) |
+| 安全存储密码、密钥 | [安全概述](/zh/env/security/) → [SecureValue](/zh/env/api-reference/secure-value) |
+| 防止敏感数据交换到磁盘 | [内存锁定](/zh/env/security/memory-locking) |
+| 在日志中安全处理敏感数据 | [敏感数据脱敏](/zh/env/security/data-masking) |
+| 把环境变量映射到 struct | [结构体映射](/zh/env/guides/struct-mapping) |
+| 加载 JSON/YAML 配置文件 | [多格式配置](/zh/env/guides/multi-format) |
+| 配置变量引用与复用 | [变量展开](/zh/env/guides/variable-expansion) |
+| 序列化/导出配置 | [序列化](/zh/env/guides/serialization) |
+| 记录安全审计日志 | [审计日志](/zh/env/guides/audit-logging) |
+| 处理和匹配错误 | [错误处理](/zh/env/guides/error-handling) |
+| 编写单元测试 | [测试场景](/zh/env/guides/testing) |
+| 扩展自定义文件格式 | [自定义解析器](/zh/env/guides/custom-parser) |
+| 上线前安全检查 | [生产检查清单](/zh/env/security/production-checklist) |
+| 查看常用代码片段 | [速查表](/zh/env/getting-started/cheatsheet) |
+| 查找常见问题解答 | [FAQ](/zh/env/reference/faq) |
 
 ## 主要功能概览
 

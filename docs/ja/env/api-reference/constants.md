@@ -1,13 +1,13 @@
 ---
 sidebar_label: "定数とエラー"
 title: "定数とエラー - CyberGo env | センチネルエラーとセキュリティ定数"
-description: "CyberGo env の定数とエラー参照。DefaultMaxFileSize・MaxVariables 制限、ErrFileNotFound センチネル、ParseError、DefaultForbiddenKeys、IsSensitiveKey・MaskValue ユーティリティを提供します。"
+description: "CyberGo env の定数とエラーリファレンス。DefaultMaxFileSize と MaxVariables の制限、ErrFileNotFound センチネルエラー、ParseError 型、DefaultForbiddenKeys 禁止キー、IsSensitiveKey、MaskValue ユーティリティ関数を含みます。"
 sidebar_position: 7
 ---
 
 # 定数とエラー
 
-ライブラリが定義する定数、エラー型、センチネルエラー、事前定義変数。
+ライブラリが定義する定数、エラー型、センチネルエラー、定義済み変数。
 
 ## セキュリティ制限定数
 
@@ -15,10 +15,10 @@ sidebar_position: 7
 
 ```go
 const (
-    // DefaultMaxFileSize - 単一ファイルの最大バイト数
+    // DefaultMaxFileSize - 1 ファイルの最大バイト数
     DefaultMaxFileSize int64 = 2 * 1024 * 1024  // 2 MB
 
-    // DefaultMaxLineLength - 単一行の最大長
+    // DefaultMaxLineLength - 1 行の最大長
     DefaultMaxLineLength int = 1024  // 1 KB
 
     // DefaultMaxKeyLength - キー名の最大長
@@ -30,41 +30,41 @@ const (
     // DefaultMaxVariables - ファイルごとの最大変数数
     DefaultMaxVariables int = 500
 
-    // DefaultMaxExpansionDepth - 変数展開の最大深度
+    // DefaultMaxExpansionDepth - 変数展開の最大深さ
     DefaultMaxExpansionDepth int = 5
 )
 ```
 
-### ハードリミット
+### ハード上限
 
 ::: warning 注意
-以下はライブラリ内部のハードリミット（未エクスポート）で、`Config.Validate()` の内部チェックに使用されます。ユーザーはこれらの定数を直接参照できませんが、`cfg.Validate()` が設定がこれらの制限を超えていないか自動的にチェックします。
+以下はライブラリ内部のハード上限（非エクスポート）で、`Config.Validate()` の内部チェックに使用されます。ユーザーはこれらの定数を直接参照できませんが、`cfg.Validate()` が設定がこれらの制限を超えていないかを自動的にチェックします。
 :::
 
 | 定数 | 値 | 説明 |
 |------|-----|------|
-| HardMaxFileSize | 100 MB | ファイルサイズのハードリミット |
-| HardMaxLineLength | 64 KB | 行の長さのハードリミット |
-| HardMaxKeyLength | 1024 | キーの長さのハードリミット |
-| HardMaxValueLength | 1 MB | 値の長さのハードリミット |
-| HardMaxVariables | 10000 | 変数数のハードリミット |
-| HardMaxExpansionDepth | 20 | 展開深度のハードリミット |
+| HardMaxFileSize | 100 MB | ファイルサイズのハード上限 |
+| HardMaxLineLength | 64 KB | 行の長さのハード上限 |
+| HardMaxKeyLength | 1024 | キーの長さのハード上限 |
+| HardMaxValueLength | 1 MB | 値の長さのハード上限 |
+| HardMaxVariables | 10000 | 変数数のハード上限 |
+| HardMaxExpansionDepth | 20 | 展開の深さのハード上限 |
 
-設定検証はハードリミットを超えていないか確認します：
+設定の検証はハード制限を超えていないかをチェックします：
 
 ```go
 cfg := env.DefaultConfig()
 cfg.MaxFileSize = 200 * 1024 * 1024  // 100MB 上限を超過
 
 if err := cfg.Validate(); err != nil {
-    // エラーを返します：MaxFileSize exceeds hard limit
+    // エラーを返す：MaxFileSize exceeds hard limit
 }
 ```
 
 ## センチネルエラー
 
 ::: warning 注意
-以下のセンチネルは事前定義されたシンボルですが、現在の実装では一部のシナリオで**これらのセンチネルに `errors.Is` で一致しません**：禁止キーは `*SecurityError` を返し（`errors.Is(err, ErrSecurityViolation)` で一致）、キー形式不正や必須キー不足は `*ValidationError` を返します（`errors.As` で抽出）。詳細は各エラー型のセクションを参照してください。
+以下のセンチネルはすべて定義済みシンボルですが、現在の実装では一部のシーンで**これらのセンチネルを `errors.Is` でマッチしません**：禁止キーは `*SecurityError` を返します（`errors.Is(err, ErrSecurityViolation)` でマッチ）、キー形式不正と必須キー不足は `*ValidationError` を返します（`errors.As` で抽出）。詳しくは各エラー型のセクションを参照。
 :::
 
 ### ファイルエラー
@@ -74,15 +74,15 @@ var ErrFileNotFound = errors.New("file not found")
 var ErrFileTooLarge = errors.New("file exceeds maximum size limit")
 ```
 
-確認方法：
+チェック方法：
 
 ```go
 err := loader.LoadFiles(".env")
 if errors.Is(err, env.ErrFileNotFound) {
-    // ファイルが存在しません
+    // ファイルが存在しない
 }
 if errors.Is(err, env.ErrFileTooLarge) {
-    // ファイルが大きすぎます
+    // ファイルが大きすぎる
 }
 ```
 
@@ -102,12 +102,12 @@ var ErrSecurityViolation = errors.New("security policy violation")
 var ErrInvalidValue = errors.New("invalid value content")
 ```
 
-禁止キーの確認：
+禁止キーのチェック：
 
 ```go
 err := loader.Set("PATH", "value")
 if errors.Is(err, env.ErrSecurityViolation) {
-    // 禁止キーの設定を試みると *SecurityError が返されます
+    // 禁止キーの設定が *SecurityError を返した
 }
 ```
 
@@ -123,7 +123,7 @@ var ErrExpansionDepth = errors.New("variable expansion depth exceeded")
 var ErrMaxVariables = errors.New("maximum number of variables exceeded")
 ```
 
-### ステータスエラー
+### 状態エラー
 
 ```go
 var ErrClosed = errors.New("loader has been closed")
@@ -133,25 +133,25 @@ var ErrNotInitialized = errors.New("default loader not initialized; call Load() 
 var ErrMissingRequired = errors.New("required key is missing")
 ```
 
-**確認方法：**
+**チェック方法：**
 
 ```go
-// ローダーがクローズ済みか確認
+// ローダーがクローズ済みかチェック
 if errors.Is(err, env.ErrClosed) {
     // ローダーはクローズ済み
 }
 
-// デフォルトローダーが初期化済みか確認
+// デフォルトローダーが初期化済みかチェック
 if errors.Is(err, env.ErrAlreadyInitialized) {
-    // デフォルトローダーが既に存在し、Load を繰り返し呼び出せません
+    // デフォルトローダーが既存、Load() を繰り返し呼び出せない
 }
 
-// デフォルトローダーが未初期化か確認
+// デフォルトローダーが未初期化かチェック
 if errors.Is(err, env.ErrNotInitialized) {
-    // 先に env.Load() または env.LoadWithConfig() を呼び出す必要があります
+    // 先に env.Load() または env.LoadWithConfig() を呼び出す必要がある
 }
 
-// 必須キーが不足していないか確認（実際は *ValidationError{Rule:"required"}）
+// 必須キーが不足しているかチェック（実際は *ValidationError{Rule:"required"} を返す）
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
     // 必須キーが不足
@@ -167,26 +167,26 @@ var ErrValidateRequiredUnsupported = errors.New(
 )
 ```
 
-カスタムバリデーターが `KeyValidator` インターフェースのみを実装し、完全な `Validator` インターフェースを実装していない場合、`ValidateRequired` を呼び出すとこのエラーが返されます。
+カスタムバリデーターが `KeyValidator` インターフェースのみを実装し、完全な `Validator` インターフェースを実装していない場合、`ValidateRequired` を呼び出すとこのエラーを返します。
 
-**確認方法：**
+**チェック方法：**
 
 ```go
 if errors.Is(err, env.ErrValidateRequiredUnsupported) {
-    // カスタムバリデーターは必須キー検証をサポートしません
-    // 完全な Validator インターフェースの実装が必要
+    // カスタムバリデーターは必須キー検証をサポートしない
+    // 完全な Validator インターフェースを実装する必要がある
 }
 ```
 
 ::: tip 解決方法
-`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の 3 つのメソッドを含む）を実装してください。
+`KeyValidator` のみではなく、`Validator` インターフェース（ValidateKey、ValidateValue、ValidateRequired の 3 メソッドを含む）を実装してください。
 :::
 
 ## エラー型
 
 ### ParseError
 
-解析エラー、位置情報を含みます：
+解析エラー。位置情報を含みます：
 
 ```go
 type ParseError struct {
@@ -274,31 +274,31 @@ if errors.As(err, &fileErr) {
 ```go
 type ExpansionError struct {
     Key   string             // キー名
-    Depth int                // 現在の深度
+    Depth int                // 現在の深さ
     Limit int                // 制限
-    Chain string             // 展開チェーン（サニタイズ済み）
-    Kind  ExpansionErrorKind // エラー原因の分類（ゼロ値 = 深度/循環）
+    Chain string             // 展開チェーン（マスク済み）
+    Kind  ExpansionErrorKind // エラー原因カテゴリ（ゼロ値 = 深さ/循環）
 }
 ```
 
-**エラー分類（Kind フィールド）:**
+**エラー分類（Kind フィールド）：**
 
 ```go
 type ExpansionErrorKind int
 
 const (
-    // ExpansionDepthKind は展開が再帰深度制限に達したか、変数の循環を検出したことを示します。
-    // これはゼロ値のため、一般的な深度/循環エラーに明示的な分類は不要です。
-    // errors.Is(err, ErrExpansionDepth) で一致します。
+    // ExpansionDepthKind は展開が再帰深さ制限に達したか、変数の循環を検出したことを示す。
+    // これはゼロ値であり、よくある深さ/循環エラーは明示的な分類が不要。
+    // errors.Is(err, ErrExpansionDepth) でこの種のエラーをマッチ可能。
     ExpansionDepthKind ExpansionErrorKind = iota
 
-    // ExpansionRequiredKind は必須変数（${VAR:?message}）が未設定または空であったことを示します。
-    // 深度オーバーフローではないため、ErrExpansionDepth には一致しません。
+    // ExpansionRequiredKind は必須変数（${VAR:?message}）が未設定または空であることを示す。
+    // これは深さオーバーフローに該当しないため、ErrExpansionDepth にはマッチしない。
     ExpansionRequiredKind
 )
 ```
 
-**`errors.Is` の挙動:** `*ExpansionError` は `Kind != ExpansionRequiredKind` の場合のみ `ErrExpansionDepth` と一致します。必須変数エラーは別の失敗モードであり、`ErrExpansionDepth` には一致しません。
+**`errors.Is` の振る舞い：** `*ExpansionError` は `Kind != ExpansionRequiredKind` の場合のみ `ErrExpansionDepth` にマッチします。必須変数エラーは独立した失敗モードであり、`ErrExpansionDepth` ではマッチしません。
 
 使用例：
 
@@ -307,10 +307,10 @@ var expErr *env.ExpansionError
 if errors.As(err, &expErr) {
     switch expErr.Kind {
     case env.ExpansionDepthKind:
-        // 深度オーバーフローまたは循環：errors.Is(err, env.ErrExpansionDepth) == true
-        fmt.Printf("深度 %d/%d、チェーン: %s\n", expErr.Depth, expErr.Limit, expErr.Chain)
+        // 深さオーバーフローまたは循環：errors.Is(err, env.ErrExpansionDepth) == true
+        fmt.Printf("深さ %d/%d、チェーン：%s\n", expErr.Depth, expErr.Limit, expErr.Chain)
     case env.ExpansionRequiredKind:
-        // 必須変数未設定：errors.Is(err, env.ErrExpansionDepth) == false
+        // 必須変数が未設定：errors.Is(err, env.ErrExpansionDepth) == false
         fmt.Printf("必須変数 %s が未設定\n", expErr.Key)
     }
 }
@@ -355,14 +355,14 @@ type MarshalError struct {
 func IsMarshalError(err error) bool  // チェック関数
 ```
 
-## 事前定義変数
+## 定義済み変数
 
 ### DefaultForbiddenKeys
 
-組み込み禁止キーリスト、システム重要変数の変更を防止します：
+組み込みの禁止キーリスト。システム重要変数の変更を防止します：
 
 ::: warning 注意
-`defaultForbiddenKeys` はライブラリ内部変数（未エクスポート）であり、`env.DefaultForbiddenKeys` から直接アクセスすることはできません。以下は内部で使用されている完全なリストで、参考用です。
+`defaultForbiddenKeys` はライブラリ内部変数（非エクスポート）で、`env.DefaultForbiddenKeys` で直接アクセスできません。以下は内部使用の完全なリストで、参考用です。
 :::
 
 | カテゴリ | 禁止キー |
@@ -374,63 +374,63 @@ func IsMarshalError(err error) bool  // チェック関数
 | Shell | `SHELL`, `ENV`, `BASH_ENV`, `IFS` |
 | 言語ランタイム | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
 
-**リスク説明：**
+**リスクの説明：**
 
 | キー | リスクタイプ | 説明 |
 |----|----------|------|
 | `PATH` | コマンド乗っ取り | コマンド検索パスの変更 |
-| `LD_PRELOAD` | ライブラリ注入 | 悪意のある動的ライブラリをプリロード |
+| `LD_PRELOAD` | ライブラリ注入 | 悪意のある動的ライブラリのプリロード |
 | `LD_LIBRARY_PATH` | ライブラリ乗っ取り | ライブラリ検索パスの変更 |
 | `DYLD_INSERT_LIBRARIES` | ライブラリ注入 | macOS ライブラリ注入 |
-| `COMSPEC` | コマンド乗っ取り | Windows コマンドインタプリタのパス上書き |
-| `PATHEXT` | コマンド乗っ取り | Windows 実行ファイル拡張子の改ざん |
-| `SYSTEMROOT` | システム破壊 | Windows システムルートの改ざん |
+| `COMSPEC` | コマンド乗っ取り | Windows コマンドインタープリタパスの上書き |
+| `PATHEXT` | コマンド乗っ取り | Windows 実行可能ファイル拡張子の改ざん |
+| `SYSTEMROOT` | システム破壊 | Windows システムルートディレクトリの改ざん |
 | `WINDIR` | システム破壊 | Windows ディレクトリの改ざん |
 | `PYTHONPATH` | モジュール乗っ取り | Python モジュール検索パス |
-| `IFS` | パース攻撃 | フィールド区切りの変更 |
+| `IFS` | 解析攻撃 | フィールドセパレータの変更 |
 
 **使用例：**
 
 ```go
-// 禁止キーを設定しようとすると *SecurityError が返されます
+// 禁止キーの設定は *SecurityError を返す
 err := loader.Set("PATH", "/malicious/path")
 if errors.Is(err, env.ErrSecurityViolation) {
-    // キーが禁止されています
+    // キーが禁止されている
 }
 
-// 追加の禁止キーを設定
+// 追加の禁止キーを追加
 cfg := env.DefaultConfig()
 cfg.ForbiddenKeys = []string{"MY_SENSITIVE_VAR"}
 ```
 
 ### SensitiveKeyPatterns
 
-機密キーパターンリスト、機密設定の自動検出に使用されます。キー名にこれらのパターンが含まれる場合（大文字小文字を区別しない）、機密として識別されます：
+機密キーパターンのリスト。機密設定の自動検出に使用します。キー名にこれらのパターン（大文字小文字を区別しない）が含まれる場合、機密として識別されます：
 
 ::: warning 注意
-`sensitiveKeyPatterns` はライブラリ内部変数（未エクスポート）であり、`IsSensitiveKey()` 関数を通じて間接的にアクセスします。以下は主要な機密パターンのカテゴリで、参考用です。
+`sensitiveKeyPatterns` はライブラリ内部変数（非エクスポート）で、`IsSensitiveKey()` 関数経由で間接的にアクセスします。以下は主要な機密パターンカテゴリで、参考用です。
 :::
 
-**主要な機密パターンのカテゴリ：**
+**主要な機密パターンカテゴリ：**
 
 | カテゴリ | パターン例 |
 |------|----------|
 | 認証・認可 | `PASSWORD`, `SECRET`, `TOKEN`, `AUTH`, `CREDENTIAL`, `PASSPHRASE`, `SESSION`, `COOKIE` |
 | API とキー | `API_KEY`, `APIKEY`, `ACCESS_KEY`, `SECRET_KEY`, `PRIVATE_KEY`, `PUBLIC_KEY` |
 | 暗号化とセキュリティ | `PRIVATE`, `ENCRYPTION_KEY`, `ENCRYPT_KEY`, `DECRYPT_KEY`, `SIGNING_KEY`, `SIGN_KEY`, `VERIFY_KEY` |
-| 金融・PII | `SSN`, `SOCIAL_SECURITY`, `CREDIT_CARD`, `CARD_NUMBER`, `CVV`, `CVC`, `CCV`, `PAN` |
-| 暗号資産 | `MNEMONIC`, `SEED`, `RECOVERY`, `WALLET`, `PRIVATE_ADDRESS` |
+| 金融と PII | `SSN`, `SOCIAL_SECURITY`, `CREDIT_CARD`, `CARD_NUMBER`, `CVV`, `CVC`, `CCV`, `PAN` |
+| 暗号通貨 | `MNEMONIC`, `SEED`, `RECOVERY`, `WALLET`, `PRIVATE_ADDRESS` |
 | データベース | `CONNECTION_STRING`, `CONN_STRING`, `DATABASE_URL`, `DB_PASSWORD` |
 | クラウドサービス | `AWS_SECRET`, `AZURE_KEY`, `GCP_KEY`, `SERVICE_ACCOUNT` |
 
-**マッチングルール：**
+**マッチルール：**
 - 大文字小文字を区別しない
 - キー名にいずれかのパターンが含まれれば機密として識別
 
 **使用例：**
 
 ```go
-// キーが機密かどうかを確認
+// キーが機密かチェック
 if env.IsSensitiveKey("DB_PASSWORD") {
     // 安全な方法で処理
     secret := env.GetSecure("DB_PASSWORD")
@@ -449,8 +449,8 @@ var DefaultKeyPattern *regexp.Regexp = nil
 ```
 
 ::: tip パフォーマンス最適化
-`nil` 値は高速なバイトレベル検証を有効にします（約 10 倍の性能向上）。
-デフォルト検証ルール：英字で始まり、英字・数字・アンダースコアのみを含みます。
+`nil` 値は高速バイトレベル検証（約 10 倍のパフォーマンス向上）を有効化します。
+デフォルトの検証ルール：文字で始まり、文字・数字・アンダースコアのみを含む。
 :::
 
 **カスタムパターン：**
@@ -459,11 +459,15 @@ var DefaultKeyPattern *regexp.Regexp = nil
 import "regexp"
 
 cfg := env.DefaultConfig()
-// 大文字で始まるもののみ許可
+// 大文字始まりのみ許可
 cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,63}$`)
 ```
 
-## セキュリティツール関数
+## セキュリティユーティリティ関数
+
+::: tip 完全なドキュメント
+`IsSensitiveKey`、`MaskValue`、`SanitizeForLog` などのセキュリティユーティリティ関数の完全なドキュメントは [SecureValue API](./secure-value#セキュリティユーティリティ関数) でも参照できます。
+:::
 
 ### IsSensitiveKey
 
@@ -471,7 +475,7 @@ cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,63}$`)
 func IsSensitiveKey(key string) bool
 ```
 
-キー名が機密パターンに一致するか確認します。
+キー名が機密パターンにマッチするかチェックします。
 
 ```go
 if env.IsSensitiveKey("DB_PASSWORD") {
@@ -490,11 +494,11 @@ func MaskValue(key, value string) string
 キーの機密性に基づいてマスク値を返します。
 
 ```go
-// 機密キー - [MASKED:N chars] 形式で返す
+// 機密キー - [MASKED:N chars] 形式を返す
 masked := env.MaskValue("API_KEY", "secret123")
 // 戻り値：[MASKED:9 chars]
 
-// 非機密キー - 元の値を返す（20 文字を超える場合は切り詰め）
+// 非機密キー - 元の値を返す（20 文字超の場合は切り詰め）
 masked := env.MaskValue("APP_NAME", "myapp")
 // 戻り値：myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
@@ -520,28 +524,28 @@ masked := env.MaskKey("DB_PASSWORD")
 func MaskSensitiveInString(s string) string
 ```
 
-文字列内の潜在的な機密内容をマスクします。50 文字を超える文字列は切り詰められます。
+文字列内の潜在的に機密な内容をマスクします。50 文字を超える文字列を切り詰めます。
 
 **パラメータ：**
 - `s` - 元の文字列
 
 **戻り値：**
-- `string` - マスクされた文字列
+- `string` - マスク後の文字列
 
 ```go
-// 長い文字列は切り詰められます
+// 長い文字列は切り詰められる
 log := "This is a very long log message that exceeds 50 characters and will be truncated"
 clean := env.MaskSensitiveInString(log)
 // 戻り値："This is a very long log message that exceeds 50..."
 
-// 短い文字列はそのまま保持
+// 短い文字列はそのまま
 short := "Short message"
 clean := env.MaskSensitiveInString(short)
 // 戻り値："Short message"
 ```
 
 ::: warning 注意
-この関数は主に長い文字列の切り詰めに使用されます。機密キーと値のペアを自動マスクする必要がある場合は、`SanitizeForLog` を使用してください。
+この関数は主に長い文字列の切り詰めに使用されます。機密キーと値のペアを自動マスクするには `SanitizeForLog` を使用してください。
 :::
 
 ### SanitizeForLog
@@ -550,15 +554,15 @@ clean := env.MaskSensitiveInString(short)
 func SanitizeForLog(s string) string
 ```
 
-文字列内の機密キーと値のペア情報をクリーンアップします。`key=value` フォーマットの機密値を自動検出してマスクします。
+文字列内の機密キーと値のペア情報をクリーンアップします。`key=value` 形式の機密値を自動検出してマスクします。
 
 **パラメータ：**
 - `s` - 元の文字列
 
 **戻り値：**
-- `string` - クリーンアップされた文字列
+- `string` - クリーンアップ後の文字列
 
-**検出される機密キーパターン：**
+**検出する機密キーパターン：**
 - `password=`, `secret=`, `token=`, `auth=`, `credential=`, `passphrase=`, `session=`, `cookie=`
 - `api_key=`, `apikey=`, `access_key=`, `secret_key=`, `private_key=`, `public_key=`
 - `encrypt_key=`, `decrypt_key=`, `signing_key=`
@@ -578,8 +582,8 @@ clean := env.SanitizeForLog(msg)
 // 戻り値："Config loaded: app_name=myapp port=8080"
 ```
 
-::: tip ユースケース
-ログ出力、エラーメッセージ、デバッグ情報など、機密キーと値のペアを自動フィルタリングする必要がある場面に適しています。
+::: tip 使用シーン
+ログ出力、エラーメッセージ、デバッグ情報など、機密キーと値のペアの自動フィルタリングが必要なシーンに適しています。
 :::
 
 ### ClearBytes
@@ -594,7 +598,7 @@ func ClearBytes(b []byte)
 sensitive := []byte("secret-data")
 // 使用...
 env.ClearBytes(sensitive)
-// sensitive 現在はすべて 0
+// sensitive はすべて 0 になる
 ```
 
 ## FileFormat 定数
@@ -615,7 +619,7 @@ const (
 使用例：
 
 ```go
-// フォーマットを検出
+// フォーマット検出
 format := env.DetectFormat("config.json")  // FormatJSON
 
 // フォーマットを指定してシリアライズ
@@ -629,26 +633,26 @@ fmt.Println(format.String())  // "json"
 
 ### errors.Is パターン
 
-センチネルエラーの確認：
+センチネルエラーのチェック：
 
 ```go
 err := loader.LoadFiles(".env")
 
 switch {
 case errors.Is(err, env.ErrFileNotFound):
-    // ファイルが存在しません
+    // ファイルが存在しない
 case errors.Is(err, env.ErrFileTooLarge):
-    // ファイルが大きすぎます
+    // ファイルが大きすぎる
 case errors.Is(err, env.ErrSecurityViolation):
     // 禁止キー
 case errors.Is(err, env.ErrClosed):
-    // ローダーはクローズ済み
+    // ローダーがクローズ済み
 }
 ```
 
 ### errors.As パターン
 
-詳細なエラー情報を抽出：
+詳細なエラー情報の抽出：
 
 ```go
 err := loader.LoadFiles(".env")
@@ -702,7 +706,7 @@ func main() {
             log.Fatal("設定ファイルが大きすぎます")
 
         case errors.Is(err, env.ErrClosed):
-            log.Fatal("ローダーはクローズ済み")
+            log.Fatal("ローダーがクローズ済みです")
 
         default:
             var parseErr *env.ParseError
@@ -749,7 +753,7 @@ func main() {
 
 ## 関連ドキュメント
 
-- [SecureValue API](/ja/env/api-reference/secure-value) - セキュリティツール関数の完全な API
+- [SecureValue API](/ja/env/api-reference/secure-value) - セキュリティユーティリティ関数の完全な API
 - [Config API](/ja/env/api-reference/config) - 設定オプションと制限設定
 - [セキュリティ概要](/ja/env/security/) - セキュリティアーキテクチャとコア機能
-- [本番チェックリスト](/ja/env/security/production-checklist) - リリース前セキュリティチェック
+- [本番チェックリスト](/ja/env/security/production-checklist) - 本番稼働前のセキュリティチェック

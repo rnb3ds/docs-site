@@ -1,19 +1,19 @@
 ---
-sidebar_label: "インターフェース定義"
-title: "インターフェース定義 - CyberGo env | コアインターフェース階層"
-description: "CyberGo env のコアインターフェース参照。依存性注入用の細粒度設計の EnvLoader、EnvFileLoader、EnvGetter、EnvSetter、Validator、FullAuditLogger、EnvParser、FileSystem インターフェースを説明します。"
+sidebar_label: "インターフェース"
+title: "インターフェース - CyberGo env | コアインターフェース階層"
+description: "CyberGo env のコアインターフェース定義リファレンス。細粒度設計で依存性注入をサポート。EnvLoader コンポジットインターフェースと EnvFileLoader、EnvGetter、EnvSetter、Validator、FullAuditLogger、EnvParser、FileSystem などのサブインターフェースを含みます。"
 sidebar_position: 6
 ---
 
 # インターフェース定義
 
-env ライブラリは細粒度インターフェース設計を採用し、依存性注入と柔軟な組み合わせをサポートしています。
+env ライブラリは細粒度インターフェース設計を使用し、依存性注入と柔軟な組み合わせをサポートします。
 
 ## コアインターフェース
 
 ### EnvLoader
 
-すべてのサブインターフェースを組み合わせた完全なローダーインターフェース：
+完全なローダーインターフェース。すべてのサブインターフェースを組み合わせます：
 
 ```go
 type EnvLoader interface {
@@ -37,7 +37,7 @@ type EnvFileLoader interface {
 }
 ```
 
-**用途：** ファイル読み込み機能のみが必要な場面。
+**用途：** ファイル読み込み能力のみが必要なシーン。
 
 ```go
 func loadConfig(loader env.EnvFileLoader) error {
@@ -60,7 +60,7 @@ type EnvGetter interface {
 }
 ```
 
-**用途：** 読み取り専用設定アクセス（最小インターフェース）。
+**用途：** 読み取り専用の設定アクセス（最小インターフェース）。
 
 ```go
 func readConfig(getter env.EnvGetter) {
@@ -72,15 +72,15 @@ func readConfig(getter env.EnvGetter) {
 
 ::: warning 注意
 `GetInt`、`GetBool`、`GetUint64`、`GetFloat64`、`GetDuration`、`GetSecure`、`Len` は `EnvGetter` インターフェースの一部では**ありません**。
-これらのメソッドは `*Loader` 型に実装されていますが、最小インターフェースには含まれていません。
+これらのメソッドは `*Loader` 型に実装されていますが、最小インターフェースには含まれません。
 
-完全な読み取り機能が必要な場合は、`*Loader` 型を直接使用してください：
+完全な読み取り能力が必要な場合は `*Loader` 型を直接使用してください：
 
 ```go
 func readFullConfig(loader *env.Loader) {
-    port := loader.GetInt("PORT", 8080)      // ✓ 利用可能
-    debug := loader.GetBool("DEBUG", false)  // ✓ 利用可能
-    count := loader.Len()                     // ✓ 利用可能
+    port := loader.GetInt("PORT", 8080)      // ✓ 使用可能
+    debug := loader.GetBool("DEBUG", false)  // ✓ 使用可能
+    count := loader.Len()                     // ✓ 使用可能
 }
 ```
 :::
@@ -98,7 +98,7 @@ type EnvSetter interface {
 }
 ```
 
-**用途：** 設定/削除機能のみが必要な場面。
+**用途：** 設定/削除能力のみが必要なシーン.
 
 ```go
 func updateConfig(setter env.EnvSetter) error {
@@ -149,7 +149,7 @@ type EnvCloser interface {
 
 ### Validator
 
-複合検証インターフェース：
+コンボジション検証インターフェース：
 
 ```go
 type Validator interface {
@@ -160,7 +160,7 @@ type Validator interface {
 ```
 
 ::: tip 注意
-`Validator` は `RequiredValidator` を埋め込むことで `ValidateRequired` メソッドを提供します。`KeyValidator` のみを実装したカスタムバリデーターは、`ValidateRequired` を呼び出すと `ErrValidateRequiredUnsupported` を返します。
+`Validator` は `RequiredValidator` を埋め込むことで `ValidateRequired` メソッドを提供します。`KeyValidator` のみを実装したカスタムバリデーターは `ValidateRequired` 呼び出し時に `ErrValidateRequiredUnsupported` を返します。
 :::
 
 ---
@@ -175,7 +175,7 @@ type RequiredValidator interface {
 }
 ```
 
-すべての必須キーが存在するかどうかを検証します。
+すべての必須キーが存在するか検証します。
 
 ---
 
@@ -189,7 +189,7 @@ type KeyValidator interface {
 }
 ```
 
-キー名がルールに準拠しているか（長さ、フォーマット、禁止キーなど）を検証します。
+キー名がルールに適合するか検証します（長さ、形式、禁止キーなど）。
 
 ---
 
@@ -203,7 +203,7 @@ type ValueValidator interface {
 }
 ```
 
-値が安全かどうか（ヌルバイト、制御文字なし等）を検証します。
+値が安全か検証します（ヌルバイト、制御文字などがないか）。
 
 ---
 
@@ -219,13 +219,13 @@ type AuditLogger interface {
 }
 ```
 
-**用途：** カスタム監査ロガーの実装に便利な最小インターフェース。完全な監査機能が必要な場合は `FullAuditLogger` を使用してください。
+**用途：** 最小化インターフェースで、カスタム監査ロガーの実装に便利です。完全な監査能力が必要な場合は `FullAuditLogger` を使用してください。
 
 ---
 
 ### FullAuditLogger
 
-拡張監査ログインターフェース、完全な監査ログ機能を提供：
+拡張監査ログインターフェース。完全な監査ログ機能を提供します：
 
 ```go
 type FullAuditLogger interface {
@@ -237,23 +237,23 @@ type FullAuditLogger interface {
 }
 ```
 
-**用途：** 完全な監査ログ機能。`ComponentFactory.Auditor()` はこのインターフェースを返します。
+**用途：** 完全な監査ログ能力。`ComponentFactory.Auditor()` がこのインターフェースを返します。
 
-**メソッド詳細：**
+**メソッドの説明：**
 
-| 方法 | 用途 |
+| メソッド | 用途 |
 |------|------|
-| LogError | エラーイベントを記録（AuditLogger から継承） |
-| `Log` | 一般的な監査イベントを記録 |
-| `LogWithFile` | ファイル情報を含むイベントを記録 |
-| `LogWithDuration` | 所要時間を含むイベントを記録 |
+| LogError | エラーイベントの記録（AuditLogger から継承） |
+| `Log` | 一般監査イベントの記録 |
+| `LogWithFile` | ファイル情報を含むイベントの記録 |
+| `LogWithDuration` | 所要時間を含むイベントの記録 |
 | `Close` | 監査ログをクローズ |
 
 ---
 
 ### AuditHandler
 
-監査ハンドラーインターフェース（Config.AuditHandler の設定に使用）：
+監査ハンドラーインターフェース（Config.AuditHandler 設定用）：
 
 ```go
 type AuditHandler interface {
@@ -262,11 +262,11 @@ type AuditHandler interface {
 }
 ```
 
-**用途：** このインターフェースを実装すると監査イベントの処理方法をカスタマイズできます。`AuditLogger` インターフェースとは異なり、`AuditHandler` は `Log` と `Close` の 2 つのメソッドを必要とし、監査イベントの受信処理とリソース解放に使用します。
+**用途：** このインターフェースを実装して監査イベントの処理方法をカスタマイズできます。`AuditLogger` インターフェースとは異なり、`AuditHandler` は `Log` と `Close` の 2 つのメソッドを必要とし、監査イベントの受信処理とリソース解放に使用されます。
 
 **組み込み実装：**
-- `JSONAuditHandler` - JSON フォーマットのログを出力
-- `LogAuditHandler` - 標準 log パッケージを使用して出力
+- `JSONAuditHandler` - JSON フォーマットログを出力
+- `LogAuditHandler` - 標準 log パッケージで出力
 - `ChannelAuditHandler` - チャネルに送信
 - `CloseableChannelHandler` - 独自のバッファチャネルを持つクローズ可能ハンドラー
 - `NopAuditHandler` - 何もしないハンドラー
@@ -306,11 +306,11 @@ type EnvParser interface {
 ```
 
 **パラメータ：**
-- `r` - ファイルコンテンツリーダー
+- `r` - ファイル内容のリーダー
 - `filename` - ファイル名（エラー情報用）
 
 **戻り値：**
-- `map[string]string` - 解析されたキーと値のペア
+- `map[string]string` - 解析後のキーと値のペア
 - `error` - 解析エラー
 
 **用途：** カスタムファイルフォーマットパーサー。
@@ -337,15 +337,15 @@ type EnvStorage interface {
 
 **用途：** カスタムストレージバックエンド。
 
-**メソッド詳細：**
+**メソッドの説明：**
 
-| 方法 | 用途 |
+| メソッド | 用途 |
 |------|------|
-| `Get` | 値の取得、値と存在有無を返す |
+| `Get` | 値を取得、値と存在有無を返す |
 | `Set` | キーと値のペアを設定 |
 | `Delete` | キーを削除 |
 | `Keys` | すべてのキー名を返す |
-| `Len` | キーと値のペアの数を返す |
+| `Len` | キーと値のペア数を返す |
 | `ToMap` | すべてのキーと値のペアのコピーを返す |
 | `Clear` | すべてのデータをクリア |
 
@@ -432,7 +432,7 @@ type FileSystem interface {
 }
 ```
 
-**用途：** テスト時にファイルシステムをモック。
+**用途：** テストでファイルシステムをモック。
 
 ```go
 type MockFileSystem struct {
@@ -507,15 +507,15 @@ type File interface {
 }
 ```
 
-**メソッド詳細：**
+**メソッドの説明：**
 
-| 方法 | 用途 |
+| メソッド | 用途 |
 |------|------|
 | Read | データの読み取り |
 | Write | データの書き込み |
-| Close | ファイルをクローズ |
+| Close | ファイルのクローズ |
 | Stat | ファイル情報の取得 |
-| Sync | ディスクに同期 |
+| Sync | ディスクへの同期 |
 
 ---
 
@@ -527,7 +527,7 @@ type File interface {
 var DefaultFileSystem FileSystem = OSFileSystem{}
 ```
 
-実際のオペレーティングシステムのファイルシステムと環境変数を使用：
+実際の OS ファイルシステムと環境変数を使用します：
 
 ```go
 cfg := env.DefaultConfig()
@@ -540,7 +540,7 @@ cfg.FileSystem = env.DefaultFileSystem  // デフォルト値
 
 ### JSONAuditHandler
 
-JSON フォーマットの監査ログを出力：
+JSON フォーマット監査ログを出力：
 
 ```go
 func NewJSONAuditHandler(w io.Writer) *JSONAuditHandler
@@ -562,7 +562,7 @@ handler := env.NewJSONAuditHandler(os.Stdout)
 
 ### LogAuditHandler
 
-標準 log パッケージを使用して出力：
+標準 log パッケージで出力：
 
 ```go
 func NewLogAuditHandler(logger *log.Logger) *LogAuditHandler
@@ -596,6 +596,10 @@ func NewChannelAuditHandler(ch chan<- AuditEvent) *ChannelAuditHandler
 **パラメータ：**
 - `ch` - 監査イベントチャネル
 
+::: warning チャネルの所有権
+`ChannelAuditHandler` はチャネルを**所有しません**、`Close()` は基盤チャネルを**クローズしません**。呼び出し側がチャネルをクローズして受信側に終了を通知する必要があります。また、チャネルバッファが満杯の場合、`Log()` はブロックします——バッファ付きチャネルの使用を推奨します。チャネルのライフサイクルを自動管理する必要がある場合は [NewCloseableChannelHandler](/ja/env/api-reference/factory#newcloseablechannelhandler) を使用してください。
+:::
+
 ```go
 ch := make(chan env.AuditEvent, 100)
 handler := env.NewChannelAuditHandler(ch)
@@ -612,7 +616,7 @@ go func() {
 
 ### NopAuditHandler
 
-空操作ハンドラー（すべてのイベントを破棄）：
+何もしないハンドラー（すべてのイベントを破棄）：
 
 ```go
 func NewNopAuditHandler() *NopAuditHandler
@@ -651,7 +655,7 @@ const (
 
 ### AuditEvent
 
-監査イベント構造：
+監査イベント構造体：
 
 ```go
 type AuditEvent = internal.Event
@@ -666,8 +670,8 @@ type AuditEvent = internal.Event
 | Key | `string` | キー名（マスク済み） |
 | File | `string` | ファイル名 |
 | Reason | `string` | 原因/説明 |
-| Success | `bool` | 成功したかどうか |
-| Masked | `bool` | マスク済みかどうか |
+| Success | `bool` | 成功したか |
+| Masked | `bool` | マスク済みか |
 | Details | `string` | 詳細 |
 | Duration | `int64` | 所要時間（ナノ秒） |
 
@@ -675,7 +679,7 @@ type AuditEvent = internal.Event
 
 ## ComponentFactory
 
-コンポーネントファクトリー、共有コンポーネントを管理：
+コンポーネントファクトリー。共有コンポーネントを管理：
 
 ```go
 type ComponentFactory struct {
@@ -683,7 +687,7 @@ type ComponentFactory struct {
 }
 ```
 
-### 方法
+### メソッド
 
 ```go
 func (f *ComponentFactory) Validator() Validator
@@ -693,7 +697,7 @@ func (f *ComponentFactory) Close() error
 func (f *ComponentFactory) IsClosed() bool
 ```
 
-**用途：** 内部使用、Loader 作成時に自動管理。詳細は [ComponentFactory API](/ja/env/api-reference/factory) を参照。
+**用途：** 内部使用。Loader 作成時に自動管理されます。詳しくは [ComponentFactory API](/ja/env/api-reference/factory) を参照。
 
 ---
 
@@ -732,9 +736,9 @@ func main() {
 
     loader, _ := env.New(cfg)
     defer loader.Close()
-    // 使用 loader...
+    // loader を使用...
 
-    // 查看監査イベント
+    // 監査イベントを確認
     for _, event := range handler.events {
         fmt.Printf("%s: %s - %s\n", event.Action, event.Key, event.Reason)
     }
@@ -751,7 +755,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// 読み取り機能のみ必要
+// 読み取り能力のみ必要
 func printConfig(getter env.EnvGetter) {
     for _, key := range getter.Keys() {
         value, _ := getter.Lookup(key)
@@ -759,12 +763,12 @@ func printConfig(getter env.EnvGetter) {
     }
 }
 
-// 書き込み機能のみ必要
+// 書き込み能力のみ必要
 func setDefaults(setter env.EnvSetter) error {
     return setter.Set("DEFAULT_KEY", "default_value")
 }
 
-// 読み込み機能のみ必要
+// 読み込み能力のみ必要
 func loadConfig(loader env.EnvFileLoader) error {
     return loader.LoadFiles(".env")
 }
@@ -774,7 +778,7 @@ func main() {
     loader, _ := env.New(cfg)
     defer loader.Close()
 
-    // 細粒度インターフェースの使用
+    // 細粒度インターフェースを使用
     loadConfig(loader)
     setDefaults(loader)
     printConfig(loader)

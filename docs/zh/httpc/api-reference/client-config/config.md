@@ -84,8 +84,9 @@ type ConnectionConfig struct {
     ProxyPool              []string      // 代理服务器列表，用于轮换
     ProxyPoolStrategy      ProxyStrategy // 代理选择策略，默认 RoundRobin
     ProxyFailureThreshold  int           // 连续失败次数阈值，0 默认为 3
-    ProxyCooldown          time.Duration // 断路冷却时间，0 默认为 30s
-    ProxyRotateOnStatus    []int         // 触发代理轮换的 HTTP 状态码
+    ProxyCooldown            time.Duration // 断路冷却时间，0 默认为 30s
+    ProxyRotatePerRequest    bool          // 每次独立请求强制换代理，默认 false
+    ProxyRotateOnStatus      []int         // 触发代理轮换的 HTTP 状态码
     EnableHTTP2            bool          // 启用 HTTP/2，默认 true
     EnableCookies          bool          // 启用 Cookie 管理，默认 false
     EnableDoH              bool          // 启用 DNS-over-HTTPS，默认 false
@@ -101,6 +102,12 @@ type ConnectionConfig struct {
 优先级：低于 `ProxyURL`，高于 `EnableSystemProxy`。若同时设置 `ProxyURL` 和 `ProxyPool`，`ProxyURL` 生效（单代理模式）。
 
 `ProxyRotateOnStatus` 指定触发换代理重试的 HTTP 状态码（如 `[]int{403}` 用于 CF/WAF 基于 IP 的封锁）。与连接失败不同，状态码轮换**不会**熔断代理——封锁往往是目标特定的（一个代理在某站点被封，在另一站点可能正常）。需 `Retry.MaxRetries > 0` 才生效。
+
+`ProxyRotatePerRequest` 确保每个独立请求（如每次 `Get`/`Post` 调用）使用不同的代理。不启用时，HTTP 连接复用会导致对同一主机的连续请求复用前一次请求的代理隧道，绕过代理池选择。启用后，每次请求开始时关闭空闲连接，强制 Transport 重新评估代理池——这增加了少量开销（无连接复用），但保证按请求轮换。需设置 `ProxyPool` 才生效；对 `ProxyURL` 或无代理池配置无效。
+
+:::tip ProxyRotatePerRequest vs ProxyRotateOnStatus
+两者都用于代理轮换，但触发机制不同：`ProxyRotateOnStatus` 在**收到特定状态码**时触发重试轮换（被动，需配合重试），`ProxyRotatePerRequest` 在**每次请求开始**时主动切换代理（无需重试）。对同一主机的爬虫/数据采集场景，`ProxyRotatePerRequest` 可确保每次请求的源 IP 不同。
+:::
 
 ```go
 cfg := httpc.DefaultConfig()

@@ -1,13 +1,13 @@
 ---
-sidebar_label: "파일 포맷"
+sidebar_label: "파일 형식"
 title: "파일 형식 - CyberGo env | .env/JSON/YAML 구문"
-description: "CyberGo env 구성 파일 형식 참조로 .env·JSON·YAML 세 형식의 구문 규칙, 따옴표와 export 접두사, 변수 확장 ${VAR}, 여러 줄 문자열, 중첩 객체·배열 플랫화, UTF-8 인코딩과 DetectFormat 자동 감지를 상세히 설명합니다."
+description: "CyberGo env 구성 파일 형식 레퍼런스로, .env, JSON, YAML 세 가지 형식의 구문 규칙, 인용부호와 export 접두사, 변수 확장 ${VAR}, 여러 줄 문자열, 중첩 객체와 배열 평탄화, UTF-8 인코딩 및 DetectFormat 자동 감지 메커니즘을 상세히 설명합니다."
 sidebar_position: 1
 ---
 
 # 파일 형식
 
-env 라이브러리는 다양한 구성 파일 형식을 지원합니다: `.env`, JSON 및 YAML.
+env 라이브러리는 다양한 구성 파일 형식을 지원합니다: `.env`, JSON, YAML.
 
 ## .env 형식
 
@@ -22,22 +22,22 @@ URL=https://example.com?foo=bar
 
 # 빈 줄은 무시됨
 
-# 잘못됨: 키에 공백 불가
+# 유효하지 않음: 키에는 공백이 있을 수 없음
 # MY KEY=value
 ```
 
-### 따옴표
+### 인용부호
 
 ```bash
-# 큰따옴표: 공백 유지, 이스케이프 지원
+# 이중 인용부호: 공백 보존, 이스케이프 지원
 MESSAGE="Hello World"
 PATH="/usr/local/bin"
 
-# 작은따옴표: 이스케이프 미처리 (백슬래시 시퀀스를 그대로 보존)
-# 참고: 작은따옴표는 변수 확장을 막지 않음 — 확장은 따옴표 제거 후 일괄 수행
+# 단일 인용부호: 이스케이프 처리 안 함(백슬래시 시퀀스 원래대로 보존)
+# 참고: 단일 인용부호는 변수 확장을 막지 않음 - 확장은 인용부호 제거 후 통합 수행
 LITERAL='no escaping here: \n stays literal'
 
-# 따옴표 없음
+# 인용부호 없음
 SIMPLE=value
 
 # 빈 값
@@ -48,16 +48,16 @@ EMPTY=''
 
 ### 이스케이프 문자
 
-큰따옴표에서 이스케이프 지원:
+이중 인용부호 내에서 이스케이프를 지원합니다:
 
 ```bash
 # 줄바꿈
 MULTILINE="line1\nline2"
 
-# 탭
+# 탭 문자
 TABBED="col1\tcol2"
 
-# 따옴표
+# 인용부호
 QUOTED="He said \"Hello\""
 
 # 백슬래시
@@ -69,14 +69,14 @@ PRICE="Price: \$100"
 
 ### 변수 확장
 
-`ExpandVariables` 활성화 후 지원:
+`ExpandVariables` 활성화 시 지원:
 
 ```bash
 # 다른 변수 참조
 BASE_URL=https://api.example.com
 API_URL=${BASE_URL}/v1
 
-# 간단한 구문
+# 단순 구문
 URL=$BASE_URL/path
 
 # 기본값
@@ -89,7 +89,7 @@ SERVICE=${CLUSTER:-default}-${REGION:-us-east}
 
 ### export 구문
 
-`AllowExportPrefix` 활성화 후 지원:
+`AllowExportPrefix` 활성화 시 지원:
 
 ```bash
 # Bash 스타일 내보내기
@@ -99,7 +99,7 @@ export ANOTHER="quoted value"
 
 ### YAML 스타일
 
-`AllowYamlSyntax` 활성화 후 지원:
+`AllowYamlSyntax` 활성화 시 지원:
 
 ```bash
 # YAML 스타일 키-값 쌍
@@ -109,10 +109,10 @@ ANOTHER: "quoted value"
 
 ### 여러 줄 값
 
-`.env` 파서는 줄 단위로 스캔하며 각 줄을 독립적으로 파싱하므로, **여러 줄에 걸친 따옴표 문자열을 지원하지 않습니다** — 큰따옴표 값은 반드시 한 줄 안에서 닫혀야 하며, 그렇지 않으면 `ErrInvalidValue`가 발생합니다. 줄바꿈이 필요하면 `\n` 이스케이프를 사용하세요 (큰따옴표 안에서만 유효하며 작은따옴표는 이스케이프를 처리하지 않음):
+`.env` 파서는 줄 단위로 스캔하며 각 줄을 독립적으로 파싱합니다. **여러 줄에 걸친 인용부호 문자열을 지원하지 않습니다** - 이중 인용부호 값은 한 줄 내에서 닫혀야 하며, 그렇지 않으면 `ErrInvalidValue`가 보고됩니다. 줄바꿈이 필요한 경우 `\n` 이스케이프를 사용하세요(이중 인용부호에서만 유효하며, 단일 인용부호는 이스케이프를 처리하지 않음):
 
 ```bash
-# 큰따옴표 안의 \n은 줄바꿈 문자로 파싱됨
+# 이중 인용부호 내의 \n은 줄바꿈 문자로 파싱됨
 LINES="line1\nline2\nline3"
 # 실제 값은 세 줄 텍스트: line1 / line2 / line3
 
@@ -120,7 +120,7 @@ LINES="line1\nline2\nline3"
 PRIVATE_KEY="-----BEGIN KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END KEY-----"
 ```
 
-실제로 여러 줄에 걸친 문자열이 필요하다면 [JSON 또는 YAML 형식](#형식-감지)을 사용하거나, 커스텀 파서로 여러 줄 지원을 확장하세요.
+진정한 여러 줄 문자열이 필요한 경우 [JSON 또는 YAML 형식](#형식-감지)을 사용하거나, 커스텀 파서로 여러 줄 지원을 확장하세요.
 
 ## JSON 형식
 
@@ -176,8 +176,8 @@ PORTS_1=443
 PORTS_2=8080
 ```
 
-::: tip 배열 요소 접근
-`GetSlice[T]` 함수 또는 점 경로를 사용하여 인덱스 키에 접근:
+:::tip 배열 요소 접근
+`GetSlice[T]` 함수 또는 점 표기 경로로 인덱스 키에 접근합니다:
 ```go
 hosts := env.GetSlice[string]("ALLOWED_HOSTS")
 port0 := env.GetInt("PORTS_0")  // 80
@@ -190,13 +190,13 @@ port0 := env.GetInt("PORTS_0")  // 80
 ```go
 cfg := env.DefaultConfig()
 
-// null 을 빈 문자열로 변환
+// null을 빈 문자열로 변환
 cfg.JSONNullAsEmpty = true
 
 // 숫자를 문자열로 변환
 cfg.JSONNumberAsString = true
 
-// 불리언 값을 문자열로 변환
+// 불리언을 문자열로 변환
 cfg.JSONBoolAsString = true
 ```
 
@@ -237,9 +237,9 @@ DATABASE_CREDENTIALS_USER=admin
 DATABASE_CREDENTIALS_PASSWORD=secret
 ```
 
-### 목록
+### 리스트
 
-목록은 인덱스 키로 평탄화됩니다:
+리스트는 인덱스 키로 평탄화됩니다:
 
 ```yaml
 allowed_hosts:
@@ -258,11 +258,11 @@ ALLOWED_HOSTS_2=api.example.com
 
 ### 여러 줄 문자열
 
-::: warning 참고
-YAML 블록 스칼라 (리터럴 블록 `|`와 폴딩 블록 `>`) 는 **현재 지원되지 않습니다**. 파서는 `|`/`>`를 일반 스칼라 문자로 저장하며, 이후 들여쓰기된 줄은 키 - 값 파싱을 망칩니다.
+:::warning 경고
+YAML 블록 스칼라(리터럴 블록 `|`와 폴딩 블록 `>`)은 **현재 지원되지 않습니다**. 파서는 `|`/`>`를 일반 스칼라 문자로 저장하며, 후속 들여쓰기 줄은 키-값 파싱을 망가뜨립니다.
 :::
 
-줄바꿈을 유지해야 하는 값은 큰따옴표와 `\n` 이스케이프를 사용하세요:
+줄바꿈을 보존해야 하는 값은 이중 인용부호와 `\n` 이스케이프를 사용하세요:
 
 ```yaml
 description: "Line1\nLine2\nLine3"
@@ -291,7 +291,7 @@ format := env.DetectFormat("config.json")   // FormatJSON
 format = env.DetectFormat("settings.yaml")  // FormatYAML
 format = env.DetectFormat(".env")           // FormatEnv
 
-// 일치하는 확장자가 없으면 FormatAuto 반환 (기본적으로 .env 파서 사용)
+// 매칭되는 확장자가 없으면 FormatAuto 반환(기본적으로 .env 파서 사용)
 format = env.DetectFormat("config")  // FormatAuto
 ```
 
@@ -319,17 +319,17 @@ fmt.Println(format.String())  // 출력: json
 
 | 시나리오 | 권장 형식 |
 |------|----------|
-| 간단한 구성 | `.env` |
+| 단순 구성 | `.env` |
 | 복잡한 중첩 구성 | JSON 또는 YAML |
 | 다른 도구와 공유 | JSON |
 | 가독성 우선 | YAML |
 | Docker/K8s 환경 | `.env` |
 
-### 파일 명명
+### 파일 이름
 
 ```bash
 .env              # 기본 구성
-.env.local        # 로컬 덮어쓰기 (커밋하지 않음)
+.env.local        # 로컬 덮어쓰기(커밋하지 않음)
 .env.development  # 개발 환경
 .env.staging      # 스테이징 환경
 .env.production   # 프로덕션 환경
@@ -339,7 +339,7 @@ fmt.Println(format.String())  // 출력: json
 ### 혼합 사용
 
 ```go
-// 다양한 형식을 혼합하여 사용 가능
+// 서로 다른 형식을 혼합하여 사용 가능
 loader.LoadFiles(
     "base.env",           // 기본 구성
     "database.json",      // 데이터베이스 구성
@@ -357,12 +357,12 @@ loader.LoadFiles(
 .env.production
 secrets.yaml
 
-# 템플릿 유지
+# 템플릿 보존
 !.env.example
 ```
 
 ## 관련 문서
 
-- [다중 형식 구성](/ko/env/guides/multi-format) - 다중 형식 로딩 가이드
-- [ComponentFactory API](/ko/env/api-reference/factory) - DetectFormat 함수 참조
+- [다중 포맷 설정](/ko/env/guides/multi-format) - 다중 형식 로드 가이드
+- [ComponentFactory API](/ko/env/api-reference/factory) - DetectFormat 함수 레퍼런스
 - [Config API](/ko/env/api-reference/config) - JSON/YAML 파싱 옵션

@@ -1,22 +1,22 @@
 ---
 sidebar_label: "Шпаргалка"
-title: "Шпаргалка - CyberGo env | Быстрый справочник API"
-description: "Шпаргалка CyberGo env: загрузка, типы, маппинг структур, ${VAR}, валидация, SecureValue, Marshal/Unmarshal, ошибки errors.Is и аудит — на одной странице."
+title: "Шпаргалка - CyberGo env | частые API"
+description: "Шпаргалка по частым API CyberGo env: загрузка файлов, типобезопасное чтение, маппинг структур, подстановка переменных, валидация, хранение SecureValue, сериализация Marshal/Unmarshal, сигнальные ошибки errors.Is и журнал аудита — ключевые фрагменты кода для повседневного использования."
 sidebar_position: 2
 ---
 
 # Шпаргалка
 
-При наличии базового понимания библиотеки, используйте этот быстрый справочник часто используемых фрагментов кода.
+Быстрая справка по часто используемым фрагментам кода при наличии базового понимания библиотеки.
 
 ## Загрузка конфигурации
 
 ```go
-// Загрузка на уровне пакета
-env.Load(".env")                                        // Загрузка файла .env
+// Через пакетные функции
+env.Load(".env")                                        // Загрузка .env файла
 env.Load(".env", ".env.local", "config.json")          // Несколько файлов
 
-// Загрузка через загрузчик
+// Через загрузчик
 loader, _ := env.New()
 loader.LoadFiles("config.json")                         // JSON
 loader.LoadFiles("config.yaml")                         // YAML
@@ -26,19 +26,19 @@ loader.LoadFiles(".env", ".env.local", "config.json")   // Несколько ф
 ## Чтение значений
 
 ```go
-// Основные типы
+// Базовые типы
 env.GetString("KEY", "default")
 env.GetInt("PORT", 8080)              // Возвращает int64
 env.GetBool("DEBUG", false)
 env.GetDuration("TIMEOUT", 30*time.Second)
 
-// Срезы (поддержка индексного формата KEY_0,KEY_1 или разделения запятыми)
+// Срезы (поддержка индексного формата KEY_0,KEY_1 или разделения запятой)
 env.GetSlice[string]("HOSTS", []string{"localhost"})
 env.GetSlice[int64]("PORTS", []int64{80})
-env.GetSlice[int]("PORTS", []int{80})          // также поддерживается int
+env.GetSlice[int]("PORTS", []int{80})          // также поддерживает int
 env.GetSlice[float64]("RATES", []float64{0.1})
 
-// Получение срезов из Loader
+// Получение среза из Loader
 env.GetSliceFrom[string](loader, "HOSTS")
 env.GetSliceFrom[int64](loader, "PORTS")
 
@@ -48,23 +48,23 @@ keys := env.Keys()
 all := env.All()
 count := env.Len()
 
-// Безопасное значение
+// Безопасные значения
 secret := env.GetSecure("PASSWORD")
 if secret != nil {
     defer secret.Release()  // или secret.Close()
-    value := secret.Reveal()
-    masked := secret.Masked()
+    value := secret.Reveal()   // Открытый текст (использовать только при необходимости)
+    masked := secret.Masked()  // Маска (для логов)
 }
 ```
 
-## Разрешение имён ключей
+## Разрешение ключей
 
 ```go
 // JSON: {"app": {"name": "myapp"}}
 // Хранится как: APP_NAME=myapp
 
-// Все эти способы позволяют получить значение
-env.GetString("APP_NAME")      // Плоское имя ключа (рекомендуется)
+// Все способы доступа работают
+env.GetString("APP_NAME")      // Плоский ключ (рекомендуется)
 env.GetString("app.name")      // Путь через точку
 env.GetString("APP.NAME")      // Путь через точку в верхнем регистре
 
@@ -93,14 +93,14 @@ cfg := Config{}
 env.ParseInto(&cfg)
 ```
 
-## Предустановки конфигурации
+## Пресеты конфигурации
 
-| Предустановка | Назначение | Особенности |
-|---------------|-----------|-------------|
+| Пресет | Назначение | Особенности |
+|--------|------------|-------------|
 | `DefaultConfig()` | Общие | Безопасные значения по умолчанию |
-| `DevelopmentConfig()` | Разработка | Мягкие ограничения, поддержка синтаксиса YAML, лимит файла 10МБ |
-| `TestingConfig()` | Тестирование | Перезапись существующих переменных, изоляция тестов, лимит файла 64КБ |
-| `ProductionConfig()` | Производство | Строгая валидация + аудит, без перезаписи существующих переменных, лимит файла 64КБ |
+| `DevelopmentConfig()` | Разработка | Мягкие ограничения, поддержка синтаксиса YAML, лимит файла 10MB |
+| `TestingConfig()` | Тестирование | Переопределение существующих переменных, изоляция тестов, лимит файла 64KB |
+| `ProductionConfig()` | Продакшн | Строгая валидация + аудит, без переопределения, лимит файла 64KB |
 
 ```go
 cfg := env.ProductionConfig()
@@ -125,7 +125,7 @@ loader.Apply()  // Применить к os.Environ
 loader.Len()    // Количество переменных
 loader.LoadTime() // Время последней загрузки
 loader.IsApplied() // Применено ли к системному окружению
-loader.IsClosed()  // Закрыт ли загрузчик
+loader.IsClosed()  // Закрыт ли
 loader.Config()    // Получить конфигурацию
 ```
 
@@ -134,17 +134,17 @@ loader.Config()    // Получить конфигурацию
 ```go
 import "errors"
 
-// Сторожевые ошибки
+// Сигнальные ошибки
 errors.Is(err, env.ErrFileNotFound)
 errors.Is(err, env.ErrFileTooLarge)
-errors.Is(err, env.ErrSecurityViolation)  // Запрещённый ключ (фактически возвращается *SecurityError)
+errors.Is(err, env.ErrSecurityViolation)  // Запрещённый ключ (фактически возвращает *SecurityError)
 errors.Is(err, env.ErrClosed)
 errors.Is(err, env.ErrAlreadyInitialized)
 
-// Недопустимый формат ключа: фактически возвращается *ValidationError, Field=="key"
+// Неверный формат ключа: фактически возвращает *ValidationError, Field=="key"
 var keyErr *env.ValidationError
 if errors.As(err, &keyErr) && keyErr.Field == "key" {
-    // Недопустимый формат ключа: keyErr.Message
+    // Неверный формат ключа: keyErr.Message
 }
 
 // Структурированные ошибки
@@ -164,7 +164,7 @@ errors.As(err, &secErr)
 ## Инструменты безопасности
 
 ```go
-// Конфиденциальные значения
+// Чувствительные значения
 secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
@@ -186,12 +186,12 @@ clean := env.SanitizeForLog(msg)
 masked := env.MaskKey("DB_PASSWORD")  // "DB***"
 ```
 
-## Множественные среды
+## Несколько сред
 
 ```go
 goEnv := os.Getenv("GO_ENV")
 if goEnv == "" { goEnv = "development" }
-env.Load(".env", ".env."+goEnv, ".env.local")  // Один вызов, последующие перезаписывают предыдущие
+env.Load(".env", ".env."+goEnv, ".env.local")  // Один вызов, последующие переопределяют предыдущие
 ```
 
 ## Многоформатность
@@ -223,9 +223,9 @@ KEY='literal ${noexpand}'
 KEY=${OTHER_KEY}           # Ссылка на переменную
 KEY=${MISSING:-default}    # Значение по умолчанию (если переменная не существует)
 KEY=${MISSING:=default}    # Значение по умолчанию (если переменная не существует, аналогично :-)
-KEY=${MISSING:?error}      # Сообщение об ошибке (если переменная не существует или пуста)
-export KEY=value           # Стиль bash
-KEY=$$                     # Экранированный знак доллара
+KEY=${MISSING:?error}      # Сообщение об ошибке (ошибка если переменная не существует или пуста)
+export KEY=value           # В стиле bash
+KEY=$$                     # Экранирование знака доллара
 ```
 
 ## Логические значения
@@ -242,14 +242,14 @@ INTERVAL=5m
 DURATION=1h30m
 ```
 
-## Ограничивающие константы
+## Константы ограничений
 
-| Параметр | По умолчанию | Жёсткий предел |
-|----------|-------------|----------------|
-| Размер файла | 2 МБ | 100 МБ |
-| Длина строки | 1 КБ | 64 КБ |
+| Ограничение | Значение по умолчанию | Жёсткий предел |
+|-------------|------------------------|----------------|
+| Размер файла | 2 MB | 100 MB |
+| Длина строки | 1 KB | 64 KB |
 | Длина ключа | 64 | 1024 |
-| Длина значения | 4 КБ | 1 МБ |
+| Длина значения | 4 KB | 1 MB |
 | Количество переменных | 500 | 10000 |
 | Глубина подстановки | 5 | 20 |
 
@@ -275,34 +275,34 @@ func TestMain(m *testing.M) {
 
 ## Встроенные запрещённые ключи
 
-Следующие имена ключей запрещены к установке по умолчанию:
+Следующие имена ключей по умолчанию запрещены:
 
 | Категория | Ключи |
 |-----------|-------|
-| Системные пути | `PATH` |
-| Динамическая компоновка Linux | `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_DEBUG`, `LD_AUDIT`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64` |
+| Системный путь | `PATH` |
+| Динамическая линковка Linux | `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_DEBUG`, `LD_AUDIT`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64` |
 | macOS | `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH` |
 | Shell | `SHELL`, `ENV`, `BASH_ENV`, `IFS` |
-| Среды выполнения языков | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
+| Рантаймы языков | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
 
 ## Типы интерфейсов
 
 ```go
-// Детализированные интерфейсы
+// Тонкозернистые интерфейсы
 // env.EnvFileLoader    // LoadFiles
 // env.EnvGetter        // GetString, Lookup, Keys, All
 // env.EnvSetter        // Set, Delete
 // env.EnvApplicator    // Apply
 // env.EnvCloser        // Close
 
-// Комбинированный интерфейс
-// env.EnvLoader        // Комбинация всех вышеуказанных
+// Композитные интерфейсы
+// env.EnvLoader        // Комбинирует все вышеуказанные
 ```
 
 ## Связанная документация
 
-- [Быстрый старт](/ru/env/getting-started/) - Полный учебник
-- [Функции пакета](/ru/env/api-reference/functions) - Подробный API
-- [Loader API](/ru/env/api-reference/loader) - Методы Loader
-- [Config API](/ru/env/api-reference/config) - Параметры конфигурации
-- [Обработка ошибок](/ru/env/advanced/error-handling) - Шаблоны обработки ошибок
+- [Быстрый старт](/ru/env/getting-started/) - полный учебник
+- [Функции пакета](/ru/env/api-reference/functions) - подробное API
+- [Loader API](/ru/env/api-reference/loader) - методы Loader
+- [Config API](/ru/env/api-reference/config) - параметры конфигурации
+- [Обработка ошибок](/ru/env/guides/error-handling) - шаблоны обработки ошибок

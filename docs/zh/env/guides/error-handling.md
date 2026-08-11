@@ -1,17 +1,18 @@
 ---
-sidebar_label: "오류 처리"
-title: "오류 처리 - CyberGo env | 센티넬 오류와 복구 전략"
-description: "CyberGo env 오류 처리 가이드로 16 개 센티넬 오류의 errors.Is 검사, ParseError/FileError/SecurityError 구조화 오류의 errors.As 추출, 복구·성능 저하 전략과 오류 체인 추적을 프로덕션 관점에서 설명합니다."
-sidebar_position: 2
+sidebar_label: "错误处理"
+title: "错误处理 - CyberGo env | 哨兵错误与恢复策略"
+description: "CyberGo env 错误处理指南，详解 16 个哨兵错误的 errors.Is 精确匹配、ParseError/FileError/SecurityError 等结构化错误的 errors.As 上下文提取、恢复降级策略与错误链 Unwrap 追踪，附生产环境错误分类实践。"
+sidebar_position: 5
+sidebar_icon: "🛡️"
 ---
 
-# 오류 처리
+# 错误处理
 
-env 라이브러리는 구조화된 오류 처리 메커니즘을 제공하며, `errors.Is`와 `errors.As` 패턴을 지원합니다.
+env 库提供结构化的错误处理机制，支持 `errors.Is` 和 `errors.As` 模式。
 
-## 센티넬 오류
+## 哨兵错误
 
-### 파일 오류
+### 文件错误
 
 ```go
 var (
@@ -20,19 +21,19 @@ var (
 )
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 err := loader.LoadFiles(".env")
 if errors.Is(err, env.ErrFileNotFound) {
-    log.Println("구성 파일이 존재하지 않음")
+    log.Println("配置文件不存在")
 }
 if errors.Is(err, env.ErrFileTooLarge) {
-    log.Println("구성 파일이 너무 큼")
+    log.Println("配置文件过大")
 }
 ```
 
-### 파싱 오류
+### 解析错误
 
 ```go
 var (
@@ -42,7 +43,7 @@ var (
 )
 ```
 
-### 보안 오류
+### 安全错误
 
 ```go
 var (
@@ -52,28 +53,28 @@ var (
 )
 ```
 
-**금지 키 확인 (실제로는 `*SecurityError` 반환, `ErrSecurityViolation`과 일치):**
+**禁止键检查（实际返回 `*SecurityError`，匹配 `ErrSecurityViolation`）：**
 
 ```go
 err := loader.Set("PATH", "/malicious")
 if errors.Is(err, env.ErrSecurityViolation) {
-    log.Println("금지 키 설정 시도")
+    log.Println("尝试设置禁止键")
 }
 ```
 
-### 확장 오류
+### 展开错误
 
 ```go
 var ErrExpansionDepth = errors.New("variable expansion depth exceeded")
 ```
 
-### 제한 오류
+### 限制错误
 
 ```go
 var ErrMaxVariables = errors.New("maximum number of variables exceeded")
 ```
 
-### 상태 오류
+### 状态错误
 
 ```go
 var (
@@ -85,32 +86,32 @@ var (
 )
 ```
 
-**확인 방법:**
+**检查方式：**
 
 ```go
-// 로더 닫힘 여부 확인
+// 检查加载器是否已关闭
 if errors.Is(err, env.ErrClosed) {
-    // 로더가 닫힘
+    // 加载器已关闭
 }
 
-// 기본 로더 초기화 여부 확인
+// 检查默认加载器是否已初始化
 if errors.Is(err, env.ErrAlreadyInitialized) {
-    // 기본 로더가 이미 존재함, Load() 를 반복 호출할 수 없음
+    // 默认加载器已存在，无法重复调用 Load()
 }
 
-// 기본 로더 미초기화 여부 확인
+// 检查默认加载器是否未初始化
 if errors.Is(err, env.ErrNotInitialized) {
-    // 먼저 env.Load() 또는 env.LoadWithConfig() 를 호출해야 함
+    // 需要先调用 env.Load() 或 env.LoadWithConfig()
 }
 
-// 필수 키 누락 여부 확인 (실제로는 *ValidationError, Rule=="required" 반환)
+// 检查必需键是否缺失（实际返回 *ValidationError，Rule=="required"）
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
-    // 필수 키 누락: valErr.Message 에 누락된 키 목록 포함
+    // 缺少必需键：valErr.Message 含缺失键列表
 }
 ```
 
-### 어댑터 오류
+### 适配器错误
 
 ```go
 var ErrValidateRequiredUnsupported = errors.New(
@@ -119,70 +120,70 @@ var ErrValidateRequiredUnsupported = errors.New(
 )
 ```
 
-커스텀 검증기가 `KeyValidator` 인터페이스만 구현하고 완전한 `Validator` 인터페이스를 구현하지 않은 경우, `ValidateRequired` 호출 시 이 오류가 반환됩니다.
+当自定义验证器仅实现 `KeyValidator` 接口而未实现完整 `Validator` 接口时，调用 `ValidateRequired` 会返回此错误。
 
-**확인 방법:**
+**检查方式：**
 
 ```go
 if errors.Is(err, env.ErrValidateRequiredUnsupported) {
-    // 커스텀 검증기가 필수 키 검증을 지원하지 않음
-    // 완전한 Validator 인터페이스를 구현해야 함
+    // 自定义验证器不支持必需键验证
+    // 需要实现完整的 Validator 接口
 }
 ```
 
-::: tip 해결 방법
-`KeyValidator`만 구현하는 대신 `Validator` 인터페이스 (ValidateKey, ValidateValue, ValidateRequired 세 가지 메서드 포함) 를 구현하세요.
+::: tip 解决方法
+实现 `Validator` 接口（包含 ValidateKey、ValidateValue、ValidateRequired 三个方法）而非仅实现 `KeyValidator`。
 :::
 
-## 구조화된 오류 타입
+## 结构化错误类型
 
 ### ParseError
 
-파싱 오류, 위치 정보 포함:
+解析错误，包含位置信息：
 
 ```go
 type ParseError struct {
-    File    string  // 파일 이름
-    Line    int     // 줄 번호
-    Content string  // 오류 내용
-    Err     error   // 원본 오류
+    File    string  // 文件名
+    Line    int     // 行号
+    Content string  // 错误内容
+    Err     error   // 原始错误
 }
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 err := loader.LoadFiles(".env")
 
 var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
-    log.Printf("파싱 오류 %s:%d - %s\n",
+    log.Printf("解析错误 %s:%d - %s\n",
         parseErr.File, parseErr.Line, parseErr.Err)
-    // 출력: 파싱 오류 .env:15 - invalid key format
+    // 输出：解析错误 .env:15 - invalid key format
 }
 ```
 
 ### FileError
 
-파일 작업 오류:
+文件操作错误：
 
 ```go
 type FileError struct {
-    Path  string  // 파일 경로
-    Op    string  // 작업
-    Err   error   // 원본 오류
-    Size  int64   // 파일 크기
-    Limit int64   // 제한
+    Path  string  // 文件路径
+    Op    string  // 操作
+    Err   error   // 原始错误
+    Size  int64   // 文件大小
+    Limit int64   // 限制
 }
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
     if fileErr.Size > 0 {
-        log.Printf("파일 %s 크기 %d이(가) 제한 %d을(를) 초과\n",
+        log.Printf("文件 %s 大小 %d 超过限制 %d\n",
             fileErr.Path, fileErr.Size, fileErr.Limit)
     }
 }
@@ -190,177 +191,177 @@ if errors.As(err, &fileErr) {
 
 ### SecurityError
 
-보안 오류:
+安全错误：
 
 ```go
 type SecurityError struct {
-    Action  string  // 작업
-    Reason  string  // 사유
-    Key     string  // 키 이름
-    Details string  // 상세 정보
+    Action  string  // 操作
+    Reason  string  // 原因
+    Key     string  // 键名
+    Details string  // 详情
 }
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 var secErr *env.SecurityError
 if errors.As(err, &secErr) {
-    log.Printf("보안 오류: %s - %s (키: %s)\n",
+    log.Printf("安全错误: %s - %s (键: %s)\n",
         secErr.Action, secErr.Reason, secErr.Key)
 }
 ```
 
 ### ValidationError
 
-검증 오류:
+验证错误：
 
 ```go
 type ValidationError struct {
-    Field   string  // 필드 이름
-    Value   string  // 값
-    Rule    string  // 규칙
-    Message string  // 메시지
+    Field   string  // 字段名
+    Value   string  // 值
+    Rule    string  // 规则
+    Message string  // 消息
 }
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 var valErr *env.ValidationError
 if errors.As(err, &valErr) {
-    log.Printf("검증 실패: 필드 %s - %s\n", valErr.Field, valErr.Message)
+    log.Printf("验证失败: 字段 %s - %s\n", valErr.Field, valErr.Message)
 }
 ```
 
 ### ExpansionError
 
-변수 확장 오류:
+变量展开错误：
 
 ```go
 type ExpansionError struct {
-    Key   string             // 키 이름
-    Depth int                // 현재 깊이
-    Limit int                // 제한
-    Chain string             // 확장 체인
-    Kind  ExpansionErrorKind // 오류 원인 범주 (기본값 = 깊이/순환)
+    Key   string             // 键名
+    Depth int                // 当前深度
+    Limit int                // 限制
+    Chain string             // 展开链
+    Kind  ExpansionErrorKind // 错误原因类别（零值 = 深度/循环）
 }
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 var expErr *env.ExpansionError
 if errors.As(err, &expErr) {
-    log.Printf("확장 깊이 초과: %s (체인: %s)\n", expErr.Key, expErr.Chain)
+    log.Printf("展开深度超限: %s (链: %s)\n", expErr.Key, expErr.Chain)
 }
 ```
 
 ### JSONError
 
-JSON 파싱 오류:
+JSON 解析错误：
 
 ```go
 type JSONError struct {
-    Path    string  // 파일 경로
-    Message string  // 오류 메시지
-    Err     error   // 원본 오류
+    Path    string  // 文件路径
+    Message string  // 错误消息
+    Err     error   // 原始错误
 }
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 var jsonErr *env.JSONError
 if errors.As(err, &jsonErr) {
-    log.Printf("JSON 오류 %s: %s\n", jsonErr.Path, jsonErr.Message)
+    log.Printf("JSON 错误 %s: %s\n", jsonErr.Path, jsonErr.Message)
 }
 ```
 
 ### YAMLError
 
-YAML 파싱 오류:
+YAML 解析错误：
 
 ```go
 type YAMLError struct {
-    Path    string  // 파일 경로
-    Line    int     // 줄 번호
-    Column  int     // 열 번호
-    Message string  // 오류 메시지
-    Err     error   // 원본 오류
+    Path    string  // 文件路径
+    Line    int     // 行号
+    Column  int     // 列号
+    Message string  // 错误消息
+    Err     error   // 原始错误
 }
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 var yamlErr *env.YAMLError
 if errors.As(err, &yamlErr) {
-    log.Printf("YAML 오류 %s:%d:%d - %s\n",
+    log.Printf("YAML 错误 %s:%d:%d - %s\n",
         yamlErr.Path, yamlErr.Line, yamlErr.Column, yamlErr.Message)
 }
 ```
 
 ### MarshalError
 
-직렬화/역직렬화 오류:
+序列化/反序列化错误：
 
 ```go
 type MarshalError struct {
-    Field   string  // 필드 이름
-    Message string  // 오류 메시지
+    Field   string  // 字段名
+    Message string  // 错误消息
 }
 ```
 
-**사용 예시:**
+**使用示例：**
 
 ```go
 _, err := env.MarshalStruct(invalidData)
 if err != nil && env.IsMarshalError(err) {
     var marshalErr *env.MarshalError
     if errors.As(err, &marshalErr) {
-        log.Printf("직렬화 오류: 필드 %s - %s\n", marshalErr.Field, marshalErr.Message)
+        log.Printf("序列化错误: 字段 %s - %s\n", marshalErr.Field, marshalErr.Message)
     }
 }
 ```
 
-## 오류 처리 패턴
+## 错误处理模式
 
-### errors.Is 패턴
+### errors.Is 模式
 
-센티넬 오류 확인:
+检查哨兵错误：
 
 ```go
 err := loader.LoadFiles(".env")
 
 switch {
 case errors.Is(err, env.ErrFileNotFound):
-    // 파일 없음
-    log.Println("구성 파일이 존재하지 않음, 기본값 사용")
+    // 文件不存在
+    log.Println("配置文件不存在，使用默认值")
 
 case errors.Is(err, env.ErrFileTooLarge):
-    // 파일이 너무 큼
-    log.Fatal("구성 파일이 너무 큼")
+    // 文件过大
+    log.Fatal("配置文件过大")
 
 case errors.Is(err, env.ErrSecurityViolation):
-    // 금지 키 (실제로는 *SecurityError 반환)
-    log.Fatal("금지 키 감지")
+    // 禁止键（实际返回 *SecurityError）
+    log.Fatal("检测到禁止键")
 
 case err != nil:
-    // 기타 오류
-    log.Fatalf("로딩 실패: %v", err)
+    // 其他错误
+    log.Fatalf("加载失败: %v", err)
 }
 
-// 키 형식이 잘못된 경우 (실제로는 *ValidationError, Field=="key" 반환)
+// 键格式非法（实际返回 *ValidationError，Field=="key"）
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Field == "key" {
-    log.Fatalf("잘못된 키 감지: %s", valErr.Message)
+    log.Fatalf("检测到无效键: %s", valErr.Message)
 }
 ```
 
-### errors.As 패턴
+### errors.As 模式
 
-상세 오류 정보 추출:
+提取详细错误信息：
 
 ```go
 err := loader.LoadFiles(".env")
@@ -368,30 +369,30 @@ if err == nil {
     return
 }
 
-// 파싱 오류 추출 시도
+// 尝试提取解析错误
 var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
-    log.Fatalf("파싱 오류 %s %d번째 줄: %v",
+    log.Fatalf("解析错误在 %s 第 %d 行: %v",
         parseErr.File, parseErr.Line, parseErr.Err)
 }
 
-// 파일 오류 추출 시도
+// 尝试提取文件错误
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
-    log.Fatalf("파일 %s 오류: %v", fileErr.Path, fileErr.Err)
+    log.Fatalf("文件 %s 错误: %v", fileErr.Path, fileErr.Err)
 }
 
-// 보안 오류 추출 시도
+// 尝试提取安全错误
 var secErr *env.SecurityError
 if errors.As(err, &secErr) {
-    log.Fatalf("보안 오류: %s - %s", secErr.Action, secErr.Reason)
+    log.Fatalf("安全错误: %s - %s", secErr.Action, secErr.Reason)
 }
 
-// 기타 오류
-log.Fatalf("알 수 없는 오류: %v", err)
+// 其他错误
+log.Fatalf("未知错误: %v", err)
 ```
 
-### 조합 처리
+### 组合处理
 
 ```go
 func handleLoadError(err error) {
@@ -399,39 +400,39 @@ func handleLoadError(err error) {
         return
     }
 
-    // 먼저 센티넬 오류 확인
+    // 首先检查哨兵错误
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        log.Println("경고: 구성 파일이 존재하지 않음")
+        log.Println("警告：配置文件不存在")
         return
 
     case errors.Is(err, env.ErrFileTooLarge):
         var fileErr *env.FileError
         errors.As(err, &fileErr)
-        log.Fatalf("파일 %s이(가) 너무 큼 (%d > %d)",
+        log.Fatalf("文件 %s 过大 (%d > %d)",
             fileErr.Path, fileErr.Size, fileErr.Limit)
     }
 
-    // 그 다음 구조화된 오류 확인
+    // 然后检查结构化错误
     var parseErr *env.ParseError
     if errors.As(err, &parseErr) {
-        log.Fatalf("파싱 오류 %s:%d - %v",
+        log.Fatalf("解析错误 %s:%d - %v",
             parseErr.File, parseErr.Line, parseErr.Err)
     }
 
     var secErr *env.SecurityError
     if errors.As(err, &secErr) {
-        log.Fatalf("보안 오류: %s", secErr.Reason)
+        log.Fatalf("安全错误: %s", secErr.Reason)
     }
 
-    // 알 수 없는 오류
-    log.Fatalf("오류: %v", err)
+    // 未知错误
+    log.Fatalf("错误: %v", err)
 }
 ```
 
-## 복구 패턴
+## 恢复模式
 
-### 우아한 성능 저하
+### 优雅降级
 
 ```go
 func loadConfig() *Config {
@@ -439,7 +440,7 @@ func loadConfig() *Config {
     cfg.Filenames = nil
     loader, err := env.New(cfg)
     if err != nil {
-        log.Printf("구성 오류: %v, 기본 구성 사용", err)
+        log.Printf("配置错误: %v，使用默认配置", err)
         return defaultConfig()
     }
     defer loader.Close()
@@ -447,21 +448,21 @@ func loadConfig() *Config {
     err = loader.LoadFiles(".env")
     if err != nil {
         if errors.Is(err, env.ErrFileNotFound) {
-            log.Println("구성 파일이 존재하지 않음, 기본값 사용")
+            log.Println("配置文件不存在，使用默认值")
             return defaultConfig()
         }
-        log.Fatalf("로딩 실패: %v", err)
+        log.Fatalf("加载失败: %v", err)
     }
 
     if err := loader.Validate(); err != nil {
-        log.Fatalf("검증 실패: %v", err)
+        log.Fatalf("验证失败: %v", err)
     }
 
     return parseConfig(loader)
 }
 ```
 
-### 재시도 패턴
+### 重试模式
 
 ```go
 func loadWithRetry(filenames []string, maxRetries int) error {
@@ -491,7 +492,7 @@ func loadWithRetry(filenames []string, maxRetries int) error {
 }
 ```
 
-## 전체 예시
+## 完整示例
 
 ```go
 package main
@@ -524,54 +525,54 @@ func main() {
         handleValidationError(err)
     }
 
-    log.Println("구성 로딩 성공")
+    log.Println("配置加载成功")
 }
 
 func handleLoadError(err error) {
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        log.Fatal("구성 파일이 존재하지 않음")
+        log.Fatal("配置文件不存在")
 
     case errors.Is(err, env.ErrFileTooLarge):
         var fileErr *env.FileError
         errors.As(err, &fileErr)
-        log.Fatalf("파일이 너무 큼: %s (%d bytes)", fileErr.Path, fileErr.Size)
+        log.Fatalf("文件过大: %s (%d bytes)", fileErr.Path, fileErr.Size)
 
     case errors.Is(err, env.ErrSecurityViolation):
-        log.Fatal("금지 키 감지")
+        log.Fatal("检测到禁止键")
     }
 
-    // 구조화된 오류
+    // 结构化错误
     var parseErr *env.ParseError
     if errors.As(err, &parseErr) {
-        log.Fatalf("파싱 오류 %s:%d - %v",
+        log.Fatalf("解析错误 %s:%d - %v",
             parseErr.File, parseErr.Line, parseErr.Err)
     }
 
     var secErr *env.SecurityError
     if errors.As(err, &secErr) {
-        log.Fatalf("보안 오류: %s - %s", secErr.Action, secErr.Reason)
+        log.Fatalf("安全错误: %s - %s", secErr.Action, secErr.Reason)
     }
 
-    log.Fatalf("로딩 실패: %v", err)
+    log.Fatalf("加载失败: %v", err)
 }
 
 func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
         if valErr.Rule == "required" {
-            // 필수 키 누락: valErr.Message 에 누락된 키 목록 포함
-            log.Fatalf("필수 키 누락: %s", valErr.Message)
+            // 缺少必需键：valErr.Message 含缺失键列表
+            log.Fatalf("缺少必需键: %s", valErr.Message)
         }
-        log.Fatalf("검증 실패: %s - %s", valErr.Field, valErr.Message)
+        log.Fatalf("验证失败: %s - %s", valErr.Field, valErr.Message)
     }
 
-    log.Fatalf("검증 실패: %v", err)
+    log.Fatalf("验证失败: %v", err)
 }
 ```
 
-## 관련 문서
+## 相关文档
 
-- [상수 및 오류](/ko/env/api-reference/constants) - 전체 오류 목록
-- [Config API](/ko/env/api-reference/config) - 구성 제한 설정
-- [보안 개요](/ko/env/security/) - 보안 오류 처리
+- [常量与错误](/zh/env/api-reference/constants) - 完整错误列表
+- [Config API](/zh/env/api-reference/config) - 配置限制设置
+- [安全概述](/zh/env/security/) - 安全错误处理

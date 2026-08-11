@@ -298,5 +298,9 @@
   {
     "from": "dd/api-reference/extensions/hooks",
     "to": "dd/api-reference/core/hooks"
+  },
+  {
+    "from": "env/advanced/error-handling",
+    "to": "env/guides/error-handling"
   }
 ]

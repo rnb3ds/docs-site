@@ -85,6 +85,7 @@ type ConnectionConfig struct {
     ProxyPoolStrategy      ProxyStrategy // Proxy selection strategy, default RoundRobin
     ProxyFailureThreshold  int           // Consecutive-failure threshold, 0 defaults to 3
     ProxyCooldown          time.Duration // Circuit-break cooldown, 0 defaults to 30s
+    ProxyRotatePerRequest  bool          // Force a different proxy for each independent request, default false
     ProxyRotateOnStatus    []int         // HTTP status codes that trigger proxy rotation
     EnableHTTP2            bool          // Enable HTTP/2, default true
     EnableCookies          bool          // Enable cookie management, default false
@@ -101,6 +102,12 @@ type ConnectionConfig struct {
 Priority: lower than `ProxyURL`, higher than `EnableSystemProxy`. If both `ProxyURL` and `ProxyPool` are set, `ProxyURL` takes effect (single-proxy mode).
 
 `ProxyRotateOnStatus` specifies HTTP status codes that trigger a proxy switch on retry (e.g. `[]int{403}` for CF/WAF IP-based blocking). Unlike connection failures, status-code rotation does **not** circuit-break the proxy — blocking is often target-specific (a proxy blocked on one site may work fine on another). Requires `Retry.MaxRetries > 0` to take effect.
+
+`ProxyRotatePerRequest` ensures that each independent request (e.g. each `Get`/`Post` call) uses a different proxy. When disabled, HTTP connection reuse causes consecutive requests to the same host to reuse the previous request's proxy tunnel, bypassing proxy-pool selection. When enabled, idle connections are closed at the start of each request, forcing the Transport to re-evaluate the proxy pool — this adds a small overhead (no connection reuse) but guarantees per-request rotation. Requires `ProxyPool` to take effect; has no effect with `ProxyURL` or when no proxy pool is configured.
+
+:::tip
+Both are used for proxy rotation, but their trigger mechanisms differ: `ProxyRotateOnStatus` triggers rotation on retry when a **specific status code is received** (passive, requires retries), while `ProxyRotatePerRequest` actively switches the proxy **at the start of each request** (no retries needed). For scraping/data-collection scenarios targeting the same host, `ProxyRotatePerRequest` ensures each request has a different source IP.
+:::
 
 ```go
 cfg := httpc.DefaultConfig()

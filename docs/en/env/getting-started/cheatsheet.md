@@ -1,22 +1,22 @@
 ---
 sidebar_label: "Cheat Sheet"
-title: "Cheat Sheet - CyberGo env | Common API Quick Reference"
-description: "CyberGo env cheat sheet: file loading, type reads, struct mapping, expansion, validation, SecureValue, Marshal/Unmarshal, sentinel errors and audit logging."
+title: "Cheat Sheet - CyberGo env | Quick API Reference"
+description: "CyberGo env common API cheat sheet - a single page summarizing core code snippets for high-frequency operations including file loading, type reading, struct mapping, variable expansion, validation, SecureValue storage, Marshal/Unmarshal serialization, sentinel errors with errors.Is, and audit logging for everyday reference."
 sidebar_position: 2
 ---
 
 # Cheat Sheet
 
-A quick reference for frequently used code snippets, assuming you are already familiar with the library.
+Quick reference for commonly used code snippets, assuming you already understand the library.
 
 ## Loading Configuration
 
 ```go
-// Package-level loading
+// Load via package-level functions
 env.Load(".env")                                        // Load .env file
 env.Load(".env", ".env.local", "config.json")          // Multiple files
 
-// Loader-level loading
+// Load via loader instance
 loader, _ := env.New()
 loader.LoadFiles("config.json")                         // JSON
 loader.LoadFiles("config.yaml")                         // YAML
@@ -35,25 +35,25 @@ env.GetDuration("TIMEOUT", 30*time.Second)
 // Slices (supports KEY_0,KEY_1 index format or comma-separated)
 env.GetSlice[string]("HOSTS", []string{"localhost"})
 env.GetSlice[int64]("PORTS", []int64{80})
-env.GetSlice[int]("PORTS", []int{80})          // Also supports int
+env.GetSlice[int]("PORTS", []int{80})          // also supports int
 env.GetSlice[float64]("RATES", []float64{0.1})
 
-// Get slices from Loader
+// Get slice from Loader
 env.GetSliceFrom[string](loader, "HOSTS")
 env.GetSliceFrom[int64](loader, "PORTS")
 
-// Lookup
+// Query
 val, ok := env.Lookup("KEY")
 keys := env.Keys()
 all := env.All()
 count := env.Len()
 
-// Secure values
+// Secure value
 secret := env.GetSecure("PASSWORD")
 if secret != nil {
     defer secret.Release()  // or secret.Close()
-    value := secret.Reveal()   // plaintext (use only when needed)
-    masked := secret.Masked()  // masked (for logging)
+    value := secret.Reveal()   // plaintext value (use only when needed)
+    masked := secret.Masked()  // mask (for logging)
 }
 ```
 
@@ -63,8 +63,8 @@ if secret != nil {
 // JSON: {"app": {"name": "myapp"}}
 // Stored as: APP_NAME=myapp
 
-// All of the following can access the value
-env.GetString("APP_NAME")      // Flat key name (recommended)
+// All of these work
+env.GetString("APP_NAME")      // Flat key (recommended)
 env.GetString("app.name")      // Dot path
 env.GetString("APP.NAME")      // Uppercase dot path
 
@@ -72,8 +72,8 @@ env.GetString("APP.NAME")      // Uppercase dot path
 env.GetString("servers.0.host")  // SERVERS_0_HOST
 ```
 
-| Input | Converts To |
-|-------|-------------|
+| Input | Converted to |
+|-------|---------------|
 | `"database.host"` | `"DATABASE_HOST"` |
 | `"servers.0.host"` | `"SERVERS_0_HOST"` |
 | `"app.config.name"` | `"APP_CONFIG_NAME"` |
@@ -95,12 +95,12 @@ env.ParseInto(&cfg)
 
 ## Configuration Presets
 
-| Preset | Use Case | Features |
-|--------|----------|----------|
+| Preset | Purpose | Characteristics |
+|--------|---------|-----------------|
 | `DefaultConfig()` | General | Safe defaults |
-| `DevelopmentConfig()` | Development | Relaxed restrictions, YAML syntax support, 10MB file limit |
-| `TestingConfig()` | Testing | Override existing variables, test isolation, 64KB file limit |
-| `ProductionConfig()` | Production | Strict validation + audit, no override, 64KB file limit |
+| `DevelopmentConfig()` | Development | Relaxed limits, YAML syntax support, 10MB file limit |
+| `TestingConfig()` | Testing | Overwrites existing variables, test isolation, 64KB file limit |
+| `ProductionConfig()` | Production | Strict validation + audit, no overwriting, 64KB file limit |
 
 ```go
 cfg := env.ProductionConfig()
@@ -164,7 +164,7 @@ errors.As(err, &secErr)
 ## Security Tools
 
 ```go
-// Sensitive values
+// Sensitive value
 secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
@@ -182,33 +182,33 @@ env.IsMemoryLockSupported()     // Linux/macOS/Windows: true
 env.ClearBytes(sensitiveData)
 clean := env.SanitizeForLog(msg)
 
-// Key masking
+// Key name masking
 masked := env.MaskKey("DB_PASSWORD")  // "DB***"
 ```
 
-## Multi-Environment
+## Multi-environment
 
 ```go
 goEnv := os.Getenv("GO_ENV")
 if goEnv == "" { goEnv = "development" }
-env.Load(".env", ".env."+goEnv, ".env.local")  // Single call, later overrides earlier
+env.Load(".env", ".env."+goEnv, ".env.local")  // Single call, later overwrites earlier
 ```
 
-## Multi-Format
+## Multi-format
 
 ```go
-// Loading
+// Load
 loader.LoadFiles("config.env", "config.json", "config.yaml")
 
 // Detect format
 format := env.DetectFormat("config.json")  // FormatJSON
 
-// Serialization
+// Serialize
 env.Marshal(data, env.FormatEnv)
 env.Marshal(data, env.FormatJSON)
 env.Marshal(data, env.FormatYAML)
 
-// Deserialization
+// Deserialize
 env.UnmarshalMap(data, env.FormatEnv)
 env.UnmarshalMap(data, env.FormatAuto)  // Auto-detect
 ```
@@ -221,9 +221,9 @@ KEY=value
 KEY="value with spaces"
 KEY='literal ${noexpand}'
 KEY=${OTHER_KEY}           # Variable reference
-KEY=${MISSING:-default}    # Default value (used when variable does not exist)
-KEY=${MISSING:=default}    # Default value (used when variable does not exist, same as :-)
-KEY=${MISSING:?error}      # Error message (errors when variable does not exist or is empty)
+KEY=${MISSING:-default}    # Default value (used when variable doesn't exist)
+KEY=${MISSING:=default}    # Default value (used when variable doesn't exist, same as :-)
+KEY=${MISSING:?error}      # Error message (errors when variable doesn't exist or is empty)
 export KEY=value           # bash style
 KEY=$$                     # Escaped dollar sign
 ```
@@ -234,7 +234,7 @@ KEY=$$                     # Escaped dollar sign
 |--------|-------|
 | `true`, `1`, `yes`, `on`, `enabled` | `false`, `0`, `no`, `off`, `disabled` |
 
-## Time Format
+## Time Formats
 
 ```bash
 TIMEOUT=30s
@@ -244,7 +244,7 @@ DURATION=1h30m
 
 ## Limit Constants
 
-| Limit | Default | Hard Cap |
+| Limit | Default | Hard Max |
 |-------|---------|----------|
 | File size | 2 MB | 100 MB |
 | Line length | 1 KB | 64 KB |
@@ -262,7 +262,7 @@ func TestExample(t *testing.T) {
     defer loader.Close()
 
     loader.Set("KEY", "value")
-    // Tests...
+    // Test...
 }
 
 func TestMain(m *testing.M) {
@@ -275,12 +275,12 @@ func TestMain(m *testing.M) {
 
 ## Built-in Forbidden Keys
 
-The following key names are forbidden by default:
+The following keys are forbidden by default:
 
 | Category | Keys |
 |----------|------|
 | System path | `PATH` |
-| Linux dynamic linking | `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_DEBUG`, `LD_AUDIT`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64` |
+| Linux dynamic linker | `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_DEBUG`, `LD_AUDIT`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64` |
 | macOS | `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH` |
 | Shell | `SHELL`, `ENV`, `BASH_ENV`, `IFS` |
 | Language runtimes | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
@@ -301,8 +301,8 @@ The following key names are forbidden by default:
 
 ## Related Documentation
 
-- [Getting Started](/en/env/getting-started/) - Full tutorial
+- [Quick Start](/en/env/getting-started/) - Full tutorial
 - [Package Functions](/en/env/api-reference/functions) - Detailed API
 - [Loader API](/en/env/api-reference/loader) - Loader methods
 - [Config API](/en/env/api-reference/config) - Configuration options
-- [Error Handling](/en/env/advanced/error-handling) - Error handling patterns
+- [Error Handling](/en/env/guides/error-handling) - Error handling patterns

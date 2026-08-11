@@ -350,7 +350,7 @@ func main() {
 
 ## 代理池与重试交互
 
-当配置了 `ProxyRotateOnStatus` 时，HTTPC 会自动提高 `MaxRetries`，确保代理池中的每个代理至少被尝试一次。这是通过 `calculateMaxRetries` 实现的：
+当配置了 `ProxyRotateOnStatus` 或 `ProxyRotatePerRequest` 时，HTTPC 会自动提高 `MaxRetries`，确保代理池中的每个代理至少被尝试一次。这是通过 `calculateMaxRetries` 实现的：
 
 ```
 effective MaxRetries = max(配置的 MaxRetries, len(ProxyPool) - 1)
@@ -361,7 +361,7 @@ effective MaxRetries = max(配置的 MaxRetries, len(ProxyPool) - 1)
 
 ```
 ProxyPool = [proxy1, proxy2, proxy3, proxy4, proxy5]
-ProxyRotateOnStatus = [403]
+ProxyRotateOnStatus = [403]   // 或 ProxyRotatePerRequest = true
 配置 MaxRetries = 3
 
 → 自动调整为 4（= 5 - 1），确保 5 个代理各尝试一次

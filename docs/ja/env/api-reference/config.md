@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Config"
-title: "Config API - CyberGo env | 設定詳細"
-description: "CyberGo env の Config 構造体 API リファレンス。ファイル検索パス、サイズ・数量制限、キー検証、JSON/YAML パースオプション、変数展開、監査設定、Development/Production プリセット、ネスト構造とフィールド昇格のアクセス方式を解説します。"
+title: "Config API - CyberGo env | 設定の詳細"
+description: "CyberGo env の Config 設定構造体 API リファレンス。ファイル検索パス、サイズ・数量制限、キーと値の検証、JSON/YAML 解析オプション、変数展開、監査設定、Development/Production プリセットテンプレートを含み、ネスト構造とフィールド昇格の 2 つのアクセス方式を詳解。"
 sidebar_position: 4
 ---
 
@@ -9,89 +9,89 @@ sidebar_position: 4
 
 `Config` 構造体の完全な設定オプションリファレンス。
 
-## 構造体定義
+## 構造体の定義
 
-Config はネストされた構造体で構成を整理し、同時に Go のフィールド昇格により後方互換性を維持します：
+Config はネストした構造体で設定を編成し、同時に Go のフィールド昇格で後方互換性を維持します：
 
 ```go
 type Config struct {
-    FileConfig       // ファイル読み込みの挙動
+    FileConfig       // ファイル読み込み動作
     ValidationConfig // キーと値の検証
     LimitsConfig     // サイズと数量の制限
     JSONConfig       // JSON 解析オプション
     YAMLConfig       // YAML 解析オプション
-    ParsingConfig    // 汎用解析の挙動
-    ComponentConfig  // カスタムコンポーネントと詳細オプション
+    ParsingConfig    // 汎用解析動作
+    ComponentConfig  // カスタムコンポーネントと高度なオプション
 }
 ```
 
-**2 種類のアクセス方法：**
+**2 つのアクセス方式：**
 
 ```go
-// 旧方式（フィールド昇格により、依然として有効）
+// 旧方式（フィールド昇格経由、引き続き有効）
 cfg.Filenames = []string{".env"}
 cfg.MaxFileSize = 1024
 
-// 新しい方法（推奨、より明確）
+// 新方式（推奨、より明確）
 cfg.FileConfig.Filenames = []string{".env"}
 cfg.LimitsConfig.MaxFileSize = 1024
 ```
 
-### ネストされた構造体
+### ネストした構造体
 
 ```go
-// FileConfig はファイル読み込みの挙動を制御
+// FileConfig はファイル読み込み動作を制御
 type FileConfig struct {
     Filenames         []string // 読み込むファイルのリスト
-    FailOnMissingFile bool     // ファイルが存在しない場合にエラーにするか
-    OverwriteExisting bool     // 既存の環境変数を上書きするかどうか
+    FailOnMissingFile bool     // ファイル不存在時にエラーとするか
+    OverwriteExisting bool     // 既存の環境変数を上書きするか
     AutoApply         bool     // os.Environ に自動適用するか
 }
 
 // ValidationConfig はキーと値の検証を制御
 type ValidationConfig struct {
-    RequiredKeys   []string       // 必須キー名のリスト
-    AllowedKeys    []string       // 許可キー名のホワイトリスト
+    RequiredKeys   []string       // 必須のキー名リスト
+    AllowedKeys    []string       // 許可するキー名のホワイトリスト
     ForbiddenKeys  []string       // 追加の禁止キーリスト
     KeyPattern     *regexp.Regexp // キー名マッチパターン
     ValidateValues bool           // 値の安全性を検証するか
-    ValidateUTF8   bool           // 値が有効な UTF-8 か検証
+    ValidateUTF8   bool           // 値が有効な UTF-8 か検証するか
 }
 
 // LimitsConfig はサイズと数量の制限を制御
 type LimitsConfig struct {
-    MaxFileSize       int64 // 単一ファイルの最大バイト数
+    MaxFileSize       int64 // 1 ファイルの最大バイト数
     MaxVariables      int   // ファイルごとの最大変数数
-    MaxLineLength     int   // 単一行の最大長
+    MaxLineLength     int   // 1 行の最大長
     MaxKeyLength      int   // キー名の最大長
     MaxValueLength    int   // 値の最大長
-    MaxExpansionDepth int   // 変数展開の最大深度
+    MaxExpansionDepth int   // 変数展開の最大深さ
 }
 
-// JSONConfig は JSON 解析の挙動を制御
+// JSONConfig は JSON 解析動作を制御
 type JSONConfig struct {
     JSONNullAsEmpty    bool // null を空文字列に変換
     JSONNumberAsString bool // 数値を文字列に変換
-    JSONBoolAsString   bool // 真偽値を文字列に変換
+    JSONBoolAsString   bool // ブール値を文字列に変換
     JSONMaxDepth       int  // 最大ネスト深度
 }
 
-// YAMLConfig は YAML 解析の挙動を制御
+// YAMLConfig は YAML 解析動作を制御
 type YAMLConfig struct {
     YAMLNullAsEmpty    bool // null/~ を空文字列に変換
     YAMLNumberAsString bool // 数値を文字列に変換
-    YAMLBoolAsString   bool // 真偽値を文字列に変換
+    YAMLBoolAsString   bool // ブール値を文字列に変換
     YAMLMaxDepth       int  // 最大ネスト深度
 }
 
-// ParsingConfig は汎用解析の挙動を制御
+// ParsingConfig は汎用解析動作を制御
 type ParsingConfig struct {
     AllowExportPrefix bool // export KEY=value 構文を許可
     AllowYamlSyntax   bool // YAML スタイルの値を許可
-    ExpandVariables   bool // ${VAR} 変数展開を行うか
+    ExpandVariables   bool // ${VAR} 参照を展開するか
 }
 
-// ComponentConfig はカスタムコンポーネントと詳細オプション
+// ComponentConfig はカスタムコンポーネントと高度なオプション
 type ComponentConfig struct {
     CustomValidator Validator        // カスタムキー/値バリデーター
     CustomExpander  VariableExpander // カスタム変数エキスパンダー
@@ -107,7 +107,7 @@ type ComponentConfig struct {
 
 ### ファイル処理
 
-これらのフィールドはファイル読み込みの動作を制御します。
+これらのフィールドはファイル読み込み動作を制御します。
 
 #### `Filenames` []string
 
@@ -121,17 +121,17 @@ cfg.Filenames = []string{".env", ".env.local"}
 
 #### `FailOnMissingFile` bool
 
-ファイルが存在しない場合にエラーを返すかどうか。**デフォルト `false`**（サイレントにスキップ）。
+ファイルが存在しない場合にエラーを返すか。**デフォルト `false`**（サイレントスキップ）。
 
 ```go
-cfg.FailOnMissingFile = true  // ファイルが存在しない場合はエラー
+cfg.FailOnMissingFile = true  // ファイル不存在時にエラー
 ```
 
 ---
 
 #### `OverwriteExisting` bool
 
-既存の環境変数を上書きするかどうか。**デフォルト `false`**。
+既存の環境変数を上書きするか。**デフォルト `false`**。
 
 ```go
 cfg.OverwriteExisting = true  // 上書きを許可
@@ -141,14 +141,14 @@ cfg.OverwriteExisting = true  // 上書きを許可
 
 #### `AutoApply` bool
 
-読み込み後、システム環境に自動適用（`os.Environ`）。**デフォルト `false`**。
+読み込み後にシステム環境（`os.Environ`）へ自動適用するか。**デフォルト `false`**。
 
 ```go
 cfg.AutoApply = true  // 読み込み後に自動適用
 ```
 
 ::: tip 注意
-パッケージレベルの `Load()` 関数は自動的に `AutoApply = true` を設定します。`New()` で Loader を作成する場合は手動で設定する必要があります。
+パッケージレベルの `Load()` 関数は自動的に `AutoApply = true` を設定します。`New()` で Loader を作成する場合は手動で設定が必要です。
 :::
 
 ### 変数展開
@@ -161,26 +161,30 @@ cfg.AutoApply = true  // 読み込み後に自動適用
 cfg.ExpandVariables = true
 ```
 
-サポートされる展開構文：
+サポートする展開構文：
 
 | 構文 | 説明 |
 |------|------|
-| `${VAR}` | 変数を参照 |
-| `${VAR:-default}` | 変数が存在しない、または空の場合にデフォルト値を使用 |
-| `${VAR:=default}` | 変数が存在しない、または空の場合にデフォルト値を設定 |
-| `${VAR:?error}` | 変数が存在しない、または空の場合にエラーを報告 |
+| `${VAR}` | 変数の参照 |
+| `${VAR:-default}` | 変数が存在しない場合にデフォルト値を使用（変数が存在し空でも元の値を使用） |
+| `${VAR:=default}` | `${VAR:-default}` と同じ（変数が存在しない場合にデフォルト値を使用、ストレージに書き戻さない） |
+| `${VAR:?error}` | 変数が存在しないか空の場合にエラーを返す |
+
+::: tip 空文字列の扱い
+`${VAR:-default}` と `${VAR:=default}` は変数が**未設定**の場合のみデフォルト値を使用します。変数が明示的に空文字列（`VAR=`）に設定されている場合、空文字列の元の値を使用します。`${VAR:?error}` のみが空文字列をエラーとして扱います。詳しくは[変数展開](/ja/env/guides/variable-expansion)を参照。
+:::
 
 ### セキュリティ制限
 
 #### `MaxFileSize` int64
 
-単一ファイルの最大バイト数。**デフォルト 2MB**，ハードリミット 100MB。
+1 ファイルの最大バイト数。**デフォルト 2MB**、ハード上限 100MB。
 
 ```go
 cfg.MaxFileSize = 10 * 1024 * 1024 // 10 MB
 ```
 
-| 設定 | デフォルト値 | ハードリミット |
+| 設定 | デフォルト値 | ハード上限 |
 |------|--------|----------|
 | `MaxFileSize` | 2MB (2097152) | 100MB |
 
@@ -188,13 +192,13 @@ cfg.MaxFileSize = 10 * 1024 * 1024 // 10 MB
 
 #### `MaxLineLength` int
 
-単一行の最大長。**デフォルト 1024**，ハードリミット 64KB。
+1 行の最大長。**デフォルト 1024**、ハード上限 64KB。
 
 ```go
 cfg.MaxLineLength = 2048
 ```
 
-| 設定 | デフォルト値 | ハードリミット |
+| 設定 | デフォルト値 | ハード上限 |
 |------|--------|----------|
 | `MaxLineLength` | 1024 | 65536 (64KB) |
 
@@ -202,13 +206,13 @@ cfg.MaxLineLength = 2048
 
 #### `MaxKeyLength` int
 
-キー名の最大長。**デフォルト 64**，ハードリミット 1024。
+キー名の最大長。**デフォルト 64**、ハード上限 1024。
 
 ```go
 cfg.MaxKeyLength = 128
 ```
 
-| 設定 | デフォルト値 | ハードリミット |
+| 設定 | デフォルト値 | ハード上限 |
 |------|--------|----------|
 | `MaxKeyLength` | 64 | 1024 |
 
@@ -216,13 +220,13 @@ cfg.MaxKeyLength = 128
 
 #### `MaxValueLength` int
 
-値の最大長。**デフォルト 4096**，ハードリミット 1MB。
+値の最大長。**デフォルト 4096**、ハード上限 1MB。
 
 ```go
 cfg.MaxValueLength = 8192
 ```
 
-| 設定 | デフォルト値 | ハードリミット |
+| 設定 | デフォルト値 | ハード上限 |
 |------|--------|----------|
 | `MaxValueLength` | 4096 | 1048576 (1MB) |
 
@@ -230,13 +234,13 @@ cfg.MaxValueLength = 8192
 
 #### `MaxVariables` int
 
-ファイルごとの最大変数数。**デフォルト 500**，ハードリミット 10000。
+ファイルごとの最大変数数。**デフォルト 500**、ハード上限 10000。
 
 ```go
 cfg.MaxVariables = 1000
 ```
 
-| 設定 | デフォルト値 | ハードリミット |
+| 設定 | デフォルト値 | ハード上限 |
 |------|--------|----------|
 | `MaxVariables` | 500 | 10000 |
 
@@ -244,24 +248,24 @@ cfg.MaxVariables = 1000
 
 #### `MaxExpansionDepth` int
 
-変数展開の最大深度。**デフォルト 5**，ハードリミット 20。
+変数展開の最大深さ。**デフォルト 5**、ハード上限 20。
 
 ```go
 cfg.MaxExpansionDepth = 10
 ```
 
-| 設定 | デフォルト値 | ハードリミット |
+| 設定 | デフォルト値 | ハード上限 |
 |------|--------|----------|
 | `MaxExpansionDepth` | 5 | 20 |
 
-### キー検証
+### キーの検証
 
 #### `KeyPattern` *regexp.Regexp
 
-カスタムキー名マッチパターン。**デフォルト `nil`**（高速なバイトレベル検証を使用）。
+カスタムキー名マッチパターン。**デフォルト `nil`**（高速バイトレベル検証を使用）。
 
 ::: tip パフォーマンス最適化
-`nil` 値で高速なバイトレベル検証を有効化（約 10 倍の性能向上）。デフォルト検証ルール：英字で始まり、英字・数字・アンダースコアのみを含む。
+`nil` 値は高速バイトレベル検証（約 10 倍のパフォーマンス向上）を有効化します。デフォルトの検証ルール：文字で始まり、文字・数字・アンダースコアのみを含む。
 :::
 
 ```go
@@ -275,7 +279,7 @@ cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]*$`)
 
 #### `AllowedKeys` []string
 
-許可キー名のホワイトリスト。空の場合はすべてのキーを許可（禁止キーを除く）。
+許可するキー名のホワイトリスト。空の場合はすべてのキーを許可（禁止キーを除く）。
 
 ```go
 cfg.AllowedKeys = []string{"APP_NAME", "APP_VERSION", "PORT"}
@@ -285,21 +289,21 @@ cfg.AllowedKeys = []string{"APP_NAME", "APP_VERSION", "PORT"}
 
 #### `ForbiddenKeys` []string
 
-追加の禁止キーリスト（組み込み禁止キーに追加）。
+追加の禁止キーリスト（組み込み禁止キーに重ねて適用）。
 
 ```go
 cfg.ForbiddenKeys = []string{"CUSTOM_DANGEROUS_VAR"}
 ```
 
 ::: tip 組み込み禁止キー
-ライブラリは `PATH`、`LD_PRELOAD`、`LD_LIBRARY_PATH`、`DYLD_INSERT_LIBRARIES` などのシステム重要変数を禁止しています。詳細は [定数とエラー](/ja/env/api-reference/constants#defaultforbiddenkeys) を参照してください。
+ライブラリは組み込みで `PATH`、`LD_PRELOAD`、`LD_LIBRARY_PATH`、`DYLD_INSERT_LIBRARIES` などのシステム重要変数を禁止しています。詳しくは[定数とエラー](/ja/env/api-reference/constants#defaultforbiddenkeys)を参照。
 :::
 
 ---
 
 #### `RequiredKeys` []string
 
-必須キー名のリスト。`Validate()` 呼び出し時にチェックされます。
+必須のキー名リスト。`Validate()` 呼び出し時にチェックします。
 
 ```go
 cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
@@ -312,7 +316,7 @@ cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
 値の安全性を検証（制御文字、ヌルバイトなど）。**デフォルト `true`**。
 
 ::: warning セキュリティの推奨
-常に有効にすることを推奨。特殊なケース（制御文字を含む値を保存する必要がある場合）のみ無効化してください。
+常に有効のままにすることを推奨します。制御文字を含む値を保存する必要がある特殊なシーンでのみ無効化してください。
 :::
 
 ```go
@@ -323,7 +327,7 @@ cfg.ValidateValues = true  // デフォルトで有効
 
 #### `ValidateUTF8` bool
 
-値が有効な UTF-8 エンコーディングか検証します。**デフォルト `false`**。
+値が有効な UTF-8 エンコーディングかを検証。**デフォルト `false`**。
 
 ```go
 cfg.ValidateUTF8 = true  // UTF-8 検証を有効化
@@ -333,7 +337,7 @@ cfg.ValidateUTF8 = true  // UTF-8 検証を有効化
 
 #### `AllowExportPrefix` bool
 
-`export KEY=value` 構文を許可します。**デフォルト `true`**。
+`export KEY=value` 構文を許可。**デフォルト `true`**。
 
 ```go
 cfg.AllowExportPrefix = false  // export プレフィックスを禁止
@@ -343,7 +347,7 @@ cfg.AllowExportPrefix = false  // export プレフィックスを禁止
 
 #### `AllowYamlSyntax` bool
 
-YAML スタイル構文を許可（`KEY: value`）。**デフォルト `false`**。
+YAML スタイルの構文（`KEY: value`）を許可。**デフォルト `false`**。
 
 ```go
 cfg.AllowYamlSyntax = true
@@ -353,7 +357,7 @@ cfg.AllowYamlSyntax = true
 
 #### `JSONNullAsEmpty` bool
 
-JSON `null` を空文字列に変換。**デフォルト `true`**。
+JSON `null` 値を空文字列に変換。**デフォルト `true`**。
 
 ```go
 cfg.JSONNullAsEmpty = true
@@ -373,7 +377,7 @@ cfg.JSONNumberAsString = true
 
 #### `JSONBoolAsString` bool
 
-JSON 真偽値を文字列に変換。**デフォルト `true`**。
+JSON ブール値を文字列に変換。**デフォルト `true`**。
 
 ```go
 cfg.JSONBoolAsString = true
@@ -393,7 +397,7 @@ cfg.JSONMaxDepth = 20
 
 #### `YAMLNullAsEmpty` bool
 
-YAML `null`/`~` を空文字列に変換。**デフォルト `true`**。
+YAML `null`/`~` 値を空文字列に変換。**デフォルト `true`**。
 
 ```go
 cfg.YAMLNullAsEmpty = true
@@ -413,7 +417,7 @@ cfg.YAMLNumberAsString = true
 
 #### `YAMLBoolAsString` bool
 
-YAML 真偽値を文字列に変換。**デフォルト `true`**。
+YAML ブール値を文字列に変換。**デフォルト `true`**。
 
 ```go
 cfg.YAMLBoolAsString = true
@@ -433,7 +437,7 @@ cfg.YAMLMaxDepth = 15
 
 #### `AuditEnabled` bool
 
-監査ログを有効化します。**デフォルト `false`**。
+監査ログを有効化。**デフォルト `false`**。
 
 ```go
 cfg.AuditEnabled = true
@@ -449,11 +453,11 @@ cfg.AuditEnabled = true
 cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 ```
 
-::: tip 詳細は
-[監査ログ](/ja/env/guides/audit-logging) で完全な監査設定の説明を参照。
+::: tip 詳細
+[監査ログ](/ja/env/guides/audit-logging)で完全な監査設定の説明を参照してください。
 :::
 
-### 詳細オプション
+### 高度なオプション
 
 #### `Prefix` string
 
@@ -477,7 +481,7 @@ cfg.FileSystem = &MockFileSystem{}
 
 #### `CustomValidator` Validator
 
-カスタムキー/値バリデーター。組み込みバリデーターを上書き。
+カスタムキー/値バリデーター。組み込みのバリデーターを上書き。
 
 ```go
 cfg.CustomValidator = &MyValidator{}
@@ -487,7 +491,7 @@ cfg.CustomValidator = &MyValidator{}
 
 #### `CustomExpander` VariableExpander
 
-カスタム変数エキスパンダー。組み込みエキスパンダーを上書き。
+カスタム変数エキスパンダー。組み込みのエキスパンダーを上書き。
 
 ```go
 cfg.CustomExpander = &MyExpander{}
@@ -497,7 +501,7 @@ cfg.CustomExpander = &MyExpander{}
 
 #### `CustomAuditor` AuditLogger
 
-カスタム監査ロガー。組み込み監査ロガーを上書き。
+カスタム監査ロガー。組み込みの監査機能を上書き。
 
 ```go
 cfg.CustomAuditor = &MyAuditLogger{}
@@ -513,7 +517,7 @@ cfg.CustomAuditor = &MyAuditLogger{}
 func DefaultConfig() Config
 ```
 
-安全なデフォルト設定を返す。
+安全なデフォルト設定を返します。
 
 **デフォルト値：**
 
@@ -554,15 +558,15 @@ func DefaultConfig() Config
 func DevelopmentConfig() Config
 ```
 
-開発環境設定を返す（緩やかな制限）。
+開発環境設定（緩い制限）を返します。
 
-**デフォルト設定との差分：**
+**デフォルト設定との差異：**
 - `OverwriteExisting`: `true`
 - `AllowYamlSyntax`: `true`
 - `MaxFileSize`: 10MB
 
 ::: tip セキュリティ保証
-`ValidateValues` すべてのプリセット設定で常に維持 `true`（デフォルト値と同じ），セキュリティが環境の影響を受けないことを保証。
+`ValidateValues` はすべてのプリセット設定で常に `true`（デフォルト値と同じ）を維持し、環境によるセキュリティの低下を防ぎます。
 :::
 
 ```go
@@ -579,9 +583,9 @@ loader, _ := env.New(cfg)
 func TestingConfig() Config
 ```
 
-テスト環境設定を返す。
+テスト環境設定を返します。
 
-**デフォルト設定との差分：**
+**デフォルト設定との差異：**
 - `OverwriteExisting`: `true`
 - `MaxFileSize`: 64KB
 - `MaxVariables`: 50
@@ -603,9 +607,9 @@ func TestSomething(t *testing.T) {
 func ProductionConfig() Config
 ```
 
-本番環境設定を返す（厳格な検証 + 監査）。
+本番環境設定（厳格な検証 + 監査）を返します。
 
-**デフォルト設定との差分：**
+**デフォルト設定との差異：**
 - `FailOnMissingFile`: `true`
 - `AuditEnabled`: `true`
 - `MaxFileSize`: 64KB
@@ -625,23 +629,23 @@ loader, _ := env.New(cfg)
 | 機能 | Default | Development | Testing | Production |
 |------|---------|-------------|---------|------------|
 | 既存変数の上書き | ✗ | ✓ | ✓ | ✗ |
-| ファイル不存在時にエラー | ✗ | ✗ | ✗ | ✓ |
+| ファイル不存在時のエラー | ✗ | ✗ | ✗ | ✓ |
 | 監査ログ | ✗ | ✗ | ✗ | ✓ |
 | YAML 構文 | ✗ | ✓ | ✗ | ✗ |
 | ファイルサイズ制限 | 2MB | 10MB | 64KB | 64KB |
 | 最大変数数 | 500 | 500 | 50 | 50 |
-| 禁止キーチェック | ✓ | ✓ | ✓ | ✓ |
-| 値検証 | ✓ | ✓ | ✓ | ✓ |
+| 禁止キーのチェック | ✓ | ✓ | ✓ | ✓ |
+| 値の検証 | ✓ | ✓ | ✓ | ✓ |
 
 ::: tip 選択のヒント
-- **開発環境**：`DevelopmentConfig()` を使用、緩やかな制限で迅速なイテレーションが可能
-- **テスト環境**：`TestingConfig()` を使用、上書きを許可しテスト分離が可能
-- **本番環境**：`ProductionConfig()` を使用、監査と厳格な検証を有効化
+- **開発環境**：`DevelopmentConfig()` を使用。緩い制限で迅速な反復開発が可能
+- **テスト環境**：`TestingConfig()` を使用。上書きを許可しテスト分離に適している
+- **本番環境**：`ProductionConfig()` を使用。監査と厳格な検証を有効化
 :::
 
 ---
 
-## 方法
+## メソッド
 
 ### Validate
 
@@ -649,7 +653,7 @@ loader, _ := env.New(cfg)
 func (c *Config) Validate() error
 ```
 
-設定の有効性を検証。すべての制限値が有効範囲内にあるか確認。
+設定の有効性を検証します。すべての制限値が有効な範囲内かチェックします。
 
 ```go
 cfg := env.DefaultConfig()
@@ -661,10 +665,10 @@ if err := cfg.Validate(); err != nil {
 ```
 
 **検証ルール：**
-- すべての制限値は正の数である必要がある
-- すべての制限値はハードリミットを超えることはできない
-- `KeyPattern` nil でない場合，有効なキー名にマッチする必要がある（如 `TEST_KEY`）、空文字列にマッチしてはならない、数字で始まるキー名にマッチしてはならない
-- `JSONMaxDepth` 和 `YAMLMaxDepth` 1-100 の範囲内である必要がある
+- すべての制限値は正の数でなければならない
+- すべての制限値はハード上限を超えてはならない
+- `KeyPattern` が nil でない場合、有効なキー名（`TEST_KEY` など）にマッチし、空文字列にマッチせず、数字で始まるキー名にマッチしない必要がある
+- `JSONMaxDepth` と `YAMLMaxDepth` は 1-100 の範囲でなければならない
 
 ---
 
@@ -674,15 +678,15 @@ if err := cfg.Validate(); err != nil {
 func (c *Config) IsZero() bool
 ```
 
-Config が未初期化のゼロ値かどうかを確認。`DefaultConfig()` を使用すべきかを判断するために使用します。
+Config が未初期化のゼロ値かをチェックします。`DefaultConfig()` を使用すべきかの判定に使います。
 
 **戻り値：**
-- `bool` - ゼロ値設定かどうか
+- `bool` - ゼロ値設定か
 
 **検出範囲：**
 - 数値制限（MaxFileSize、MaxVariables など）
 - ブールフィールド（ValidateValues、AutoApply など）
-- ポインタ・インターフェースフィールド（KeyPattern、FileSystem など）
+- ポインタ/インターフェースフィールド（KeyPattern、FileSystem など）
 - スライスフィールド（Filenames、RequiredKeys など）
 
 ::: warning 注意
@@ -735,19 +739,19 @@ if err := loader.LoadFiles(".env"); err != nil {
 }
 
 if err := loader.Validate(); err != nil {
-    log.Fatal("必須設定が不足：", err)
+    log.Fatal("必須設定が不足しています：", err)
 }
 ```
 
-### プレフィックスフィルタリング
+### プレフィックスフィルタの使用
 
 ```go
 cfg := env.DefaultConfig()
-cfg.Prefix = "MYAPP_"  // MYAPP_KEY1, MYAPP_KEY2 のみ読み込み
+cfg.Prefix = "MYAPP_"  // MYAPP_KEY1, MYAPP_KEY2 などのみ読み込み
 cfg.Filenames = []string{".env"}
 
 loader, _ := env.New(cfg)
-// loader には MYAPP_ で始まる変数のみ含まれる
+// loader には MYAPP_ で始まる変数のみ
 ```
 
 ### カスタム検証
@@ -756,7 +760,7 @@ loader, _ := env.New(cfg)
 import "regexp"
 
 cfg := env.DefaultConfig()
-// 大文字で始まるもののみ許可
+// 大文字始まりのみ許可
 cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]*$`)
 // カスタム禁止キーを追加
 cfg.ForbiddenKeys = []string{"DEBUG", "TRACE"}

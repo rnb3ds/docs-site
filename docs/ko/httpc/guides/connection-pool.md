@@ -1,7 +1,7 @@
 ---
 sidebar_label: "연결 풀과 프록시"
 title: "연결 풀과 프록시 - CyberGo HTTPC | 풀 튜닝과 프록시 설정"
-description: "HTTPC 연결 풀과 프록시 설정 가이드: MaxIdleConns 풀 튜닝과 시나리오 추천, ProxyURL 수동 프록시와 SOCKS5, EnableSystemProxy 자동 감지, ProxyPool 프록시 풀 회전과 수동 서킷 브레이킹, ProxyRotateOnStatus 상태 코드 회전, DoH와 HTTP/2 설정 실무."
+description: "HTTPC 연결 풀과 프록시 설정 가이드: MaxIdleConns 풀 튜닝과 시나리오 추천, ProxyURL 수동 프록시와 SOCKS5, EnableSystemProxy 자동 감지, ProxyPool 프록시 풀 회전과 수동 서킷 브레이킹, ProxyRotatePerRequest 요청별 회전, ProxyRotateOnStatus 상태 코드 회전, DoH와 HTTP/2 설정 실무."
 sidebar_position: 8
 ---
 
@@ -117,6 +117,7 @@ client, err := httpc.New(cfg)
 | `ProxyPoolStrategy` | `ProxyStrategy` | `RoundRobin` | 선택 전략 |
 | `ProxyFailureThreshold` | `int` | `3` (0 이면 기본값) | 연속 실패 서킷 브레이크 임계값 |
 | `ProxyCooldown` | `time.Duration` | `30s` (0 이면 기본값) | 서킷 브레이크 프록시 대기 시간 |
+| `ProxyRotatePerRequest` | `bool` | `false` | 각 독립적인 요청마다 프록시 강제 교체 (유휴 연결 재사용 비활성화) |
 | `ProxyRotateOnStatus` | `[]int` | `nil` | 프록시 회전을 트리거하는 상태 코드 |
 
 #### 선택 전략
@@ -174,6 +175,30 @@ client, err := httpc.New(cfg)
 
 `ProxyRotateOnStatus`가 설정되고 풀에 여러 프록시가 있는 경우, 재시도 예산이 자동으로 `len(ProxyPool) - 1`로 상향됩니다 (`MaxRetries` 상한 10으로 제한), 모든 프록시가 시도될 기회를 보장합니다.
 :::
+
+#### 요청별 로테이션
+
+`ProxyRotatePerRequest`는 **연결 재사용**으로 인해 프록시 터널이 고정되는 문제를 해결합니다: HTTP 연결 풀은 이미 설정된 TCP 연결을 재사용하며, 여기에는 프록시 터널도 포함됩니다. 이는 동일한 호스트에 대한 연속 요청이 `ProxyPoolStrategy`가 선택기 커서를 이미 회전했더라도 이전 요청의 프록시를 재사용함을 의미합니다.
+
+활성화하면, 매 요청 시작 시 모든 유휴 연결을 닫아 Transport가 프록시 풀을 다시 평가하도록 강제합니다 — 대가로 연결 재사용이 없지만(매 요청마다 새 연결 + 프록시 터널), 요청별 회전이 보장됩니다:
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyRotatePerRequest = true  // 매 요청마다 프록시 교체
+
+client, err := httpc.New(cfg)
+```
+
+:::tip 적용 시나리오
+동일한 호스트에 대한 스크래핑/데이터 수집에 적용 — 매 요청의 소스 IP가 달라 대상 사이트의 IP 차단 위험을 낮춥니다. 서로 다른 호스트에 대한 요청은 연결 재사용이 동일한 프록시에 바인딩되지 않으므로 보통 활성화할 필요가 없습니다.
+:::
+
+`ProxyRotateOnStatus`와 마찬가지로, `ProxyRotatePerRequest`도 프록시 풀에 여러 프록시가 있는 경우 재시도 예산을 자동으로 `len(ProxyPool) - 1`로 상향하여, 각 프록시가 최소 한 번 시도되도록 보장합니다.
 
 ### 프록시 우선순위
 

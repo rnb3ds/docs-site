@@ -1,8 +1,9 @@
 ---
 sidebar_label: "Serialization"
 title: "Serialization - CyberGo env | Multi-format Conversion"
-description: "CyberGo env serialization: Map/struct conversion across .env/JSON/YAML, Marshal/Unmarshal family, Marshaler/Unmarshaler, DetectFormat, export and migration."
+description: "Serialization guide for CyberGo env, covering Map and struct conversion between .env, JSON, and YAML, including Marshal/Unmarshal function families, Marshaler/Unmarshaler custom interfaces, and DetectFormat auto-detection, for configuration export and format migration."
 sidebar_position: 2
+sidebar_icon: "🔧"
 ---
 
 # Serialization
@@ -183,18 +184,18 @@ func main() {
 
 ### MarshalStruct Function
 
-Convert a struct to `map[string]string`:
+Converts a struct to `map[string]string`:
 
 ```go
 func MarshalStruct(v any) (map[string]string, error)
 ```
 
 **Parameters:**
-- `v` - Struct pointer or value
+- `v` - struct pointer or value
 
 **Returns:**
-- `map[string]string` - Environment variable mapping
-- `error` - Serialization error
+- `map[string]string` - environment variable mapping
+- `error` - serialization error
 
 ```go
 package main
@@ -226,7 +227,7 @@ func main() {
     fmt.Printf("%+v\n", data)
     // Output: map[DEBUG:true HOST:localhost PORT:8080]
 
-    // Can be used to export to a file
+    // Can be used to export to file
     content, _ := env.Marshal(data, env.FormatEnv)
     fmt.Println(content)
 }
@@ -384,12 +385,12 @@ ENABLED=true
 
 ## Custom Serialization
 
-::: tip Scope of the two custom interfaces
-- **Field-level**: For custom encoding/decoding of struct fields, implement the standard library `encoding.TextMarshaler` / `encoding.TextUnmarshaler` (`MarshalText()` / `UnmarshalText([]byte)`). When a struct is processed by `env.Marshal` / `env.UnmarshalInto`, the per-field logic recognizes these two interfaces.
-- **Top-level**: The `env.Marshaler` (`MarshalEnv()`) and `env.Unmarshaler` (`UnmarshalEnv(map[string]string)`) interfaces **only take effect on the top-level value passed directly to `env.Marshal` / `env.MarshalStruct` / `env.UnmarshalInto`**; if the value is a field inside an enclosing struct, they are not invoked.
+:::tip
+- **Field level**: Custom encoding/decoding of struct fields, implement the standard library `encoding.TextMarshaler` / `encoding.TextUnmarshaler` (`MarshalText()` / `UnmarshalText([]byte)`). When a struct is processed by `env.Marshal`/`env.UnmarshalInto`, the field-by-field logic recognizes these two interfaces.
+- **Top level**: `env.Marshaler` (`MarshalEnv()`) and `env.Unmarshaler` (`UnmarshalEnv(map[string]string)`) interfaces **only take effect on the top-level value directly passed to `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`**; if passed as a field within an outer struct, they will not be called.
 :::
 
-### Field-level: Implementing encoding.TextMarshaler
+### Field level: Implement encoding.TextMarshaler
 
 ```go
 package main
@@ -403,7 +404,7 @@ import (
 
 type LogLevel string
 
-// Implement encoding.TextMarshaler — invoked when serializing as a struct field
+// Implement encoding.TextMarshaler — called when serializing as a struct field
 func (l LogLevel) MarshalText() ([]byte, error) {
     return []byte(strings.ToUpper(string(l))), nil
 }
@@ -427,7 +428,7 @@ func main() {
 }
 ```
 
-### Field-level: Implementing encoding.TextUnmarshaler
+### Field level: Implement encoding.TextUnmarshaler
 
 ```go
 package main
@@ -440,7 +441,7 @@ import (
 
 type LogLevel string
 
-// Implement encoding.TextUnmarshaler — invoked when deserializing as a struct field
+// Implement encoding.TextUnmarshaler — called when deserializing as a struct field
 func (l *LogLevel) UnmarshalText(text []byte) error {
     switch string(text) {
     case "debug", "info", "warn", "error":
@@ -471,9 +472,9 @@ func main() {
 }
 ```
 
-### Top-level: Implementing env.Marshaler / env.Unmarshaler
+### Top level: Implement env.Marshaler / env.Unmarshaler
 
-When you pass a value of a type **directly** to `env.Marshal` / `env.UnmarshalInto` (rather than as a field of an enclosing struct), the `env.Marshaler` / `env.Unmarshaler` interfaces take effect on that top-level value:
+When you **directly** pass a type's value to `env.Marshal` / `env.UnmarshalInto` (rather than as a field of an outer struct), the `env.Marshaler` / `env.Unmarshaler` interfaces take effect on that top-level value:
 
 ```go
 package main
@@ -484,7 +485,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// The top-level type directly implements env.Marshaler
+// Top-level type directly implements env.Marshaler
 type EnvBlob string
 
 func (e EnvBlob) MarshalEnv() ([]byte, error) {
@@ -493,7 +494,7 @@ func (e EnvBlob) MarshalEnv() ([]byte, error) {
 }
 
 func main() {
-    // Serialize the top-level value directly (not a field of an enclosing struct)
+    // Directly serialize the top-level value (not a field of an outer struct)
     result, err := env.Marshal(EnvBlob(""), env.FormatEnv)
     if err != nil {
         panic(err)
@@ -538,7 +539,7 @@ func main() {
 
 ## Practical Scenarios
 
-### Saving Configuration to File
+### Save Configuration to File
 
 ```go
 package main

@@ -1,13 +1,14 @@
 ---
 sidebar_label: "Пользовательский парсер"
-title: "Пользовательский парсер - CyberGo env | Расширение форматов"
-description: "Парсер CyberGo env: реализация Parse из EnvParser, регистрация через RegisterParser, ComponentFactory для Validator/Auditor, с примерами TOML и INI."
-sidebar_position: 7
+title: "Пользовательский парсер - CyberGo env | расширение форматов файлов"
+description: "Руководство по пользовательскому парсеру CyberGo env: реализация метода Parse интерфейса EnvParser и регистрация через RegisterParser, использование ComponentFactory для получения Validator и Auditor, с полными примерами парсеров TOML и INI и лучшими практиками."
+sidebar_position: 8
+sidebar_icon: "⚙️"
 ---
 
 # Пользовательский парсер
 
-В этом руководстве описано создание и регистрация пользовательских парсеров файловых форматов для расширения поддерживаемых библиотекой env конфигурационных форматов.
+В этом руководстве описывается создание и регистрация пользовательских парсеров форматов файлов для расширения поддерживаемых библиотекой env форматов конфигурации.
 
 ## Интерфейс парсера
 
@@ -22,12 +23,12 @@ type EnvParser interface {
 ```
 
 **Параметры:**
-- `r` - Читатель содержимого файла
-- `filename` - Имя файла (используется в сообщениях об ошибках)
+- `r` - читатель содержимого файла
+- `filename` - имя файла (для сообщений об ошибках)
 
 **Возвращает:**
-- `map[string]string` - Разобранные пары ключ-значение
-- `error` - Ошибка парсинга
+- `map[string]string` - разобранные пары ключ-значение
+- `error` - ошибка разбора
 
 ---
 
@@ -56,7 +57,7 @@ type CustomParser struct {
 func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, error) {
     result := make(map[string]string)
 
-    // 1. Чтение содержимого (учитывая ограничение размера)
+    // 1. Чтение содержимого (учитывайте ограничение размера)
     content, err := io.ReadAll(io.LimitReader(r, p.cfg.MaxFileSize))
     if err != nil {
         return nil, err
@@ -87,7 +88,7 @@ func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, e
 }
 ```
 
-### Пример парсера TOML
+### Пример TOML-парсера
 
 ```go
 package tomlparser
@@ -142,7 +143,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
         // Разбор key = value
         parts := strings.SplitN(line, "=", 2)
         if len(parts) != 2 {
-            continue // или возврат ошибки
+            continue // или вернуть ошибку
         }
 
         key := strings.TrimSpace(parts[0])
@@ -178,7 +179,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
 }
 ```
 
-### Пример парсера INI
+### Пример INI-парсера
 
 ```go
 package iniparser
@@ -258,8 +259,8 @@ type ParserFactory func(cfg Config, factory *ComponentFactory) (EnvParser, error
 Фабричная функция принимает Config и ComponentFactory, возвращая экземпляр парсера.
 
 **Описание параметров:**
-- `cfg` - Объект конфигурации, содержащий все ограничения и настройки безопасности
-- `factory` - Фабрика компонентов, позволяющая получить Validator, Auditor и другие компоненты
+- `cfg` - объект конфигурации, содержащий все ограничения и настройки безопасности
+- `factory` - фабрика компонентов, позволяющая получить Validator, Auditor и др.
 
 ### Функция RegisterParser
 
@@ -267,21 +268,21 @@ type ParserFactory func(cfg Config, factory *ComponentFactory) (EnvParser, error
 func RegisterParser(format FileFormat, factory ParserFactory) error
 ```
 
-Регистрация парсера пользовательского формата.
+Регистрирует пользовательский парсер формата.
 
 **Параметры:**
-- `format` - Константа файлового формата (рекомендуется использовать значения 100+ для предотвращения конфликтов)
-- `factory` - Фабричная функция парсера
+- `format` - константа формата файла (рекомендуется использовать значения 100+ для избежания конфликтов)
+- `factory` - фабричная функция парсера
 
 **Возвращает:**
-- `error` - Ошибка при неудачной регистрации
+- `error` - ошибка при неудаче регистрации
 
 **Случаи ошибок:**
 - Встроенные форматы (FormatEnv, FormatJSON, FormatYAML) не могут быть переопределены
 - Формат уже зарегистрирован
 
 **Примечания:**
-- Регистрация должна быть выполнена до вызова `env.New()`
+- Регистрация должна выполняться до вызова `env.New()`
 - Рекомендуется регистрировать в функции `init()`
 
 ### Использование ComponentFactory
@@ -306,9 +307,9 @@ func NewSecureParser(cfg env.Config, factory *env.ComponentFactory) (env.EnvPars
 func (p *SecureParser) Parse(r io.Reader, filename string) (map[string]string, error) {
     result := make(map[string]string)
 
-    // ... логика парсинга
+    // ... логика разбора
 
-    // Использование валидатора для проверки имён ключей
+    // Валидация имён ключей
     for key := range result {
         if err := p.validator.ValidateKey(key); err != nil {
             _ = p.auditor.Log(env.ActionParse, key, "invalid key", false)
@@ -340,7 +341,7 @@ const (
 
 // 2. Регистрация в init
 func init() {
-    // Регистрация парсера TOML
+    // Регистрация TOML-парсера
     err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &TOMLParser{
             cfg:       cfg,
@@ -352,7 +353,7 @@ func init() {
         panic(err) // Формат уже зарегистрирован или другая ошибка
     }
 
-    // Регистрация парсера INI
+    // Регистрация INI-парсера
     env.RegisterParser(FormatINI, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &INIParser{
             cfg:       cfg,
@@ -363,14 +364,13 @@ func init() {
 }
 
 func main() {
-    // Регистрация должна быть завершена до вызова New (выполнено в init).
+    // Регистрация должна быть завершена до New (уже выполнена в init).
     //
-    // Важное ограничение: LoadFiles не маршрутизирует по расширению .toml
-    // в TOMLParser выше — DetectFormat распознаёт только .env/.json/.yaml/.yml,
-    // прочие расширения fallback на встроенный парсер dotenv (см. format.go,
-    // функцию DetectFormat). Чтобы LoadFiles фактически вызвал TOMLParser,
-    // нужно переопределить FormatEnv через ForceRegisterParser и назвать
-    // файл *.env:
+    // Важное ограничение: LoadFiles не маршрутизирует автоматически по расширению .toml
+    // к TOMLParser выше — DetectFormat распознаёт только .env/.json/.yaml/.yml, другие
+    // расширения попадают на встроенный dotenv-парсер (см. format.go, DetectFormat).
+    // Чтобы LoadFiles фактически вызвал TOMLParser, используйте ForceRegisterParser
+    // для переопределения FormatEnv и назовите файл *.env:
     err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &TOMLParser{
             cfg:       cfg,
@@ -386,20 +386,20 @@ func main() {
     loader, _ := env.New(cfg)
     defer loader.Close()
 
-    // Расширение файла должно быть .env (содержимое в формате TOML), чтобы сработал переопределённый парсер
+    // Расширение файла должно быть .env (содержимое в формате TOML) для маршрутизации к переопределённому парсеру
     if err := loader.LoadFiles("config.env"); err != nil {
         panic(err)
     }
 }
 ```
 
-:::warning Ограничение маршрутизации LoadFiles
-Зарегистрированный через `RegisterParser` номер пользовательского формата (например, `FormatTOML = 100`) **не распознаётся `LoadFiles` автоматически по расширению файла**. Внутренне `LoadFiles` вызывает `DetectFormat(filename)` для выбора парсера, а `DetectFormat` распознаёт только расширения `.env` / `.json` / `.yaml` / `.yml`; прочие расширения возвращают `FormatAuto` и в итоге fallback на встроенный парсер dotenv — пользовательский парсер не вызывается.
+::: warning Ограничение маршрутизации LoadFiles
+Пользовательский номер формата (например `FormatTOML = 100`), зарегистрированный через `RegisterParser`, **не распознаётся `LoadFiles` автоматически по расширению файла**. `LoadFiles` внутренне вызывает `DetectFormat(filename)` для выбора парсера, а `DetectFormat` распознаёт только четыре расширения: `.env` / `.json` / `.yaml` / `.yml`; другие расширения возвращают `FormatAuto`, что в итоге попадает на встроенный dotenv-парсер — пользовательский парсер никогда не вызывается.
 
 Два пути загрузки файлов пользовательского формата:
 
-1. **Расширение `.env` + `ForceRegisterParser`** (рекомендуется): назовите файл пользовательского формата как `*.env` и переопределите встроенный парсер dotenv через `env.ForceRegisterParser(env.FormatEnv, ...)`. Сохраните проверки имени/значения/размера ключа, иначе появятся уязвимости безопасности.
-2. **Ручной вызов парсера**: прочтите файл в `io.Reader`, самостоятельно создайте экземпляр парсера и вызовите `parser.Parse(reader, filename)`, получив `map[string]string`, затем записывайте значения через `loader.Set` по одному. Учтите, что внутренние `validator`/`auditor` парсера обычно зависят от `*ComponentFactory` — их следует получить при регистрации фабрики и передать внутрь.
+1. **Расширение `.env` + `ForceRegisterParser`** (рекомендуется): назовите файл пользовательского формата `*.env` и используйте `env.ForceRegisterParser(env.FormatEnv, ...)` для переопределения встроенного dotenv-парсера. Обратите внимание на сохранение проверок безопасности (имена/значения/размер ключей и т. д.), иначе будут введены уязвимости.
+2. **Ручной вызов парсера**: прочитайте файл в `io.Reader`, создайте экземпляр парсера вручную и вызовите `parser.Parse(reader, filename)` для получения `map[string]string`, затем используйте `loader.Set` для поэлементной записи. Обратите внимание, что внутренние `validator`/`auditor` парсера обычно зависят от `*ComponentFactory`, который нужно получить и передать при регистрации фабрики.
 :::
 
 ---
@@ -435,7 +435,7 @@ func (p *CustomParser) checkLimits(result map[string]string) error {
 func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, error) {
     result := make(map[string]string)
 
-    // ... логика парсинга
+    // ... логика разбора
 
     // Валидация всех ключей
     for key := range result {
@@ -457,7 +457,7 @@ func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, e
 }
 ```
 
-### 3. Информативные сообщения об ошибках
+### 3. Предоставление значимых ошибок
 
 ```go
 type CustomParseError struct {
@@ -479,16 +479,16 @@ func (e *CustomParseError) Unwrap() error {
 }
 ```
 
-### 4. Запись в аудитный журнал
+### 4. Регистрация журнала аудита
 
 ```go
 func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, error) {
     start := time.Now()
     result := make(map[string]string)
 
-    // ... логика парсинга
+    // ... логика разбора
 
-    // Запись об успешном парсинге
+    // Регистрация успеха
     _ = p.auditor.LogWithDuration(
         env.ActionParse,
         "",
@@ -505,7 +505,7 @@ func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, e
 
 ## Полный пример
 
-### Реализация парсера XML
+### Реализация XML-парсера
 
 ```go
 package main
@@ -562,7 +562,7 @@ func (p *XMLParser) Parse(r io.Reader, filename string) (map[string]string, erro
     for _, entry := range xmlConfig.Entries {
         key := strings.ToUpper(entry.Key)
 
-        // Проверка длины ключа
+        // Валидация длины ключа
         if len(key) > p.cfg.MaxKeyLength {
             return nil, fmt.Errorf("key too long: %s", key)
         }
@@ -572,7 +572,7 @@ func (p *XMLParser) Parse(r io.Reader, filename string) (map[string]string, erro
             return nil, fmt.Errorf("invalid key %q: %w", key, err)
         }
 
-        // Проверка длины значения
+        // Валидация длины значения
         if len(entry.Value) > p.cfg.MaxValueLength {
             return nil, fmt.Errorf("value too long for key: %s", key)
         }
@@ -589,11 +589,11 @@ func (p *XMLParser) Parse(r io.Reader, filename string) (map[string]string, erro
     return result, nil
 }
 
-// Определение константы формата XML
+// Определение константы XML-формата
 const FormatXML env.FileFormat = 102
 
 func init() {
-    // Регистрация парсера XML
+    // Регистрация XML-парсера
     env.RegisterParser(FormatXML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &XMLParser{
             cfg:       cfg,
@@ -604,10 +604,9 @@ func init() {
 }
 
 func main() {
-    // LoadFiles не маршрутизирует по расширению .xml в XML-парсер — DetectFormat
-    // распознаёт только .env/.json/.yaml/.yml. Здесь переопределяем FormatEnv
-    // через ForceRegisterParser, файл загружается с расширением .env
-    // (содержимое в формате XML):
+    // LoadFiles не маршрутизирует автоматически по расширению .xml к XML-парсеру — DetectFormat
+    // распознаёт только .env/.json/.yaml/.yml. Здесь используется ForceRegisterParser для переопределения
+    // FormatEnv, файл загружается с расширением .env (содержимое в формате XML):
     err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &XMLParser{
             cfg:       cfg,
@@ -645,6 +644,6 @@ func main() {
 ## Связанная документация
 
 - [ComponentFactory API](/ru/env/api-reference/factory) - ComponentFactory и RegisterParser
-- [Определение интерфейсов](/ru/env/api-reference/interfaces) - Определение интерфейса EnvParser
-- [Config API](/ru/env/api-reference/config) - Подробно о параметрах конфигурации
-- [Мультиформатная конфигурация](/ru/env/guides/multi-format) - Подробно о форматах JSON/YAML
+- [Определения интерфейсов](/ru/env/api-reference/interfaces) - определение интерфейса EnvParser
+- [Config API](/ru/env/api-reference/config) - подробности параметров конфигурации
+- [Многоформатная конфигурация](/ru/env/guides/multi-format) - подробно о форматах JSON/YAML

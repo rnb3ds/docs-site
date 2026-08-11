@@ -1,29 +1,29 @@
 ---
 sidebar_label: "Security Overview"
 title: "Security Overview - CyberGo env | Security Architecture"
-description: "CyberGo env security: SecureValue memory lock + auto-zero, key/value validation, DefaultForbiddenKeys (PATH/LD_PRELOAD), IsSensitiveKey, presets and audit."
+description: "Security architecture overview for CyberGo env, covering SecureValue memory locking and auto-zeroing, key-value validation filtering control characters and null bytes, DefaultForbiddenKeys forbidding PATH and LD_PRELOAD, IsSensitiveKey auto-detection, security presets, and audit tracking."
 sidebar_position: 1
 ---
 
 # Security Overview
 
-Environment variables often store sensitive information, making secure handling critical. This document provides an overview of the env library's security architecture and core features.
+Environment variables often store sensitive information, making secure handling critical. This document outlines the security architecture and core features of the env library.
 
 ## Security Architecture
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│                        Application Layer                     │
+│                      Application Layer                       │
 ├──────────────────────────────────────────────────────────────┤
-│   SecureValue   │   Masking   │   Zeroing   │  Memory Lock  │
+│   SecureValue   │   Masking   │  Zeroing  │  Memory Locking   │
 ├──────────────────────────────────────────────────────────────┤
-│                          Loader Layer                        │
+│                        Loader Layer                          │
 ├──────────────────────────────────────────────────────────────┤
-│   Key Validation │  Value Validation │  Forbidden Keys │ Size Limits │
+│   Key Validation │ Value Validation │ Forbidden Keys │ Size Limits │
 ├──────────────────────────────────────────────────────────────┤
-│                         Parsing Layer                        │
+│                       Parsing Layer                          │
 ├──────────────────────────────────────────────────────────────┤
-│  Format Detection │  Expansion Check │    Path Validation   │
+│  Format Detection │ Expansion Check │   Path Validation       │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -31,11 +31,11 @@ Environment variables often store sensitive information, making secure handling 
 
 | Feature | Description | Documentation |
 |---------|-------------|---------------|
-| **SecureValue** | Sensitive value memory protection, auto-zeroing | [SecureValue API](/en/env/api-reference/secure-value) |
-| **Forbidden Keys** | Prevent modification of critical system variables | [Constants & Errors](/en/env/api-reference/constants#defaultforbiddenkeys) |
-| **Sensitive Key Detection** | Automatic identification of sensitive config keys | [Constants & Errors](/en/env/api-reference/constants#sensitivekeypatterns) |
-| **Value Validation** | Detect control characters, null bytes, etc. | [Config API](/en/env/api-reference/config) |
-| **Audit Logging** | Complete operation tracking | [Component Factory](/en/env/api-reference/factory#audit-handler-factory) |
+| **SecureValue** | Memory protection and auto-zeroing for sensitive values | [SecureValue API](/en/env/api-reference/secure-value) |
+| **Forbidden keys** | Prevents modification of system-critical variables | [Constants & Errors](/en/env/api-reference/constants#defaultforbiddenkeys) |
+| **Sensitive key detection** | Auto-identifies sensitive config keys, log masking tools | [Data Masking](/en/env/security/data-masking) |
+| **Value validation** | Detects control characters, null bytes, etc. | [Config API](/en/env/api-reference/config) |
+| **Audit logging** | Complete operation tracking | [Component Factory](/en/env/api-reference/factory#audit-handler-factories) |
 
 ## SecureValue Overview
 
@@ -48,41 +48,62 @@ password := env.GetString("DB_PASSWORD")
 // Recommended
 secret := env.GetSecure("DB_PASSWORD")
 defer secret.Close()
-password := secret.Reveal()  // Call only when plaintext is needed
+password := secret.Reveal()  // Only call when plaintext is needed
 ```
 
-**Core capabilities:**
-- **Memory Locking** - Prevents swapping to disk (Linux/macOS/Windows/FreeBSD)
-- **Auto-Zeroing** - Securely erases memory on `Close()`
-- **Masked Display** - `Masked()` for log output
-- **Thread Safety** - Supports concurrent reads
+**Core features:**
+- **Memory locking** - Prevents swapping to disk (Linux/macOS/Windows/FreeBSD)
+- **Auto-zeroing** - Safely erases memory on `Close()`
+- **Masked display** - `Masked()` for log output
+- **Thread safety** - Supports concurrent reads
 
-:::tip Full API
-See [SecureValue API](/en/env/api-reference/secure-value) for details.
+:::tip
+See [SecureValue API](/en/env/api-reference/secure-value).
+:::
+
+## Log Security
+
+SecureValue protects sensitive values **in memory**, but logs, error messages, and debug output are equally prone to leaking keys. env provides a set of standalone masking utility functions that can be used without a Loader:
+
+- `IsSensitiveKey` auto-detects sensitive key names like passwords, keys, and tokens
+- `MaskValue` / `MaskKey` mask values and key names before output
+- `SanitizeForLog` scans log strings for `key=value` patterns and masks them
+
+```go
+// Safely output configuration in logs, avoiding plaintext leakage
+log.Printf("Loading config: %s", env.MaskValue("DB_PASSWORD", password))
+// Output: Loading config: [MASKED:12 chars]
+
+log.Printf("Connection params: %s", env.SanitizeForLog("user=admin password=s3cret"))
+// Output: Connection params: user=admin [MASKED]
+```
+
+:::tip
+For complete usage of masking tools, see [Data Masking](/en/env/security/data-masking).
 :::
 
 ## Key/Value Validation
 
 ### Key Validation
 
-Default key name rule: `^[A-Za-z][A-Za-z0-9_]*$`
+Default key name rules: `^[A-Za-z][A-Za-z0-9_]*$`
 
-- Must start with a letter
-- Only letters, digits, and underscores
-- Maximum length of `MaxKeyLength`
+- Starts with a letter
+- Contains only letters, numbers, and underscores
+- Length does not exceed `MaxKeyLength`
 
 ### Forbidden Keys
 
-Built-in forbidden keys prevent modification of critical system variables:
+Built-in forbidden keys prevent modification of system-critical variables:
 
 | Category | Examples | Risk |
 |----------|----------|------|
-| System Paths | `PATH`, `LD_LIBRARY_PATH` | Command/library hijacking |
-| Dynamic Linking | `LD_PRELOAD`, `DYLD_INSERT_LIBRARIES` | Malicious library injection |
+| System path | `PATH`, `LD_LIBRARY_PATH` | Command/library hijacking |
+| Dynamic linking | `LD_PRELOAD`, `DYLD_INSERT_LIBRARIES` | Malicious library injection |
 | Shell | `SHELL`, `IFS`, `BASH_ENV` | Shell hijacking |
-| Language Runtimes | `PYTHONPATH`, `NODE_PATH` | Module hijacking |
+| Language runtimes | `PYTHONPATH`, `NODE_PATH` | Module hijacking |
 
-:::tip Full List
+:::tip
 See [DefaultForbiddenKeys](/en/env/api-reference/constants#defaultforbiddenkeys) for the complete forbidden keys list.
 :::
 
@@ -100,7 +121,7 @@ cfg.ValidateValues = true  // Detect control characters, null bytes, etc.
 ### File Permissions
 
 ```bash
-# Read/write for owner only
+# Readable/writable by owner only
 chmod 600 .env
 
 # Or stricter (read-only)
@@ -119,11 +140,11 @@ chmod 400 .env
 
 ## Configuration Security Levels
 
-| Preset | Use Case | Characteristics |
-|--------|----------|-----------------|
-| `DevelopmentConfig()` | Development | Relaxed restrictions, YAML syntax support |
-| `TestingConfig()` | Testing | Override existing variables, test isolation |
-| `ProductionConfig()` | Production | Strict validation + audit logging, no override of existing variables |
+| Preset | Purpose | Characteristics |
+|--------|---------|-----------------|
+| `DevelopmentConfig()` | Development | Relaxed limits, YAML syntax support |
+| `TestingConfig()` | Testing | Overwrites existing variables, test isolation |
+| `ProductionConfig()` | Production | Strict validation + audit logging, no overwriting |
 
 ```go
 // Recommended production configuration
@@ -135,5 +156,6 @@ cfg.AllowedKeys = []string{"APP_NAME", "PORT", "DB_HOST", "API_KEY"}
 ## Related Documentation
 
 - [SecureValue API](/en/env/api-reference/secure-value) - Complete API for secure value handling
-- [Constants & Errors](/en/env/api-reference/constants) - Forbidden keys list, sensitive key patterns
-- [Production Checklist](/en/env/security/production-checklist) - Pre-deployment security checks
+- [Memory Locking](/en/env/security/memory-locking) - Complete mlock memory protection guide
+- [Constants & Errors](/en/env/api-reference/constants) - Complete forbidden keys list, sensitive key patterns
+- [Production Checklist](/en/env/security/production-checklist) - Pre-launch security checks

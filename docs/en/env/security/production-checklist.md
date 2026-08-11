@@ -1,26 +1,26 @@
 ---
 sidebar_label: "Production Checklist"
-title: "Production Checklist - CyberGo env | Pre-Deployment Security"
-description: "CyberGo env production checklist: .env 600 perms + .gitignore, RequiredKeys/AllowedKeys validation, audit, SecureValue handling and performance tuning."
-sidebar_position: 2
+title: "Production Checklist - CyberGo env | Security Launch Check"
+description: "Production deployment security checklist for CyberGo env, covering .env file 600 permissions and .gitignore protection, RequiredKeys/AllowedKeys required key validation, audit logging, SecureValue handling, and performance parameter tuning to ensure security at launch."
+sidebar_position: 4
 ---
 
 # Production Checklist
 
-A checklist to review before deploying your application to production.
+A checklist to run through before deploying your application to production.
 
-:::tip Security Concepts
-For the security architecture and core features, see [Security Overview](/en/env/security/).
+:::tip
+For security architecture and core features, see [Security Overview](/en/env/security/).
 :::
 
-## Pre-Deployment Checks
+## Pre-deployment Checks
 
 ### File Security
 
 - [ ] `.env.production` file exists
 - [ ] File permissions are `600` or stricter
-- [ ] Sensitive files are listed in `.gitignore`
-- [ ] Config files contain no placeholders (e.g., `change-me`, `xxx`)
+- [ ] Sensitive files added to `.gitignore`
+- [ ] Configuration files contain no placeholders (e.g., `change-me`, `xxx`)
 
 ```bash
 # Check permissions
@@ -64,9 +64,9 @@ cfg.AuditHandler = env.NewJSONAuditHandler(auditFile)
 
 ### Sensitive Data Handling
 
-- [ ] Sensitive values are retrieved with `GetSecure`
-- [ ] `Close()` is called promptly to release resources
-- [ ] Raw sensitive values are not logged
+- [ ] Sensitive values obtained with `GetSecure`
+- [ ] `Close()` called promptly to release resources
+- [ ] Logs do not output raw sensitive values
 
 ```go
 secret := loader.GetSecure("DB_PASSWORD")
@@ -76,9 +76,9 @@ log.Printf("Password length: %d", secret.Length())
 
 ### Access Control
 
-- [ ] `AllowedKeys` whitelist is set (recommended)
-- [ ] `ValidateValues` is enabled
-- [ ] Size limits are configured appropriately
+- [ ] `AllowedKeys` whitelist set (recommended)
+- [ ] `ValidateValues` enabled
+- [ ] Reasonable size limits set
 
 ```go
 cfg.AllowedKeys = []string{"APP_NAME", "DB_HOST", "API_KEY"}
@@ -86,19 +86,19 @@ cfg.ValidateValues = true
 cfg.MaxVariables = 100
 ```
 
-## Deployment-Time Checks
+## At Deployment Checks
 
-- [ ] Config files are loaded from a secure location
-- [ ] Application validates configuration on startup
-- [ ] Application refuses to start on configuration errors
-- [ ] Sensitive information is not written to logs
+- [ ] Configuration files loaded from a secure location
+- [ ] Application validates configuration at startup
+- [ ] Application refuses to start on configuration error
+- [ ] Sensitive information is not output to logs
 
-## Post-Deployment Checks
+## Post-deployment Checks
 
-- [ ] Application is running normally
-- [ ] Audit logs are being written
-- [ ] No sensitive information is leaking
-- [ ] Monitoring is set up for configuration-related errors
+- [ ] Application runs normally
+- [ ] Audit logs are being written correctly
+- [ ] No sensitive information leaked
+- [ ] Monitoring for configuration-related errors
 
 ## Quick Check Script
 
@@ -117,7 +117,7 @@ echo "=== Pre-deployment Config Check ==="
 PERMS=$(stat -c %a .env.production 2>/dev/null || stat -f %Lp .env.production)
 [ "$PERMS" = "600" ] || [ "$PERMS" = "400" ] || echo "WARNING: permissions are $PERMS"
 
-# Check placeholders
+# Check for placeholders
 grep -qE "(change-?me|placeholder|xxx|YOUR_)" .env.production && \
     { echo "ERROR: Found placeholder values"; exit 1; }
 

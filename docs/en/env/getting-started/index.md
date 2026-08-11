@@ -1,11 +1,11 @@
 ---
 sidebar_label: "Quick Start"
-title: "Getting Started - CyberGo env | 5-Minute Guide"
-description: "CyberGo env 5-minute start: go get, .env load, type-safe reads, GetSecure, struct mapping, expansion, errors.Is, four presets and multi-env loading."
+title: "Quick Start - CyberGo env | 5-Minute Tutorial"
+description: "Get started with the CyberGo env library in 5 minutes. Covers go get installation, .env loading, type-safe reading, GetSecure for sensitive values, struct mapping, variable expansion, and errors.Is error handling, plus four configuration presets and multi-environment multi-file loading with complete runnable code examples."
 sidebar_position: 1
 ---
 
-# Getting Started
+# Quick Start
 
 Get started with the env library in 5 minutes, from installation to practical usage.
 
@@ -15,13 +15,13 @@ Get started with the env library in 5 minutes, from installation to practical us
 go get github.com/cybergodev/env
 ```
 
-::: tip Requirements
+:::tip
 Go 1.25+
 :::
 
 ## Create a .env File
 
-Create a `.env` file in your project root directory:
+Create a `.env` file in your project root:
 
 ```bash
 # Database configuration
@@ -50,7 +50,7 @@ import (
 )
 
 func main() {
-    // Load .env file and apply to system environment
+    // Load the .env file and apply to the system environment
     if err := env.Load(".env"); err != nil {
         panic(err)
     }
@@ -63,6 +63,19 @@ func main() {
 }
 ```
 
+:::tip
+env provides two usage modes:
+
+| Mode | Usage | Use Case |
+|------|-------|----------|
+| **Global mode** | `env.Load()` + `env.GetString()` | Simple applications, scripts, quick prototyping |
+| **Instance mode** | `env.New()` + `loader.GetString()` | Multiple instances, test isolation, fine-grained lifecycle control |
+
+The global mode uses package-level functions backed by a default Loader singleton. After calling `env.Load()`, all `env.GetXxx()` calls use that instance. The instance mode creates an independent Loader via `env.New()`, suitable for scenarios requiring isolation or managing multiple configurations simultaneously.
+
+The examples in this documentation use the global mode by default. See the [Multi-environment Configuration](#multi-environment-configuration) section for the full instance mode usage.
+:::
+
 ## Reading Values - All Types
 
 ### Basic Types
@@ -70,54 +83,54 @@ func main() {
 ```go
 // === With default values ===
 
-// String - returns "localhost" if not found
+// String - returns default "localhost" when not found
 host := env.GetString("HOST", "localhost")
 
-// Integer (int64) - returns 8080 if not found
+// Integer (int64) - returns default 8080 when not found
 port := env.GetInt("PORT", 8080)
 
-// Boolean - returns false if not found
+// Boolean - returns default false when not found
 debug := env.GetBool("DEBUG", false)
 
-// Duration - returns 30s if not found
+// Duration - returns default 30s when not found
 timeout := env.GetDuration("TIMEOUT", 30*time.Second)
 
 
 // === Without default values ===
 
-// String - returns empty string "" if not found
+// String - returns empty string "" when not found
 host := env.GetString("HOST")
 
-// Integer (int64) - returns 0 if not found
+// Integer (int64) - returns 0 when not found
 port := env.GetInt("PORT")
 
-// Boolean - returns false if not found
+// Boolean - returns false when not found
 debug := env.GetBool("DEBUG")
 
-// Duration - returns 0 if not found
+// Duration - returns 0 when not found
 timeout := env.GetDuration("TIMEOUT")
 ```
 
-::: tip Key Resolution
+:::tip
 The library supports multiple key access methods:
 
 ```go
 // JSON: {"app": {"name": "myapp"}}
 // Stored as: APP_NAME=myapp
 
-// All of the following can access the value
-name := env.GetString("APP_NAME")      // Flat key name (recommended)
+// All of the following can access this value
+name := env.GetString("APP_NAME")      // Flat key (recommended)
 name := env.GetString("app.name")      // Dot path (auto-converted)
 name := env.GetString("APP.NAME")      // Uppercase dot path
 ```
 
 **Resolution rules:**
-1. **Exact match**: Exact key name `KEY` is looked up first
-2. **Uppercase conversion**: Lowercase key tries uppercase version `key` -> `KEY`
-3. **Path resolution**: Dot path converts to underscore `app.name` -> `APP_NAME`
+1. **Exact match**: Looks up the exact key `KEY` first
+2. **Uppercase conversion**: Lowercase keys try the uppercase version `key` → `KEY`
+3. **Path resolution**: Dot paths are converted to underscores `app.name` → `APP_NAME`
 :::
 
-### Boolean Values
+### Boolean Support
 
 `GetBool` supports the following values (case-insensitive):
 
@@ -131,9 +144,9 @@ name := env.GetString("APP.NAME")      // Uppercase dot path
 // String slice
 hosts := env.GetSlice[string]("HOSTS", []string{"localhost"})
 
-// Integer slice (supports int, int64, uint, uint64)
+// Integer slices (supports int, int64, uint, uint64)
 ports := env.GetSlice[int64]("PORTS", []int64{80, 443})
-portsInt := env.GetSlice[int]("PORTS")  // also supports int type
+portsInt := env.GetSlice[int]("PORTS")  // also supports int
 
 // Float slice
 rates := env.GetSlice[float64]("RATES", []float64{0.1, 0.2})
@@ -145,9 +158,9 @@ flags := env.GetSlice[bool]("FLAGS", []bool{true, false})
 timeouts := env.GetSlice[time.Duration]("TIMEOUTS")
 ```
 
-**Resolution order:**
-1. Indexed keys `KEY_0`, `KEY_1`, `KEY_2`... are looked up first
-2. If no indexed keys exist, the value of `KEY` is parsed by comma separation
+**Parse order:**
+1. First looks up indexed keys `KEY_0`, `KEY_1`, `KEY_2`...
+2. If no indexed keys, parses the `KEY` value by comma separation
 
 ```go
 // Method 1: Indexed keys (recommended)
@@ -160,13 +173,13 @@ hosts := env.GetSlice[string]("HOSTS")  // ["localhost", "example.com"]
 ports := env.GetSlice[int64]("PORTS")  // [80, 443, 8080]
 ```
 
-### Checking and Lookup
+### Lookup and Inspection
 
 ```go
 // Check if a key exists
 value, exists := env.Lookup("API_KEY")
 if !exists {
-    // Key does not exist
+    // key does not exist
 }
 
 // Get all keys
@@ -186,17 +199,17 @@ secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
 
-    // Get the raw value (call only when plaintext is needed, e.g., crypto, API calls)
+    // Get the raw value (only call when plaintext is needed, e.g. for crypto, API calls)
     value := secret.Reveal()
 
-    // Log with masking (prevent leakage)
+    // Use mask for logging (prevent leakage)
     log.Printf("API Key: %s", secret.Masked())  // Output: [SECURE:32 bytes]
 }
 ```
 
 ## Struct Mapping
 
-Map environment variables to a struct using tags:
+Use struct tags to map environment variables to a struct:
 
 ```go
 package main
@@ -229,7 +242,7 @@ func main() {
 }
 ```
 
-::: details See Also
+:::details
 [Struct Mapping](/en/env/guides/struct-mapping) guide.
 :::
 
@@ -237,18 +250,18 @@ func main() {
 
 The library provides four preset configurations for different scenarios:
 
-| Preset | Use Case | Features |
-|--------|----------|----------|
+| Preset | Purpose | Characteristics |
+|--------|---------|-----------------|
 | `DefaultConfig()` | General use | Safe defaults, suitable for most cases |
-| `DevelopmentConfig()` | Development | Relaxed restrictions, allows override |
-| `TestingConfig()` | Testing | Tight restrictions, allows override, suitable for unit tests |
+| `DevelopmentConfig()` | Development | Relaxed limits, allows overwriting |
+| `TestingConfig()` | Testing | Compact limits, allows overwriting, suited for unit tests |
 | `ProductionConfig()` | Production | Strict validation + audit logging |
 
 ```go
-// Development - relaxed restrictions
+// Development - relaxed limits
 cfg := env.DevelopmentConfig()
 
-// Testing - tight restrictions
+// Testing - compact limits
 cfg := env.TestingConfig()
 
 // Production - strict validation + audit logging
@@ -259,24 +272,24 @@ cfg := env.ProductionConfig()
 
 | Feature | Default | Development | Testing | Production |
 |---------|---------|-------------|---------|------------|
-| Override existing variables | No | Yes | Yes | No |
-| Error on missing file | No | No | No | Yes |
-| Audit logging | No | No | No | Yes |
-| YAML syntax | No | Yes | No | No |
+| Overwrite existing variables | ✗ | ✓ | ✓ | ✗ |
+| Error on missing file | ✗ | ✗ | ✗ | ✓ |
+| Audit logging | ✗ | ✗ | ✗ | ✓ |
+| YAML syntax | ✗ | ✓ | ✗ | ✗ |
 | File size limit | 2MB | 10MB | 64KB | 64KB |
 | Max variables | 500 | 500 | 50 | 50 |
-| Forbidden key check | Yes | Yes | Yes | Yes |
-| Value validation | Yes | Yes | Yes | Yes |
+| Forbidden key check | ✓ | ✓ | ✓ | ✓ |
+| Value validation | ✓ | ✓ | ✓ | ✓ |
 
-::: tip Selection Guide
-- **Development**: Use `DevelopmentConfig()` with relaxed restrictions for rapid iteration
-- **Testing**: Use `TestingConfig()` with override support for test isolation
-- **Production**: Use `ProductionConfig()` with audit logging and strict validation
+:::tip
+- **Development**: Use `DevelopmentConfig()` with relaxed limits for fast iteration
+- **Testing**: Use `TestingConfig()` with overwrite support for test isolation
+- **Production**: Use `ProductionConfig()` with audit and strict validation
 :::
 
-## Multi-Environment Configuration
+## Multi-environment Configuration
 
-### Loading by Environment
+### Load by Environment
 
 ```go
 // Determine config file based on environment
@@ -285,13 +298,13 @@ if goEnv == "" {
     goEnv = "development"
 }
 
-// Load all config files in a single call (in order, later files override earlier ones)
+// Load all config files in one call (in order, later files overwrite earlier ones)
 env.Load(".env", ".env."+goEnv, ".env.local")
 ```
 
 ### Using a Loader Instance
 
-For more control, use a Loader instance:
+When you need more control, use a Loader instance:
 
 ```go
 package main
@@ -306,14 +319,14 @@ func main() {
     cfg := env.ProductionConfig()
     cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
 
-    // Create loader
+    // Create a loader
     loader, err := env.New(cfg)
     if err != nil {
         panic(err)
     }
     defer loader.Close()
 
-    // Load files (in order, later files override earlier ones)
+    // Load files (in order, later files overwrite earlier ones)
     if err := loader.LoadFiles(".env", ".env.production"); err != nil {
         panic(err)
     }
@@ -323,21 +336,21 @@ func main() {
         panic(err)
     }
 
-    // Usage
+    // Use
     host := loader.GetString("DB_HOST")
     fmt.Println("Host:", host)
 }
 ```
 
-## Multiple Files and Formats
+## Multi-file and Multi-format
 
-### Multiple File Loading
+### Multi-file Loading
 
-Files are loaded in order; later files override earlier ones:
+Files are loaded in order, later files overwrite earlier ones:
 
 ::: code-group
 
-```go [Package-level function]
+```go [Package functions]
 env.Load(".env", "config.json", "config.yaml")
 ```
 
@@ -349,15 +362,15 @@ loader.LoadFiles(".env", ".env.local")
 
 ### Multi-format Support
 
-File format is automatically detected:
+File format is auto-detected:
 
 ```go
 loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 ```
 
-::: details Supported Formats
-| Format | Extension | Detection Method |
-|--------|-----------|------------------|
+:::details
+| Format | Extension | Detection |
+|--------|-----------|-----------|
 | .env | `.env` | File extension |
 | JSON | `.json` | File extension |
 | YAML | `.yaml`, `.yml` | File extension |
@@ -372,24 +385,24 @@ err := loader.LoadFiles(".env")
 if err != nil {
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        // File not found
+        // file not found
     case errors.Is(err, env.ErrFileTooLarge):
-        // File too large
+        // file too large
     case errors.Is(err, env.ErrSecurityViolation):
-        // Forbidden key (actually returns *SecurityError)
+        // forbidden key (actually returns *SecurityError)
     default:
-        // Other errors
+        // other errors
     }
 
     // Invalid key format: actually returns *ValidationError, Field=="key"
     var valErr *env.ValidationError
     if errors.As(err, &valErr) && valErr.Field == "key" {
-        // Invalid key format
+        // invalid key format
     }
 }
 ```
 
-::: details Getting Detailed Error Information
+:::details
 ```go
 // Parse error details
 var parseErr *env.ParseError
@@ -415,11 +428,11 @@ if errors.As(err, &secErr) {
 
 <div class="vp-features">
 
-### Deep Dive
+### Learn More
 - [Struct Mapping](/en/env/guides/struct-mapping) - Detailed configuration binding
-- [Serialization](/en/env/guides/serialization) - Configuration serialization and deserialization
-- [Multi-format Configuration](/en/env/guides/multi-format) - JSON/YAML in depth
-- [Testing Scenarios](/en/env/guides/testing) - Usage in tests
+- [Serialization](/en/env/guides/serialization) - Config serialization and deserialization
+- [Multi-format Config](/en/env/guides/multi-format) - JSON/YAML in depth
+- [Testing](/en/env/guides/testing) - Usage in tests
 
 ### API Reference
 - [Package Functions](/en/env/api-reference/functions) - Complete list of package-level functions

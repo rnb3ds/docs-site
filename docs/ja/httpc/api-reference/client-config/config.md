@@ -85,6 +85,7 @@ type ConnectionConfig struct {
     ProxyPoolStrategy      ProxyStrategy // プロキシ選択戦略、デフォルト RoundRobin
     ProxyFailureThreshold  int           // 連続失敗回数のしきい値、0 の場合はデフォルト 3
     ProxyCooldown          time.Duration // サーキットブレーカの冷却時間、0 の場合はデフォルト 30s
+    ProxyRotatePerRequest  bool          // 各リクエストで独立してプロキシを強制切り替え、デフォルト false
     ProxyRotateOnStatus    []int         // プロキシローテーションをトリガーする HTTP ステータスコード
     EnableHTTP2            bool          // HTTP/2 を有効化、デフォルト true
     EnableCookies          bool          // Cookie 管理を有効化、デフォルト false
@@ -101,6 +102,12 @@ type ConnectionConfig struct {
 優先度：`ProxyURL` より低く、`EnableSystemProxy` より高いです。`ProxyURL` と `ProxyPool` を同時に設定した場合、`ProxyURL` が有効になります（単一プロキシモード）。
 
 `ProxyRotateOnStatus` はプロキシの切り替えと再試行をトリガーする HTTP ステータスコードを指定します（例：CF/WAF の IP ベースのブロックに対して `[]int{403}`）。接続失敗とは異なり、ステータスコードによるローテーションはプロキシを**サーキットブレークしません**——ブロックはターゲット固有であることが多いためです（あるプロキシがあるサイトでブロックされても、別のサイトでは正常な場合があります）。`Retry.MaxRetries > 0` が必要です。
+
+`ProxyRotatePerRequest` は各独立リクエスト（毎回の `Get`/`Post` 呼び出しなど）が異なるプロキシを使用することを保証します。有効でない場合、HTTP 接続の再利用により同一ホストへの連続リクエストが前回のリクエストのプロキシトンネルを再利用し、プロキシプール選択をバイパスしてしまいます。有効化すると、毎回のリクエスト開始時にアイドル接続をクローズし、Transport にプロキシプールを再評価させます——これは少量のオーバーヘッドを追加します（接続再利用なし）が、リクエストごとのローテーションを保証します。`ProxyPool` の設定が必要です。`ProxyURL` やプロキシプール未設定には無効です。
+
+:::tip ProxyRotatePerRequest と ProxyRotateOnStatus
+どちらもプロキシローテーションに使用されますが、トリガー機構が異なります：`ProxyRotateOnStatus` は**特定のステータスコードを受信**した際にリトライローテーションをトリガーし（受動的、リトライと組み合わせが必要）、`ProxyRotatePerRequest` は**毎回のリクエスト開始時**に能動的にプロキシを切り替えます（リトライ不要）。同一ホストのスクレイピング/データ収集シナリオでは、`ProxyRotatePerRequest` により毎回のリクエストの送信元 IP が異なることを保証できます。
+:::
 
 ```go
 cfg := httpc.DefaultConfig()

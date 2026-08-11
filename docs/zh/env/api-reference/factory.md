@@ -254,6 +254,10 @@ func NewChannelAuditHandler(ch chan<- AuditEvent) *ChannelAuditHandler
 **参数：**
 - `ch` - 审计事件通道
 
+::: warning 通道所有权
+`ChannelAuditHandler` **不拥有**通道，`Close()` **不会**关闭底层通道。调用者必须自行关闭通道以通知接收方结束。此外，当通道缓冲区满时，`Log()` 会阻塞——建议使用带缓冲的通道。
+:::
+
 ```go
 ch := make(chan env.AuditEvent, 100)
 cfg.AuditHandler = env.NewChannelAuditHandler(ch)

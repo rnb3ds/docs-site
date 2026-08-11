@@ -1,13 +1,14 @@
 ---
 sidebar_label: "직렬화"
 title: "직렬화 - CyberGo env | 다중 형식 변환"
-description: "CyberGo env 직렬화 가이드로 .env·JSON·YAML 간 Map·구조체 변환, Marshal/Unmarshal 함수군, Marshaler/Unmarshaler 인터페이스, DetectFormat 자동 감지와 env 태그·민감 필드 마스킹을 다룹니다."
+description: "CyberGo env 직렬화 가이드로, .env, JSON, YAML 간의 Map과 구조체 변환을 상세히 설명합니다. Marshal/Unmarshal 함수군, Marshaler/Unmarshaler 커스텀 인터페이스, DetectFormat 자동 감지를 다루며, 구성 내보내기와 형식 마이그레이션 등 실용적인 시나리오를 포함합니다."
 sidebar_position: 2
+sidebar_icon: "🔧"
 ---
 
 # 직렬화
 
-Marshal 및 Unmarshal 기능으로 환경 변수를 직렬화/역직렬화하며, `.env`, JSON, YAML 형식 변환을 지원합니다.
+Marshal 및 Unmarshal 기능을 사용하여 환경 변수를 직렬화/역직렬화하며, `.env`, JSON, YAML 형식 변환을 지원합니다.
 
 ## 기본 직렬화
 
@@ -58,7 +59,7 @@ func main() {
         "PORT": "8080",
     }
 
-    // JSON 으로 직렬화
+    // JSON으로 직렬화
     result, err := env.Marshal(data, env.FormatJSON)
     if err != nil {
         panic(err)
@@ -90,7 +91,7 @@ func main() {
         "DATABASE_NAME": "myapp",
     }
 
-    // YAML 로 직렬화
+    // YAML로 직렬화
     result, err := env.Marshal(data, env.FormatYAML)
     if err != nil {
         panic(err)
@@ -183,7 +184,7 @@ func main() {
 
 ### MarshalStruct 함수
 
-구조체를 `map[string]string`으로 변환:
+구조체를 `map[string]string`으로 변환합니다:
 
 ```go
 func MarshalStruct(v any) (map[string]string, error)
@@ -217,7 +218,7 @@ func main() {
         Debug: true,
     }
 
-    // map 으로 변환
+    // map으로 변환
     data, err := env.MarshalStruct(cfg)
     if err != nil {
         panic(err)
@@ -252,7 +253,7 @@ PORT=8080
 DEBUG=true
 `
 
-    // map 으로 역직렬화
+    // map으로 역직렬화
     result, err := env.UnmarshalMap(data, env.FormatEnv)
     if err != nil {
         panic(err)
@@ -317,7 +318,7 @@ DATABASE_USER: postgres
 
 ## 구조체 역직렬화
 
-### Map 에서 역직렬화
+### Map에서 역직렬화
 
 ```go
 package main
@@ -384,9 +385,9 @@ ENABLED=true
 
 ## 커스텀 직렬화
 
-::: tip 두 가지 커스텀 인터페이스의 동작 범위
-- **필드 수준**: 구조체 필드의 커스텀 인코딩/디코딩은 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`(`MarshalText()` / `UnmarshalText([]byte)`) 를 구현합니다. 구조체가 `env.Marshal`/`env.UnmarshalInto`로 처리될 때 필드 단위 로직이 이 두 인터페이스를 인식합니다.
-- **최상위**: `env.Marshaler`(`MarshalEnv()`) 와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 **`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 직접 전달된 최상위 값에서만 동작**합니다. 해당 타입을 필드로 포함한 외부 구조체를 전달하면 호출되지 않습니다.
+:::tip 두 가지 커스텀 인터페이스의 적용 범위
+- **필드 수준**: 구조체 필드의 커스텀 인코딩/디코딩, 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`(`MarshalText()` / `UnmarshalText([]byte)`) 구현. 구조체가 `env.Marshal`/`env.UnmarshalInto`로 처리될 때 필드별 로직이 이 두 인터페이스를 인식합니다.
+- **최상위**: `env.Marshaler`(`MarshalEnv()`)와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 **직접** 전달된 최상위 값에서만 작동합니다. 해당 타입을 필드로 포함하는 외부 구조체를 전달하면 호출되지 않습니다.
 :::
 
 ### 필드 수준: encoding.TextMarshaler 구현
@@ -403,7 +404,7 @@ import (
 
 type LogLevel string
 
-// encoding.TextMarshaler 구현 — 구조체 필드로 직렬화 시 호출됨
+// encoding.TextMarshaler 구현 — 구조체 필드로 직렬화될 때 호출됨
 func (l LogLevel) MarshalText() ([]byte, error) {
     return []byte(strings.ToUpper(string(l))), nil
 }
@@ -440,7 +441,7 @@ import (
 
 type LogLevel string
 
-// encoding.TextUnmarshaler 구현 — 구조체 필드로 역직렬화 시 호출됨
+// encoding.TextUnmarshaler 구현 — 구조체 필드로 역직렬화될 때 호출됨
 func (l *LogLevel) UnmarshalText(text []byte) error {
     switch string(text) {
     case "debug", "info", "warn", "error":
@@ -473,7 +474,7 @@ func main() {
 
 ### 최상위: env.Marshaler / env.Unmarshaler 구현
 
-어떤 타입의 값을 `env.Marshal` / `env.UnmarshalInto`에 **직접** 전달할 때 (외부 구조체의 필드가 아닌), `env.Marshaler` / `env.Unmarshaler` 인터페이스가 해당 최상위 값에서 동작합니다:
+타입의 값을 `env.Marshal` / `env.UnmarshalInto`에 **직접** 전달할 때(외부 구조체의 필드가 아닌), `env.Marshaler` / `env.Unmarshaler` 인터페이스가 해당 최상위 값에서 작동합니다:
 
 ```go
 package main
@@ -484,7 +485,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// 최상위 타입이 env.Marshaler 를 직접 구현
+// 최상위 타입이 env.Marshaler를 직접 구현
 type EnvBlob string
 
 func (e EnvBlob) MarshalEnv() ([]byte, error) {
@@ -493,7 +494,7 @@ func (e EnvBlob) MarshalEnv() ([]byte, error) {
 }
 
 func main() {
-    // 최상위 값을 직접 직렬화 (외부 구조체의 필드가 아님)
+    // 최상위 값 직접 직렬화(외부 구조체의 필드가 아님)
     result, err := env.Marshal(EnvBlob(""), env.FormatEnv)
     if err != nil {
         panic(err)
@@ -529,7 +530,7 @@ func main() {
     format = env.DetectFormat(".env")
     fmt.Println(format.String()) // dotenv
 
-    // FormatAuto 로 자동 감지
+    // FormatAuto로 자동 감지 사용
     data := `{"KEY": "value"}`
     result, _ := env.UnmarshalMap(data, env.FormatAuto)
     fmt.Println(result)
@@ -538,7 +539,7 @@ func main() {
 
 ## 실용 시나리오
 
-### 설정을 파일로 저장
+### 구성을 파일로 저장
 
 ```go
 package main
@@ -585,7 +586,7 @@ func main() {
     // 모든 환경 변수 가져오기
     all := env.All()
 
-    // JSON 으로 내보내기
+    // JSON으로 내보내기
     content, err := env.Marshal(all, env.FormatJSON)
     if err != nil {
         panic(err)
@@ -598,7 +599,7 @@ func main() {
 }
 ```
 
-### 설정 마이그레이션
+### 구성 마이그레이션
 
 ```go
 package main
@@ -610,7 +611,7 @@ import (
 )
 
 func main() {
-    // JSON 설정 읽기
+    // JSON 구성 읽기
     jsonContent, _ := os.ReadFile("config.json")
 
     // JSON 파싱
@@ -634,6 +635,6 @@ func main() {
 
 ## 관련 문서
 
-- [패키지 함수](/ko/env/api-reference/functions) - Marshal, UnmarshalMap 등 함수 참조
-- [다중 형식 구성](/ko/env/guides/multi-format) - 다중 형식 로딩 가이드
+- [패키지 함수](/ko/env/api-reference/functions) - Marshal, UnmarshalMap 등 함수 레퍼런스
+- [다중 포맷 설정](/ko/env/guides/multi-format) - 다중 형식 로드 가이드
 - [구조체 매핑](/ko/env/guides/struct-mapping) - 구조체 매핑 가이드

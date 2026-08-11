@@ -1,13 +1,14 @@
 ---
-sidebar_label: "Аудитные логи"
-title: "Аудитный журнал - CyberGo env | Настройка аудита"
-description: "Аудит CyberGo env: обработчики JSONAuditHandler, LogAuditHandler, ChannelAuditHandler и пользовательский AuditHandler для записи операций над переменными."
-sidebar_position: 5
+sidebar_label: "Журнал аудита"
+title: "Журнал аудита - CyberGo env | конфигурация безопасности аудита"
+description: "Руководство по конфигурации журнала аудита CyberGo env: три обработчика JSONAuditHandler, LogAuditHandler и ChannelAuditHandler, а также пользовательский AuditHandler для регистрации операций загрузки, чтения, изменения и удаления переменных — для аудита безопасности, проверок соответствия и устранения неполадок."
+sidebar_position: 6
+sidebar_icon: "🛡️"
 ---
 
-# Аудитный журнал
+# Журнал аудита
 
-Функция аудитного журнала записывает все операции с переменными окружения для проведения аудита безопасности, проверок соответствия и устранения неполадок.
+Функционал журнала аудита регистрирует все операции с переменными окружения, используется для аудита безопасности, проверок соответствия и устранения неполадок.
 
 ## Включение аудита
 
@@ -21,14 +22,14 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 loader, _ := env.New(cfg)
 ```
 
-### Предустановки конфигурации
+### Пресеты конфигурации
 
-| Предустановка | Состояние аудита |
-|------|----------|
-| `DefaultConfig()` | Отключён |
-| `DevelopmentConfig()` | Отключён |
-| `TestingConfig()` | Отключён |
-| `ProductionConfig()` | Включён |
+| Пресет | Состояние аудита |
+|--------|-------------------|
+| `DefaultConfig()` | Отключено |
+| `DevelopmentConfig()` | Отключено |
+| `TestingConfig()` | Отключено |
+| `ProductionConfig()` | Включено |
 
 ---
 
@@ -36,7 +37,7 @@ loader, _ := env.New(cfg)
 
 ### JSONAuditHandler
 
-Вывод журналов в формате JSON:
+Выводит логи в формате JSON:
 
 ```go
 import (
@@ -57,7 +58,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
 
-Чувствительные ключи (например, `API_KEY`) автоматически маскируются в поле `key` аудитного журнала как `[MASKED:N chars]` (N — длина ключа); нечувствительные ключи (например, `CUSTOM_VAR`) отображаются как есть.
+Чувствительные ключи (например `API_KEY`) автоматически маскируются в поле `key` журнала аудита как `[MASKED:N chars]` (N — длина ключа), нечувствительные ключи (например `CUSTOM_VAR`) отображаются как есть.
 
 ---
 
@@ -105,13 +106,13 @@ go func() {
 **Сценарии использования:**
 - Отправка в удалённый сервис логирования
 - Запись в базу данных
-- Мониторинг и оповещения в реальном времени
+- Мониторинг в реальном времени и оповещения
 
 ---
 
 ### NopAuditHandler
 
-Обработчик без операций, отбрасывающий все события:
+Обработчик-заглушка, отбрасывает все события:
 
 ```go
 cfg.AuditHandler = env.NewNopAuditHandler()
@@ -129,13 +130,13 @@ cfg.AuditHandler = env.NewNopAuditHandler()
 
 ```go
 type AuditEvent struct {
-    Timestamp time.Time   // Метка времени
+    Timestamp time.Time   // Временная метка
     Action    AuditAction // Тип операции
     Key       string      // Имя ключа
     File      string      // Имя файла
     Reason    string      // Причина
-    Success   bool        // Успешность
-    Masked    bool        // Маскировка
+    Success   bool        // Успешно ли
+    Masked    bool        // Маскировано ли
     Details   string      // Подробности
     Duration  int64       // Длительность (наносекунды)
 }
@@ -144,9 +145,9 @@ type AuditEvent struct {
 ### Типы операций AuditAction
 
 | Константа | Значение | Описание |
-|------|---|------|
+|-----------|----------|----------|
 | `ActionLoad` | `load` | Загрузка файла |
-| `ActionParse` | `parse` | Операция парсинга |
+| `ActionParse` | `parse` | Операция разбора |
 | `ActionGet` | `get` | Чтение переменной |
 | `ActionSet` | `set` | Установка переменной |
 | `ActionDelete` | `delete` | Удаление переменной |
@@ -162,11 +163,11 @@ type AuditEvent struct {
 
 ### Реализация интерфейса FullAuditLogger
 
-`FullAuditLogger` — это полный интерфейс аудитного журнала, расширяющий минимальный интерфейс `AuditLogger` (содержащий только метод LogError):
+`FullAuditLogger` — полный интерфейс журнала аудита, расширяющий минимальный интерфейс `AuditLogger` (содержит только метод LogError):
 
 ```go
 type FullAuditLogger interface {
-    AuditLogger  // Встроенный минимальный интерфейс (LogError)
+    AuditLogger  // Встраивание минимального интерфейса (LogError)
     Log(action AuditAction, key, reason string, success bool) error
     LogWithFile(action AuditAction, key, file, reason string, success bool) error
     LogWithDuration(action AuditAction, key, reason string, success bool, duration time.Duration) error
@@ -228,9 +229,9 @@ func (h *DatabaseAuditHandler) Close() error {
 
 ---
 
-## Полный пример
+## Полные примеры
 
-### Конфигурация для производственной среды
+### Продакшн-конфигурация
 
 ```go
 package main
@@ -242,7 +243,7 @@ import (
 )
 
 func main() {
-    // Создание файла аудитного журнала
+    // Создание файла журнала аудита
     auditFile, err := os.OpenFile("/var/log/app/env-audit.log",
         os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
     if err != nil {
@@ -318,7 +319,7 @@ func processAuditEvents(ch chan env.AuditEvent) {
     encoder := json.NewEncoder(file)
 
     for event := range ch {
-        // Можно добавить фильтрацию, агрегацию и т.д.
+        // Можно добавить фильтрацию, агрегацию и т. д.
         if event.Action == env.ActionError {
             log.Printf("Audit error: %+v", event)
         }
@@ -330,38 +331,38 @@ func processAuditEvents(ch chan env.AuditEvent) {
 
 ---
 
-## Вопросы безопасности
+## Замечания по безопасности
 
 ### Записи аудита и маскирование
 
-Аудитный журнал автоматически маскирует поле `key` для чувствительных ключей (по умолчанию отображается как `[MASKED:N chars]`, где N — количество символов в имени ключа; нечувствительные ключи отображаются как есть). **События аудита записываются только для операций записи**: `Set` / `Delete` / `LoadFiles` и т. п. вызывают события `ActionSet` / `ActionDelete` / `ActionLoad` и фиксируют ключ в маскированном виде.
+Журнал аудита автоматически маскирует поле `key` для чувствительных ключей (по умолчанию отображается как `[MASKED:N chars]`, где N — количество символов в имени ключа; нечувствительные ключи отображаются как есть). **События аудита регистрируются только для операций записи**: `Set` / `Delete` / `LoadFiles` и т. д. вызывают события `ActionSet` / `ActionDelete` / `ActionLoad` и т. д., записывая маскированное имя ключа.
 
-Операции чтения не порождают аудит: `Get` / `GetString` / `GetInt` / `GetSecure` и т. п. **при успешном чтении не создают записей аудита**. Событие `ActionGet` возникает только на пути ошибки при **неудачном преобразовании типа** в `GetInt` / `GetBool` / `GetFloat64` и т. п. (`success=false`), например:
+Операции чтения не создают аудит: `Get` / `GetString` / `GetInt` / `GetSecure` и т. д. **не регистрируют аудит при нормальном чтении**. Событие `ActionGet` срабатывает только при ошибке преобразования типов в `GetInt` / `GetBool` / `GetFloat64` и т. д. (на пути ошибки с `success=false`), например:
 
 ```go
-// Операция записи: создаёт событие аудита (с маскированным чувствительным ключом)
+// Операция записи: регистрирует событие аудита (чувствительный ключ записывается в маскированном виде)
 _ = loader.Set("API_KEY", "sk-1234567890")
 // Запись аудита: {"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
 
-// Операции чтения: нормальное чтение не порождает аудит
-secret := loader.GetSecure("API_KEY") // не создаёт записи аудита
-_ = loader.GetInt("PORT")             // успешный разбор — записи аудита нет
-_ = loader.GetInt("API_KEY")          // при неудачном разборе возникает событие ActionGet (success=false)
+// Операция чтения: нормальное чтение не создаёт аудит
+secret := loader.GetSecure("API_KEY") // не создаёт запись аудита
+_ = loader.GetInt("PORT")             // успешный разбор, не создаёт запись аудита
+_ = loader.GetInt("API_KEY")          // при неудаче разбора создаёт событие ActionGet (success=false)
 ```
 
 ### Права доступа к журналу аудита
 
 ```bash
-# Установка прав доступа к файлу аудитного журнала
+# Установка прав файла журнала аудита
 chmod 600 /var/log/app/env-audit.log
 
-# Только пользователь приложения должен иметь доступ на чтение/запись
+# Обеспечение доступа только для пользователя приложения
 chown app:app /var/log/app/env-audit.log
 ```
 
-### Ротация журналов
+### Ротация логов
 
-Рекомендуется использовать logrotate для управления журналами аудита:
+Рекомендуется использовать logrotate для управления журналом аудита:
 
 ```bash
 # /etc/logrotate.d/app-env-audit
@@ -380,7 +381,7 @@ chown app:app /var/log/app/env-audit.log
 
 ## Связанная документация
 
-- [Обзор безопасности](/ru/env/security/) - Архитектура безопасности и основные возможности
-- [Контрольный список для продакшена](/ru/env/security/production-checklist) - Проверка конфигурации аудита
-- [Определение интерфейсов](/ru/env/api-reference/interfaces) - Интерфейс AuditLogger
-- [Фабрика компонентов](/ru/env/api-reference/factory) - Фабрика обработчиков аудита
+- [Обзор безопасности](/ru/env/security/) - архитектура безопасности и ключевые особенности
+- [Контрольный список для продакшена](/ru/env/security/production-checklist) - проверка конфигурации аудита
+- [Определения интерфейсов](/ru/env/api-reference/interfaces) - интерфейс AuditLogger
+- [Фабрика компонентов](/ru/env/api-reference/factory) - фабрика обработчиков аудита

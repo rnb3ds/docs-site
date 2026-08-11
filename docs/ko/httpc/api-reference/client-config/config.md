@@ -84,8 +84,9 @@ type ConnectionConfig struct {
     ProxyPool              []string      // 순환에 사용할 프록시 서버 목록
     ProxyPoolStrategy      ProxyStrategy // 프록시 선택 전략, 기본 RoundRobin
     ProxyFailureThreshold  int           // 연속 실패 임계값, 0 이면 기본값 3
-    ProxyCooldown          time.Duration // 서킷 브레이크 대기 시간, 0 이면 기본값 30s
-    ProxyRotateOnStatus    []int         // 프록시 순환을 트리거하는 HTTP 상태 코드
+    ProxyCooldown            time.Duration // 서킷 브레이크 대기 시간, 0 이면 기본값 30s
+    ProxyRotatePerRequest    bool          // 각 독립적인 요청마다 다른 프록시를 강제 사용, 기본값 false
+    ProxyRotateOnStatus      []int         // 프록시 순환을 트리거하는 HTTP 상태 코드
     EnableHTTP2            bool          // HTTP/2 활성화, 기본 true
     EnableCookies          bool          // Cookie 관리 활성화, 기본 false
     EnableDoH              bool          // DNS-over-HTTPS 활성화, 기본 false
@@ -101,6 +102,12 @@ type ConnectionConfig struct {
 우선순위: `ProxyURL`보다 낮고, `EnableSystemProxy`보다 높습니다. `ProxyURL`과 `ProxyPool`을 동시에 설정하면 `ProxyURL`이 적용됩니다 (단일 프록시 모드).
 
 `ProxyRotateOnStatus`는 재시도 시 프록시 전환을 트리거하는 HTTP 상태 코드를 지정합니다 (예: CF/WAF 의 IP 기반 차단에 `[]int{403}`). 연결 실패와 달리 상태 코드 순환은 프록시를 서킷 브레이킹 **하지 않습니다** — 차단은 종종 타겟별로 발생하기 때문입니다 (한 프록시가 특정 사이트에서 차단되더라도 다른 사이트에서는 정상일 수 있음). 적용하려면 `Retry.MaxRetries > 0`이 필요합니다.
+
+`ProxyRotatePerRequest`는 각 독립적인 요청(예: 매 `Get`/`Post` 호출)이 다른 프록시를 사용하도록 보장합니다. 활성화하지 않으면, HTTP 연결 재사용으로 인해 동일한 호스트에 대한 연속 요청이 이전 요청의 프록시 터널을 재사용하여 프록시 풀 선택을 우회하게 됩니다. 활성화하면, 매 요청 시작 시 유휴 연결을 닫아 Transport가 프록시 풀을 다시 평가하도록 강제합니다 — 이는 약간의 오버헤드를 추가하지만(연결 재사용 없음) 요청별 순환을 보장합니다. `ProxyPool`을 설정해야 적용되며, `ProxyURL`이나 프록시 풀이 없는 구성에는 영향을 주지 않습니다.
+
+:::tip 팁
+`ProxyRotateOnStatus`는 **특정 상태 코드 수신** 시 재시도 순환을 트리거(수동적, 재시도 필요)하며, `ProxyRotatePerRequest`는 **매 요청 시작** 시 능동적으로 프록시를 전환(재시도 불필요)합니다. 동일한 호스트에 대한 스크래핑/데이터 수집 시나리오에서 `ProxyRotatePerRequest`는 매 요청의 소스 IP가 다르도록 보장합니다.
+:::
 
 ```go
 cfg := httpc.DefaultConfig()

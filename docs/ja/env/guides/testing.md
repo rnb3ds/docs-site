@@ -1,19 +1,20 @@
 ---
-sidebar_label: "テストシナリオ"
-title: "テストシナリオ - CyberGo env | ユニットテストベストプラクティス"
-description: "CyberGo env テストベストプラクティスガイド。TestingConfig と OverwriteExisting テスト分離、FileSystem インターフェースのモック、テストごとの独立ローダー、テーブル駆動・ベンチマーク、ResetDefaultLoader クリーンアップで結果を保証します。"
-sidebar_position: 6
+sidebar_label: "テスト"
+title: "テスト - CyberGo env | ユニットテストのベストプラクティス"
+description: "CyberGo env テストベストプラクティスガイド。TestingConfig 設定と OverwriteExisting テスト分離、FileSystem インターフェースでメモリファイルシステムをモック、各テストで独立ローダー、テーブル駆動とベンチマークテスト、ResetDefaultLoader 状態クリーンアップ戦略を含み、テストの安定性と再現性を保証。"
+sidebar_position: 7
+sidebar_icon: "🧪"
 ---
 
-# テストシナリオ
+# テスト
 
-このガイドでは、テストで env ライブラリを使用する方法について説明します。テスト環境の分離、ファイルシステムのモック、状態のクリーンアップなどを含みます。
+本ガイドはテストで env ライブラリを使用する方法を紹介します。テスト環境の分離、ファイルシステムのモック、状態のクリーンアップを含みます。
 
 ## テスト設定
 
 ### TestingConfig の使用
 
-TestingConfig は既存の環境変数を上書きし、テストの分離に適しています：
+TestingConfig は既存の環境変数を上書きし、テスト分離に適しています：
 
 ```go
 func TestWithTestingConfig(t *testing.T) {
@@ -30,10 +31,10 @@ func TestWithTestingConfig(t *testing.T) {
 ```
 
 ::: tip 注意
-TestingConfig は `OverwriteExisting: true` を設定し、テストの分離を保証します。既存の変数を保持する必要がある場合は、手動で `cfg.OverwriteExisting = false` に設定できます。
+TestingConfig は `OverwriteExisting: true` を設定し、テスト分離を保証します。既存変数を保持する必要がある場合は手動で `cfg.OverwriteExisting = false` を設定できます。
 :::
 
-### テストごとに独立したローダー
+### 各テストで独立ローダー
 
 ```go
 func TestDatabase(t *testing.T) {
@@ -53,7 +54,7 @@ func TestDatabase(t *testing.T) {
 
 ### カスタム FileSystem
 
-`FileSystem` インターフェースを使用してファイルをモックします：
+`FileSystem` インターフェースでファイルをモックします：
 
 ```go
 type MockFileSystem struct {
@@ -251,7 +252,7 @@ func TestValidation(t *testing.T) {
 
 ```go
 func TestConfigLoading(t *testing.T) {
-    // 一時 .env ファイルを作成
+    // テンポラリ .env ファイルを作成
     tmpDir := t.TempDir()
     envFile := filepath.Join(tmpDir, ".env")
 
@@ -336,7 +337,7 @@ func TestConcurrentAccess(t *testing.T) {
 }
 ```
 
-## ベンチマーク
+## ベンチマークテスト
 
 ### 読み取りパフォーマンス
 
@@ -358,7 +359,7 @@ func BenchmarkGetString(b *testing.B) {
 
 ```go
 func BenchmarkLoadFile(b *testing.B) {
-    // 一時ファイルを作成
+    // テンポラリファイルを作成
     tmpDir := b.TempDir()
     envFile := filepath.Join(tmpDir, ".env")
 
@@ -438,7 +439,7 @@ func TestWithHelper(t *testing.T) {
         "DB_PORT": "5432",
     })
 
-    // loader はテスト終了後に自動的にクローズされる
+    // loader はテスト終了後に自動クローズ
     assert.Equal(t, "localhost", loader.GetString("DB_HOST"))
 }
 ```
@@ -447,5 +448,5 @@ func TestWithHelper(t *testing.T) {
 
 - [Config API - TestingConfig](/ja/env/api-reference/config#testingconfig) - テスト設定リファレンス
 - [Loader API](/ja/env/api-reference/loader) - Loader の完全なメソッド
-- [インターフェース定義 - FileSystem](/ja/env/api-reference/interfaces) - カスタムファイルシステムインターフェース
+- [インターフェース - FileSystem](/ja/env/api-reference/interfaces) - カスタムファイルシステムインターフェース
 - [パフォーマンス最適化](/ja/env/advanced/performance) - ベンチマークデータ

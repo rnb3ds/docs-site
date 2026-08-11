@@ -1,17 +1,18 @@
 ---
 sidebar_label: "구조체 매핑"
-title: "구조체 매핑 - CyberGo env | 환경 변수에서 구조체로"
-description: "CyberGo env 구조체 매핑 가이드로 env·envDefault 태그로 환경 변수를 Go 구조체 필드에 자동 매핑하며, 중첩 구조체·포인터·슬라이스·커스텀 타입 디코딩·필드 무시·기본값·필수 검증을 다루어 타입 안전한 설정 로딩을 구현합니다."
+title: "구조체 매핑 - CyberGo env | 환경 변수를 구조체로"
+description: "CyberGo env 구조체 매핑 가이드로, env, envDefault 태그를 통해 환경 변수를 Go 구조체 필드에 자동 매핑합니다. 중첩 구조체, 포인터와 슬라이스, 커스텀 타입 디코딩, 필드 무시, 기본값과 필수 검증을 다루어 타입 안전한 구성 로딩을 구현합니다."
 sidebar_position: 1
+sidebar_icon: "🔧"
 ---
 
 # 구조체 매핑
 
-구조체 태그를 사용하여 환경 변수를 Go 구조체에 자동으로 매핑하고, 타입 안전한 설정 관리를 구현합니다.
+구조체 태그를 사용하여 환경 변수를 Go 구조체에 자동으로 매핑하고, 타입 안전한 구성 관리를 구현합니다.
 
 ## 기본 매핑
 
-### 간단한 예시
+### 단순 예제
 
 ```go
 package main
@@ -55,7 +56,7 @@ if err := loader.ParseInto(&cfg); err != nil {
 
 ### env 태그
 
-환경 변수 이름 지정:
+환경 변수 이름을 지정합니다:
 
 ```go
 type Config struct {
@@ -66,7 +67,7 @@ type Config struct {
 
 ### envDefault 태그
 
-기본값 설정:
+기본값을 설정합니다:
 
 ```go
 type Config struct {
@@ -79,7 +80,7 @@ type Config struct {
 
 ### 필드 무시
 
-`env:"-"`을 사용하여 필드를 건너뜁니다:
+`env:"-"`를 사용하여 필드를 건너뜁니다:
 
 ```go
 type Config struct {
@@ -120,10 +121,10 @@ type Config struct {
 ```
 
 지원 형식:
-- `30s` - 30 초
-- `5m` - 5 분
-- `1h30m` - 1 시간 30 분
-- `100ms` - 100 밀리초
+- `30s` - 30초
+- `5m` - 5분
+- `1h30m` - 1시간 30분
+- `100ms` - 100밀리초
 
 ### 슬라이스 타입
 
@@ -220,7 +221,7 @@ func main() {
 
 ### encoding.TextUnmarshaler 인터페이스 구현
 
-구조체 필드의 커스텀 디코딩은 표준 라이브러리 `encoding.TextUnmarshaler` 인터페이스를 구현하여 수행합니다 — 이 인터페이스가 필드 단위 채우기에서 **실제로 호출되는** 인터페이스입니다.
+구조체 필드의 커스텀 디코딩은 표준 라이브러리 `encoding.TextUnmarshaler` 인터페이스를 구현하여 수행됩니다 - 이것은 필드별로 채울 때 **실제로 호출되는** 인터페이스입니다.
 
 ```go
 package main
@@ -261,7 +262,7 @@ func main() {
 }
 ```
 
-### 검증을 포함한 타입 별칭
+### 검증이 포함된 타입 별칭
 
 <!-- check-code: skip -->
 ```go
@@ -281,11 +282,11 @@ func (p *Port) UnmarshalText(text []byte) error {
 }
 ```
 
-:::tip env.Marshaler / env.Unmarshaler 인터페이스에 대해
-`env.Marshaler`(`MarshalEnv()`) 와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 **`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 전달된 최상위 값에서만 동작**하며, 구조체의 필드 단위 채우기 로직에서는 호출되지 않습니다. 구조체 필드에 커스텀 인코딩/디코딩을 적용하려면 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`를 구현하세요. 이들은 필드 수준에서 인식됩니다.
+:::tip env.Marshaler / env.Unmarshaler 인터페이스 정보
+`env.Marshaler`(`MarshalEnv()`)와 `env.Unmarshaler`(`UnmarshalEnv(map[string]string)`) 인터페이스는 `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`에 전달된 **최상위 값에서만** 작동하며, 구조체의 필드별 채우기 로직에 의해 호출되지 않습니다. 구조체 필드에 커스텀 인코딩/디코딩을 수행하려면 표준 라이브러리 `encoding.TextMarshaler` / `encoding.TextUnmarshaler`를 구현하세요. 이들은 필드 수준에서 인식됩니다.
 :::
 
-## 설정 검증
+## 구성 검증
 
 ### 구조체 검증
 
@@ -345,7 +346,7 @@ func (c *Config) Validate() error {
 
 ## 실용 패턴
 
-### 중앙 집중식 설정 관리
+### 중앙 집중식 구성 관리
 
 <!-- check-code: skip -->
 ```go
@@ -434,7 +435,7 @@ if err := env.ParseInto(&cfg); err != nil {
 
 ```go
 type Config struct {
-    Port int64 `env:"PORT"`  // PORT 가 유효한 정수가 아닌 경우
+    Port int64 `env:"PORT"`  // PORT가 유효한 정수가 아닌 경우
 }
 
 cfg := Config{}
@@ -443,7 +444,7 @@ if err := env.ParseInto(&cfg); err != nil {
 }
 ```
 
-## 전체 예시
+## 완전한 예제
 
 ```go
 package main
@@ -534,6 +535,6 @@ func main() {
 
 ## 관련 문서
 
-- [패키지 함수 - ParseInto](/ko/env/api-reference/functions#parseinto) - ParseInto 함수 참조
-- [Loader API - ParseInto](/ko/env/api-reference/loader#parseinto) - Loader 메서드 참조
+- [패키지 함수 - ParseInto](/ko/env/api-reference/functions#parseinto) - ParseInto 함수 레퍼런스
+- [Loader API - ParseInto](/ko/env/api-reference/loader#parseinto) - Loader 메서드 레퍼런스
 - [빠른 시작](/ko/env/getting-started/) - 기본 사용법

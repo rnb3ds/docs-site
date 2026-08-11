@@ -1,8 +1,9 @@
 ---
 sidebar_label: "Variable Expansion"
-title: "Variable Expansion - CyberGo env | Variable Syntax"
-description: "CyberGo env variable expansion: ${VAR}, ${VAR:-default}, ${VAR:=default}, ${VAR:?error}, $VAR shorthand, circular-ref detection, MaxExpansionDepth limits."
+title: "Variable Expansion - CyberGo env | ${VAR} References and Default Value Syntax"
+description: "Variable expansion syntax guide for CyberGo env, covering ${VAR} and ${VAR:-default} references, ${VAR:=default} defaults, ${VAR:?error} required validation, $VAR shorthand, circular reference detection, and MaxExpansionDepth depth limits for configuration reuse and dynamic value substitution."
 sidebar_position: 4
+sidebar_icon: "🔧"
 ---
 
 # Variable Expansion
@@ -39,12 +40,12 @@ URL=$HOST:8080
 
 | Syntax | Description |
 |--------|-------------|
-| `${VAR:-default}` | Use default if VAR does not exist |
-| `${VAR:=default}` | Use default if VAR does not exist (same as `:-`) |
-| `${VAR:?error}` | Return error if VAR does not exist or is empty |
+| `${VAR:-default}` | If VAR doesn't exist, use default |
+| `${VAR:=default}` | If VAR doesn't exist, use default (same as `:-`) |
+| `${VAR:?error}` | If VAR doesn't exist or is empty, return error |
 
-::: warning Self-reference limitation
-The variable referenced by `:-`, `:=`, `:?` must differ from the key being assigned. A self-reference such as `KEY=${KEY:-default}` is detected as a cycle and fails at load with `ErrExpansionDepth`. To set a default for a key, assign a literal directly (`KEY=default`) or reference another variable (see the examples below).
+:::warning
+Variables referenced by `:-`, `:=`, `:?` must be **different** from the key being assigned. Self-references like `KEY=${KEY:-default}` are detected as circular references and produce an `ErrExpansionDepth` error during loading. To set a default value for a key, assign a literal directly (`KEY=default`), or reference another variable (see examples below).
 :::
 
 ---
@@ -53,7 +54,7 @@ The variable referenced by `:-`, `:=`, `:?` must differ from the key being assig
 
 ### `${VAR:-default}` - Use Default Value
 
-The most common default value syntax. When the variable does not exist, the default value is used; when the variable exists (even if empty), the original value is used:
+The most common default value syntax. Uses the default value when the variable doesn't exist; uses the original value when the variable exists (even if empty):
 
 ```bash
 # HOST is defined, use its value
@@ -61,14 +62,14 @@ HOST=localhost
 PRIMARY_HOST=${HOST:-127.0.0.1}
 # PRIMARY_HOST expands to: localhost
 
-# If TIMEOUT is not defined, use the default value "30s"
+# When TIMEOUT is undefined, use default "30s"
 TIMEOUT_VALUE=${TIMEOUT:-30s}
 # TIMEOUT_VALUE expands to: 30s
 
 # Nested defaults
 DB_HOST=localhost
 DB_URL=${DB_HOST}:${DB_PORT:-5432}
-# When DB_HOST=localhost and DB_PORT is not defined
+# When DB_HOST=localhost and DB_PORT is undefined
 # DB_URL expands to: localhost:5432
 ```
 
@@ -80,43 +81,43 @@ DB_URL=${DB_HOST}:${DB_PORT:-5432}
 
 ### `${VAR:=default}` - Use Default Value
 
-Behaves identically to `${VAR:-default}`, using the default value when the variable does not exist:
+Behaves the same as `${VAR:-default}`, using the default value when the variable doesn't exist:
 
 ```bash
-# If DEBUG is not defined, use "false"
+# When DEBUG is undefined, use "false"
 DEBUG_VALUE=${DEBUG:=false}
 
-# If CACHE_TTL is not defined, use the default value
+# When CACHE_TTL is undefined, use default value
 CACHE_TTL_VALUE=${CACHE_TTL:=3600}
 ```
 
-::: info Relationship with `:-`
-`${VAR:=default}` behaves identically to `${VAR:-default}` in this library. When the variable does not exist, the default value is used as the expansion result. `:=` does not write the default value back to variable storage.
+:::info
+`${VAR:=default}` behaves exactly the same as `${VAR:-default}` in this library. When the variable doesn't exist, the default value is used as the expansion result. `:=` does not write the default value back to variable storage.
 :::
 
 ---
 
-### `${VAR:?error}` - Error Message
+### `${VAR:?error}` - Error on Missing
 
-Returns an error if the variable does not exist or is empty:
+Returns an error if the variable doesn't exist or is empty:
 
 ```bash
-# If DATABASE_URL is not defined, loading fails with an error
+# If DATABASE_URL is undefined, loading fails with an error
 DB_URL=${DATABASE_URL:?Database URL is required}
 
-# If API_TOKEN is not defined, raise error
+# If API_TOKEN is undefined, error
 AUTH_TOKEN=${API_TOKEN:?API_TOKEN must be set}
 ```
 
 **Use cases:**
-- Required configuration validation
+- Required configuration item validation
 - Fail early to avoid runtime errors
 
 ---
 
 ## Escaping
 
-### Escaping the Dollar Sign
+### Escaping Dollar Signs
 
 Use `$$` for a literal `$`:
 
@@ -132,22 +133,22 @@ MESSAGE=Price is $$100
 
 ### Quotes and Expansion
 
-Variable expansion happens during a unified post-processing stage after quote stripping, and **neither single quotes nor double quotes affect expansion**. For example, `SINGLE='${BASE}'` (with `BASE=hello`) expands to `hello`, identical to the double-quote behavior; if the referenced variable is undefined (e.g., `LITERAL='${NO_EXPANSION}'`), the result is an empty string rather than the literal `${NO_EXPANSION}`.
+Variable expansion happens in a unified post-processing stage after quote stripping, so **neither single quotes nor double quotes affect variable expansion**. For example, `SINGLE='${BASE}'` (with `BASE=hello`) expands to `hello`, consistent with double-quote behavior; if the referenced variable is undefined (e.g., `LITERAL='${NO_EXPANSION}'`), the result is an empty string rather than preserving the `${NO_EXPANSION}` literal.
 
-The only difference between single and double quotes is in **literal parsing**: double quotes process escape sequences like `\n` and `\t`, while single quotes preserve them verbatim (no escaping).
+The difference between single and double quotes only matters for **literal parsing**: double quotes process escape sequences like `\n`, `\t`, while single quotes preserve them as-is (no escaping).
 
-::: warning Note
-Do not use quotes to "disable expansion." To preserve the literal `${VAR}`, use one of the following approaches:
+:::warning
+Do not use quotes to "disable expansion." To preserve the `${VAR}` literal, use the following methods:
 :::
 
 ```bash
-# Method 1: escape the dollar sign ($$ expands to literal $)
+# Method 1: Escape the dollar sign ($$ expands to literal $)
 LITERAL='$${NO_EXPANSION}'
 # Value: ${NO_EXPANSION}
 ```
 
 ```go
-// Method 2: disable global variable expansion
+// Method 2: Disable global variable expansion
 cfg := env.DefaultConfig()
 cfg.ExpandVariables = false
 ```
@@ -156,7 +157,7 @@ cfg.ExpandVariables = false
 
 ## Nested Expansion
 
-Variables can reference each other with nesting:
+Variables can be nested references:
 
 ```bash
 # Base configuration (avoid the built-in forbidden key ENV, use DEPLOY_ENV instead)
@@ -189,7 +190,7 @@ B=${A}
 
 ## Expansion Depth Limit
 
-The default maximum expansion depth is 5, with a hard upper limit of 20:
+The default maximum expansion depth is 5, with a hard limit of 20:
 
 ```go
 cfg := env.DefaultConfig()
@@ -200,8 +201,8 @@ cfg.MaxExpansionDepth = 10  // Custom depth
 |----------|-------|-------------|
 | `DefaultMaxExpansionDepth` | 5 | Default value (public API) |
 
-::: info Note
-The hard upper limit is 20 (internal restriction). The configured `MaxExpansionDepth` cannot exceed this limit.
+:::info
+The hard limit is 20 (internal limit). The configured `MaxExpansionDepth` cannot exceed this limit.
 :::
 
 ---
@@ -226,7 +227,7 @@ DB_URL=postgres://${DB_HOST}:${DB_PORT}/${DB_NAME}
 API_BASE=https://api.${DEPLOY_ENV}.example.com
 API_URL=${API_BASE}/v1
 
-# Logging configuration
+# Log configuration
 LOG_LEVEL=info
 
 # Price (escaped)
@@ -268,6 +269,6 @@ func main() {
 
 ## Related Documentation
 
-- [Getting Started](/en/env/getting-started/) - Basic usage
+- [Quick Start](/en/env/getting-started/) - Basic usage
 - [Config API](/en/env/api-reference/config) - ExpandVariables configuration
 - [Constants & Errors](/en/env/api-reference/constants) - Expansion depth limits

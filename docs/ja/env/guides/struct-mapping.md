@@ -1,15 +1,16 @@
 ---
 sidebar_label: "構造体マッピング"
 title: "構造体マッピング - CyberGo env | 環境変数から構造体へ"
-description: "CyberGo env 構造体マッピングガイド。env・envDefault タグで環境変数を構造体にマッピングし、ネスト、ポインタ、スライス、カスタム型デコード、フィールド無視、デフォルト値、必須検証を説明します。"
+description: "CyberGo env 構造体マッピングガイド。env、envDefault タグで環境変数を Go 構造体フィールドに自動マッピング。ネスト構造体、ポインタとスライス、カスタム型デコード、フィールド無視、デフォルト値と必須検証をカバーし、型安全な設定読み込みを実現。"
 sidebar_position: 1
+sidebar_icon: "🔧"
 ---
 
 # 構造体マッピング
 
 構造体タグを使用して環境変数を Go 構造体に自動マッピングし、型安全な設定管理を実現します。
 
-## 基本的なマッピング
+## 基本マッピング
 
 ### シンプルな例
 
@@ -55,7 +56,7 @@ if err := loader.ParseInto(&cfg); err != nil {
 
 ### env タグ
 
-環境変数名を指定します：
+環境変数名を指定：
 
 ```go
 type Config struct {
@@ -66,7 +67,7 @@ type Config struct {
 
 ### envDefault タグ
 
-デフォルト値を設定します：
+デフォルト値を設定：
 
 ```go
 type Config struct {
@@ -79,16 +80,16 @@ type Config struct {
 
 ### フィールドの無視
 
-`env:"-"` を使用してフィールドをスキップします：
+`env:"-"` でフィールドをスキップ：
 
 ```go
 type Config struct {
     Host    string `env:"HOST"`
-    Ignored string `env:"-"`  // 値は設定されない
+    Ignored string `env:"-"`  // 格納されない
 }
 ```
 
-## サポートされる型
+## サポートする型
 
 ### 基本型
 
@@ -119,7 +120,7 @@ type Config struct {
 }
 ```
 
-サポートされるフォーマット：
+サポートするフォーマット：
 - `30s` - 30 秒
 - `5m` - 5 分
 - `1h30m` - 1 時間 30 分
@@ -127,7 +128,7 @@ type Config struct {
 
 ### スライス型
 
-スライスフィールドはカンマ `,` で区切られ、セパレータ前後の空白は自動的に削除されます。
+スライスフィールドはカンマ `,` で区切られ、セパレータ前後の空白は自動削除されます。
 
 ```go
 type Config struct {
@@ -143,7 +144,7 @@ HOSTS=localhost,example.com,api.example.com
 PORTS=80,443,8080
 ```
 
-## ネストされた構造体
+## ネストした構造体
 
 ### 基本的なネスト
 
@@ -220,7 +221,7 @@ func main() {
 
 ### encoding.TextUnmarshaler インターフェースの実装
 
-構造体フィールドのカスタムデコードは、標準ライブラリ `encoding.TextUnmarshaler` インターフェースを実装することで行います。これはフィールド単位の充填時に**実際に呼び出される**インターフェースです。
+構造体フィールドのカスタムデコードは標準ライブラリ `encoding.TextUnmarshaler` インターフェースの実装で行います——フィールドごとの格納時に**実際に呼び出される**インターフェースです。
 
 ```go
 package main
@@ -261,13 +262,13 @@ func main() {
 }
 ```
 
-### バリデーション付きの型エイリアス
+### バリデーション付き型エイリアス
 
 <!-- check-code: skip -->
 ```go
 type Port int64
 
-// encoding.TextUnmarshaler を実装、解析時に範囲バリデーションを伴う
+// encoding.TextUnmarshaler を実装、解析時に範囲バリデーション付き
 func (p *Port) UnmarshalText(text []byte) error {
     val, err := strconv.ParseInt(string(text), 10, 64)
     if err != nil {
@@ -282,7 +283,7 @@ func (p *Port) UnmarshalText(text []byte) error {
 ```
 
 ::: tip env.Marshaler / env.Unmarshaler インターフェースについて
-`env.Marshaler`（`MarshalEnv()`）と `env.Unmarshaler`（`UnmarshalEnv(map[string]string)`）インターフェースは、`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto` に渡された**トップレベルの値に対してのみ有効**で、構造体のフィールド単位の充填ロジックからは呼び出されません。構造体フィールドでカスタムエンコード/デコードを行うには、標準ライブラリ `encoding.TextMarshaler` / `encoding.TextUnmarshaler` を実装してください。これらはフィールドレベルで認識されます。
+`env.Marshaler`（`MarshalEnv()`）と `env.Unmarshaler`（`UnmarshalEnv(map[string]string)`）インターフェースは**`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto` に渡された最上位の値でのみ有効**で、構造体のフィールドごとの格納ロジックからは呼び出されません。構造体フィールドにカスタムエンコード/デコードを行うには、標準ライブラリ `encoding.TextMarshaler` / `encoding.TextUnmarshaler` を実装してください。これらはフィールドレベルで認識されます。
 :::
 
 ## 設定の検証
@@ -343,9 +344,9 @@ func (c *Config) Validate() error {
 }
 ```
 
-## 実用的なパターン
+## 実用パターン
 
-### 集中設定管理
+### 設定管理の一元化
 
 <!-- check-code: skip -->
 ```go
@@ -439,7 +440,7 @@ type Config struct {
 
 cfg := Config{}
 if err := env.ParseInto(&cfg); err != nil {
-    // 型変換の失敗はエラーを返す
+    // 型変換失敗でエラーを返す
 }
 ```
 

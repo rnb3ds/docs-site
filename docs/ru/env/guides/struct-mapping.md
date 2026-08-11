@@ -1,13 +1,14 @@
 ---
-sidebar_label: "Структуры и маппинг"
-title: "Маппинг структур - CyberGo env | Переменные в структуры"
-description: "Маппинг CyberGo env: теги env, envDefault, вложенные структуры, указатели, срезы, пользовательские типы через encoding.TextUnmarshaler, дефолты и обязательная валидация для типобезопасной загрузки конфигурации."
+sidebar_label: "Маппинг структур"
+title: "Маппинг структур - CyberGo env | переменные окружения в структуры"
+description: "Руководство по маппингу структур CyberGo env: автоматическое отображение переменных окружения на поля Go-структур через теги env и envDefault, охватывая вложенные структуры, указатели и срезы, декодирование пользовательских типов, игнорирование полей, значения по умолчанию и валидацию обязательных полей для типобезопасной загрузки конфигурации."
 sidebar_position: 1
+sidebar_icon: "🔧"
 ---
 
 # Маппинг структур
 
-Автоматическое отображение переменных окружения в Go-структуры с помощью структурных тегов для типобезопасного управления конфигурацией.
+Используйте теги структуры для автоматического маппинга переменных окружения на Go-структуры, обеспечивая типобезопасное управление конфигурацией.
 
 ## Базовый маппинг
 
@@ -55,7 +56,7 @@ if err := loader.ParseInto(&cfg); err != nil {
 
 ### Тег env
 
-Указание имени переменной окружения:
+Указывает имя переменной окружения:
 
 ```go
 type Config struct {
@@ -66,7 +67,7 @@ type Config struct {
 
 ### Тег envDefault
 
-Установка значений по умолчанию:
+Устанавливает значение по умолчанию:
 
 ```go
 type Config struct {
@@ -77,7 +78,7 @@ type Config struct {
 }
 ```
 
-### Игнорирование полей
+### Игнорирование поля
 
 Используйте `env:"-"` для пропуска поля:
 
@@ -108,7 +109,7 @@ type Config struct {
 }
 ```
 
-### Типы времени
+### Временные типы
 
 ```go
 import "time"
@@ -127,7 +128,7 @@ type Config struct {
 
 ### Типы срезов
 
-Поля-срезы разделяются запятой `,`, пробелы вокруг разделителя удаляются автоматически.
+Поля срезов разделяются запятой `,`, пробелы вокруг разделителя удаляются автоматически.
 
 ```go
 type Config struct {
@@ -220,7 +221,7 @@ func main() {
 
 ### Реализация интерфейса encoding.TextUnmarshaler
 
-Пользовательская декодировка полей структуры выполняется через реализацию стандартного интерфейса `encoding.TextUnmarshaler` — это интерфейс, **фактически вызываемый** при постатейном заполнении.
+Пользовательское декодирование полей структуры выполняется через реализацию интерфейса стандартной библиотеки `encoding.TextUnmarshaler` — это интерфейс, который **фактически вызывается** при пословном заполнении.
 
 ```go
 package main
@@ -267,7 +268,7 @@ func main() {
 ```go
 type Port int64
 
-// Реализация encoding.TextUnmarshaler с проверкой диапазона при разборе
+// Реализация encoding.TextUnmarshaler с валидацией диапазона при разборе
 func (p *Port) UnmarshalText(text []byte) error {
     val, err := strconv.ParseInt(string(text), 10, 64)
     if err != nil {
@@ -281,8 +282,8 @@ func (p *Port) UnmarshalText(text []byte) error {
 }
 ```
 
-:::tip Об интерфейсах env.Marshaler / env.Unmarshaler
-Интерфейсы `env.Marshaler` (`MarshalEnv()`) и `env.Unmarshaler` (`UnmarshalEnv(map[string]string)`) **действуют только на верхнем уровне значения, переданного в `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`**, и не вызываются логикой постатейного заполнения структуры. Для пользовательского кодирования/декодирования полей структуры реализуйте стандартные интерфейсы `encoding.TextMarshaler` / `encoding.TextUnmarshaler` — они распознаются на уровне полей.
+::: tip Об интерфейсах env.Marshaler / env.Unmarshaler
+Интерфейсы `env.Marshaler` (`MarshalEnv()`) и `env.Unmarshaler` (`UnmarshalEnv(map[string]string`) **действуют только на верхнем уровне значения, переданного в `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`**, и не вызываются логикой пословного заполнения структуры. Для пользовательского кодирования/декодирования полей структуры реализуйте стандартные интерфейсы `encoding.TextMarshaler` / `encoding.TextUnmarshaler`; они распознаются на уровне полей.
 :::
 
 ## Валидация конфигурации
@@ -327,9 +328,9 @@ func main() {
 
 ```go
 type Config struct {
-    APIKey    string `env:"API_KEY"`     // Обязательное
-    APISecret string `env:"API_SECRET"`  // Обязательное
-    Timeout   int64  `env:"TIMEOUT" envDefault:"30"`  // Необязательное
+    APIKey    string `env:"API_KEY"`     // Обязательно
+    APISecret string `env:"API_SECRET"`  // Обязательно
+    Timeout   int64  `env:"TIMEOUT" envDefault:"30"`  // Необязательно
 }
 
 func (c *Config) Validate() error {
@@ -343,7 +344,7 @@ func (c *Config) Validate() error {
 }
 ```
 
-## Практические паттерны
+## Практические шаблоны
 
 ### Централизованное управление конфигурацией
 
@@ -381,7 +382,7 @@ func Load() (*Config, error) {
 }
 ```
 
-### Разделение по окружениям
+### Разделение сред
 
 ```go
 type BaseConfig struct {
@@ -417,7 +418,7 @@ func LoadConfig() interface{} {
 
 ## Обработка ошибок
 
-### Ошибки парсинга
+### Ошибки разбора
 
 ```go
 cfg := Config{}
@@ -434,12 +435,12 @@ if err := env.ParseInto(&cfg); err != nil {
 
 ```go
 type Config struct {
-    Port int64 `env:"PORT"`  // Если PORT не является допустимым целым числом
+    Port int64 `env:"PORT"`  // Если PORT не является корректным целым числом
 }
 
 cfg := Config{}
 if err := env.ParseInto(&cfg); err != nil {
-    // Ошибка преобразования типа будет возвращена
+    // При неудаче преобразования типов возвращается ошибка
 }
 ```
 
@@ -534,6 +535,6 @@ func main() {
 
 ## Связанная документация
 
-- [Функции пакета - ParseInto](/ru/env/api-reference/functions#parseinto) - Справка по функции ParseInto
-- [Loader API - ParseInto](/ru/env/api-reference/loader#parseinto) - Справка по методу Loader
-- [Быстрый старт](/ru/env/getting-started/) - Базовое использование
+- [Функции пакета — ParseInto](/ru/env/api-reference/functions#parseinto) - справочник функции ParseInto
+- [Loader API — ParseInto](/ru/env/api-reference/loader#parseinto) - справочник метода Loader
+- [Быстрый старт](/ru/env/getting-started/) - базовое использование

@@ -1,24 +1,24 @@
 ---
 sidebar_label: "パッケージ関数"
 title: "パッケージ関数 - CyberGo env | グローバル便利関数"
-description: "CyberGo env のパッケージ関数 API リファレンス。Load、GetString、GetInt、GetBool、GetDuration、GetSlice、GetSecure、Lookup、Keys、ParseInto などスレッドセーフなグローバルローダー基盤の簡潔な API を提供します。"
+description: "CyberGo env パッケージレベル便利関数の API リファレンス。Load、GetString、GetInt、GetBool、GetDuration、GetSlice、GetSecure、Lookup、Keys、ParseInto などグローバルデフォルト Loader に基づくスレッドセーフなインターフェースを提供。"
 sidebar_position: 2
 ---
 
 # パッケージ関数
 
-パッケージレベル便利関数はシンプルな API を提供し、ほとんどのユースケースに適しています。これらの関数はグローバルデフォルトローダーを使用し、すべての関数はスレッドセーフです。
+パッケージレベルの便利関数はシンプルな API を提供し、ほとんどのユースケースに適しています。これらの関数はグローバルデフォルトローダーを使用し、すべてスレッドセーフです。
 
-:::info 初期化の必要性
-グローバルデフォルトローダーは `Load()` または `LoadWithConfig()` で明示的に初期化する必要があり、初回呼び出し時に自動生成され**ません**。未初期化時の関数の挙動は以下の通りです：
+::: info 初期化要件
+グローバルデフォルトローダーは `Load()` または `LoadWithConfig()` で明示的に初期化する必要があり、初回呼び出しで自動作成**されません**。未初期化の場合、関数の動作は以下の通りです：
 
-- `Get*` 関数（`GetString`、`GetInt`、`GetBool` など）: 指定されたデフォルト値（またはゼロ値）を返す
-- `Lookup`: `("", false)` を返す
-- `Keys`/`All`/`Len`/`GetSecure`: `nil`/`0` を返す
-- `Set`/`Delete`/`Validate`/`ParseInto`: `ErrNotInitialized` を返す
+- `Get*` 関数（`GetString`、`GetInt`、`GetBool` など）：渡されたデフォルト値（またはゼロ値）を返す
+- `Lookup`：`("", false)` を返す
+- `Keys`/`All`/`Len`/`GetSecure`：`nil`/`0` を返す
+- `Set`/`Delete`/`Validate`/`ParseInto`：`ErrNotInitialized` を返す
 :::
 
-## ファイル読み込み
+## 読み込み関数
 
 ### Load
 
@@ -29,17 +29,17 @@ func Load(filenames ...string) error
 環境変数ファイルを読み込み、システム環境に適用します。
 
 **パラメータ：**
-- `filenames` - ファイルパスのリスト。指定しない場合、ファイルは読み込まれません。デフォルトファイルを読み込むには明示的に `".env"` を渡す必要があります。
+- `filenames` - ファイルパスのリスト。未指定時はデフォルトで `.env` ファイルを読み込み（`DefaultConfig()` の `Filenames` 設定を使用）。
 
 **戻り値：**
 - `error` - 読み込みエラー
 
 **動作：**
-- 新しい Loader インスタンスを作成しデフォルトローダーに設定
-- システム環境に自動適用（`os.Environ`）
-- 後から読み込んだファイルが前のものを上書き
-- デフォルトローダーが既に初期化されている場合、`ErrAlreadyInitialized` を返す
-- 多フォーマットをサポート（.env、JSON、YAML）
+- 新しい Loader インスタンスを作成しデフォルトローダーとして設定
+- システム環境（`os.Environ`）に自動適用
+- 後に読み込んだファイルが前に読み込んだものを上書き可能（`OverwriteExisting` 設定で制御、`Load()` のデフォルトは `false`、つまり上書きしない）
+- デフォルトローダーが初期化済みの場合 `ErrAlreadyInitialized` を返す
+- マルチフォーマットサポート（.env、JSON、YAML）
 
 ```go
 // .env ファイルを読み込み
@@ -47,12 +47,12 @@ if err := env.Load(".env"); err != nil {
     log.Fatal(err)
 }
 
-// 指定されたファイルを読み込み（順番に、後が前を上書き）
+// 指定ファイルを読み込み（順番に、上書きが必要な場合は OverwriteExisting を設定）
 if err := env.Load(".env", ".env.local", "config.json"); err != nil {
     log.Fatal(err)
 }
 
-// JSON/YAML ネスト構造はドットパスアクセスをサポート
+// JSON/YAML ネスト構造はドットアクセスをサポート
 // config.json: {"database": {"host": "localhost", "port": 5432}}
 env.Load("config.json")
 host := env.GetString("database.host") // "localhost"
@@ -63,7 +63,7 @@ port := env.GetInt("database.port")    // 5432
 
 ## キー名の解決
 
-すべての取得関数はスマートキー名解決をサポートし、柔軟なアクセス方法を提供します。
+すべての取得関数はインテリジェントなキー名解決をサポートし、柔軟なアクセス方法を提供します。
 
 ### 解決ルール
 
@@ -73,18 +73,18 @@ port := env.GetInt("database.port")    // 5432
 name := env.GetString("APP_NAME")  // "myapp"
 ```
 
-**2. 大文字変換（単純キー）**
+**2. 大文字変換（シンプルキー）**
 ```go
-// ドットを含まないキーの場合、自動的に大文字バージョンを試行
-name := env.GetString("app_name")  // app_name を検索 -> APP_NAME
+// ドットを含まないキーは自動的に大文字版を試行
+name := env.GetString("app_name")  // app_name -> APP_NAME を検索
 ```
 
 **3. ドットパス解決（ネストキー）**
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 保存：APP_NAME=myapp
+// 格納形態：APP_NAME=myapp
 
-// 以下のすべての方法でこの値にアクセス可能
+// 以下の方法でこの値にアクセス可能
 name := env.GetString("APP_NAME")   // フラット化キー名（推奨）
 name := env.GetString("app.name")   // ドットパス（自動変換）
 name := env.GetString("APP.NAME")   // 大文字ドットパス
@@ -92,7 +92,7 @@ name := env.GetString("APP.NAME")   // 大文字ドットパス
 
 ### パス変換テーブル
 
-| 入力キー名 | 保存キー名 |
+| 入力キー名 | 格納キー名 |
 |----------|----------|
 | `"database.host"` | `"DATABASE_HOST"` |
 | `"db.port"` | `"DB_PORT"` |
@@ -101,11 +101,11 @@ name := env.GetString("APP.NAME")   // 大文字ドットパス
 
 ### インデックスアクセス
 
-配列要素にはインデックスでアクセスできます。また、カンマ区切り値にフォールバックすることも可能です：
+配列要素はインデックスでアクセスするか、カンマ区切り値にフォールバックできます：
 
 ```go
 // JSON: {"servers": [{"host": "a.com"}, {"host": "b.com"}]}
-// 格納結果：SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
+// 格納形態：SERVERS_0_HOST=a.com, SERVERS_1_HOST=b.com
 
 host0 := env.GetString("servers.0.host")  // "a.com"
 host1 := env.GetString("servers.1.host")  // "b.com"
@@ -125,24 +125,24 @@ host0 := env.GetString("hosts.0")  // "localhost"（カンマ区切り値から�
 func GetString(key string, defaultValue ...string) string
 ```
 
-文字列値の取得。ドットパス解決をサポート。
+文字列値を取得します。ドットパス解決をサポートします。
 
 **パラメータ：**
 - `key` - キー名（完全一致、大文字変換、ドットパスをサポート）
 - `defaultValue` - オプションのデフォルト値
 
 **戻り値：**
-- `string` - 値またはデフォルト値（未検出かつデフォルト値がない場合は空文字列を返す）
+- `string` - 値またはデフォルト値（見つからずデフォルト値なしの場合は空文字列）
 
 ```go
-// 基本用法
+// 基本的な使い方
 host := env.GetString("HOST", "localhost")
 
 // ドットパスアクセス（JSON/YAML ネスト構造）
 dbHost := env.GetString("database.host", "localhost")
 appName := env.GetString("app.name")
 
-// デフォルト値がない場合は空文字列を返す
+// デフォルト値なしの場合は空文字列を返す
 value := env.GetString("NON_EXISTENT")  // ""
 ```
 
@@ -154,20 +154,20 @@ value := env.GetString("NON_EXISTENT")  // ""
 func GetInt(key string, defaultValue ...int64) int64
 ```
 
-整数値の取得。文字列を自動的に整数に変換します。ドットパス解決をサポート。
+整数値を取得します。文字列を整数に自動変換します。ドットパス解決をサポートします。
 
 **パラメータ：**
 - `key` - キー名（ドットパスをサポート）
-- `defaultValue` - オプションのデフォルト値，型 `int64`
+- `defaultValue` - オプションのデフォルト値、型は `int64`
 
 **戻り値：**
-- `int64` - 値またはデフォルト値（未検出かつデフォルト値がない場合は 0 を返す）
+- `int64` - 値またはデフォルト値（見つからずデフォルト値なしの場合は 0）
 
 ```go
 port := env.GetInt("PORT", 8080)
 maxConn := env.GetInt("database.max_connections", 10)
 
-// デフォルト値がない場合は 0 を返す
+// デフォルト値なしの場合は 0 を返す
 value := env.GetInt("NON_EXISTENT")  // 0
 ```
 
@@ -179,23 +179,23 @@ value := env.GetInt("NON_EXISTENT")  // 0
 func GetBool(key string, defaultValue ...bool) bool
 ```
 
-ブール値の取得。ドットパス解決をサポート。
+ブール値を取得します。ドットパス解決をサポートします。
 
-- **真值（大文字小文字を区別しない）：** `true`, `1`, `yes`, `on`, `enabled`
-- **假值（大文字小文字を区別しない）：** `false`, `0`, `no`, `off`, `disabled`
+- **真値（大文字小文字を区別しない）：** `true`, `1`, `yes`, `on`, `enabled`
+- **偽値（大文字小文字を区別しない）：** `false`, `0`, `no`, `off`, `disabled`
 
 **パラメータ：**
 - `key` - キー名（ドットパスをサポート）
 - `defaultValue` - オプションのデフォルト値
 
 **戻り値：**
-- `bool` - 値またはデフォルト値（未検出かつデフォルト値がない場合は false を返す）
+- `bool` - 値またはデフォルト値（見つからずデフォルト値なしの場合は false）
 
 ```go
 debug := env.GetBool("DEBUG", false)
 cacheEnabled := env.GetBool("cache.enabled", true)
 
-// デフォルト値がない場合は false を返す
+// デフォルト値なしの場合は false を返す
 value := env.GetBool("NON_EXISTENT")  // false
 ```
 
@@ -207,20 +207,20 @@ value := env.GetBool("NON_EXISTENT")  // false
 func GetUint64(key string, defaultValue ...uint64) uint64
 ```
 
-符号なし整数値の取得。ドットパス解決をサポート。
+符号なし整数値を取得します。ドットパス解決をサポートします。
 
 **パラメータ：**
 - `key` - キー名（ドットパスをサポート）
-- `defaultValue` - オプションのデフォルト値，型 `uint64`
+- `defaultValue` - オプションのデフォルト値、型は `uint64`
 
 **戻り値：**
-- `uint64` - 値またはデフォルト値（未検出かつデフォルト値がない場合は 0 を返す）
+- `uint64` - 値またはデフォルト値（見つからずデフォルト値なしの場合は 0）
 
 ```go
 port := env.GetUint64("PORT", 8080)
 maxSize := env.GetUint64("MAX_SIZE", 1024)
 
-// デフォルト値がない場合は 0 を返す
+// デフォルト値なしの場合は 0 を返す
 value := env.GetUint64("NON_EXISTENT")  // 0
 ```
 
@@ -232,20 +232,20 @@ value := env.GetUint64("NON_EXISTENT")  // 0
 func GetFloat64(key string, defaultValue ...float64) float64
 ```
 
-浮動小数点数値の取得。ドットパス解決をサポート。
+浮動小数点数値を取得します。ドットパス解決をサポートします。
 
 **パラメータ：**
 - `key` - キー名（ドットパスをサポート）
-- `defaultValue` - オプションのデフォルト値，型 `float64`
+- `defaultValue` - オプションのデフォルト値、型は `float64`
 
 **戻り値：**
-- `float64` - 値またはデフォルト値（未検出かつデフォルト値がない場合は 0 を返す）
+- `float64` - 値またはデフォルト値（見つからずデフォルト値なしの場合は 0）
 
 ```go
 rate := env.GetFloat64("RATE", 0.5)
 threshold := env.GetFloat64("THRESHOLD")
 
-// デフォルト値がない場合は 0 を返す
+// デフォルト値なしの場合は 0 を返す
 value := env.GetFloat64("NON_EXISTENT")  // 0
 ```
 
@@ -257,9 +257,9 @@ value := env.GetFloat64("NON_EXISTENT")  // 0
 func GetDuration(key string, defaultValue ...time.Duration) time.Duration
 ```
 
-時間間隔値の取得。ドットパス解決をサポート。
+時間間隔値を取得します。ドットパス解決をサポートします。
 
-**サポートされるフォーマット：**
+**サポートするフォーマット：**
 - `300ms` - ミリ秒
 - `1.5s` - 秒
 - `2m30s` - 分 + 秒
@@ -270,13 +270,13 @@ func GetDuration(key string, defaultValue ...time.Duration) time.Duration
 - `defaultValue` - オプションのデフォルト値
 
 **戻り値：**
-- `time.Duration` - 値またはデフォルト値（未検出かつデフォルト値がない場合は 0 を返す）
+- `time.Duration` - 値またはデフォルト値（見つからずデフォルト値なしの場合は 0）
 
 ```go
 timeout := env.GetDuration("TIMEOUT", 30*time.Second)
 interval := env.GetDuration("INTERVAL", 5*time.Minute)
 
-// デフォルト値がない場合は 0 を返す
+// デフォルト値なしの場合は 0 を返す
 value := env.GetDuration("NON_EXISTENT")  // 0
 ```
 
@@ -294,24 +294,24 @@ func GetSecure(key string) *SecureValue
 - `key` - キー名
 
 **戻り値：**
-- `*SecureValue` - セキュア値ラッパー、キーが存在しない、またはローダーが使用不可の場合は nil を返す
+- `*SecureValue` - セキュア値ラッパー、キーが存在しないまたはローダーが利用不可の場合は nil
 
 ```go
 secret := env.GetSecure("API_KEY")
 if secret != nil {
     defer secret.Release()
 
-    value := secret.Reveal()   // 平文の値（必要な場合のみ呼び出し）
+    value := secret.Reveal()   // 平文値（必要な時のみ呼び出す）
     masked := secret.Masked()  // ログ用：[SECURE:32 bytes]
 }
 ```
 
 ::: warning 重要
-使用後にリソースを解放するため、必ず `Release()` または `Close()` を呼び出す必要があります。解放を保証するため `defer` の使用を推奨します。
+使用後に `Release()` または `Close()` を呼び出してリソースを解放する必要があります。`defer` で解放を保証することを推奨します。
 :::
 
-::: tip 詳細は
-[SecureValue API](/ja/env/api-reference/secure-value) 完全な API ドキュメントを取得。
+::: tip 詳細
+[SecureValue API](/ja/env/api-reference/secure-value) で完全な API ドキュメントを参照してください。
 :::
 
 ---
@@ -322,14 +322,14 @@ if secret != nil {
 func GetSlice[T sliceElement](key string, defaultValue ...[]T) []T
 ```
 
-ジェネリック関数、スライス値を取得します。
+ジェネリック関数。スライス値を取得します。
 
-**サポートされる型：** `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`
+**サポートする型：** `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`
 
-**注意：** これはジェネリック関数であり、Loader のメソッドではありません。指定の Loader インスタンスからスライスを取得するには、`GetSliceFrom[T]` を使用してください。
+**注意：** これはジェネリック関数で、Loader のメソッドではありません。指定 Loader インスタンスからスライスを取得するには `GetSliceFrom[T]` を使用します。
 
 **解析順序：**
-1. インデックスキー `KEY_0`, `KEY_1`, `KEY_2`... を優先的に検索
+1. インデックスキー `KEY_0`, `KEY_1`, `KEY_2`... を優先検索
 2. インデックスキーがない場合、`KEY` の値をカンマ区切りで解析
 3. ドットパス解決をサポート
 
@@ -353,7 +353,7 @@ ports := env.GetSlice[int64]("PORTS", []int64{80})  // [80, 443, 8080]
 // 浮動小数点スライス
 rates := env.GetSlice[float64]("RATES", []float64{0.1, 0.2})
 
-// 真偽値スライス
+// ブール値スライス
 flags := env.GetSlice[bool]("FLAGS")
 
 // Duration スライス
@@ -366,7 +366,7 @@ port64s := env.GetSlice[uint64]("PORTS")
 // int 型
 portInts := env.GetSlice[int]("PORTS")
 
-// デフォルト値がない場合は nil を返す
+// デフォルト値なしの場合は nil を返す
 value := env.GetSlice[string]("NON_EXISTENT")  // nil
 ```
 
@@ -378,17 +378,17 @@ value := env.GetSlice[string]("NON_EXISTENT")  // nil
 func GetSliceFrom[T sliceElement](loader *Loader, key string, defaultValue ...[]T) []T
 ```
 
-指定の Loader インスタンスからスライス値を取得します。これは独立したジェネリック関数です（Loader メソッドではありません）。
+指定 Loader インスタンスからスライス値を取得します。これは独立したジェネリック関数です（Loader メソッドではありません）。
 
 **パラメータ：**
-- `loader` - Loader インスタンスへのポインタ（nil の場合はデフォルト値を返します）
+- `loader` - Loader インスタンスポインタ（nil の場合、デフォルト値を返す）
 - `key` - キー名
 - `defaultValue` - オプションのデフォルト値
 
 **戻り値：**
 - `[]T` - スライス値
 
-**サポートされる型：** `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`
+**サポートする型：** `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`
 
 ```go
 loader, _ := env.New(cfg)
@@ -406,7 +406,7 @@ portsUint64 := env.GetSliceFrom[uint64](loader, "PORTS")
 
 ::: tip 違い
 - `GetSlice[T]` - デフォルトローダーを使用するパッケージレベル関数
-- `GetSliceFrom[T]` - 指定の Loader インスタンスのジェネリック関数（Go はジェネリックメソッドをサポートしていないため）
+- `GetSliceFrom[T]` - 指定 Loader インスタンスのジェネリック関数（Go はジェネリックメソッドをサポートしない）
 :::
 
 ---
@@ -419,14 +419,14 @@ portsUint64 := env.GetSliceFrom[uint64](loader, "PORTS")
 func Lookup(key string) (string, bool)
 ```
 
-キーが存在するか確認して値を取得。ドットパス解決をサポート。
+キーが存在するかチェックし値を取得します。ドットパス解決をサポートします。
 
 **パラメータ：**
 - `key` - キー名（ドットパスをサポート）
 
 **戻り値：**
-- `string` - 値（先頭と末尾の空白は削除される）
-- `bool` - 存在するかどうか
+- `string` - 値（前後の空白は削除済み）
+- `bool` - 存在するか
 
 ```go
 value, exists := env.Lookup("API_KEY")
@@ -448,10 +448,10 @@ if value, exists := env.Lookup("database.host"); exists {
 func Keys() []string
 ```
 
-すべてのキー名を取得。
+すべてのキー名を取得します。
 
 **戻り値：**
-- `[]string` - キー名リスト、ローダーが使用不可の場合は nil を返す
+- `[]string` - キー名リスト、ローダーが利用不可の場合は nil
 
 ```go
 keys := env.Keys()
@@ -468,10 +468,10 @@ for _, key := range keys {
 func All() map[string]string
 ```
 
-すべてのキーと値のペアを取得。
+すべてのキーと値のペアを取得します。
 
 **戻り値：**
-- `map[string]string` - キーと値のマッピング、ローダーが使用不可の場合は nil を返す
+- `map[string]string` - キーと値のマッピング、ローダーが利用不可の場合は nil
 
 ```go
 all := env.All()
@@ -488,14 +488,14 @@ for key, value := range all {
 func Len() int
 ```
 
-変数の数を取得。
+変数の数を取得します。
 
 **戻り値：**
-- `int` - 変数の数、ローダーが使用不可の場合は 0 を返す
+- `int` - 変数の数、ローダーが利用不可の場合は 0
 
 ```go
 count := env.Len()
-fmt.Printf("読み込み済み %d 個の環境変数\n", count)
+fmt.Printf("%d 個の環境変数を読み込みました\n", count)
 ```
 
 ---
@@ -508,7 +508,7 @@ fmt.Printf("読み込み済み %d 個の環境変数\n", count)
 func Set(key, value string) error
 ```
 
-環境変数の設定。
+環境変数を設定します。
 
 **パラメータ：**
 - `key` - キー名
@@ -519,9 +519,9 @@ func Set(key, value string) error
 
 **エラー型：**
 - `*ValidationError` - キー名形式が無効（Field="key"）
-- `*SecurityError` - キーが禁止されています（`errors.Is(err, env.ErrSecurityViolation)` で一致）
-- `ErrInvalidValue` - 値が無効です（`ValidateValues` が true のとき、値にヌルバイトや制御文字など安全でない内容が含まれる場合）
-- `ErrClosed` - ローダークローズ済み
+- `*SecurityError` - キーが禁止されている（`errors.Is(err, env.ErrSecurityViolation)` でマッチ可能）
+- `ErrInvalidValue` - 値が無効（`ValidateValues` が true の場合、値にヌルバイト、制御文字などの安全でない内容が含まれる）
+- `ErrClosed` - ローダーがクローズ済み
 
 ```go
 if err := env.Set("CUSTOM_KEY", "value"); err != nil {
@@ -537,7 +537,7 @@ if err := env.Set("CUSTOM_KEY", "value"); err != nil {
 func Delete(key string) error
 ```
 
-環境変数の削除。
+環境変数を削除します。
 
 **パラメータ：**
 - `key` - キー名
@@ -561,13 +561,13 @@ if err := env.Delete("TEMP_KEY"); err != nil {
 func Validate() error
 ```
 
-必須キーが存在するかどうかを検証します。Config で RequiredKeys を設定する必要があります。
+必須キーが存在するか検証します。Config で RequiredKeys を設定する必要があります。
 
 **戻り値：**
 - `error` - 検証エラー
 
 ```go
-// 先に RequiredKeys を設定する必要がある（カスタムローダーを使用）
+// RequiredKeys を設定する必要がある（カスタムローダー経由）
 cfg := env.ProductionConfig()
 cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
 
@@ -587,7 +587,7 @@ if err := loader.Validate(); err != nil {
 func ParseInto(v any) error
 ```
 
-環境変数を構造体にマッピング。
+環境変数を構造体にマッピングします。
 
 **パラメータ：**
 - `v` - 構造体ポインタ
@@ -614,10 +614,10 @@ if err := env.ParseInto(&cfg); err != nil {
 | `env:"-"` | このフィールドを無視 |
 | `envDefault:"value"` | デフォルト値 |
 
-スライスフィールドはデフォルトでカンマ `,` で区切られます（セパレータ前後の空白は自動的に削除されます）。カスタムセパレータタグは存在しません。
+スライスフィールドはデフォルトでカンマ `,` で区切られ（セパレータ前後の空白は自動削除）、カスタムセパレータタグはありません。
 
-::: tip 詳細は
-[構造体マッピング](/ja/env/guides/struct-mapping) 完全なガイドを取得。
+::: tip 詳細
+[構造体マッピング](/ja/env/guides/struct-mapping) で完全なガイドを参照してください。
 :::
 
 ---
@@ -630,15 +630,15 @@ if err := env.ParseInto(&cfg); err != nil {
 func ResetDefaultLoader() error
 ```
 
-グローバルデフォルトローダーをリセット。主にテストシナリオで使用。
+グローバルデフォルトローダーをリセットします。主にテストシーンで使用されます。
 
 **戻り値：**
-- `error` - 旧ローダーをクローズする際のエラー（存在する場合）；以前にローダーがない場合、またはクローズが成功した場合は nil を返す
+- `error` - 旧ローダーをクローズするエラー（存在する場合）；以前ローダーがないかクローズ成功の場合は nil
 
 **動作：**
-- `atomic.Pointer.Swap` でデフォルトローダーを nil に原子的に置換
-- `defaultMu` ロックを保持した状態で旧ローダーをクローズ（クローズ完了後にロック解放、リセットの原子性を保証）
-- リセット後、`Load()` または `LoadWithConfig()` で新しいデフォルトローダーを作成可能
+- `defaultMu.Lock()` でロック後、`defaultLoader.Swap(nil)` でデフォルトローダーを原子的に nil と交換し、即座にロックを解放
+- ロック**外**で旧ローダーをクローズ（ロック保持状態で時間のかかるクリーンアップを実行し、`Close()` がデフォルトローダーを必要とするコードをトリガーした際のデッドロックを防止）
+- リセット後 `Load()` または `LoadWithConfig()` で新しいデフォルトローダーを作成可能
 
 ```go
 func TestMain(m *testing.M) {
@@ -658,7 +658,7 @@ func TestSomething(t *testing.T) {
 ```
 
 ::: warning 注意
-この関数は並行安全，ただし予期しない動作を避けるため、テストまたは起動時にのみ呼び出す。
+この関数は並行セーフですが、予期しない動作を避けるためテストまたは起動時にのみ呼び出してください。
 :::
 
 ---
@@ -669,7 +669,7 @@ func TestSomething(t *testing.T) {
 func LoadWithConfig(cfg Config) error
 ```
 
-カスタム設定でデフォルトローダーを初期化。
+カスタム設定でデフォルトローダーを初期化します。
 
 **パラメータ：**
 - `cfg` - カスタム設定
@@ -678,12 +678,12 @@ func LoadWithConfig(cfg Config) error
 - `error` - 初期化エラー
 
 **動作：**
-- パッケージレベルデフォルトローダーを設定（`GetString`、`GetInt` などの関数で使用）
-- `AutoApply = true` を**強制**（cfg の設定に関係なく）
-- デフォルトローダーが既に初期化されている場合、`ErrAlreadyInitialized` を返す
+- パッケージレベルデフォルトローダーを設定（`GetString`、`GetInt` などの関数が使用）
+- `AutoApply = true` を**強制**（cfg の設定に関わらず）
+- デフォルトローダーが初期化済みの場合 `ErrAlreadyInitialized` を返す
 
 **Load との違い：**
-- `Load()` - ファイル名のリストのみ受け取り、デフォルト設定を使用
+- `Load()` - ファイル名リストのみ受け取り、デフォルト設定を使用
 - `LoadWithConfig()` - 完全な Config を受け取り、すべての設定オプションをサポート
 
 ```go
@@ -693,12 +693,12 @@ cfg.OverwriteExisting = true
 if err := env.LoadWithConfig(cfg); err != nil {
     log.Fatal(err)
 }
-// パッケージレベル関数が使用可能
+// パッケージレベル関数が使用可能に
 port := env.GetInt("PORT", 8080)
 ```
 
 ::: warning 注意
-この関数は `cfg.AutoApply` を強制的に `true` に設定し、変数がシステム環境に適用されることを保証します。適用タイミングを制御したい場合は、`New()` で独立したインスタンスを作成してください。
+この関数は `cfg.AutoApply` を強制的に `true` にし、変数がシステム環境に適用されることを保証します。適用タイミングを制御する必要がある場合は `New()` で独立インスタンスを作成してください。
 :::
 
 ---
@@ -713,17 +713,17 @@ func Marshal(data any, format ...FileFormat) (string, error)
 
 データを指定フォーマットの文字列にシリアライズします。`map[string]string` または構造体を入力としてサポートします。
 
-**インターフェース統合：** 入力型が `Marshaler` インターフェースを実装している場合、シリアライズに `MarshalEnv()` メソッドが優先的に呼び出されます。
+**インターフェース統合：** 入力型が `Marshaler` インターフェースを実装している場合、`MarshalEnv()` メソッドを優先的に呼び出してシリアライズします。
 
 **パラメータ：**
 - `data` - シリアライズするデータ（map または構造体）
 - `format` - オプションのフォーマット、デフォルト `FormatEnv`
 
 **戻り値：**
-- `string` - シリアライズされた文字列（キーはソート済み）
+- `string` - シリアライズ後の文字列（キーはソート済み）
 - `error` - シリアライズエラー
 
-**サポート形式：**
+**サポートフォーマット：**
 - `FormatEnv` (デフォルト) - .env フォーマット
 - `FormatJSON` - JSON フォーマット
 - `FormatYAML` - YAML フォーマット
@@ -735,7 +735,7 @@ envStr, _ := env.Marshal(mapData)
 // HOST=localhost
 // PORT=8080
 
-// map を JSON フォーマットに変換（数字文字列はそのまま数値として出力、キーはアルファベット順にソート）
+// map を JSON フォーマットに変換（数値文字列は数値として出力、キーはアルファベット順）
 jsonStr, _ := env.Marshal(mapData, env.FormatJSON)
 // {
 //   "HOST": "localhost",
@@ -758,25 +758,25 @@ envStr, _ := env.Marshal(Config{Host: "localhost", Port: "8080"})
 func UnmarshalMap(data string, format ...FileFormat) (map[string]string, error)
 ```
 
-フォーマットされた文字列を解析して map に変換します。自動フォーマット検出をサポート。
+フォーマット文字列を map に解析します。自動フォーマット検出をサポートします。
 
 **パラメータ：**
-- `data` - フォーマットされた文字列
+- `data` - フォーマット文字列
 - `format` - オプションのフォーマット、デフォルト `FormatEnv`；`FormatAuto` で自動検出
 
 **戻り値：**
-- `map[string]string` - 解析されたキーと値のペア
+- `map[string]string` - 解析後のキーと値のペア
 - `error` - 解析エラー
 
 ```go
 // .env フォーマット
 m, _ := env.UnmarshalMap("HOST=localhost\nPORT=8080")
 
-// JSON フォーマット（ネストされた構造はフラット化される）
+// JSON フォーマット（ネスト構造はフラット化される）
 m, _ := env.UnmarshalMap(`{"database": {"host": "localhost"}}`, env.FormatJSON)
 // m["DATABASE_HOST"] = "localhost"
 
-// 自動フォーマット検出
+// フォーマット自動検出
 m, _ := env.UnmarshalMap(jsonString, env.FormatAuto)
 ```
 
@@ -788,10 +788,10 @@ m, _ := env.UnmarshalMap(jsonString, env.FormatAuto)
 func UnmarshalStruct(data string, v any, format ...FileFormat) error
 ```
 
-フォーマットされた文字列を解析して構造体に充填します。
+フォーマット文字列を解析して構造体に格納します。
 
 **パラメータ：**
-- `data` - フォーマットされた文字列
+- `data` - フォーマット文字列
 - `v` - 構造体ポインタ
 - `format` - オプションのフォーマット、デフォルト `FormatEnv`
 
@@ -820,16 +820,16 @@ err = env.UnmarshalStruct(`{"server": {"host": "localhost"}}`, &cfg, env.FormatJ
 func UnmarshalInto(data map[string]string, v any) error
 ```
 
-map を構造体に充填します。`env` と `envDefault` タグをサポート。
+map を構造体に格納します。`env` と `envDefault` タグをサポートします。
 
-**インターフェース統合：** ターゲット型が `Unmarshaler` インターフェースを実装している場合、`UnmarshalEnv(data)` メソッドが優先的に呼び出されます。
+**インターフェース統合：** 対象の型が `Unmarshaler` インターフェースを実装している場合、`UnmarshalEnv(data)` メソッドを優先的に呼び出します。
 
 **パラメータ：**
 - `data` - キーと値のペアのマッピング
 - `v` - 構造体ポインタ
 
 **戻り値：**
-- `error` - 充填エラー
+- `error` - 格納エラー
 
 ```go
 type Config struct {
@@ -851,9 +851,9 @@ err := env.UnmarshalInto(data, &cfg)
 func MarshalStruct(v any) (map[string]string, error)
 ```
 
-構造体を map に変換します。`env` タグでキー名を指定できます。
+構造体を map に変換します。`env` タグでキー名を指定します。
 
-**インターフェース統合：** 入力型が `Marshaler` インターフェースを実装している場合、`MarshalEnv()` メソッドが優先的に呼び出されます。
+**インターフェース統合：** 入力型が `Marshaler` インターフェースを実装している場合、`MarshalEnv()` メソッドを優先的に呼び出します。
 
 **パラメータ：**
 - `v` - 構造体または構造体ポインタ
@@ -882,13 +882,13 @@ m, _ := env.MarshalStruct(cfg)
 func IsMarshalError(err error) bool
 ```
 
-エラーがシリアライズ/デシリアライズエラーか確認します。
+エラーがシリアライズ/デシリアライズエラーかチェックします。
 
 **パラメータ：**
-- `err` - 確認するエラー
+- `err` - チェックするエラー
 
 **戻り値：**
-- `bool` - MarshalError 型かどうか
+- `bool` - MarshalError 型か
 
 ```go
 _, err := env.MarshalStruct(invalidData)
@@ -958,5 +958,5 @@ func main() {
 
 - [Loader API](/ja/env/api-reference/loader) - Loader インスタンスメソッド
 - [Config API](/ja/env/api-reference/config) - 設定オプション
-- [SecureValue API](/ja/env/api-reference/secure-value) - セキュア値処理
+- [SecureValue API](/ja/env/api-reference/secure-value) - セキュア値の処理
 - [構造体マッピング](/ja/env/guides/struct-mapping) - 構造体マッピングガイド

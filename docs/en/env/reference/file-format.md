@@ -1,7 +1,7 @@
 ---
 sidebar_label: "File Format"
 title: "File Format - CyberGo env | .env/JSON/YAML Syntax"
-description: "CyberGo env file format: .env/JSON/YAML syntax, quotes, export prefix, ${VAR} expansion, multiline strings, nested flatten, UTF-8, DetectFormat."
+description: "Configuration file format reference for CyberGo env, covering syntax rules for .env, JSON, and YAML formats, quotes and export prefix, variable expansion ${VAR}, multi-line strings, nested object and array flattening, UTF-8 encoding, and DetectFormat auto-detection mechanism."
 sidebar_position: 1
 ---
 
@@ -20,24 +20,24 @@ KEY=value
 # Equals sign in value
 URL=https://example.com?foo=bar
 
-# Blank lines are ignored
+# Empty lines are ignored
 
-# Invalid: key cannot contain spaces
+# Invalid: keys cannot have spaces
 # MY KEY=value
 ```
 
-### Quoting
+### Quotes
 
 ```bash
-# Double quotes: preserve spaces, support escaping
+# Double quotes: preserve spaces, support escapes
 MESSAGE="Hello World"
 PATH="/usr/local/bin"
 
-# Single quotes: do not process escapes (preserve backslash sequences as-is)
-# Note: single quotes do NOT prevent variable expansion — expansion happens after quote stripping
+# Single quotes: no escape processing (backslash sequences preserved as-is)
+# Note: single quotes do not prevent variable expansion — expansion happens after quote stripping
 LITERAL='no escaping here: \n stays literal'
 
-# Unquoted
+# No quotes
 SIMPLE=value
 
 # Empty values
@@ -48,7 +48,7 @@ EMPTY=''
 
 ### Escape Characters
 
-Escaping is supported within double quotes:
+Escapes are supported in double quotes:
 
 ```bash
 # Newline
@@ -97,7 +97,7 @@ export KEY=value
 export ANOTHER="quoted value"
 ```
 
-### YAML-Style Syntax
+### YAML Style
 
 Supported when `AllowYamlSyntax` is enabled:
 
@@ -107,20 +107,20 @@ KEY: value
 ANOTHER: "quoted value"
 ```
 
-### Multiline Values
+### Multi-line Values
 
-The `.env` parser scans line by line, parsing each line independently and **not supporting quoted strings that span multiple lines** — a double-quoted value must be closed on the same line, otherwise it returns `ErrInvalidValue`. To include newlines, use the `\n` escape (only effective within double quotes; single quotes do not process escapes):
+The `.env` parser scans line by line, parsing each line independently, and **does not support quoted strings spanning multiple lines** — double-quoted values must close on a single line, otherwise `ErrInvalidValue` is returned. For line breaks, use `\n` escapes (only effective in double quotes; single quotes don't process escapes):
 
 ```bash
-# \n inside double quotes is parsed as a newline
+# \n inside double quotes is parsed as a newline character
 LINES="line1\nline2\nline3"
-# The actual value is three lines: line1 / line2 / line3
+# The actual value is three lines of text: line1 / line2 / line3
 
-# For multi-line certificates like PRIVATE_KEY, join with \n
+# Multi-line certificates like PRIVATE_KEY should be joined with \n
 PRIVATE_KEY="-----BEGIN KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END KEY-----"
 ```
 
-For genuinely cross-line strings, use the [JSON or YAML format](#format-detection) instead, or extend multi-line support via a custom parser.
+For true multi-line strings, use [JSON or YAML format](#format-detection) instead, or extend multi-line support via a custom parser.
 
 ## JSON Format
 
@@ -157,7 +157,7 @@ DATABASE_PORT=5432
 
 ### Arrays
 
-Arrays are flattened into indexed keys:
+Arrays are flattened to indexed keys:
 
 ```json
 {
@@ -176,13 +176,13 @@ PORTS_1=443
 PORTS_2=8080
 ```
 
-:::tip Accessing Array Elements
-Use the `GetSlice[T]` function or dot-notation paths to access indexed keys:
+:::tip
+Use the `GetSlice[T]` function or dot-path to access indexed keys:
 ```go
 hosts := env.GetSlice[string]("ALLOWED_HOSTS")
 port0 := env.GetInt("PORTS_0")  // 80
 ```
-See [GetSlice documentation](/en/env/api-reference/functions#getslice-t) for details.
+See [GetSlice documentation](/en/env/api-reference/functions#getslice-t).
 :::
 
 ### Type Conversion Options
@@ -190,20 +190,20 @@ See [GetSlice documentation](/en/env/api-reference/functions#getslice-t) for det
 ```go
 cfg := env.DefaultConfig()
 
-// Convert null to empty string
+// null converts to empty string
 cfg.JSONNullAsEmpty = true
 
-// Convert numbers to strings
+// numbers convert to strings
 cfg.JSONNumberAsString = true
 
-// Convert booleans to strings
+// booleans convert to strings
 cfg.JSONBoolAsString = true
 ```
 
 ### Depth Limit
 
 ```go
-cfg.JSONMaxDepth = 10  // Maximum nesting depth
+cfg.JSONMaxDepth = 10  // Max nesting depth
 ```
 
 ## YAML Format
@@ -239,7 +239,7 @@ DATABASE_CREDENTIALS_PASSWORD=secret
 
 ### Lists
 
-Lists are flattened into indexed keys:
+Lists are flattened to indexed keys:
 
 ```yaml
 allowed_hosts:
@@ -256,13 +256,13 @@ ALLOWED_HOSTS_1=example.com
 ALLOWED_HOSTS_2=api.example.com
 ```
 
-### Multiline Strings
+### Multi-line Strings
 
-:::warning Note
-YAML block scalars (literal block `|` and folded block `>`) are **not currently supported**. The parser treats `|`/`>` as ordinary scalar characters and the subsequent indented lines break the key-value parsing.
+:::warning
+YAML block scalars (literal block `|` and folded block `>`) are **currently not supported**. The parser treats `|`/`>` as ordinary scalar characters, and subsequent indented lines will break key-value parsing.
 :::
 
-For values that must preserve newlines, use double quotes with `\n` escapes:
+For values that need to preserve line breaks, use double quotes with `\n` escapes:
 
 ```yaml
 description: "Line1\nLine2\nLine3"
@@ -283,7 +283,7 @@ cfg.YAMLMaxDepth = 10
 
 ## Format Detection
 
-### Auto-Detection
+### Auto-detection
 
 ```go
 // Detect by extension
@@ -318,12 +318,12 @@ fmt.Println(format.String())  // Output: json
 ### Choosing a Format
 
 | Scenario | Recommended Format |
-|----------|--------------------|
+|----------|-------------------|
 | Simple configuration | `.env` |
 | Complex nested configuration | JSON or YAML |
 | Sharing with other tools | JSON |
 | Human readability priority | YAML |
-| Docker/K8s environments | `.env` |
+| Docker/K8s environment | `.env` |
 
 ### File Naming
 
@@ -363,6 +363,6 @@ secrets.yaml
 
 ## Related Documentation
 
-- [Multi-Format Configuration](/en/env/guides/multi-format) - Multi-format loading guide
+- [Multi-format Config](/en/env/guides/multi-format) - Multi-format loading guide
 - [ComponentFactory API](/en/env/api-reference/factory) - DetectFormat function reference
 - [Config API](/en/env/api-reference/config) - JSON/YAML parsing options
