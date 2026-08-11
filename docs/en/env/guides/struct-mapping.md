@@ -1,13 +1,14 @@
 ---
 sidebar_label: "Struct Mapping"
-title: "Struct Mapping - CyberGo env | Env Vars to Struct"
-description: "CyberGo env struct mapping guide: env and envDefault tags map environment variables to Go struct fields; covers nested structs, pointers and slices, custom type decoding, field ignoring, defaults and required validation for type-safe configuration loading."
+title: "Struct Mapping - CyberGo env | Environment Variables to Struct"
+description: "Struct mapping guide for CyberGo env, automatically mapping environment variables to Go struct fields via env and envDefault tags, covering nested structs, pointers and slices, custom type decoding, field ignoring, defaults, and required validation for type-safe configuration loading."
 sidebar_position: 1
+sidebar_icon: "🔧"
 ---
 
 # Struct Mapping
 
-Use struct tags to automatically map environment variables to Go structs for type-safe configuration management.
+Use struct tags to automatically map environment variables to Go structs, enabling type-safe configuration management.
 
 ## Basic Mapping
 
@@ -55,18 +56,18 @@ if err := loader.ParseInto(&cfg); err != nil {
 
 ### env Tag
 
-Specify the environment variable name:
+Specifies the environment variable name:
 
 ```go
 type Config struct {
-    Host string `env:"SERVER_HOST"`  // Maps SERVER_HOST
-    Port int64  `env:"PORT"`         // Maps PORT
+    Host string `env:"SERVER_HOST"`  // Maps to SERVER_HOST
+    Port int64  `env:"PORT"`         // Maps to PORT
 }
 ```
 
 ### envDefault Tag
 
-Set default values:
+Sets a default value:
 
 ```go
 type Config struct {
@@ -127,7 +128,7 @@ Supported formats:
 
 ### Slice Types
 
-Slice fields are split by comma `,`, with surrounding whitespace around the separator trimmed automatically.
+Slice fields are comma-separated `,`; spaces around the separator are automatically removed.
 
 ```go
 type Config struct {
@@ -218,9 +219,9 @@ func main() {
 
 ## Custom Types
 
-### Implementing the encoding.TextUnmarshaler Interface
+### Implementing encoding.TextUnmarshaler Interface
 
-Custom decoding of struct fields is done by implementing the standard library `encoding.TextUnmarshaler` interface — this is the interface that is **actually invoked** during per-field population.
+Custom decoding of struct fields is done by implementing the standard library `encoding.TextUnmarshaler` interface — this is the interface that **actually gets called** during field-by-field population.
 
 ```go
 package main
@@ -233,7 +234,7 @@ import (
 
 type LogLevel string
 
-// Implement encoding.TextUnmarshaler — invoked at the field level
+// Implement encoding.TextUnmarshaler — called at field level
 func (l *LogLevel) UnmarshalText(text []byte) error {
     switch string(text) {
     case "debug", "info", "warn", "error":
@@ -261,7 +262,7 @@ func main() {
 }
 ```
 
-### Type Aliases with Validation
+### Type Alias with Validation
 
 <!-- check-code: skip -->
 ```go
@@ -281,8 +282,8 @@ func (p *Port) UnmarshalText(text []byte) error {
 }
 ```
 
-:::tip About env.Marshaler / env.Unmarshaler interfaces
-The `env.Marshaler` (`MarshalEnv()`) and `env.Unmarshaler` (`UnmarshalEnv(map[string]string)`) interfaces **only take effect on the top-level value passed to `env.Marshal` / `env.MarshalStruct` / `env.UnmarshalInto`**, and are not invoked by the per-field population logic of structs. To customize encoding/decoding of struct fields, implement the standard library `encoding.TextMarshaler` / `encoding.TextUnmarshaler`; they are recognized at the field level.
+:::tip
+`env.Marshaler` (`MarshalEnv()`) and `env.Unmarshaler` (`UnmarshalEnv(map[string]string)`) interfaces **only take effect on the top-level value passed to `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`**, and are not called by the field-by-field population logic. For custom encoding/decoding of struct fields, implement the standard library `encoding.TextMarshaler` / `encoding.TextUnmarshaler`, which are recognized at the field level.
 :::
 
 ## Configuration Validation
@@ -381,7 +382,7 @@ func Load() (*Config, error) {
 }
 ```
 
-### Environment Separation
+### Environment Differentiation
 
 ```go
 type BaseConfig struct {
@@ -536,4 +537,4 @@ func main() {
 
 - [Package Functions - ParseInto](/en/env/api-reference/functions#parseinto) - ParseInto function reference
 - [Loader API - ParseInto](/en/env/api-reference/loader#parseinto) - Loader method reference
-- [Getting Started](/en/env/getting-started/) - Basic usage
+- [Quick Start](/en/env/getting-started/) - Basic usage

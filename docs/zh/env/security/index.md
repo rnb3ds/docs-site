@@ -33,7 +33,7 @@ sidebar_position: 1
 |------|------|------|
 | **SecureValue** | 敏感值内存保护、自动清零 | [SecureValue API](/zh/env/api-reference/secure-value) |
 | **禁止键** | 防止修改系统关键变量 | [常量与错误](/zh/env/api-reference/constants#defaultforbiddenkeys) |
-| **敏感键检测** | 自动识别敏感配置键 | [常量与错误](/zh/env/api-reference/constants#sensitivekeypatterns) |
+| **敏感键检测** | 自动识别敏感配置键，日志脱敏工具 | [敏感数据脱敏](/zh/env/security/data-masking) |
 | **值验证** | 检测控制字符、空字节等 | [Config API](/zh/env/api-reference/config) |
 | **审计日志** | 完整操作追踪 | [组件工厂](/zh/env/api-reference/factory#审计处理器工厂) |
 
@@ -59,6 +59,27 @@ password := secret.Reveal()  // 仅在需要明文时调用
 
 ::: tip 完整 API
 详见 [SecureValue API](/zh/env/api-reference/secure-value)。
+:::
+
+## 日志安全
+
+SecureValue 保护的是**内存中**的敏感值，而日志、错误信息和调试输出同样容易泄露密钥。env 提供一组独立的脱敏工具函数，无需依赖 Loader 即可使用：
+
+- `IsSensitiveKey` 自动检测密码、密钥、令牌等敏感键名
+- `MaskValue` / `MaskKey` 对值和键名脱敏后再输出
+- `SanitizeForLog` 扫描日志字符串中的 `key=value` 模式并掩码
+
+```go
+// 日志中安全输出配置，避免泄露明文
+log.Printf("加载配置: %s", env.MaskValue("DB_PASSWORD", password))
+// 输出: 加载配置: [MASKED:12 chars]
+
+log.Printf("连接参数: %s", env.SanitizeForLog("user=admin password=s3cret"))
+// 输出: 连接参数: user=admin [MASKED]
+```
+
+::: tip 完整指南
+脱敏工具的完整用法详见 [敏感数据脱敏](/zh/env/security/data-masking)。
 :::
 
 ## 键/值验证
@@ -135,5 +156,6 @@ cfg.AllowedKeys = []string{"APP_NAME", "PORT", "DB_HOST", "API_KEY"}
 ## 相关文档
 
 - [SecureValue API](/zh/env/api-reference/secure-value) - 安全值处理完整 API
+- [内存锁定](/zh/env/security/memory-locking) - mlock 内存保护完整指南
 - [常量与错误](/zh/env/api-reference/constants) - 禁止键完整列表、敏感键模式
 - [生产检查清单](/zh/env/security/production-checklist) - 上线前安全检查

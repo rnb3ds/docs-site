@@ -1,13 +1,14 @@
 ---
 sidebar_label: "マルチフォーマット設定"
 title: "マルチフォーマット設定 - CyberGo env | .env/JSON/YAML"
-description: "CyberGo env マルチフォーマット読み込みガイド。.env・JSON・YAML の自動検出と混在読み込み、ネスト・配列のフラットキー、マージ優先順位、Marshal/UnmarshalMap フォーマット変換、RegisterParser カスタム形式をマイクロサービス・コンテナ環境に提供します。"
+description: "CyberGo env マルチフォーマット設定読み込みガイド。.env、JSON、YAML の自動検出と混在読み込みをサポート。ネストオブジェクトと配列のフラット化キー名、キー値マージ優先度、Marshal/UnmarshalMap フォーマット相互変換、RegisterParser カスタムフォーマットを詳解し、マイクロサービスやコンテナ化シーンに適応。"
 sidebar_position: 3
+sidebar_icon: "🔧"
 ---
 
 # マルチフォーマット設定
 
-env ライブラリは `.env`、JSON、YAML 3 種類の設定フォーマットをサポートし、フォーマットの自動検出と読み込みが可能です。
+env ライブラリは `.env`、JSON、YAML の 3 種類の設定フォーマットをサポートし、フォーマットを自動検出して読み込めます。
 
 ## フォーマット検出
 
@@ -42,7 +43,7 @@ loader.LoadFiles("settings.json")
 loader.LoadFiles("secrets.yaml")
 ```
 
-### ミックスフォーマット
+### フォーマット混在
 
 ```go
 // 各ファイルのフォーマットを自動検出
@@ -51,7 +52,7 @@ loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 
 ### 上書き順序
 
-後から読み込んだファイルが前のものを上書き：
+後に読み込んだファイルが前に読み込んだものを上書きします：
 
 ```go
 // 順序：base -> env -> json -> yaml
@@ -79,18 +80,18 @@ loader.LoadFiles(
 ```
 
 ::: tip 注意
-ネストされたオブジェクトは `DATABASE_HOST`、`DATABASE_PORT` のようにフラット化されます。
+ネストしたオブジェクトは `DATABASE_HOST`、`DATABASE_PORT` にフラット化されます。
 :::
 
 ### キー名の解決
 
-JSON/YAML のネストされた構造はフラット化されて保存されます。ライブラリは複数のキー名アクセス方式をサポートしています：
+JSON/YAML のネスト構造はフラット化して格納されます。ライブラリは複数のキー名アクセス方法をサポートします：
 
 ```go
 loader.LoadFiles("config.json")
 
 // JSON: {"database": {"host": "localhost", "port": 5432}}
-// 保存：DATABASE_HOST=localhost, DATABASE_PORT=5432
+// 格納形態：DATABASE_HOST=localhost, DATABASE_PORT=5432
 
 // 方式 1：フラット化キー名（推奨）
 host := loader.GetString("DATABASE_HOST")   // localhost
@@ -113,14 +114,14 @@ host := loader.GetString("DATABASE.HOST")   // localhost
 | `"app.config.name"` | `"APP_CONFIG_NAME"` |
 | `"servers.0.host"` | `"SERVERS_0_HOST"`（配列インデックス） |
 
-::: tip 推奨される使用方法
-- **コードではフラット化キー名を使用**：`GetString("DATABASE_HOST")` - 明確、効率的
-- **設定ファイル内では読みやすいパス**：JSON/YAML は自然なネスト構造を使用
+::: tip 推奨される使い方
+- **コード内ではフラット化キー名を使用**：`GetString("DATABASE_HOST")` - 明確で効率的
+- **設定ファイル内では読みやすいパス**：JSON/YAML で自然なネスト構造を使用
 :::
 
 **フラット化ルール：**
 
-| JSON パス | 保存キー |
+| JSON パス | 格納キー |
 |-----------|--------|
 | `database.host` | `DATABASE_HOST` |
 | `database.port` | `DATABASE_PORT` |
@@ -141,12 +142,12 @@ JSON 配列はインデックス付きキーにフラット化されます：
 ```
 
 ```go
-// フラット化されたキー名で配列要素にアクセス
+// フラット化キー名で配列要素にアクセス
 host0 := loader.GetString("SERVERS_0_HOST")  // server1.example.com
 port0 := loader.GetInt("SERVERS_0_PORT")     // 8080
 host1 := loader.GetString("SERVERS_1_HOST")  // server2.example.com
 
-// ループで全ホストを取得
+// ループですべてのホストを取得
 var hosts []string
 for i := 0; ; i++ {
     h := loader.GetString(fmt.Sprintf("SERVERS_%d_HOST", i))
@@ -169,7 +170,7 @@ cfg.JSONNullAsEmpty = true
 // 数値を文字列に変換（デフォルト true）
 cfg.JSONNumberAsString = true
 
-// 真偽値を文字列に変換（デフォルト true）
+// ブール値を文字列に変換（デフォルト true）
 cfg.JSONBoolAsString = true
 
 // 最大ネスト深度（デフォルト 10）
@@ -194,7 +195,7 @@ port := loader.GetInt("PORT")     // 8080（整数）
 
 // JSONBoolAsString = true（デフォルト）
 debug := loader.GetString("DEBUG")  // "true"（文字列）
-debug := loader.GetBool("DEBUG")    // true（真偽値）
+debug := loader.GetBool("DEBUG")    // true（ブール値）
 ```
 
 ## YAML フォーマット
@@ -222,12 +223,12 @@ ALLOWED_HOSTS:
 
 ### キー名の解決
 
-YAML のネストされた構造は JSON と同じフラット化ルールを使用します：
+YAML のネスト構造は JSON と同じフラット化ルールを使用します：
 
 ```go
 loader.LoadFiles("config.yaml")
 
-// フラット化されたキー名でアクセス
+// フラット化キー名でアクセス
 host := loader.GetString("DATABASE_HOST")        // localhost
 user := loader.GetString("DATABASE_USER")        // postgres
 ```
@@ -245,7 +246,7 @@ servers:
 ```
 
 ```go
-// フラット化されたキー名でアクセス
+// フラット化キー名でアクセス
 host0 := loader.GetString("SERVERS_0_HOST")  // server1.example.com
 port0 := loader.GetInt("SERVERS_0_PORT")     // 8080
 host1 := loader.GetString("SERVERS_1_HOST")  // server2.example.com
@@ -259,13 +260,13 @@ hosts := env.GetSliceFrom[string](loader, "ALLOWED_HOSTS") // ["localhost", "exa
 ```go
 cfg := env.DefaultConfig()
 
-// null/~ は空文字列に変換（デフォルト true）
+// null/~ 値を空文字列に変換（デフォルト true）
 cfg.YAMLNullAsEmpty = true
 
 // 数値を文字列に変換（デフォルト true）
 cfg.YAMLNumberAsString = true
 
-// 真偽値を文字列に変換（デフォルト true）
+// ブール値を文字列に変換（デフォルト true）
 cfg.YAMLBoolAsString = true
 
 // 最大ネスト深度（デフォルト 10）
@@ -291,7 +292,7 @@ port := loader.GetInt("PORT")     // 8080（整数）
 
 // YAMLBoolAsString = true（デフォルト）
 debug := loader.GetString("DEBUG")  // "true"（文字列）
-debug := loader.GetBool("DEBUG")    // true（真偽値）
+debug := loader.GetBool("DEBUG")    // true（ブール値）
 
 // リストアクセス
 rates := env.GetSliceFrom[float64](loader, "RATES")  // [0.1, 0.2, 0.3]
@@ -315,7 +316,7 @@ LITERAL='literal ${noexpand}'
 BASE_URL=https://api.example.com
 API_URL=${BASE_URL}/v1
 
-# デフォルト値
+# ログレベル
 LOG_LEVEL=info
 ```
 
@@ -340,7 +341,7 @@ apiURL := loader.GetString("API_URL")
 
 | 構文 | 説明 |
 |------|------|
-| `${VAR}` | 変数参照 |
+| `${VAR}` | 変数の参照 |
 | `${VAR:-default}` | 変数が存在しない場合にデフォルト値を使用 |
 
 ```bash
@@ -351,7 +352,7 @@ PORT=8080
 # 他の変数を参照
 URL=http://${HOST}:${PORT}
 
-# デフォルト値
+# デフォルト値（他の変数を参照、未定義の場合にデフォルト値を使用）
 TIMEOUT_VALUE=${TIMEOUT:-30s}
 DEBUG_VALUE=${DEBUG:-false}
 ```
@@ -377,16 +378,16 @@ KEY: value
 ANOTHER_KEY: "quoted value"
 ```
 
-## 混合設定パターン
+## 混合設定モード
 
 ### 開発/本番の分離
 
 ```text
 config/
 ├── base.json          # 基本設定
-├── development.env    # 開発オーバーライド
-├── production.yaml    # 本番オーバーライド
-└── local.env          # ローカルオーバーライド（コミットしない）
+├── development.env    # 開発上書き
+├── production.yaml    # 本番上書き
+└── local.env          # ローカル上書き（コミットしない）
 ```
 
 ```go
@@ -413,7 +414,7 @@ func loadConfig(loader *env.Loader) error {
         }
     }
 
-    // 3. ローカルオーバーライド（任意）
+    // 3. ローカル上書き（オプション）
     if _, err := os.Stat("config/local.env"); err == nil {
         if err := loader.LoadFiles("config/local.env"); err != nil {
             return err
@@ -424,7 +425,7 @@ func loadConfig(loader *env.Loader) error {
 }
 ```
 
-### 機能別分割
+### 機能別分離
 
 ```text
 config/
@@ -443,17 +444,17 @@ loader.LoadFiles(
 )
 ```
 
-### 設定の優先順位
+### 設定の優先度
 
 ```text
-コマンドライン引数 > 環境変数 > ローカル設定 > 環境設定 > 基本設定
+コマンドライン引数 > 環境変数 > local 設定 > 環境設定 > base 設定
 ```
 
 ## シリアライズ
 
 ### Marshal
 
-設定を指定フォーマットにシリアライズ：
+設定を指定フォーマットにシリアライズします。先にデータを準備し、対象フォーマットで `env.Marshal` を呼び出します：
 
 ```go
 data := map[string]string{
@@ -499,15 +500,15 @@ cfg := Config{Host: "localhost", Port: 8080}
 
 ::: code-group
 
-```go [.envに変換]
+```go [.env へ変換]
 envStr, _ := env.Marshal(cfg, env.FormatEnv)
 ```
 
-```go [JSONに変換]
+```go [JSON へ変換]
 jsonStr, _ := env.Marshal(cfg, env.FormatJSON)
 ```
 
-```go [YAMLに変換]
+```go [YAML へ変換]
 yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 ```
 
@@ -515,34 +516,34 @@ yamlStr, _ := env.Marshal(cfg, env.FormatYAML)
 
 ### UnmarshalMap
 
-map にデシリアライズ：
+map にデシリアライズします：
 
 ::: code-group
 
-```go [.envから]
+```go [.env から]
 envData := "HOST=localhost\nPORT=8080"
 data, _ := env.UnmarshalMap(envData, env.FormatEnv)
 ```
 
-```go [JSONから]
+```go [JSON から]
 jsonData := `{"HOST":"localhost","PORT":"8080"}`
 data, _ := env.UnmarshalMap(jsonData, env.FormatJSON)
 ```
 
-```go [YAMLから]
+```go [YAML から]
 yamlData := "HOST: localhost\nPORT: \"8080\""
 data, _ := env.UnmarshalMap(yamlData, env.FormatYAML)
 ```
 
 :::
 
-::: tip フォーマット自動検出
-`env.FormatAuto` を渡すと、ライブラリが内容からフォーマットを自動判定します：`data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`。
+::: tip フォーマットの自動検出
+`env.FormatAuto` を渡すとライブラリが内容に基づいてフォーマットを自動判定します：`data, _ := env.UnmarshalMap(jsonData, env.FormatAuto)`。
 :::
 
 ### UnmarshalStruct
 
-構造体にデシリアライズ：
+構造体にデシリアライズします：
 
 ```go
 type Config struct {
@@ -555,15 +556,15 @@ var cfg Config
 
 ::: code-group
 
-```go [.envから]
+```go [.env から]
 env.UnmarshalStruct("HOST=localhost\nPORT=8080", &cfg, env.FormatEnv)
 ```
 
-```go [JSONから]
+```go [JSON から]
 env.UnmarshalStruct(`{"HOST":"localhost","PORT":"8080"}`, &cfg, env.FormatJSON)
 ```
 
-```go [YAMLから]
+```go [YAML から]
 env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ```
 
@@ -574,10 +575,10 @@ env.UnmarshalStruct("HOST: localhost\nPORT: \"8080\"", &cfg, env.FormatYAML)
 ### パーサーの登録
 
 ```go
-// フォーマット定数の定義
+// フォーマット定数を定義
 const FormatTOML env.FileFormat = 100
 
-// EnvParser インターフェースの実装
+// EnvParser インターフェースを実装
 type TOMLParser struct {
     cfg       env.Config
     validator env.Validator
@@ -591,7 +592,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// パーサーの登録
+// パーサーを登録
 func init() {
     env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &TOMLParser{
@@ -603,7 +604,7 @@ func init() {
 }
 ```
 
-詳細は [カスタムパーサー](/ja/env/guides/custom-parser) を参照してください。
+詳しくは [カスタムパーサー](/ja/env/guides/custom-parser) を参照してください。
 
 ## 完全な例
 
@@ -618,7 +619,7 @@ import (
 )
 
 func main() {
-    // ローダーの作成
+    // ローダーを作成
     cfg := env.DefaultConfig()
     cfg.ExpandVariables = true
 
@@ -628,7 +629,7 @@ func main() {
     }
     defer loader.Close()
 
-    // ミックスフォーマット設定の読み込み
+    // 混合フォーマット設定を読み込み
     err = loader.LoadFiles(
         "config/base.json",       // JSON 基本設定
         "config/database.yaml",   // YAML データベース設定
@@ -638,7 +639,7 @@ func main() {
         log.Fatal(err)
     }
 
-    // 設定の読み取り
+    // 設定を読み取り
     fmt.Printf("App: %s\n", loader.GetString("APP_NAME"))
     fmt.Printf("DB Host: %s\n", loader.GetString("DATABASE_HOST"))
     fmt.Printf("DB Port: %d\n", loader.GetInt("DATABASE_PORT"))

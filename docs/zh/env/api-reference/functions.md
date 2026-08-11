@@ -29,7 +29,7 @@ func Load(filenames ...string) error
 加载环境变量文件并应用到系统环境。
 
 **参数：**
-- `filenames` - 文件路径列表。未提供时不加载任何文件，需显式传入 `".env"` 来加载默认文件。
+- `filenames` - 文件路径列表。未提供时默认加载 `.env` 文件（使用 `DefaultConfig()` 的 `Filenames` 设置）。
 
 **返回：**
 - `error` - 加载错误
@@ -37,7 +37,7 @@ func Load(filenames ...string) error
 **行为：**
 - 创建新的 Loader 实例并设为默认加载器
 - 自动应用到系统环境（`os.Environ`）
-- 后加载的文件覆盖先加载的
+- 后加载的文件可覆盖先加载的（受 `OverwriteExisting` 配置控制，`Load()` 默认 `false` 即不覆盖）
 - 返回 `ErrAlreadyInitialized` 如果默认加载器已初始化
 - 支持多格式（.env、JSON、YAML）
 
@@ -47,7 +47,7 @@ if err := env.Load(".env"); err != nil {
     log.Fatal(err)
 }
 
-// 加载指定文件（按顺序，后覆盖前）
+// 加载指定文件（按顺序，如需覆盖需设置 OverwriteExisting）
 if err := env.Load(".env", ".env.local", "config.json"); err != nil {
     log.Fatal(err)
 }
@@ -636,8 +636,8 @@ func ResetDefaultLoader() error
 - `error` - 关闭旧加载器的错误（如果存在）；如果之前没有加载器或关闭成功则返回 nil
 
 **行为：**
-- 通过 `atomic.Pointer.Swap` 原子地将默认加载器交换为 nil
-- 在持有 `defaultMu` 锁的状态下关闭旧的加载器（关闭完成才释放锁，确保重置过程的原子性）
+- 通过 `defaultMu.Lock()` 加锁后，使用 `defaultLoader.Swap(nil)` 原子地将默认加载器交换为 nil，然后立即释放锁
+- 在锁**外**关闭旧的加载器（避免在持有锁的状态下执行可能耗时的清理操作，防止 `Close()` 触发需要默认加载器的代码时发生死锁）
 - 重置后允许通过 `Load()` 或 `LoadWithConfig()` 创建新的默认加载器
 
 ```go

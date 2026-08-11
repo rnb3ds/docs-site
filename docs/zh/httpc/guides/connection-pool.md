@@ -1,7 +1,7 @@
 ---
 sidebar_label: "连接池与代理"
 title: "连接池与代理 - CyberGo HTTPC | 连接池调优与代理配置"
-description: "HTTPC 连接池与代理配置指南：MaxIdleConns 连接池参数调优与场景推荐、ProxyURL 手动代理与 SOCKS5、EnableSystemProxy 系统代理检测、ProxyPool 代理池轮换与被动熔断、ProxyRotateOnStatus 状态码轮换、DoH 与 HTTP/2 配置实践。"
+description: "HTTPC 连接池与代理配置指南：MaxIdleConns 连接池参数调优与场景推荐、ProxyURL 手动代理与 SOCKS5、EnableSystemProxy 系统代理检测、ProxyPool 代理池轮换与被动熔断、ProxyRotatePerRequest 每请求轮换、ProxyRotateOnStatus 状态码轮换、DoH 与 HTTP/2 配置实践。"
 sidebar_position: 8
 ---
 
@@ -117,6 +117,7 @@ client, err := httpc.New(cfg)
 | `ProxyPoolStrategy` | `ProxyStrategy` | `ProxyStrategyRoundRobin` | 选择策略 |
 | `ProxyFailureThreshold` | `int` | `3`（0 回退） | 连续连接失败熔断阈值 |
 | `ProxyCooldown` | `time.Duration` | `30s`（0 回退） | 熔断代理冷却时间 |
+| `ProxyRotatePerRequest` | `bool` | `false` | 每次独立请求强制换代理（关闭空闲连接复用） |
 | `ProxyRotateOnStatus` | `[]int` | `nil` | 触发换代理重试的状态码 |
 
 #### 选择策略
@@ -174,6 +175,30 @@ client, err := httpc.New(cfg)
 
 当 `ProxyRotateOnStatus` 设置且代理池有多个代理时，重试预算自动提升至 `len(ProxyPool) - 1`（受 `MaxRetries` 上限 10 约束），确保每个代理都有机会被尝试。
 :::
+
+#### 每请求轮换
+
+`ProxyRotatePerRequest` 解决的是**连接复用**导致代理隧道固化的问题：HTTP 连接池会复用已建立的 TCP 连接，包括其代理隧道。这意味着对同一主机的连续请求会复用前一次请求的代理，即使 `ProxyPoolStrategy` 已轮换选择器游标。
+
+启用后，每次请求开始时关闭所有空闲连接，强制 Transport 重新评估代理池——代价是无连接复用（每次请求新建连接+代理隧道），但保证按请求轮换：
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyRotatePerRequest = true  // 每次请求换代理
+
+client, err := httpc.New(cfg)
+```
+
+:::tip 适用场景
+适用于对同一主机的爬虫/数据采集——每次请求的源 IP 不同，降低被目标站点 IP 封锁的风险。对于不同主机的请求，连接复用不会绑定同一代理，通常无需启用。
+:::
+
+与 `ProxyRotateOnStatus` 一样，`ProxyRotatePerRequest` 也会在代理池有多个代理时自动提升重试预算至 `len(ProxyPool) - 1`，确保每个代理至少被尝试一次。
 
 ### 代理优先级
 

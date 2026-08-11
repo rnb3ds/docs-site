@@ -350,7 +350,7 @@ func main() {
 
 ## Пул прокси и взаимодействие с повторами
 
-При настройке `ProxyRotateOnStatus` HTTPC автоматически повышает `MaxRetries`, гарантируя, что каждый прокси в пуле будет опробован хотя бы раз. Это реализовано через `calculateMaxRetries`:
+При настройке `ProxyRotateOnStatus` или `ProxyRotatePerRequest` HTTPC автоматически повышает `MaxRetries`, гарантируя, что каждый прокси в пуле будет опробован хотя бы раз. Это реализовано через `calculateMaxRetries`:
 
 ```
 эффективный MaxRetries = max(сконфигурированный MaxRetries, len(ProxyPool) - 1)
@@ -361,7 +361,7 @@ func main() {
 
 ```
 ProxyPool = [proxy1, proxy2, proxy3, proxy4, proxy5]
-ProxyRotateOnStatus = [403]
+ProxyRotateOnStatus = [403]   // или ProxyRotatePerRequest = true
 Сконфигурировано MaxRetries = 3
 
 → Автоматически скорректировано до 4 (= 5 - 1), каждый из 5 прокси опробован

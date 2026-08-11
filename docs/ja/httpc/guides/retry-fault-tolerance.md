@@ -350,7 +350,7 @@ func main() {
 
 ## プロキシプールとリトライの連携
 
-`ProxyRotateOnStatus` を設定すると、HTTPC は `MaxRetries` を自動的に引き上げ、プロキシプール内の各プロキシが少なくとも 1 回試行されるようにします。これは `calculateMaxRetries` で実装されています：
+`ProxyRotateOnStatus` または `ProxyRotatePerRequest` を設定すると、HTTPC は `MaxRetries` を自動的に引き上げ、プロキシプール内の各プロキシが少なくとも 1 回試行されるようにします。これは `calculateMaxRetries` で実装されています：
 
 ```
 有効な MaxRetries = max(設定された MaxRetries, len(ProxyPool) - 1)
@@ -361,7 +361,7 @@ func main() {
 
 ```
 ProxyPool = [proxy1, proxy2, proxy3, proxy4, proxy5]
-ProxyRotateOnStatus = [403]
+ProxyRotateOnStatus = [403]   // または ProxyRotatePerRequest = true
 設定 MaxRetries = 3
 
 → 自動的に 4 に調整（= 5 - 1）、5 つのプロキシすべてを 1 回ずつ試行

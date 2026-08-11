@@ -1,17 +1,18 @@
 ---
 sidebar_label: "Обработка ошибок"
-title: "Обработка ошибок - CyberGo env | Стратегии восстановления"
-description: "Руководство по обработке ошибок CyberGo env: 16 сторожевых через errors.Is, извлечение контекста через errors.As для ParseError/FileError/SecurityError, восстановление, цепочки Unwrap и практика классификации ошибок для продакшена."
-sidebar_position: 2
+title: "Обработка ошибок - CyberGo env | сигнальные ошибки и стратегии восстановления"
+description: "Руководство по обработке ошибок CyberGo env: точное сопоставление 16 сигнальных ошибок через errors.Is, извлечение контекста структурированных ошибок ParseError/FileError/SecurityError через errors.As, стратегии восстановления и деградации, отслеживание цепочки ошибок Unwrap, практика классификации ошибок в продакшене."
+sidebar_position: 5
+sidebar_icon: "🛡️"
 ---
 
 # Обработка ошибок
 
-Библиотека env предоставляет структурированный механизм обработки ошибок с поддержкой паттернов `errors.Is` и `errors.As`.
+Библиотека env предоставляет структурированный механизм обработки ошибок, поддерживающий шаблоны `errors.Is` и `errors.As`.
 
-## Сторожевые ошибки
+## Сигнальные ошибки
 
-### Ошибки файлов
+### Файловые ошибки
 
 ```go
 var (
@@ -25,14 +26,14 @@ var (
 ```go
 err := loader.LoadFiles(".env")
 if errors.Is(err, env.ErrFileNotFound) {
-    log.Println("Конфигурационный файл не найден")
+    log.Println("Файл конфигурации не существует")
 }
 if errors.Is(err, env.ErrFileTooLarge) {
-    log.Println("Конфигурационный файл слишком большой")
+    log.Println("Файл конфигурации слишком большой")
 }
 ```
 
-### Ошибки парсинга
+### Ошибки разбора
 
 ```go
 var (
@@ -52,7 +53,7 @@ var (
 )
 ```
 
-**Проверка запрещённых ключей (фактически возвращается `*SecurityError`, совпадение с `ErrSecurityViolation`):**
+**Проверка запрещённых ключей (фактически возвращает `*SecurityError`, сопоставляется с `ErrSecurityViolation`):**
 
 ```go
 err := loader.Set("PATH", "/malicious")
@@ -85,7 +86,7 @@ var (
 )
 ```
 
-**Способы проверки:**
+**Способ проверки:**
 
 ```go
 // Проверка, закрыт ли загрузчик
@@ -100,17 +101,17 @@ if errors.Is(err, env.ErrAlreadyInitialized) {
 
 // Проверка, не инициализирован ли загрузчик по умолчанию
 if errors.Is(err, env.ErrNotInitialized) {
-    // Необходимо сначала вызвать env.Load() или env.LoadWithConfig()
+    // Нужно сначала вызвать env.Load() или env.LoadWithConfig()
 }
 
-// Проверка отсутствия обязательного ключа (фактически возвращается *ValidationError, Rule=="required")
+// Проверка отсутствия обязательного ключа (фактически возвращает *ValidationError, Rule=="required")
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
-    // Отсутствует обязательный ключ: valErr.Message содержит список отсутствующих ключей
+    // Отсутствует обязательный ключ: valErr.Message содержит список недостающих ключей
 }
 ```
 
-### Ошибка адаптера
+### Ошибки адаптера
 
 ```go
 var ErrValidateRequiredUnsupported = errors.New(
@@ -119,32 +120,32 @@ var ErrValidateRequiredUnsupported = errors.New(
 )
 ```
 
-Эта ошибка возвращается, когда пользовательский валидатор реализует только интерфейс `KeyValidator`, но не полный интерфейс `Validator`.
+Возвращается, когда пользовательский валидатор реализует только интерфейс `KeyValidator`, но не полный интерфейс `Validator`, при вызове `ValidateRequired`.
 
 **Способ проверки:**
 
 ```go
 if errors.Is(err, env.ErrValidateRequiredUnsupported) {
     // Пользовательский валидатор не поддерживает валидацию обязательных ключей
-    // Необходимо реализовать полный интерфейс Validator
+    // Нужно реализовать полный интерфейс Validator
 }
 ```
 
 ::: tip Решение
-Реализуйте интерфейс `Validator` (включающий методы ValidateKey, ValidateValue, ValidateRequired), а не только `KeyValidator`.
+Реализуйте интерфейс `Validator` (включающий три метода: ValidateKey, ValidateValue, ValidateRequired), а не только `KeyValidator`.
 :::
 
 ## Структурированные типы ошибок
 
 ### ParseError
 
-Ошибка парсинга с информацией о местоположении:
+Ошибка разбора, содержащая информацию о позиции:
 
 ```go
 type ParseError struct {
     File    string  // Имя файла
     Line    int     // Номер строки
-    Content string  // Содержимое с ошибкой
+    Content string  // Содержимое ошибки
     Err     error   // Исходная ошибка
 }
 ```
@@ -156,9 +157,9 @@ err := loader.LoadFiles(".env")
 
 var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
-    log.Printf("Ошибка парсинга %s:%d - %s\n",
+    log.Printf("Ошибка разбора %s:%d - %s\n",
         parseErr.File, parseErr.Line, parseErr.Err)
-    // Вывод: Ошибка парсинга .env:15 - invalid key format
+    // Вывод: Ошибка разбора .env:15 - invalid key format
 }
 ```
 
@@ -182,7 +183,7 @@ type FileError struct {
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
     if fileErr.Size > 0 {
-        log.Printf("Размер файла %s (%d) превышает ограничение %d\n",
+        log.Printf("Файл %s размер %d превышает ограничение %d\n",
             fileErr.Path, fileErr.Size, fileErr.Limit)
     }
 }
@@ -194,7 +195,7 @@ if errors.As(err, &fileErr) {
 
 ```go
 type SecurityError struct {
-    Action  string  // Операция
+    Action  string  // Действие
     Reason  string  // Причина
     Key     string  // Имя ключа
     Details string  // Подробности
@@ -229,7 +230,7 @@ type ValidationError struct {
 ```go
 var valErr *env.ValidationError
 if errors.As(err, &valErr) {
-    log.Printf("Ошибка валидации: поле %s - %s\n", valErr.Field, valErr.Message)
+    log.Printf("Валидация не прошла: поле %s - %s\n", valErr.Field, valErr.Message)
 }
 ```
 
@@ -243,7 +244,7 @@ type ExpansionError struct {
     Depth int                // Текущая глубина
     Limit int                // Ограничение
     Chain string             // Цепочка подстановки
-    Kind  ExpansionErrorKind // Категория причины (нулевое значение = глубина/цикл)
+    Kind  ExpansionErrorKind // Категория причины ошибки (нулевое значение = глубина/цикл)
 }
 ```
 
@@ -258,7 +259,7 @@ if errors.As(err, &expErr) {
 
 ### JSONError
 
-Ошибка парсинга JSON:
+Ошибка разбора JSON:
 
 ```go
 type JSONError struct {
@@ -273,13 +274,13 @@ type JSONError struct {
 ```go
 var jsonErr *env.JSONError
 if errors.As(err, &jsonErr) {
-    log.Printf("Ошибка JSON %s: %s\n", jsonErr.Path, jsonErr.Message)
+    log.Printf("JSON ошибка %s: %s\n", jsonErr.Path, jsonErr.Message)
 }
 ```
 
 ### YAMLError
 
-Ошибка парсинга YAML:
+Ошибка разбора YAML:
 
 ```go
 type YAMLError struct {
@@ -296,7 +297,7 @@ type YAMLError struct {
 ```go
 var yamlErr *env.YAMLError
 if errors.As(err, &yamlErr) {
-    log.Printf("Ошибка YAML %s:%d:%d - %s\n",
+    log.Printf("YAML ошибка %s:%d:%d - %s\n",
         yamlErr.Path, yamlErr.Line, yamlErr.Column, yamlErr.Message)
 }
 ```
@@ -324,43 +325,43 @@ if err != nil && env.IsMarshalError(err) {
 }
 ```
 
-## Паттерны обработки ошибок
+## Шаблоны обработки ошибок
 
-### Паттерн errors.Is
+### Шаблон errors.Is
 
-Проверка сторожевых ошибок:
+Проверка сигнальных ошибок:
 
 ```go
 err := loader.LoadFiles(".env")
 
 switch {
 case errors.Is(err, env.ErrFileNotFound):
-    // Файл не найден
-    log.Println("Конфигурационный файл не найден, используются значения по умолчанию")
+    // Файл не существует
+    log.Println("Файл конфигурации не существует, используются значения по умолчанию")
 
 case errors.Is(err, env.ErrFileTooLarge):
     // Файл слишком большой
-    log.Fatal("Конфигурационный файл слишком большой")
+    log.Fatal("Файл конфигурации слишком большой")
 
 case errors.Is(err, env.ErrSecurityViolation):
-    // Запрещённый ключ (фактически возвращается *SecurityError)
+    // Запрещённый ключ (фактически возвращает *SecurityError)
     log.Fatal("Обнаружен запрещённый ключ")
 
 case err != nil:
     // Другая ошибка
-    log.Fatalf("Ошибка загрузки: %v", err)
+    log.Fatalf("Загрузка не удалась: %v", err)
 }
 
-// Недопустимый формат ключа (фактически возвращается *ValidationError, Field=="key")
+// Недопустимый формат ключа (фактически возвращает *ValidationError, Field=="key")
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Field == "key" {
     log.Fatalf("Обнаружен недопустимый ключ: %s", valErr.Message)
 }
 ```
 
-### Паттерн errors.As
+### Шаблон errors.As
 
-Извлечение подробной информации об ошибке:
+Извлечение подробной информации об ошибках:
 
 ```go
 err := loader.LoadFiles(".env")
@@ -368,17 +369,17 @@ if err == nil {
     return
 }
 
-// Попытка извлечь ошибку парсинга
+// Попытка извлечь ошибку разбора
 var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
-    log.Fatalf("Ошибка парсинга в %s на строке %d: %v",
+    log.Fatalf("Ошибка разбора в %s на строке %d: %v",
         parseErr.File, parseErr.Line, parseErr.Err)
 }
 
-// Попытка извлечь ошибку файла
+// Попытка извлечь файловую ошибку
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
-    log.Fatalf("Ошибка файла %s: %v", fileErr.Path, fileErr.Err)
+    log.Fatalf("Файловая ошибка %s: %v", fileErr.Path, fileErr.Err)
 }
 
 // Попытка извлечь ошибку безопасности
@@ -399,10 +400,10 @@ func handleLoadError(err error) {
         return
     }
 
-    // Сначала проверка сторожевых ошибок
+    // Сначала проверяем сигнальные ошибки
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        log.Println("Предупреждение: конфигурационный файл не найден")
+        log.Println("Предупреждение: файл конфигурации не существует")
         return
 
     case errors.Is(err, env.ErrFileTooLarge):
@@ -412,10 +413,10 @@ func handleLoadError(err error) {
             fileErr.Path, fileErr.Size, fileErr.Limit)
     }
 
-    // Затем проверка структурированных ошибок
+    // Затем проверяем структурированные ошибки
     var parseErr *env.ParseError
     if errors.As(err, &parseErr) {
-        log.Fatalf("Ошибка парсинга %s:%d - %v",
+        log.Fatalf("Ошибка разбора %s:%d - %v",
             parseErr.File, parseErr.Line, parseErr.Err)
     }
 
@@ -429,7 +430,7 @@ func handleLoadError(err error) {
 }
 ```
 
-## Паттерны восстановления
+## Шаблоны восстановления
 
 ### Изящная деградация
 
@@ -439,7 +440,7 @@ func loadConfig() *Config {
     cfg.Filenames = nil
     loader, err := env.New(cfg)
     if err != nil {
-        log.Printf("Ошибка конфигурации: %v, используются значения по умолчанию", err)
+        log.Printf("Ошибка конфигурации: %v, используется конфигурация по умолчанию", err)
         return defaultConfig()
     }
     defer loader.Close()
@@ -447,21 +448,21 @@ func loadConfig() *Config {
     err = loader.LoadFiles(".env")
     if err != nil {
         if errors.Is(err, env.ErrFileNotFound) {
-            log.Println("Конфигурационный файл не найден, используются значения по умолчанию")
+            log.Println("Файл конфигурации не существует, используются значения по умолчанию")
             return defaultConfig()
         }
-        log.Fatalf("Ошибка загрузки: %v", err)
+        log.Fatalf("Загрузка не удалась: %v", err)
     }
 
     if err := loader.Validate(); err != nil {
-        log.Fatalf("Ошибка валидации: %v", err)
+        log.Fatalf("Валидация не прошла: %v", err)
     }
 
     return parseConfig(loader)
 }
 ```
 
-### Паттерн повторных попыток
+### Шаблон повтора
 
 ```go
 func loadWithRetry(filenames []string, maxRetries int) error {
@@ -530,12 +531,12 @@ func main() {
 func handleLoadError(err error) {
     switch {
     case errors.Is(err, env.ErrFileNotFound):
-        log.Fatal("Конфигурационный файл не найден")
+        log.Fatal("Файл конфигурации не существует")
 
     case errors.Is(err, env.ErrFileTooLarge):
         var fileErr *env.FileError
         errors.As(err, &fileErr)
-        log.Fatalf("Файл слишком большой: %s (%d байт)", fileErr.Path, fileErr.Size)
+        log.Fatalf("Файл слишком большой: %s (%d bytes)", fileErr.Path, fileErr.Size)
 
     case errors.Is(err, env.ErrSecurityViolation):
         log.Fatal("Обнаружен запрещённый ключ")
@@ -544,7 +545,7 @@ func handleLoadError(err error) {
     // Структурированные ошибки
     var parseErr *env.ParseError
     if errors.As(err, &parseErr) {
-        log.Fatalf("Ошибка парсинга %s:%d - %v",
+        log.Fatalf("Ошибка разбора %s:%d - %v",
             parseErr.File, parseErr.Line, parseErr.Err)
     }
 
@@ -553,25 +554,25 @@ func handleLoadError(err error) {
         log.Fatalf("Ошибка безопасности: %s - %s", secErr.Action, secErr.Reason)
     }
 
-    log.Fatalf("Ошибка загрузки: %v", err)
+    log.Fatalf("Загрузка не удалась: %v", err)
 }
 
 func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
         if valErr.Rule == "required" {
-            // Отсутствует обязательный ключ: valErr.Message содержит список отсутствующих ключей
+            // Отсутствует обязательный ключ: valErr.Message содержит список недостающих ключей
             log.Fatalf("Отсутствует обязательный ключ: %s", valErr.Message)
         }
-        log.Fatalf("Ошибка валидации: %s - %s", valErr.Field, valErr.Message)
+        log.Fatalf("Валидация не прошла: %s - %s", valErr.Field, valErr.Message)
     }
 
-    log.Fatalf("Ошибка валидации: %v", err)
+    log.Fatalf("Валидация не прошла: %v", err)
 }
 ```
 
 ## Связанная документация
 
-- [Константы и ошибки](/ru/env/api-reference/constants) - Полный список ошибок
-- [Config API](/ru/env/api-reference/config) - Настройка ограничений конфигурации
-- [Обзор безопасности](/ru/env/security/) - Обработка ошибок безопасности
+- [Константы и ошибки](/ru/env/api-reference/constants) - полный список ошибок
+- [Config API](/ru/env/api-reference/config) - настройки ограничений конфигурации
+- [Обзор безопасности](/ru/env/security/) - обработка ошибок безопасности

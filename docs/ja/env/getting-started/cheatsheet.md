@@ -1,13 +1,13 @@
 ---
 sidebar_label: "チートシート"
-title: "チートシート - CyberGo env | よく使う API 速査"
-description: "CyberGo env のよく使う API チートシート。ファイル読み込み、型読み取り、構造体マッピング、変数展開、SecureValue、Marshal シリアライズ、センチネルエラー errors.Is、監査ログなど高頻度操作のコアコードを 1 ページにまとめました。"
+title: "チートシート - CyberGo env | よく使う API 早見表"
+description: "CyberGo env よく使う API のチートシート。ファイル読み込み、型読み取り、構造体マッピング、変数展開、検証、SecureValue ストレージ、Marshal/Unmarshal シリアライズ、センチネルエラー errors.Is、監査ログなど高頻度操作のコアコードスニペットを 1 ページにまとめ、日常的な参照に便利です。"
 sidebar_position: 2
 ---
 
 # チートシート
 
-このライブラリについて基本的な理解があることを前提に、高頻度で使用されるコードスニペットを素早く参照できます。
+ライブラリを理解している前提で、高頻度で使用するコードスニペットを素早く参照できます。
 
 ## 設定の読み込み
 
@@ -52,7 +52,7 @@ count := env.Len()
 secret := env.GetSecure("PASSWORD")
 if secret != nil {
     defer secret.Release()  // または secret.Close()
-    value := secret.Reveal()   // 平文値（必要な場合のみ使用）
+    value := secret.Reveal()   // 平文値（必要な時のみ使用）
     masked := secret.Masked()  // マスク（ログ用）
 }
 ```
@@ -61,9 +61,9 @@ if secret != nil {
 
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 格納形式：APP_NAME=myapp
+// 格納形態：APP_NAME=myapp
 
-// 以下のメソッドでアクセス可能
+// 以下の方法でアクセス可能
 env.GetString("APP_NAME")      // フラット化キー名（推奨）
 env.GetString("app.name")      // ドットパス
 env.GetString("APP.NAME")      // 大文字ドットパス
@@ -98,9 +98,9 @@ env.ParseInto(&cfg)
 | プリセット | 用途 | 特徴 |
 |------|------|------|
 | `DefaultConfig()` | 汎用 | 安全なデフォルト値 |
-| `DevelopmentConfig()` | 開発 | 緩やかな制限、YAML 構文サポート、10MB ファイル上限 |
+| `DevelopmentConfig()` | 開発 | 緩い制限、YAML 構文サポート、10MB ファイル上限 |
 | `TestingConfig()` | テスト | 既存変数の上書き、テスト分離、64KB ファイル上限 |
-| `ProductionConfig()` | 本番 | 厳格な検証 + 監査、既存変数の上書きなし、64KB ファイル上限 |
+| `ProductionConfig()` | 本番 | 厳格な検証 + 監査、既存変数を上書きしない、64KB ファイル上限 |
 
 ```go
 cfg := env.ProductionConfig()
@@ -124,8 +124,8 @@ loader.Validate()
 loader.Apply()  // os.Environ に適用
 loader.Len()    // 変数の数
 loader.LoadTime() // 最終読み込み時刻
-loader.IsApplied() // システム環境に適用済みかどうか
-loader.IsClosed()  // クローズ済みかどうか
+loader.IsApplied() // システム環境に適用済みか
+loader.IsClosed()  // クローズ済みか
 loader.Config()    // 設定を取得
 ```
 
@@ -141,7 +141,7 @@ errors.Is(err, env.ErrSecurityViolation)  // 禁止キー（実際は *SecurityE
 errors.Is(err, env.ErrClosed)
 errors.Is(err, env.ErrAlreadyInitialized)
 
-// キー形式が不正：実際は *ValidationError、Field=="key"
+// キー形式不正：実際は *ValidationError を返す、Field=="key"
 var keyErr *env.ValidationError
 if errors.As(err, &keyErr) && keyErr.Field == "key" {
     // 無効なキー形式：keyErr.Message
@@ -182,7 +182,7 @@ env.IsMemoryLockSupported()     // Linux/macOS/Windows: true
 env.ClearBytes(sensitiveData)
 clean := env.SanitizeForLog(msg)
 
-// キー名マスク
+// キー名のマスク
 masked := env.MaskKey("DB_PASSWORD")  // "DB***"
 ```
 
@@ -223,18 +223,18 @@ KEY='literal ${noexpand}'
 KEY=${OTHER_KEY}           # 変数参照
 KEY=${MISSING:-default}    # デフォルト値（変数が存在しない場合に使用）
 KEY=${MISSING:=default}    # デフォルト値（変数が存在しない場合に使用、:- と同じ）
-KEY=${MISSING:?error}      # エラープロンプト（変数が存在しないまたは空の場合にエラー）
+KEY=${MISSING:?error}      # エラーメッセージ（変数が存在しないか空の場合にエラー）
 export KEY=value           # bash スタイル
 KEY=$$                     # ドル記号のエスケープ
 ```
 
 ## ブール値
 
-| 真の値 | 偽の値 |
+| 真値 | 偽値 |
 |------|------|
 | `true`, `1`, `yes`, `on`, `enabled` | `false`, `0`, `no`, `off`, `disabled` |
 
-## 時間形式
+## 時間フォーマット
 
 ```bash
 TIMEOUT=30s
@@ -244,14 +244,14 @@ DURATION=1h30m
 
 ## 制限定数
 
-| 制限項目 | デフォルト値 | ハードリミット |
+| 制限項目 | デフォルト値 | ハード上限 |
 |--------|--------|----------|
 | ファイルサイズ | 2 MB | 100 MB |
 | 行の長さ | 1 KB | 64 KB |
 | キーの長さ | 64 | 1024 |
 | 値の長さ | 4 KB | 1 MB |
-| 変数数 | 500 | 10000 |
-| 展開深度 | 5 | 20 |
+| 変数の数 | 500 | 10000 |
+| 展開の深さ | 5 | 20 |
 
 ## テスト
 
@@ -295,8 +295,8 @@ func TestMain(m *testing.M) {
 // env.EnvApplicator    // Apply
 // env.EnvCloser        // Close
 
-// 複合インターフェース
-// env.EnvLoader        // 上記すべてを組み合わせ
+// コンポジットインターフェース
+// env.EnvLoader        // 以上すべてを組み合わせ
 ```
 
 ## 関連ドキュメント
@@ -305,4 +305,4 @@ func TestMain(m *testing.M) {
 - [パッケージ関数](/ja/env/api-reference/functions) - 詳細な API
 - [Loader API](/ja/env/api-reference/loader) - Loader メソッド
 - [Config API](/ja/env/api-reference/config) - 設定オプション
-- [エラー処理](/ja/env/advanced/error-handling) - エラー処理パターン
+- [エラー処理](/ja/env/guides/error-handling) - エラー処理パターン

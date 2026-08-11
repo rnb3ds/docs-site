@@ -107,13 +107,15 @@ cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
 
 ## 代理池轮换原理是什么？
 
-**答：** 代理池通过两种机制实现 IP 轮换：
+**答：** 代理池通过三种机制实现 IP 轮换：
 
 **1. 策略轮换**（每次选择时）：`ProxyStrategyRoundRobin` 按顺序循环选择，每次选择前进到下一个代理，因此重试时**自然落到不同 IP**，无需额外配置。`ProxyStrategyRandom` 从健康代理中随机选取。
 
-**2. 状态码触发轮换**（响应时）：设置 `ProxyRotateOnStatus`（如 `[]int{403}`），当响应返回这些状态码且 `Retry.MaxRetries > 0` 时触发重试，重试时策略轮换确保换 IP。适用于绕过 CF/WAF 等 IP 维度封锁。
+**2. 每请求轮换**（请求开始时）：设置 `ProxyRotatePerRequest = true`，每次独立请求开始时关闭所有空闲连接，强制 Transport 重新评估代理池。不启用时，HTTP 连接复用会导致对同一主机的连续请求复用前一次请求的代理隧道，绕过策略轮换。代价是无连接复用（每次请求新建连接），但保证按请求轮换。适用于对同一主机的爬虫/数据采集——每次请求的源 IP 不同。
 
-**3. 被动熔断与自动恢复**：连续连接失败（dial/TLS）达到 `ProxyFailureThreshold`（默认 3）后，该代理被临时移出轮换池，经过 `ProxyCooldown`（默认 30s）后以半开探测方式恢复。注意 HTTP 状态码**不**触发熔断——因为封锁往往是目标站点特定的（在某站被封的代理在另一站可能正常）。
+**3. 状态码触发轮换**（响应时）：设置 `ProxyRotateOnStatus`（如 `[]int{403}`），当响应返回这些状态码且 `Retry.MaxRetries > 0` 时触发重试，重试时策略轮换确保换 IP。适用于绕过 CF/WAF 等 IP 维度封锁。
+
+此外，代理池还内置**被动熔断与自动恢复**：连续连接失败（dial/TLS）达到 `ProxyFailureThreshold`（默认 3）后，该代理被临时移出轮换池，经过 `ProxyCooldown`（默认 30s）后以半开探测方式恢复。注意 HTTP 状态码**不**触发熔断——因为封锁往往是目标站点特定的（在某站被封的代理在另一站可能正常）。
 
 ```go
 cfg := httpc.DefaultConfig()

@@ -1,17 +1,18 @@
 ---
 sidebar_label: "シリアライズ"
-title: "シリアライズ - CyberGo env | 多フォーマット変換"
-description: "CyberGo env シリアライズガイド。.env・JSON・YAML 間の Map・構造体変換、Marshal/Unmarshal 関数群、Marshaler/Unmarshaler インターフェース、DetectFormat 自動検出、env タグと機密フィールドマスクを解説します。"
+title: "シリアライズ - CyberGo env | マルチフォーマット変換"
+description: "CyberGo env シリアライズガイド。.env、JSON、YAML 間の Map と構造体変換を詳解。Marshal/Unmarshal 関数ファミリー、Marshaler/Unmarshaler カスタムインターフェース、DetectFormat 自動検出を含み、設定エクスポートやフォーマット移行などの実用シーンをカバー。"
 sidebar_position: 2
+sidebar_icon: "🔧"
 ---
 
 # シリアライズ
 
-Marshal と Unmarshal 機能を使用して環境変数のシリアライズ/デシリアライズを行い、`.env`、JSON、YAML フォーマットの変換をサポートします。
+Marshal と Unmarshal 機能で環境変数をシリアライズ/デシリアライズし、`.env`、JSON、YAML フォーマット変換をサポートします。
 
 ## 基本的なシリアライズ
 
-### Map シリアライズ
+### Map のシリアライズ
 
 ```go
 package main
@@ -104,7 +105,7 @@ func main() {
 }
 ```
 
-## 構造体シリアライズ
+## 構造体のシリアライズ
 
 ### 基本的なシリアライズ
 
@@ -143,7 +144,7 @@ func main() {
 }
 ```
 
-### ネストされた構造体
+### ネストした構造体
 
 ```go
 package main
@@ -226,7 +227,7 @@ func main() {
     fmt.Printf("%+v\n", data)
     // 出力：map[DEBUG:true HOST:localhost PORT:8080]
 
-    // ファイルへのエクスポートに使用可能
+    // ファイルへエクスポートに使用可能
     content, _ := env.Marshal(data, env.FormatEnv)
     fmt.Println(content)
 }
@@ -234,7 +235,7 @@ func main() {
 
 ## デシリアライズ
 
-### Map デシリアライズ
+### Map のデシリアライズ
 
 ```go
 package main
@@ -263,7 +264,7 @@ DEBUG=true
 }
 ```
 
-### JSON デシリアライズ
+### JSON のデシリアライズ
 
 ```go
 package main
@@ -289,7 +290,7 @@ func main() {
 }
 ```
 
-### YAML デシリアライズ
+### YAML のデシリアライズ
 
 ```go
 package main
@@ -315,7 +316,7 @@ DATABASE_USER: postgres
 }
 ```
 
-## 構造体デシリアライズ
+## 構造体のデシリアライズ
 
 ### Map からのデシリアライズ
 
@@ -384,9 +385,9 @@ ENABLED=true
 
 ## カスタムシリアライズ
 
-::: tip 2 種のカスタムインターフェースの有効範囲
-- **フィールドレベル**：構造体フィールドのカスタムエンコード/デコード。標準ライブラリ `encoding.TextMarshaler` / `encoding.TextUnmarshaler`（`MarshalText()` / `UnmarshalText([]byte)`）を実装します。構造体が `env.Marshal`/`env.UnmarshalInto` で処理される際、フィールド単位のロジックがこれら 2 つのインターフェースを認識します。
-- **トップレベル**：`env.Marshaler`（`MarshalEnv()`）と `env.Unmarshaler`（`UnmarshalEnv(map[string]string)`）インターフェースは、`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto` に**直接渡されたトップレベルの値に対してのみ有効**です。この型をフィールドとして含む外側の構造体を渡した場合は呼び出されません。
+::: tip 2 つのカスタムインターフェースの有効範囲
+- **フィールドレベル**：構造体フィールドのカスタムエンコード/デコード、標準ライブラリ `encoding.TextMarshaler` / `encoding.TextUnmarshaler`（`MarshalText()` / `UnmarshalText([]byte)`）を実装。構造体が `env.Marshal`/`env.UnmarshalInto` で処理される際、フィールドごとのロジックがこの 2 つのインターフェースを認識します。
+- **最上位**：`env.Marshaler`（`MarshalEnv()`）と `env.Unmarshaler`（`UnmarshalEnv(map[string]string)`）インターフェースは**`env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto` に直接渡された最上位の値でのみ有効**；その型のフィールドを含む外側の構造体を渡した場合は呼び出されません。
 :::
 
 ### フィールドレベル：encoding.TextMarshaler の実装
@@ -403,7 +404,7 @@ import (
 
 type LogLevel string
 
-// encoding.TextMarshaler を実装 —— 構造体フィールドとしてシリアライズされる際に呼び出される
+// encoding.TextMarshaler を実装 —— 構造体フィールドとしてシリアライズ時に呼び出される
 func (l LogLevel) MarshalText() ([]byte, error) {
     return []byte(strings.ToUpper(string(l))), nil
 }
@@ -440,7 +441,7 @@ import (
 
 type LogLevel string
 
-// encoding.TextUnmarshaler を実装 —— 構造体フィールドとしてデシリアライズされる際に呼び出される
+// encoding.TextUnmarshaler を実装 —— 構造体フィールドとしてデシリアライズ時に呼び出される
 func (l *LogLevel) UnmarshalText(text []byte) error {
     switch string(text) {
     case "debug", "info", "warn", "error":
@@ -471,9 +472,9 @@ func main() {
 }
 ```
 
-### トップレベル：env.Marshaler / env.Unmarshaler の実装
+### 最上位：env.Marshaler / env.Unmarshaler の実装
 
-ある型の値を（外側の構造体のフィールドではなく）`env.Marshal` / `env.UnmarshalInto` に**直接**渡す場合、そのトップレベルの値に対して `env.Marshaler` / `env.Unmarshaler` インターフェースが有効になります：
+ある型の値を**直接** `env.Marshal` / `env.UnmarshalInto` に渡す場合（外側の構造体のフィールドとしてではなく）、`env.Marshaler` / `env.Unmarshaler` インターフェースがその最上位の値で有効になります：
 
 ```go
 package main
@@ -484,7 +485,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// トップレベル型が直接 env.Marshaler を実装
+// 最上位の型が直接 env.Marshaler を実装
 type EnvBlob string
 
 func (e EnvBlob) MarshalEnv() ([]byte, error) {
@@ -493,7 +494,7 @@ func (e EnvBlob) MarshalEnv() ([]byte, error) {
 }
 
 func main() {
-    // トップレベルの値を直接シリアライズ（外側の構造体のフィールドではない）
+    // 最上位の値を直接シリアライズ（外側構造体のフィールドではない）
     result, err := env.Marshal(EnvBlob(""), env.FormatEnv)
     if err != nil {
         panic(err)
@@ -508,7 +509,7 @@ func main() {
 
 ## フォーマット検出
 
-### 自動フォーマット検出
+### フォーマットの自動検出
 
 ```go
 package main
@@ -519,7 +520,7 @@ import (
 )
 
 func main() {
-    // 自動フォーマット検出
+    // フォーマットを自動検出
     format := env.DetectFormat("config.json")
     fmt.Println(format.String()) // json
 
@@ -529,14 +530,14 @@ func main() {
     format = env.DetectFormat(".env")
     fmt.Println(format.String()) // dotenv
 
-    // FormatAuto で自動検出
+    // FormatAuto で自動検出を使用
     data := `{"KEY": "value"}`
     result, _ := env.UnmarshalMap(data, env.FormatAuto)
     fmt.Println(result)
 }
 ```
 
-## 実用シナリオ
+## 実用シーン
 
 ### 設定をファイルに保存
 
@@ -585,7 +586,7 @@ func main() {
     // すべての環境変数を取得
     all := env.All()
 
-    // JSON としてエクスポート
+    // JSON でエクスポート
     content, err := env.Marshal(all, env.FormatJSON)
     if err != nil {
         panic(err)
@@ -598,7 +599,7 @@ func main() {
 }
 ```
 
-### 設定移行
+### 設定の移行
 
 ```go
 package main
@@ -634,6 +635,6 @@ func main() {
 
 ## 関連ドキュメント
 
-- [パッケージ関数](/ja/env/api-reference/functions) - Marshal、UnmarshalMap 等関数リファレンス
-- [多フォーマット設定](/ja/env/guides/multi-format) - 多フォーマット読み込みガイド
+- [パッケージ関数](/ja/env/api-reference/functions) - Marshal、UnmarshalMap などの関数リファレンス
+- [マルチフォーマット設定](/ja/env/guides/multi-format) - マルチフォーマット読み込みガイド
 - [構造体マッピング](/ja/env/guides/struct-mapping) - 構造体マッピングガイド

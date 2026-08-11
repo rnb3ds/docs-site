@@ -1,13 +1,14 @@
 ---
 sidebar_label: "Audit Logging"
 title: "Audit Logging - CyberGo env | Security Audit Configuration"
-description: "CyberGo env audit logging: JSONAuditHandler, LogAuditHandler, ChannelAuditHandler and custom AuditHandler tracking load/read/modify/delete for security compliance."
-sidebar_position: 5
+description: "Audit logging configuration guide for CyberGo env, covering JSONAuditHandler, LogAuditHandler, and ChannelAuditHandler handlers, and custom AuditHandler for recording variable loading, reading, modification, and deletion operations for security auditing, compliance checking, and troubleshooting."
+sidebar_position: 6
+sidebar_icon: "🛡️"
 ---
 
 # Audit Logging
 
-The audit logging feature records all environment variable operations for security auditing, compliance checks, and troubleshooting.
+The audit logging feature records all environment variable operations for security auditing, compliance checking, and troubleshooting.
 
 ## Enabling Audit
 
@@ -36,7 +37,7 @@ loader, _ := env.New(cfg)
 
 ### JSONAuditHandler
 
-Outputs JSON formatted logs:
+Outputs JSON format logs:
 
 ```go
 import (
@@ -49,7 +50,7 @@ cfg.AuditEnabled = true
 cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 ```
 
-**Output Example:**
+**Output example:**
 
 ```json
 {"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
@@ -57,7 +58,7 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
 
-Sensitive keys (such as `API_KEY`) have their `key` field automatically masked as `[MASKED:N chars]` in the audit log (N is the key length); non-sensitive keys (such as `CUSTOM_VAR`) are shown as-is.
+Sensitive keys (e.g., `API_KEY`) are automatically masked as `[MASKED:N chars]` (N = key length) in the audit log's `key` field; non-sensitive keys (e.g., `CUSTOM_VAR`) are shown as-is.
 
 ---
 
@@ -76,7 +77,7 @@ logger := log.New(os.Stderr, "[AUDIT] ", log.LstdFlags)
 cfg.AuditHandler = env.NewLogAuditHandler(logger)
 ```
 
-**Output Example:**
+**Output example:**
 
 ```text
 [AUDIT] 2024/01/15 10:30:00 action=load success=true reason="" file=.env duration=1.23ms
@@ -88,7 +89,7 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 
 ### ChannelAuditHandler
 
-Sends to a channel for async processing:
+Sends to a channel for asynchronous processing:
 
 ```go
 ch := make(chan env.AuditEvent, 100)
@@ -103,15 +104,15 @@ go func() {
 ```
 
 **Use cases:**
-- Send to remote logging services
-- Write to databases
-- Real-time monitoring and alerting
+- Send to remote logging service
+- Write to database
+- Real-time monitoring alerts
 
 ---
 
 ### NopAuditHandler
 
-A no-op handler that discards all events:
+No-op handler, discards all events:
 
 ```go
 cfg.AuditHandler = env.NewNopAuditHandler()
@@ -119,7 +120,7 @@ cfg.AuditHandler = env.NewNopAuditHandler()
 
 **Use cases:**
 - Temporarily disable auditing
-- Testing environments
+- Test environments
 
 ---
 
@@ -146,10 +147,10 @@ type AuditEvent struct {
 | Constant | Value | Description |
 |----------|-------|-------------|
 | `ActionLoad` | `load` | File loading |
-| `ActionParse` | `parse` | Parse operation |
-| `ActionGet` | `get` | Variable read |
-| `ActionSet` | `set` | Variable set |
-| `ActionDelete` | `delete` | Variable delete |
+| `ActionParse` | `parse` | Parsing operation |
+| `ActionGet` | `get` | Variable reading |
+| `ActionSet` | `set` | Variable setting |
+| `ActionDelete` | `delete` | Variable deletion |
 | `ActionValidate` | `validate` | Validation operation |
 | `ActionExpand` | `expand` | Variable expansion |
 | `ActionSecurity` | `security` | Security event |
@@ -158,7 +159,7 @@ type AuditEvent struct {
 
 ---
 
-## Custom Handlers
+## Custom Handler
 
 ### Implementing the FullAuditLogger Interface
 
@@ -228,7 +229,7 @@ func (h *DatabaseAuditHandler) Close() error {
 
 ---
 
-## Complete Examples
+## Complete Example
 
 ### Production Configuration
 
@@ -280,7 +281,7 @@ func main() {
 }
 ```
 
-### Async Audit Processing
+### Asynchronous Audit Processing
 
 ```go
 package main
@@ -318,7 +319,7 @@ func processAuditEvents(ch chan env.AuditEvent) {
     encoder := json.NewEncoder(file)
 
     for event := range ch {
-        // Add filtering, aggregation, etc.
+        // Can add filtering, aggregation, etc.
         if event.Action == env.ActionError {
             log.Printf("Audit error: %+v", event)
         }
@@ -332,21 +333,21 @@ func processAuditEvents(ch chan env.AuditEvent) {
 
 ## Security Considerations
 
-### Audit Records and Masking
+### Audit Recording and Masking
 
-The audit log automatically masks the `key` field of sensitive keys (shown as `[MASKED:N chars]`, where N is the number of characters in the key name; non-sensitive keys are shown as-is). **Only write operations produce audit events**: `Set` / `Delete` / `LoadFiles` and similar trigger `ActionSet` / `ActionDelete` / `ActionLoad` events and record the masked key name in the event.
+The audit log automatically masks the `key` field for sensitive keys (shown as `[MASKED:N chars]` by default, where N is the number of characters in the key name; non-sensitive keys are shown as-is). **Only write operations record audit events**: `Set` / `Delete` / `LoadFiles` etc. trigger `ActionSet` / `ActionDelete` / `ActionLoad` events, recording the masked key name.
 
-Read operations do not produce audit events: `Get` / `GetString` / `GetInt` / `GetSecure` and similar **normal reads do not record audit logs**. The `ActionGet` event is only triggered on the error path of a **parse failure** during type conversion in `GetInt` / `GetBool` / `GetFloat64` and similar (`success=false`), for example:
+Read operations do not produce audit entries: `Get` / `GetString` / `GetInt` / `GetSecure` etc. **do not record audit logs during normal reads**. `ActionGet` events are only triggered in the error path when type conversion **parsing fails** (e.g., in `GetInt` / `GetBool` / `GetFloat64`), with `success=false`. For example:
 
 ```go
-// Write operation: produces an audit event (sensitive key recorded after masking)
+// Write operation: records audit event (sensitive key recorded after masking)
 _ = loader.Set("API_KEY", "sk-1234567890")
 // Audit record: {"action":"set","key":"[MASKED:7 chars]","success":true,"masked":true}
 
-// Read operations: normal reads do not produce audit events
-secret := loader.GetSecure("API_KEY") // no audit log produced
-_ = loader.GetInt("PORT")             // parse succeeds, no audit log produced
-_ = loader.GetInt("API_KEY")          // produces an ActionGet event when parsing fails (success=false)
+// Read operation: normal reads don't produce audit
+secret := loader.GetSecure("API_KEY") // No audit log produced
+_ = loader.GetInt("PORT")             // Parse succeeds, no audit log produced
+_ = loader.GetInt("API_KEY")          // Produces ActionGet event when parsing fails (success=false)
 ```
 
 ### Audit Log Permissions
@@ -361,7 +362,7 @@ chown app:app /var/log/app/env-audit.log
 
 ### Log Rotation
 
-Using logrotate to manage audit logs is recommended:
+Recommend using logrotate to manage audit logs:
 
 ```bash
 # /etc/logrotate.d/app-env-audit
@@ -381,6 +382,6 @@ Using logrotate to manage audit logs is recommended:
 ## Related Documentation
 
 - [Security Overview](/en/env/security/) - Security architecture and core features
-- [Production Checklist](/en/env/security/production-checklist) - Audit configuration checklist
+- [Production Checklist](/en/env/security/production-checklist) - Audit configuration checks
 - [Interfaces](/en/env/api-reference/interfaces) - AuditLogger interface
-- [Component Factory](/en/env/api-reference/factory) - Audit handler factory
+- [Component Factory](/en/env/api-reference/factory) - Audit handler factories

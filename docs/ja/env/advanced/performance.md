@@ -1,19 +1,19 @@
 ---
-sidebar_label: "パフォーマンス最適化"
-title: "パフォーマンス最適化 - CyberGo env | 高並発読み書きチューニング"
-description: "CyberGo env パフォーマンス最適化ガイド。RWMutex 読み書きロックとシャードロックの並行安全性、sync.Pool オブジェクトプール再利用による割り当ての大幅削減、mlock メモリロックのオーバーヘッドと大容量ファイルのストリーミング解析、ベンチマーク比較、並行スループット分析、MaxFileSize/MaxVariables パラメータチューニングの提案を含みます。"
+sidebar_label: "パフォーマンス"
+title: "パフォーマンス最適化 - CyberGo env | 高並行読み書きチューニング"
+description: "CyberGo env パフォーマンス最適化ガイド。RWMutex 読み書きロックとシャードロックの並行セーフ機構、sync.Pool オブジェクトプール再利用によるアロケーション削減、mlock メモリロックのオーバーヘッド考察と大ファイルストリーミング解析を詳解。ベンチマーク比較、並行スループット分析、MaxFileSize/MaxVariables パラメータチューニングの提案を含む。"
 sidebar_position: 1
 ---
 
 # パフォーマンス最適化
 
-env ライブラリは高パフォーマンスシナリオ向けに最適化されています。このドキュメントではスレッドセーフ、オブジェクトプール、メモリ管理などのパフォーマンス関連機能について説明します。
+env ライブラリは高性能シーン向けに最適化されています。本文書は並行セーフ、オブジェクトプール、メモリ管理などのパフォーマンス関連機能を紹介します。
 
-## スレッドセーフ
+## 並行セーフ
 
 ### スレッドセーフの保証
 
-`Loader` のすべてのメソッドはスレッドセーフ：
+`Loader` のすべてのメソッドはスレッドセーフです：
 
 ```go
 loader, _ := env.New(env.DefaultConfig())
@@ -21,7 +21,7 @@ defer loader.Close()
 
 var wg sync.WaitGroup
 
-// 並発読み取り
+// 並行読み取り
 for i := 0; i < 100; i++ {
     wg.Add(1)
     go func() {
@@ -30,7 +30,7 @@ for i := 0; i < 100; i++ {
     }()
 }
 
-// 並発書き込み
+// 並行書き込み
 for i := 0; i < 100; i++ {
     wg.Add(1)
     go func(n int) {
@@ -42,7 +42,7 @@ for i := 0; i < 100; i++ {
 wg.Wait()
 ```
 
-### パッケージレベル関数のスレッドセーフ性
+### パッケージレベル関数のスレッドセーフ
 
 パッケージレベル関数はグローバルローダーを使用し、同様にスレッドセーフです：
 
@@ -62,7 +62,7 @@ wg.Wait()
 
 ### 内部実装
 
-ライブラリはシャードストレージ（Sharded Storage）を使用してロック競合を削減しています：
+ライブラリはシャードストレージ（Sharded Storage）を使用してロック競合を削減します：
 
 ```text
 ┌─────────────────────────────────────────┐
@@ -76,15 +76,15 @@ wg.Wait()
 └─────────────────────────────────────────┘
 ```
 
-- キーはハッシュ値に基づいて異なるシャードに割り当てられる
-- 各シャードには独立したロックがある
+- キーはハッシュ値に基づき異なるシャードに割り当て
+- 各シャードは独立したロックを持つ
 - ロック競合を削減し、並行パフォーマンスを向上
 
 ## オブジェクトプール
 
-### オブジェクトプールを使用する理由
+### なぜオブジェクトプールを使うのか
 
-頻繁なオブジェクトの作成と破棄は GC 負荷を増大させます：
+頻繁なオブジェクトの作成と破棄は GC 圧力を高めます：
 
 ```text
 オブジェクトプールなし：
@@ -96,29 +96,29 @@ wg.Wait()
 
 ### SecureValue プール
 
-`SecureValue` オブジェクトはプール化管理されています：
+`SecureValue` オブジェクトはプール管理を使用します：
 
 ```go
-// SecureValue を取得（プールから再利用される場合がある）
+// SecureValue を取得（プールから再利用される可能性）
 secret := env.GetSecure("API_KEY")
 
-// 使用（Reveal は平文を返し、String/Masked はマスクを返す）
+// 使用（Reveal は平文を返す、String/Masked はマスクを返す）
 value := secret.Reveal()
 
 // プールに返却
 secret.Close()  // または secret.Release()
 ```
 
-### オブジェクトプールの正しい使用方法
+### オブジェクトプールの正しい使用
 
-**速やかに解放する：**
+**タイムリーな解放：**
 
 ```go
 func processData() {
     secret := env.GetSecure("SECRET")
     defer secret.Close()  // 解放を保証
 
-    // 使用 secret...
+    // secret を使用...
 }
 ```
 
@@ -130,11 +130,11 @@ var globalSecret *env.SecureValue
 
 func init() {
     globalSecret = env.GetSecure("KEY")
-    globalSecret.Close()  // 解放後、オブジェクトは再利用される
+    globalSecret.Close()  // 解放後オブジェクトが再利用される
 }
 
 func later() {
-    // 危険：globalSecret は他のコードで使用されている可能性がある
+    // 危険：globalSecret は既に他のコードで使用されている可能性
     globalSecret.String()
 }
 
@@ -146,12 +146,12 @@ func getSecret() string {
 }
 ```
 
-**クローズ状態の確認：**
+**クローズ状態のチェック：**
 
 ```go
 secret := env.GetSecure("KEY")
 
-// 使用前に確認
+// 使用前にチェック
 if secret.IsClosed() {
     // オブジェクトはクローズ済み、使用不可
 }
@@ -159,20 +159,20 @@ if secret.IsClosed() {
 // 使用後にクローズ
 secret.Close()
 
-// クローズ後の確認
+// クローズ後にチェック
 if secret.IsClosed() {
     // クローズ済み
 }
 ```
 
-## メモリ安全性
+## メモリセーフ
 
 ### メモリロック
 
-メモリロックを有効にして機密データのディスクスワップを防止：
+メモリロックを有効化して機密データのディスクスワップを防止します：
 
 ```go
-// プラットフォームサポートを確認
+// プラットフォームサポートをチェック
 if env.IsMemoryLockSupported() {
     env.SetMemoryLockEnabled(true)
 }
@@ -189,19 +189,19 @@ if env.IsMemoryLockSupported() {
 | wasm | ❌ |
 
 ::: tip 詳細
-[SecureValue API - メモリロック設定](/ja/env/api-reference/secure-value#メモリロック設定) で完全な設定説明を確認してください。
+[SecureValue API - メモリロック設定](/ja/env/api-reference/secure-value#メモリロック設定) で完全な設定説明を参照してください。
 :::
 
-### ストリクトモード
+### 厳格モード
 
-ストリクトモードでは、メモリロックの失敗はエラーとなります：
+厳格モードでは、メモリロック失敗がエラーになります：
 
 ```go
 env.SetMemoryLockStrict(true)
 
 secret, err := env.NewSecureValueStrict("sensitive_data")
 if err != nil {
-    // メモリロックに失敗
+    // メモリロック失敗
 }
 ```
 
@@ -211,10 +211,10 @@ if err != nil {
 
 ```go
 secret := env.GetSecure("PASSWORD")
-// 内部状態：['p', 'a', 's', 's', ...]
+// 内部ストレージ：['p', 'a', 's', 's', ...]
 
 secret.Close()
-// 内部状態：[0, 0, 0, 0, ...]
+// 内部ストレージ：[0, 0, 0, 0, ...]
 ```
 
 バイトスライスの手動ゼロクリア：
@@ -222,14 +222,14 @@ secret.Close()
 ```go
 sensitiveBytes := []byte("secret")
 env.ClearBytes(sensitiveBytes)
-// sensitiveBytes 現在はすべて 0
+// sensitiveBytes はすべて 0 になる
 ```
 
 ## パフォーマンスパターン
 
 ### 初期化後の読み取り専用
 
-最も効率的なパターン：起動時に設定を読み込み，実行時は読み取り専用：
+最も効率的なパターン：起動時に設定を読み込み、実行時は読み取り専用：
 
 ```go
 var config *Config
@@ -241,7 +241,7 @@ func init() {
     env.ParseInto(config)
 }
 
-// 任意の goroutine から安全に読み取り可能
+// 任意の goroutine から安全に読み取り
 func getValue() string {
     return config.Key
 }
@@ -282,9 +282,9 @@ func (l *Loader) ProcessValue(key string) {
     processValue(value)
 }
 
-// 推奨：素早く読み取り、ロックの外で処理
+// 推奨：高速に読み取り、ロック外で処理
 func ProcessValue(key string) {
-    value := loader.GetString(key)  // 素早く取得
+    value := loader.GetString(key)  // 高速に取得
     go processValue(value)          // 非同期処理
 }
 ```
@@ -292,7 +292,7 @@ func ProcessValue(key string) {
 ### バッチ操作
 
 ```go
-// 必要な値をすべて一度に取得
+// 必要な値を一度に取得
 func LoadAllConfig(loader *env.Loader) *Config {
     return &Config{
         Host:    loader.GetString("HOST"),
@@ -303,12 +303,12 @@ func LoadAllConfig(loader *env.Loader) *Config {
 }
 ```
 
-### 頻繁な呼び出しを回避
+### 頻繁な呼び出しの回避
 
 ```go
-// 非推奨：リクエストのたびに読み取り
+// 非推奨：リクエストごとに読み取り
 func Handler(w http.ResponseWriter, r *http.Request) {
-    apiKey := env.GetString("API_KEY")  // リクエストのたびにロックを取得
+    apiKey := env.GetString("API_KEY")  // リクエストごとにロック
     // ...
 }
 
@@ -321,26 +321,26 @@ func init() {
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-    // キャッシュされた値を直接使用
+    // キャッシュ値を直接使用
     // ...
 }
 ```
 
 ## パフォーマンスへの影響
 
-### オブジェクトプールの効果
+### オブジェクトプールのメリット
 
 | 操作 | プールなし | プールあり |
 |------|------|------|
-| 割り当て回数 | N | ~定数 |
-| GC 負荷 | 高 | 低 |
+| アロケーション回数 | N | ~一定 |
+| GC 圧力 | 高 | 低 |
 | レイテンシ | 不安定 | 安定 |
 
 ### メモリロックのオーバーヘッド
 
-メモリロック（Linux の `mlock` / Windows の `VirtualLock`）は `SecureValue` 作成時にのみ 1 回の追加 syscall オーバーヘッドを発生させ、読み取り操作（`Reveal` / `String` / `Masked`）に差異はありません。`SecureValue` は小さく短命に保つことを推奨します——使用後すぐに `Close()` / `Release()` でオブジェクトプールに返却し、大きなロック済みメモリを長期間保持しないでください。
+メモリロック（Linux の `mlock` / Windows の `VirtualLock`）は `SecureValue` 作成時に 1 回だけ追加の syscall オーバーヘッドを発生させ、読み取り操作（`Reveal` / `String` / `Masked`）に差はありません。`SecureValue` は小さく短命に保つことを推奨します——使い終わったら即座に `Close()` / `Release()` してオブジェクトプールに返却し、大块のロックされたメモリを長期保持しないでください。
 
-## ベンチマークテスト
+## ベンチマーク
 
 ### 読み取りパフォーマンス
 
@@ -373,7 +373,7 @@ func BenchmarkConcurrentWrite(b *testing.B) {
 }
 ```
 
-### 読み書きの混在
+### 混合読み書き
 
 ```go
 func BenchmarkMixedReadWrite(b *testing.B) {
@@ -396,23 +396,23 @@ func BenchmarkMixedReadWrite(b *testing.B) {
 
 ## 注意事項
 
-### ロック内でのブロックを回避
+### ロック内でのブロック回避
 
 ```go
-// 危険：デッドロックの可能性あり
+// 危険：デッドロックの可能性
 func (l *Loader) BadMethod() {
     // ロック内でブロックする可能性のある操作を呼び出し
-    l.Set("KEY", computeValue())  // computeValue 遅くなる可能性がある
+    l.Set("KEY", computeValue())  // computeValue が遅い可能性
 }
 
 // 安全：先に計算、後に設定
 func GoodMethod() {
-    value := computeValue()  // ロックの外で計算
-    loader.Set("KEY", value)  // 素早く設定
+    value := computeValue()  // ロック外で計算
+    loader.Set("KEY", value)  // 高速に設定
 }
 ```
 
-### クローズ後の並行アクセス
+### Close 後の並行アクセス
 
 ```go
 loader, _ := env.New(cfg)
@@ -429,10 +429,10 @@ loader.Close()  // メイン goroutine がクローズ
 ### グローバルローダーのリセット
 
 ```go
-// 並行安全ではない：実行時に呼び出さないこと
+// 並行セーフでない：実行時に呼び出さないでください
 env.ResetDefaultLoader()
 
-// 安全：テストまたは起動時にのみ呼び出す
+// 安全：テストまたは起動時にのみ呼び出し
 func init() {
     env.ResetDefaultLoader()
     env.Load(".env")
@@ -443,4 +443,4 @@ func init() {
 
 - [SecureValue API](/ja/env/api-reference/secure-value) - セキュア値の処理とメモリロック
 - [Loader API](/ja/env/api-reference/loader) - ローダーメソッド
-- [テストシナリオ](/ja/env/guides/testing) - ベンチマーク例
+- [テスト](/ja/env/guides/testing) - ベンチマーク例

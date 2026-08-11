@@ -1,19 +1,19 @@
 ---
-sidebar_label: "Performance Optimization"
+sidebar_label: "Performance"
 title: "Performance - CyberGo env | High-Concurrency Tuning"
-description: "CyberGo env performance optimization guide: RWMutex and sharded locks for concurrency safety, sync.Pool object reuse significantly reducing allocations, mlock tradeoffs, large-file streaming, with benchmark comparisons, concurrency throughput analysis, and MaxFileSize/MaxVariables tuning recommendations."
+description: "Performance optimization guide for CyberGo env, covering RWMutex read-write locks and sharded locks for concurrency safety, sync.Pool object pooling to significantly reduce allocations, mlock memory locking overhead tradeoffs, and large-file streaming parsing, with benchmark comparisons, concurrent throughput analysis, and MaxFileSize/MaxVariables tuning recommendations."
 sidebar_position: 1
 ---
 
 # Performance
 
-The env library is optimized for high-performance scenarios. This document covers concurrency safety, object pooling, memory management, and other performance-related features.
+The env library is optimized for high-performance scenarios. This document covers performance-related features including concurrency safety, object pooling, and memory management.
 
 ## Concurrency Safety
 
-### Thread Safety Guarantees
+### Thread Safety Guarantee
 
-All methods on `Loader` are thread-safe:
+All methods of `Loader` are thread-safe:
 
 ```go
 loader, _ := env.New(env.DefaultConfig())
@@ -42,9 +42,9 @@ for i := 0; i < 100; i++ {
 wg.Wait()
 ```
 
-### Package-Level Function Thread Safety
+### Package-level Function Thread Safety
 
-Package-level functions use a global loader and are also thread-safe:
+Package-level functions use the global loader and are equally thread-safe:
 
 ```go
 var wg sync.WaitGroup
@@ -76,40 +76,40 @@ The library uses sharded storage to reduce lock contention:
 └─────────────────────────────────────────┘
 ```
 
-- Keys are assigned to different shards based on hash value
-- Each shard has its own lock
-- Reduces lock contention and improves concurrency performance
+- Keys are distributed across shards based on hash value
+- Each shard has an independent lock
+- Reduces lock contention, improves concurrency performance
 
 ## Object Pool
 
-### Why Use an Object Pool
+### Why Use Object Pooling
 
-Frequent object creation and destruction increases GC pressure:
+Frequent creation and destruction of objects increases GC pressure:
 
 ```text
 Without object pool:
-Create → Use → GC Collect → Create → Use → GC Collect ...
+Create object → Use → GC collect → Create object → Use → GC collect ...
 
 With object pool:
-Create → Use → Return to Pool → Get → Use → Return to Pool ...
+Create object → Use → Return to pool → Get → Use → Return to pool ...
 ```
 
 ### SecureValue Pool
 
-`SecureValue` objects use pooled management:
+`SecureValue` objects use pool management:
 
 ```go
 // Get a SecureValue (may be reused from pool)
 secret := env.GetSecure("API_KEY")
 
-// Use it (Reveal returns plaintext, String/Masked return mask)
+// Use (Reveal returns plaintext, String/Masked return masks)
 value := secret.Reveal()
 
 // Release back to pool
 secret.Close()  // or secret.Release()
 ```
 
-### Using the Object Pool Correctly
+### Proper Object Pool Usage
 
 **Release promptly:**
 
@@ -138,7 +138,7 @@ func later() {
     globalSecret.String()
 }
 
-// Correct: acquire each time you need it
+// Correct: get it each time it's needed
 func getSecret() string {
     secret := env.GetSecure("KEY")
     defer secret.Close()
@@ -153,7 +153,7 @@ secret := env.GetSecure("KEY")
 
 // Check before use
 if secret.IsClosed() {
-    // Object is closed, cannot be used
+    // Object has been closed, cannot be used
 }
 
 // Close after use
@@ -182,19 +182,19 @@ if env.IsMemoryLockSupported() {
 
 | Platform | Supported |
 |----------|-----------|
-| Linux | Yes |
-| macOS | Yes |
-| Windows | Yes |
-| FreeBSD | Yes |
-| wasm | No |
+| Linux | ✅ |
+| macOS | ✅ |
+| Windows | ✅ |
+| FreeBSD | ✅ |
+| wasm | ❌ |
 
-:::tip See Also
-See [SecureValue API - Memory Lock Configuration](/en/env/api-reference/secure-value#memory-lock-configuration) for complete configuration details.
+:::tip
+See [SecureValue API - Memory Lock Configuration](/en/env/api-reference/secure-value#memory-lock-configuration) for complete configuration documentation.
 :::
 
 ### Strict Mode
 
-In strict mode, memory locking failure returns an error:
+In strict mode, memory locking failure causes an error:
 
 ```go
 env.SetMemoryLockStrict(true)
@@ -217,7 +217,7 @@ secret.Close()
 // Internal storage: [0, 0, 0, 0, ...]
 ```
 
-Manually zero a byte slice:
+Manual zeroing of byte slices:
 
 ```go
 sensitiveBytes := []byte("secret")
@@ -227,7 +227,7 @@ env.ClearBytes(sensitiveBytes)
 
 ## Performance Patterns
 
-### Read-Only After Initialization
+### Read-only After Initialization
 
 The most efficient pattern: load configuration at startup, read-only at runtime:
 
@@ -249,7 +249,7 @@ func getValue() string {
 
 ### Dynamic Configuration Refresh
 
-Pattern for dynamic configuration updates:
+Pattern for when you need to dynamically update configuration:
 
 ```go
 type ConfigManager struct {
@@ -275,16 +275,16 @@ func (m *ConfigManager) Get(key string) string {
 ### Reduce Lock Hold Time
 
 ```go
-// Not recommended: performing expensive operations inside the lock
+// Not recommended: time-consuming operations inside lock
 func (l *Loader) ProcessValue(key string) {
     value := l.GetString(key)
-    // Expensive operation...
+    // Time-consuming operations...
     processValue(value)
 }
 
-// Recommended: quick read, process outside the lock
+// Recommended: quick read, process outside lock
 func ProcessValue(key string) {
-    value := loader.GetString(key)  // Quick acquisition
+    value := loader.GetString(key)  // Quick get
     go processValue(value)          // Async processing
 }
 ```
@@ -321,7 +321,7 @@ func init() {
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-    // Use the cached value directly
+    // Use cached value directly
     // ...
 }
 ```
@@ -333,12 +333,12 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 | Operation | Without Pool | With Pool |
 |-----------|-------------|-----------|
 | Allocations | N | ~constant |
-| GC Pressure | High | Low |
+| GC pressure | High | Low |
 | Latency | Unstable | Stable |
 
 ### Memory Locking Overhead
 
-Memory locking (`mlock` on Linux / `VirtualLock` on Windows) incurs a one-time extra syscall overhead only when creating a `SecureValue`; read operations (`Reveal` / `String` / `Masked`) are unaffected. Keep `SecureValue` instances small and short-lived — release them back to the pool immediately via `Close()` / `Release()` to avoid holding large locked memory regions for long periods.
+Memory locking (Linux `mlock` / Windows `VirtualLock`) incurs a one-time extra syscall overhead only when creating a `SecureValue`; read operations (`Reveal` / `String` / `Masked`) have no difference. It is recommended to keep `SecureValue` small and short-lived — call `Close()` / `Release()` immediately after use to return to the object pool, avoiding holding large blocks of locked memory for extended periods.
 
 ## Benchmarks
 
@@ -401,7 +401,7 @@ func BenchmarkMixedReadWrite(b *testing.B) {
 ```go
 // Dangerous: may cause deadlock
 func (l *Loader) BadMethod() {
-    // Calling potentially blocking operations inside the lock
+    // Calling potentially blocking operations inside lock
     l.Set("KEY", computeValue())  // computeValue may be slow
 }
 
@@ -420,7 +420,7 @@ loader, _ := env.New(cfg)
 // Start goroutine
 go func() {
     time.Sleep(1 * time.Second)
-    loader.GetString("KEY")  // Returns empty string (GetString does not return an error)
+    loader.GetString("KEY")  // Returns empty string (GetString doesn't return error)
 }()
 
 loader.Close()  // Main goroutine closes
@@ -432,7 +432,7 @@ loader.Close()  // Main goroutine closes
 // Not concurrency-safe: do not call at runtime
 env.ResetDefaultLoader()
 
-// Safe: call only during tests or startup
+// Safe: only call during tests or startup
 func init() {
     env.ResetDefaultLoader()
     env.Load(".env")
@@ -443,4 +443,4 @@ func init() {
 
 - [SecureValue API](/en/env/api-reference/secure-value) - Secure value handling and memory locking
 - [Loader API](/en/env/api-reference/loader) - Loader methods
-- [Testing Scenarios](/en/env/guides/testing) - Benchmark examples
+- [Testing](/en/env/guides/testing) - Benchmark examples

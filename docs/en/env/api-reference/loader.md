@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Loader"
-title: "Loader API - CyberGo env | Loader Details"
-description: "CyberGo env Loader API: LoadFiles multi-format, GetString/GetInt/GetSlice reads, Set/Delete, Validate, serialization and Close — all thread-safe."
+title: "Loader API - CyberGo env | Loader Reference"
+description: "Loader API reference for CyberGo env, the core type providing multi-format LoadFiles loading, type-safe GetString/GetInt/GetSlice reading, Set/Delete modification, Validate validation, serialization export, and Close lifecycle management, all methods thread-safe."
 sidebar_position: 3
 ---
 
@@ -9,8 +9,8 @@ sidebar_position: 3
 
 Complete method reference for the `Loader` type. Loader is the core type of the env library, providing environment variable loading, storage, and access functionality.
 
-:::tip Thread Safety
-All Loader methods are thread-safe and can be called concurrently from multiple goroutines.
+:::tip
+All methods of Loader are thread-safe and can be called concurrently from multiple goroutines.
 :::
 
 ## Type Definition
@@ -38,23 +38,23 @@ func New(cfg ...Config) (*Loader, error)
 Creates a new loader instance.
 
 **Parameters:**
-- `cfg` - Optional configuration options. When not provided or a zero-value Config is passed, `DefaultConfig()` is used automatically
+- `cfg` - optional configuration options. When not provided or a zero-value Config is passed, `DefaultConfig()` is automatically used.
 
 **Returns:**
-- `*Loader` - Loader instance
-- `error` - Configuration validation error
+- `*Loader` - loader instance
+- `error` - configuration validation error
 
 **Behavior:**
-- Validates configuration validity
+- Validates configuration
 - Creates internal components (validator, auditor, expander)
-- If `cfg.Filenames` is non-empty, automatically loads files
-- If `cfg.AutoApply` is true, automatically applies to system environment
+- Automatically loads files if `cfg.Filenames` is non-empty
+- Automatically applies to system environment if `cfg.AutoApply` is true
 
 ```go
-// Using default configuration
+// Use default configuration
 loader, err := env.New()
 
-// Using custom configuration
+// Use custom configuration
 cfg := env.DefaultConfig()
 cfg.Filenames = []string{".env"}
 cfg.AutoApply = true
@@ -79,15 +79,15 @@ func (l *Loader) LoadFiles(filenames ...string) error
 Loads one or more configuration files.
 
 **Parameters:**
-- `filenames` - List of file paths; defaults to `.env` when empty
+- `filenames` - list of file paths; defaults to loading `.env` when empty
 
 **Returns:**
-- `error` - Loading error
+- `error` - load error
 
 **Behavior:**
-- Loads in order; files loaded later override earlier ones (controlled by `OverwriteExisting` configuration)
+- Loads in order; later files overwrite earlier ones (controlled by `OverwriteExisting` config)
 - Auto-detects file format (.env, JSON, YAML)
-- Behavior when file not found is determined by `FailOnMissingFile` configuration
+- Determines behavior for missing files based on `FailOnMissingFile` config
 - If `AutoApply` is true, automatically applies after loading
 
 ```go
@@ -101,16 +101,16 @@ err := loader.LoadFiles(".env", ".env.local")
 err := loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 ```
 
-**Error Types:**
-- `ErrFileNotFound` - File not found (when `FailOnMissingFile=true`)
-- `ErrFileTooLarge` - File exceeds size limit
-- `ErrClosed` - Loader is closed
-- `*ParseError` - Parse error
+**Error types:**
+- `ErrFileNotFound` - file not found (when `FailOnMissingFile=true`)
+- `ErrFileTooLarge` - file exceeds size limit
+- `ErrClosed` - loader has been closed
+- `*ParseError` - parse error
 - `*JSONError` - JSON parse error
 - `*YAMLError` - YAML parse error
-- `*SecurityError` - File path security validation failed (e.g., path traversal attack)
+- `*SecurityError` - file path security check failed (e.g., path traversal attack)
 
-**Format Detection Rules:**
+**Format detection rules:**
 
 | Extension | Format |
 |-----------|--------|
@@ -125,20 +125,20 @@ err := loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
 
 ### Key Resolution
 
-All getter methods support smart key name resolution:
+All getter methods support smart key resolution:
 
-| Input Key | Resolved |
-|-----------|----------|
+| Input Key | Resolved Result |
+|----------|-----------------|
 | `"DATABASE_HOST"` | `"DATABASE_HOST"` (exact match) |
-| `"database.host"` | `"DATABASE_HOST"` (dot to underscore) |
-| `"app.name"` | `"APP_NAME"` (uppercase + underscore) |
+| `"database.host"` | `"DATABASE_HOST"` (dots to underscores) |
+| `"app.name"` | `"APP_NAME"` (uppercase + underscores) |
 | `"servers.0.host"` | `"SERVERS_0_HOST"` (array index) |
 
-**Resolution Order:**
-1. Exact match - Direct key name lookup
-2. Uppercase conversion - Simple keys try the uppercase version
-3. Path resolution - Dot paths converted to underscore format
-4. Index fallback - Falls back to comma-separated values for index access
+**Resolution order:**
+1. Exact match - directly look up the key name
+2. Uppercase conversion - simple keys try uppercase version
+3. Path resolution - dot paths are converted to underscore format
+4. Index fallback - index access falls back to comma-separated values
 
 ---
 
@@ -148,24 +148,24 @@ All getter methods support smart key name resolution:
 func (l *Loader) GetString(key string, defaultValue ...string) string
 ```
 
-Gets a string value. Supports dot path resolution.
+Gets a string value. Supports dot-path resolution.
 
 **Parameters:**
-- `key` - Key name (supports exact match, uppercase conversion, dot path)
-- `defaultValue` - Optional default value
+- `key` - key name (supports exact match, uppercase conversion, dot path)
+- `defaultValue` - optional default value
 
 **Returns:**
-- `string` - Value or default value (returns empty string if not found and no default)
+- `string` - value or default value (returns empty string when not found and no default)
 
 ```go
 // Basic usage
 host := loader.GetString("HOST", "localhost")
 
-// Dot path access (JSON/YAML nested structures)
+// Dot-path access (JSON/YAML nested structures)
 dbHost := loader.GetString("database.host", "localhost")
 appName := loader.GetString("app.name")
 
-// Returns empty string when no default value
+// Returns empty string when no default
 value := loader.GetString("NON_EXISTENT")  // ""
 ```
 
@@ -177,20 +177,20 @@ value := loader.GetString("NON_EXISTENT")  // ""
 func (l *Loader) GetInt(key string, defaultValue ...int64) int64
 ```
 
-Gets an integer value. Supports dot path resolution.
+Gets an integer value. Supports dot-path resolution.
 
 **Parameters:**
-- `key` - Key name (supports dot path)
-- `defaultValue` - Optional default value, type `int64`
+- `key` - key name (supports dot path)
+- `defaultValue` - optional default value, type `int64`
 
 **Returns:**
-- `int64` - Value or default value (returns 0 if not found and no default)
+- `int64` - value or default value (returns 0 when not found and no default)
 
 ```go
 port := loader.GetInt("PORT", 8080)
 maxConn := loader.GetInt("database.max_connections", 10)
 
-// Returns 0 when no default value
+// Returns 0 when no default
 value := loader.GetInt("NON_EXISTENT")  // 0
 ```
 
@@ -202,16 +202,16 @@ value := loader.GetInt("NON_EXISTENT")  // 0
 func (l *Loader) GetBool(key string, defaultValue ...bool) bool
 ```
 
-Gets a boolean value. Supports dot path resolution.
+Gets a boolean value. Supports dot-path resolution.
 
 **Parameters:**
-- `key` - Key name (supports dot path)
-- `defaultValue` - Optional default value
+- `key` - key name (supports dot path)
+- `defaultValue` - optional default value
 
 **Returns:**
-- `bool` - Value or default value (returns false if not found and no default)
+- `bool` - value or default value (returns false when not found and no default)
 
-**Supported Values:**
+**Supported values:**
 - Truthy: `true`, `1`, `yes`, `on`, `enabled`
 - Falsy: `false`, `0`, `no`, `off`, `disabled`
 
@@ -219,7 +219,7 @@ Gets a boolean value. Supports dot path resolution.
 debug := loader.GetBool("DEBUG", false)
 cacheEnabled := loader.GetBool("cache.enabled", true)
 
-// Returns false when no default value
+// Returns false when no default
 value := loader.GetBool("NON_EXISTENT")  // false
 ```
 
@@ -231,20 +231,20 @@ value := loader.GetBool("NON_EXISTENT")  // false
 func (l *Loader) GetUint64(key string, defaultValue ...uint64) uint64
 ```
 
-Gets an unsigned integer value. Supports dot path resolution.
+Gets an unsigned integer value. Supports dot-path resolution.
 
 **Parameters:**
-- `key` - Key name (supports dot path)
-- `defaultValue` - Optional default value, type `uint64`
+- `key` - key name (supports dot path)
+- `defaultValue` - optional default value, type `uint64`
 
 **Returns:**
-- `uint64` - Value or default value (returns 0 if not found and no default)
+- `uint64` - value or default value (returns 0 when not found and no default)
 
 ```go
 port := loader.GetUint64("PORT", 8080)
 maxSize := loader.GetUint64("MAX_SIZE", 1024)
 
-// Returns 0 when no default value
+// Returns 0 when no default
 value := loader.GetUint64("NON_EXISTENT")  // 0
 ```
 
@@ -256,20 +256,20 @@ value := loader.GetUint64("NON_EXISTENT")  // 0
 func (l *Loader) GetFloat64(key string, defaultValue ...float64) float64
 ```
 
-Gets a floating-point value. Supports dot path resolution.
+Gets a floating-point value. Supports dot-path resolution.
 
 **Parameters:**
-- `key` - Key name (supports dot path)
-- `defaultValue` - Optional default value, type `float64`
+- `key` - key name (supports dot path)
+- `defaultValue` - optional default value, type `float64`
 
 **Returns:**
-- `float64` - Value or default value (returns 0 if not found and no default)
+- `float64` - value or default value (returns 0 when not found and no default)
 
 ```go
 rate := loader.GetFloat64("RATE", 0.5)
 threshold := loader.GetFloat64("THRESHOLD")
 
-// Returns 0 when no default value
+// Returns 0 when no default
 value := loader.GetFloat64("NON_EXISTENT")  // 0
 ```
 
@@ -281,22 +281,22 @@ value := loader.GetFloat64("NON_EXISTENT")  // 0
 func (l *Loader) GetDuration(key string, defaultValue ...time.Duration) time.Duration
 ```
 
-Gets a time duration value. Supports dot path resolution.
+Gets a duration value. Supports dot-path resolution.
 
 **Parameters:**
-- `key` - Key name (supports dot path)
-- `defaultValue` - Optional default value
+- `key` - key name (supports dot path)
+- `defaultValue` - optional default value
 
 **Returns:**
-- `time.Duration` - Value or default value (returns 0 if not found and no default)
+- `time.Duration` - value or default value (returns 0 when not found and no default)
 
-**Supported Formats:** `ns`, `us`, `ms`, `s`, `m`, `h` (e.g., `30s`, `5m`, `1h30m`)
+**Supported formats:** `ns`, `us`, `ms`, `s`, `m`, `h` (e.g., `30s`, `5m`, `1h30m`)
 
 ```go
 timeout := loader.GetDuration("TIMEOUT", 30*time.Second)
 ttl := loader.GetDuration("cache.ttl", 5*time.Minute)
 
-// Returns 0 when no default value
+// Returns 0 when no default
 value := loader.GetDuration("NON_EXISTENT")  // 0
 ```
 
@@ -308,53 +308,53 @@ value := loader.GetDuration("NON_EXISTENT")  // 0
 func (l *Loader) GetSecure(key string) *SecureValue
 ```
 
-Gets a secure value (for sensitive data protection).
+Gets a secure value (sensitive data protection).
 
 **Parameters:**
-- `key` - Key name
+- `key` - key name
 
 **Returns:**
-- `*SecureValue` - A **defensive copy** of the secure value; the caller is responsible for releasing it; returns nil if the key doesn't exist or the loader is closed
+- `*SecureValue` - **defensive copy** of the secure value; caller is responsible for releasing; returns nil if the key doesn't exist or loader is closed
 
 ```go
 secret := loader.GetSecure("API_SECRET")
 if secret != nil {
     defer secret.Release()
 
-    value := secret.Reveal()   // plaintext
+    value := secret.Reveal()   // plaintext value
     masked := secret.Masked()  // [SECURE:32 bytes]
 }
 ```
 
-:::warning Important
-You must call `Release()` or `Close()` to release resources after use.
+:::warning
+You must call `Release()` or `Close()` after use to release resources.
 :::
 
-:::tip Defensive Copy
-`GetSecure` returns a copy of the original value, independent of the parent Loader. The caller is responsible for calling `Release()` or `Close()` to release it.
+:::tip
+`GetSecure` returns a copy of the original value, independent from the parent Loader. The caller is responsible for calling `Release()` or `Close()`.
 :::
 
-:::tip See Also
-[SecureValue API](/en/env/api-reference/secure-value) for complete documentation.
+:::tip
+See [SecureValue API](/en/env/api-reference/secure-value) for complete documentation.
 :::
 
 ---
 
 ### Getting Slice Values
 
-Loader does not provide slice getter methods (Go does not support generic methods). Use the standalone generic function `GetSliceFrom[T]` to get slices from a Loader instance:
+Loader does not provide a slice getter method (Go does not support generic methods). Use the standalone generic function `GetSliceFrom[T]` to get slices from a Loader instance:
 
 ```go
-// Using standalone generic function
+// Use standalone generic function
 hosts := env.GetSliceFrom[string](loader, "HOSTS")
 ports := env.GetSliceFrom[int64](loader, "PORTS", []int64{80})
-portsInt := env.GetSliceFrom[int](loader, "PORTS")  // Also supports int
+portsInt := env.GetSliceFrom[int](loader, "PORTS")  // also supports int
 ```
 
-**Supported Types:** `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`
+**Supported types:** `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`
 
-:::tip See Also
-[Package Functions - GetSliceFrom](/en/env/api-reference/functions#getslicefrom-t) for complete documentation.
+:::tip
+See [Package Functions - GetSliceFrom](/en/env/api-reference/functions#getslicefrom-t) for complete documentation.
 :::
 
 ---
@@ -365,19 +365,19 @@ portsInt := env.GetSliceFrom[int](loader, "PORTS")  // Also supports int
 func (l *Loader) Lookup(key string) (string, bool)
 ```
 
-Checks if a key exists and gets its value. Supports dot path resolution.
+Checks whether a key exists and gets its value. Supports dot-path resolution.
 
 **Parameters:**
-- `key` - Key name (supports dot path)
+- `key` - key name (supports dot path)
 
 **Returns:**
-- `string` - Value (leading and trailing whitespace removed)
-- `bool` - Whether the key exists
+- `string` - value (leading/trailing whitespace removed)
+- `bool` - whether it exists
 
 ```go
 value, exists := loader.Lookup("API_KEY")
 if !exists {
-    // Key does not exist
+    // key does not exist
 }
 
 // Dot path
@@ -385,7 +385,7 @@ if value, exists := loader.Lookup("database.host"); exists {
     fmt.Println(value)
 }
 
-// Index access (falls back to comma-separated values)
+// Index access (falls back to comma-separated value)
 // HOSTS=localhost,example.com
 if value, exists := loader.Lookup("hosts.0"); exists {
     fmt.Println(value)  // "localhost"
@@ -405,17 +405,17 @@ func (l *Loader) Set(key, value string) error
 Sets an environment variable.
 
 **Parameters:**
-- `key` - Key name
-- `value` - Value
+- `key` - key name
+- `value` - value
 
 **Returns:**
-- `error` - Setting error
+- `error` - set error
 
 **Behavior:**
 - Validates key name validity
 - If `ValidateValues` is true, validates value safety
-- If `OverwriteExisting` is false and the key already exists, skips (returns nil)
-- If `AutoApply` is true, also sets to system environment
+- If `OverwriteExisting` is false and key already exists, skips (returns nil)
+- If `AutoApply` is true, also sets in the system environment
 
 ```go
 err := loader.Set("CUSTOM_KEY", "value")
@@ -424,11 +424,11 @@ if err != nil {
 }
 ```
 
-**Error Types:**
-- `*ValidationError` - Invalid key name format (Field="key")
-- `*SecurityError` - Forbidden key (matchable via `errors.Is(err, env.ErrSecurityViolation)`)
-- `ErrInvalidValue` - Invalid value (when `ValidateValues` is true, value contains unsafe content like null bytes or control characters)
-- `ErrClosed` - Loader is closed
+**Error types:**
+- `*ValidationError` - invalid key name format (Field="key")
+- `*SecurityError` - key is forbidden (matchable with `errors.Is(err, env.ErrSecurityViolation)`)
+- `ErrInvalidValue` - invalid value (when `ValidateValues` is true, value contains null bytes, control characters, or other unsafe content)
+- `ErrClosed` - loader has been closed
 
 ---
 
@@ -441,13 +441,13 @@ func (l *Loader) Delete(key string) error
 Deletes an environment variable.
 
 **Parameters:**
-- `key` - Key name
+- `key` - key name
 
 **Returns:**
-- `error` - Deletion error
+- `error` - delete error
 
 **Behavior:**
-- If the variable has been applied to the system environment, also deletes from system environment
+- If the variable has been applied to the system environment, also removes it from the system environment
 
 ```go
 err := loader.Delete("TEMP_KEY")
@@ -469,7 +469,7 @@ func (l *Loader) Keys() []string
 Gets all key names.
 
 **Returns:**
-- `[]string` - List of key names; returns nil if the loader is closed
+- `[]string` - key name list; returns nil if loader is closed
 
 ```go
 keys := loader.Keys()
@@ -489,7 +489,7 @@ func (l *Loader) All() map[string]string
 Gets all key-value pairs.
 
 **Returns:**
-- `map[string]string` - Key-value mapping; returns nil if the loader is closed
+- `map[string]string` - key-value mapping; returns nil if loader is closed
 
 ```go
 all := loader.All()
@@ -509,7 +509,7 @@ func (l *Loader) Len() int
 Gets the variable count.
 
 **Returns:**
-- `int` - Number of variables; returns 0 if the loader is closed
+- `int` - variable count; returns 0 if loader is closed
 
 ```go
 count := loader.Len()
@@ -529,16 +529,16 @@ func (l *Loader) Apply() error
 Applies variables to the system environment (`os.Environ`).
 
 **Returns:**
-- `error` - Application error
+- `error` - apply error
 
 **Behavior:**
-- Iterates through all loaded variables
-- Whether to overwrite existing system environment variables is controlled by `OverwriteExisting` configuration
-- After applying, values can be accessed via `os.Getenv()`
+- Iterates over all loaded variables
+- Determines whether to overwrite existing system environment variables based on `OverwriteExisting` config
+- After applying, accessible via `os.Getenv()`
 
 **Error types:**
-- `ErrClosed` - Loader has been closed
-- Wrapped `os` error - Failed to set environment variable (key name masked; sensitive key not exposed in error message)
+- `ErrClosed` - loader has been closed
+- Wrapped `os` error - failed to set environment variable (key name masked, sensitive key names not exposed in error message)
 
 ```go
 err := loader.Apply()
@@ -546,7 +546,7 @@ if err != nil {
     panic(err)
 }
 
-// After applying, os.Getenv() also has access
+// After that, os.Getenv() can access it too
 host := os.Getenv("HOST")
 ```
 
@@ -561,7 +561,7 @@ func (l *Loader) IsApplied() bool
 Checks whether variables have been applied to the system environment.
 
 **Returns:**
-- `bool` - Whether applied
+- `bool` - whether applied
 
 ```go
 if loader.IsApplied() {
@@ -582,7 +582,7 @@ func (l *Loader) LoadTime() time.Time
 Returns the time of the last file load.
 
 **Returns:**
-- `time.Time` - Load time; returns zero value if not loaded
+- `time.Time` - load time; returns zero value if never loaded
 
 ```go
 loadTime := loader.LoadTime()
@@ -602,10 +602,10 @@ func (l *Loader) Config() Config
 Returns the loader's configuration.
 
 **Returns:**
-- `Config` - Configuration (should be treated as read-only)
+- `Config` - configuration (should be treated as read-only)
 
-:::warning Note
-The returned Config should be treated as read-only. Modifying `KeyPattern`, `AllowedKeys`, `ForbiddenKeys`, `RequiredKeys` and other fields may affect loader behavior. For a safe mutable copy, manually copy the needed fields.
+:::warning
+The returned Config should be treated as read-only. Modifying fields like `KeyPattern`, `AllowedKeys`, `ForbiddenKeys`, `RequiredKeys` may affect loader behavior. For a safe mutable copy, manually copy the required fields.
 :::
 
 ```go
@@ -623,13 +623,13 @@ fmt.Printf("Max file size: %d\n", cfg.MaxFileSize)
 func (l *Loader) Validate() error
 ```
 
-Validates that all required keys exist.
+Validates that required keys exist.
 
 **Returns:**
-- `error` - Validation error
+- `error` - validation error
 
 **Behavior:**
-- Checks whether all keys specified in `ValidationConfig.RequiredKeys` exist
+- Checks that all keys specified in `ValidationConfig.RequiredKeys` exist
 
 ```go
 cfg := env.DefaultConfig()
@@ -639,7 +639,7 @@ loader, _ := env.New(cfg)
 loader.LoadFiles(".env")
 
 if err := loader.Validate(); err != nil {
-    // Missing required key
+    // Missing required keys
     var missingErr *env.ValidationError
     if errors.As(err, &missingErr) {
         fmt.Printf("Missing: %s\n", missingErr.Field)
@@ -658,17 +658,17 @@ func (l *Loader) ParseInto(v any) error
 Maps environment variables to a struct.
 
 **Parameters:**
-- `v` - Pointer to a struct
+- `v` - struct pointer
 
 **Returns:**
-- `error` - Mapping error
+- `error` - mapping error
 
-**Supported Tags:**
-- `env:"KEY"` - Specifies the environment variable name
-- `env:"-"` - Ignores this field
-- `envDefault:"value"` - Specifies the default value
+**Supported tags:**
+- `env:"KEY"` - specifies the environment variable name
+- `env:"-"` - ignore this field
+- `envDefault:"value"` - specifies a default value
 
-Slice fields are split by comma `,` by default (surrounding whitespace around the separator is trimmed automatically); there is no custom separator tag.
+Slice fields are separated by comma `,` by default (spaces around the separator are automatically removed); there is no custom separator tag.
 
 ```go
 type Config struct {
@@ -699,10 +699,10 @@ func (l *Loader) Close() error
 Releases resources and clears storage.
 
 **Returns:**
-- `error` - Closing error
+- `error` - close error
 
 **Behavior:**
-- Securely zeroes all stored sensitive data
+- Securely zeros all stored sensitive data
 - If the loader owns a ComponentFactory, also closes the factory
 - Safe to close; multiple calls return nil
 
@@ -713,13 +713,13 @@ defer loader.Close()
 // Use loader...
 ```
 
-:::warning Behavior After Close
-After closing, all operations will return errors or zero values:
-- `LoadFiles` -> `ErrClosed`
-- `GetString` -> Returns empty value
-- `Set` -> `ErrClosed`
-- `Keys` -> Returns nil
-- `Len` -> Returns 0
+:::warning
+After closing, all operations return errors or zero values:
+- `LoadFiles` → `ErrClosed`
+- `GetString` → returns empty value
+- `Set` → `ErrClosed`
+- `Keys` → returns nil
+- `Len` → returns 0
 :::
 
 ---
@@ -730,14 +730,14 @@ After closing, all operations will return errors or zero values:
 func (l *Loader) IsClosed() bool
 ```
 
-Checks whether the loader is closed.
+Checks whether the loader has been closed.
 
 **Returns:**
-- `bool` - Whether closed
+- `bool` - whether closed
 
 ```go
 if loader.IsClosed() {
-    // Loader is closed
+    // loader has been closed
 }
 ```
 
@@ -774,7 +774,7 @@ func main() {
     // Load files
     if err := loader.LoadFiles(".env", ".env.production"); err != nil {
         if errors.Is(err, env.ErrFileNotFound) {
-            log.Fatal("Config file not found")
+            log.Fatal("Configuration file not found")
         }
         log.Fatal(err)
     }

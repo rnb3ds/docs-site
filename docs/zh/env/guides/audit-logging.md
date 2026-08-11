@@ -2,7 +2,8 @@
 sidebar_label: "审计日志"
 title: "审计日志 - CyberGo env | 安全审计配置"
 description: "CyberGo env 审计日志配置指南，涵盖 JSONAuditHandler、LogAuditHandler 与 ChannelAuditHandler 三种处理器，及自定义 AuditHandler 记录变量加载、读取、修改与删除操作，用于安全审计、合规检查与问题排查。"
-sidebar_position: 5
+sidebar_position: 6
+sidebar_icon: "🛡️"
 ---
 
 # 审计日志

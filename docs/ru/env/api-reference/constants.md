@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Константы и ошибки"
-title: "Константы и ошибки - CyberGo env | Константы безопасности"
-description: "Константы и ошибки CyberGo env: лимиты DefaultMaxFileSize, ErrFileNotFound, ParseError, DefaultForbiddenKeys и функции IsSensitiveKey, MaskValue."
+title: "Константы и ошибки - CyberGo env | сигнальные ошибки и константы безопасности"
+description: "Справочник констант и ошибок CyberGo env: ограничения DefaultMaxFileSize и MaxVariables, сигнальные ошибки ErrFileNotFound, тип ParseError, запрещённые ключи DefaultForbiddenKeys и служебные функции IsSensitiveKey, MaskValue."
 sidebar_position: 7
 ---
 
 # Константы и ошибки
 
-Константы, типы ошибок, сторожевые ошибки и предопределённые переменные, определённые библиотекой.
+Константы, типы ошибок, сигнальные ошибки и предопределённые переменные, определённые в библиотеке.
 
 ## Константы ограничений безопасности
 
@@ -15,30 +15,30 @@ sidebar_position: 7
 
 ```go
 const (
-    // DefaultMaxFileSize - Максимальное количество байт на файл
+    // DefaultMaxFileSize — максимальное количество байт на файл
     DefaultMaxFileSize int64 = 2 * 1024 * 1024  // 2 MB
 
-    // DefaultMaxLineLength - Максимальная длина строки
+    // DefaultMaxLineLength — максимальная длина строки
     DefaultMaxLineLength int = 1024  // 1 KB
 
-    // DefaultMaxKeyLength - Максимальная длина имени ключа
+    // DefaultMaxKeyLength — максимальная длина имени ключа
     DefaultMaxKeyLength int = 64
 
-    // DefaultMaxValueLength - Максимальная длина значения
+    // DefaultMaxValueLength — максимальная длина значения
     DefaultMaxValueLength int = 4096  // 4 KB
 
-    // DefaultMaxVariables - Максимальное количество переменных на файл
+    // DefaultMaxVariables — максимальное количество переменных на файл
     DefaultMaxVariables int = 500
 
-    // DefaultMaxExpansionDepth - Максимальная глубина подстановки переменных
+    // DefaultMaxExpansionDepth — максимальная глубина подстановки переменных
     DefaultMaxExpansionDepth int = 5
 )
 ```
 
 ### Жёсткие пределы
 
-:::warning Внимание
-Ниже приведены внутренние жёсткие пределы библиотеки (не экспортируются), используемые для внутренних проверок в `Config.Validate()`. Пользователи не могут напрямую ссылаться на эти константы, но `cfg.Validate()` автоматически проверяет, не превышает ли конфигурация эти ограничения.
+::: warning Внимание
+Ниже приведены внутренние жёсткие пределы библиотеки (не экспортируются), используемые для внутренних проверок `Config.Validate()`. Пользователь не может напрямую ссылаться на эти константы, но `cfg.Validate()` автоматически проверяет, не превышает ли конфигурация эти ограничения.
 :::
 
 | Константа | Значение | Описание |
@@ -57,17 +57,17 @@ cfg := env.DefaultConfig()
 cfg.MaxFileSize = 200 * 1024 * 1024  // Превышает предел 100MB
 
 if err := cfg.Validate(); err != nil {
-    // Возвращается ошибка: MaxFileSize exceeds hard limit
+    // Возвращает ошибку: MaxFileSize exceeds hard limit
 }
 ```
 
-## Сторожевые ошибки
+## Сигнальные ошибки
 
-:::warning Внимание
-Все нижеперечисленные сторожевые являются предопределёнными символами, однако в текущей реализации ряд сценариев **не сопоставляется с этими сторожевыми через `errors.Is`**: запрещённые ключи возвращают `*SecurityError` (используйте `errors.Is(err, ErrSecurityViolation)`), недопустимый формат ключа и отсутствие обязательного ключа возвращают `*ValidationError` (используйте `errors.As` для извлечения). Подробности см. в разделах соответствующих типов ошибок.
+::: warning Внимание
+Следующие сигнальные ошибки являются предопределёнными символами, однако в текущей реализации некоторые сценарии **не сопоставляются с этими сигнальными ошибками через `errors.Is`**: запрещённые ключи возвращают `*SecurityError` (сопоставляется через `errors.Is(err, ErrSecurityViolation)`), недопустимый формат ключа и отсутствие обязательных ключей возвращают `*ValidationError` (извлекается через `errors.As`). Подробнее см. в разделах о типах ошибок.
 :::
 
-### Ошибки файлов
+### Файловые ошибки
 
 ```go
 var ErrFileNotFound = errors.New("file not found")
@@ -79,7 +79,7 @@ var ErrFileTooLarge = errors.New("file exceeds maximum size limit")
 ```go
 err := loader.LoadFiles(".env")
 if errors.Is(err, env.ErrFileNotFound) {
-    // Файл не найден
+    // Файл не существует
 }
 if errors.Is(err, env.ErrFileTooLarge) {
     // Файл слишком большой
@@ -102,7 +102,7 @@ var ErrSecurityViolation = errors.New("security policy violation")
 var ErrInvalidValue = errors.New("invalid value content")
 ```
 
-Проверка запрещённого ключа:
+Проверка запрещённых ключей:
 
 ```go
 err := loader.Set("PATH", "value")
@@ -136,22 +136,22 @@ var ErrMissingRequired = errors.New("required key is missing")
 **Способ проверки:**
 
 ```go
-// Проверка закрытия загрузчика
+// Проверка, закрыт ли загрузчик
 if errors.Is(err, env.ErrClosed) {
     // Загрузчик закрыт
 }
 
-// Проверка инициализации загрузчика по умолчанию
+// Проверка, инициализирован ли загрузчик по умолчанию
 if errors.Is(err, env.ErrAlreadyInitialized) {
     // Загрузчик по умолчанию уже существует, нельзя повторно вызвать Load()
 }
 
-// Проверка что загрузчик не инициализирован
+// Проверка, не инициализирован ли загрузчик по умолчанию
 if errors.Is(err, env.ErrNotInitialized) {
     // Нужно сначала вызвать env.Load() или env.LoadWithConfig()
 }
 
-// Проверка отсутствия обязательных ключей (фактически возвращается *ValidationError{Rule:"required"})
+// Проверка отсутствия обязательного ключа (фактически возвращает *ValidationError{Rule:"required"})
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
     // Отсутствует обязательный ключ
@@ -167,32 +167,32 @@ var ErrValidateRequiredUnsupported = errors.New(
 )
 ```
 
-Когда пользовательский валидатор реализует только интерфейс `KeyValidator`, но не полный интерфейс `Validator`, вызов `ValidateRequired` возвращает эту ошибку.
+Возвращается, когда пользовательский валидатор реализует только интерфейс `KeyValidator`, но не полный интерфейс `Validator`, при вызове `ValidateRequired`.
 
 **Способ проверки:**
 
 ```go
 if errors.Is(err, env.ErrValidateRequiredUnsupported) {
     // Пользовательский валидатор не поддерживает валидацию обязательных ключей
-    // Необходимо реализовать полный интерфейс Validator
+    // Нужно реализовать полный интерфейс Validator
 }
 ```
 
-:::tip Решение
-Реализуйте интерфейс `Validator` (включающий методы ValidateKey, ValidateValue, ValidateRequired) вместо только `KeyValidator`.
+::: tip Решение
+Реализуйте интерфейс `Validator` (включающий три метода: ValidateKey, ValidateValue, ValidateRequired), а не только `KeyValidator`.
 :::
 
 ## Типы ошибок
 
 ### ParseError
 
-Ошибка разбора, содержит информацию о положении:
+Ошибка разбора, содержащая информацию о позиции:
 
 ```go
 type ParseError struct {
     File    string  // Имя файла
     Line    int     // Номер строки
-    Content string  // Содержимое ошибки (маскировано)
+    Content string  // Содержимое ошибки (маскированное)
     Err     error   // Исходная ошибка
 }
 ```
@@ -215,7 +215,7 @@ if errors.As(err, &parseErr) {
 ```go
 type ValidationError struct {
     Field   string  // Имя поля
-    Value   string  // Значение (маскировано)
+    Value   string  // Значение (маскированное)
     Rule    string  // Правило
     Message string  // Сообщение
 }
@@ -229,7 +229,7 @@ type ValidationError struct {
 type SecurityError struct {
     Action  string  // Действие
     Reason  string  // Причина
-    Key     string  // Имя ключа (маскировано)
+    Key     string  // Имя ключа (маскированное)
     Details string  // Дополнительные подробности
 }
 ```
@@ -252,8 +252,8 @@ type FileError struct {
     Path  string  // Путь к файлу
     Op    string  // Операция (open, stat, size_check)
     Err   error   // Исходная ошибка
-    Size  int64   // Размер файла (при проверке размера)
-    Limit int64   // Ограничение (при проверке размера)
+    Size  int64   // Размер файла (при проверке Size)
+    Limit int64   // Ограничение (при проверке Size)
 }
 ```
 
@@ -262,7 +262,7 @@ type FileError struct {
 ```go
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
-    fmt.Printf("Файл %s размер %d превышает лимит %d\n",
+    fmt.Printf("Файл %s размер %d превышает ограничение %d\n",
         fileErr.Path, fileErr.Size, fileErr.Limit)
 }
 ```
@@ -276,8 +276,8 @@ type ExpansionError struct {
     Key   string             // Имя ключа
     Depth int                // Текущая глубина
     Limit int                // Ограничение
-    Chain string             // Цепочка раскрытия (санитизирована)
-    Kind  ExpansionErrorKind // Категория причины (нулевое значение = глубина/цикл)
+    Chain string             // Цепочка подстановки (санитизированная)
+    Kind  ExpansionErrorKind // Категория причины ошибки (нулевое значение = глубина/цикл)
 }
 ```
 
@@ -287,18 +287,19 @@ type ExpansionError struct {
 type ExpansionErrorKind int
 
 const (
-    // ExpansionDepthKind указывает, что подстановка достигла лимита рекурсивной глубины
-    // или обнаружила цикл переменных. Это нулевое значение, поэтому обычные ошибки
-    // глубины/цикла не требуют явной классификации. errors.Is(err, ErrExpansionDepth) их находит.
+    // ExpansionDepthKind означает, что подстановка достигла ограничения рекурсивной глубины
+    // или обнаружила цикл переменных. Это нулевое значение, поэтому обычные ошибки глубины/цикла
+    // не требуют явной классификации.
+    // errors.Is(err, ErrExpansionDepth) может сопоставлять эту ошибку.
     ExpansionDepthKind ExpansionErrorKind = iota
 
-    // ExpansionRequiredKind указывает, что обязательная переменная (${VAR:?message})
-    // не задана или пуста. Это не переполнение глубины, поэтому ErrExpansionDepth не соответствует.
+    // ExpansionRequiredKind означает, что обязательная переменная (${VAR:?message}) не установлена
+    // или пуста. Это не переполнение глубины, поэтому не сопоставляется с ErrExpansionDepth.
     ExpansionRequiredKind
 )
 ```
 
-**Поведение `errors.Is`:** `*ExpansionError` соответствует `ErrExpansionDepth` только если `Kind != ExpansionRequiredKind`. Ошибки обязательной переменной — это отдельный режим сбоя и не соответствуют `ErrExpansionDepth`.
+**Поведение `errors.Is`:** `*ExpansionError` сопоставляется с `ErrExpansionDepth` только при `Kind != ExpansionRequiredKind`. Ошибки обязательных переменных относятся к независимому режиму отказа и не сопоставляются через `ErrExpansionDepth`.
 
 Пример использования:
 
@@ -308,10 +309,10 @@ if errors.As(err, &expErr) {
     switch expErr.Kind {
     case env.ExpansionDepthKind:
         // Переполнение глубины или цикл: errors.Is(err, env.ErrExpansionDepth) == true
-        fmt.Printf("глубина %d/%d, цепочка: %s\n", expErr.Depth, expErr.Limit, expErr.Chain)
+        fmt.Printf("Глубина %d/%d, цепочка: %s\n", expErr.Depth, expErr.Limit, expErr.Chain)
     case env.ExpansionRequiredKind:
-        // Обязательная переменная не задана: errors.Is(err, env.ErrExpansionDepth) == false
-        fmt.Printf("обязательная переменная %s не задана\n", expErr.Key)
+        // Обязательная переменная не установлена: errors.Is(err, env.ErrExpansionDepth) == false
+        fmt.Printf("Обязательная переменная %s не установлена\n", expErr.Key)
     }
 }
 ```
@@ -359,35 +360,35 @@ func IsMarshalError(err error) bool  // Функция проверки
 
 ### DefaultForbiddenKeys
 
-Встроенный список запрещённых ключей для предотвращения изменения критических системных переменных:
+Встроенный список запрещённых ключей, предотвращающий изменение системно-важных переменных:
 
-:::warning Внимание
-`defaultForbiddenKeys` является внутренней переменной библиотеки (не экспортируется), недоступна напрямую через `env.DefaultForbiddenKeys`. Ниже приведён полный внутренний список для справки.
+::: warning Внимание
+`defaultForbiddenKeys` — внутренняя переменная библиотеки (не экспортируется), недоступна напрямую через `env.DefaultForbiddenKeys`. Ниже приведён полный список для справки.
 :::
 
-| Категория | Запрещённый ключ |
-|-----------|-----------------|
-| Системные пути | `PATH` |
-| Динамический компоновщик (Linux) | `LD_PRELOAD`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64`, `LD_AUDIT`, `LD_DEBUG` |
+| Категория | Запрещённые ключи |
+|-----------|-------------------|
+| Системный путь | `PATH` |
+| Динамический линковщик (Linux) | `LD_PRELOAD`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64`, `LD_AUDIT`, `LD_DEBUG` |
 | macOS | `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH` |
 | Windows | `COMSPEC`, `PATHEXT`, `SYSTEMROOT`, `WINDIR` |
 | Shell | `SHELL`, `ENV`, `BASH_ENV`, `IFS` |
-| Среды выполнения языков | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
+| Рантаймы языков | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
 
 **Описание рисков:**
 
 | Ключ | Тип риска | Описание |
 |------|-----------|----------|
 | `PATH` | Перехват команд | Изменение пути поиска команд |
-| `LD_PRELOAD` | Инъекция библиотек | Предварительная загрузка вредоносных динамических библиотек |
+| `LD_PRELOAD` | Внедрение библиотек | Предзагрузка вредоносных динамических библиотек |
 | `LD_LIBRARY_PATH` | Перехват библиотек | Изменение пути поиска библиотек |
-| `DYLD_INSERT_LIBRARIES` | Инъекция библиотек | Инъекция библиотек на macOS |
-| `COMSPEC` | Перехват команд | Переопределение пути интерпретатора команд Windows |
+| `DYLD_INSERT_LIBRARIES` | Внедрение библиотек | Внедрение библиотек macOS |
+| `COMSPEC` | Перехват команд | Перекрытие пути интерпретатора команд Windows |
 | `PATHEXT` | Перехват команд | Подмена расширений исполняемых файлов Windows |
-| `SYSTEMROOT` | Повреждение системы | Подмена корневого каталога системы Windows |
-| `WINDIR` | Повреждение системы | Подмена каталога Windows |
+| `SYSTEMROOT` | Разрушение системы | Подмена корневого каталога Windows |
+| `WINDIR` | Разрушение системы | Подмена каталога Windows |
 | `PYTHONPATH` | Перехват модулей | Путь поиска модулей Python |
-| `IFS` | Атака на парсер | Изменение разделителя полей |
+| `IFS` | Атака на разбор | Изменение разделителя полей |
 
 **Пример использования:**
 
@@ -398,41 +399,41 @@ if errors.Is(err, env.ErrSecurityViolation) {
     // Ключ запрещён
 }
 
-// Добавление дополнительного запрещённого ключа
+// Добавление дополнительных запрещённых ключей
 cfg := env.DefaultConfig()
 cfg.ForbiddenKeys = []string{"MY_SENSITIVE_VAR"}
 ```
 
 ### SensitiveKeyPatterns
 
-Список шаблонов конфиденциальных ключей для автоматического обнаружения. Имя ключа, содержащее эти шаблоны (без учёта регистра), распознаётся как конфиденциальное:
+Список шаблонов чувствительных ключей для автоматического обнаружения чувствительной конфигурации. Имена ключей, содержащие эти шаблоны (без учёта регистра), идентифицируются как чувствительные:
 
-:::warning Внимание
-`sensitiveKeyPatterns` является внутренней переменной библиотеки (не экспортируется), доступна через функцию `IsSensitiveKey()` косвенно. Ниже приведены основные категории шаблонов конфиденциальности для справки.
+::: warning Внимание
+`sensitiveKeyPatterns` — внутренняя переменная библиотеки (не экспортируется), доступна косвенно через функцию `IsSensitiveKey()`. Ниже приведены основные категории чувствительных шаблонов для справки.
 :::
 
-**Основные категории шаблонов конфиденциальности:**
+**Основные категории чувствительных шаблонов:**
 
 | Категория | Примеры шаблонов |
-|-----------|-----------------|
+|-----------|------------------|
 | Аутентификация и авторизация | `PASSWORD`, `SECRET`, `TOKEN`, `AUTH`, `CREDENTIAL`, `PASSPHRASE`, `SESSION`, `COOKIE` |
 | API и ключи | `API_KEY`, `APIKEY`, `ACCESS_KEY`, `SECRET_KEY`, `PRIVATE_KEY`, `PUBLIC_KEY` |
 | Шифрование и безопасность | `PRIVATE`, `ENCRYPTION_KEY`, `ENCRYPT_KEY`, `DECRYPT_KEY`, `SIGNING_KEY`, `SIGN_KEY`, `VERIFY_KEY` |
 | Финансы и PII | `SSN`, `SOCIAL_SECURITY`, `CREDIT_CARD`, `CARD_NUMBER`, `CVV`, `CVC`, `CCV`, `PAN` |
-| Криптовалюты | `MNEMONIC`, `SEED`, `RECOVERY`, `WALLET`, `PRIVATE_ADDRESS` |
+| Криптовалюта | `MNEMONIC`, `SEED`, `RECOVERY`, `WALLET`, `PRIVATE_ADDRESS` |
 | Базы данных | `CONNECTION_STRING`, `CONN_STRING`, `DATABASE_URL`, `DB_PASSWORD` |
 | Облачные сервисы | `AWS_SECRET`, `AZURE_KEY`, `GCP_KEY`, `SERVICE_ACCOUNT` |
 
-**Правила соответствия:**
+**Правила сопоставления:**
 - Без учёта регистра
-- Ключ распознаётся как конфиденциальный, если содержит любой из шаблонов
+- Если имя ключа содержит любой из шаблонов, он считается чувствительным
 
 **Пример использования:**
 
 ```go
-// Проверка, является ли ключ конфиденциальным
+// Проверка, является ли ключ чувствительным
 if env.IsSensitiveKey("DB_PASSWORD") {
-    // Использовать безопасный метод обработки
+    // Обработка безопасным способом
     secret := env.GetSecure("DB_PASSWORD")
     if secret != nil {
         defer secret.Release()
@@ -442,15 +443,15 @@ if env.IsSensitiveKey("DB_PASSWORD") {
 
 ### DefaultKeyPattern
 
-Шаблон валидации имени ключа по умолчанию:
+Шаблон валидации имён ключей по умолчанию:
 
 ```go
 var DefaultKeyPattern *regexp.Regexp = nil
 ```
 
-:::tip Оптимизация производительности
-Значение `nil` включает быструю побайтовую валидацию (примерно 10-кратное повышение производительности).
-Правило валидации по умолчанию: начинается с буквы, содержит только буквы, цифры и подчёркивания.
+::: tip Оптимизация производительности
+Значение `nil` включает быструю побайтовую валидацию (примерно 10-кратный прирост производительности).
+Правило валидации по умолчанию: начинается с буквы, содержит только буквы, цифры, подчёркивания.
 :::
 
 **Пользовательский шаблон:**
@@ -459,11 +460,15 @@ var DefaultKeyPattern *regexp.Regexp = nil
 import "regexp"
 
 cfg := env.DefaultConfig()
-// Разрешить только ключи, начинающиеся с заглавной буквы
+// Разрешать только ключи, начинающиеся с заглавной буквы
 cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,63}$`)
 ```
 
 ## Функции инструментов безопасности
+
+::: tip Полная документация
+Полную документацию функций инструментов безопасности `IsSensitiveKey`, `MaskValue`, `SanitizeForLog` также можно найти в [SecureValue API](./secure-value#Функции-инструментов-безопасности).
+:::
 
 ### IsSensitiveKey
 
@@ -471,11 +476,11 @@ cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,63}$`)
 func IsSensitiveKey(key string) bool
 ```
 
-Проверяет, соответствует ли ключ шаблону конфиденциальности.
+Проверяет, соответствует ли имя ключа чувствительным шаблонам.
 
 ```go
 if env.IsSensitiveKey("DB_PASSWORD") {
-    // Конфиденциальный ключ, используйте безопасный метод обработки
+    // Чувствительный ключ, обрабатывайте безопасно
     secret := env.GetSecure("DB_PASSWORD")
     defer secret.Release()
 }
@@ -490,11 +495,11 @@ func MaskValue(key, value string) string
 Возвращает маскированное значение в зависимости от чувствительности ключа.
 
 ```go
-// Конфиденциальный ключ — возвращает формат [MASKED:N chars]
+// Чувствительный ключ — возвращает формат [MASKED:N chars]
 masked := env.MaskValue("API_KEY", "secret123")
 // Возвращает: [MASKED:9 chars]
 
-// Неконфиденциальный ключ — возвращает исходное значение (обрезается свыше 20 символов)
+// Нечувствительный ключ — возвращает исходное значение (обрезается, если > 20 символов)
 masked := env.MaskValue("APP_NAME", "myapp")
 // Возвращает: myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
@@ -507,7 +512,7 @@ masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
 func MaskKey(key string) string
 ```
 
-Маскирует имя ключа для логирования.
+Маскирует имя ключа для логов.
 
 ```go
 masked := env.MaskKey("DB_PASSWORD")
@@ -520,16 +525,16 @@ masked := env.MaskKey("DB_PASSWORD")
 func MaskSensitiveInString(s string) string
 ```
 
-Маскирует потенциально конфиденциальное содержимое в строке. Обрезает строки длиннее 50 символов.
+Маскирует потенциально чувствительное содержимое в строке. Обрезает строки длиннее 50 символов.
 
 **Параметры:**
-- `s` - Исходная строка
+- `s` - исходная строка
 
 **Возвращает:**
-- `string` - Маскированная строка
+- `string` - маскированная строка
 
 ```go
-// Длинные строки будут усечены
+// Длинные строки будут обрезаны
 log := "This is a very long log message that exceeds 50 characters and will be truncated"
 clean := env.MaskSensitiveInString(log)
 // Возвращает: "This is a very long log message that exceeds 50..."
@@ -540,8 +545,8 @@ clean := env.MaskSensitiveInString(short)
 // Возвращает: "Short message"
 ```
 
-:::warning Внимание
-Эта функция в основном используется для усечения длинных строк. Для автоматического маскирования конфиденциальных пар ключ-значение используйте `SanitizeForLog`.
+::: warning Внимание
+Эта функция в основном используется для обрезки длинных строк. Для автоматического маскирования чувствительных пар ключ-значение используйте `SanitizeForLog`.
 :::
 
 ### SanitizeForLog
@@ -550,15 +555,15 @@ clean := env.MaskSensitiveInString(short)
 func SanitizeForLog(s string) string
 ```
 
-Очищает строку от конфиденциальных пар ключ-значение. Автоматически обнаруживает и маскирует конфиденциальные значения в формате `key=value`.
+Очищает строку от информации о чувствительных парах ключ-значение. Автоматически обнаруживает и маскирует чувствительные значения в формате `key=value`.
 
 **Параметры:**
-- `s` - Исходная строка
+- `s` - исходная строка
 
 **Возвращает:**
-- `string` - Очищенная строка
+- `string` - очищенная строка
 
-**Обнаруживаемые шаблоны конфиденциальных ключей:**
+**Обнаруживаемые шаблоны чувствительных ключей:**
 - `password=`, `secret=`, `token=`, `auth=`, `credential=`, `passphrase=`, `session=`, `cookie=`
 - `api_key=`, `apikey=`, `access_key=`, `secret_key=`, `private_key=`, `public_key=`
 - `encrypt_key=`, `decrypt_key=`, `signing_key=`
@@ -567,19 +572,19 @@ func SanitizeForLog(s string) string
 - `connection_string=`, `database_url=`, `db_password=`
 
 ```go
-// Автоматическое маскирование конфиденциальных пар ключ-значение
+// Автоматическое маскирование чувствительных пар ключ-значение
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
 // Возвращает: "Connected with password=[MASKED] api_key=[MASKED]"
 
-// Неконфиденциальные пары ключ-значение остаются без изменений
+// Нечувствительные пары ключ-значение остаются без изменений
 msg := "Config loaded: app_name=myapp port=8080"
 clean := env.SanitizeForLog(msg)
 // Возвращает: "Config loaded: app_name=myapp port=8080"
 ```
 
-:::tip Сценарии использования
-Подходит для вывода в логи, сообщений об ошибках, отладочной информации и других сценариев, требующих автоматической фильтрации конфиденциальных пар ключ-значение.
+::: tip Сценарий использования
+Подходит для вывода в логи, сообщений об ошибках, отладочной информации, где требуется автоматическая фильтрация чувствительных пар ключ-значение.
 :::
 
 ### ClearBytes
@@ -588,13 +593,13 @@ clean := env.SanitizeForLog(msg)
 func ClearBytes(b []byte)
 ```
 
-Безопасно обнуляет байтовый срез.
+Безопасно обнуляет срез байтов.
 
 ```go
 sensitive := []byte("secret-data")
 // Использование...
 env.ClearBytes(sensitive)
-// sensitive теперь содержит нули
+// sensitive теперь все 0
 ```
 
 ## Константы FileFormat
@@ -605,7 +610,7 @@ env.ClearBytes(sensitive)
 type FileFormat int
 
 const (
-    FormatAuto  FileFormat = iota  // Автоматическое обнаружение
+    FormatAuto  FileFormat = iota  // Автоопределение
     FormatEnv                      // Формат .env
     FormatJSON                     // Формат JSON
     FormatYAML                     // Формат YAML
@@ -618,10 +623,10 @@ const (
 // Определение формата
 format := env.DetectFormat("config.json")  // FormatJSON
 
-// Сериализация в указанном формате
+// Сериализация с указанием формата
 data, _ := env.Marshal(cfg, env.FormatJSON)
 
-// Строка формата
+// Строковое представление формата
 fmt.Println(format.String())  // "json"
 ```
 
@@ -629,14 +634,14 @@ fmt.Println(format.String())  // "json"
 
 ### Шаблон errors.Is
 
-Проверка сторожевых ошибок:
+Проверка сигнальных ошибок:
 
 ```go
 err := loader.LoadFiles(".env")
 
 switch {
 case errors.Is(err, env.ErrFileNotFound):
-    // Файл не найден
+    // Файл не существует
 case errors.Is(err, env.ErrFileTooLarge):
     // Файл слишком большой
 case errors.Is(err, env.ErrSecurityViolation):
@@ -648,19 +653,19 @@ case errors.Is(err, env.ErrClosed):
 
 ### Шаблон errors.As
 
-Извлечение подробной информации об ошибке:
+Извлечение подробной информации об ошибках:
 
 ```go
 err := loader.LoadFiles(".env")
 
 var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
-    fmt.Printf("Ошибка разбора в %s строка %d\n", parseErr.File, parseErr.Line)
+    fmt.Printf("Ошибка разбора в %s на строке %d\n", parseErr.File, parseErr.Line)
 }
 
 var fileErr *env.FileError
 if errors.As(err, &fileErr) {
-    fmt.Printf("Файл %s размер %d превышает лимит %d\n",
+    fmt.Printf("Файл %s размер %d превышает ограничение %d\n",
         fileErr.Path, fileErr.Size, fileErr.Limit)
 }
 
@@ -696,10 +701,10 @@ func main() {
     if err != nil {
         switch {
         case errors.Is(err, env.ErrFileNotFound):
-            log.Fatal("Конфигурационный файл не найден")
+            log.Fatal("Файл конфигурации не существует")
 
         case errors.Is(err, env.ErrFileTooLarge):
-            log.Fatal("Конфигурационный файл слишком большой")
+            log.Fatal("Файл конфигурации слишком большой")
 
         case errors.Is(err, env.ErrClosed):
             log.Fatal("Загрузчик закрыт")
@@ -713,7 +718,7 @@ func main() {
 
             var fileErr *env.FileError
             if errors.As(err, &fileErr) {
-                log.Fatalf("Ошибка файла %s - %v", fileErr.Path, fileErr.Err)
+                log.Fatalf("Файловая ошибка %s - %v", fileErr.Path, fileErr.Err)
             }
 
             var secErr *env.SecurityError
@@ -723,12 +728,12 @@ func main() {
 
             var jsonErr *env.JSONError
             if errors.As(err, &jsonErr) {
-                log.Fatalf("Ошибка JSON %s: %s", jsonErr.Path, jsonErr.Message)
+                log.Fatalf("JSON ошибка %s: %s", jsonErr.Path, jsonErr.Message)
             }
 
             var yamlErr *env.YAMLError
             if errors.As(err, &yamlErr) {
-                log.Fatalf("Ошибка YAML %s:%d:%d - %s",
+                log.Fatalf("YAML ошибка %s:%d:%d - %s",
                     yamlErr.Path, yamlErr.Line, yamlErr.Column, yamlErr.Message)
             }
 
@@ -740,7 +745,7 @@ func main() {
     if err := loader.Validate(); err != nil {
         var valErr *env.ValidationError
         if errors.As(err, &valErr) {
-            log.Fatalf("Валидация не удалась: %s - %s", valErr.Field, valErr.Message)
+            log.Fatalf("Валидация не прошла: %s - %s", valErr.Field, valErr.Message)
         }
         log.Fatal(err)
     }
@@ -749,7 +754,7 @@ func main() {
 
 ## Связанная документация
 
-- [SecureValue API](/ru/env/api-reference/secure-value) - Полный API функций безопасности
-- [Config API](/ru/env/api-reference/config) - Параметры конфигурации и настройки ограничений
-- [Обзор безопасности](/ru/env/security/) - Архитектура безопасности и основные функции
-- [Контрольный список для производства](/ru/env/security/production-checklist) - Проверка безопасности перед развёртыванием
+- [SecureValue API](/ru/env/api-reference/secure-value) - полный API функций безопасности
+- [Config API](/ru/env/api-reference/config) - параметры конфигурации и ограничения
+- [Обзор безопасности](/ru/env/security/) - архитектура безопасности и ключевые особенности
+- [Контрольный список для продакшена](/ru/env/security/production-checklist) - проверка безопасности перед запуском

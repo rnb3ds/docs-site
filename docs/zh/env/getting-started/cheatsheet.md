@@ -305,4 +305,4 @@ func TestMain(m *testing.M) {
 - [包函数](/zh/env/api-reference/functions) - 详细 API
 - [Loader API](/zh/env/api-reference/loader) - Loader 方法
 - [Config API](/zh/env/api-reference/config) - 配置选项
-- [错误处理](/zh/env/advanced/error-handling) - 错误处理模式
+- [错误处理](/zh/env/guides/error-handling) - 错误处理模式

@@ -1,13 +1,14 @@
 ---
 sidebar_label: "Error Handling"
-title: "Error Handling - CyberGo env | Sentinel Errors & Recovery"
-description: "CyberGo env error handling: 16 sentinels via errors.Is, ParseError/FileError/SecurityError via errors.As, recovery, Unwrap, production classification."
-sidebar_position: 2
+title: "Error Handling - CyberGo env | Sentinel Errors and Recovery"
+description: "Error handling guide for CyberGo env, covering errors.Is exact matching for 16 sentinel errors, errors.As context extraction for structured errors like ParseError/FileError/SecurityError, recovery and degradation strategies, error chain Unwrap tracing, and production error classification practices."
+sidebar_position: 5
+sidebar_icon: "🛡️"
 ---
 
 # Error Handling
 
-The env library provides structured error handling with support for `errors.Is` and `errors.As` patterns.
+The env library provides a structured error handling mechanism, supporting both `errors.Is` and `errors.As` patterns.
 
 ## Sentinel Errors
 
@@ -28,7 +29,7 @@ if errors.Is(err, env.ErrFileNotFound) {
     log.Println("Configuration file not found")
 }
 if errors.Is(err, env.ErrFileTooLarge) {
-    log.Println("Configuration file is too large")
+    log.Println("Configuration file too large")
 }
 ```
 
@@ -85,28 +86,28 @@ var (
 )
 ```
 
-**Checking:**
+**How to check:**
 
 ```go
-// Check if the loader is closed
+// Check if the loader has been closed
 if errors.Is(err, env.ErrClosed) {
-    // Loader is closed
+    // loader has been closed
 }
 
-// Check if the default loader is already initialized
+// Check if the default loader has been initialized
 if errors.Is(err, env.ErrAlreadyInitialized) {
     // Default loader already exists, cannot call Load() again
 }
 
-// Check if the default loader is not initialized
+// Check if the default loader has not been initialized
 if errors.Is(err, env.ErrNotInitialized) {
     // Need to call env.Load() or env.LoadWithConfig() first
 }
 
-// Check if a required key is missing (actually returns *ValidationError, Rule=="required")
+// Check if required keys are missing (actually returns *ValidationError, Rule=="required")
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
-    // Required key is missing: valErr.Message contains the missing key list
+    // Missing required keys: valErr.Message contains the list of missing keys
 }
 ```
 
@@ -121,7 +122,7 @@ var ErrValidateRequiredUnsupported = errors.New(
 
 When a custom validator only implements the `KeyValidator` interface but not the full `Validator` interface, calling `ValidateRequired` returns this error.
 
-**Checking:**
+**How to check:**
 
 ```go
 if errors.Is(err, env.ErrValidateRequiredUnsupported) {
@@ -130,8 +131,8 @@ if errors.Is(err, env.ErrValidateRequiredUnsupported) {
 }
 ```
 
-:::tip Resolution
-Implement the `Validator` interface (which includes ValidateKey, ValidateValue, and ValidateRequired methods) rather than only implementing `KeyValidator`.
+:::tip
+Implement the `Validator` interface (which includes ValidateKey, ValidateValue, and ValidateRequired methods) instead of just `KeyValidator`.
 :::
 
 ## Structured Error Types
@@ -194,7 +195,7 @@ Security error:
 
 ```go
 type SecurityError struct {
-    Action  string  // Action
+    Action  string  // Operation
     Reason  string  // Reason
     Key     string  // Key name
     Details string  // Details
@@ -243,7 +244,7 @@ type ExpansionError struct {
     Depth int                // Current depth
     Limit int                // Limit
     Chain string             // Expansion chain
-    Kind  ExpansionErrorKind // Cause category (zero value = depth/cycle)
+    Kind  ExpansionErrorKind // Error reason category (zero value = depth/cycle)
 }
 ```
 
@@ -319,7 +320,7 @@ _, err := env.MarshalStruct(invalidData)
 if err != nil && env.IsMarshalError(err) {
     var marshalErr *env.MarshalError
     if errors.As(err, &marshalErr) {
-        log.Printf("Marshal error: field %s - %s\n", marshalErr.Field, marshalErr.Message)
+        log.Printf("Serialization error: field %s - %s\n", marshalErr.Field, marshalErr.Message)
     }
 }
 ```
@@ -328,26 +329,26 @@ if err != nil && env.IsMarshalError(err) {
 
 ### errors.Is Pattern
 
-Check for sentinel errors:
+Check sentinel errors:
 
 ```go
 err := loader.LoadFiles(".env")
 
 switch {
 case errors.Is(err, env.ErrFileNotFound):
-    // File not found
+    // file not found
     log.Println("Configuration file not found, using defaults")
 
 case errors.Is(err, env.ErrFileTooLarge):
-    // File too large
-    log.Fatal("Configuration file is too large")
+    // file too large
+    log.Fatal("Configuration file too large")
 
 case errors.Is(err, env.ErrSecurityViolation):
-    // Forbidden key (actually returns *SecurityError)
+    // forbidden key (actually returns *SecurityError)
     log.Fatal("Forbidden key detected")
 
 case err != nil:
-    // Other error
+    // other errors
     log.Fatalf("Load failed: %v", err)
 }
 
@@ -371,7 +372,7 @@ if err == nil {
 // Try to extract parse error
 var parseErr *env.ParseError
 if errors.As(err, &parseErr) {
-    log.Fatalf("Parse error in %s at line %d: %v",
+    log.Fatalf("Parse error at %s line %d: %v",
         parseErr.File, parseErr.Line, parseErr.Err)
 }
 
@@ -387,7 +388,7 @@ if errors.As(err, &secErr) {
     log.Fatalf("Security error: %s - %s", secErr.Action, secErr.Reason)
 }
 
-// Other error
+// Other errors
 log.Fatalf("Unknown error: %v", err)
 ```
 
@@ -399,7 +400,7 @@ func handleLoadError(err error) {
         return
     }
 
-    // First check sentinel errors
+    // Check sentinel errors first
     switch {
     case errors.Is(err, env.ErrFileNotFound):
         log.Println("Warning: configuration file not found")
@@ -439,7 +440,7 @@ func loadConfig() *Config {
     cfg.Filenames = nil
     loader, err := env.New(cfg)
     if err != nil {
-        log.Printf("Configuration error: %v, using defaults", err)
+        log.Printf("Config error: %v, using default config", err)
         return defaultConfig()
     }
     defer loader.Close()
@@ -560,8 +561,8 @@ func handleValidationError(err error) {
     var valErr *env.ValidationError
     if errors.As(err, &valErr) {
         if valErr.Rule == "required" {
-            // Required key is missing: valErr.Message contains the missing key list
-            log.Fatalf("Missing required key: %s", valErr.Message)
+            // Missing required keys: valErr.Message contains the list of missing keys
+            log.Fatalf("Missing required keys: %s", valErr.Message)
         }
         log.Fatalf("Validation failed: %s - %s", valErr.Field, valErr.Message)
     }

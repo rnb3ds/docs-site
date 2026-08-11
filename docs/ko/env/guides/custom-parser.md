@@ -1,8 +1,9 @@
 ---
 sidebar_label: "커스텀 파서"
 title: "커스텀 파서 - CyberGo env | 파일 형식 확장"
-description: "CyberGo env 커스텀 파서 가이드로 EnvParser 인터페이스의 Parse 메서드를 구현해 RegisterParser 로 등록하고, ComponentFactory 로 Validator 와 Auditor 를 얻으며 TOML·INI 파서 예제와 모범 사례를 제공합니다."
-sidebar_position: 7
+description: "CyberGo env 커스텀 파서 가이드로, EnvParser 인터페이스의 Parse 메서드를 구현하고 RegisterParser로 등록하며, ComponentFactory를 통해 Validator와 Auditor를 획득합니다. TOML과 INI 파서의 완전한 예제와 모범 사례를 포함합니다."
+sidebar_position: 8
+sidebar_icon: "⚙️"
 ---
 
 # 커스텀 파서
@@ -22,11 +23,11 @@ type EnvParser interface {
 ```
 
 **매개변수:**
-- `r` - 파일 내용 리더
-- `filename` - 파일 이름 (오류 메시지에 사용)
+- `r` - 파일 콘텐츠 리더
+- `filename` - 파일 이름(오류 정보에 사용)
 
 **반환값:**
-- `map[string]string` - 파싱된 키 - 값 쌍
+- `map[string]string` - 파싱된 키-값 쌍
 - `error` - 파싱 오류
 
 ---
@@ -56,13 +57,13 @@ type CustomParser struct {
 func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, error) {
     result := make(map[string]string)
 
-    // 1. 내용 읽기 (크기 제한 주의)
+    // 1. 콘텐츠 읽기(크기 제한 주의)
     content, err := io.ReadAll(io.LimitReader(r, p.cfg.MaxFileSize))
     if err != nil {
         return nil, err
     }
 
-    // 2. 내용을 키 - 값 쌍으로 파싱
+    // 2. 콘텐츠를 키-값 쌍으로 파싱
     for _, line := range strings.Split(string(content), "\n") {
         line = strings.TrimSpace(line)
         if line == "" || strings.HasPrefix(line, "#") {
@@ -87,7 +88,7 @@ func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, e
 }
 ```
 
-### TOML 파서 예시
+### TOML 파서 예제
 
 ```go
 package tomlparser
@@ -101,7 +102,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// TOMLParser 는 TOML 형식을 파싱합니다
+// TOMLParser는 TOML 형식 파싱
 type TOMLParser struct {
     cfg       env.Config
     validator env.Validator
@@ -128,7 +129,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     for lineNum, line := range lines {
         line = strings.TrimSpace(line)
 
-        // 빈 줄 및 주석 건너뛰기
+        // 빈 줄과 주석 건너뛰기
         if line == "" || strings.HasPrefix(line, "#") {
             continue
         }
@@ -153,7 +154,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
             key = currentSection + "_" + key
         }
 
-        // 따옴표 제거
+        // 인용부호 제거
         value = strings.Trim(value, "\"'")
 
         // 대문자로 변환
@@ -178,7 +179,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
 }
 ```
 
-### INI 파서 예시
+### INI 파서 예제
 
 ```go
 package iniparser
@@ -191,7 +192,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// INIParser 는 INI 형식을 파싱합니다
+// INIParser는 INI 형식 파싱
 type INIParser struct {
     cfg       env.Config
     validator env.Validator
@@ -212,7 +213,7 @@ func (p *INIParser) Parse(r io.Reader, filename string) (map[string]string, erro
     for lineNum, line := range lines {
         line = strings.TrimSpace(line)
 
-        // 빈 줄 및 주석 건너뛰기
+        // 빈 줄과 주석 건너뛰기
         if line == "" || strings.HasPrefix(line, ";") || strings.HasPrefix(line, "#") {
             continue
         }
@@ -255,11 +256,11 @@ func (p *INIParser) Parse(r io.Reader, filename string) (map[string]string, erro
 type ParserFactory func(cfg Config, factory *ComponentFactory) (EnvParser, error)
 ```
 
-팩토리 함수는 Config 와 ComponentFactory 를 받아 파서 인스턴스를 반환합니다.
+팩토리 함수는 Config와 ComponentFactory를 받아 파서 인스턴스를 반환합니다.
 
 **매개변수 설명:**
-- `cfg` - 구성 객체, 모든 제한 및 보안 설정 포함
-- `factory` - 컴포넌트 팩토리, Validator, Auditor 등의 컴포넌트 접근 가능
+- `cfg` - 구성 객체, 모든 제한과 보안 설정 포함
+- `factory` - 컴포넌트 팩토리, Validator, Auditor 등의 컴포넌트 획득 가능
 
 ### RegisterParser 함수
 
@@ -270,23 +271,23 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 커스텀 형식 파서를 등록합니다.
 
 **매개변수:**
-- `format` - 파일 형식 상수 (충돌을 피하기 위해 100+ 값 사용 권장)
+- `format` - 파일 형식 상수(충돌 방지를 위해 100+ 값 사용 권장)
 - `factory` - 파서 팩토리 함수
 
 **반환값:**
 - `error` - 등록 실패 시 오류 반환
 
 **오류 상황:**
-- 내장 형식 (FormatEnv, FormatJSON, FormatYAML) 은 덮어쓸 수 없음
+- 내장 형식(FormatEnv, FormatJSON, FormatYAML)은 덮어쓸 수 없음
 - 형식이 이미 등록됨
 
-**주의 사항:**
+**주의사항:**
 - `env.New()` 호출 전에 등록해야 함
-- `init()` 함수에서 등록하는 것을 권장
+- `init()` 함수에서 등록 권장
 
 ### ComponentFactory 사용
 
-ComponentFactory 를 통해 검증기와 감사기를 가져옵니다:
+ComponentFactory를 통해 검증기와 감사기를 획득합니다:
 
 ```go
 type SecureParser struct {
@@ -321,7 +322,7 @@ func (p *SecureParser) Parse(r io.Reader, filename string) (map[string]string, e
 }
 ```
 
-### 완전한 등록 예시
+### 완전한 등록 예제
 
 <!-- check-code: skip -->
 ```go
@@ -331,14 +332,14 @@ import (
     "github.com/cybergodev/env"
 )
 
-// 1. 형식 상수 정의 (100+ 값 사용 권장)
+// 1. 형식 상수 정의(100+ 값 사용 권장)
 const (
     FormatTOML env.FileFormat = 100
     FormatINI  env.FileFormat = 101
     FormatXML  env.FileFormat = 102
 )
 
-// 2. init 에서 등록
+// 2. init에서 등록
 func init() {
     // TOML 파서 등록
     err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
@@ -363,14 +364,14 @@ func init() {
 }
 
 func main() {
-    // 등록은 New 전에 완료되어야 함 (init 에서 이미 완료).
+    // 등록은 New 전에 완료되어야 함(이미 init에서 완료됨).
     //
-    // 중요 제한: LoadFiles 는 .toml 확장자를 보고 위의 TOMLParser 로
-    // 자동 라우팅하지 않습니다 — DetectFormat 는 .env/.json/.yaml/.yml만
-    // 인식하며, 그 외 확장자는 내장 dotenv 파서로 폴백합니다
-    // (format.go 의 DetectFormat 참고). LoadFiles 가 실제로 TOMLParser 를
-    // 호출하게 하려면 ForceRegisterParser 로 FormatEnv 를 덮어쓰고 파일
-    // 이름을 *.env 로 지정하세요:
+    // 중요한 제한: LoadFiles는 .toml 확장자를 기준으로 위의
+    // TOMLParser로 자동 라우팅하지 않습니다 - DetectFormat은
+    // .env/.json/.yaml/.yml만 인식하며, 다른 확장자는
+    // 내장 dotenv 파서로 폴백합니다(format.go의 DetectFormat 참조).
+    // LoadFiles가 실제로 TOMLParser를 호출하게 하려면
+    // ForceRegisterParser로 FormatEnv를 덮어쓰고 파일 이름을 *.env로 지정해야 합니다:
     err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &TOMLParser{
             cfg:       cfg,
@@ -386,20 +387,20 @@ func main() {
     loader, _ := env.New(cfg)
     defer loader.Close()
 
-    // 파일 확장자가 .env 여야 덮어쓴 파서로 라우팅됨 (내용은 TOML 형식)
+    // 파일 확장자가 .env여야 함(콘텐츠는 TOML 형식) - 덮어쓴 파서로 라우팅
     if err := loader.LoadFiles("config.env"); err != nil {
         panic(err)
     }
 }
 ```
 
-::: warning LoadFiles 라우팅 제한
-`RegisterParser`로 등록한 커스텀 형식 번호 (예: `FormatTOML = 100`) 는 `LoadFiles`에서 파일 확장자로 **자동 인식되지 않습니다**. `LoadFiles`는 내부적으로 `DetectFormat(filename)`을 호출해 파서를 선택하는데, `DetectFormat`는 `.env` / `.json` / `.yaml` / `.yml` 네 가지 확장자만 인식하며 다른 확장자는 `FormatAuto`를 반환해 결국 내장 dotenv 파서로 폴백합니다 — 커스텀 파서는 결코 호출되지 않습니다.
+:::warning LoadFiles 라우팅 제한
+`RegisterParser`로 등록된 커스텀 형식 번호(예: `FormatTOML = 100`)는 `LoadFiles`에서 파일 확장자로 **자동 인식되지 않습니다**. `LoadFiles` 내부적으로 `DetectFormat(filename)`을 호출하여 파서를 선택하지만, `DetectFormat`은 `.env` / `.json` / `.yaml` / `.yml` 네 가지 확장자만 인식하며, 다른 확장자는 `FormatAuto`를 반환하고 최종적으로 내장 dotenv 파서로 폴백합니다 - 커스텀 파서는 결코 호출되지 않습니다.
 
 커스텀 형식 파일을 로드하는 두 가지 경로:
 
-1. **`.env` 확장자 + `ForceRegisterParser`** (권장): 커스텀 형식 파일 이름을 `*.env`로 지정하고 `env.ForceRegisterParser(env.FormatEnv, ...)`로 내장 dotenv 파서를 덮어씁니다. 단, 키 이름/값/크기 등의 보안 검사는 그대로 유지해야 하며 그렇지 않으면 보안 취약점이 생깁니다.
-2. **파서 수동 호출**: 파일을 읽어 `io.Reader`를 얻고, 직접 파서 인스턴스를 생성해 `parser.Parse(reader, filename)`을 호출해 `map[string]string`을 얻은 다음 `loader.Set`으로 하나씩 기록합니다. 단, 파서 내부의 `validator`/`auditor`는 일반적으로 `*ComponentFactory`에 의존하므로 팩토리 등록 시 함께 획득해 전달해야 합니다.
+1. **`.env` 확장자 + `ForceRegisterParser`**(권장): 커스텀 형식 파일의 이름을 `*.env`로 지정하고 `env.ForceRegisterParser(env.FormatEnv, ...)`로 내장 dotenv 파서를 덮어씁니다. 키 이름/값/크기 등 보안 검사를 유지해야 하며, 그렇지 않으면 보안 취약점이 도입됩니다.
+2. **파서 수동 호출**: 파일을 읽어 `io.Reader`를 얻고, 파서 인스턴스를 직접 구성하여 `parser.Parse(reader, filename)`을 호출해 `map[string]string`을 얻은 다음 `loader.Set`으로 하나씩 기록합니다. 파서 내부의 `validator`/`auditor`는 일반적으로 `*ComponentFactory`에 의존하므로 등록 팩토리에서 함께 획득하여 전달해야 합니다.
 :::
 
 ---
@@ -415,7 +416,7 @@ func (p *CustomParser) checkLimits(result map[string]string) error {
         return fmt.Errorf("exceeds max variables: %d > %d", len(result), p.cfg.MaxVariables)
     }
 
-    // 키 및 값 길이 확인
+    // 키와 값 길이 확인
     for key, value := range result {
         if len(key) > p.cfg.MaxKeyLength {
             return fmt.Errorf("key too long: %s", key)
@@ -444,7 +445,7 @@ func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, e
         }
     }
 
-    // 모든 값 검증 (활성화된 경우)
+    // 모든 값 검증(활성화된 경우)
     if p.cfg.ValidateValues {
         for key, value := range result {
             if err := p.validator.ValidateValue(value); err != nil {
@@ -503,7 +504,7 @@ func (p *CustomParser) Parse(r io.Reader, filename string) (map[string]string, e
 
 ---
 
-## 전체 예시
+## 완전한 예제
 
 ### XML 파서 구현
 
@@ -520,7 +521,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// XML 구성 구조체
+// XML 구성 구조
 type XMLConfig struct {
     XMLName xml.Name   `xml:"config"`
     Entries []XMLEntry `xml:"entry"`
@@ -531,7 +532,7 @@ type XMLEntry struct {
     Value string `xml:",chardata"`
 }
 
-// XMLParser 는 XML 형식을 파싱합니다
+// XMLParser는 XML 형식 파싱
 type XMLParser struct {
     cfg       env.Config
     validator env.Validator
@@ -604,9 +605,9 @@ func init() {
 }
 
 func main() {
-    // LoadFiles 는 .xml 확장자를 XML 파서로 자동 라우팅하지 않음 — DetectFormat 는
-    // .env/.json/.yaml/.yml만 인식. 여기서는 ForceRegisterParser 로 FormatEnv 를
-    // 덮어쓰고 파일을 .env 확장자로 로드 (내용은 XML 형식):
+    // LoadFiles는 .xml 확장자를 기준으로 XML 파서로 자동 라우팅하지 않음 - DetectFormat은
+    // .env/.json/.yaml/.yml만 인식. 여기서는 ForceRegisterParser로
+    // FormatEnv를 덮어쓰고 파일을 .env 확장자로 로드(콘텐츠는 XML 형식):
     err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &XMLParser{
             cfg:       cfg,
@@ -623,7 +624,7 @@ func main() {
     defer loader.Close()
 
     /*
-    config.env 파일 내용 (XML 형식):
+    config.env 파일 내용(XML 형식):
     <?xml version="1.0"?>
     <config>
         <entry key="DATABASE_HOST">localhost</entry>
@@ -643,7 +644,7 @@ func main() {
 
 ## 관련 문서
 
-- [ComponentFactory API](/ko/env/api-reference/factory) - ComponentFactory 및 RegisterParser
-- [인터페이스 정의](/ko/env/api-reference/interfaces) - EnvParser 인터페이스 정의
+- [ComponentFactory API](/ko/env/api-reference/factory) - ComponentFactory와 RegisterParser
+- [인터페이스](/ko/env/api-reference/interfaces) - EnvParser 인터페이스 정의
 - [Config API](/ko/env/api-reference/config) - 구성 옵션 상세
-- [다중 형식 구성](/ko/env/guides/multi-format) - JSON/YAML 형식 상세
+- [다중 포맷 설정](/ko/env/guides/multi-format) - JSON/YAML 형식 상세

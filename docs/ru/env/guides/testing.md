@@ -1,19 +1,20 @@
 ---
 sidebar_label: "Сценарии тестирования"
-title: "Тестирование - CyberGo env | Практики unit-тестов"
-description: "Тесты CyberGo env: TestingConfig с OverwriteExisting, мокинг FileSystem, независимый загрузчик на тест, табличные/базовые тесты и ResetDefaultLoader."
-sidebar_position: 6
+title: "Сценарии тестирования - CyberGo env | лучшие практики модульного тестирования"
+description: "Руководство по лучшим практикам тестирования CyberGo env: конфигурация TestingConfig с OverwriteExisting для изоляции тестов, интерфейс FileSystem для имитации файловой системы в памяти, независимые загрузчики для каждого теста, табличные и бенчмарк-тесты, стратегия очистки состояния через ResetDefaultLoader для стабильных и воспроизводимых тестов."
+sidebar_position: 7
+sidebar_icon: "🧪"
 ---
 
 # Сценарии тестирования
 
-В этом руководстве описано использование библиотеки env в тестах, включая изоляцию тестовой среды, имитацию файловой системы и очистку состояния.
+В этом руководстве описывается использование библиотеки env в тестах, включая изоляцию тестовой среды, имитацию файловой системы и очистку состояния.
 
 ## Тестовая конфигурация
 
 ### Использование TestingConfig
 
-TestingConfig перекрывает существующие переменные окружения, что подходит для изоляции тестов:
+TestingConfig переопределяет существующие переменные окружения, подходя для изоляции тестов:
 
 ```go
 func TestWithTestingConfig(t *testing.T) {
@@ -29,7 +30,7 @@ func TestWithTestingConfig(t *testing.T) {
 }
 ```
 
-::: tip Примечание
+::: tip Внимание
 TestingConfig устанавливает `OverwriteExisting: true`, обеспечивая изоляцию тестов. Если нужно сохранить существующие переменные, можно вручную установить `cfg.OverwriteExisting = false`.
 :::
 
@@ -45,15 +46,15 @@ func TestDatabase(t *testing.T) {
     loader.Set("DB_HOST", "localhost")
     loader.Set("DB_PORT", "5432")
 
-    // Выполнение тестов...
+    // Запуск тестов...
 }
 ```
 
 ## Имитация файловой системы
 
-### Пользовательский FileSystem
+### Пользовательская FileSystem
 
-Использование интерфейса `FileSystem` для имитации файлов:
+Используйте интерфейс `FileSystem` для имитации файлов:
 
 ```go
 type MockFileSystem struct {
@@ -133,10 +134,10 @@ func TestMain(m *testing.M) {
 }
 
 func TestExample(t *testing.T) {
-    // Каждый тест также может выполнять сброс
+    // Каждый тест также может сбрасывать
     env.ResetDefaultLoader()
 
-    // Использование функций уровня пакета
+    // Использование пакетных функций
     env.Load(".env.test")
 }
 ```
@@ -145,13 +146,13 @@ func TestExample(t *testing.T) {
 
 ```go
 func TestWithCleanup(t *testing.T) {
-    // Сохранение оригинального значения
+    // Сохранение исходного значения
     originalHost := os.Getenv("TEST_HOST")
 
     // Установка тестового значения
     os.Setenv("TEST_HOST", "test-value")
 
-    // Восстановление после завершения теста
+    // Восстановление после теста
     t.Cleanup(func() {
         if originalHost == "" {
             os.Unsetenv("TEST_HOST")
@@ -160,7 +161,7 @@ func TestWithCleanup(t *testing.T) {
         }
     })
 
-    // Выполнение тестов...
+    // Запуск тестов...
 }
 ```
 
@@ -312,7 +313,7 @@ func TestConcurrentAccess(t *testing.T) {
 
     var wg sync.WaitGroup
 
-    // Параллельная запись
+    // Конкурентная запись
     for i := 0; i < 100; i++ {
         wg.Add(1)
         go func(n int) {
@@ -322,7 +323,7 @@ func TestConcurrentAccess(t *testing.T) {
         }(i)
     }
 
-    // Параллельное чтение
+    // Конкурентное чтение
     for i := 0; i < 100; i++ {
         wg.Add(1)
         go func(n int) {
@@ -336,7 +337,7 @@ func TestConcurrentAccess(t *testing.T) {
 }
 ```
 
-## Бенчмарки
+## Бенчмарк-тесты
 
 ### Производительность чтения
 
@@ -438,14 +439,14 @@ func TestWithHelper(t *testing.T) {
         "DB_PORT": "5432",
     })
 
-    // Загрузчик будет автоматически закрыт после завершения теста
+    // loader будет автоматически закрыт после теста
     assert.Equal(t, "localhost", loader.GetString("DB_HOST"))
 }
 ```
 
 ## Связанная документация
 
-- [Config API - TestingConfig](/ru/env/api-reference/config#testingconfig) - Справка по тестовой конфигурации
-- [Loader API](/ru/env/api-reference/loader) - Полный список методов Loader
-- [Определение интерфейсов - FileSystem](/ru/env/api-reference/interfaces) - Интерфейс пользовательской файловой системы
-- [Оптимизация производительности](/ru/env/advanced/performance) - Данные бенчмарков
+- [Config API — TestingConfig](/ru/env/api-reference/config#testingconfig) - справочник тестовой конфигурации
+- [Loader API](/ru/env/api-reference/loader) - полные методы Loader
+- [Определения интерфейсов — FileSystem](/ru/env/api-reference/interfaces) - интерфейс пользовательской файловой системы
+- [Оптимизация производительности](/ru/env/advanced/performance) - данные бенчмарк-тестов

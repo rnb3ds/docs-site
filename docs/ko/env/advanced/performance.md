@@ -1,15 +1,15 @@
 ---
-sidebar_label: "성능 최적화"
-title: "성능 최적화 - CyberGo env | 고동시성 읽기/쓰기 튜닝"
-description: "CyberGo env 성능 최적화 가이드로 RWMutex·샤드 락 동시성, sync.Pool 객체 풀 재사용으로 할당을 크게 줄임, mlock 메모리 잠금 비용 절충, 대용량 파일 스트리밍과 MaxFileSize/MaxVariables 매개변수 튜닝을 벤치마크 기반으로 제안합니다."
+sidebar_label: "성능"
+title: "성능 - CyberGo env | 고동시 읽기/쓰기 튜닝"
+description: "CyberGo env 성능 최적화 가이드로, RWMutex 읽기/쓰기 잠금과 분할 잠금의 동시 안전 메커니즘, sync.Pool 객체 풀 재사용으로 할당을 크게 줄이는 방법, mlock 메모리 잠금 오버헤드 트레이드오프와 대용량 파일 스트리밍 파싱을 상세히 설명하며, 벤치마크 비교, 동시 처리량 분석, MaxFileSize/MaxVariables 매개변수 튜닝 제안을 제공합니다."
 sidebar_position: 1
 ---
 
 # 성능 최적화
 
-env 라이브러리는 고성능 시나리오에 최적화되어 있습니다. 이 문서에서는 동시성 안전, 객체 풀, 메모리 관리 등 성능 관련 기능을 소개합니다.
+env 라이브러리는 고성능 시나리오에 최적화되어 있습니다. 이 문서는 동시 안전, 객체 풀, 메모리 관리 등 성능 관련 기능을 소개합니다.
 
-## 동시성 안전
+## 동시 안전
 
 ### 스레드 안전 보장
 
@@ -44,7 +44,7 @@ wg.Wait()
 
 ### 패키지 수준 함수 스레드 안전
 
-패키지 수준 함수는 전역 로더를 사용하며, 마찬가지로 스레드 안전합니다:
+패키지 수준 함수는 글로벌 로더를 사용하며, 마찬가지로 스레드 안전합니다:
 
 ```go
 var wg sync.WaitGroup
@@ -62,11 +62,11 @@ wg.Wait()
 
 ### 내부 구현
 
-라이브러리는 샤딩된 저장소 (Sharded Storage) 를 사용하여 잠금 경합을 줄입니다:
+라이브러리는 분할 저장(Sharded Storage)을 사용하여 잠금 경합을 줄입니다:
 
 ```text
 ┌─────────────────────────────────────────┐
-│          Loader (8 개 샤드)               │
+│          Loader(8개 분할)                │
 ├─────────────────────────────────────────┤
 │  ┌─────────┐ ┌─────────┐    ┌────────┐ │
 │  │ Shard 0 │ │ Shard 1 │... │ Shard 7│ │
@@ -76,40 +76,40 @@ wg.Wait()
 └─────────────────────────────────────────┘
 ```
 
-- 키는 해시값에 따라 다른 샤드에 할당됩니다
-- 각 샤드는 독립적인 잠금을 가집니다
-- 잠금 경합 감소, 동시성 성능 향상
+- 키는 해시 값에 따라 서로 다른 분할에 할당
+- 각 분할은 독립적인 잠금 보유
+- 잠금 경합 감소, 동시 성능 향상
 
 ## 객체 풀
 
 ### 객체 풀을 사용하는 이유
 
-빈번한 객체 생성과 파괴는 GC 부하를 증가시킵니다:
+빈번한 객체 생성 및 파괴는 GC 압력을 증가시킵니다:
 
 ```text
 객체 풀 없음:
 객체 생성 → 사용 → GC 회수 → 객체 생성 → 사용 → GC 회수 ...
 
 객체 풀 있음:
-객체 생성 → 사용 → 풀에 반납 → 가져오기 → 사용 → 풀에 반납 ...
+객체 생성 → 사용 → 풀에 반환 → 가져오기 → 사용 → 풀에 반환 ...
 ```
 
 ### SecureValue 풀
 
-`SecureValue` 객체는 풀링으로 관리됩니다:
+`SecureValue` 객체는 풀로 관리됩니다:
 
 ```go
-// SecureValue 가져오기 (풀에서 재사용될 수 있음)
+// SecureValue 가져오기(풀에서 재사용 가능)
 secret := env.GetSecure("API_KEY")
 
-// 사용 (Reveal 은 평문 반환, String/Masked는 마스크 반환)
+// 사용(Reveal은 평문 반환, String/Masked는 마스크 반환)
 value := secret.Reveal()
 
-// 풀에 반납
+// 풀에 반환
 secret.Close()  // 또는 secret.Release()
 ```
 
-### 객체 풀 올바른 사용법
+### 객체 풀 올바른 사용
 
 **적시 해제:**
 
@@ -134,7 +134,7 @@ func init() {
 }
 
 func later() {
-    // 위험: globalSecret 이 다른 코드에서 이미 사용 중일 수 있음
+    // 위험: globalSecret은 다른 코드에서 이미 사용 중일 수 있음
     globalSecret.String()
 }
 
@@ -153,7 +153,7 @@ secret := env.GetSecure("KEY")
 
 // 사용 전 확인
 if secret.IsClosed() {
-    // 객체가 닫힘, 사용할 수 없음
+    // 객체가 닫혀 사용할 수 없음
 }
 
 // 사용 후 닫기
@@ -165,11 +165,11 @@ if secret.IsClosed() {
 }
 ```
 
-## 메모리 보안
+## 메모리 안전
 
 ### 메모리 잠금
 
-메모리 잠금을 활성화하여 민감 데이터의 디스크 스왑을 방지합니다:
+메모리 잠금을 활성화하여 민감 데이터가 디스크로 스왑되는 것을 방지합니다:
 
 ```go
 // 플랫폼 지원 확인
@@ -188,8 +188,8 @@ if env.IsMemoryLockSupported() {
 | FreeBSD | ✅ |
 | wasm | ❌ |
 
-::: tip 자세히 보기
-[SecureValue API - 메모리 잠금 구성](/ko/env/api-reference/secure-value)에서 전체 구성 설명을 확인하세요.
+:::tip 상세
+[SecureValue API - 메모리 잠금 구성](/ko/env/api-reference/secure-value#메모리-잠금-구성)에서 완전한 구성 설명을 확인하세요.
 :::
 
 ### 엄격 모드
@@ -205,31 +205,31 @@ if err != nil {
 }
 ```
 
-### 보안 영값 초기화
+### 안전한 제로화
 
-`SecureValue`는 닫힐 때 메모리를 자동으로 영값 초기화합니다:
+`SecureValue`는 닫을 때 자동으로 메모리를 제로화합니다:
 
 ```go
 secret := env.GetSecure("PASSWORD")
-// 내부 저장소: ['p', 'a', 's', 's', ...]
+// 내부 저장: ['p', 'a', 's', 's', ...]
 
 secret.Close()
-// 내부 저장소: [0, 0, 0, 0, ...]
+// 내부 저장: [0, 0, 0, 0, ...]
 ```
 
-바이트 슬라이스 수동 영값 초기화:
+바이트 슬라이스 수동 제로화:
 
 ```go
 sensitiveBytes := []byte("secret")
 env.ClearBytes(sensitiveBytes)
-// sensitiveBytes 는 이제 모두 0
+// sensitiveBytes는 이제 모두 0
 ```
 
 ## 성능 패턴
 
 ### 초기화 후 읽기 전용
 
-가장 효율적인 패턴: 시작 시 구성을 로딩하고, 런타임에는 읽기 전용:
+가장 효율적인 패턴: 시작 시 구성 로드, 런타임에는 읽기 전용:
 
 ```go
 var config *Config
@@ -241,7 +241,7 @@ func init() {
     env.ParseInto(config)
 }
 
-// 임의의 goroutine 에서 안전하게 읽기
+// 모든 goroutine에서 안전하게 읽기
 func getValue() string {
     return config.Key
 }
@@ -249,7 +249,7 @@ func getValue() string {
 
 ### 동적 구성 새로고침
 
-구성을 동적으로 업데이트해야 하는 패턴:
+구성을 동적으로 업데이트해야 할 때의 패턴:
 
 ```go
 type ConfigManager struct {
@@ -275,21 +275,21 @@ func (m *ConfigManager) Get(key string) string {
 ### 잠금 보유 시간 단축
 
 ```go
-// 비권장: 잠금 내에서 시간이 오래 걸리는 작업 실행
+// 비권장: 잠금 내에서 시간이 많이 걸리는 작업 수행
 func (l *Loader) ProcessValue(key string) {
     value := l.GetString(key)
-    // 시간이 오래 걸리는 작업...
+    // 시간이 많이 걸리는 작업...
     processValue(value)
 }
 
-// 권장: 빠르게 읽고, 잠금 밖에서 처리
+// 권장: 빠른 읽기, 잠금 외부에서 처리
 func ProcessValue(key string) {
     value := loader.GetString(key)  // 빠르게 가져오기
     go processValue(value)          // 비동기 처리
 }
 ```
 
-### 일괄 작업
+### 배치 작업
 
 ```go
 // 필요한 모든 값을 한 번에 가져오기
@@ -303,16 +303,16 @@ func LoadAllConfig(loader *env.Loader) *Config {
 }
 ```
 
-### 빈번한 호출 방지
+### 빈번한 호출 피하기
 
 ```go
 // 비권장: 매 요청마다 읽기
 func Handler(w http.ResponseWriter, r *http.Request) {
-    apiKey := env.GetString("API_KEY")  // 매 요청마다 잠금 획득
+    apiKey := env.GetString("API_KEY")  // 매 요청마다 잠금
     // ...
 }
 
-// 권장: 시작 시 캐시
+// 권장: 시작 시 캐싱
 var apiKey string
 
 func init() {
@@ -321,7 +321,7 @@ func init() {
 }
 
 func Handler(w http.ResponseWriter, r *http.Request) {
-    // 캐시된 값을 직접 사용
+    // 캐시된 값 직접 사용
     // ...
 }
 ```
@@ -333,14 +333,14 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 | 작업 | 풀 없음 | 풀 있음 |
 |------|------|------|
 | 할당 횟수 | N | ~상수 |
-| GC 부하 | 높음 | 낮음 |
+| GC 압력 | 높음 | 낮음 |
 | 지연 | 불안정 | 안정 |
 
 ### 메모리 잠금 오버헤드
 
-메모리 잠금 (Linux 의 `mlock` / Windows 의 `VirtualLock`) 은 `SecureValue` 생성 시 한 번만 추가 syscall 오버헤드를 발생시키며, 읽기 작업 (`Reveal` / `String` / `Masked`) 에는 차이가 없습니다. `SecureValue`는 작고 짧게 유지하는 것을 권장합니다 — 사용 후 즉시 `Close()` / `Release()`하여 객체 풀에 반납하고, 큰 잠금 메모리를 장기간 보유하지 마세요.
+메모리 잠금(Linux의 `mlock` / Windows의 `VirtualLock`)은 `SecureValue` 생성 시 한 번만 추가 syscall 오버헤드를 발생시키며, 읽기 작업(`Reveal` / `String` / `Masked`)에는 차이가 없습니다. `SecureValue`를 작고 일시적으로 유지하는 것을 권장합니다 - 사용 후 즉시 `Close()` / `Release()`하여 객체 풀에 반환하고, 대규모 잠긴 메모리를 장기간 보유하지 마세요.
 
-## 벤치마크 테스트
+## 벤치마크
 
 ### 읽기 성능
 
@@ -394,25 +394,25 @@ func BenchmarkMixedReadWrite(b *testing.B) {
 }
 ```
 
-## 주의 사항
+## 주의사항
 
-### 잠금 내 차단 방지
+### 잠금 내부에서 차단 피하기
 
 ```go
-// 위험: 교착 상태 발생 가능
+// 위험: 교착 상태 가능성
 func (l *Loader) BadMethod() {
-    // 잠금 내에서 차단될 수 있는 작업 호출
-    l.Set("KEY", computeValue())  // computeValue 가 느릴 수 있음
+    // 잠금 내부에서 차단 가능한 작업 호출
+    l.Set("KEY", computeValue())  // computeValue가 느릴 수 있음
 }
 
-// 안전: 먼저 계산, 그 다음 설정
+// 안전: 먼저 계산, 나중에 설정
 func GoodMethod() {
-    value := computeValue()  // 잠금 밖에서 계산
-    loader.Set("KEY", value)  // 빠른 설정
+    value := computeValue()  // 잠금 외부에서 계산
+    loader.Set("KEY", value)  // 빠르게 설정
 }
 ```
 
-### Close 후 동시성 접근
+### Close 후 동시 접근
 
 ```go
 loader, _ := env.New(cfg)
@@ -420,16 +420,16 @@ loader, _ := env.New(cfg)
 // goroutine 시작
 go func() {
     time.Sleep(1 * time.Second)
-    loader.GetString("KEY")  // 빈 문자열 반환 (GetString 은 error 를 반환하지 않음)
+    loader.GetString("KEY")  // 빈 문자열 반환(GetString은 error를 반환하지 않음)
 }()
 
-loader.Close()  // 주 goroutine 에서 닫기
+loader.Close()  // 메인 goroutine에서 닫기
 ```
 
-### 전역 로더 재설정
+### 글로벌 로더 재설정
 
 ```go
-// 동시성 불안전: 런타임에 호출하지 마세요
+// 동시성 안전하지 않음: 런타임에 호출하지 마세요
 env.ResetDefaultLoader()
 
 // 안전: 테스트 또는 시작 시에만 호출
@@ -441,6 +441,6 @@ func init() {
 
 ## 관련 문서
 
-- [SecureValue API](/ko/env/api-reference/secure-value) - 보안 값 처리 및 메모리 잠금
+- [SecureValue API](/ko/env/api-reference/secure-value) - 보안 값 처리와 메모리 잠금
 - [Loader API](/ko/env/api-reference/loader) - 로더 메서드
-- [테스트 시나리오](/ko/env/guides/testing) - 벤치마크 테스트 예시
+- [테스트](/ko/env/guides/testing) - 벤치마크 예제

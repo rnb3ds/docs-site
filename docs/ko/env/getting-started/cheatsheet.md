@@ -1,22 +1,22 @@
 ---
 sidebar_label: "치트시트"
-title: "치트시트 - CyberGo env | 자주 사용하는 API 빠른 참조"
-description: "CyberGo env 자주 쓰는 API 치트시트로 파일 로딩, 타입 읽기, 구조체 매핑, 변수 확장, SecureValue 저장, Marshal 직렬화, 센티넬 오류 errors.Is, 감사 로그 등 고빈도 작업의 핵심 코드를 한 페이지에 정리해 빠르게 참조할 수 있습니다."
+title: "치트시트 - CyberGo env | 자주 쓰는 API"
+description: "CyberGo env 자주 쓰는 API 치트시트로, 파일 로드, 타입 읽기, 구조체 매핑, 변수 확장, 검증, SecureValue 저장, Marshal/Unmarshal 직렬화, 센티넬 오류 errors.Is와 감사 로그 등 고빈도 작업의 핵심 코드 조각을 한 페이지에 정리하여 일상적인 참고에 편리합니다."
 sidebar_position: 2
 ---
 
 # 치트시트
 
-이 라이브러리에 이미 익숙한 상태에서, 고빈도 사용 코드 스니펫을 빠르게 참조하세요.
+이 라이브러리에 대해 어느 정도 이해하고 있다는 전제하에, 자주 사용되는 코드 조각을 빠르게 참조하세요.
 
-## 설정 로드
+## 구성 로드
 
 ```go
-// 패키지 수준 로드
+// 패키지 수준으로 로드
 env.Load(".env")                                        // .env 파일 로드
 env.Load(".env", ".env.local", "config.json")          // 다중 파일
 
-// 로더를 통한 로드
+// 로더로 로드
 loader, _ := env.New()
 loader.LoadFiles("config.json")                         // JSON
 loader.LoadFiles("config.yaml")                         // YAML
@@ -32,13 +32,13 @@ env.GetInt("PORT", 8080)              // int64 반환
 env.GetBool("DEBUG", false)
 env.GetDuration("TIMEOUT", 30*time.Second)
 
-// 슬라이스 (KEY_0,KEY_1 인덱스 형식 또는 쉼표 구분 지원)
+// 슬라이스(KEY_0,KEY_1 인덱스 형식 또는 쉼표 구분 지원)
 env.GetSlice[string]("HOSTS", []string{"localhost"})
 env.GetSlice[int64]("PORTS", []int64{80})
-env.GetSlice[int]("PORTS", []int{80})          // int 도 지원
+env.GetSlice[int]("PORTS", []int{80})          // int도 지원
 env.GetSlice[float64]("RATES", []float64{0.1})
 
-// Loader 에서 슬라이스 가져오기
+// Loader에서 슬라이스 가져오기
 env.GetSliceFrom[string](loader, "HOSTS")
 env.GetSliceFrom[int64](loader, "PORTS")
 
@@ -52,8 +52,8 @@ count := env.Len()
 secret := env.GetSecure("PASSWORD")
 if secret != nil {
     defer secret.Release()  // 또는 secret.Close()
-    value := secret.Reveal()
-    masked := secret.Masked()
+    value := secret.Reveal()   // 평문 값(필요한 경우에만 사용)
+    masked := secret.Masked()  // 마스크(로그용)
 }
 ```
 
@@ -61,12 +61,12 @@ if secret != nil {
 
 ```go
 // JSON: {"app": {"name": "myapp"}}
-// 저장됨: APP_NAME=myapp
+// 저장 형태: APP_NAME=myapp
 
 // 다음 방식 모두 접근 가능
-env.GetString("APP_NAME")      // 평탄화 키 이름 (권장)
-env.GetString("app.name")      // 점 경로
-env.GetString("APP.NAME")      // 대문자 점 경로
+env.GetString("APP_NAME")      // 플랫 키 이름(권장)
+env.GetString("app.name")      // 점 표기 경로
+env.GetString("APP.NAME")      // 대문자 점 표기 경로
 
 // 배열 인덱스
 env.GetString("servers.0.host")  // SERVERS_0_HOST
@@ -93,14 +93,14 @@ cfg := Config{}
 env.ParseInto(&cfg)
 ```
 
-## 설정 프리셋
+## 구성 프리셋
 
 | 프리셋 | 용도 | 특징 |
 |------|------|------|
 | `DefaultConfig()` | 일반 | 안전한 기본값 |
-| `DevelopmentConfig()` | 개발 | 느슨한 제한, YAML 구문 지원, 10MB 파일 상한 |
-| `TestingConfig()` | 테스트 | 기존 변수 덮어쓰기, 테스트 격리, 64KB 파일 상한 |
-| `ProductionConfig()` | 프로덕션 | 엄격한 검증 + 감사, 기존 변수 덮어쓰지 않음, 64KB 파일 상한 |
+| `DevelopmentConfig()` | 개발 | 느슨한 제한, YAML 구문 지원, 10MB 파일 크기 상한 |
+| `TestingConfig()` | 테스트 | 이미 존재하는 변수 덮어쓰기, 테스트 격리, 64KB 파일 크기 상한 |
+| `ProductionConfig()` | 프로덕션 | 엄격한 검증 + 감사, 이미 존재하는 변수 덮어쓰지 않음, 64KB 파일 크기 상한 |
 
 ```go
 cfg := env.ProductionConfig()
@@ -121,12 +121,12 @@ loader.Delete("KEY")
 loader.Keys()
 loader.All()
 loader.Validate()
-loader.Apply()  // os.Environ 에 적용
-loader.Len()    // 변수 수
+loader.Apply()  // os.Environ에 적용
+loader.Len()    // 변수 개수
 loader.LoadTime() // 마지막 로드 시간
 loader.IsApplied() // 시스템 환경에 적용되었는지 여부
 loader.IsClosed()  // 닫혔는지 여부
-loader.Config()    // 설정 가져오기
+loader.Config()    // 구성 가져오기
 ```
 
 ## 오류 처리
@@ -134,17 +134,17 @@ loader.Config()    // 설정 가져오기
 ```go
 import "errors"
 
-// 센티넬 오류
+// 센티널 오류
 errors.Is(err, env.ErrFileNotFound)
 errors.Is(err, env.ErrFileTooLarge)
-errors.Is(err, env.ErrSecurityViolation)  // 금지 키 (실제로는 *SecurityError 반환)
+errors.Is(err, env.ErrSecurityViolation)  // 금지된 키(실제로는 *SecurityError 반환)
 errors.Is(err, env.ErrClosed)
 errors.Is(err, env.ErrAlreadyInitialized)
 
-// 키 형식이 잘못된 경우: 실제로는 *ValidationError, Field=="key" 반환
+// 키 형식이 잘못된 경우: 실제로는 *ValidationError 반환, Field=="key"
 var keyErr *env.ValidationError
 if errors.As(err, &keyErr) && keyErr.Field == "key" {
-    // 잘못된 키 형식: keyErr.Message
+    // 유효하지 않은 키 형식: keyErr.Message
 }
 
 // 구조화된 오류
@@ -191,7 +191,7 @@ masked := env.MaskKey("DB_PASSWORD")  // "DB***"
 ```go
 goEnv := os.Getenv("GO_ENV")
 if goEnv == "" { goEnv = "development" }
-env.Load(".env", ".env."+goEnv, ".env.local")  // 단일 호출, 나중 것이 앞의 것을 덮어씀
+env.Load(".env", ".env."+goEnv, ".env.local")  // 한 번 호출, 나중 것이 앞의 것 덮어씀
 ```
 
 ## 다중 형식
@@ -221,9 +221,9 @@ KEY=value
 KEY="value with spaces"
 KEY='literal ${noexpand}'
 KEY=${OTHER_KEY}           # 변수 참조
-KEY=${MISSING:-default}    # 기본값 (변수가 없을 때 사용)
-KEY=${MISSING:=default}    # 기본값 (변수가 없을 때 사용, :-와 동일)
-KEY=${MISSING:?error}      # 오류 메시지 (변수가 없거나 비어 있을 때 오류)
+KEY=${MISSING:-default}    # 기본값(변수가 없을 때 사용)
+KEY=${MISSING:=default}    # 기본값(변수가 없을 때 사용, :-와 동일)
+KEY=${MISSING:?error}      # 오류 메시지(변수가 없거나 비어있을 때 오류)
 export KEY=value           # bash 스타일
 KEY=$$                     # 달러 기호 이스케이프
 ```
@@ -251,7 +251,7 @@ DURATION=1h30m
 | 키 길이 | 64 | 1024 |
 | 값 길이 | 4 KB | 1 MB |
 | 변수 수 | 500 | 10000 |
-| 전개 깊이 | 5 | 20 |
+| 확장 깊이 | 5 | 20 |
 
 ## 테스트
 
@@ -275,7 +275,7 @@ func TestMain(m *testing.M) {
 
 ## 내장 금지 키
 
-다음 키 이름은 기본적으로 설정이 금지되어 있습니다:
+다음 키 이름은 기본적으로 설정이 금지됩니다:
 
 | 카테고리 | 키 이름 |
 |------|------|
@@ -295,8 +295,8 @@ func TestMain(m *testing.M) {
 // env.EnvApplicator    // Apply
 // env.EnvCloser        // Close
 
-// 복합 인터페이스
-// env.EnvLoader        // 위 모든 것을 조합
+// 결합 인터페이스
+// env.EnvLoader        // 위 모든 것을 결합
 ```
 
 ## 관련 문서
@@ -304,5 +304,5 @@ func TestMain(m *testing.M) {
 - [빠른 시작](/ko/env/getting-started/) - 완전한 튜토리얼
 - [패키지 함수](/ko/env/api-reference/functions) - 상세 API
 - [Loader API](/ko/env/api-reference/loader) - Loader 메서드
-- [Config API](/ko/env/api-reference/config) - 설정 옵션
-- [오류 처리](/ko/env/advanced/error-handling) - 오류 처리 패턴
+- [Config API](/ko/env/api-reference/config) - 구성 옵션
+- [오류 처리](/ko/env/guides/error-handling) - 오류 처리 패턴

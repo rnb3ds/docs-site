@@ -1,7 +1,7 @@
 ---
 sidebar_label: "コネクションプールとプロキシ"
 title: "コネクションプールとプロキシ - CyberGo HTTPC | プールチューニングとプロキシ設定"
-description: "HTTPC コネクションプールとプロキシ設定ガイド：MaxIdleConns プールチューニングとシナリオ推奨、ProxyURL 手動プロキシと SOCKS5、EnableSystemProxy 自動検出、ProxyPool プロキシプール回転とパッシブサーキットブレーキング、ProxyRotateOnStatus、DoH と HTTP/2 設定。"
+description: "HTTPC コネクションプールとプロキシ設定ガイド：MaxIdleConns プールパラメータチューニングとシナリオ推奨、ProxyURL 手動プロキシと SOCKS5、EnableSystemProxy システムプロキシ検出、ProxyPool プロキシプールローテーションとパッシブサーキットブレーキング、ProxyRotatePerRequest リクエストごとのローテーション、ProxyRotateOnStatus ステータスコードローテーション、DoH と HTTP/2 設定プラクティス。"
 sidebar_position: 8
 ---
 
@@ -117,6 +117,7 @@ client, err := httpc.New(cfg)
 | `ProxyPoolStrategy` | `ProxyStrategy` | `RoundRobin` | 選択戦略 |
 | `ProxyFailureThreshold` | `int` | `3`（0 でフォールバック） | 連続失敗サーキットブレーク閾値 |
 | `ProxyCooldown` | `time.Duration` | `30s`（0 でフォールバック） | サーキットブレークプロキシのクールダウン |
+| `ProxyRotatePerRequest` | `bool` | `false` | 各リクエストでプロキシを強制切り替え（アイドル接続の再利用を無効化） |
 | `ProxyRotateOnStatus` | `[]int` | `nil` | プロキシ回転をトリガーするステータスコード |
 
 #### 選択戦略
@@ -174,6 +175,30 @@ client, err := httpc.New(cfg)
 
 `ProxyRotateOnStatus` が設定され、プールに複数のプロキシがある場合、リトライ予算が自動的に `len(ProxyPool) - 1` に引き上げられます（`MaxRetries` 上限 10 で制限）、すべてのプロキシが試行される機会を保証します。
 :::
+
+#### リクエストごとのローテーション
+
+`ProxyRotatePerRequest` は**接続再利用**によってプロキシトンネルが固定化される問題を解決します：HTTP コネクションプールは確立済みの TCP 接続を再利用し、そのプロキシトンネルも含まれます。つまり同一ホストへの連続リクエストは、`ProxyPoolStrategy` がセレクタのカーソルをローテーションしていても、前回のリクエストのプロキシを再利用してしまいます。
+
+有効化すると、毎回のリクエスト開始時にすべてのアイドル接続をクローズし、Transport にプロキシプールを再評価させます——代償は接続再利用なし（毎回のリクエストで新規接続 + プロキシトンネル）ですが、リクエストごとのローテーションを保証します：
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{
+    "http://proxy1:8080",
+    "http://proxy2:8080",
+    "http://proxy3:8080",
+}
+cfg.Connection.ProxyRotatePerRequest = true  // 毎回のリクエストでプロキシを切り替え
+
+client, err := httpc.New(cfg)
+```
+
+:::tip 適用シナリオ
+同一ホストのスクレイピング/データ収集に適しています——毎回のリクエストの送信元 IP が異なり、ターゲットサイトの IP ブロックのリスクを低減します。異なるホストへのリクエストの場合、接続再利用は同一プロキシに束縛されないため、通常は有効化の必要はありません。
+:::
+
+`ProxyRotateOnStatus` と同様に、`ProxyRotatePerRequest` もプロキシプールに複数のプロキシがある場合、リトライ予算を自動的に `len(ProxyPool) - 1` に引き上げ、各プロキシが少なくとも 1 回は試行されることを保証します。
 
 ### プロキシ優先度
 

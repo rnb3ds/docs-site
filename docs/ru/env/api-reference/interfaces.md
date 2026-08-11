@@ -1,19 +1,19 @@
 ---
 sidebar_label: "Определения интерфейсов"
-title: "Определения интерфейсов - CyberGo env | Иерархия интерфейсов"
-description: "Интерфейсы CyberGo env с детализированным дизайном для DI: EnvLoader, EnvFileLoader, EnvGetter, EnvSetter, Validator, FullAuditLogger, EnvParser и FileSystem."
+title: "Определения интерфейсов - CyberGo env | иерархия основных интерфейсов"
+description: "Справочник определений ключевых интерфейсов CyberGo env: тонкозернистый дизайн с поддержкой внедрения зависимостей, включает композитный интерфейс EnvLoader и субинтерфейсы EnvFileLoader, EnvGetter, EnvSetter, Validator, FullAuditLogger, EnvParser, FileSystem."
 sidebar_position: 6
 ---
 
 # Определения интерфейсов
 
-Библиотека env использует детализированный дизайн интерфейсов, поддерживая внедрение зависимостей и гибкую композицию.
+Библиотека env использует тонкозернистый дизайн интерфейсов, поддерживающий внедрение зависимостей и гибкую композицию.
 
 ## Основные интерфейсы
 
 ### EnvLoader
 
-Полный интерфейс загрузчика, объединяющий все под-интерфейсы:
+Полный интерфейс загрузчика, комбинирующий все субинтерфейсы:
 
 ```go
 type EnvLoader interface {
@@ -37,7 +37,7 @@ type EnvFileLoader interface {
 }
 ```
 
-**Назначение:** Сценарии, требующие только возможности загрузки файлов.
+**Назначение:** сценарии, где требуется только возможность загрузки файлов.
 
 ```go
 func loadConfig(loader env.EnvFileLoader) error {
@@ -49,7 +49,7 @@ func loadConfig(loader env.EnvFileLoader) error {
 
 ### EnvGetter
 
-Интерфейс доступа для чтения:
+Интерфейс доступа на чтение:
 
 ```go
 type EnvGetter interface {
@@ -60,7 +60,7 @@ type EnvGetter interface {
 }
 ```
 
-**Назначение:** Доступ к конфигурации только для чтения (минимальный интерфейс).
+**Назначение:** доступ к конфигурации только для чтения (минимальный интерфейс).
 
 ```go
 func readConfig(getter env.EnvGetter) {
@@ -70,17 +70,17 @@ func readConfig(getter env.EnvGetter) {
 }
 ```
 
-:::warning Внимание
+::: warning Внимание
 `GetInt`, `GetBool`, `GetUint64`, `GetFloat64`, `GetDuration`, `GetSecure`, `Len` **не являются** частью интерфейса `EnvGetter`.
 Эти методы реализованы на типе `*Loader`, но не входят в минимальный интерфейс.
 
-Для полного доступа на чтение используйте непосредственно тип `*Loader`:
+Для полного доступа на чтение используйте тип `*Loader` напрямую:
 
 ```go
 func readFullConfig(loader *env.Loader) {
-    port := loader.GetInt("PORT", 8080)      // Доступно
-    debug := loader.GetBool("DEBUG", false)  // Доступно
-    count := loader.Len()                     // Доступно
+    port := loader.GetInt("PORT", 8080)      // ✓ доступно
+    debug := loader.GetBool("DEBUG", false)  // ✓ доступно
+    count := loader.Len()                     // ✓ доступно
 }
 ```
 :::
@@ -89,7 +89,7 @@ func readFullConfig(loader *env.Loader) {
 
 ### EnvSetter
 
-Интерфейс доступа для записи:
+Интерфейс доступа на запись:
 
 ```go
 type EnvSetter interface {
@@ -98,7 +98,7 @@ type EnvSetter interface {
 }
 ```
 
-**Назначение:** Сценарии, требующие только возможности установки/удаления.
+**Назначение:** сценарии, где требуется только возможность установки/удаления.
 
 ```go
 func updateConfig(setter env.EnvSetter) error {
@@ -121,7 +121,7 @@ type EnvApplicator interface {
 }
 ```
 
-**Назначение:** Применение загруженных переменных к `os.Environ`.
+**Назначение:** применение загруженных переменных к `os.Environ`.
 
 ```go
 func applyToSystem(applicator env.EnvApplicator) error {
@@ -141,7 +141,7 @@ type EnvCloser interface {
 }
 ```
 
-**Назначение:** Освобождение ресурсов загрузчика.
+**Назначение:** освобождение ресурсов загрузчика.
 
 ---
 
@@ -149,7 +149,7 @@ type EnvCloser interface {
 
 ### Validator
 
-Объединённый интерфейс валидации:
+Композитный интерфейс валидации:
 
 ```go
 type Validator interface {
@@ -159,8 +159,8 @@ type Validator interface {
 }
 ```
 
-:::tip Внимание
-`Validator` через встраивание `RequiredValidator` предоставляет метод `ValidateRequired`. Пользовательский валидатор, реализующий только `KeyValidator`, при вызове `ValidateRequired` вернёт `ErrValidateRequiredUnsupported`.
+::: tip Внимание
+`Validator` предоставляет метод `ValidateRequired` через встраивание `RequiredValidator`. Пользовательский валидатор, реализующий только `KeyValidator`, вернёт `ErrValidateRequiredUnsupported` при вызове `ValidateRequired`.
 :::
 
 ---
@@ -175,7 +175,7 @@ type RequiredValidator interface {
 }
 ```
 
-Валидирует наличие всех обязательных ключей.
+Проверяет наличие всех обязательных ключей.
 
 ---
 
@@ -189,7 +189,7 @@ type KeyValidator interface {
 }
 ```
 
-Валидирует, соответствует ли имя ключа правилам (длина, формат, запрещённые ключи и т.д.).
+Проверяет, соответствует ли имя ключа правилам (длина, формат, запрещённые ключи и т. д.).
 
 ---
 
@@ -203,7 +203,7 @@ type ValueValidator interface {
 }
 ```
 
-Валидирует, является ли значение безопасным (отсутствие нулевых байтов, управляющих символов и т.д.).
+Проверяет, безопасно ли значение (нет нулевых байтов, управляющих символов и т. д.).
 
 ---
 
@@ -211,7 +211,7 @@ type ValueValidator interface {
 
 ### AuditLogger
 
-Минимальный интерфейс аудитного лога (псевдоним `internal.AuditLogger`):
+Минимальный интерфейс журнала аудита (псевдоним `internal.AuditLogger`):
 
 ```go
 type AuditLogger interface {
@@ -219,13 +219,13 @@ type AuditLogger interface {
 }
 ```
 
-**Назначение:** Минимизированный интерфейс для удобной реализации пользовательского аудитного лога. Для полного функционала аудита используйте `FullAuditLogger`.
+**Назначение:** минимальный интерфейс для удобной реализации пользовательского журнала аудита. Для полного аудита используйте `FullAuditLogger`.
 
 ---
 
 ### FullAuditLogger
 
-Расширенный интерфейс аудитного лога, предоставляющий полный функционал:
+Расширенный интерфейс журнала аудита, предоставляющий полный функционал:
 
 ```go
 type FullAuditLogger interface {
@@ -237,17 +237,17 @@ type FullAuditLogger interface {
 }
 ```
 
-**Назначение:** Полные возможности аудитного лога. `ComponentFactory.Auditor()` возвращает этот интерфейс.
+**Назначение:** полный функционал журнала аудита. `ComponentFactory.Auditor()` возвращает этот интерфейс.
 
 **Описание методов:**
 
 | Метод | Назначение |
 |-------|------------|
-| LogError | Регистрация события ошибки (наследуется от AuditLogger) |
-| `Log` | Регистрация общего события аудита |
-| `LogWithFile` | Регистрация события с информацией о файле |
-| `LogWithDuration` | Регистрация события с информацией о продолжительности |
-| `Close` | Закрытие аудитного лога |
+| LogError | Регистрирует событие ошибки (наследуется от AuditLogger) |
+| `Log` | Регистрирует общее событие аудита |
+| `LogWithFile` | Регистрирует событие с информацией о файле |
+| `LogWithDuration` | Регистрирует событие с длительностью |
+| `Close` | Закрывает журнал аудита |
 
 ---
 
@@ -262,14 +262,14 @@ type AuditHandler interface {
 }
 ```
 
-**Назначение:** Реализация этого интерфейса позволяет настроить способ обработки событий аудита. В отличие от интерфейса `AuditLogger`, `AuditHandler` требует методы `Log` и `Close` для приёма обработки событий аудита и освобождения ресурсов.
+**Назначение:** реализация этого интерфейса позволяет настроить способ обработки событий аудита. В отличие от интерфейса `AuditLogger`, `AuditHandler` требует методы `Log` и `Close` для приёма обработки событий аудита и освобождения ресурсов.
 
 **Встроенные реализации:**
-- `JSONAuditHandler` - Вывод логов в формате JSON
-- `LogAuditHandler` - Вывод с использованием стандартного пакета log
-- `ChannelAuditHandler` - Отправка в канал
-- `CloseableChannelHandler` - Закрываемый обработчик с собственным буферизованным каналом
-- `NopAuditHandler` - Обработчик с пустой операцией
+- `JSONAuditHandler` - выводит логи в формате JSON
+- `LogAuditHandler` - выводит через стандартный пакет log
+- `ChannelAuditHandler` - отправляет в канал
+- `CloseableChannelHandler` - закрываемый обработчик с собственным буферизованным каналом
+- `NopAuditHandler` - заглушка (ничего не делает)
 
 ---
 
@@ -285,7 +285,7 @@ type VariableExpander interface {
 }
 ```
 
-**Назначение:** Пользовательская логика подстановки переменных, поддержка синтаксиса `${VAR}`, `${VAR:-default}` и т.д.
+**Назначение:** пользовательская логика подстановки переменных, поддерживающая синтаксис `${VAR}`, `${VAR:-default}` и т. д.
 
 ```go
 expanded, err := expander.Expand("${BASE_URL}/api")
@@ -293,7 +293,7 @@ expanded, err := expander.Expand("${BASE_URL}/api")
 
 ---
 
-## Интерфейс разбора
+## Интерфейсы разбора
 
 ### EnvParser
 
@@ -306,18 +306,18 @@ type EnvParser interface {
 ```
 
 **Параметры:**
-- `r` - Читатель содержимого файла
-- `filename` - Имя файла (для сообщений об ошибках)
+- `r` - читатель содержимого файла
+- `filename` - имя файла (для сообщений об ошибках)
 
 **Возвращает:**
-- `map[string]string` - Разобранные пары ключ-значение
-- `error` - Ошибка разбора
+- `map[string]string` - разобранные пары ключ-значение
+- `error` - ошибка разбора
 
-**Назначение:** Пользовательские парсеры файловых форматов.
+**Назначение:** пользовательские парсеры форматов файлов.
 
 ---
 
-## Интерфейс хранения
+## Интерфейсы хранения
 
 ### EnvStorage
 
@@ -335,19 +335,19 @@ type EnvStorage interface {
 }
 ```
 
-**Назначение:** Пользовательский бэкенд хранения.
+**Назначение:** пользовательское хранилище.
 
 **Описание методов:**
 
 | Метод | Назначение |
 |-------|------------|
-| `Get` | Получить значение, возвращает значение и наличие |
-| `Set` | Установить пару ключ-значение |
-| `Delete` | Удалить ключ |
+| `Get` | Получает значение, возвращает значение и флаг существования |
+| `Set` | Устанавливает пару ключ-значение |
+| `Delete` | Удаляет ключ |
 | `Keys` | Возвращает все имена ключей |
 | `Len` | Возвращает количество пар ключ-значение |
 | `ToMap` | Возвращает копию всех пар ключ-значение |
-| `Clear` | Очистить все данные |
+| `Clear` | Очищает все данные |
 
 ---
 
@@ -363,7 +363,7 @@ type Marshaler interface {
 }
 ```
 
-**Назначение:** Сериализация пользовательских типов.
+**Назначение:** сериализация пользовательских типов.
 
 ```go
 type LogLevel string
@@ -389,7 +389,7 @@ type Unmarshaler interface {
 }
 ```
 
-**Назначение:** Десериализация пользовательских типов.
+**Назначение:** десериализация пользовательских типов.
 
 ```go
 type Config struct {
@@ -411,7 +411,7 @@ env.UnmarshalInto(data, &cfg)  // Вызывает UnmarshalEnv
 
 ---
 
-## Интерфейс файловой системы
+## Интерфейсы файловой системы
 
 ### FileSystem
 
@@ -432,7 +432,7 @@ type FileSystem interface {
 }
 ```
 
-**Назначение:** Имитация файловой системы при тестировании.
+**Назначение:** имитация файловой системы при тестировании.
 
 ```go
 type MockFileSystem struct {
@@ -440,7 +440,7 @@ type MockFileSystem struct {
     env   map[string]string
 }
 
-// MockFile реализует интерфейс env.File (для тестирования)
+// MockFile реализует интерфейс env.File (для тестов)
 type MockFile struct {
     reader *strings.Reader
 }
@@ -515,7 +515,7 @@ type File interface {
 | Write | Запись данных |
 | Close | Закрытие файла |
 | Stat | Получение информации о файле |
-| Sync | Синхронизация на диск |
+| Sync | Синхронизация с диском |
 
 ---
 
@@ -540,14 +540,14 @@ cfg.FileSystem = env.DefaultFileSystem  // Значение по умолчан�
 
 ### JSONAuditHandler
 
-Вывод аудитного лога в формате JSON:
+Выводит журнал аудита в формате JSON:
 
 ```go
 func NewJSONAuditHandler(w io.Writer) *JSONAuditHandler
 ```
 
 **Параметры:**
-- `w` - Цель вывода (например, `os.Stdout`, файл)
+- `w` - цель вывода (например `os.Stdout`, файл)
 
 ```go
 handler := env.NewJSONAuditHandler(os.Stdout)
@@ -562,14 +562,14 @@ handler := env.NewJSONAuditHandler(os.Stdout)
 
 ### LogAuditHandler
 
-Вывод с использованием стандартного пакета log:
+Вывод через стандартный пакет log:
 
 ```go
 func NewLogAuditHandler(logger *log.Logger) *LogAuditHandler
 ```
 
 **Параметры:**
-- `logger` - Экземпляр стандартного log.Logger
+- `logger` - экземпляр стандартного log.Logger
 
 ```go
 import "log"
@@ -594,7 +594,11 @@ func NewChannelAuditHandler(ch chan<- AuditEvent) *ChannelAuditHandler
 ```
 
 **Параметры:**
-- `ch` - Канал событий аудита
+- `ch` - канал событий аудита
+
+::: warning Владение каналом
+`ChannelAuditHandler` **не владеет** каналом, `Close()` **не закрывает** базовый канал. Вызывающий должен самостоятельно закрыть канал, чтобы уведомить получателя о завершении. Кроме того, `Log()` блокируется при заполнении буфера канала — рекомендуется использовать буферизованный канал. Для автоматического управления жизненным циклом канала используйте [NewCloseableChannelHandler](/ru/env/api-reference/factory#newcloseablechannelhandler).
+:::
 
 ```go
 ch := make(chan env.AuditEvent, 100)
@@ -612,7 +616,7 @@ go func() {
 
 ### NopAuditHandler
 
-Обработчик с пустой операцией (отбрасывает все события):
+Заглушка (отбрасывает все события):
 
 ```go
 func NewNopAuditHandler() *NopAuditHandler
@@ -661,25 +665,25 @@ type AuditEvent = internal.Event
 
 | Поле | Тип | Описание |
 |------|-----|----------|
-| Timestamp | `time.Time` | Метка времени |
+| Timestamp | `time.Time` | Временная метка |
 | Action | `AuditAction` | Тип операции |
-| Key | `string` | Имя ключа (маскировано) |
+| Key | `string` | Имя ключа (маскированное) |
 | File | `string` | Имя файла |
 | Reason | `string` | Причина/описание |
 | Success | `bool` | Успешно ли |
 | Masked | `bool` | Маскировано ли |
 | Details | `string` | Подробности |
-| Duration | `int64` | Продолжительность (наносекунды) |
+| Duration | `int64` | Длительность (наносекунды) |
 
 ---
 
 ## ComponentFactory
 
-Компонентная фабрика, управляющая общими компонентами:
+Фабрика компонентов, управляющая общими компонентами:
 
 ```go
 type ComponentFactory struct {
-    // Содержит приватные поля
+    // содержит приватные поля
 }
 ```
 
@@ -693,11 +697,11 @@ func (f *ComponentFactory) Close() error
 func (f *ComponentFactory) IsClosed() bool
 ```
 
-**Назначение:** Внутреннее использование, автоматически управляется при создании Loader. Подробнее в [ComponentFactory API](/ru/env/api-reference/factory).
+**Назначение:** внутреннее использование, автоматически управляется при создании Loader. Подробнее см. [ComponentFactory API](/ru/env/api-reference/factory).
 
 ---
 
-## Полный пример
+## Полные примеры
 
 ### Реализация пользовательского обработчика аудита
 
@@ -741,7 +745,7 @@ func main() {
 }
 ```
 
-### Использование детализированных интерфейсов
+### Использование тонкозернистых интерфейсов
 
 ```go
 package main
@@ -751,7 +755,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// Требуется только возможность чтения
+// Требуется только чтение
 func printConfig(getter env.EnvGetter) {
     for _, key := range getter.Keys() {
         value, _ := getter.Lookup(key)
@@ -759,12 +763,12 @@ func printConfig(getter env.EnvGetter) {
     }
 }
 
-// Требуется только возможность записи
+// Требуется только запись
 func setDefaults(setter env.EnvSetter) error {
     return setter.Set("DEFAULT_KEY", "default_value")
 }
 
-// Требуется только возможность загрузки
+// Требуется только загрузка
 func loadConfig(loader env.EnvFileLoader) error {
     return loader.LoadFiles(".env")
 }
@@ -774,7 +778,7 @@ func main() {
     loader, _ := env.New(cfg)
     defer loader.Close()
 
-    // Использование детализированных интерфейсов
+    // Использование тонкозернистых интерфейсов
     loadConfig(loader)
     setDefaults(loader)
     printConfig(loader)
@@ -783,6 +787,6 @@ func main() {
 
 ## Связанная документация
 
-- [Loader API](/ru/env/api-reference/loader) - Методы экземпляра Loader
-- [ComponentFactory API](/ru/env/api-reference/factory) - Компонентная фабрика
-- [Пользовательский парсер](/ru/env/guides/custom-parser) - Руководство по пользовательскому парсеру
+- [Loader API](/ru/env/api-reference/loader) - методы экземпляра Loader
+- [ComponentFactory API](/ru/env/api-reference/factory) - фабрика компонентов
+- [Пользовательский парсер](/ru/env/guides/custom-parser) - руководство по пользовательским парсерам

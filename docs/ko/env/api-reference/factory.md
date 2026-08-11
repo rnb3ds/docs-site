@@ -1,28 +1,28 @@
 ---
 sidebar_label: "컴포넌트 팩토리"
 title: "ComponentFactory API - CyberGo env | 컴포넌트 팩토리"
-description: "CyberGo env ComponentFactory API 참조로 Validator 검증기, Auditor 감사기, FileSystem 파일 시스템 어댑터와 변수 확장기를 생성하고 RegisterParser 로 커스텀 파서를 등록하며 Close 로 수명 주기를 관리합니다."
+description: "CyberGo env의 ComponentFactory 컴포넌트 팩토리 API 레퍼런스로, Validator 검증기, Auditor 감사기, FileSystem 파일 시스템 어댑터와 변수 확장기를 통합 생성하고, RegisterParser로 커스텀 파서를 등록하며 Close 수명 주기 관리를 제공합니다."
 sidebar_position: 8
 ---
 
 # ComponentFactory API
 
-`ComponentFactory`는 Loader 와 Parser 가 공유하는 컴포넌트를 생성하고 관리하며, 명확한 수명 주기 관리를 제공합니다.
+`ComponentFactory`는 Loader와 Parser가 공유하는 컴포넌트를 생성하고 관리하며, 명확한 수명 주기 관리를 제공합니다.
 
-## 유형 정의
+## 타입 정의
 
 ```go
 type ComponentFactory struct {
-    // 개인 필드 포함
+    // 전용 필드 포함
 }
 ```
 
 **핵심 책임:**
 - 공유 검증기, 감사기 및 변수 확장기 생성
 - 컴포넌트 수명 주기 관리
-- 사용자 정의 파서의 내부 컴포넌트 접근 지원
+- 커스텀 파서가 내부 컴포넌트에 액세스 지원
 
-**스레드 안전:** ComponentFactory 의 모든 메서드는 스레드 안전합니다.
+**스레드 안전:** ComponentFactory의 모든 메서드는 스레드 안전합니다.
 
 ---
 
@@ -34,10 +34,10 @@ type ComponentFactory struct {
 func (f *ComponentFactory) Validator() Validator
 ```
 
-검증기 컴포넌트를 반환하며, 키 이름과 값의 검증에 사용합니다.
+검증기 컴포넌트를 반환합니다. 키 이름과 값의 검증에 사용됩니다.
 
 ```go
-// 사용자 정의 파서에서 사용
+// 커스텀 파서에서 사용
 validator := factory.Validator()
 
 if err := validator.ValidateKey("MY_KEY"); err != nil {
@@ -45,7 +45,7 @@ if err := validator.ValidateKey("MY_KEY"); err != nil {
 }
 
 if err := validator.ValidateValue("some value"); err != nil {
-    // 값에 잘못된 내용이 포함됨 (예: 널 바이트, 제어 문자)
+    // 값에 부적절한 콘텐츠 포함(예: 널 바이트, 제어 문자)
 }
 ```
 
@@ -57,7 +57,7 @@ if err := validator.ValidateValue("some value"); err != nil {
 func (f *ComponentFactory) Auditor() FullAuditLogger
 ```
 
-감사 로그 컴포넌트를 반환하며, 전체 감사 로그 기능을 제공합니다.
+감사 로그 컴포넌트를 반환합니다. 완전한 감사 로그 기능을 제공합니다.
 
 ```go
 auditor := factory.Auditor()
@@ -75,7 +75,7 @@ _ = auditor.LogWithDuration(env.ActionParse, "", "parsed", true, time.Since(star
 func (f *ComponentFactory) Expander() VariableExpander
 ```
 
-변수 확장기 컴포넌트를 반환하며, `${VAR}` 구문의 변수 확장에 사용합니다.
+변수 확장기 컴포넌트를 반환합니다. `${VAR}` 구문의 변수 확장에 사용됩니다.
 
 ```go
 expander := factory.Expander()
@@ -90,17 +90,17 @@ expanded, err := expander.Expand("${BASE_URL}/api")
 func (f *ComponentFactory) Close() error
 ```
 
-팩토리가 보유한 리소스를 해제합니다. 닫은 후에는 팩토리 및 팩토리를 통해 생성된 컴포넌트를 더 이상 사용해서는 안 됩니다.
+팩토리가 보유한 리소스를 해제합니다. 닫은 후에는 팩토리 및 이를 통해 생성된 컴포넌트를 더 이상 사용하지 않아야 합니다.
 
 **동작:**
-- 안전한 닫기, 여러 번 호출해도 nil 반환
+- 안전하게 닫히며, 여러 번 호출해도 nil 반환
 - 감사기 리소스 해제
-- 원자 연산을 사용하여 스레드 안전 보장
+- 원자적 연산으로 스레드 안전 보장
 
 ```go
-// 일반적으로 Loader 가 자동 관리
+// 일반적으로 Loader가 자동으로 관리
 loader, _ := env.New(cfg)
-defer loader.Close()  // ComponentFactory 도 자동으로 닫힘
+defer loader.Close()  // ComponentFactory 자동 닫기
 ```
 
 ---
@@ -123,20 +123,20 @@ if factory.IsClosed() {
 
 ## 생성 방법
 
-### 자동 생성 (권장)
+### 자동 생성(권장)
 
-Loader 생성 시 ComponentFactory 가 자동으로 생성되고 관리됩니다:
+Loader 생성 시 ComponentFactory가 자동으로 생성되고 관리됩니다:
 
 ```go
 cfg := env.DefaultConfig()
 loader, _ := env.New(cfg)
 // Loader 내부에서 ComponentFactory 자동 생성
-defer loader.Close()  // 팩토리도 자동으로 닫힘
+defer loader.Close()  // 팩토리 자동 닫기
 ```
 
-### 사용자 정의 파서에서 사용
+### 커스텀 파서에서 사용
 
-사용자 정의 파서를 등록할 때, ComponentFactory 를 통해 검증기와 감사기를 가져올 수 있습니다:
+커스텀 파서 등록 시 ComponentFactory를 통해 검증기와 감사기를 가져옵니다:
 
 ```go
 type CustomParser struct {
@@ -153,7 +153,7 @@ func newCustomParser(cfg env.Config, factory *env.ComponentFactory) *CustomParse
     }
 }
 
-// 사용자 정의 형식 상수 정의 (충돌 방지를 위해 100+ 사용 권장)
+// 커스텀 형식 상수 정의(충돌 방지를 위해 100+ 사용 권장)
 const FormatCustom env.FileFormat = 100
 
 // 파서 등록
@@ -184,10 +184,10 @@ Validator  Auditor  Expander
       Close() 해제
 ```
 
-:::warning 참고
-- 각 Loader 는 일반적으로 자체 ComponentFactory 를 소유
-- Close() 를 호출한 후 해당 팩토리를 통해 생성된 모든 컴포넌트를 더 이상 사용해서는 안 됨
-- 팩토리는 스레드 안전하며, 동시 접근 가능
+:::warning 경고
+- 각 Loader는 일반적으로 자체 ComponentFactory를 소유
+- Close() 호출 후, 해당 팩토리를 통해 생성된 모든 컴포넌트를 더 이상 사용하지 않아야 함
+- 팩토리는 스레드 안전하며 동시에 액세스 가능
 :::
 
 ---
@@ -200,10 +200,10 @@ Validator  Auditor  Expander
 func NewJSONAuditHandler(w io.Writer) *JSONAuditHandler
 ```
 
-JSON 형식의 감사 핸들러를 생성하며, 구조화된 로그를 출력합니다.
+JSON 형식의 감사 핸들러를 생성합니다. 구조화된 로그를 출력합니다.
 
 **매개변수:**
-- `w` - 출력 대상 (예: `os.Stdout`, 파일)
+- `w` - 출력 대상(예: `os.Stdout`, 파일)
 
 ```go
 cfg := env.ProductionConfig()
@@ -211,7 +211,7 @@ cfg.AuditEnabled = true
 cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 ```
 
-**출력 예:**
+**출력 예시:**
 ```json
 {"timestamp":"2024-01-15T10:30:00Z","action":"load","file":".env","success":true,"duration_ns":1234567}
 ```
@@ -236,7 +236,7 @@ logger := log.New(os.Stderr, "[AUDIT] ", log.LstdFlags)
 cfg.AuditHandler = env.NewLogAuditHandler(logger)
 ```
 
-**출력 예:**
+**출력 예시:**
 ```text
 [AUDIT] 2024/01/15 10:30:00 load .env success (1.23ms)
 ```
@@ -249,10 +249,14 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 func NewChannelAuditHandler(ch chan<- AuditEvent) *ChannelAuditHandler
 ```
 
-채널 감사 핸들러를 생성하며, 감사 이벤트를 비동기적으로 처리합니다.
+비동기 처리를 위한 채널 감사 핸들러를 생성합니다.
 
 **매개변수:**
 - `ch` - 감사 이벤트 채널
+
+:::warning 채널 소유권
+`ChannelAuditHandler`는 채널을 소유하지 **않으며**, `Close()`는 기저 채널을 닫지 **않습니다**. 호출자가 수신자에게 종료를 알리기 위해 채널을 직접 닫아야 합니다. 또한 채널 버퍼가 가득 차면 `Log()`가 차단됩니다 - 버퍼가 있는 채널 사용을 권장합니다.
+:::
 
 ```go
 ch := make(chan env.AuditEvent, 100)
@@ -274,7 +278,7 @@ go func() {
 func NewNopAuditHandler() *NopAuditHandler
 ```
 
-아무 작업도 수행하지 않는 감사 핸들러를 생성하며, 감사 로그를 비활성화합니다.
+아무 작업도 수행하지 않는 감사 핸들러를 생성합니다. 감사 로그 비활성화에 사용됩니다.
 
 ```go
 cfg.AuditEnabled = true
@@ -289,10 +293,10 @@ cfg.AuditHandler = env.NewNopAuditHandler() // 어떤 로그도 기록하지 않
 func NewCloseableChannelHandler(bufferSize int) *CloseableChannelHandler
 ```
 
-자체 버퍼 채널을 가진 닫기 가능한 감사 핸들러를 생성합니다. `ChannelAuditHandler`가 외부 채널을 받는 것과 달리, `CloseableChannelHandler`는 자체 버퍼 채널을 생성하고 소유합니다. `Close()`를 호출하면 핸들러를 닫고 채널을 닫습니다. `Channel()`을 사용하여 이벤트를 수신합니다.
+자체 버퍼 채널을 소유하는 닫기 가능한 감사 핸들러를 생성합니다. `ChannelAuditHandler`가 외부 채널을 받는 것과 달리, `CloseableChannelHandler`는 자체 버퍼 채널을 생성하고 소유합니다. `Close()`를 호출하면 핸들러를 닫고 채널도 닫습니다. `Channel()`로 이벤트를 수신합니다.
 
 **매개변수:**
-- `bufferSize` - 버퍼 채널 크기 (음수는 0 으로 간주됨)
+- `bufferSize` - 버퍼 채널 크기(음수는 0으로 처리됨)
 
 ```go
 handler := env.NewCloseableChannelHandler(64)
@@ -307,7 +311,7 @@ go func() {
 
 #### CloseableChannelHandler 메서드
 
-`CloseableChannelHandler`는 `AuditHandler` 인터페이스 (`Log` / `Close`) 를 구현하는 것 외에도 다음과 같은 특유의 메서드를 제공합니다:
+`CloseableChannelHandler`는 `AuditHandler` 인터페이스(`Log` / `Close`)를 구현하는 것 외에도 다음과 같은 특유의 메서드를 제공합니다:
 
 ```go
 func (h *CloseableChannelHandler) Channel() <-chan AuditEvent
@@ -316,18 +320,18 @@ func (h *CloseableChannelHandler) IsClosed() bool
 
 **메서드 설명:**
 
-| 메서드 | 시그니처 | 용도 |
+| 메서드 | 서명 | 용도 |
 |------|------|------|
-| `Channel` | `func (h *CloseableChannelHandler) Channel() <-chan AuditEvent` | 감사 이벤트를 소비하기 위한 내부 읽기 전용 채널을 반환합니다. `Close()` 호출 후 이 채널은 닫히며, `range` 루프가 함께 종료됩니다 |
-| `IsClosed` | `func (h *CloseableChannelHandler) IsClosed() bool` | 핸들러가 닫혔는지 확인합니다 (스레드 안전, 동시 호출 가능) |
+| `Channel` | `func (h *CloseableChannelHandler) Channel() <-chan AuditEvent` | 감사 이벤트를 소비하기 위한 읽기 전용 내부 채널을 반환. `Close()` 호출 후 이 채널이 닫히며 `range` 루프도 함께 종료됨 |
+| `IsClosed` | `func (h *CloseableChannelHandler) IsClosed() bool` | 핸들러가 닫혔는지 확인(스레드 안전, 동시 호출 가능) |
 
 ```go
 handler := env.NewCloseableChannelHandler(64)
 defer handler.Close()
 
-// 닫기 전에 상태를 확인할 수 있음
+// 닫기 전에 상태 확인 가능
 if !handler.IsClosed() {
-    // 핸들러는 여전히 사용 가능
+    // 핸들러가 여전히 사용 가능
 }
 
 // 채널이 닫힐 때까지 이벤트 소비
@@ -335,7 +339,7 @@ go func() {
     for event := range handler.Channel() {
         fmt.Printf("Audit: %+v\n", event)
     }
-    // handler.Close() 후 채널이 닫히며 루프 종료
+    // handler.Close() 후 채널 닫힘, 루프 종료
 }()
 ```
 
@@ -345,7 +349,7 @@ go func() {
 
 ### OSFileSystem
 
-기본 파일 시스템 구현으로, 운영 체제 파일 작업을 래핑합니다:
+기본 파일 시스템 구현으로, 운영 체제 파일 작업을 캡슐화합니다:
 
 ```go
 type OSFileSystem struct{}
@@ -379,9 +383,9 @@ var DefaultFileSystem FileSystem = OSFileSystem{}
 
 ---
 
-### 사용자 정의 파일 시스템 사용
+### 커스텀 파일 시스템 사용
 
-테스트에서 파일 시스템 모킹:
+테스트에서 파일 시스템을 모의합니다:
 
 ```go
 type MockFileSystem struct {
@@ -482,15 +486,15 @@ format := env.DetectFormat("config.json")   // FormatJSON
 format := env.DetectFormat("settings.yaml") // FormatYAML
 format := env.DetectFormat("app.yml")       // FormatYAML
 format := env.DetectFormat(".env")          // FormatEnv
-format := env.DetectFormat(".env.local")    // FormatAuto (실제로는 .env 로 처리)
+format := env.DetectFormat(".env.local")    // FormatAuto (실제로는 .env로 처리)
 format := env.DetectFormat("unknown.txt")   // FormatAuto
 ```
 
-**LoadFiles 에서의 적용:**
+**LoadFiles에서의 적용:**
 
 ```go
 loader.LoadFiles("config.env", "settings.json", "secrets.yaml")
-// 각 파일의 형식을 자동으로 감지하고 해당 파서를 사용
+// 각 파일의 형식을 자동 감지하고 해당 파서 사용
 ```
 
 ---
@@ -506,10 +510,10 @@ const (
 )
 ```
 
-**사용자 정의 형식:**
+**커스텀 형식:**
 
 ```go
-// 사용자 정의 형식 상수 정의 (충돌 방지를 위해 100+ 값 사용 권장)
+// 커스텀 형식 상수 정의(충돌 방지를 위해 100+ 값 사용 권장)
 const (
     FormatTOML  env.FileFormat = 100
     FormatINI   env.FileFormat = 101
@@ -545,7 +549,7 @@ fmt.Println(env.FileFormat(999).String())  // "unknown"
 func RegisterParser(format FileFormat, factory ParserFactory) error
 ```
 
-사용자 정의 형식 파서를 등록합니다.
+커스텀 형식 파서를 등록합니다.
 
 **매개변수:**
 - `format` - 파일 형식 상수
@@ -554,13 +558,13 @@ func RegisterParser(format FileFormat, factory ParserFactory) error
 **반환값:**
 - `error` - 등록 실패 시 오류 반환
 
-**오류 발생 경우:**
-- 내장 형식 (FormatEnv, FormatJSON, FormatYAML) 은 덮어쓸 수 없음
-- 형식이 이미 등록된 경우
+**오류 상황:**
+- 내장 형식(FormatEnv, FormatJSON, FormatYAML)은 덮어쓸 수 없음
+- 형식이 이미 등록됨
 
-**주의 사항:**
-- `env.New()`를 호출하기 전에 등록해야 함
-- 내장 형식과의 충돌을 방지하기 위해 100+ 형식 값을 사용하는 것을 권장
+**주의사항:**
+- `env.New()` 호출 전에 등록해야 함
+- 내장 형식과의 충돌을 피하기 위해 100+ 형식 값 사용을 권장
 - 팩토리 함수는 스레드 안전한 파서를 반환해야 함
 
 ```go
@@ -572,7 +576,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// 1. 사용자 정의 형식 상수 정의
+// 1. 커스텀 형식 상수 정의
 const FormatTOML env.FileFormat = 100
 
 // 2. 파서 인터페이스 구현
@@ -589,7 +593,7 @@ func (p *TOMLParser) Parse(r io.Reader, filename string) (map[string]string, err
     return result, nil
 }
 
-// 3. 사용 전 실행되도록 init() 에서 파서 등록
+// 3. 파서 등록(init()에서 등록하여 사용 전에 완료 보장)
 func init() {
     err := env.RegisterParser(FormatTOML, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
         return &TOMLParser{
@@ -603,13 +607,13 @@ func init() {
     }
 }
 
-// 4. 사용자 정의 형식 사용
+// 4. 커스텀 형식 사용
 func main() {
-    // 등록은 init() 에서 완료됨 (main 보다 먼저 실행)
+    // 등록은 init()에서 완료됨(main보다 먼저 실행)
     loader, _ := env.New(env.DefaultConfig())
     defer loader.Close()
 
-    // 이제 .toml 파일을 로드할 수 있음
+    // 이제 .toml 파일 로드 가능
     loader.LoadFiles("config.toml")
 }
 ```
@@ -622,26 +626,26 @@ func main() {
 func ForceRegisterParser(format FileFormat, factory ParserFactory) error
 ```
 
-파서를 강제로 등록하며, 내장 파서를 덮어쓸 수 있습니다.
+파서를 강제로 등록하며, 내장 파서 덮어쓰기를 허용합니다.
 
 **매개변수:**
 - `format` - 파일 형식 상수
 - `factory` - 파서 팩토리 함수
 
 **반환값:**
-- `error` - 등록 실패 시 오류 반환 (`factory`가 nil 인 경우)
+- `error` - 등록 실패 시 오류 반환(`factory`가 nil인 경우)
 
-:::danger 경고
-신중하게 사용하세요. 내장 파서를 덮어쓰면 대체 파서가 동일한 보안 검사 (키 검증, 값 검증, 크기 제한 등) 를 구현하지 않은 경우 보안 취약점이 발생할 수 있습니다.
+:::danger 위험
+신중하게 사용하세요. 교체된 파서가 동일한 보안 검사(키 검증, 값 검증, 크기 제한 등)를 구현하지 않으면 내장 파서를 덮어쓰는 것이 보안 취약점을 도입할 수 있습니다.
 
 다음과 같은 고급 시나리오에 적합합니다:
-- 내장 파서에 사용자 정의 보안 검사 추가
-- 형식 확장 구현 (예: HEREDOC, 여러 줄 값)
-- 테스트용 모킹 파서 사용
+- 내장 파서에 커스텀 보안 검사 추가
+- 형식 확장 구현(예: HEREDOC, 여러 줄 값)
+- 모의 파서로 테스트
 :::
 
 ```go
-// 기본 .env 파서 덮어쓰기 (고급 용도)
+// 기본 .env 파서 덮어쓰기(고급 용도)
 err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, f *env.ComponentFactory) (env.EnvParser, error) {
     return &MyCustomEnvParser{
         validator: f.Validator(),
@@ -652,7 +656,7 @@ err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, f *env.Compon
 
 ---
 
-### ParserFactory 유형
+### ParserFactory 타입
 
 ```go
 type ParserFactory func(cfg Config, factory *ComponentFactory) (EnvParser, error)
@@ -661,8 +665,8 @@ type ParserFactory func(cfg Config, factory *ComponentFactory) (EnvParser, error
 파서 팩토리 함수 서명입니다.
 
 **매개변수:**
-- `cfg` - 설정 객체, 제한 및 보안 설정 포함
-- `factory` - 컴포넌트 팩토리, 검증기 및 감사기에 접근 가능
+- `cfg` - 구성 객체, 제한 및 보안 설정 포함
+- `factory` - 컴포넌트 팩토리, 검증기 및 감사기 획득 가능
 
 **반환값:**
 - `EnvParser` - 파서 인스턴스
@@ -681,49 +685,49 @@ type EnvParser interface {
 파서가 구현해야 하는 인터페이스입니다.
 
 **매개변수:**
-- `r` - 파일 내용 리더
-- `filename` - 파일 이름 (오류 메시지용)
+- `r` - 파일 콘텐츠 리더
+- `filename` - 파일 이름(오류 정보에 사용)
 
 **반환값:**
-- `map[string]string` - 파싱된 키 - 값 쌍
+- `map[string]string` - 파싱된 키-값 쌍
 - `error` - 파싱 오류
 
 ---
 
 ## 내장 파서
 
-라이브러리에 세 가지 형식의 파서가 내장되어 있습니다:
+라이브러리는 세 가지 형식 파서를 내장합니다:
 
-### DotEnv 파서
+### DotEnv Parser
 
 `.env` 형식 파서, 지원 기능:
 - `KEY=value` 구문
 - `export KEY=value` 구문
-- 작은따옴표 `'value'` 및 큰따옴표 `"value"`
+- 단일 인용부호 `'value'`와 이중 인용부호 `"value"`
 - 변수 확장 `${VAR}` 및 `${VAR:-default}`
 - 주석 `#`
 
-### JSON 파서
+### JSON Parser
 
 JSON 형식 파서, 지원 기능:
-- 키 - 값 쌍 객체
-- 중첩 구조 (평면화 처리)
-- 숫자, 문자열, 부울값 변환
-- 배열 (`KEY_0`, `KEY_1`...으로 평면화)
+- 키-값 쌍 객체
+- 중첩 구조(평탄화 처리)
+- 숫자, 문자열, 불리언 변환
+- 배열(`KEY_0`, `KEY_1`...로 평탄화)
 
-### YAML 파서
+### YAML Parser
 
 YAML 형식 파서, 지원 기능:
-- 키 - 값 쌍
-- 중첩 구조 (평면화 처리)
-- 다양한 스칼라 유형
-- 리스트 (인덱스 키로 평면화)
+- 키-값 쌍
+- 중첩 구조(평탄화 처리)
+- 다양한 스칼라 타입
+- 리스트(인덱스 키로 평탄화)
 
 ---
 
-## 전체 예제
+## 완전한 예제
 
-### 사용자 정의 파서 등록
+### 커스텀 파서 등록
 
 ```go
 package main
@@ -736,7 +740,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// 사용자 정의 INI 파서
+// 커스텀 INI 파서
 type INIParser struct {
     cfg       env.Config
     validator env.Validator
@@ -756,7 +760,7 @@ func (p *INIParser) Parse(r io.Reader, filename string) (map[string]string, erro
     for lineNum, line := range lines {
         line = strings.TrimSpace(line)
 
-        // 빈 행 및 주석 건너뛰기
+        // 빈 줄과 주석 건너뛰기
         if line == "" || strings.HasPrefix(line, ";") || strings.HasPrefix(line, "#") {
             continue
         }
@@ -792,7 +796,7 @@ func (p *INIParser) Parse(r io.Reader, filename string) (map[string]string, erro
 }
 
 func main() {
-    // 사용자 정의 형식 정의
+    // 커스텀 형식 정의
     const FormatINI env.FileFormat = 101
 
     // 파서 등록
@@ -807,19 +811,19 @@ func main() {
         panic(err)
     }
 
-    // 사용자 정의 형식 사용
+    // 커스텀 형식 사용
     cfg := env.DefaultConfig()
     loader, _ := env.New(cfg)
     defer loader.Close()
 
-    // 이제 .ini 파일을 로드할 수 있음
+    // 이제 .ini 파일 로드 가능
     // loader.LoadFiles("config.ini")
 
     fmt.Println("INI parser registered")
 }
 ```
 
-### 사용자 정의 파일 시스템
+### 커스텀 파일 시스템
 
 ```go
 package main
@@ -834,7 +838,7 @@ import (
     "github.com/cybergodev/env"
 )
 
-// 메모리 파일 시스템 (테스트용)
+// 메모리 파일 시스템(테스트용)
 type MemoryFileSystem struct {
     files map[string]string
     env   map[string]string
@@ -901,7 +905,7 @@ func (m *MemoryFileSystem) LookupEnv(key string) (string, bool) {
     return val, ok
 }
 
-// MemoryFile 은 env.File 구현
+// MemoryFile은 env.File 구현
 type MemoryFile struct {
     reader *strings.Reader
 }
@@ -912,7 +916,7 @@ func (f *MemoryFile) Close() error                      { return nil }
 func (f *MemoryFile) Stat() (os.FileInfo, error)        { return nil, errors.ErrUnsupported }
 func (f *MemoryFile) Sync() error                       { return nil }
 
-// MemoryFileInfo 는 os.FileInfo 구현
+// MemoryFileInfo는 os.FileInfo 구현
 type MemoryFileInfo struct {
     name string
     size int64
@@ -931,7 +935,7 @@ func main() {
     fs := NewMemoryFileSystem()
     fs.files[".env"] = "APP_NAME=myapp\nPORT=8080\n"
 
-    // 사용자 정의 파일 시스템 사용 설정
+    // 커스텀 파일 시스템 사용 구성
     cfg := env.TestingConfig()
     cfg.FileSystem = fs
 
@@ -949,6 +953,6 @@ func main() {
 
 ## 관련 문서
 
-- [인터페이스 정의](/ko/env/api-reference/interfaces) - 모든 인터페이스 정의
-- [사용자 정의 파서](/ko/env/guides/custom-parser) - 사용자 정의 파서 가이드
-- [테스트 시나리오](/ko/env/guides/testing) - 사용자 정의 파일 시스템을 사용한 테스트
+- [인터페이스](/ko/env/api-reference/interfaces) - 모든 인터페이스 정의
+- [커스텀 파서](/ko/env/guides/custom-parser) - 커스텀 파서 가이드
+- [테스트](/ko/env/guides/testing) - 커스텀 파일 시스템으로 테스트

@@ -1,13 +1,14 @@
 ---
 sidebar_label: "Сериализация"
-title: "Сериализация - CyberGo env | Мультиформатное преобразование"
-description: "Сериализация CyberGo env: Map и структуры между .env/JSON/YAML, Marshal/Unmarshal, Marshaler/Unmarshaler и DetectFormat для экспорта и миграции конфигов."
+title: "Сериализация - CyberGo env | мультиформатное преобразование"
+description: "Руководство по сериализации CyberGo env: преобразование Map и структур между .env, JSON, YAML, семейство функций Marshal/Unmarshal, пользовательские интерфейсы Marshaler/Unmarshaler и DetectFormat с автоопределением, охватывающее экспорт конфигурации и миграцию форматов."
 sidebar_position: 2
+sidebar_icon: "🔧"
 ---
 
 # Сериализация
 
-Сериализация и десериализация переменных окружения с помощью функций Marshal и Unmarshal с поддержкой преобразования между форматами `.env`, JSON и YAML.
+Используйте функции Marshal и Unmarshal для сериализации/десериализации переменных окружения с поддержкой преобразования между форматами `.env`, JSON, YAML.
 
 ## Базовая сериализация
 
@@ -183,14 +184,14 @@ func main() {
 
 ### Функция MarshalStruct
 
-Преобразование структуры в `map[string]string`:
+Преобразует структуру в `map[string]string`:
 
 ```go
 func MarshalStruct(v any) (map[string]string, error)
 ```
 
 **Параметры:**
-- `v` - указатель или значение структуры
+- `v` - указатель на структуру или значение
 
 **Возвращает:**
 - `map[string]string` - отображение переменных окружения
@@ -384,12 +385,12 @@ ENABLED=true
 
 ## Пользовательская сериализация
 
-:::tip Область действия двух пользовательских интерфейсов
-- **Уровень поля**: для пользовательского кодирования/декодирования полей структуры реализуйте стандартные интерфейсы `encoding.TextMarshaler` / `encoding.TextUnmarshaler` (`MarshalText()` / `UnmarshalText([]byte)`). Когда структура обрабатывается функциями `env.Marshal`/`env.UnmarshalInto`, постатейная логика распознаёт эти интерфейсы.
-- **Верхний уровень**: интерфейсы `env.Marshaler` (`MarshalEnv()`) и `env.Unmarshaler` (`UnmarshalEnv(map[string]string)`) **действуют только на верхнем уровне значения, непосредственно переданного в `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`**; если передана внешняя структура, содержащая поле этого типа, они не будут вызваны.
+::: tip Область действия двух пользовательских интерфейсов
+- **На уровне поля**: пользовательское кодирование/декодирование полей структуры через реализацию стандартных интерфейсов `encoding.TextMarshaler` / `encoding.TextUnmarshaler` (`MarshalText()` / `UnmarshalText([]byte)`). При обработке структуры через `env.Marshal`/`env.UnmarshalInto` пословная логика распознаёт эти два интерфейса.
+- **На верхнем уровне**: интерфейсы `env.Marshaler` (`MarshalEnv()`) и `env.Unmarshaler` (`UnmarshalEnv(map[string]string)`) **действуют только на верхнем уровне значения, непосредственно переданного в `env.Marshal`/`env.MarshalStruct`/`env.UnmarshalInto`**; если передаётся внешняя структура, содержащая поле этого типа, они не вызываются.
 :::
 
-### Уровень поля: реализация encoding.TextMarshaler
+### На уровне поля: реализация encoding.TextMarshaler
 
 ```go
 package main
@@ -427,7 +428,7 @@ func main() {
 }
 ```
 
-### Уровень поля: реализация encoding.TextUnmarshaler
+### На уровне поля: реализация encoding.TextUnmarshaler
 
 ```go
 package main
@@ -471,9 +472,9 @@ func main() {
 }
 ```
 
-### Верхний уровень: реализация env.Marshaler / env.Unmarshaler
+### На верхнем уровне: реализация env.Marshaler / env.Unmarshaler
 
-Когда значение типа **напрямую** передаётся в `env.Marshal` / `env.UnmarshalInto` (а не как поле внешней структуры), интерфейсы `env.Marshaler` / `env.Unmarshaler` срабатывают на этом верхнем уровне:
+Когда значение типа **непосредственно** передаётся в `env.Marshal` / `env.UnmarshalInto` (а не как поле внешней структуры), интерфейсы `env.Marshaler` / `env.Unmarshaler` действуют на этом верхнем уровне:
 
 ```go
 package main
@@ -488,12 +489,12 @@ import (
 type EnvBlob string
 
 func (e EnvBlob) MarshalEnv() ([]byte, error) {
-    // Пользовательская сериализация всего значения
+    // Пользовательский вывод сериализации
     return []byte("APP_NAME=custom\nAPP_VERSION=2.0.0"), nil
 }
 
 func main() {
-    // Непосредственная сериализация верхнего уровня (не поле внешней структуры)
+    // Непосредственная сериализация значения верхнего уровня (не поле внешней структуры)
     result, err := env.Marshal(EnvBlob(""), env.FormatEnv)
     if err != nil {
         panic(err)
@@ -508,7 +509,7 @@ func main() {
 
 ## Определение формата
 
-### Автоматическое определение
+### Автоопределение формата
 
 ```go
 package main
@@ -519,7 +520,7 @@ import (
 )
 
 func main() {
-    // Автоматическое определение формата
+    // Автоопределение формата
     format := env.DetectFormat("config.json")
     fmt.Println(format.String()) // json
 
@@ -529,7 +530,7 @@ func main() {
     format = env.DetectFormat(".env")
     fmt.Println(format.String()) // dotenv
 
-    // Автоопределение с FormatAuto
+    // Использование FormatAuto для автоопределения
     data := `{"KEY": "value"}`
     result, _ := env.UnmarshalMap(data, env.FormatAuto)
     fmt.Println(result)
@@ -613,7 +614,7 @@ func main() {
     // Чтение JSON-конфигурации
     jsonContent, _ := os.ReadFile("config.json")
 
-    // Парсинг JSON
+    // Разбор JSON
     data, err := env.UnmarshalMap(string(jsonContent), env.FormatJSON)
     if err != nil {
         panic(err)
@@ -625,7 +626,7 @@ func main() {
         panic(err)
     }
 
-    // Сохранение как файл .env
+    // Сохранение как .env файл
     os.WriteFile(".env", []byte(envContent), 0644)
 
     fmt.Println("Config migrated from JSON to .env")
@@ -634,6 +635,6 @@ func main() {
 
 ## Связанная документация
 
-- [Функции пакета](/ru/env/api-reference/functions) - Справка по функциям Marshal, UnmarshalMap и др.
-- [Мультиформатная конфигурация](/ru/env/guides/multi-format) - Руководство по загрузке нескольких форматов
-- [Маппинг структур](/ru/env/guides/struct-mapping) - Руководство по маппингу структур
+- [Функции пакета](/ru/env/api-reference/functions) - справочник функций Marshal, UnmarshalMap и др.
+- [Многоформатная конфигурация](/ru/env/guides/multi-format) - руководство по загрузке нескольких форматов
+- [Маппинг структур](/ru/env/guides/struct-mapping) - руководство по маппингу структур

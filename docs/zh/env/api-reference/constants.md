@@ -465,6 +465,10 @@ cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,63}$`)
 
 ## 安全工具函数
 
+::: tip 完整文档
+`IsSensitiveKey`、`MaskValue`、`SanitizeForLog` 等安全工具函数的完整文档也可在 [SecureValue API](./secure-value#安全工具函数) 中查看。
+:::
+
 ### IsSensitiveKey
 
 ```go

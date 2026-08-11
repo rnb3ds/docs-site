@@ -1,8 +1,9 @@
 ---
 sidebar_label: "变量展开"
-title: "变量展开 - CyberGo env | 变量语法"
+title: "变量展开 - CyberGo env | ${VAR} 引用与默认值语法"
 description: "CyberGo env 变量展开语法指南，详解 ${VAR} 与 ${VAR:-default} 引用、${VAR:=default} 默认值、${VAR:?error} 必填校验、$VAR 简写、循环引用检测与 MaxExpansionDepth 深度限制，实现配置复用与动态值替换。"
 sidebar_position: 4
+sidebar_icon: "🔧"
 ---
 
 # 变量展开

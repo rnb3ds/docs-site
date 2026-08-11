@@ -243,6 +243,59 @@ if secret != nil {
 
 ---
 
+### MarshalJSON
+
+```go
+func (sv *SecureValue) MarshalJSON() ([]byte, error)
+```
+
+实现 `json.Marshaler` 接口。返回掩码表示，防止通过 `json.Marshal` 等基于反射的序列化器意外泄露密钥。明文永远不会出现在 JSON 输出中。
+
+**返回：**
+- `[]byte` - JSON 安全的掩码字符串（如 `"[SECURE:32 bytes]"`），nil 时返回 `"null"`
+- `error` - 总是返回 nil
+
+```go
+type Response struct {
+    APIKey *env.SecureValue `json:"api_key"`
+}
+
+resp := Response{APIKey: env.NewSecureValue("sk-1234567890")}
+data, _ := json.Marshal(resp)
+// {"api_key":"[SECURE:16 bytes]"}
+// 明文不会出现在输出中
+```
+
+::: tip 安全设计
+`MarshalJSON` 确保即使将 `SecureValue` 嵌入结构体并进行 JSON 序列化，也不会泄露明文。输出与 `String()` / `Masked()` 一致。
+:::
+
+---
+
+### MarshalText
+
+```go
+func (sv *SecureValue) MarshalText() ([]byte, error)
+```
+
+实现 `encoding.TextMarshaler` 接口。返回与 `String()` 一致的掩码表示，防止通过 `encoding/xml`、`text/template`、结构化日志等基于文本的编码器意外泄露密钥。
+
+**返回：**
+- `[]byte` - 掩码字符串（如 `"[SECURE:32 bytes]"`），nil 时返回 `"[NIL]"`
+- `error` - 总是返回 nil
+
+```go
+type Config struct {
+    Token *env.SecureValue `xml:"token"`
+}
+
+cfg := Config{Token: env.NewSecureValue("Bearer xyz")}
+data, _ := xml.Marshal(cfg)
+// <Config><token>[SECURE:10 bytes]</token></Config>
+```
+
+---
+
 ### Close
 
 ```go
@@ -706,16 +759,25 @@ runtime.SetFinalizer(sv, (*SecureValue).finalize)
 
 ### 安全清零
 
-使用 `unsafe.Pointer` 防止编译器优化：
+使用 `unsafe.Pointer` 防止编译器优化（必须在持有 `sv.mu` 锁时调用）：
 
 ```go
-func (sv *SecureValue) clearData() {
+func (sv *SecureValue) clearDataLocked() {
+    if len(sv.data) == 0 {
+        return
+    }
+    // 解锁内存（如果已锁定）
+    if sv.locked {
+        internal.UnlockMemory(sv.data)
+        sv.locked = false
+    }
     dataPtr := unsafe.Pointer(&sv.data[0])
     for i := range sv.data {
         *(*byte)(unsafe.Pointer(uintptr(dataPtr) + uintptr(i))) = 0
     }
     runtime.KeepAlive(sv.data)
     sv.data = nil
+    sv.lockErr = nil
 }
 ```
 

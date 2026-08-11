@@ -1,17 +1,18 @@
 ---
 sidebar_label: "監査ログ"
 title: "監査ログ - CyberGo env | セキュリティ監査設定"
-description: "CyberGo env 監査ログ設定ガイド。JSONAuditHandler・LogAuditHandler・ChannelAuditHandler の 3 種ハンドラーとカスタム AuditHandler で変数の読み込み・読み取り・変更・削除を記録し、セキュリティ監査とコンプライアンスに活用します。"
-sidebar_position: 5
+description: "CyberGo env 監査ログ設定ガイド。JSONAuditHandler、LogAuditHandler、ChannelAuditHandler の 3 種類のハンドラーとカスタム AuditHandler で変数の読み込み、読み取り、変更、削除操作を記録し、セキュリティ監査、コンプライアンスチェック、問題調査に使用。"
+sidebar_position: 6
+sidebar_icon: "🛡️"
 ---
 
 # 監査ログ
 
-監査ログ機能はすべての環境変数操作を記録し、セキュリティ監査、コンプライアンスチェック、トラブルシューティングに使用します。
+監査ログ機能はすべての環境変数操作を記録し、セキュリティ監査、コンプライアンスチェック、問題調査に使用します。
 
 ## 監査の有効化
 
-### 設定による有効化
+### 設定で有効化
 
 ```go
 cfg := env.ProductionConfig()
@@ -36,7 +37,7 @@ loader, _ := env.New(cfg)
 
 ### JSONAuditHandler
 
-JSON フォーマットのログを出力：
+JSON フォーマットログを出力：
 
 ```go
 import (
@@ -57,13 +58,13 @@ cfg.AuditHandler = env.NewJSONAuditHandler(os.Stdout)
 {"timestamp":"2024-01-15T10:30:02Z","action":"set","key":"CUSTOM_VAR","success":true}
 ```
 
-機密キー（例：`API_KEY`）は監査ログの `key` フィールドで自動的に `[MASKED:N chars]`（N はキーの文字数）にマスクされ、非機密キー（例：`CUSTOM_VAR`）はそのまま表示されます。
+機密キー（`API_KEY` など）は監査ログの `key` フィールドで自動的に `[MASKED:N chars]`（N はキー長）にマスクされ、非機密キー（`CUSTOM_VAR` など）はそのまま表示されます。
 
 ---
 
 ### LogAuditHandler
 
-標準 log パッケージを使用して出力：
+標準 log パッケージで出力：
 
 ```go
 import (
@@ -94,7 +95,7 @@ cfg.AuditHandler = env.NewLogAuditHandler(logger)
 ch := make(chan env.AuditEvent, 100)
 cfg.AuditHandler = env.NewChannelAuditHandler(ch)
 
-// 非同期処理監査イベント
+// 監査イベントを非同期処理
 go func() {
     for event := range ch {
         processAuditEvent(event)
@@ -102,9 +103,9 @@ go func() {
 }()
 ```
 
-**ユースケース：**
-- リモートログサービスに送信
-- データベースに書き込み
+**使用シーン：**
+- リモートログサービスへの送信
+- データベースへの書き込み
 - リアルタイム監視アラート
 
 ---
@@ -117,8 +118,8 @@ go func() {
 cfg.AuditHandler = env.NewNopAuditHandler()
 ```
 
-**ユースケース：**
-- 監査を一時的に無効化
+**使用シーン：**
+- 監査の一時無効化
 - テスト環境
 
 ---
@@ -133,9 +134,9 @@ type AuditEvent struct {
     Action    AuditAction // 操作タイプ
     Key       string      // キー名
     File      string      // ファイル名
-    Reason    string      // 理由
-    Success   bool        // 成功したかどうか
-    Masked    bool        // マスクされているか
+    Reason    string      // 原因
+    Success   bool        // 成功したか
+    Masked    bool        // マスク済みか
     Details   string      // 詳細
     Duration  int64       // 所要時間（ナノ秒）
 }
@@ -162,7 +163,7 @@ type AuditEvent struct {
 
 ### FullAuditLogger インターフェースの実装
 
-`FullAuditLogger` は完全な監査ログインターフェースで、最小インターフェース `AuditLogger`（LogError メソッドのみを含む）を拡張します：
+`FullAuditLogger` は完全な監査ログインターフェースで、最小インターフェース `AuditLogger`（LogError メソッドのみ含む）を拡張します：
 
 ```go
 type FullAuditLogger interface {
@@ -256,7 +257,7 @@ func main() {
     cfg.AuditHandler = env.NewJSONAuditHandler(auditFile)
     cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
 
-    // ローダーの作成
+    // ローダーを作成
     loader, err := env.New(cfg)
     if err != nil {
         log.Fatal(err)
@@ -307,7 +308,7 @@ func main() {
     loader, _ := env.New(cfg)
     defer loader.Close()
 
-    // 通常の使用...
+    // 通常使用...
 }
 
 func processAuditEvents(ch chan env.AuditEvent) {
@@ -318,7 +319,7 @@ func processAuditEvents(ch chan env.AuditEvent) {
     encoder := json.NewEncoder(file)
 
     for event := range ch {
-        // フィルタリング、集計などのロジックを追加可能
+        // フィルタ、集計などのロジックを追加可能
         if event.Action == env.ActionError {
             log.Printf("Audit error: %+v", event)
         }
@@ -330,13 +331,13 @@ func processAuditEvents(ch chan env.AuditEvent) {
 
 ---
 
-## セキュリティ上の注意
+## セキュリティ注意事項
 
 ### 監査記録とマスク
 
-監査ログは機密キーの `key` フィールドを自動的にマスクします（デフォルトでは `[MASKED:N chars]` と表示、N はキー名の文字数。非機密キーはそのまま表示）。**書き込み操作のみが監査イベントを記録します**：`Set` / `Delete` / `LoadFiles` などは `ActionSet` / `ActionDelete` / `ActionLoad` などのイベントをトリガーし、イベントにはマスク後のキー名が記録されます。
+監査ログは機密キーの `key` フィールドを自動的にマスクします（デフォルトで `[MASKED:N chars]`、N はキー名の文字数；非機密キーはそのまま表示）。**書き込み操作のみ監査イベントを記録**：`Set` / `Delete` / `LoadFiles` などが `ActionSet` / `ActionDelete` / `ActionLoad` などのイベントをトリガーし、イベント内にマスク後のキー名を記録します。
 
-読み取り操作は監査を生成しません：`Get` / `GetString` / `GetInt` / `GetSecure` などの**正常な読み取りは監査ログに記録されません**。`ActionGet` イベントは `GetInt` / `GetBool` / `GetFloat64` などの型変換**解析失敗**のエラーパス（`success=false`）でのみトリガーされます。例：
+読み取り操作は監査を生成しません：`Get` / `GetString` / `GetInt` / `GetSecure` などは**正常な読み取りで監査ログを記録しません**。`ActionGet` イベントは `GetInt` / `GetBool` / `GetFloat64` などの型変換**解析失敗**のエラーパスでのみトリガーされ（`success=false`）、例えば：
 
 ```go
 // 書き込み操作：監査イベントを記録（機密キーはマスク後に記録）
@@ -355,13 +356,13 @@ _ = loader.GetInt("API_KEY")          // 解析失敗時に ActionGet イベン�
 # 監査ログファイルの権限を設定
 chmod 600 /var/log/app/env-audit.log
 
-# アプリケーションユーザーのみが読み書き可能であることを保証
+# アプリケーションユーザーのみ読み書き可能にする
 chown app:app /var/log/app/env-audit.log
 ```
 
 ### ログローテーション
 
-logrotate を使用した監査ログの管理を推奨：
+logrotate で監査ログを管理することを推奨します：
 
 ```bash
 # /etc/logrotate.d/app-env-audit
@@ -381,6 +382,6 @@ logrotate を使用した監査ログの管理を推奨：
 ## 関連ドキュメント
 
 - [セキュリティ概要](/ja/env/security/) - セキュリティアーキテクチャとコア機能
-- [本番チェックリスト](/ja/env/security/production-checklist) - 監査設定の確認
-- [インターフェース定義](/ja/env/api-reference/interfaces) - AuditLogger インターフェース
+- [本番チェックリスト](/ja/env/security/production-checklist) - 監査設定チェック
+- [インターフェース](/ja/env/api-reference/interfaces) - AuditLogger インターフェース
 - [コンポーネントファクトリー](/ja/env/api-reference/factory) - 監査ハンドラーファクトリー

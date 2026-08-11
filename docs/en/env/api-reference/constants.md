@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Constants & Errors"
-title: "Constants & Errors - CyberGo env | Sentinels & Security"
-description: "CyberGo env constants and errors: MaxFileSize/MaxVariables, ErrFileNotFound sentinel, ParseError, DefaultForbiddenKeys, IsSensitiveKey and MaskValue helpers."
+title: "Constants & Errors - CyberGo env | Sentinel Errors and Security Constants"
+description: "Constants and errors reference for CyberGo env, including DefaultMaxFileSize and MaxVariables limits, ErrFileNotFound sentinel errors, ParseError type, DefaultForbiddenKeys forbidden keys, and IsSensitiveKey, MaskValue utility functions."
 sidebar_position: 7
 ---
 
@@ -15,40 +15,40 @@ Constants, error types, sentinel errors, and predefined variables defined by the
 
 ```go
 const (
-    // DefaultMaxFileSize - Maximum bytes per file
+    // DefaultMaxFileSize - max bytes per file
     DefaultMaxFileSize int64 = 2 * 1024 * 1024  // 2 MB
 
-    // DefaultMaxLineLength - Maximum length per line
+    // DefaultMaxLineLength - max single line length
     DefaultMaxLineLength int = 1024  // 1 KB
 
-    // DefaultMaxKeyLength - Maximum key name length
+    // DefaultMaxKeyLength - max key name length
     DefaultMaxKeyLength int = 64
 
-    // DefaultMaxValueLength - Maximum value length
+    // DefaultMaxValueLength - max value length
     DefaultMaxValueLength int = 4096  // 4 KB
 
-    // DefaultMaxVariables - Maximum variables per file
+    // DefaultMaxVariables - max variables per file
     DefaultMaxVariables int = 500
 
-    // DefaultMaxExpansionDepth - Maximum variable expansion depth
+    // DefaultMaxExpansionDepth - max variable expansion depth
     DefaultMaxExpansionDepth int = 5
 )
 ```
 
 ### Hard Limits
 
-:::warning Note
-The following are internal hard limits (unexported), used by `Config.Validate()` for internal checks. Users cannot directly reference these constants, but `cfg.Validate()` automatically checks whether the configuration exceeds these limits.
+:::warning
+The following are internal hard limits (not exported), used by `Config.Validate()` for internal checks. Users cannot reference these constants directly, but `cfg.Validate()` will automatically check whether the configuration exceeds these limits.
 :::
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| HardMaxFileSize | 100 MB | File size hard limit |
-| HardMaxLineLength | 64 KB | Line length hard limit |
-| HardMaxKeyLength | 1024 | Key length hard limit |
-| HardMaxValueLength | 1 MB | Value length hard limit |
-| HardMaxVariables | 10000 | Variable count hard limit |
-| HardMaxExpansionDepth | 20 | Expansion depth hard limit |
+| HardMaxFileSize | 100 MB | Hard limit on file size |
+| HardMaxLineLength | 64 KB | Hard limit on line length |
+| HardMaxKeyLength | 1024 | Hard limit on key length |
+| HardMaxValueLength | 1 MB | Hard limit on value length |
+| HardMaxVariables | 10000 | Hard limit on variable count |
+| HardMaxExpansionDepth | 20 | Hard limit on expansion depth |
 
 Configuration validation checks whether hard limits are exceeded:
 
@@ -63,8 +63,8 @@ if err := cfg.Validate(); err != nil {
 
 ## Sentinel Errors
 
-:::warning Note
-The following are predefined sentinel symbols, but in the current implementation some scenarios **do not match these sentinels via `errors.Is`**: forbidden keys return `*SecurityError` (match with `errors.Is(err, ErrSecurityViolation)`), while invalid key format and missing required keys return `*ValidationError` (extract via `errors.As`). See each error type section for details.
+:::warning
+The following sentinels are predefined symbols, but in the current implementation some scenarios **do not match these sentinels via `errors.Is`**: forbidden keys return `*SecurityError` (match with `errors.Is(err, ErrSecurityViolation)`), invalid key format and missing required keys return `*ValidationError` (extract with `errors.As`). See each error type section for details.
 :::
 
 ### File Errors
@@ -74,15 +74,15 @@ var ErrFileNotFound = errors.New("file not found")
 var ErrFileTooLarge = errors.New("file exceeds maximum size limit")
 ```
 
-Checking:
+How to check:
 
 ```go
 err := loader.LoadFiles(".env")
 if errors.Is(err, env.ErrFileNotFound) {
-    // File not found
+    // file not found
 }
 if errors.Is(err, env.ErrFileTooLarge) {
-    // File too large
+    // file too large
 }
 ```
 
@@ -102,7 +102,7 @@ var ErrSecurityViolation = errors.New("security policy violation")
 var ErrInvalidValue = errors.New("invalid value content")
 ```
 
-Checking forbidden keys:
+Check forbidden keys:
 
 ```go
 err := loader.Set("PATH", "value")
@@ -133,20 +133,20 @@ var ErrNotInitialized = errors.New("default loader not initialized; call Load() 
 var ErrMissingRequired = errors.New("required key is missing")
 ```
 
-**Checking:**
+**How to check:**
 
 ```go
-// Check if loader is closed
+// Check if the loader has been closed
 if errors.Is(err, env.ErrClosed) {
-    // Loader is closed
+    // loader has been closed
 }
 
-// Check if default loader is initialized
+// Check if the default loader has been initialized
 if errors.Is(err, env.ErrAlreadyInitialized) {
     // Default loader already exists, cannot call Load() again
 }
 
-// Check if default loader is not initialized
+// Check if the default loader has not been initialized
 if errors.Is(err, env.ErrNotInitialized) {
     // Need to call env.Load() or env.LoadWithConfig() first
 }
@@ -154,7 +154,7 @@ if errors.Is(err, env.ErrNotInitialized) {
 // Check if required keys are missing (actually returns *ValidationError{Rule:"required"})
 var valErr *env.ValidationError
 if errors.As(err, &valErr) && valErr.Rule == "required" {
-    // Required key is missing
+    // Missing required keys
 }
 ```
 
@@ -167,19 +167,19 @@ var ErrValidateRequiredUnsupported = errors.New(
 )
 ```
 
-When a custom validator only implements the `KeyValidator` interface but not the complete `Validator` interface, calling `ValidateRequired` returns this error.
+When a custom validator only implements the `KeyValidator` interface but not the full `Validator` interface, calling `ValidateRequired` returns this error.
 
-**Checking:**
+**How to check:**
 
 ```go
 if errors.Is(err, env.ErrValidateRequiredUnsupported) {
     // Custom validator does not support required key validation
-    // Need to implement complete Validator interface
+    // Need to implement the full Validator interface
 }
 ```
 
-:::tip Solution
-Implement the `Validator` interface (including ValidateKey, ValidateValue, ValidateRequired methods) instead of only implementing `KeyValidator`.
+:::tip
+Implement the `Validator` interface (which includes ValidateKey, ValidateValue, and ValidateRequired methods) instead of just `KeyValidator`.
 :::
 
 ## Error Types
@@ -227,7 +227,7 @@ Security error:
 
 ```go
 type SecurityError struct {
-    Action  string  // Action
+    Action  string  // Operation
     Reason  string  // Reason
     Key     string  // Key name (masked)
     Details string  // Additional details
@@ -252,8 +252,8 @@ type FileError struct {
     Path  string  // File path
     Op    string  // Operation (open, stat, size_check)
     Err   error   // Original error
-    Size  int64   // File size (for size check)
-    Limit int64   // Limit (for size check)
+    Size  int64   // File size (during Size check)
+    Limit int64   // Limit (during Size check)
 }
 ```
 
@@ -274,10 +274,10 @@ Variable expansion error:
 ```go
 type ExpansionError struct {
     Key   string             // Key name
-    Depth int                // Current expansion depth
-    Limit int                // Maximum allowed depth
+    Depth int                // Current depth
+    Limit int                // Limit
     Chain string             // Expansion chain (sanitized)
-    Kind  ExpansionErrorKind // Cause category (zero value = depth/cycle)
+    Kind  ExpansionErrorKind // Error reason category (zero value = depth/cycle)
 }
 ```
 
@@ -287,18 +287,19 @@ type ExpansionError struct {
 type ExpansionErrorKind int
 
 const (
-    // ExpansionDepthKind indicates the expansion hit a recursion-depth limit or cycle.
-    // This is the zero value, so common depth/cycle errors need no explicit classification.
-    // errors.Is(err, ErrExpansionDepth) matches them.
+    // ExpansionDepthKind indicates the expansion hit the recursion depth limit
+    // or detected a variable cycle.
+    // This is the zero value, so common depth/cycle errors don't need explicit classification.
+    // errors.Is(err, ErrExpansionDepth) matches this kind of error.
     ExpansionDepthKind ExpansionErrorKind = iota
 
-    // ExpansionRequiredKind indicates a required variable (${VAR:?message}) was unset or empty.
+    // ExpansionRequiredKind indicates a required variable (${VAR:?message}) was not set or empty.
     // This is not a depth overflow, so it does not match ErrExpansionDepth.
     ExpansionRequiredKind
 )
 ```
 
-**`errors.Is` behavior:** A `*ExpansionError` matches `ErrExpansionDepth` only when `Kind != ExpansionRequiredKind`. Required-variable errors are a distinct failure mode and do not match `ErrExpansionDepth`.
+**`errors.Is` behavior:** `*ExpansionError` matches `ErrExpansionDepth` only when `Kind != ExpansionRequiredKind`. Required variable errors are a separate failure mode not matched by `ErrExpansionDepth`.
 
 Usage example:
 
@@ -308,10 +309,10 @@ if errors.As(err, &expErr) {
     switch expErr.Kind {
     case env.ExpansionDepthKind:
         // Depth overflow or cycle: errors.Is(err, env.ErrExpansionDepth) == true
-        fmt.Printf("depth %d/%d, chain: %s\n", expErr.Depth, expErr.Limit, expErr.Chain)
+        fmt.Printf("Depth %d/%d, chain: %s\n", expErr.Depth, expErr.Limit, expErr.Chain)
     case env.ExpansionRequiredKind:
-        // Required variable unset: errors.Is(err, env.ErrExpansionDepth) == false
-        fmt.Printf("required variable %s not set\n", expErr.Key)
+        // Required variable not set: errors.Is(err, env.ErrExpansionDepth) == false
+        fmt.Printf("Required variable %s not set\n", expErr.Key)
     }
 }
 ```
@@ -359,43 +360,43 @@ func IsMarshalError(err error) bool  // Check function
 
 ### DefaultForbiddenKeys
 
-Built-in forbidden key list, preventing modification of system-critical variables:
+Built-in forbidden keys list, preventing modification of system-critical variables:
 
-:::warning Note
-`defaultForbiddenKeys` is an internal variable (unexported) and cannot be accessed directly via `env.DefaultForbiddenKeys`. The following is the complete list used internally, for reference.
+:::warning
+`defaultForbiddenKeys` is an internal library variable (not exported) and cannot be accessed directly via `env.DefaultForbiddenKeys`. The following is the complete list used internally, for reference.
 :::
 
 | Category | Forbidden Keys |
 |----------|----------------|
-| System paths | `PATH` |
+| System path | `PATH` |
 | Dynamic linker (Linux) | `LD_PRELOAD`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64`, `LD_AUDIT`, `LD_DEBUG` |
 | macOS | `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH` |
 | Windows | `COMSPEC`, `PATHEXT`, `SYSTEMROOT`, `WINDIR` |
 | Shell | `SHELL`, `ENV`, `BASH_ENV`, `IFS` |
 | Language runtimes | `PYTHONPATH`, `NODE_PATH`, `PERL5OPT`, `RUBYLIB` |
 
-**Risk Description:**
+**Risk description:**
 
 | Key | Risk Type | Description |
-|-----|-----------|-------------|
-| `PATH` | Command hijacking | Modify command search path |
-| `LD_PRELOAD` | Library injection | Preload malicious dynamic library |
-| `LD_LIBRARY_PATH` | Library hijacking | Modify library search path |
+|----|-----------|-------------|
+| `PATH` | Command hijacking | Modifies command search path |
+| `LD_PRELOAD` | Library injection | Preloads malicious dynamic libraries |
+| `LD_LIBRARY_PATH` | Library hijacking | Modifies library search path |
 | `DYLD_INSERT_LIBRARIES` | Library injection | macOS library injection |
 | `COMSPEC` | Command hijacking | Windows command interpreter path override |
 | `PATHEXT` | Command hijacking | Windows executable extension tampering |
-| `SYSTEMROOT` | System corruption | Windows system root tampering |
+| `SYSTEMROOT` | System corruption | Windows system root directory tampering |
 | `WINDIR` | System corruption | Windows directory tampering |
 | `PYTHONPATH` | Module hijacking | Python module search path |
-| `IFS` | Parsing attack | Modify field separator |
+| `IFS` | Parsing attack | Modifies field separator |
 
-**Usage Example:**
+**Usage example:**
 
 ```go
-// Attempting to set a forbidden key returns *SecurityError
+// Setting a forbidden key returns *SecurityError
 err := loader.Set("PATH", "/malicious/path")
 if errors.Is(err, env.ErrSecurityViolation) {
-    // Key is forbidden
+    // key is forbidden
 }
 
 // Add additional forbidden keys
@@ -405,15 +406,15 @@ cfg.ForbiddenKeys = []string{"MY_SENSITIVE_VAR"}
 
 ### SensitiveKeyPatterns
 
-Sensitive key pattern list for automatic detection of sensitive configuration. Key names containing these patterns (case-insensitive) are identified as sensitive:
+Sensitive key pattern list for auto-detecting sensitive configuration. Key names containing these patterns (case-insensitive) are identified as sensitive:
 
-:::warning Note
-`sensitiveKeyPatterns` is an internal variable (unexported), accessed indirectly via the `IsSensitiveKey()` function. The following are the main sensitive pattern categories, for reference.
+:::warning
+`sensitiveKeyPatterns` is an internal library variable (not exported), accessed indirectly through the `IsSensitiveKey()` function. The following are the main sensitive pattern categories, for reference.
 :::
 
-**Main Sensitive Pattern Categories:**
+**Main sensitive pattern categories:**
 
-| Category | Pattern Examples |
+| Category | Example Patterns |
 |----------|------------------|
 | Authentication & Authorization | `PASSWORD`, `SECRET`, `TOKEN`, `AUTH`, `CREDENTIAL`, `PASSPHRASE`, `SESSION`, `COOKIE` |
 | API & Keys | `API_KEY`, `APIKEY`, `ACCESS_KEY`, `SECRET_KEY`, `PRIVATE_KEY`, `PUBLIC_KEY` |
@@ -423,11 +424,11 @@ Sensitive key pattern list for automatic detection of sensitive configuration. K
 | Database | `CONNECTION_STRING`, `CONN_STRING`, `DATABASE_URL`, `DB_PASSWORD` |
 | Cloud Services | `AWS_SECRET`, `AZURE_KEY`, `GCP_KEY`, `SERVICE_ACCOUNT` |
 
-**Matching Rules:**
+**Matching rules:**
 - Case-insensitive
-- Key name containing any pattern is identified as sensitive
+- A key name containing any pattern is identified as sensitive
 
-**Usage Example:**
+**Usage example:**
 
 ```go
 // Check if a key is sensitive
@@ -448,22 +449,26 @@ Default key name validation pattern:
 var DefaultKeyPattern *regexp.Regexp = nil
 ```
 
-:::tip Performance Optimization
-A `nil` value enables fast byte-level validation (~10x performance improvement).
-Default validation rules: starts with a letter, contains only letters, digits, and underscores.
+:::tip
+`nil` enables fast byte-level validation (about 10x performance improvement).
+Default validation rule: starts with a letter, contains only letters, numbers, and underscores.
 :::
 
-**Custom Pattern:**
+**Custom pattern:**
 
 ```go
 import "regexp"
 
 cfg := env.DefaultConfig()
-// Only allow uppercase letters at the start
+// Only allow uppercase letter prefix
 cfg.KeyPattern = regexp.MustCompile(`^[A-Z][A-Z0-9_]{1,63}$`)
 ```
 
 ## Security Utility Functions
+
+:::tip
+Complete documentation for `IsSensitiveKey`, `MaskValue`, `SanitizeForLog` and other security utility functions is also available in [SecureValue API](./secure-value#security-utility-functions).
+:::
 
 ### IsSensitiveKey
 
@@ -494,7 +499,7 @@ Returns a masked value based on the key's sensitivity.
 masked := env.MaskValue("API_KEY", "secret123")
 // Returns: [MASKED:9 chars]
 
-// Non-sensitive key - returns original value (truncated if over 20 characters)
+// Non-sensitive key - returns original value (truncated if over 20 chars)
 masked := env.MaskValue("APP_NAME", "myapp")
 // Returns: myapp
 masked := env.MaskValue("DESCRIPTION", "this is a very long description text")
@@ -520,13 +525,13 @@ masked := env.MaskKey("DB_PASSWORD")
 func MaskSensitiveInString(s string) string
 ```
 
-Masks potentially sensitive content in a string. Truncates strings exceeding 50 characters.
+Masks potential sensitive content in a string. Truncates strings longer than 50 characters.
 
 **Parameters:**
-- `s` - Original string
+- `s` - original string
 
 **Returns:**
-- `string` - Masked string
+- `string` - masked string
 
 ```go
 // Long strings are truncated
@@ -540,8 +545,8 @@ clean := env.MaskSensitiveInString(short)
 // Returns: "Short message"
 ```
 
-:::warning Note
-This function is primarily used for truncating long strings. To automatically mask sensitive key-value pairs, use `SanitizeForLog`.
+:::warning
+This function is primarily used for truncating long strings. To auto-mask sensitive key-value pairs, use `SanitizeForLog`.
 :::
 
 ### SanitizeForLog
@@ -550,13 +555,13 @@ This function is primarily used for truncating long strings. To automatically ma
 func SanitizeForLog(s string) string
 ```
 
-Sanitizes sensitive key-value pair information in a string. Automatically detects and masks sensitive values in `key=value` format.
+Cleans sensitive key-value pair information from a string. Auto-detects and masks sensitive values in `key=value` format.
 
 **Parameters:**
-- `s` - Original string
+- `s` - original string
 
 **Returns:**
-- `string` - Sanitized string
+- `string` - cleaned string
 
 **Detected sensitive key patterns:**
 - `password=`, `secret=`, `token=`, `auth=`, `credential=`, `passphrase=`, `session=`, `cookie=`
@@ -567,7 +572,7 @@ Sanitizes sensitive key-value pair information in a string. Automatically detect
 - `connection_string=`, `database_url=`, `db_password=`
 
 ```go
-// Automatically masks sensitive key-value pairs
+// Auto-mask sensitive key-value pairs
 msg := "Connected with password=secret123 api_key=abc123"
 clean := env.SanitizeForLog(msg)
 // Returns: "Connected with password=[MASKED] api_key=[MASKED]"
@@ -578,8 +583,8 @@ clean := env.SanitizeForLog(msg)
 // Returns: "Config loaded: app_name=myapp port=8080"
 ```
 
-:::tip Use Case
-Suitable for log output, error messages, debugging information, and other scenarios requiring automatic filtering of sensitive key-value pairs.
+:::tip
+Suitable for log output, error messages, debug information, and other scenarios requiring automatic filtering of sensitive key-value pairs.
 :::
 
 ### ClearBytes
@@ -588,7 +593,7 @@ Suitable for log output, error messages, debugging information, and other scenar
 func ClearBytes(b []byte)
 ```
 
-Securely zeroes a byte slice.
+Securely zeros a byte slice.
 
 ```go
 sensitive := []byte("secret-data")
@@ -599,7 +604,7 @@ env.ClearBytes(sensitive)
 
 ## FileFormat Constants
 
-File format type:
+File format types:
 
 ```go
 type FileFormat int
@@ -618,7 +623,7 @@ Usage example:
 // Detect format
 format := env.DetectFormat("config.json")  // FormatJSON
 
-// Specify format for serialization
+// Serialize with specified format
 data, _ := env.Marshal(cfg, env.FormatJSON)
 
 // Format string
@@ -636,13 +641,13 @@ err := loader.LoadFiles(".env")
 
 switch {
 case errors.Is(err, env.ErrFileNotFound):
-    // File not found
+    // file not found
 case errors.Is(err, env.ErrFileTooLarge):
-    // File too large
+    // file too large
 case errors.Is(err, env.ErrSecurityViolation):
-    // Forbidden key
+    // forbidden key
 case errors.Is(err, env.ErrClosed):
-    // Loader is closed
+    // loader has been closed
 }
 ```
 
@@ -696,13 +701,13 @@ func main() {
     if err != nil {
         switch {
         case errors.Is(err, env.ErrFileNotFound):
-            log.Fatal("Config file not found")
+            log.Fatal("Configuration file not found")
 
         case errors.Is(err, env.ErrFileTooLarge):
-            log.Fatal("Config file too large")
+            log.Fatal("Configuration file too large")
 
         case errors.Is(err, env.ErrClosed):
-            log.Fatal("Loader is closed")
+            log.Fatal("Loader has been closed")
 
         default:
             var parseErr *env.ParseError
@@ -749,7 +754,7 @@ func main() {
 
 ## Related Documentation
 
-- [SecureValue API](/en/env/api-reference/secure-value) - Complete security utility API
+- [SecureValue API](/en/env/api-reference/secure-value) - Complete API for security utility functions
 - [Config API](/en/env/api-reference/config) - Configuration options and limit settings
 - [Security Overview](/en/env/security/) - Security architecture and core features
-- [Production Checklist](/en/env/security/production-checklist) - Pre-deployment security check
+- [Production Checklist](/en/env/security/production-checklist) - Pre-launch security checks

@@ -350,7 +350,7 @@ func main() {
 
 ## 프록시 풀과 재시도 상호작용
 
-`ProxyRotateOnStatus`를 구성하면 HTTPC가 자동으로 `MaxRetries`를 높여 프록시 풀의 각 프록시가 최소 한 번 시되도록 보장합니다. 이는 `calculateMaxRetries`로 구현됩니다:
+`ProxyRotateOnStatus` 또는 `ProxyRotatePerRequest`를 구성하면 HTTPC가 자동으로 `MaxRetries`를 높여 프록시 풀의 각 프록시가 최소 한 번 시도되도록 보장합니다. 이는 `calculateMaxRetries`로 구현됩니다:
 
 ```
 유효 MaxRetries = max(구성된 MaxRetries, len(ProxyPool) - 1)
@@ -361,7 +361,7 @@ func main() {
 
 ```
 ProxyPool = [proxy1, proxy2, proxy3, proxy4, proxy5]
-ProxyRotateOnStatus = [403]
+ProxyRotateOnStatus = [403]   // 또는 ProxyRotatePerRequest = true
 구성 MaxRetries = 3
 
 → 자동으로 4로 조정(= 5 - 1), 5개 프록시 각각 시도 보장

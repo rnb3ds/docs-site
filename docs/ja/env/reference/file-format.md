@@ -1,13 +1,13 @@
 ---
 sidebar_label: "ファイル形式"
-title: "ファイルフォーマット - CyberGo env | .env/JSON/YAML 構文"
-description: "CyberGo env 設定ファイルフォーマットリファレンス。.env・JSON・YAML の 3 形式の構文規則、クォートと export 接頭辞、変数展開 ${VAR}、複数行文字列、ネスト・配列のフラット化、UTF-8 エンコーディング、DetectFormat 自動検出を詳解します。"
+title: "ファイル形式 - CyberGo env | .env/JSON/YAML 構文"
+description: "CyberGo env 設定ファイルフォーマットのリファレンス。.env、JSON、YAML の 3 種類のフォーマットの構文ルール、引用符と export プレフィックス、変数展開 ${VAR}、複数行文字列、ネストオブジェクトと配列のフラット化、UTF-8 エンコーディングと DetectFormat 自動検出機構を詳解。"
 sidebar_position: 1
 ---
 
-# ファイルフォーマット
+# ファイル形式
 
-env ライブラリは複数の設定ファイルフォーマットをサポートしています：`.env`、JSON、YAML。
+env ライブラリは複数の設定ファイルフォーマットをサポートします：`.env`、JSON、YAML。
 
 ## .env フォーマット
 
@@ -17,30 +17,30 @@ env ライブラリは複数の設定ファイルフォーマットをサポー�
 # コメント
 KEY=value
 
-# 値の中に等号を含む場合
+# 値に等記号を含む
 URL=https://example.com?foo=bar
 
 # 空行は無視される
 
-# 無効：キーに空白を含めることはできない
+# 無効：キーにスペースを含められない
 # MY KEY=value
 ```
 
 ### 引用符
 
 ```bash
-# ダブルクォート：空白を保持、エスケープをサポート
+# 二重引用符：スペースを保持、エスケープをサポート
 MESSAGE="Hello World"
 PATH="/usr/local/bin"
 
-# シングルクォート：エスケープを処理しない（バックスラッシュ序列をそのまま保持）
-# 注意：シングルクォートは変数展開を阻止しない——展開は引用符が剥がれた後に統一的に行われる
+# 単一引用符：エスケープを処理しない（バックスラッシュシーケンスをそのまま保持）
+# 注意：単一引用符は変数展開を阻止しない——展開は引用符剥离後に統一して行われる
 LITERAL='no escaping here: \n stays literal'
 
 # 引用符なし
 SIMPLE=value
 
-# 空の値
+# 空値
 EMPTY=
 EMPTY=""
 EMPTY=''
@@ -48,7 +48,7 @@ EMPTY=''
 
 ### エスケープ文字
 
-ダブルクォート内でエスケープをサポート：
+二重引用符内でエスケープをサポートします：
 
 ```bash
 # 改行
@@ -69,37 +69,37 @@ PRICE="Price: \$100"
 
 ### 変数展開
 
-`ExpandVariables` を有効にするとサポート：
+`ExpandVariables` 有効時にサポート：
 
 ```bash
 # 他の変数を参照
 BASE_URL=https://api.example.com
 API_URL=${BASE_URL}/v1
 
-# 簡略構文
+# シンプル構文
 URL=$BASE_URL/path
 
 # デフォルト値
 HOST=${HOST:-localhost}
 PORT=${PORT:-8080}
 
-# ネストされた展開
+# ネスト展開
 SERVICE=${CLUSTER:-default}-${REGION:-us-east}
 ```
 
 ### export 構文
 
-`AllowExportPrefix` を有効にするとサポート：
+`AllowExportPrefix` 有効時にサポート：
 
 ```bash
-# Bash スタイルのエクスポート
+# Bash スタイルエクスポート
 export KEY=value
 export ANOTHER="quoted value"
 ```
 
 ### YAML スタイル
 
-`AllowYamlSyntax` を有効にするとサポート：
+`AllowYamlSyntax` 有効時にサポート：
 
 ```bash
 # YAML スタイルのキーと値のペア
@@ -109,18 +109,18 @@ ANOTHER: "quoted value"
 
 ### 複数行の値
 
-`.env` パーサーは行単位でスキャンし、各行を個別に解析します。**複数行にまたがる引用符文字列はサポートされていません**——ダブルクォート値は 1 行内で閉じる必要があり、そうでない場合は `ErrInvalidValue` が返されます。改行が必要な場合は `\n` エスケープを使用してください（ダブルクォート内でのみ有効、シングルクォートはエスケープを処理しません）：
+`.env` パーサーは行単位でスキャンし、各行を独立して解析し、**複数行にまたがる引用符文字列をサポートしません**——二重引用符の値は 1 行内で閉じる必要があり、そうでないと `ErrInvalidValue` を報告します。改行が必要な場合は `\n` エスケープを使用してください（二重引用符内のみ有効、単一引用符はエスケープを処理しません）：
 
 ```bash
-# ダブルクォート内の \n は改行文字として解析される
+# 二重引用符内の \n は改行文字として解析される
 LINES="line1\nline2\nline3"
-# 実際の値は 3 行のテキスト: line1 / line2 / line3
+# 実際の値は 3 行テキスト：line1 / line2 / line3
 
 # PRIVATE_KEY などの複数行証明書は \n で結合することを推奨
 PRIVATE_KEY="-----BEGIN KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END KEY-----"
 ```
 
-本当にまたがる文字列が必要な場合は、[JSON または YAML フォーマット](#フォーマット検出)を使用するか、カスタムパーサーで複数行サポートを拡張してください。
+真の複数行文字列が必要な場合は [JSON または YAML フォーマット](#フォーマット検出) を使用するか、カスタムパーサーで複数行サポートを拡張してください。
 
 ## JSON フォーマット
 
@@ -135,9 +135,9 @@ PRIVATE_KEY="-----BEGIN KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..
 }
 ```
 
-### ネストされたオブジェクト
+### ネストしたオブジェクト
 
-ネストされたオブジェクトはフラット化されます：
+ネストしたオブジェクトはフラット化されます：
 
 ```json
 {
@@ -157,7 +157,7 @@ DATABASE_PORT=5432
 
 ### 配列
 
-配列はインデックスキーにフラット化されます：
+配列はインデックス付きキーにフラット化されます：
 
 ```json
 {
@@ -177,12 +177,12 @@ PORTS_2=8080
 ```
 
 ::: tip 配列要素へのアクセス
-`GetSlice[T]` 関数またはドットパスを使用してインデックスキーにアクセスします：
+`GetSlice[T]` 関数またはドットパスでインデックスキーにアクセスします：
 ```go
 hosts := env.GetSlice[string]("ALLOWED_HOSTS")
 port0 := env.GetInt("PORTS_0")  // 80
 ```
-詳細は [GetSlice ドキュメント](/ja/env/api-reference/functions#getslice-t)を参照してください。
+詳しくは [GetSlice ドキュメント](/ja/env/api-reference/functions#getslice-t) を参照。
 :::
 
 ### 型変換オプション
@@ -217,7 +217,7 @@ DEBUG: true
 PORT: 8080
 ```
 
-### ネストされた構造
+### ネスト構造
 
 ```yaml
 database:
@@ -239,7 +239,7 @@ DATABASE_CREDENTIALS_PASSWORD=secret
 
 ### リスト
 
-リストはインデックスキーにフラット化されます：
+リストはインデックス付きキーにフラット化されます：
 
 ```yaml
 allowed_hosts:
@@ -259,16 +259,16 @@ ALLOWED_HOSTS_2=api.example.com
 ### 複数行文字列
 
 ::: warning 注意
-YAML ブロックスカラー（リテラルブロック `|` とフォールドブロック `>`）は**現在サポートされていません**。パーサーは `|`/`>` を通常のスカラー文字として保存し、後続のインデント行はキーと値の解析を壊します。
+YAML ブロックスカラー（リテラルブロック `|` とフォールドブロック `>`）は**現在サポートされていません**。パーサーは `|`/`>` を通常のスカラー文字として格納し、後続のインデント行はキーと値の解析を壊します。
 :::
 
-改行を保持する必要がある値は、ダブルクォートと `\n` エスケープを使用してください：
+改行を保持する必要がある値は、二重引用符と `\n` エスケープを使用してください：
 
 ```yaml
 description: "Line1\nLine2\nLine3"
 ```
 
-またはカスタムパーサーでブロックスカラーのサポートを拡張してください。
+またはカスタムパーサーでブロックスカラーサポートを拡張してください。
 
 ### 型変換オプション
 
@@ -286,7 +286,7 @@ cfg.YAMLMaxDepth = 10
 ### 自動検出
 
 ```go
-// 拡張子に基づいて検出
+// 拡張子で検出
 format := env.DetectFormat("config.json")   // FormatJSON
 format = env.DetectFormat("settings.yaml")  // FormatYAML
 format = env.DetectFormat(".env")           // FormatEnv
@@ -317,34 +317,34 @@ fmt.Println(format.String())  // 出力：json
 
 ### フォーマットの選択
 
-| シナリオ | 推奨フォーマット |
+| シーン | 推奨フォーマット |
 |------|----------|
 | シンプルな設定 | `.env` |
 | 複雑なネスト設定 | JSON または YAML |
-| 他のツールと共有 | JSON |
-| 人間の可読性を優先 | YAML |
+| 他のツールとの共有 | JSON |
+| 人間の可読性優先 | YAML |
 | Docker/K8s 環境 | `.env` |
 
 ### ファイル命名
 
 ```bash
 .env              # デフォルト設定
-.env.local        # ローカルオーバーライド（コミットしない）
+.env.local        # ローカル上書き（コミットしない）
 .env.development  # 開発環境
 .env.staging      # ステージング環境
 .env.production   # 本番環境
 .env.test         # テスト環境
 ```
 
-### 組み合わせて使用
+### 混合使用
 
 ```go
-// 異なるフォーマットを混合して使用可能
+// 異なるフォーマットを混合使用可能
 loader.LoadFiles(
     "base.env",           // 基本設定
     "database.json",      // データベース設定
     "secrets.yaml",       // 機密設定
-    ".env.local",         // ローカルオーバーライド
+    ".env.local",         // ローカル上書き
 )
 ```
 
@@ -363,6 +363,6 @@ secrets.yaml
 
 ## 関連ドキュメント
 
-- [多フォーマット設定](/ja/env/guides/multi-format) - 多フォーマット読み込みガイド
+- [マルチフォーマット設定](/ja/env/guides/multi-format) - マルチフォーマット読み込みガイド
 - [ComponentFactory API](/ja/env/api-reference/factory) - DetectFormat 関数リファレンス
 - [Config API](/ja/env/api-reference/config) - JSON/YAML 解析オプション
