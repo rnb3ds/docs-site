@@ -1,7 +1,7 @@
 ---
 sidebar_label: "删除操作"
 title: "Processor 删除方法 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 删除方法：Delete 按路径删除、DeleteClean 删除后自动清理空值与空数组，保留链式调用能力。"
+description: "CyberGo JSON Processor 删除方法：Delete 按路径删除、DeleteClean 删除后自动清理空值与空数组并级联移除空父节点，支持通配符、切片与多字段路径，缺失目标静默跳过，不可变返回新字符串，出错时返回原输入，保留链式调用能力。"
 sidebar_position: 4
 ---
 

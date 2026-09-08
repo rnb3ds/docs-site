@@ -1,8 +1,9 @@
 ---
 sidebar_label: "Data Masking"
 title: "Data Masking - CyberGo env | Log Security Tools"
-description: "Complete guide to CyberGo env sensitive data masking tools, covering IsSensitiveKey auto-detection of passwords and keys, MaskValue masking by sensitivity, MaskKey masking key names, SanitizeForLog cleaning log strings, and ClearBytes secure zeroing, with HTTP middleware and structured logging practical examples."
+description: "Sensitive data masking guide for CyberGo env: IsSensitiveKey auto-detection, MaskValue and MaskKey masking, and ClearBytes zeroing, with logging examples."
 sidebar_position: 2
+sidebar_icon: "🛡️"
 ---
 
 # Data Masking
@@ -124,7 +125,7 @@ func main() {
 func MaskKey(key string) string
 ```
 
-Masks the key name itself, for scenarios where you need to show a key exists but don't want to expose its meaning (internally calls `DefaultMaskKey`):
+Masks the key name itself, for scenarios where you need to show a key exists but don't want to expose its meaning (the public API `MaskKey` is a wrapper around the internal masking routine, sharing one implementation with error reporting and audit logs):
 
 | Condition | Return Value |
 |-----------|-------------|

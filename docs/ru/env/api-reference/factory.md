@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Фабрика компонентов"
 title: "ComponentFactory API - CyberGo env | фабрика компонентов"
-description: "Справочник API фабрики компонентов ComponentFactory CyberGo env: унифицированное создание валидатора Validator, аудитора Auditor, адаптера файловой системы FileSystem и раскрывателя переменных, регистрация пользовательских парсеров через RegisterParser, управление жизненным циклом Close."
+description: "Справочник ComponentFactory CyberGo env: создание Validator, Auditor и FileSystem, регистрация пользовательских парсеров RegisterParser и управление Close."
 sidebar_position: 8
 ---
 

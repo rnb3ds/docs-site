@@ -1,7 +1,7 @@
 ---
 sidebar_label: "错误处理"
 title: "错误处理 - CyberGo JSON | 最佳实践"
-description: "CyberGo JSON 错误处理：JsonsError 类型判断、errors.Is/As 匹配、SafeError 安全输出与 RedactedPath 脱敏日志，构建健壮异常机制。"
+description: "CyberGo JSON 错误处理：JsonsError 类型判断、errors.Is/As 匹配、SafeError 安全输出与 RedactedPath 脱敏日志，配合哨兵错误分类、Op/Path 定位失败点、默认值兜底与重试降级策略，构建健壮异常机制。"
 sidebar_position: 2
 ---
 
@@ -29,6 +29,25 @@ var (
     ErrResourceExhausted  = errors.New("system resources exhausted")  // Deprecated
 )
 ```
+
+### 哨兵错误分类表
+
+12 个导出哨兵错误按**处理方式**分为四类：
+
+| 错误 | 含义 / 典型触发 | 分类 | 处理建议 |
+|------|-----------------|------|----------|
+| `ErrInvalidJSON` | 输入不是合法 JSON（语法错误、非法 UTF-8） | 用户输入 | 返回友好提示，要求修正数据 |
+| `ErrPathNotFound` | 路径不存在（嵌套键缺失、数组下标越界） | 用户输入 | 回退默认值或按业务语义处理 |
+| `ErrTypeMismatch` | 路径上的值与期望类型不符 | 用户输入 | 提示字段类型错误 |
+| `ErrInvalidPath` | 路径语法非法（如 `a..b`） | 用户输入 | 提示路径格式错误 |
+| `ErrUnsupportedPath` | 路径操作不支持 | 用户输入 | 检查路径与操作的组合 |
+| `ErrSizeLimit` | 输入超过 `Config.MaxJSONSize` | 安全限制 | 拒绝并按限流策略处理 |
+| `ErrDepthLimit` | 嵌套深度超过 `MaxNestingDepthSecurity` | 安全限制 | 拒绝（深嵌套常见于恶意输入） |
+| `ErrSecurityViolation` | 检出危险模式（原型污染等） | 安全限制 | 记录并拒绝，不回显详情 |
+| `ErrConcurrencyLimit` | 在途操作数达到 `MaxConcurrency`（软上限，立即拒绝不阻塞） | 系统暂时性 | **可重试**——稍候重试或提高上限 |
+| `ErrProcessorClosed` | 处理器已 Close 后继续调用 | 系统状态 | 重建 `Processor` 或检查生命周期 |
+| `ErrOperationTimeout` | ——（保留兼容） | 已废弃 | 当前无操作返回它，勿据此分支 |
+| `ErrResourceExhausted` | ——（保留兼容） | 已废弃 | 当前无操作返回它，勿据此分支 |
 
 ### 错误检查
 
@@ -88,6 +107,47 @@ if err != nil {
     }
 }
 ```
+
+### 用 Op / Path 定位失败点
+
+`Op`（失败操作）与 `Path`（失败路径）组合即可精确定位问题，无需解析错误字符串：
+
+```go
+package main
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	data := `{"user":{"name":"Alice"},"perms":["read"]}`
+
+	// 两个典型失败：路径不存在 / JSON 非法
+	for _, tc := range []struct {
+		jsonStr, path string
+	}{
+		{data, "user.email"},  // 路径不存在
+		{`{"broken"`, "user"}, // JSON 非法
+	} {
+		_, err := json.Get(tc.jsonStr, tc.path)
+		var jsonErr *json.JsonsError
+		if errors.As(err, &jsonErr) {
+			fmt.Printf("op=%s path=%q 原因=%v\n", jsonErr.Op, jsonErr.Path, json.SafeError(err))
+		}
+	}
+}
+
+// 输出：
+// op=get path="user.email" 原因=path not found
+// op=parse path="" 原因=invalid JSON format
+```
+
+:::tip 定位法
+`Op` 回答「哪个操作失败」（`get`/`set`/`delete`/`get_multiple`/`warmup_cache`；解析失败统一记为 `parse`），`Path` 回答「失败在哪条路径」。日志中输出这两个字段（而非整个 `Error()` 字符串）既能定位问题，又避免把路径中的敏感键名写进日志——需要输出路径时配合 [`RedactedPath`](#redactedpath-日志脱敏) 掩码。
+:::
 
 ## 错误处理模式
 
@@ -210,17 +270,36 @@ func auditLog(op string, path string, err error) {
 
 ### SafeError 安全输出
 
-`SafeError` 返回客户端安全的错误消息，去除内部上下文信息：
+`SafeError` 返回客户端安全的错误消息，去除内部上下文（操作、路径、结构细节），适合 HTTP/API 响应（CWE-209）：
 
 ```go
-// Signature: func SafeError(err error) string
+// 签名：func SafeError(err error) string
 
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
-    // SafeError strips internal details like paths and operation context
+    // 完整 Error() 会包含 "JSON get failed at path '...': ..."，不要直接外发
+    // SafeError 只返回底层哨兵错误消息，如 "path not found"
     safeMsg := json.SafeError(err)
-    http.Error(w, safeMsg, http.StatusBadRequest)
+    _ = safeMsg // http.Error(w, safeMsg, http.StatusBadRequest)
+    _ = val
     return
+}
+```
+
+### RedactedPath 日志脱敏
+
+路径本身可能携带敏感键名（`user.password`、`token` 等）。写日志前用 `RedactedPath` 掩码——非空路径一律替换为 `***`，不泄露任何片段：
+
+```go
+// 签名：func RedactedPath(path string) string
+
+var jsonErr *json.JsonsError
+if errors.As(err, &jsonErr) {
+    // 日志中只记录被掩码的路径，避免敏感键名进入日志系统
+    log.Warn("JSON 操作失败",
+        "op", jsonErr.Op,
+        "path", json.RedactedPath(jsonErr.Path), // ***
+    )
 }
 ```
 
@@ -409,8 +488,8 @@ func processLevel2(data string) error {
     return err
 }
 
-// 错误链示例：
-// 深度处理失败：一级处理失败 (路径 data.field): path not found
+// 错误链示例（JsonsError 携带 Op/Path，fmt.Errorf 的 %w 层层保留底层原因）：
+// 深度处理失败：一级处理失败 (路径 data.field): JSON get failed at path 'data.field': ... (caused by: path not found)
 ```
 
 ## 相关

@@ -1,23 +1,24 @@
 ---
 sidebar_label: "Overview"
 title: "JSON Library - CyberGo JSON | High-Performance Go Library"
-description: "CyberGo JSON: a fast, thread-safe Go JSON library with JSONPath queries, streaming, generic APIs, and Schema validation, compatible with encoding/json."
+description: "CyberGo JSON: high-performance, thread-safe Go JSON with JSONPath queries, streaming, generics, Schema validation, hooks, and 100% encoding/json compatibility."
+sidebar_icon: "📘"
 ---
 
 # JSON Library
 
-`github.com/cybergodev/json` is a high-performance, thread-safe Go JSON processing library. It provides rich JSON operations including parsing, querying, modifying, validating, and formatting, while maintaining 100% compatibility with the standard library `encoding/json`.
+`github.com/cybergodev/json` is a high-performance, thread-safe Go JSON processing library. It provides a rich set of JSON operations — parsing, querying, modifying, validating, and formatting — while maintaining 100% compatibility with the standard library `encoding/json`.
 
 ## Core Features
 
-- **100% encoding/json Compatible** — Seamless replacement for the standard library with no code changes required
-- **Thread-Safe** — All operations are concurrency-safe, supporting high-concurrency scenarios
-- **Path Queries** — JSONPath-style path expressions, including wildcards and slicing
-- **Type-Safe Getters** — Generic API (`GetTyped[T]`) and type assertion methods (`SafeGet`)
-- **Stream Processing** — Large file and JSONL/NDJSON streaming support
-- **Security Protection** — Built-in input validation, depth limits, and dangerous pattern detection
-- **High-Performance Caching** — Smart caching, pre-parse optimization, and object pool reuse
-- **Extensible** — Hook system, custom encoders, and validators
+- **100% encoding/json compatible** — a drop-in replacement for the standard library, no changes to existing code required
+- **Thread-safe** — all operations are concurrency-safe, suited to high-concurrency workloads
+- **Path queries** — JSONPath-style path expressions, including wildcards and slices
+- **Type-safe access** — generic API (`GetTyped[T]`) and type-assertion methods (`SafeGet`)
+- **Streaming** — streaming processing for large files and the JSONL/NDJSON format
+- **Security hardening** — built-in input validation, depth limits, and dangerous-pattern detection
+- **High-performance caching** — smart caching, pre-parse optimization, object-pool reuse
+- **Extensible** — hook system, custom encoders, validators
 
 ## Installation
 
@@ -25,45 +26,45 @@ description: "CyberGo JSON: a fast, thread-safe Go JSON library with JSONPath qu
 go get github.com/cybergodev/json
 ```
 
-## 30-Second Quick Start
+## 30-Second Quick Tour
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{"name": "CyberGo", "version": 1, "tags": ["json", "go"]}`
+	data := `{"name": "CyberGo", "version": 1, "tags": ["json", "go"]}`
 
-    // 1. Path query
-    name := json.GetString(data, "name")
-    fmt.Println("Name:", name)
+	// 1. Get by path
+	name := json.GetString(data, "name")
+	fmt.Println("Name:", name)
 
-    // 2. Modify value
-    updated, _ := json.Set(data, "version", 2)
-    fmt.Println("Updated:", updated)
+	// 2. Modify a value
+	updated, _ := json.Set(data, "version", 2)
+	fmt.Println("Updated:", updated)
 
-    // 3. Validate
-    if json.Valid([]byte(data)) {
-        fmt.Println("Valid JSON")
-    }
+	// 3. Validate
+	if json.Valid([]byte(data)) {
+		fmt.Println("Valid JSON")
+	}
 
-    // 4. Get with default value
-    desc := json.GetString(data, "description", "Default description")
-    fmt.Println("Description:", desc)
+	// 4. Get with a default value
+	desc := json.GetString(data, "description", "Default description")
+	fmt.Println("Description:", desc)
 
-    // 5. Decode into struct
-    type Config struct {
-        Name    string   `json:"name"`
-        Version int      `json:"version"`
-        Tags    []string `json:"tags"`
-    }
-    var config Config
-    json.Unmarshal([]byte(data), &config)
-    fmt.Printf("Config: %+v\n", config)
+	// 5. Decode into a struct
+	type Config struct {
+		Name    string   `json:"name"`
+		Version int      `json:"version"`
+		Tags    []string `json:"tags"`
+	}
+	var config Config
+	json.Unmarshal([]byte(data), &config)
+	fmt.Printf("Config: %+v\n", config)
 }
 ```
 
@@ -73,77 +74,83 @@ func main() {
 
 | Feature | Functions | Description |
 |---------|-----------|-------------|
-| Get value | `Get`, `GetString`, `GetInt`... | Supports nested paths, array indices |
-| Get with default | `GetString`, `GetInt`, etc. | Pass a defaultValue parameter |
-| Set value | `Set` | Automatically creates non-existent paths by default (Config.CreatePaths) |
-| Delete value | `Delete` | Remove value at specified path |
+| Get values | `Get`, `GetString`, `GetInt`... | Nested paths and array indices supported |
+| Batch get | `GetMultiple` | Retrieve values at multiple paths with a single parse |
+| Get with default | `GetString`, `GetInt`, etc. | Pass a defaultValue argument |
+| Set values | `Set` | Automatically creates missing paths by default (Config.CreatePaths) |
+| Delete values | `Delete` | Deletes the specified path |
 
 ### Encoding & Decoding
 
 | Feature | Functions | Description |
 |---------|-----------|-------------|
-| Encode | `Marshal`, `MarshalIndent` | 100% compatible with encoding/json |
-| Decode | `Unmarshal`, `Parse`, `ParseAny` | Supports generics and type safety |
-| Format | `Prettify`, `Compact` | JSON pretty-print / compact |
+| Encode | `Marshal`, `MarshalIndent` | 100% encoding/json compatible |
+| Decode | `Unmarshal`, `Parse`, `ParseAny` | Generics and type safety supported |
+| Format | `Prettify`, `Compact` | JSON pretty-print / compaction |
 
 ### Advanced Features
 
 | Feature | Functions/Types | Description |
-|---------|----------------|-------------|
-| Generic API | `GetTyped[T]` | Type-safe generic getter |
-| Pre-parse | `Processor.PreParse`, `Processor.GetFromParsed` | Parse once, query many times |
-| Safe access | `SafeGet` → `AccessResult` | Chained type conversions |
-| Stream processing | `NDJSONProcessor` | Line-by-line streaming, controlled memory |
-| JSONL processing | `StreamLinesInto[T]` | Log/data pipeline support |
+|---------|-----------------|-------------|
+| Generic API | `GetTyped[T]` | Type-safe generic get |
+| Pre-parsing | `Processor.PreParse`, `Processor.GetFromParsed` | Parse once, query many times |
+| Path pre-compilation | `Processor.CompilePath`, `Processor.GetCompiled` | Zero repeated parsing for high-frequency identical paths |
+| Parallel iteration | `NewParallelIterator` | Parallel Map/Filter/ForEach with a built-in worker pool |
+| Safe access | `SafeGet` → `AccessResult` | Chained type conversion |
+| Streaming | `NDJSONProcessor` | Line-by-line streaming with bounded memory |
+| JSONL processing | `StreamLinesInto[T]` | Log/data pipelines |
 | Schema validation | `ValidateSchema` | JSON Schema validation |
 
 ## Module Navigation
 
 | Module | Description |
 |--------|-------------|
-| [Getting Started](./getting-started/) | Installation, basic usage, core concepts |
-| [Path Expression Syntax](./getting-started/path-syntax) | Path queries, slicing, wildcards, field extraction |
-| [Processor Guide](./getting-started/processor-guide) | When to use a Processor, PreParse optimization, lifecycle |
+| [Quick Start](./getting-started/) | Installation, basic usage, core concepts |
+| [Path Expression Syntax](./getting-started/path-syntax) | Path queries, slices, wildcards, field extraction |
+| [Processor Guide](./getting-started/processor-guide) | When to use a Processor, pre-parse optimization, lifecycle |
 | [API Reference](./api-reference/) | Complete API reference |
-| [Large File Processing](./streaming/large-files) | Stream processing, chunked read/write, memory optimization |
-| [Usage Examples](./examples/) | Practical code examples |
+| [Large File Handling](./streaming/large-files) | Streaming, chunked read/write, memory optimization |
+| [Examples](./examples/) | Real-world code examples |
 | [Advanced Examples](./examples/examples-advanced) | Batch encoding, pre-parsing, hook system |
 
-## Performance Features
+## Performance Characteristics
 
-- **Zero-Copy Parsing** — Reduced memory allocations
-- **Smart Caching** — Automatic caching of hot paths with cache warmup support
-- **Object Pool** — Reuse of intermediate objects to reduce GC pressure
-- **Parallel Stream Processing** — JSONL streaming supports multi-worker parallelism (`StreamJSONLParallel`)
-- **Pre-Parse Optimization** — Parse large JSON once, query many times
+- **Zero-allocation fast paths** — single-key access and cache-key building use on-stack buffers to reduce heap allocations
+- **Smart caching** — hot paths are cached automatically, with cache warm-up support
+- **Object pools** — reuse of intermediate objects to reduce GC pressure
+- **Parallel streaming** — JSONL streaming supports multiple parallel workers (`StreamJSONLParallel`)
+- **Pre-parse optimization** — parse large JSON once, query many times
 
-## Comparison with Standard Library
+## Comparison with the Standard Library
 
 | Feature | encoding/json | cybergodev/json |
 |---------|---------------|-----------------|
 | Basic encoding/decoding | ✅ | ✅ 100% compatible |
-| Path queries | ❌ | ✅ Dot/bracket syntax |
-| Type-safe getters | ❌ | ✅ Generic API |
-| Stream processing | Basic | ✅ Enhanced |
-| JSONL support | ❌ | ✅ Native support |
-| Security validation | ❌ | ✅ Built-in protection |
-| Hook system | ❌ | ✅ Extensible |
-| Cache optimization | ❌ | ✅ Smart caching |
+| Path queries | ❌ | ✅ dot/bracket syntax |
+| Type-safe access | ❌ | ✅ generic API |
+| Streaming | Basic | ✅ enhanced |
+| JSONL support | ❌ | ✅ native support |
+| Security validation | ❌ | ✅ built-in protection |
+| Hook system | ❌ | ✅ extensible |
+| Cache optimization | ❌ | ✅ smart caching |
 
 ## Quick Decision Guide
 
 | Scenario | Recommended Approach |
-|----------|---------------------|
+|----------|----------------------|
 | Simple query | `GetString(data, "path")` |
-| With default value | `GetString(data, "path", "default")` |
+| With a default value | `GetString(data, "path", "default")` |
 | Type safety | `GetTyped[User](data, "user")` |
-| High-frequency queries | `Processor` + `PreParse` |
+| Query many paths on one JSON | `Processor` + `PreParse` |
+| Query one path across many JSONs | `Processor` + `CompilePath` |
 | Large files | `Processor.ForeachFile` |
+| Process large arrays in parallel | `NewParallelIterator` |
+| JSONL pipelines | `StreamLinesInto[T]` |
 | Untrusted input | `SecurityConfig()` |
 
 ## Next Steps
 
-- [Getting Started](./getting-started/) — Get up and running in 5 minutes
-- [Processor Guide](./getting-started/processor-guide) — When to use a processor
-- [Path Expression Syntax](./getting-started/path-syntax) — Complete path syntax reference
-- [Usage Examples](./examples/) — More practical examples
+- [Quick Start](./getting-started/) — up and running in 5 minutes
+- [Processor Guide](./getting-started/processor-guide) — when to use a processor
+- [Path Expression Syntax](./getting-started/path-syntax) — the complete path syntax
+- [Examples](./examples/) — more real-world examples

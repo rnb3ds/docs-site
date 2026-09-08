@@ -10,7 +10,7 @@
 // Filters:
 //   - skip files: *_test.go, *.pb.go, *.gen.go
 //   - skip dirs:  internal, testdata, vendor, examples, example, dev_test,
-//                 docs, node_modules, .git, .idea, .claude
+//     docs, node_modules, .git, .idea, .claude
 //   - only exported (uppercase) identifiers (go/doc default)
 //   - skip Test*/Benchmark*/Example*/Fuzz* names
 //   - mark `// Deprecated:` (kept, flagged, not dropped)
@@ -162,11 +162,13 @@ func targetDir(module, importPath string) string {
 }
 
 // aliasResolver parses skipped packages (typically internal/) on demand to
-// discover the exported methods of types reached only via a public alias.
-// Without it, `type X = internal.Y` looks like a method-less alias even when Y
-// has methods — the canonical case is env's `CloseableChannelHandler` whose
-// `Channel()` method lives on the internal struct. One parser instance is
-// reused across the whole scan so each target dir is parsed at most once.
+// discover the exported methods and struct fields of types reached only via a
+// public alias. Without it, `type X = internal.Y` looks like a method-less,
+// field-less alias even when Y has members — the canonical cases are env's
+// `CloseableChannelHandler` whose `Channel()` method lives on the internal
+// struct, and env's `ExpansionError` whose `Kind` (etc.) fields live on the
+// internal struct. One parser instance is reused across the whole scan so each
+// target dir is parsed at most once.
 type aliasResolver struct {
 	src    string
 	module string
@@ -256,6 +258,60 @@ func (r *aliasResolver) targetTypeMethods(importPath, typeName, aliasName string
 			})
 		}
 		return out
+	}
+	return nil
+}
+
+// targetTypeFields returns the exported named fields of {importPath}.typeName
+// under their bare field names — the same output shape the main scan emits
+// for ordinary struct fields (see structFields) — so audit-api's
+// collectSymbols derives both "Alias.Field" and the bare "Field" identifier
+// from the manifest. Embedded/anonymous fields are skipped (they are not
+// reachable by field name through the alias), as are unexported fields (they
+// never match IDENT_RE anyway). aliasName is kept for call-site symmetry with
+// targetTypeMethods; bare field names make it redundant for Name itself.
+// Returns nil if the target package or type can't be resolved or the target
+// is not a struct.
+func (r *aliasResolver) targetTypeFields(importPath, typeName, _ string) []Symbol {
+	dp := r.parseTarget(importPath)
+	if dp == nil {
+		return nil
+	}
+	for _, t := range dp.Types {
+		if t.Name != typeName {
+			continue
+		}
+		if t.Decl == nil {
+			return nil
+		}
+		for _, sp := range t.Decl.Specs {
+			ts, ok := sp.(*ast.TypeSpec)
+			if !ok {
+				continue
+			}
+			st, ok := ts.Type.(*ast.StructType)
+			if !ok || st.Fields == nil {
+				continue
+			}
+			var out []Symbol
+			for _, field := range st.Fields.List {
+				if len(field.Names) == 0 {
+					continue // embedded/anonymous field — skip
+				}
+				typ := exprString(r.fset, field.Type)
+				for _, n := range field.Names {
+					if token.IsExported(n.Name) {
+						out = append(out, Symbol{
+							Name:      n.Name,
+							Signature: n.Name + " " + typ,
+							Doc:       trimDoc(field.Doc.Text()),
+						})
+					}
+				}
+			}
+			return out
+		}
+		return nil
 	}
 	return nil
 }
@@ -396,16 +452,19 @@ func main() {
 					ty.Methods = append(ty.Methods, interfaceMethods(fset, t)...)
 				}
 				// Qualified type alias (`type X = pkg.Y`): attach the target
-				// type's exported methods as X.Method. The target is usually
-				// inside internal/ (skipped by the main scan), so the resolver
-				// parses it on demand. Without this, a doc reference like
-				// `handler.Channel()` — where Channel is defined on the
-				// internal struct reached only via the public alias — would
+				// type's exported methods as X.Method and its exported struct
+				// fields under bare names. The target is usually inside
+				// internal/ (skipped by the main scan), so the resolver parses
+				// it on demand. Without this, a doc reference like
+				// `handler.Channel()` or `ExpansionError.Kind` — defined only on
+				// the internal type reached via the public alias — would
 				// false-positive as DANGLING. Non-qualified / external aliases
 				// fall through (extractAliasTarget returns nil).
 				if ty.Kind == "alias" {
 					if at := extractAliasTarget(t, pkgAST); at != nil {
 						ty.Methods = append(ty.Methods, resolver.targetTypeMethods(
+							at.importPath, at.typeName, ty.Name)...)
+						ty.Fields = append(ty.Fields, resolver.targetTypeFields(
 							at.importPath, at.typeName, ty.Name)...)
 					}
 				}

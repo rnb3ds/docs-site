@@ -1,7 +1,7 @@
 ---
 sidebar_label: "削除操作"
 title: "Processor 削除メソッド - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON Processor 削除メソッド：Delete はパスで削除、DeleteClean は削除後に null 値と空配列を自動クリーンアップし、メソッドチェーンの能力を保持します。"
+description: "CyberGo JSON Processor 削除メソッド：Delete はパスで削除、DeleteClean は null 値・空配列と空の親ノードを自動クリーンアップ。ワイルドカード、スライス、複数フィールドに対応、欠落対象は静かにスキップ、不変で新しい文字列を返し、エラー時は元入力を返しチェーンを維持します。"
 sidebar_position: 4
 ---
 

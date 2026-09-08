@@ -1,13 +1,17 @@
 ---
-sidebar_label: "Запрос и получение"
-title: "Processor: запросы - CyberGo JSON | API"
-description: "Запросы Processor CyberGo JSON: Get/GetString/GetInt типизированное получение, GetMultiple пакет, SafeGet с AccessResult и GetTyped[T], поддержка JSONPath."
+sidebar_label: "Запросы и получение"
+title: "Запросы по путям Processor - CyberGo JSON | Справочник API"
+description: "Запросы по путям CyberGo JSON Processor: типизированные Get/GetString/GetInt, пакетный GetMultiple, SafeGet с AccessResult и обобщённый GetTyped[T], JSONPath."
 sidebar_position: 2
 ---
 
-# Методы запросов по пути
+# Методы запросов по путям
 
-Processor предоставляет различные типобезопасные методы запросов по пути.
+Processor предоставляет множество типобезопасных методов запросов по путям.
+
+::: tip Зеркальная связь с функциями уровня пакета
+Методы этой страницы и [пакетные функции запросов](../functions/query) — два входа к одному поведению: синтаксис путей, возвращаемые типы и семантика ошибек полностью совпадают. Здесь фокус на конфигурационной семантике и паттернах переиспользования со стороны Processor; полные примеры уровня функций см. на пакетной странице.
+:::
 
 ## Базовые запросы
 
@@ -15,12 +19,12 @@ Processor предоставляет различные типобезопасн
 
 Сигнатура: `func (p *Processor) Get(jsonStr, path string, cfg ...Config) (result any, err error)`
 
-Получает значение любого типа из указанного пути.
+Получает значение произвольного типа по указанному пути.
 
 ```go
 val, err := p.Get(data, "items[0]")
 if err != nil {
-    panic(err)
+	panic(err)
 }
 ```
 
@@ -28,13 +32,13 @@ if err != nil {
 
 Сигнатура: `func (p *Processor) GetString(jsonStr, path string, defaultValue ...string) string`
 
-Получает строковое значение из указанного пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается пустая строка или `defaultValue`.
+Получает строковое значение по указанному пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается пустая строка или `defaultValue`.
 
 ```go
 // Без значения по умолчанию
 name := p.GetString(data, "user.name")
 
-// С значением по умолчанию
+// Со значением по умолчанию
 email := p.GetString(data, "user.email", "unknown@example.com")
 ```
 
@@ -42,7 +46,7 @@ email := p.GetString(data, "user.email", "unknown@example.com")
 
 Сигнатура: `func (p *Processor) GetInt(jsonStr, path string, defaultValue ...int) int`
 
-Получает целочисленное значение из указанного пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается 0 или `defaultValue`.
+Получает целочисленное значение по указанному пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается 0 или `defaultValue`.
 
 ```go
 count := p.GetInt(data, "count")
@@ -53,7 +57,7 @@ timeout := p.GetInt(data, "timeout", 30)
 
 Сигнатура: `func (p *Processor) GetFloat(jsonStr, path string, defaultValue ...float64) float64`
 
-Получает число с плавающей точкой из указанного пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается 0 или `defaultValue`.
+Получает число с плавающей точкой по указанному пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается 0 или `defaultValue`.
 
 ```go
 price := p.GetFloat(data, "price")
@@ -64,27 +68,31 @@ rate := p.GetFloat(data, "rate", 0.5)
 
 Сигнатура: `func (p *Processor) GetBool(jsonStr, path string, defaultValue ...bool) bool`
 
-Получает логическое значение из указанного пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается false или `defaultValue`.
+Получает логическое значение по указанному пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается false или `defaultValue`.
 
 ```go
 enabled := p.GetBool(data, "enabled")
 debug := p.GetBool(data, "debug", false)
 ```
 
+::: tip Типизированное получение не принимает cfg
+Вариативный параметр typed getters `GetString`/`GetInt` и др. — это **значение по умолчанию**, а не `Config` (в Go допускается только один вариативный параметр — это одно из трёх намеренных исключений официального дизайна). Для типизированного чтения с управлением через `Config` создайте процессор через `New(cfg)` и вызывайте его типизированные методы `GetString`/`GetInt` и др. либо используйте `SafeGet` + методы преобразования `AsInt()` и др.
+:::
+
 ### GetWithContext
 
 Сигнатура: `func (p *Processor) GetWithContext(ctx context.Context, jsonStr, path string, cfg ...Config) (any, error)`
 
-Получение по пути с контекстом. Поддерживает тайм-аут и отмену операции. Контекстно-зависимая версия `Get`.
+Получение по пути с контекстом. Поддерживает тайм-ауты и отмену; контекстно-зависимая версия `Get`.
 
 ::: info Примечание
-Контекст проверяется до и после операции, но не во время парсинга/навигации. Для больших JSON-документов операция может не реагировать на отмену во время выполнения.
+Context проверяется до и после операции, но не в процессе разбора/навигации. Для больших JSON-документов отмена во время операции может не сработать.
 :::
 
 ```go
 p, err := json.New()
 if err != nil {
-    panic(err)
+	panic(err)
 }
 defer p.Close()
 
@@ -93,7 +101,7 @@ defer cancel()
 
 val, err := p.GetWithContext(ctx, data, "items[0].name")
 if err != nil {
-    panic(err)
+	panic(err)
 }
 fmt.Println(val)
 ```
@@ -104,19 +112,19 @@ fmt.Println(val)
 
 Сигнатура: `func (p *Processor) SafeGet(jsonStr, path string, cfg ...Config) AccessResult`
 
-Безопасное получение значения, возвращает структуру AccessResult. Подходит для сценариев, требующих преобразования типов.
+Безопасно получает значение, возвращая структуру AccessResult. Подходит для сценариев с преобразованием типов.
 
 ```go
 result := p.SafeGet(data, "user.age")
 if result.Ok() {
-    age, err := result.AsInt()
-    if err != nil {
-        // Преобразование типа не удалось
-    }
-    fmt.Println(age)
+	age, err := result.AsInt()
+	if err != nil {
+		// Преобразование типа не удалось
+	}
+	fmt.Println(age)
 }
 
-// Также можно получать другие типы
+// Можно получать и другие типы
 name, err := result.AsString()
 price, err := result.AsFloat64()
 enabled, err := result.AsBool()
@@ -125,15 +133,15 @@ enabled, err := result.AsBool()
 **Методы AccessResult**:
 
 | Метод | Описание |
-|-------|----------|
-| `Ok() bool` | Проверяет, существует ли значение |
-| `Unwrap() any` | Получает исходное значение |
-| `UnwrapOr(defaultValue any) any` | Получает значение или значение по умолчанию |
-| `AsString() (string, error)` | Безопасно преобразует в строку |
-| `AsStringConverted() (string, error)` | Форматирование в строку |
-| `AsInt() (int, error)` | Безопасно преобразует в целое число |
-| `AsFloat64() (float64, error)` | Безопасно преобразует в число с плавающей точкой |
-| `AsBool() (bool, error)` | Безопасно преобразует в логическое значение |
+|------|------|
+| `Ok() bool` | Проверить, существует ли значение |
+| `Unwrap() any` | Получить исходное значение |
+| `UnwrapOr(defaultValue any) any` | Получить значение или значение по умолчанию |
+| `AsString() (string, error)` | Безопасно преобразовать в строку |
+| `AsStringConverted() (string, error)` | Преобразовать в строку форматированием |
+| `AsInt() (int, error)` | Безопасно преобразовать в целое |
+| `AsFloat64() (float64, error)` | Безопасно преобразовать в число с плавающей точкой |
+| `AsBool() (bool, error)` | Безопасно преобразовать в логическое значение |
 
 ## Получение коллекций
 
@@ -141,7 +149,7 @@ enabled, err := result.AsBool()
 
 Сигнатура: `func (p *Processor) GetArray(jsonStr, path string, defaultValue ...[]any) []any`
 
-Получает массив из указанного пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается nil или `defaultValue`.
+Получает массив по указанному пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается nil или `defaultValue`.
 
 ```go
 items := p.GetArray(data, "items")
@@ -152,7 +160,7 @@ tags := p.GetArray(data, "tags", []any{"default"})
 
 Сигнатура: `func (p *Processor) GetObject(jsonStr, path string, defaultValue ...map[string]any) map[string]any`
 
-Получает объект из указанного пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается nil или `defaultValue`.
+Получает объект по указанному пути. Если путь не существует, значение равно null или преобразование типа не удалось, возвращается nil или `defaultValue`.
 
 ```go
 profile := p.GetObject(data, "user.profile")
@@ -166,25 +174,25 @@ config := p.GetObject(data, "config", map[string]any{"timeout": 30})
 :::
 
 ```go
-// Использование GetTyped уровня пакета
+// Использование пакетного GetTyped
 user := json.GetTyped[User](data, "user")
 
-// С значением по умолчанию
+// Со значением по умолчанию
 user = json.GetTyped[User](data, "user", User{Name: "unknown"})
 ```
 
-## Массовые запросы
+## Пакетные запросы
 
 ### GetMultiple
 
 Сигнатура: `func (p *Processor) GetMultiple(jsonStr string, paths []string, cfg ...Config) (map[string]any, error)`
 
-Получает значения по нескольким путям за один вызов, возвращает отображение пути в значение.
+За один вызов получает значения нескольких путей, возвращая соответствие путей значениям.
 
 ```go
 results, err := p.GetMultiple(data, []string{"user.name", "user.age", "user.email"})
 if err != nil {
-    panic(err)
+	panic(err)
 }
 fmt.Println(results["user.name"]) // Alice
 fmt.Println(results["user.age"])  // 30
@@ -196,16 +204,16 @@ fmt.Println(results["user.age"])  // 30
 
 Сигнатура: `func (p *Processor) CompilePath(path string) (*CompiledPath, error)`
 
-Предварительно компилирует выражение пути для последующих быстрых повторных операций.
+Предкомпилирует path-выражение для последующих быстрых повторных операций.
 
 ```go
 cp, err := p.CompilePath("users[0].name")
 if err != nil {
-    panic(err)
+	panic(err)
 }
 defer cp.Release()
 
-// Использование скомпилированного пути для нескольких запросов
+// Многократные запросы по скомпилированному пути
 value, err := p.GetCompiled(data1, cp)
 value, err = p.GetCompiled(data2, cp)
 ```
@@ -214,23 +222,97 @@ value, err = p.GetCompiled(data2, cp)
 
 Сигнатура: `func (p *Processor) GetCompiled(jsonStr string, cp *CompiledPath) (any, error)`
 
-Получает значение с использованием предварительно скомпилированного пути. Подходит для повторных запросов по одному и тому же пути к разным JSON-данным.
+Получает значение по предкомпилированному пути. Подходит для повторных запросов одного пути по нескольким JSON-данным.
+
+::: warning Два отличия от Get
+- **Не принимает per-call `cfg`**: проверка ввода (размер, глубина, опасные паттерны) всегда выполняется по собственной конфигурации процессора.
+- **Не ищет в кэше результатов**: экономится только разбор пути — сам JSON парсится каждый раз; чтобы переиспользовать и разбор, используйте вместе с [`PreParse`](#preparse).
+:::
+
+**Полный пример: повторные запросы одного пути по партии документов**
 
 ```go
-cp, _ := p.CompilePath("items[0].id")
-defer cp.Release()
+package main
 
-for _, jsonStr := range jsonStrings {
-    id, err := p.GetCompiled(jsonStr, cp)
-    if err != nil {
-        continue
-    }
-    fmt.Println(id)
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	cp, err := p.CompilePath("user.name")
+	if err != nil {
+		panic(err)
+	}
+	defer cp.Release()
+
+	docs := []string{
+		`{"user":{"name":"Alice"}}`,
+		`{"user":{"name":"Bob"}}`,
+	}
+	for _, doc := range docs {
+		name, err := p.GetCompiled(doc, cp)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(name)
+	}
 }
+
+// Вывод:
+// Alice
+// Bob
 ```
 
-## Связанные разделы
+## Запросы по предразобранному JSON
 
-- [Модификация данных](./modify) - Методы Set/Delete
-- [Массовые операции](./batch) - Массовая обработка ProcessBatch
-- [Обобщённые операции](../generics) - Обобщённое получение GetTyped[T]
+### PreParse
+
+Сигнатура: `func (p *Processor) PreParse(jsonStr string, cfg ...Config) (*ParsedJSON, error)`
+
+Заранее разбирает JSON-документ и возвращает переиспользуемый `*ParsedJSON`. При многократных запросах к одному JSON разбор выполняется один раз, последующие запросы сразу навигируют.
+
+```go
+parsed, err := p.PreParse(largeJSON)
+if err != nil {
+	panic(err)
+}
+defer parsed.Release() // Освобождение ссылки на дерево разбора после использования
+
+// Многократные запросы переиспользуют результат разбора
+name, _ := p.GetFromParsed(parsed, "user.name")
+email, _ := p.GetFromParsed(parsed, "user.email")
+tags, _ := p.GetFromParsed(parsed, "tags")
+```
+
+### GetFromParsed
+
+Сигнатура: `func (p *Processor) GetFromParsed(parsed *ParsedJSON, path string, cfg ...Config) (any, error)`
+
+Получает значение по пути из предразобранного результата, пропуская этап разбора JSON.
+
+Контейнерные результаты (`map[string]any` / `[]any`) по умолчанию возвращаются после защитного глубокого копирования, примитивные типы возвращаются напрямую; если у процессора включён `Config.CacheSharedResults` (вызывающая сторона обещает не изменять возвращаемое значение), копирование пропускается. Сам `GetFromParsed` **не пишет в кэш результатов** — предразбор переиспользует само дерево разбора, а не результаты запросов.
+
+**Методы ParsedJSON**
+
+| Метод | Описание |
+|------|------|
+| `Data() any` | Получить нижележащий результат разбора (`map[string]any` / `[]any`) |
+| `Release()` | Обнуляет внутреннюю ссылку на данные, позволяя GC собрать дерево разбора (после вызова `Data()` возвращает `nil`; использовать с `defer`) |
+
+::: tip Разделение труда с CompilePath
+`PreParse` устраняет «повторный разбор одного JSON», `CompilePath` — «повторный разбор одного пути»; `SetFromParsed` (см. [Парсинг и валидация](./parse#setfromparsed)) поддерживает цепочечные изменения предразобранного результата. Критерии выбора описаны в [Введении в Processor](../../getting-started/processor-guide).
+:::
+
+## См. также
+
+- [Изменение данных](./modify) - методы Set/Delete
+- [Пакетные операции](./batch) - пакетная обработка ProcessBatch
+- [Обобщённые операции](../generics) - обобщённое получение GetTyped[T]

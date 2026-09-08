@@ -1,7 +1,7 @@
 ---
 sidebar_label: "인터페이스"
 title: "인터페이스 - CyberGo env | 핵심 인터페이스 계층"
-description: "CyberGo env 핵심 인터페이스 정의 레퍼런스로, 의존성 주입을 지원하는 세분화된 설계를 채택하여 EnvLoader 결합 인터페이스와 EnvFileLoader, EnvGetter, EnvSetter, Validator, FullAuditLogger, EnvParser, FileSystem 등 하위 인터페이스를 포함합니다."
+description: "CyberGo env 핵심 인터페이스 정의 레퍼런스로, 의존성 주입을 지원하는 EnvLoader 결합 인터페이스와 EnvFileLoader, EnvGetter, Validator, EnvParser 등 하위 인터페이스를 포함합니다."
 sidebar_position: 6
 ---
 

@@ -1,9 +1,9 @@
 ---
 sidebar_label: "감사 로깅"
 title: "감사 로깅 - CyberGo env | 보안 감사 구성"
-description: "CyberGo env 감사 로그 구성 가이드로, JSONAuditHandler, LogAuditHandler, ChannelAuditHandler 세 가지 핸들러와 커스텀 AuditHandler로 변수 로드, 읽기, 수정, 삭제 작업을 기록하여 보안 감사, 규정 준수 검사, 문제 해결에 활용합니다."
+description: "CyberGo env 감사 로그 구성 가이드로, JSONAuditHandler, LogAuditHandler, ChannelAuditHandler 핸들러와 커스텀 AuditHandler로 변수 로드와 수정 작업을 기록하여 보안 감사와 문제 해결에 활용합니다."
 sidebar_position: 6
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # 감사 로깅
@@ -378,6 +378,78 @@ logrotate로 감사 로그 관리를 권장합니다:
 ```
 
 ---
+
+## 추가 내장 핸들러
+
+JSON/Log/Channel 세 가지 일반 핸들러 외에 라이브러리는 두 가지 추가 구현을 제공합니다.
+
+### CloseableChannelHandler (자체 관리 채널)
+
+외부 채널을 받는 `ChannelAuditHandler`와 달리 `CloseableChannelHandler`는 버퍼링된 채널을 직접 생성·소유하며 완전한 수명 주기를 관리합니다 — `Close()`는 핸들러를 종료하고 채널을 닫습니다; 소비자는 `Channel()`로 이벤트를 수신합니다:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	handler := env.NewCloseableChannelHandler(64)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for event := range handler.Channel() {
+			fmt.Printf("%+v\n", event)
+		}
+	}()
+
+	cfg := env.ProductionConfig()
+	cfg.AuditHandler = handler
+	loader, err := env.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	_ = loader.Set("CUSTOM_VAR", "value")
+
+	loader.Close()
+	handler.Close()
+	<-done
+}
+```
+
+### NopAuditHandler (no-op)
+
+모든 감사 이벤트를 버립니다 — 테스트나 감사 출력을 일시적으로 음소거할 때 유용합니다:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.AuditEnabled = true
+cfg.AuditHandler = env.NewNopAuditHandler()
+```
+
+## 감사 액션 (AuditAction)
+
+감사 이벤트는 액션별로 분류됩니다. 커스텀 핸들러는 `AuditAction` 상수로 관심 이벤트 유형을 필터링할 수 있습니다:
+
+| 상수 | 의미 |
+|------|------|
+| `ActionLoad` | 파일 로드 |
+| `ActionParse` | env/JSON/YAML 파일 파싱 |
+| `ActionGet` | 변수 조회 (타입 파싱 실패 기록 포함) |
+| `ActionSet` | 변수 설정, 프로세스 환경 적용 또는 정책에 따른 건너뜀 |
+| `ActionDelete` | 변수 삭제 |
+| `ActionValidate` | 검증 작업 |
+| `ActionExpand` | 변수 전개 |
+| `ActionSecurity` | 보안 이벤트 (경로 검증 실패, 금지 키 등) |
+| `ActionError` | 오류 조건 |
+| `ActionFileAccess` | 파일 시스템 접근 |
+
+`AuditEvent`는 구조화된 이벤트입니다 (타임스탬프, 액션, 키, 사유, 성공 여부, 소요 시간 등). 민감한 키는 이벤트 진입 전에 `MaskKey`로 `[MASKED:N chars]`(N = 키 길이) 마스킹되며, 비민감 키는 그대로 유지됩니다.
 
 ## 관련 문서
 

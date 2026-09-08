@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Интерфейсы"
 title: "Определения интерфейсов - CyberGo JSON | Справочник API"
-description: "Интерфейсы CyberGo JSON: CustomEncoder, TypeEncoder, Validator, Hook, PathParser и DangerousPattern — расширение кодирования, валидации и защиты."
+description: "Интерфейсы расширения CyberGo JSON: CustomEncoder, TypeEncoder, Validator, Hook, PathParser, DangerousPattern и HookContext для расширения библиотеки."
 sidebar_position: 6
 ---
 
@@ -21,8 +21,8 @@ sidebar_position: 6
 
 ```go
 type CustomEncoder interface {
-    // Encode преобразует значение Go в JSON строку
-    Encode(value any) (string, error)
+	// Encode преобразует значение Go в JSON строку
+	Encode(value any) (string, error)
 }
 ```
 
@@ -63,8 +63,8 @@ if err != nil {
 
 ```go
 type TypeEncoder interface {
-    // Encode кодирует значение определённого типа в JSON строку
-    Encode(v reflect.Value) (string, error)
+	// Encode кодирует значение определённого типа в JSON строку
+	Encode(v reflect.Value) (string, error)
 }
 ```
 
@@ -95,7 +95,7 @@ if err != nil {
 ## Интерфейс валидатора
 
 ::: warning Неподключённые поля расширения
-Интерфейс `Validator` объявлен в текущей версии, но **ещё не подключён к конвейеру операций**. Его установка через `Config.CustomValidators` или `Config.AddValidator()` не даёт эффекта — он зарезервирован для будущих версий. Доступный в настоящее время метод валидации — `ValidateSchema` (см. [Валидатор](../extensions/validator)).
+Интерфейс `Validator` объявлен в текущей версии, но **ещё не подключён к конвейеру операций**. Его установка через `Config.CustomValidators` или `Config.AddValidator()` не даёт эффекта — он зарезервирован для будущих версий. Доступный в настоящее время метод валидации — `ValidateSchema` (см. [Валидация Schema](./schema)).
 :::
 
 ### Validator
@@ -104,9 +104,9 @@ if err != nil {
 
 ```go
 type Validator interface {
-    // Validate проверяет, есть ли проблемы в JSON строке
-    // Возвращает nil, если валидно, иначе ошибку, описывающую проблему
-    Validate(jsonStr string) error
+	// Validate проверяет, есть ли проблемы в JSON строке
+	// Возвращает nil, если валидно, иначе ошибку, описывающую проблему
+	Validate(jsonStr string) error
 }
 ```
 
@@ -142,15 +142,17 @@ if err != nil {
 
 ```go
 type Hook interface {
-    // Before вызывается перед операцией
-    // Возврат ошибки прерывает операцию
-    Before(ctx HookContext) error
+	// Before вызывается перед операцией
+	// Возврат ошибки прерывает операцию
+	Before(ctx HookContext) error
 
-    // After вызывается после завершения операции
-    // Может модифицировать результат или проверить ошибку
-    After(ctx HookContext, result any, err error) (any, error)
+	// After вызывается после завершения операции
+	// Может модифицировать результат или проверить ошибку
+	After(ctx HookContext, result any, err error) (any, error)
 }
 ```
+
+**Порядок выполнения**: несколько перехватчиков выполняют `Before` в порядке регистрации (ошибка любого из них немедленно прерывает обработку — следующие перехватчики и сама операция не выполняются); `After` выполняется в **обратном порядке регистрации** (как в луковой модели промежуточного ПО). Паника внутри перехватчика перехватывается: паника в `Before` превращается в ошибку и прерывает операцию, паника в `After` записывается в журнал, и этот перехватчик пропускается — процессор в любом случае не падает.
 
 ### HookContext
 
@@ -158,14 +160,27 @@ type Hook interface {
 
 ```go
 type HookContext struct {
-    Operation string        // Тип операции: "get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string        // Входная JSON строка (может быть пустой при marshal). Предупреждение безопасности: может содержать конфиденциальные данные
-    Path      string        // Целевой путь (может быть пустым при marshal/unmarshal)
-    Value     any           // Значение операции set
-    Config    *Config       // Активная конфигурация
-    StartTime time.Time     // Время начала операции
+	Operation string    // Тип операции: "get", "set", "delete", "marshal", "unmarshal"
+	JSONStr   string    // Входная JSON строка (может быть пустой при marshal). Предупреждение безопасности: может содержать конфиденциальные данные
+	Path      string    // Целевой путь (может быть пустым при marshal/unmarshal)
+	Value     any       // Значение операции set
+	Config    *Config   // Активная конфигурация
+	StartTime time.Time // Время начала операции
 }
 ```
+
+| Поле        | Тип        | Описание                                                                     |
+| ----------- | ---------- | ---------------------------------------------------------------------------- |
+| `Operation` | `string`   | Тип операции: `"get"`, `"set"`, `"delete"`, `"marshal"`, `"unmarshal"`        |
+| `JSONStr`   | `string`   | Входная JSON-строка (при marshal может быть пустой); **может содержать конфиденциальные данные** |
+| `Path`      | `string`   | Целевой путь (при marshal/unmarshal может быть пустым)                       |
+| `Value`     | `any`      | Значение, записываемое операцией set                                         |
+| `Config`    | `*Config`  | Активная конфигурация, используемая текущей операцией                        |
+| `StartTime` | `time.Time` | Время начала операции (устанавливается до вызова `After`)                   |
+
+::: warning JSONStr содержит конфиденциальные данные
+`JSONStr` может содержать конфиденциальные данные — пароли, токены, API-ключи, PII (персональные данные) — **не** записывайте это поле в журналы; при логировании используйте только `Operation` и `Path`, а при необходимости проверить содержимое читайте только конкретные пути.
+:::
 
 **Пример использования**
 
@@ -199,32 +214,37 @@ cfg.Hooks = []json.Hook{&LoggingHook{logger: slog.Default()}}
 
 ### HookFunc
 
-Адаптер структуры, позволяющий использовать функции в качестве перехватчиков.
+Адаптер структуры, позволяющий использовать функции в качестве перехватчиков. Оба поля-функции необязательны: неустановленная сторона ведёт себя как «прямой проход» (`Before` возвращает nil, `After` возвращает результат и ошибку без изменений).
 
 ```go
 type HookFunc struct {
-    BeforeFn func(ctx HookContext) error
-    AfterFn  func(ctx HookContext, result any, err error) (any, error)
+	BeforeFn func(ctx HookContext) error
+	AfterFn  func(ctx HookContext, result any, err error) (any, error)
 }
 ```
+
+| Поле      | Тип                                                        | Описание                                                                           |
+| --------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `BeforeFn` | `func(ctx HookContext) error`                               | Функция обратного вызова перед операцией; возврат ошибки прерывает операцию. Если не задана, `Before` возвращает `nil` (прямой проход) |
+| `AfterFn`  | `func(ctx HookContext, result any, err error) (any, error)` | Функция обратного вызова после операции; может преобразовать результат или ошибку. Если не задана, `After` возвращает результат и ошибку без изменений |
 
 **Пример использования**
 
 ```go
 // Нужен только After
 p.AddHook(&json.HookFunc{
-    AfterFn: func(ctx json.HookContext, result any, err error) (any, error) {
-        log.Printf("%s completed in %v", ctx.Operation, time.Since(ctx.StartTime))
-        return result, err
-    },
+	AfterFn: func(ctx json.HookContext, result any, err error) (any, error) {
+		log.Printf("%s completed in %v", ctx.Operation, time.Since(ctx.StartTime))
+		return result, err
+	},
 })
 
 // Нужен только Before
 p.AddHook(&json.HookFunc{
-    BeforeFn: func(ctx json.HookContext) error {
-        log.Printf("starting %s on path %s", ctx.Operation, ctx.Path)
-        return nil
-    },
+	BeforeFn: func(ctx json.HookContext) error {
+		log.Printf("starting %s on path %s", ctx.Operation, ctx.Path)
+		return nil
+	},
 })
 ```
 
@@ -264,10 +284,10 @@ p.AddHook(json.TimingHook(&MetricsRecorder{}))
 
 ```go
 p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
-    if len(jsonStr) > 1_000_000 {
-        return errors.New("JSON слишком большой")
-    }
-    return nil
+	if len(jsonStr) > 1_000_000 {
+		return errors.New("JSON слишком большой")
+	}
+	return nil
 }))
 ```
 
@@ -279,8 +299,8 @@ p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
 
 ```go
 p.AddHook(json.ErrorHook(func(ctx json.HookContext, err error) error {
-    sentry.CaptureException(err)
-    return err // Возвращает исходную или преобразованную ошибку
+	sentry.CaptureException(err)
+	return err // Возвращает исходную или преобразованную ошибку
 }))
 ```
 
@@ -294,16 +314,18 @@ p.AddHook(json.ErrorHook(func(ctx json.HookContext, err error) error {
 type PatternLevel int
 
 const (
-    // PatternLevelCritical - всегда блокирует операцию
-    PatternLevelCritical PatternLevel = iota
+	// PatternLevelCritical - всегда блокирует операцию
+	PatternLevelCritical PatternLevel = iota
 
-    // PatternLevelWarning - блокирует в строгом режиме, записывает предупреждение в мягком режиме
-    PatternLevelWarning
+	// PatternLevelWarning - блокирует в строгом режиме, записывает предупреждение в мягком режиме
+	PatternLevelWarning
 
-    // PatternLevelInfo - только запись в журнал, никогда не блокирует
-    PatternLevelInfo
+	// PatternLevelInfo - только запись в журнал, никогда не блокирует
+	PatternLevelInfo
 )
 ```
+
+**Метод String**: `func (pl PatternLevel) String() string` возвращает `"critical"` / `"warning"` / `"info"` (для неизвестных значений — `"unknown"`), что удобно для вывода в журналы.
 
 ### DangerousPattern
 
@@ -311,34 +333,40 @@ const (
 
 ```go
 type DangerousPattern struct {
-    // Pattern - подстрока для обнаружения во входных данных
-    Pattern string
+	// Pattern - подстрока для обнаружения во входных данных
+	Pattern string
 
-    // Name - описательное имя паттерна
-    Name string
+	// Name - описательное имя паттерна
+	Name string
 
-    // Level - уровень серьёзности, определяющий способ обработки
-    Level PatternLevel
+	// Level - уровень серьёзности, определяющий способ обработки
+	Level PatternLevel
 }
 ```
+
+| Поле     | Тип           | Описание                                                                                     |
+| -------- | -------------- | ---------------------------------------------------------------------------------------------- |
+| `Pattern` | `string`       | Подстрока для обнаружения во входных данных                                                   |
+| `Name`    | `string`       | Описательное имя этого риска безопасности                                                     |
+| `Level`   | `PatternLevel` | Уровень серьёзности, определяющий способ обработки при срабатывании (блокировка/предупреждение/только запись) |
 
 **Пример использования**
 
 ```go
 // Создание пользовательского опасного паттерна с помощью литерала структуры
 customPattern := json.DangerousPattern{
-    Pattern: "eval(",
-    Name:    "Вызов JavaScript eval",
-    Level:   json.PatternLevelCritical,
+	Pattern: "eval(",
+	Name:    "Вызов JavaScript eval",
+	Level:   json.PatternLevelCritical,
 }
 
 // Добавление через конфигурацию
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(customPattern)
 cfg.AddDangerousPattern(json.DangerousPattern{
-    Pattern: "internal_api",
-    Name:    "Ссылка на внутренний API",
-    Level:   json.PatternLevelWarning,
+	Pattern: "internal_api",
+	Name:    "Ссылка на внутренний API",
+	Level:   json.PatternLevelWarning,
 })
 ```
 
@@ -350,8 +378,8 @@ cfg.AddDangerousPattern(json.DangerousPattern{
 
 ```go
 type PathParser interface {
-    // ParsePath разбирает строку пути в сегменты пути
-    ParsePath(path string) ([]PathSegment, error)
+	// ParsePath разбирает строку пути в сегменты пути
+	ParsePath(path string) ([]PathSegment, error)
 }
 ```
 
@@ -361,10 +389,14 @@ type PathParser interface {
 type CustomPathParser struct{}
 
 func (p *CustomPathParser) ParsePath(path string) ([]json.PathSegment, error) {
-    // Пользовательская логика разбора пути
-    return nil, nil // реализация пользовательского разбора
+	// Пользовательская логика разбора пути
+	return nil, nil // реализация пользовательского разбора
 }
 ```
+
+::: warning Зарезервированный интерфейс
+`CustomPathParser` в текущей версии **ещё не подключён к конвейеру разбора путей**: после установки через `Config.CustomPathParser` разбор путей по-прежнему выполняется встроенным парсером (поле пока лишь участвует в ключе кэша процессора как признак «установлен или нет»; при его установке конфигурация не будет использовать кэш процессора). Как и `CustomEncoder`, `CustomValidators`, это интерфейс, зарезервированный для будущих версий.
+:::
 
 ## Базовые типы
 
@@ -383,9 +415,9 @@ type Number string
 **Методы**:
 
 ```go
-func (n Number) String() string              // Возвращает литеральный текст числа
-func (n Number) Float64() (float64, error)   // Преобразует в float64
-func (n Number) Int64() (int64, error)       // Преобразует в int64
+func (n Number) String() string            // Возвращает литеральный текст числа
+func (n Number) Float64() (float64, error) // Преобразует в float64
+func (n Number) Int64() (int64, error)     // Преобразует в int64
 ```
 
 **Пример использования**:
@@ -397,76 +429,86 @@ decoder.UseNumber()
 
 var obj map[string]any
 if err := decoder.Decode(&obj); err != nil {
-    panic(err)
+	panic(err)
 }
 
 // Получение Number через утверждение типа
 if num, ok := obj["large_number"].(json.Number); ok {
-    // Number сохраняет исходную точность
-    fmt.Println(num.String()) // "9007199254740993" (полная точность)
+	// Number сохраняет исходную точность
+	fmt.Println(num.String()) // "9007199254740993" (полная точность)
 
-    // Преобразование в другие типы
-    f, _ := num.Float64()
-    i, _ := num.Int64()
+	// Преобразование в другие типы
+	f, _ := num.Float64()
+	i, _ := num.Int64()
 }
 ```
 
 ## Совместимые интерфейсы стандартной библиотеки
 
-Пакет `json` экспортирует следующие стандартные интерфейсы, совместимые с `encoding/json`, для настройки поведения кодирования и декодирования пользовательских типов.
+Пакет `json` экспортирует следующие стандартные интерфейсы, совместимые с `encoding/json`, для настройки поведения кодирования и декодирования пользовательских типов: со стороны кодирования — `Marshaler` и `TextMarshaler` (практические примеры см. в [Пользовательском кодировщике](../extensions/custom-encoder)), со стороны декодирования — `Unmarshaler` и `TextUnmarshaler`.
 
 ### Marshaler
 
 ```go
 type Marshaler interface {
-    MarshalJSON() ([]byte, error)
+	MarshalJSON() ([]byte, error)
 }
 ```
+
+Тип, реализующий `MarshalJSON`, при кодировании полностью берёт на управление собственное JSON-представление; возвращаемое значение должно быть корректным JSON.
 
 ### Unmarshaler
 
 ```go
 type Unmarshaler interface {
-    UnmarshalJSON(data []byte) error
+	UnmarshalJSON(data []byte) error
 }
 ```
+
+Тип, реализующий `UnmarshalJSON`, при декодировании берёт на управление собственный разбор: декодер передаёт соответствующее JSON-значение как есть, а тип сам заполняет цель; ошибка, возвращённая методом, передаётся наверх без изменений. Обычно реализуется на **указателе-получателе** (декодирование должно изменять сам получатель).
 
 ### TextMarshaler
 
 ```go
 type TextMarshaler interface {
-    MarshalText() ([]byte, error)
+	MarshalText() ([]byte, error)
 }
 ```
+
+Тип, реализующий `MarshalText`, кодируется как JSON-строка, значением которой является текстовое содержимое (кавычки и экранирование добавляются автоматически).
 
 ### TextUnmarshaler
 
 ```go
 type TextUnmarshaler interface {
-    UnmarshalText(text []byte) error
+	UnmarshalText(text []byte) error
 }
 ```
+
+Тип, реализующий `UnmarshalText`, самостоятельно разбирает **содержимое** JSON-строки (текст после снятия кавычек и экранирования); это подходит для типов, полностью выразимых текстом (пользовательское время, ID и т.п.). Если тот же тип реализует и `Unmarshaler`, приоритет у `UnmarshalJSON`.
 
 **Пример использования**
 
 ```go
 type Person struct {
-    Name string
+	Name string
 }
 
 // Реализация интерфейса Marshaler
 func (p Person) MarshalJSON() ([]byte, error) {
-    return []byte(`{"name":"` + p.Name + `"}`), nil
+	return []byte(`{"name":"` + p.Name + `"}`), nil
 }
 
 // Реализация интерфейса Unmarshaler
 func (p *Person) UnmarshalJSON(data []byte) error {
-    var v struct{ Name string `json:"name"` }
-    if err := json.Unmarshal(data, &v); err != nil {
-        return err
-    }
-    p.Name = v.Name
-    return nil
+	var v struct {
+		Name string `json:"name"`
+	}
+	if err := json.Unmarshal(data, &v); err != nil {
+		return err
+	}
+	p.Name = v.Name
+	return nil
 }
 ```
 
@@ -480,9 +522,9 @@ func (p *Person) UnmarshalJSON(data []byte) error {
 
 ```go
 type Result[T any] struct {
-    Value  T     // Значение результата
-    Exists bool  // Существует ли путь
-    Error  error // Информация об ошибке (если есть)
+	Value  T     // Значение результата
+	Exists bool  // Существует ли путь
+	Error  error // Информация об ошибке (если есть)
 }
 ```
 
@@ -513,9 +555,9 @@ name = json.GetTyped[string](data, "user.name", "unknown")
 
 ```go
 type AccessResult struct {
-    Value  any    // Значение результата
-    Exists bool   // Существует ли путь
-    Type   string // Информация о типе во время выполнения
+	Value  any    // Значение результата
+	Exists bool   // Существует ли путь
+	Type   string // Информация о типе во время выполнения
 }
 
 // Методы
@@ -537,7 +579,7 @@ func (r AccessResult) AsBool() (bool, error)              // Строгое пр
 | `AsStringConverted()` | Форматирование | Использует fmt.Sprintf для преобразования любого значения в строковое представление |
 | `AsInt()` | Строгое | Не преобразует bool в int, принимает только целые числа и разборчивые числа |
 | `AsFloat64()` | Строгое | Не преобразует bool в float, принимает только числа с плавающей точкой и разборчивые числа |
-| `AsBool()` | Строгое | Принимает только bool и строки, допустимые `strconv.ParseBool` ("1"/"t"/"T"/"TRUE"/"true"/"True", "0"/"f"/"F"/"FALSE"/"false"/"False") |
+| `AsBool()` | Строгое | Принимает только bool и строки, допустимые `strconv.ParseBool` ("1"/"t"/"true"/"True"/"TRUE", "0"/"f"/"false"/"False"/"FALSE") |
 
 ```go
 result := p.SafeGet(data, "user.age")
@@ -557,29 +599,29 @@ JSON Schema определяется как структура, поддержи
 
 ```go
 type Schema struct {
-    Type                 string            `json:"type,omitempty"`
-    Properties           map[string]*Schema `json:"properties,omitempty"`
-    Items                *Schema           `json:"items,omitempty"`
-    Required             []string          `json:"required,omitempty"`
-    MinLength            int               `json:"minLength,omitempty"`
-    MaxLength            int               `json:"maxLength,omitempty"`
-    Minimum              float64           `json:"minimum,omitempty"`
-    Maximum              float64           `json:"maximum,omitempty"`
-    Pattern              string            `json:"pattern,omitempty"`
-    Format               string            `json:"format,omitempty"`
-    AdditionalProperties bool              `json:"additionalProperties,omitempty"`
-    MinItems             int               `json:"minItems,omitempty"`
-    MaxItems             int               `json:"maxItems,omitempty"`
-    UniqueItems          bool              `json:"uniqueItems,omitempty"`
-    Enum                 []any             `json:"enum,omitempty"`
-    Const                any               `json:"const,omitempty"`
-    MultipleOf           float64           `json:"multipleOf,omitempty"`
-    ExclusiveMinimum     bool              `json:"exclusiveMinimum,omitempty"`
-    ExclusiveMaximum     bool              `json:"exclusiveMaximum,omitempty"`
-    Title                string            `json:"title,omitempty"`
-    Description          string            `json:"description,omitempty"`
-    Default              any               `json:"default,omitempty"`
-    Examples             []any             `json:"examples,omitempty"`
+	Type                 string             `json:"type,omitempty"`
+	Properties           map[string]*Schema `json:"properties,omitempty"`
+	Items                *Schema            `json:"items,omitempty"`
+	Required             []string           `json:"required,omitempty"`
+	MinLength            int                `json:"minLength,omitempty"`
+	MaxLength            int                `json:"maxLength,omitempty"`
+	Minimum              float64            `json:"minimum,omitempty"`
+	Maximum              float64            `json:"maximum,omitempty"`
+	Pattern              string             `json:"pattern,omitempty"`
+	Format               string             `json:"format,omitempty"`
+	AdditionalProperties bool               `json:"additionalProperties,omitempty"`
+	MinItems             int                `json:"minItems,omitempty"`
+	MaxItems             int                `json:"maxItems,omitempty"`
+	UniqueItems          bool               `json:"uniqueItems,omitempty"`
+	Enum                 []any              `json:"enum,omitempty"`
+	Const                any                `json:"const,omitempty"`
+	MultipleOf           float64            `json:"multipleOf,omitempty"`
+	ExclusiveMinimum     bool               `json:"exclusiveMinimum,omitempty"`
+	ExclusiveMaximum     bool               `json:"exclusiveMaximum,omitempty"`
+	Title                string             `json:"title,omitempty"`
+	Description          string             `json:"description,omitempty"`
+	Default              any                `json:"default,omitempty"`
+	Examples             []any              `json:"examples,omitempty"`
 }
 ```
 
@@ -587,12 +629,12 @@ type Schema struct {
 
 ```go
 schema := &json.Schema{
-    Type:     "object",
-    Required: []string{"name"},
-    Properties: map[string]*json.Schema{
-        "name": {Type: "string"},
-        "age":  {Type: "number"},
-    },
+	Type:     "object",
+	Required: []string{"name"},
+	Properties: map[string]*json.Schema{
+		"name": {Type: "string"},
+		"age":  {Type: "number"},
+	},
 }
 ```
 
@@ -602,29 +644,29 @@ schema := &json.Schema{
 
 ```go
 type SchemaConfig struct {
-    Type                 string
-    Properties           map[string]*Schema
-    Items                *Schema
-    Required             []string
-    MinLength            *int
-    MaxLength            *int
-    Minimum              *float64
-    Maximum              *float64
-    Pattern              string
-    Format               string
-    AdditionalProperties *bool
-    MinItems             *int
-    MaxItems             *int
-    UniqueItems          bool
-    Enum                 []any
-    Const                any
-    MultipleOf           *float64
-    ExclusiveMinimum     *bool
-    ExclusiveMaximum     *bool
-    Title                string
-    Description          string
-    Default              any
-    Examples             []any
+	Type                 string
+	Properties           map[string]*Schema
+	Items                *Schema
+	Required             []string
+	MinLength            *int
+	MaxLength            *int
+	Minimum              *float64
+	Maximum              *float64
+	Pattern              string
+	Format               string
+	AdditionalProperties *bool
+	MinItems             *int
+	MaxItems             *int
+	UniqueItems          bool
+	Enum                 []any
+	Const                any
+	MultipleOf           *float64
+	ExclusiveMinimum     *bool
+	ExclusiveMaximum     *bool
+	Title                string
+	Description          string
+	Default              any
+	Examples             []any
 }
 ```
 
@@ -645,15 +687,15 @@ schema := json.NewSchemaWithConfig(cfg)
 
 ```go
 type ValidationError struct {
-    Path    string `json:"path"`    // Путь ошибки
-    Message string `json:"message"` // Сообщение об ошибке
+	Path    string `json:"path"`    // Путь ошибки
+	Message string `json:"message"` // Сообщение об ошибке
 }
 
 func (ve *ValidationError) Error() string
 ```
 
-## Смотрите также
+## См. также
 
-- [Система перехватчиков Hook](../extensions/hooks) - Подробное руководство по перехватчикам
-- [Validator](../extensions/validator) - Подробное руководство по валидаторам
-- [CustomEncoder](../extensions/custom-encoder) - Руководство по пользовательскому кодировщику
+- [Система перехватчиков Hook](../extensions/hooks) — подробное руководство по перехватчикам
+- [Валидация Schema](./schema) — подробное руководство по валидации Schema
+- [CustomEncoder](../extensions/custom-encoder) — руководство по пользовательскому кодировщику

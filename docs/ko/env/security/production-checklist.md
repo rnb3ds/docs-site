@@ -3,6 +3,7 @@ sidebar_label: "프로덕션 체크리스트"
 title: "프로덕션 체크리스트 - CyberGo env | 보안 출시 점검"
 description: "CyberGo env 프로덕션 배포 보안 점검 체크리스트로, .env 파일 600 권한과 .gitignore 보호, RequiredKeys/AllowedKeys 필수 키 검증, 감사 로그 활성화, SecureValue 처리와 성능 매개변수 튜닝을 포함하여 출시 즉시 보안을 보장합니다."
 sidebar_position: 4
+sidebar_icon: "🛡️"
 ---
 
 # 프로덕션 체크리스트

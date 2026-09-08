@@ -1,7 +1,7 @@
 ---
-sidebar_label: "概要"
+sidebar_label: "API 概要"
 title: "API リファレンス - CyberGo env | 完全なインターフェースドキュメント"
-description: "CyberGo env の完全な API リファレンスナビゲーション。パッケージレベル便利関数、Config 設定、Loader ローダー、SecureValue セキュア値、コアインターフェース定義、ComponentFactory コンポーネントファクトリー、定数とエラーの 7 つのモジュールの詳細エントリとメソッドシグネチャの索引を網羅。"
+description: "CyberGo env の完全な API リファレンスナビゲーション。便利関数、Config、Loader、SecureValue、コアインターフェース、ComponentFactory、定数とエラーの 7 モジュールの詳細エントリとメソッドシグネチャの索引を網羅。"
 sidebar_position: 1
 ---
 

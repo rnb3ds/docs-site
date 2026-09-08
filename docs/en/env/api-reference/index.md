@@ -1,7 +1,7 @@
 ---
-sidebar_label: "Overview"
+sidebar_label: "API Overview"
 title: "API Reference - CyberGo env | Complete Interface Docs"
-description: "Complete API reference navigation for CyberGo env, covering seven modules: package-level convenience functions, Config configuration, Loader, SecureValue, core interface definitions, ComponentFactory, and constants/errors with detailed entry points and method signature indices."
+description: "API reference for CyberGo env: package functions, Config, Loader, SecureValue, interfaces, ComponentFactory, and constants with linked module entries."
 sidebar_position: 1
 ---
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "インターフェース定義"
-title: "インターフェース - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON 拡張インターフェース：CustomEncoder、TypeEncoder、Validator、Hook、PathParser、DangerousPattern で、エンコード・検証・セキュリティ防護を柔軟に拡張します。"
+title: "インターフェース定義 - CyberGo JSON | API リファレンス"
+description: "CyberGo JSON の拡張インターフェース：CustomEncoder、TypeEncoder、Validator、Hook、PathParser、DangerousPattern、HookContext コンテキストと定義済みフックで、エンコード・検証・セキュリティ保護を柔軟に拡張します。"
 sidebar_position: 6
 ---
 
@@ -11,8 +11,8 @@ json パッケージは複数の拡張インターフェースを提供し、JSO
 
 ## エンコーダインターフェース
 
-::: warning 未接続の拡張フィールド
-`CustomEncoder` と `TypeEncoder` インターフェースは現在のバージョンで宣言されていますが、**エンコードパイプラインにはまだ接続されていません**。`Config.CustomEncoder` / `Config.CustomTypeEncoders` で設定しても効果はなく、将来のバージョンのために予約されています。現在利用可能なエンコードのカスタマイズ方法は `json.Marshaler` または `encoding.TextMarshaler` インターフェースの実装です（[カスタムエンコーダ](../extensions/custom-encoder) を参照）。
+::: warning 接続されていない拡張フィールド
+`CustomEncoder` と `TypeEncoder` インターフェースは、現バージョンでは**宣言済みだがエンコードパイプラインにはまだ接続されていません**。`Config.CustomEncoder` / `Config.CustomTypeEncoders` で設定しても効果はなく、将来のバージョンのために予約されています。現時点で利用できるエンコードのカスタマイズ方法は、`json.Marshaler` または `encoding.TextMarshaler` インターフェースの実装です（[カスタムエンコーダ](../extensions/custom-encoder)を参照）。
 :::
 
 ### CustomEncoder
@@ -21,7 +21,7 @@ json パッケージは複数の拡張インターフェースを提供し、JSO
 
 ```go
 type CustomEncoder interface {
-    // Encode は Go 値を JSON 文字列に変換します
+    // Encode は Go 値を JSON 文字列に変換する
     Encode(value any) (string, error)
 }
 ```
@@ -48,7 +48,7 @@ func (e *UpperCaseEncoder) Encode(value any) (string, error) {
     }
 }
 
-// 設定に適用
+// 設定して使用
 cfg := json.DefaultConfig()
 cfg.CustomEncoder = &UpperCaseEncoder{}
 processor, err := json.New(cfg)
@@ -63,7 +63,7 @@ if err != nil {
 
 ```go
 type TypeEncoder interface {
-    // Encode は特定型の値を JSON 文字列にエンコードします
+    // Encode は特定型の値を JSON 文字列にエンコードする
     Encode(v reflect.Value) (string, error)
 }
 ```
@@ -78,7 +78,7 @@ func (e *TimeEncoder) Encode(v reflect.Value) (string, error) {
         t := v.Interface().(time.Time)
         return fmt.Sprintf(`"%s"`, t.Format(time.RFC3339)), nil
     }
-    return "", fmt.Errorf("サポートされていない型: %v", v.Type())
+    return "", fmt.Errorf("サポートされない型: %v", v.Type())
 }
 
 // 型エンコーダを登録
@@ -94,8 +94,8 @@ if err != nil {
 
 ## バリデータインターフェース
 
-::: warning 未接続の拡張フィールド
-`Validator` インターフェースは現在のバージョンで宣言されていますが、**操作パイプラインにはまだ接続されていません**。`Config.CustomValidators` または `Config.AddValidator()` で設定しても効果はなく、将来のバージョンのために予約されています。現在利用可能な検証方法は `ValidateSchema` です（[バリデータ](../extensions/validator) を参照）。
+::: warning 接続されていない拡張フィールド
+`Validator` インターフェースは、現バージョンでは**宣言済みだが操作パイプラインにはまだ接続されていません**。`Config.CustomValidators` や `Config.AddValidator()` で設定しても効果はなく、将来のバージョンのために予約されています。現時点で利用できる検証方法は `ValidateSchema` です（[Schema 検証](./schema)を参照）。
 :::
 
 ### Validator
@@ -104,8 +104,8 @@ JSON バリデータインターフェース。
 
 ```go
 type Validator interface {
-    // Validate は JSON 文字列に問題がないかチェックします
-    // 有効な場合は nil を返し、そうでない場合は問題を説明するエラーを返します
+    // Validate は JSON 文字列に問題がないかチェックする
+    // 有効なら nil を、そうでなければ問題を記述するエラーを返す
     Validate(jsonStr string) error
 }
 ```
@@ -138,19 +138,21 @@ if err != nil {
 
 ### Hook
 
-操作インターセプトインターフェース。前処理/後処理をサポートします。
+操作インターセプトインターフェース。前置/後置処理をサポートします。
 
 ```go
 type Hook interface {
-    // Before は操作の前に呼び出されます
-    // エラーを返すと操作を中止します
+    // Before は操作の前に呼び出される
+    // エラーを返すと操作を中止する
     Before(ctx HookContext) error
 
-    // After は操作の完了後に呼び出されます
-    // 結果の変更やエラーのチェックが可能です
+    // After は操作の完了後に呼び出される
+    // 結果の変更やエラーのチェックが可能
     After(ctx HookContext, result any, err error) (any, error)
 }
 ```
+
+**実行順序**：複数のフックは登録順に `Before` が実行されます（いずれかがエラーを返すと即座に中止し、以降のフックと操作自体は実行されません）。`After` は**登録の逆順**に実行されます（ミドルウェアのオニオンモデルに類似）。フック内の panic は捕捉されます：`Before` の panic はエラーに変換されて操作を中止し、`After` の panic はログに記録された後そのフックをスキップします。いずれもプロセッサを落とすことはありません。
 
 ### HookContext
 
@@ -158,14 +160,29 @@ type Hook interface {
 
 ```go
 type HookContext struct {
-    Operation string        // 操作タイプ："get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string        // 入力 JSON 文字列（marshal 時は空の可能性あり）。セキュリティ警告：機密データが含まれる可能性があります
-    Path      string        // 対象パス（marshal/unmarshal 時は空の可能性あり）
+    Operation string        // 操作型："get", "set", "delete", "marshal", "unmarshal"
+    JSONStr   string        // 入力 JSON 文字列（marshal 時は空の場合がある）。セキュリティ警告：機密データを含む可能性あり
+    Path      string        // ターゲットパス（marshal/unmarshal 時は空の場合がある）
     Value     any           // set 操作の値
-    Config    *Config       // アクティブな設定
+    Config    *Config       // 有効な設定
     StartTime time.Time     // 操作開始時刻
 }
 ```
+
+**フィールドの説明**
+
+| フィールド | 型 | 説明 |
+|------|------|------|
+| `Operation` | `string` | 操作型：`"get"`、`"set"`、`"delete"`、`"marshal"`、`"unmarshal"` |
+| `JSONStr` | `string` | 入力 JSON 文字列（marshal 時は空の場合がある）。**機密データを含む可能性あり** |
+| `Path` | `string` | ターゲットパス（marshal/unmarshal 時は空の場合がある） |
+| `Value` | `any` | set 操作で書き込む値 |
+| `Config` | `*Config` | 現在の操作で使用される有効な設定 |
+| `StartTime` | `time.Time` | 操作開始時刻（`After` の呼び出し前に設定される） |
+
+::: warning JSONStr は機密データを含む
+`JSONStr` にはパスワード、トークン、API キー、PII（個人識別情報）などの機密データが含まれる可能性があります——このフィールドをログに書き込ま**ない**でください。ログ記録には `Operation` と `Path` のみを使用し、内容の確認が必要な場合は特定のパスに対してのみ読み取ってください。
+:::
 
 **使用例**
 
@@ -199,7 +216,7 @@ cfg.Hooks = []json.Hook{&LoggingHook{logger: slog.Default()}}
 
 ### HookFunc
 
-構造体アダプタ。関数をフックとして使用できるようにします。
+構造体アダプター。関数をフックとして使えるようにします。2 つの関数フィールドはどちらもオプションです：未設定の方は「パススルー」扱いになります（`Before` は nil を返し、`After` は結果とエラーをそのまま返す）。
 
 ```go
 type HookFunc struct {
@@ -208,10 +225,17 @@ type HookFunc struct {
 }
 ```
 
+**フィールドの説明**
+
+| フィールド | 型 | 説明 |
+|------|------|------|
+| `BeforeFn` | `func(ctx HookContext) error` | 操作前のコールバック。エラーを返すと操作を中止。未設定の場合 `Before` はパススルーで `nil` を返す |
+| `AfterFn` | `func(ctx HookContext, result any, err error) (any, error)` | 操作後のコールバック。結果やエラーを変換可能。未設定の場合 `After` は結果とエラーをそのまま返す |
+
 **使用例**
 
 ```go
-// After のみ必要な場合
+// After だけが必要
 p.AddHook(&json.HookFunc{
     AfterFn: func(ctx json.HookContext, result any, err error) (any, error) {
         log.Printf("%s completed in %v", ctx.Operation, time.Since(ctx.StartTime))
@@ -219,7 +243,7 @@ p.AddHook(&json.HookFunc{
     },
 })
 
-// Before のみ必要な場合
+// Before だけが必要
 p.AddHook(&json.HookFunc{
     BeforeFn: func(ctx json.HookContext) error {
         log.Printf("starting %s on path %s", ctx.Operation, ctx.Path)
@@ -244,7 +268,7 @@ p.AddHook(json.LoggingHook(slog.Default()))
 
 シグネチャ：`func TimingHook(recorder interface{ Record(op string, duration time.Duration) }) Hook`
 
-タイミング記録フックを作成します。
+計時記録フックを作成します。
 
 ```go
 type MetricsRecorder struct{}
@@ -260,7 +284,7 @@ p.AddHook(json.TimingHook(&MetricsRecorder{}))
 
 シグネチャ：`func ValidationHook(validator func(jsonStr, path string) error) Hook`
 
-入力バリデーションフックを作成します。
+入力検証フックを作成します。
 
 ```go
 p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
@@ -284,7 +308,7 @@ p.AddHook(json.ErrorHook(func(ctx json.HookContext, err error) error {
 }))
 ```
 
-## セキュリティパターンインターフェース
+## セキュリティモードインターフェース
 
 ### PatternLevel
 
@@ -294,16 +318,18 @@ p.AddHook(json.ErrorHook(func(ctx json.HookContext, err error) error {
 type PatternLevel int
 
 const (
-    // PatternLevelCritical - 常に操作をブロック
+    // PatternLevelCritical - 常に操作を阻止
     PatternLevelCritical PatternLevel = iota
 
-    // PatternLevelWarning - 厳格モードではブロック、緩やかなモードでは警告を記録
+    // PatternLevelWarning - 厳格モードでは阻止、緩いモードでは警告を記録
     PatternLevelWarning
 
-    // PatternLevelInfo - 記録のみ、ブロックしない
+    // PatternLevelInfo - 記録のみ、決して阻止しない
     PatternLevelInfo
 )
 ```
+
+**String メソッド**：`func (pl PatternLevel) String() string` は `"critical"` / `"warning"` / `"info"` を返します（未知の値は `"unknown"`）。ログ出力に便利です。
 
 ### DangerousPattern
 
@@ -317,10 +343,18 @@ type DangerousPattern struct {
     // Name はパターンの説明的な名前
     Name string
 
-    // Level はパターンの重大度レベルの処理方法を決定
+    // Level はこのパターンをどう扱うかを決める重大度レベル
     Level PatternLevel
 }
 ```
+
+**フィールドの説明**
+
+| フィールド | 型 | 説明 |
+|------|------|------|
+| `Pattern` | `string` | 入力内で検出する部分文字列 |
+| `Name` | `string` | このセキュリティリスクの説明的な名前 |
+| `Level` | `PatternLevel` | 重大度レベル。ヒット時の処理方法（阻止/警告/記録のみ）を決定 |
 
 **使用例**
 
@@ -332,7 +366,7 @@ customPattern := json.DangerousPattern{
     Level:   json.PatternLevelCritical,
 }
 
-// 設定で追加
+// 設定経由で追加
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(customPattern)
 cfg.AddDangerousPattern(json.DangerousPattern{
@@ -350,7 +384,7 @@ cfg.AddDangerousPattern(json.DangerousPattern{
 
 ```go
 type PathParser interface {
-    // ParsePath はパス文字列をパスセグメントに解析します
+    // ParsePath はパス文字列をパスセグメントに解析する
     ParsePath(path string) ([]PathSegment, error)
 }
 ```
@@ -366,18 +400,22 @@ func (p *CustomPathParser) ParsePath(path string) ([]json.PathSegment, error) {
 }
 ```
 
+::: warning 予約状態
+`CustomPathParser` は現バージョンでは**パス解析パイプラインにまだ接続されていません**：`Config.CustomPathParser` で設定しても、パス解析は引き続き組み込みパーサーを使用します（このフィールドは現在、プロセッサキャッシュキーの「設定されているか」判定にのみ参加し、設定するとその構成はプロセッサキャッシュを使わなくなります）。`CustomEncoder`、`CustomValidators` と同様に将来のバージョン用の予約インターフェースです。
+:::
+
 ## 基本型
 
 ### Number
 
-JSON 数値型。数値精度を維持するために使用します。大きな数値や正確な小数を扱う場合に使用します。
+JSON 数値型。数値精度の保持に使用します。大きな数値を扱う場合や正確な小数が必要な場合に使用します。
 
 ```go
 type Number string
 ```
 
 ::: tip 互換性について
-ライブラリの `Number` 型は `encoding/json.Number` と 100% 互換があり、直接置き換えて使用できます。
+ライブラリの `Number` 型は `encoding/json.Number` と 100% 互換で、直接置き換えて使用できます。
 :::
 
 **メソッド**：
@@ -391,7 +429,7 @@ func (n Number) Int64() (int64, error)       // int64 に変換
 **使用例**：
 
 ```go
-// Number 型の取得（Decoder.UseNumber で完全な精度を維持）
+// Number 型を取得（Decoder.UseNumber で完全な精度を保持）
 decoder := json.NewDecoder(strings.NewReader(data))
 decoder.UseNumber()
 
@@ -402,7 +440,7 @@ if err := decoder.Decode(&obj); err != nil {
 
 // 型アサーションで Number を取得
 if num, ok := obj["large_number"].(json.Number); ok {
-    // Number は元の精度を維持
+    // Number は元の精度を保持
     fmt.Println(num.String()) // "9007199254740993"（完全な精度）
 
     // 他の型に変換
@@ -413,7 +451,7 @@ if num, ok := obj["large_number"].(json.Number); ok {
 
 ## 標準ライブラリ互換インターフェース
 
-`json` パッケージは `encoding/json` と互換の以下の標準インターフェースをエクスポートし、カスタム型のエンコード/デコード動作の定義に使用します。
+`json` パッケージは、`encoding/json` と互換の以下の標準インターフェースをエクスポートします。カスタム型のエンコード・デコード動作に使用します：エンコード側は `Marshaler` と `TextMarshaler`（実践は[カスタムエンコーダ](../extensions/custom-encoder)を参照）、デコード側は `Unmarshaler` と `TextUnmarshaler` です。
 
 ### Marshaler
 
@@ -423,6 +461,8 @@ type Marshaler interface {
 }
 ```
 
+`MarshalJSON` を実装した型は、エンコード時に自身の JSON 表現を完全に引き受けます。戻り値は正当な JSON である必要があります。
+
 ### Unmarshaler
 
 ```go
@@ -430,6 +470,8 @@ type Unmarshaler interface {
     UnmarshalJSON(data []byte) error
 }
 ```
+
+`UnmarshalJSON` を実装した型は、デコード時に自身の解析を引き受けます：デコーダは対応する JSON 値をそのまま渡し、型自身がターゲットを埋めます。メソッドが返すエラーはそのまま上位に伝播します。通常は**ポインタレシーバ**で実装します（デコードはレシーバ自身の変更を伴うため）。
 
 ### TextMarshaler
 
@@ -439,6 +481,8 @@ type TextMarshaler interface {
 }
 ```
 
+`MarshalText` を実装した型は、テキスト内容を値とする JSON 文字列としてエンコードされます（引用符とエスケープは自動で付加）。
+
 ### TextUnmarshaler
 
 ```go
@@ -447,6 +491,8 @@ type TextUnmarshaler interface {
 }
 ```
 
+`UnmarshalText` を実装した型は、JSON 文字列の**内容**（引用符とエスケープを除去したテキスト）から自ら解析します。テキストだけで完全に表現できる型（カスタム時刻、ID など）に適します。同じ型が `Unmarshaler` も実装している場合、`UnmarshalJSON` が優先されます。
+
 **使用例**
 
 ```go
@@ -454,12 +500,12 @@ type Person struct {
     Name string
 }
 
-// Marshaler インターフェースの実装
+// Marshaler インターフェースを実装
 func (p Person) MarshalJSON() ([]byte, error) {
     return []byte(`{"name":"` + p.Name + `"}`), nil
 }
 
-// Unmarshaler インターフェースの実装
+// Unmarshaler インターフェースを実装
 func (p *Person) UnmarshalJSON(data []byte) error {
     var v struct{ Name string `json:"name"` }
     if err := json.Unmarshal(data, &v); err != nil {
@@ -470,19 +516,19 @@ func (p *Person) UnmarshalJSON(data []byte) error {
 }
 ```
 
-`Encoder`、`Decoder`、`Token`、`Delim`、`Number` などのエンコード/デコード型の詳細は[型定義](./types#encoder-json-エンコーダ)を参照してください。
+`Encoder`、`Decoder`、`Token`、`Delim`、`Number` などのエンコード・デコード型の詳細は[型定義](./types#encoder-json-エンコーダ)を参照してください。
 
 ## 型定義
 
 ### Result[T]
 
-タイプセーフな操作結果。ジェネリック対応の結果処理を提供します。
+型安全な操作結果。ジェネリクス対応の結果処理を提供します。
 
 ```go
 type Result[T any] struct {
     Value  T     // 結果値
     Exists bool  // パスが存在するか
-    Error  error // エラー情報（ある場合）
+    Error  error // エラー情報（あれば）
 }
 ```
 
@@ -490,14 +536,14 @@ type Result[T any] struct {
 
 | メソッド | シグネチャ | 説明 |
 |------|------|------|
-| `Ok` | `func (r Result[T]) Ok() bool` | 結果が有効か（エラーがなく存在するか） |
-| `Unwrap` | `func (r Result[T]) Unwrap() T` | 値を取得、無効な場合はゼロ値を返す |
+| `Ok` | `func (r Result[T]) Ok() bool` | 結果が有効か（エラーなし且つ存在する） |
+| `Unwrap` | `func (r Result[T]) Unwrap() T` | 値を取得。無効時はゼロ値 |
 | `UnwrapOr` | `func (r Result[T]) UnwrapOr(defaultValue T) T` | 値またはデフォルト値を取得 |
 
 **使用例**：
 
 ```go
-// ジェネリック取得で値を取得
+// ジェネリクスで値を取得
 name := json.GetTyped[string](data, "user.name")
 fmt.Println(name)
 
@@ -509,7 +555,7 @@ name = json.GetTyped[string](data, "user.name", "unknown")
 
 ### AccessResult
 
-動的型アクセス結果。Processor.SafeGet から返されます。
+動的型アクセスの結果。Processor.SafeGet が返します。
 
 ```go
 type AccessResult struct {
@@ -533,27 +579,27 @@ func (r AccessResult) AsBool() (bool, error)              // 厳格変換
 
 | メソッド | 変換動作 | 説明 |
 |------|----------|------|
-| `AsString()` | 厳格 | string 型のみ受け入れ、非文字列はエラーを返す |
-| `AsStringConverted()` | フォーマット | fmt.Sprintf を使用して任意の値を文字列表現に変換 |
-| `AsInt()` | 厳格 | bool を int に変換しない、整数とパース可能な数値のみ受け入れ |
-| `AsFloat64()` | 厳格 | bool を float に変換しない、浮動小数点数とパース可能な数値のみ受け入れ |
-| `AsBool()` | 厳格 | bool と `strconv.ParseBool` が許可する文字列のみ受け入れ（"1"/"t"/"T"/"TRUE"/"true"/"True", "0"/"f"/"F"/"FALSE"/"false"/"False"） |
+| `AsString()` | 厳格 | string 型のみ受け付ける。非文字列はエラー |
+| `AsStringConverted()` | フォーマット | fmt.Sprintf で任意の値を文字列表現に変換 |
+| `AsInt()` | 厳格 | bool から int への変換はしない。整数と解析可能な数値のみ受け付ける |
+| `AsFloat64()` | 厳格 | bool から float への変換はしない。浮動小数点数と解析可能な数値のみ受け付ける |
+| `AsBool()` | 厳格 | bool と解析可能な文字列のみ受け付ける（`strconv.ParseBool` ルール：`1/t/true/True/TRUE`、`0/f/false/False/FALSE`） |
 
 ```go
 result := p.SafeGet(data, "user.age")
 
-// 厳格変換 - 値が整数でない場合はエラーを返す
+// 厳格変換 - 値が整数でなければエラー
 age, err := result.AsInt()
 
 // フォーマット変換 - 任意の値を文字列に変換
-str, err := result.AsStringConverted() // 例：30 -> "30"
+str, err := result.AsStringConverted() // 例: 30 -> "30"
 ```
 
 ## Schema 型
 
 ### Schema
 
-JSON Schema は構造体として定義され、タイプセーフな Schema 定義をサポートします。
+JSON Schema は構造体として定義され、型安全な Schema 定義をサポートします。
 
 ```go
 type Schema struct {
@@ -598,7 +644,7 @@ schema := &json.Schema{
 
 ### SchemaConfig
 
-Schema バリデーション設定。`NewSchemaWithConfig` で Schema インスタンスを作成するために使用します。
+Schema 検証設定。`NewSchemaWithConfig` による Schema インスタンス作成に使用します。
 
 ```go
 type SchemaConfig struct {
@@ -641,7 +687,7 @@ schema := json.NewSchemaWithConfig(cfg)
 
 ### ValidationError
 
-Schema バリデーションエラー。
+Schema 検証エラー。
 
 ```go
 type ValidationError struct {
@@ -654,6 +700,6 @@ func (ve *ValidationError) Error() string
 
 ## 関連
 
-- [Hook フックシステム](../extensions/hooks) - フックの詳細な使用ガイド
-- [バリデータ](../extensions/validator) - バリデータの詳細な使用ガイド
+- [Hook フックシステム](../extensions/hooks) - フックの詳細な使い方ガイド
+- [Schema 検証](./schema) - Schema 検証の詳細ガイド
 - [CustomEncoder](../extensions/custom-encoder) - カスタムエンコーダガイド

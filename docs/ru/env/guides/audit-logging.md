@@ -1,9 +1,9 @@
 ---
 sidebar_label: "Журнал аудита"
-title: "Журнал аудита - CyberGo env | конфигурация безопасности аудита"
-description: "Руководство по конфигурации журнала аудита CyberGo env: три обработчика JSONAuditHandler, LogAuditHandler и ChannelAuditHandler, а также пользовательский AuditHandler для регистрации операций загрузки, чтения, изменения и удаления переменных — для аудита безопасности, проверок соответствия и устранения неполадок."
+title: "Журнал аудита - CyberGo env | обработчики и соответствие"
+description: "Руководство по журналу аудита CyberGo env: обработчики JSONAuditHandler, LogAuditHandler и ChannelAuditHandler для аудита безопасности и соответствия."
 sidebar_position: 6
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # Журнал аудита
@@ -378,6 +378,78 @@ chown app:app /var/log/app/env-audit.log
 ```
 
 ---
+
+## Дополнительные встроенные обработчики
+
+Помимо трёх распространённых (JSON/Log/Channel) библиотека предоставляет ещё две готовые реализации.
+
+### CloseableChannelHandler (самоуправляемый канал)
+
+В отличие от `ChannelAuditHandler`, принимающего внешний канал, `CloseableChannelHandler` создаёт и владеет буферизованным каналом с полным управлением жизненным циклом — `Close()` останавливает обработчик и закрывает канал; потребители получают события через `Channel()`:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	handler := env.NewCloseableChannelHandler(64)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for event := range handler.Channel() {
+			fmt.Printf("%+v\n", event)
+		}
+	}()
+
+	cfg := env.ProductionConfig()
+	cfg.AuditHandler = handler
+	loader, err := env.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	_ = loader.Set("CUSTOM_VAR", "value")
+
+	loader.Close()
+	handler.Close()
+	<-done
+}
+```
+
+### NopAuditHandler (no-op)
+
+Отбрасывает все события аудита — полезно для тестов или временного глушения вывода аудита:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.AuditEnabled = true
+cfg.AuditHandler = env.NewNopAuditHandler()
+```
+
+## Действия аудита (AuditAction)
+
+События аудита классифицируются по действиям. Пользовательские обработчики могут фильтровать интересующие типы по константам `AuditAction`:
+
+| Константа | Значение |
+|-----------|----------|
+| `ActionLoad` | Загрузка файлов |
+| `ActionParse` | Разбор файлов env/JSON/YAML |
+| `ActionGet` | Получение переменных (включая записи об ошибках разбора типов) |
+| `ActionSet` | Установка переменных, применение к окружению процесса или пропуск по политике |
+| `ActionDelete` | Удаление переменных |
+| `ActionValidate` | Операции валидации |
+| `ActionExpand` | Развёртка переменных |
+| `ActionSecurity` | События безопасности (ошибки проверки путей, запрещённые ключи и т.д.) |
+| `ActionError` | Ошибочные состояния |
+| `ActionFileAccess` | Доступ к файловой системе |
+
+`AuditEvent` — структурированное событие (метка времени, действие, ключ, причина, успех/провал, длительность и др.). Чувствительные ключи маскируются `MaskKey` в `[MASKED:N chars]` (N = длина ключа) до попадания в событие; нечувствительные сохраняются как есть.
 
 ## Связанная документация
 

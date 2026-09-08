@@ -1,8 +1,9 @@
 ---
 sidebar_label: "内存锁定"
 title: "内存锁定 - CyberGo env | mlock 内存保护"
-description: "CyberGo env 内存锁定指南，详解 SetMemoryLockEnabled 启用、IsMemoryLockSupported 检测、SetMemoryLockStrict 模式与 NewSecureValueStrict 错误处理，覆盖 Linux CAP_IPC_LOCK、Windows VirtualLock 权限及 SecureValue 生命周期管理。"
+description: "CyberGo env 内存锁定指南，详解 SetMemoryLockEnabled 启用、IsMemoryLockSupported 检测与 SetMemoryLockStrict 严格模式，阐述 mlock 防止敏感数据被交换到磁盘的原理与 SecureValue 生命周期管理实践。"
 sidebar_position: 3
+sidebar_icon: "🛡️"
 ---
 
 # 内存锁定

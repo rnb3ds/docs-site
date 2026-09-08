@@ -1,7 +1,7 @@
 ---
-sidebar_label: "Performance"
-title: "Performance - CyberGo JSON | High Performance Guide"
-description: "CyberGo JSON performance optimization: EnableCache/CacheTTL caching, PreParse pre-parsing and WarmupCache warmup to improve high-frequency JSON processing."
+sidebar_label: "Performance Optimization"
+title: "Performance Optimization - CyberGo JSON | High Performance"
+description: "CyberGo JSON performance: EnableCache/CacheTTL caching, ParallelThreshold parallelism, PreParse pre-parsing, WarmupCache warm-up, CompilePath precompilation."
 sidebar_position: 1
 ---
 
@@ -11,15 +11,15 @@ Strategies and techniques for optimizing JSON processing performance.
 
 ## Processor Reuse
 
-### Reuse Processor Instances
+### Reuse the Processor Instance
 
 ```go
-// ✅ Package-level functions automatically reuse the global Processor
+// OK: package-level functions automatically reuse the global Processor
 for _, item := range dataList {
     val := json.GetString(item, "name")
 }
 
-// ✅ Or explicitly reuse instances (suitable for custom configuration)
+// OK: or reuse an instance explicitly (good for custom configuration)
 processor, err := json.New()
 if err != nil {
     panic(err)
@@ -30,35 +30,67 @@ for _, item := range dataList {
 }
 ```
 
+## Built-in Performance Mechanisms
+
+Know what the library already optimizes, and avoid reinventing the wheel:
+
+| Mechanism | Effect | What you do |
+|-----------|--------|-------------|
+| Fast-path detection | Single-key property access (e.g. `name`, path with only letters/digits/underscores) is recognized via a lookup table; with the cache off it reads straight from the root object, bypassing the recursive processor | Nothing — automatic; with the cache on (default), such access is accelerated by the parse/result cache |
+| FastEncoder | Reflection-free encoding of simple types (maps/slices/primitives) | Nothing — automatic |
+| Result cache | Repeated queries of the same (JSON, path) hit the cache | On by default; tune `CacheTTL`/`MaxCacheSize` for scale |
+| Object pools | Reuse of `IterableValue`, encoding buffers, Config, etc., reducing GC pressure | Return via `parsed.Release()` / `cp.Release()` |
+| Compiled-path cache | Globally cached parse results for common paths | Use [`CompilePath`](../api-reference/processor/query#compilepath) for hot paths |
+
+:::tip CacheSharedResults: the zero-copy switch for read-heavy workloads
+With `Config.CacheSharedResults = true`, cache hits in `Get` return the shared value directly, **skipping the defensive deep copy** — allocation and CPU overhead of repeatedly reading large subtrees drop significantly. The contract: **callers must not mutate** the returned `map[string]any`/`[]any` (primitives are always safe). Off by default (copy-on-read); enable explicitly to match your workload.
+:::
+
+## Optimization Decision Path
+
+When performance issues appear, proceed in a fixed order, letting **measurements** decide each step:
+
+| Step | Technique | Signal it fits |
+|------|-----------|----------------|
+| 1. Measure first | Benchmarks + memory profiling (below), `GetStats()` for cache hit ratio | Before any optimization — no data, no direction |
+| 2. Reuse | Package-level functions or a shared `Processor` instance (reuses cache and pools) | Per-request `json.New()`, frequent processor rebuilds |
+| 3. Pre-compile paths | [`CompilePath`](../api-reference/processor/query#compilepath) + `GetCompiled` | The **same path** queried across many JSONs (path parsing becomes repeated overhead) |
+| 4. Pre-parse | [`PreParse`](../api-reference/processor/query#preparse) + `GetFromParsed` | The **same JSON** queried at many paths in a row (repeated parsing is the hotspot) |
+| 5. Parallelize | `NewParallelIterator` / `StreamJSONLParallel` (see [Concurrency](./concurrency)) | CPU-bound batch processing; many lines with heavy per-line work |
+
+:::tip Measure before optimizing
+The default configuration (cache on + object pools + fast paths) already covers most scenarios. Locate hotspots with benchmarks and confirm where the bottleneck belongs before reaching for the explicit optimizations in steps 3-5 — each trades some flexibility for speed. Small arrays (below the `ParallelThreshold` default of 10) run slower in parallel.
+:::
+
 ## Memory Optimization
 
 ### Reduce Allocations
 
 ```go
-// ✅ Use Marshal to return a byte slice
+// OK: use Marshal, which returns a byte slice
 bytes, _ := json.Marshal(data)
 
-// ✅ Use EncodeWithConfig to return a string (Encode is deprecated)
+// OK: use EncodeWithConfig, which returns a string (Encode is deprecated)
 s, _ := json.EncodeWithConfig(data)
 ```
 
 ### Pre-allocate Buffers
 
 ```go
-// Pre-allocate when processing large amounts of data
+// Pre-allocate when processing large volumes
 buf := make([]byte, 0, 1024*1024)
 ```
 
 ## File Processing
 
-### Use Structured Iteration for Large Files
+### Structured Iteration for Large Files
 
 ```go
-// ❌ Load everything at once
+// Not ideal: load everything at once
 data, _ := os.ReadFile("large.json")
 parsed, _ := json.ParseAny(string(data))
 
-// ✅ Structured iteration (note: still loads the full file into memory)
+// OK: structured iteration (note: the whole file still loads into memory)
 processor, err := json.New()
 if err != nil {
     panic(err)
@@ -73,7 +105,7 @@ processor.ForeachFile("large.json", func(key any, item *json.IterableValue) erro
 ### NDJSON Processing
 
 ```go
-// Use StreamLinesInto for stream processing
+// Stream with StreamLinesInto
 file, _ := os.Open("data.jsonl")
 defer file.Close()
 entries, err := json.StreamLinesInto[LogEntry](file, func(lineNum int, entry LogEntry) error {
@@ -84,34 +116,33 @@ entries, err := json.StreamLinesInto[LogEntry](file, func(lineNum int, entry Log
 
 ## Concurrent Processing
 
-### Parallel Array Processing
+### Prefer the Built-in ParallelIterator
+
+The library ships a parallel iterator that spares you hand-written semaphores and goroutine pools, batches automatically, and supports cancellation:
 
 ```go
-items := json.GetArray(data, "items")
+items, _ := json.GetArray(data, "items")
+it := json.NewParallelIterator(items)
+defer it.Close()
 
-var wg sync.WaitGroup
-sem := make(chan struct{}, runtime.NumCPU())
+// Parallel map
+doubled, err := it.Map(func(i int, v any) (any, error) {
+    return processItem(v), nil
+})
 
-for _, item := range items {
-    wg.Add(1)
-    go func(item any) {
-        defer wg.Done()
-        sem <- struct{}{}
-        defer func() { <-sem }()
-
-        processItem(item)
-    }(item)
-}
-wg.Wait()
+// Or parallel traversal / filtering (WithContext variants respond to cancellation)
+_ = it.ForEach(func(i int, v any) error { return nil })
+_ = it.ForEachWithContext(ctx, func(i int, v any) error { return nil })
+filtered := it.Filter(func(i int, v any) bool { return v != nil })
 ```
 
-### Using a Worker Pool
+### When you need full control: a hand-rolled Worker Pool
 
 ```go
 items := json.GetArray(data, "items")
 jobs := make(chan any, len(items))
 
-// Start a fixed number of workers, reusing goroutines to avoid frequent creation/destruction
+// Start a fixed number of workers, reusing goroutines to avoid churn
 var wg sync.WaitGroup
 workers := runtime.NumCPU()
 for w := 0; w < workers; w++ {
@@ -124,7 +155,7 @@ for w := 0; w < workers; w++ {
     }()
 }
 
-// Close the channel after dispatching tasks to notify workers to exit
+// Distribute tasks, then close the channel to signal workers to exit
 for _, item := range items {
     jobs <- item
 }
@@ -132,30 +163,34 @@ close(jobs)
 wg.Wait()
 ```
 
-## Configuration Optimization
+:::tip Parallel thresholds
+`Config.ParallelThreshold` (default 10) sets the lower bound for the library's internal parallel paths; JSONL parallel worker count is controlled by `Config.JSONLWorkers` (default 4) or the parameter of `StreamJSONLParallel(reader, workers, ...)`. See [Concurrency](./concurrency).
+:::
 
-### Adjust Configuration Based on Scenario
+## Configuration Tuning
+
+### Adjust Configuration per Scenario
 
 ```go
-// Small data: relaxed configuration
+// Small payloads: lenient configuration
 smallCfg := json.DefaultConfig()
-smallCfg.MaxNestingDepthSecurity = 200 // Maximum allowed value (validation range 10-200)
+smallCfg.MaxNestingDepthSecurity = 200 // Maximum allowed (validation range 10-200)
 
 // Untrusted input: security configuration
 safeCfg := json.SecurityConfig()
 safeCfg.MaxJSONSize = 1024 * 1024
 ```
 
-### Disable Unnecessary Features
+### Disable Unneeded Features
 
 ```go
-// If you don't need Hooks, don't configure them
+// If you don't need Hooks, don't configure any
 cfg := json.DefaultConfig() // Minimal configuration
 ```
 
 ## Caching Strategies
 
-### Cache Parse Results
+### Caching Parse Results
 
 ```go
 var cache sync.Map
@@ -175,10 +210,10 @@ func getOrParse(key string, data []byte) (any, error) {
 }
 ```
 
-### Cache Path Queries
+### Caching Path Queries
 
 ```go
-// Pre-compile commonly used paths (using Processor)
+// Pre-compile common paths (with a Processor)
 p, err := json.New()
 if err != nil {
     panic(err)
@@ -189,9 +224,9 @@ path2, _ := p.CompilePath("user.email")
 path3, _ := p.CompilePath("items[*].id")
 ```
 
-## Benchmarking
+## Benchmarks
 
-### Performance Testing Example
+### Performance Test Examples
 
 ```go
 func BenchmarkParse(b *testing.B) {
@@ -213,7 +248,50 @@ func BenchmarkGetString(b *testing.B) {
 }
 ```
 
-### Memory Analysis
+### A/B Comparison of Optimizations
+
+The most reliable way to verify an optimization is to write "before / after" as a pair of benchmarks. `b.ReportAllocs()` outputs `B/op` and `allocs/op` alongside; run with `go test -bench=. -benchmem`:
+
+```go
+// Baseline: repeated Get (each with its own cache-key lookup + navigation)
+func BenchmarkRepeatGet(b *testing.B) {
+    data := `{"user": {"name": "CyberGo"}, "items": [1, 2, 3]}`
+    b.ReportAllocs()
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        _, _ = json.Get(data, "user.name")
+        _, _ = json.Get(data, "items")
+    }
+}
+
+// Candidate optimization: PreParse once, GetFromParsed for each query
+func BenchmarkPreParse(b *testing.B) {
+    data := `{"user": {"name": "CyberGo"}, "items": [1, 2, 3]}`
+    p, err := json.New()
+    if err != nil {
+        b.Fatal(err)
+    }
+    defer p.Close()
+
+    b.ReportAllocs()
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        parsed, err := p.PreParse(data)
+        if err != nil {
+            b.Fatal(err)
+        }
+        _, _ = p.GetFromParsed(parsed, "user.name")
+        _, _ = p.GetFromParsed(parsed, "items")
+        parsed.Release()
+    }
+}
+```
+
+:::tip Reading the results
+Compare `ns/op` and `allocs/op` across the two benchmarks: if the pre-parse benchmark is clearly lower, the hotspot's cost is dominated by repeated parsing/cache-key lookup and pre-parsing is worth adopting; if the gap is negligible, continue down the [optimization decision path](#optimization-decision-path) to the next layer (e.g. encoding, lock contention).
+:::
+
+### Memory Profiling
 
 ```go
 func TestMemoryUsage(t *testing.T) {
@@ -221,7 +299,7 @@ func TestMemoryUsage(t *testing.T) {
     runtime.ReadMemStats(&m)
     before := m.Alloc
 
-    // Execute operation
+    // Perform operations
     data := generateLargeJSON()
     _, _ = json.ParseAny(data)
 
@@ -234,12 +312,12 @@ func TestMemoryUsage(t *testing.T) {
 
 ## Performance Comparison
 
-| Operation | Small Data (<1KB) | Medium Data (1MB) | Large Data (>10MB) |
-|-----------|-------------------|-------------------|---------------------|
+| Operation | Small data (<1KB) | Medium data (1MB) | Large data (>10MB) |
+|-----------|-------------------|-------------------|--------------------|
 | `Parse` | Recommended | Recommended | Not recommended |
 | `ForeachFile` | Unnecessary | Optional | Recommended |
 
 ## See Also
 
-- [Large File Processing](../streaming/large-files)
+- [Large File Handling](../streaming/large-files)
 - [Error Handling](./error-handling)

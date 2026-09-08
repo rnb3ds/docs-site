@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Loader"
 title: "Loader API - CyberGo env | 로더 상세"
-description: "CyberGo env의 Loader 로더 API 레퍼런스로, 핵심 타입이 다중 형식 LoadFiles 로드, GetString/GetInt/GetSlice 타입 안전 읽기, Set/Delete 증감변, Validate 검증, 직렬화 내보내기 및 Close 수명 주기 관리를 제공하며, 모든 메서드는 스레드 안전합니다."
+description: "CyberGo env의 Loader API 레퍼런스로, 다중 형식 LoadFiles 로드, GetString/GetInt 타입 안전 읽기, Set/Delete 수정, Validate 검증, 직렬화 내보내기와 Close 수명 주기 관리를 제공하며 모든 메서드는 스레드 안전합니다."
 sidebar_position: 3
 ---
 
@@ -810,6 +810,50 @@ func main() {
     fmt.Printf("Load time: %v\n", loader.LoadTime())
 }
 ```
+
+## 수명 주기와 프로세스 환경 의미론
+
+### Close는 os.Environ을 롤백하지 않음
+
+`Close()`는 메모리상 변수 사본만 제로화하며, `Apply`, `AutoApply`, (`AutoApply` 설정 시) `Set`을 통해 프로세스 환경에 기록한 변수를 unset하지 **않습니다**. 닫기 전에 제거하려면 키별로 `Delete`를 호출하세요:
+
+<!-- check-code: skip -->
+```go
+loader.Delete("API_KEY") // 이 loader가 설정한 키일 때만 프로세스 환경에서 unset
+loader.Close()
+```
+
+### Delete의 키별 소유 추적
+
+Loader는 자신이 프로세스 환경에 기록한 키(`appliedKeys`)를 추적합니다. `Delete`는 그 키만 unset하며 이 loader가 설정하지 않은 프로세스 변수(`HOME`, `TERM` 등)는 절대 건드리지 않습니다. 덕분에 다중 Loader 환경에서 서로 간섭하지 않습니다.
+
+### Apply는 '미설정'과 '명시적 빈 값'을 구분
+
+`Apply`는 `LookupEnv`로 기존 값을 감지합니다: 빈 문자열로 명시적으로 설정된 변수도 '존재'로 간주되어 `OverwriteExisting=false`일 때 마찬가지로 건너뜁니다 — 미설정으로 오인해 덮어쓰지 않습니다.
+
+### 상태 및 메타데이터 메서드
+
+| 메서드 | 설명 |
+|--------|------|
+| `Config()` | loader 구성의 읽기 전용 스냅샷; 반환값을 수정해도 실행 중인 loader에 영향 없음 |
+| `IsClosed()` | loader 닫힘 여부(nil receiver는 true 반환) |
+| `IsApplied()` | 변수의 os.Environ 적용 여부 |
+| `LoadTime()` | 가장 최근 로드 완료 시각(로드 이력 없으면 영값) |
+
+### 읽기 경로의 키 이름 해석 세부 사항
+
+- **정확 일치 우선**: 원래 키로 먼저 조회, 미스 시 대문자 형식으로 폴백
+- **점 표기 경로**: `database.host`는 `DATABASE_HOST`로 전개(JSON/YAML 평탄화 키); 인덱스 경로 `service.cors.origins.0`는 미스 시 쉼표 구분 값으로 폴백
+- **trim 하지 않음**: `Lookup`은 저장된 원값을 반환 — `.env` 값은 파싱 시점에 trim됐고, JSON/YAML 값은 선행/후행 공백을 유지할 수 있음
+- **락 프리 빠른 경로**: 단일 키 읽기(`Lookup`/`GetSecure`)는 원자적 닫힘 플래그로 loader 수준 읽기 락을 우회 — 고동시성에서 읽기 락 카운트 자체가 병목이 되는 것을 방지; `Close`와 경쟁 시 '값을 읽거나 제로화된 상태를 읽는' 우아한 저하
+
+### Set의 조용한 건너뜀 의미론
+
+`OverwriteExisting=false`일 때 존재하는 키에 `Set`을 호출하면 **조용히 건너뛰고 nil을 반환**합니다(오류 없음). 건너뜀을 감지하려면 감사 로그(`skipped (no overwrite)` 이벤트)를 관찰하세요.
+
+### 파일 로드의 심층 방어 (TOCTOU)
+
+`Stat()` 크기 검사와 실제 읽기 사이에는 이론적 교체 창이 존재하며, 라이브러리는 두 계층으로 완화합니다: 파서는 내부적으로 크기 상한을 강제하는 강화된 읽기 경로로 파일 스트림을 래핑하고, 검사 후 커져도 하드 상한(100 MB)에서 잘려 메모리 고갈을 방지합니다.
 
 ## 관련 문서
 

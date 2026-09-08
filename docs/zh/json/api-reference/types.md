@@ -1,7 +1,7 @@
 ---
 sidebar_label: "类型定义"
 title: "类型定义 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 核心类型：Result[T] 泛型、AccessResult 访问、BatchOperation、BatchResult、Schema、Stats 与 IterableValue，构成完整类型系统。"
+description: "CyberGo JSON 核心类型：Result[T] 泛型、AccessResult 访问、BatchOperation、BatchResult、Schema、Stats 与 IterableValue，兼有 CompiledPath 预编译路径，构成完整类型系统。"
 sidebar_position: 5
 ---
 
@@ -23,6 +23,14 @@ type Result[T any] struct {
 }
 ```
 
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Value` | `T` | 结果值，类型由泛型参数 `T` 决定 |
+| `Exists` | `bool` | 路径是否存在（是否找到值） |
+| `Error` | `error` | 操作错误（无错为 `nil`） |
+
 ### 方法
 
 | 方法 | 签名 | 说明 |
@@ -37,23 +45,23 @@ type Result[T any] struct {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{"user": {"name": "Alice", "age": 30}}`
+	data := `{"user": {"name": "Alice", "age": 30}}`
 
-    // 使用 GetTyped 获取类型化值
-    name := json.GetTyped[string](data, "user.name")
-    fmt.Printf("姓名: %s\n", name)
+	// 使用 GetTyped 获取类型化值
+	name := json.GetTyped[string](data, "user.name")
+	fmt.Printf("姓名: %s\n", name)
 
-    // 使用 defaultValue 参数提供默认值
-    nickname := json.GetTyped[string](data, "user.nickname", "未设置")
-    fmt.Printf("昵称: %s\n", nickname)
+	// 使用 defaultValue 参数提供默认值
+	nickname := json.GetTyped[string](data, "user.nickname", "未设置")
+	fmt.Printf("昵称: %s\n", nickname)
 
-    age := json.GetTyped[int](data, "user.age", 0)
-    fmt.Printf("年龄：%d\n", age)
+	age := json.GetTyped[int](data, "user.age", 0)
+	fmt.Printf("年龄：%d\n", age)
 }
 ```
 
@@ -105,6 +113,147 @@ val, err := processor.GetCompiled(data, compiled)
 对于高频重复路径访问，预编译路径可显著减少路径解析开销。适用于批量操作、循环查询等场景。
 :::
 
+### 方法
+
+| 方法 | 签名 | 说明 |
+|------|------|------|
+| `Get` | `func (cp *CompiledPath) Get(data any) (any, error)` | 从已解析的 JSON 数据中按编译路径取值 |
+| `GetFromRaw` | `func (cp *CompiledPath) GetFromRaw(raw []byte) (any, error)` | 从原始 JSON 字节中按编译路径取值（内部先反序列化再导航） |
+| `Exists` | `func (cp *CompiledPath) Exists(data any) bool` | 检查已解析数据中该路径是否存在值 |
+| `Len` | `func (cp *CompiledPath) Len() int` | 返回路径的段数 |
+| `IsEmpty` | `func (cp *CompiledPath) IsEmpty() bool` | 路径没有任何段时返回 true |
+| `Hash` | `func (cp *CompiledPath) Hash() uint64` | 返回编译时预计算的路径哈希（FNV-1a），可用于自定义缓存键 |
+| `Path` | `func (cp *CompiledPath) Path() string` | 返回编译时的原始路径字符串 |
+| `String` | `func (cp *CompiledPath) String() string` | 与 `Path` 等价的字符串表示 |
+| `Segments` | `func (cp *CompiledPath) Segments() []PathSegment` | 返回解析后的路径段（详见下文 PathSegment 一节） |
+| `Release` | `func (cp *CompiledPath) Release()` | 归还对象池；调用后不得再使用该实例 |
+
+### 使用示例
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	cp, err := p.CompilePath("user.name")
+	if err != nil {
+		panic(err)
+	}
+	defer cp.Release()
+
+	// 直接从原始 JSON 字节取值，无需先解析成 Go 值
+	val, err := cp.GetFromRaw([]byte(`{"user": {"name": "CyberGo"}}`))
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(val) // 输出：CyberGo
+}
+```
+
+::: tip GetFromRaw 与 PreParse 的取舍
+`GetFromRaw` 每次调用都会完整反序列化输入字节，适合一次性查询；对同一文档做多次查询时，请改用 `PreParse` 获得 `ParsedJSON` 后调用 `Get`，或直接使用 `GetFromParsed`，避免重复解析。
+:::
+
+---
+
+## PathSegment - 路径段
+
+`PathSegment` 表示解析后的单个路径段，是 [`PathParser`](./interfaces#pathparser) 接口 `ParsePath` 方法的返回元素，也可通过 `CompiledPath` 的 `Segments` 方法获得。
+
+### 类型定义
+
+```go
+type PathSegment = internal.PathSegment
+```
+
+::: warning 内部实现别名
+与 `CompiledPath` 一样，`PathSegment` 是 `internal.PathSegment` 的类型别名：字段类型 PathSegmentType、PathSegmentFlags 及段类型常量（PropertySegment 等）未从根包导出。判断段类型请使用 `TypeString`、`IsArrayAccess` 等访问方法，不要直接比较 `Type` 字段与内部常量。
+:::
+
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Type` | PathSegmentType | 段类型枚举（属性/数组索引/切片/通配符等；判断请用 `TypeString`） |
+| `Key` | `string` | 属性段与提取段使用的键名 |
+| `Index` | `int` | 数组索引段的下标；切片段的起始值（是否设置见 `HasStart`） |
+| `End` | `int` | 切片段的结束值（是否设置见 `HasEnd`） |
+| `Step` | `int` | 切片段的步长（是否设置见 `HasStep`） |
+| `Flags` | PathSegmentFlags | 位标志，记录负索引、通配符、扁平提取及起始/结束/步长是否设置 |
+
+### 方法
+
+| 方法 | 签名 | 说明 |
+|------|------|------|
+| `TypeString` | `func (ps PathSegment) TypeString() string` | 段类型名称：`property` / `array` / `slice` / `wildcard` / `recursive` / `filter` / `extract` / `append` |
+| `String` | `func (ps PathSegment) String() string` | 段的路径表示（如 `name`、`[0]`、`[1:3]`、`[*]`） |
+| `IsArrayAccess` | `func (ps PathSegment) IsArrayAccess() bool` | 数组索引段、切片段或通配符段返回 true |
+| `IsWildcardSegment` | `func (ps *PathSegment) IsWildcardSegment() bool` | 通配符段（`[*]`）返回 true |
+| `IsFlatExtract` | `func (ps *PathSegment) IsFlatExtract() bool` | 扁平提取段返回 true |
+| `IsNegativeIndex` | `func (ps *PathSegment) IsNegativeIndex() bool` | 数组索引为负数（如 `[-1]`）返回 true |
+| `HasStart` | `func (ps *PathSegment) HasStart() bool` | 切片段是否设置了起始值 |
+| `HasEnd` | `func (ps *PathSegment) HasEnd() bool` | 切片段是否设置了结束值 |
+| `HasStep` | `func (ps *PathSegment) HasStep() bool` | 切片段是否设置了步长 |
+| `GetStart` | `func (ps *PathSegment) GetStart() (int, bool)` | 返回起始值及是否设置（未设置时为 0, false） |
+| `GetEnd` | `func (ps *PathSegment) GetEnd() (int, bool)` | 返回结束值及是否设置 |
+| `GetStep` | `func (ps *PathSegment) GetStep() (int, bool)` | 返回步长及是否设置 |
+| `GetArrayIndex` | `func (ps PathSegment) GetArrayIndex(arrayLength int) (int, error)` | 解析数组下标：负索引换算为正向（`-1` 表示末元素），越界或非数组索引段返回 error |
+
+### 使用示例
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	cp, err := p.CompilePath("users[0].name")
+	if err != nil {
+		panic(err)
+	}
+	defer cp.Release()
+
+	// Segments 返回解析后的路径段
+	for _, seg := range cp.Segments() {
+		fmt.Printf("段 %s（%s）\n", seg.String(), seg.TypeString())
+	}
+
+	// 数组索引段：GetArrayIndex 解析实际下标（负索引换算为正向，越界返回 error）
+	arrSeg := cp.Segments()[1]
+	idx, err := arrSeg.GetArrayIndex(1)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("数组下标：", idx)
+	// 输出：
+	// 段 users（property）
+	// 段 [0]（array）
+	// 段 name（property）
+	// 数组下标：0
+}
+```
+
 ---
 
 ## AccessResult - 属性访问结果
@@ -120,6 +269,14 @@ type AccessResult struct {
     Type   string // 运行时类型信息（用于调试）
 }
 ```
+
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Value` | `any` | 结果值 |
+| `Exists` | `bool` | 路径是否存在 |
+| `Type` | `string` | 运行时类型信息（用于调试） |
 
 ### 创建方法
 
@@ -189,34 +346,34 @@ obj := json.GetTyped[map[string]any](data, "user.profile")
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    processor, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer processor.Close()
+	processor, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer processor.Close()
 
-    data := `{"user": {"name": "Alice", "age": 30, "active": true}}`
+	data := `{"user": {"name": "Alice", "age": 30, "active": true}}`
 
-    // 安全获取并转换
-    result := processor.SafeGet(data, "user.age")
+	// 安全获取并转换
+	result := processor.SafeGet(data, "user.age")
 
-    // 直接使用 AccessResult 方法
-    age, err := result.AsInt()
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("年龄：%d\n", age)
+	// 直接使用 AccessResult 方法
+	age, err := result.AsInt()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("年龄：%d\n", age)
 
-    // 获取不存在的路径
-    missing := processor.SafeGet(data, "user.nickname")
-    if !missing.Exists {
-        fmt.Println("昵称不存在")
-    }
+	// 获取不存在的路径
+	missing := processor.SafeGet(data, "user.nickname")
+	if !missing.Exists {
+		fmt.Println("昵称不存在")
+	}
 }
 ```
 
@@ -265,12 +422,17 @@ schema := &json.Schema{
     Type:     "object",
     Required: []string{"name", "email"},
     Properties: map[string]*json.Schema{
-        "name":  {Type: "string", MinLength: 1},
+        "name":  {Type: "string"},
         "email": {Type: "string", Format: "email"},
-        "age":   {Type: "integer", Minimum: 0},
+        "age":   {Type: "number"},
     },
 }
 ```
+
+::: warning 两条硬性限制
+- `Type` 仅支持 `object`/`array`/`string`/`number`/`boolean`/`null` 六种取值——JSON Schema 的 `integer` **不受支持**（整数也会被解析为 `float64`，请写 `"number"`）。
+- `MinLength`/`MaxLength`/`Minimum`/`Maximum`/`MinItems`/`MaxItems`/`ExclusiveMinimum`/`ExclusiveMaximum` 通过结构体字面量赋值**不会生效**，必须经 `NewSchemaWithConfig` 的指针字段启用。详见 [Schema 校验](./schema#schema-的创建方式)。
+:::
 
 #### 使用 NewSchemaWithConfig
 
@@ -323,54 +485,76 @@ type SchemaConfig struct {
 }
 ```
 
+| 字段类别 | 字段 | 类型 | 说明 |
+|----------|------|------|------|
+| 直接字段 | `Type`/`Pattern`/`Format`/`UniqueItems`/`Enum`/`Const`/`Title`/`Description`/`Default`/`Examples` | 值类型 | 直接赋值即生效 |
+| 结构字段 | `Properties`/`Items`/`Required` | 值类型 | 子 Schema、必填属性 |
+| 指针字段 | `MinLength`/`MaxLength`/`Minimum`/`Maximum`/`MinItems`/`MaxItems`/`MultipleOf`/`ExclusiveMinimum`/`ExclusiveMaximum` | `*int`/`*float64`/`*bool` | **非 nil 才启用对应约束**（传指针是为了区分「未设置」与「零值」） |
+| 指针字段 | `AdditionalProperties` | `*bool` | 非 nil 生效；nil 时默认 `true` |
+
+#### DefaultSchemaConfig
+
+签名：`func DefaultSchemaConfig() SchemaConfig`
+
+返回带默认值的 SchemaConfig（`AdditionalProperties` 指向 `true`，其余为零值）。
+
+```go
+cfg := json.DefaultSchemaConfig()
+cfg.Type = "object"
+cfg.Required = []string{"name", "email"}
+schema := json.NewSchemaWithConfig(cfg)
+```
+
 ### 使用示例
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 使用结构体字面量定义 Schema
-    schema := &json.Schema{
-        Type:     "object",
-        Required: []string{"name", "email"},
-        Properties: map[string]*json.Schema{
-            "name": {
-                Type:      "string",
-                MinLength: 1,
-                MaxLength: 100,
-            },
-            "email": {
-                Type:   "string",
-                Format: "email",
-            },
-            "age": {
-                Type:    "integer",
-                Minimum: 0,
-                Maximum: 150,
-            },
-        },
-        AdditionalProperties: false,
-    }
+	// 长度/区间约束经 NewSchemaWithConfig 的指针字段启用
+	minLen, maxLen := 1, 100
+	minAge, maxAge := 0.0, 150.0
 
-    // 验证 JSON
-    data := `{"name": "Alice", "email": "alice@example.com", "age": 30}`
-    errors, err := json.ValidateSchema(data, schema)
-    if err != nil {
-        panic(err)
-    }
+	nameCfg := json.DefaultSchemaConfig()
+	nameCfg.Type = "string"
+	nameCfg.MinLength = &minLen
+	nameCfg.MaxLength = &maxLen
 
-    if len(errors) > 0 {
-        for _, e := range errors {
-            fmt.Printf("验证错误 [%s]: %s\n", e.Path, e.Message)
-        }
-    } else {
-        fmt.Println("验证通过")
-    }
+	ageCfg := json.DefaultSchemaConfig()
+	ageCfg.Type = "number" // 数值一律用 "number"（不支持 "integer"）
+	ageCfg.Minimum = &minAge
+	ageCfg.Maximum = &maxAge
+
+	schema := &json.Schema{
+		Type:     "object",
+		Required: []string{"name", "email"},
+		Properties: map[string]*json.Schema{
+			"name":  json.NewSchemaWithConfig(nameCfg),
+			"email": {Type: "string", Format: "email"},
+			"age":   json.NewSchemaWithConfig(ageCfg),
+		},
+	}
+
+	// 验证 JSON
+	data := `{"name": "Alice", "email": "alice@example.com", "age": 30}`
+	errors, err := json.ValidateSchema(data, schema)
+	if err != nil {
+		panic(err)
+	}
+
+	if len(errors) > 0 {
+		for _, e := range errors {
+			fmt.Printf("验证错误 [%s]: %s\n", e.Path, e.Message)
+		}
+	} else {
+		fmt.Println("验证通过")
+	}
+	// 输出：验证通过
 }
 ```
 
@@ -388,6 +572,13 @@ type ValidationError struct {
     Message string `json:"message"` // 错误消息
 }
 ```
+
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Path` | `string` | 验证错误发生的 JSON 路径 |
+| `Message` | `string` | 验证失败的描述消息 |
 
 ### 方法
 
@@ -407,7 +598,7 @@ for _, e := range errors {
 
 ## BatchOperation
 
-批量操作定义。
+批量操作定义，`ProcessBatch` 的输入单元。
 
 ### 结构定义
 
@@ -420,6 +611,20 @@ type BatchOperation struct {
     ID      string `json:"id"`       // 操作标识
 }
 ```
+
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Type` | `string` | 操作类型，仅支持 `"get"`、`"set"`、`"delete"`、`"validate"`；其他值在对应 `BatchResult.Error` 中报 `unknown operation type` |
+| `JSONStr` | `string` | 该操作作用的目标 JSON 字符串（每个操作独立携带） |
+| `Path` | `string` | 目标路径 |
+| `Value` | `any` | 仅 `"set"` 操作使用，要写入的值 |
+| `ID` | `string` | 操作标识，原样回填到 `BatchResult.ID`，用于结果对账 |
+
+::: tip 批量上限
+`ProcessBatch` 的操作数超过 `Config.MaxBatchSize`（默认 2000）时整体返回 `ErrSizeLimit` 错误；`"validate"` 操作的 `BatchResult.Result` 为 `map[string]any{"valid": bool}`。
+:::
 
 ---
 
@@ -437,11 +642,19 @@ type BatchResult struct {
 }
 ```
 
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `ID` | `string` | 对应 `BatchOperation.ID`，与输入顺序一一对应 |
+| `Result` | `any` | 操作结果；`"get"` 为取到的值，`"set"`/`"delete"` 为修改后的 JSON 字符串，`"validate"` 为 `map[string]any{"valid": bool}` |
+| `Error` | `error` | 该单条操作的错误；**逐项返回**，单条失败不中断整批（是否继续由实现内部逐项执行） |
+
 ---
 
 ## WarmupResult
 
-缓存预热结果。
+缓存预热结果，由 `WarmupCache` 返回。
 
 ### 结构定义
 
@@ -454,6 +667,20 @@ type WarmupResult struct {
     FailedPaths []string `json:"failed_paths,omitempty"` // 失败路径列表
 }
 ```
+
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `TotalPaths` | `int` | 提交预热的路径总数 |
+| `Successful` | `int` | 成功写入缓存的路径数 |
+| `Failed` | `int` | 预热失败的路径数 |
+| `SuccessRate` | `float64` | 成功率，**百分比 0–100**（非 0–1） |
+| `FailedPaths` | `[]string` | 失败路径清单（全部成功时为 nil） |
+
+::: warning 全部失败时返回 error
+`WarmupCache` 在**所有路径都失败**时除返回 `WarmupResult` 外还会返回非 nil 的 error（含最后一条错误）；缓存被禁用（`EnableCache: false`）时直接返回错误。
+:::
 
 ---
 
@@ -472,17 +699,12 @@ type ParsedJSON struct {
 }
 ```
 
-### Data 方法
+### 方法
 
-签名：`func (p *ParsedJSON) Data() any`
-
-返回底层已解析的数据。
-
-### Release 方法
-
-签名：`func (p *ParsedJSON) Release()`
-
-释放已解析数据持有的资源。当不再需要 `ParsedJSON` 时调用，允许底层资源被垃圾回收。
+| 方法 | 签名 | 说明 |
+|------|------|------|
+| `Data` | `func (p *ParsedJSON) Data() any` | 返回底层已解析的数据；`Release` 之后返回 nil |
+| `Release` | `func (p *ParsedJSON) Release()` | 将内部数据置 nil，即使 `ParsedJSON` 本身仍被引用，解析树也可被垃圾回收 |
 
 ```go
 processor, err := json.New()
@@ -518,7 +740,7 @@ age, _ := processor.GetFromParsed(parsed, "user.age")
 
 ## Stats
 
-处理器统计信息。
+处理器统计信息，通过包级 `GetStats()` 或 `Processor.GetStats()` 获取。
 
 ### 结构定义
 
@@ -539,11 +761,60 @@ type Stats struct {
 }
 ```
 
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `CacheSize` | `int64` | 当前缓存条目数 |
+| `CacheMemory` | `int64` | 缓存占用内存估算（字节） |
+| `MaxCacheSize` | `int` | 配置的缓存条目上限（`Config.MaxCacheSize`） |
+| `HitCount` | `int64` | 缓存命中次数 |
+| `MissCount` | `int64` | 缓存未命中次数 |
+| `HitRatio` | `float64` | 命中率（0–1） |
+| `CacheTTL` | `time.Duration` | 当前缓存条目 TTL |
+| `CacheEnabled` | `bool` | 缓存是否启用 |
+| `IsClosed` | `bool` | 处理器是否已 `Close` |
+| `MemoryEfficiency` | `float64` | 内存效率指标（0–1） |
+| `OperationCount` | `int64` | 处理器累计操作数 |
+| `ErrorCount` | `int64` | 处理器累计错误数 |
+
+---
+
+## SecurityLimits
+
+`SecurityLimits` 汇总 Config 中的安全相关限制字段，是这些字段的只读快照视图（字段一一映射）。
+
+### 结构定义
+
+```go
+type SecurityLimits struct {
+    MaxNestingDepth           int   `json:"max_nesting_depth"`
+    MaxSecurityValidationSize int64 `json:"max_security_validation_size"`
+    MaxObjectKeys             int   `json:"max_object_keys"`
+    MaxArrayElements          int   `json:"max_array_elements"`
+    MaxJSONSize               int64 `json:"max_json_size"`
+    MaxPathDepth              int   `json:"max_path_depth"`
+}
+```
+
+### 与 Config 字段映射
+
+| SecurityLimits 字段 | 来源 Config 字段 |
+|--------------------|------------------|
+| `MaxNestingDepth` | `MaxNestingDepthSecurity` |
+| `MaxSecurityValidationSize` | `MaxSecurityValidationSize` |
+| `MaxObjectKeys` | `MaxObjectKeys` |
+| `MaxArrayElements` | `MaxArrayElements` |
+| `MaxJSONSize` | `MaxJSONSize` |
+| `MaxPathDepth` | `MaxPathDepth` |
+
+该类型由库内部汇总安全限制时使用（零值表示 nil Config）；字段含义与取值范围见 [Config](./config#config-结构体)。
+
 ---
 
 ## HealthStatus
 
-健康状态信息。
+健康状态信息，通过包级 `GetHealthStatus()` 或 `Processor.GetHealthStatus()` 获取。
 
 ### 结构定义
 
@@ -555,7 +826,17 @@ type HealthStatus struct {
 }
 ```
 
+### 字段说明
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Timestamp` | `time.Time` | 本次健康检查的时间戳 |
+| `Healthy` | `bool` | 总体健康结论（全部检查项通过为 true） |
+| `Checks` | `map[string]CheckResult` | 各检查项结果，键为检查项名称 |
+
 ### CheckResult 结构
+
+单项健康检查结果。
 
 ```go
 type CheckResult struct {
@@ -563,6 +844,11 @@ type CheckResult struct {
     Message string `json:"message"` // 检查消息
 }
 ```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Healthy` | `bool` | 该检查项是否通过 |
+| `Message` | `string` | 通过/失败的描述消息 |
 
 ---
 
@@ -836,25 +1122,25 @@ err := encoder.Encode(map[string]any{"name": "Alice"})
 package main
 
 import (
-    "bytes"
-    "fmt"
-    "github.com/cybergodev/json"
+	"bytes"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    var buf bytes.Buffer
-    encoder := json.NewEncoder(&buf)
-    encoder.SetIndent("", "  ")
-    encoder.SetEscapeHTML(true)
+	var buf bytes.Buffer
+	encoder := json.NewEncoder(&buf)
+	encoder.SetIndent("", "  ")
+	encoder.SetEscapeHTML(true)
 
-    err := encoder.Encode(map[string]any{
-        "name":  "Alice",
-        "email": "alice@example.com",
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(buf.String())
+	err := encoder.Encode(map[string]any{
+		"name":  "Alice",
+		"email": "alice@example.com",
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(buf.String())
 }
 ```
 
@@ -902,22 +1188,22 @@ for decoder.More() {
 package main
 
 import (
-    "fmt"
-    "strings"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"strings"
 )
 
 func main() {
-    input := `{"name":"Alice","age":30}{"name":"Bob","age":25}`
-    decoder := json.NewDecoder(strings.NewReader(input))
+	input := `{"name":"Alice","age":30}{"name":"Bob","age":25}`
+	decoder := json.NewDecoder(strings.NewReader(input))
 
-    for decoder.More() {
-        var person map[string]any
-        if err := decoder.Decode(&person); err != nil {
-            break
-        }
-        fmt.Printf("姓名: %s, 年龄: %v\n", person["name"], person["age"])
-    }
+	for decoder.More() {
+		var person map[string]any
+		if err := decoder.Decode(&person); err != nil {
+			break
+		}
+		fmt.Printf("姓名: %s, 年龄: %v\n", person["name"], person["age"])
+	}
 }
 ```
 
@@ -927,23 +1213,23 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "strings"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"strings"
 )
 
 func main() {
-    // 解码 JSON 流中的多个值
-    input := `[1,2,3][4,5,6]`
-    decoder := json.NewDecoder(strings.NewReader(input))
+	// 解码 JSON 流中的多个值
+	input := `[1,2,3][4,5,6]`
+	decoder := json.NewDecoder(strings.NewReader(input))
 
-    for decoder.More() {
-        var arr []any
-        if err := decoder.Decode(&arr); err != nil {
-            panic(err)
-        }
-        fmt.Println(arr)
-    }
+	for decoder.More() {
+		var arr []any
+		if err := decoder.Decode(&arr); err != nil {
+			panic(err)
+		}
+		fmt.Println(arr)
+	}
 }
 ```
 

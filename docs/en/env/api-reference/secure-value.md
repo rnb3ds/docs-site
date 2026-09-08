@@ -1,7 +1,7 @@
 ---
 sidebar_label: "SecureValue"
 title: "SecureValue API - CyberGo env | Secure Value Storage"
-description: "SecureValue API reference for CyberGo env, including NewSecureValue creation, mlock memory locking, Reveal for plaintext access, Masked masking, Release zeroing disposal, IsSensitiveKey detection, for securely storing passwords, tokens, and keys."
+description: "SecureValue API reference for CyberGo env: NewSecureValue creation with mlock locking, Reveal plaintext access, Masked display, and Release zeroing."
 sidebar_position: 5
 ---
 
@@ -782,6 +782,75 @@ func (sv *SecureValue) clearDataLocked() {
 ```
 
 ---
+
+## Leak-Proof Interfaces and Lifecycle Details
+
+### Safe stringification interfaces
+
+`SecureValue` implements a set of "safe stringification" interfaces so secrets **never** leak through the common formatting paths:
+
+| Interface | Behavior |
+|-----------|----------|
+| `fmt.Stringer` (`String()`) | Returns the masked form (same as `Masked()`); `fmt.Printf("%v")`, `log.Println` are safe |
+| `json.Marshaler` (`MarshalJSON()`) | JSON serialization emits the masked string; the plaintext never enters JSON |
+| `encoding.TextMarshaler` (`MarshalText()`) | Text encoders (XML, text/template, structured loggers) emit the mask |
+
+The only explicit path to the plaintext is `Reveal()` (or the `Bytes()` copy).
+
+### Close vs. Release
+
+| Method | Zeros data | Returns to pool | Use |
+|--------|:----------:|:---------------:|-----|
+| `Close()` | Y | N | Regular one-shot usage |
+| `Release()` | Y | Y | High-frequency create/destroy cycles (reuse cuts allocations) |
+
+Both are safe to call repeatedly with no side effects. Abandoned unclosed objects are still covered: the GC finalizer zeroes the data when the object becomes unreachable (`runtime.SetFinalizer` is installed once at first creation; pool cycles don't repay that cost).
+
+### Masked output format
+
+The masked representation carries lock status so you can verify protection from logs:
+
+```text
+[SECURE:24 bytes]            // memory locking not enabled
+[SECURE:24 bytes locked]     // locked
+[SECURE:24 bytes lock-failed] // lock failed (pair with MemoryLockError)
+[CLOSED]                      // closed
+[NIL]                         // nil receiver
+```
+
+### Lock-status queries
+
+- `IsMemoryLocked()`: whether the value's memory is currently locked
+- `MemoryLockError()`: the error from the most recent lock attempt (nil on success or when not attempted); the first tool for diagnosing permission issues in strict mode
+
+### GetSecure returns a defensive copy
+
+The `*SecureValue` returned by `Loader.GetSecure` is an **independent copy** of the stored value — its lifecycle is decoupled from the Loader. The caller owns `Close`/`Release`; the Loader's internal original is unaffected.
+
+### ClearBytes
+
+The copy returned by `Bytes()` should be zeroed explicitly when done:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	sv := env.NewSecureValue("my-secret")
+	defer sv.Release()
+
+	data := sv.Bytes()
+	defer env.ClearBytes(data) // zero when done, no residue
+
+	fmt.Println(len(data))
+	// Output: 9
+}
+```
 
 ## Related Documentation
 

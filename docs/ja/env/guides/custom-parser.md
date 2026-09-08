@@ -642,6 +642,26 @@ func main() {
 
 ---
 
+## 組み込みパーサーのオーバーライド（ForceRegisterParser）
+
+セキュリティ上、`RegisterParser` は 3 つの組み込み形式（`FormatEnv`、`FormatJSON`、`FormatYAML`）のオーバーライドを**拒否**します；同じカスタム形式の重複登録もエラーを返します。組み込みパーサーを本当に置き換える必要がある場合 — 例えば `.env` への複数行値構文の追加、カスタムセキュリティ検査の付与、テストでの mock パーサー注入 — には `ForceRegisterParser` を使います：
+
+<!-- check-code: skip -->
+```go
+err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, factory *env.ComponentFactory) (env.EnvParser, error) {
+    return &MyCustomEnvParser{
+        validator: factory.Validator(),
+        auditor:   factory.Auditor(),
+    }, nil
+})
+```
+
+::: warning セキュリティ警告
+組み込みパーサーのオーバーライドは脆弱性をもたらす可能性があります：置換実装にキー検証・値検証・サイズ制限が欠けると、ライブラリのデフォルト保護を失います。パーサーが同等のセキュリティ検査を完全に実装している場合にのみ使用してください。
+:::
+
+**登録タイミング**：パーサーファクトリーは Loader 作成時にスナップショットとして呼び出されます（`New()` 内部の `createParsers`）。したがって `RegisterParser`/`ForceRegisterParser` は `env.New()` の前に完了させる必要があり、作成済みの Loader は以降の登録の影響を受けません。
+
 ## 関連ドキュメント
 
 - [ComponentFactory API](/ja/env/api-reference/factory) - ComponentFactory と RegisterParser

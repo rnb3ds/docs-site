@@ -1,7 +1,7 @@
 ---
-sidebar_label: "개요"
+sidebar_label: "API 개요"
 title: "API 레퍼런스 - CyberGo env | 완전한 인터페이스 문서"
-description: "CyberGo env 완전한 API 레퍼런스 탐색으로, 패키지 수준 편의 함수, Config 구성, Loader 로더, SecureValue 보안 값, 핵심 인터페이스 정의, ComponentFactory 컴포넌트 팩토리, 상수와 오류 등 7대 모듈의 상세 진입점과 메서드 서명 인덱스를 다룹니다."
+description: "CyberGo env 완전한 API 레퍼런스 탐색으로, 패키지 함수, Config, Loader, SecureValue, 인터페이스, ComponentFactory, 상수와 오류 등 7대 모듈의 진입점과 메서드 서명 인덱스를 다룹니다."
 sidebar_position: 1
 ---
 

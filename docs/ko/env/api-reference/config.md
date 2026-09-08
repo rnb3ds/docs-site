@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Config"
 title: "Config API - CyberGo env | 구성 상세"
-description: "CyberGo env의 Config 구성 구조체 API 레퍼런스로, 파일 검색 경로, 크기와 수량 제한, 키-값 검증, JSON/YAML 파싱 옵션, 변수 확장, 감사 구성 및 Development/Production 프리셋 템플릿을 포함하며, 중첩 구조와 필드 승격 두 가지 접근 방식을 상세히 설명합니다."
+description: "CyberGo env의 Config 구성 구조체 API 레퍼런스로, 파일 검색 경로와 크기·수량 제한, 키-값 검증, JSON/YAML 파싱 옵션, 변수 확장, 감사 구성, Development/Production 프리셋과 중첩 구조 매핑 방식을 상세히 설명합니다."
 sidebar_position: 4
 ---
 
@@ -86,9 +86,10 @@ type YAMLConfig struct {
 
 // ParsingConfig 일반 파싱 동작 제어
 type ParsingConfig struct {
-    AllowExportPrefix bool // export KEY=value 구문 허용
-    AllowYamlSyntax   bool // YAML 스타일 값 허용
-    ExpandVariables   bool // ${VAR} 참조 확장 여부
+    AllowExportPrefix bool            // export KEY=value 구문 허용
+    AllowYamlSyntax   bool            // YAML 스타일 값 허용
+    ExpandVariables   bool            // ${VAR} 참조 확장 여부
+    ExpansionScope    ExpansionScope  // ${VAR} 참조를 해석할 수 있는 범위
 }
 
 // ComponentConfig 커스텀 컴포넌트와 고급 옵션
@@ -769,6 +770,59 @@ loader, _ := env.New(cfg)
 ```
 
 ---
+
+## 프리셋 대조표와 구성 함정
+
+### 네 가지 프리셋의 전체 차이
+
+| 구성 항목 | Default | Development | Testing | Production |
+|-----------|---------|-------------|---------|------------|
+| `FailOnMissingFile` | false | false | false | **true** |
+| `OverwriteExisting` | false | **true** | **true** | false |
+| `ValidateValues` | true | true | true | true |
+| `AllowExportPrefix` | true | true | true | true |
+| `AllowYamlSyntax` | false | **true** | false | false |
+| `ExpandVariables` | true | true | true | true |
+| `MaxFileSize` | 2 MB | 10 MB | 64 KB | 64 KB |
+| `MaxVariables` | 500 | 500 | 50 | 50 |
+| `JSONMaxDepth`/`YAMLMaxDepth` | 10 | 10 | 10 | 10 |
+| `AuditEnabled` | false | false | false | **true** |
+
+핵심: `DevelopmentConfig`가 완화하는 것은 **편의성**(덮어쓰기, YAML 문법, 파일 크기)이며 값 검증은 모든 프리셋에서 켜져 있습니다 — 어느 프리셋도 주입 방어를 희생하지 않습니다.
+
+### DefaultConfig 주요 기본값
+
+| 항목 | 기본값 |
+|------|--------|
+| 키 패턴 | 내장 바이트 수준 검증(`^[A-Za-z][A-Za-z0-9_]*$`와 동등) |
+| `ValidateValues` | true |
+| `JSONNullAsEmpty`/`JSONNumberAsString`/`JSONBoolAsString` | true |
+| `ExpandVariables` | true(범위 `ExpansionFileThenProcess`) |
+| `Prefix` | 빈 문자열(필터링 없음) |
+
+### IsZero 함정: 항상 DefaultConfig()에서 시작
+
+`New()`는 **영값** Config에 자동으로 `DefaultConfig()`를 적용합니다. `IsZero()`는 '일반 기본 필드가 모두 0인가'로 판정합니다 — 일부 필드만 설정된 Config는 영값으로 오인되지 않지만, 판정 규칙은 필드 목록에 의존하므로 **영값 구조체에서 필드를 하나씩 대입**하는 방식은 경계에 걸리기 쉽습니다. 권장 패턴은 항상:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig() // 완전한 기본값 위에서 수정
+cfg.Filenames = []string{".env.production"}
+cfg.OverwriteExisting = true
+```
+
+### KeyPattern 보안 프로브 (SEC-06)
+
+커스텀 `KeyPattern`은 `Config.Validate()`에서 네 가지 프로브를 받으며, 하나라도 실패하면 구성이 거부됩니다:
+
+1. 유효한 키(예: `TEST_KEY`)를 매치할 수 있어야 함
+2. 빈 문자열을 거부해야 함
+3. 숫자로 시작하는 키(예: `123_INVALID`)를 거부해야 함
+4. `=`, `:`, 줄바꿈, 제어 문자를 포함한 키를 거부해야 함 — 구분자를 포함한 키가 직렬화 라운드트립 후 **다른 행**으로 재파싱되는 것을 방지(라운드트립 인젝션)
+
+### ExpansionScope
+
+[변수 전개 가이드의 '전개 범위' 절](/ko/env/guides/variable-expansion)을 참조하세요. `ExpansionFileOnly`는 신뢰할 수 없는 구성 파일용(SEC-03)이며 `${VAR}` 참조가 프로세스 환경을 읽는 것을 차단합니다.
 
 ## 관련 문서
 

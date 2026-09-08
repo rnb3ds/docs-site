@@ -187,9 +187,9 @@ func (sv *SecureValue) Bytes() []byte
 ```go
 secret := env.GetSecure("API_KEY")
 if secret != nil {
-    data := secret.Bytes()
-    defer env.ClearBytes(data)  // 使用后清零
-    // 使用 data
+	data := secret.Bytes()
+	defer env.ClearBytes(data)  // 使用后清零
+	// 使用 data
 }
 ```
 
@@ -782,6 +782,75 @@ func (sv *SecureValue) clearDataLocked() {
 ```
 
 ---
+
+## 防泄漏接口与生命周期细节
+
+### 防泄漏的字符串化接口
+
+`SecureValue` 实现了一组「安全字符串化」接口，确保机密**不会**经由常见的格式化路径意外输出：
+
+| 接口 | 行为 |
+|------|------|
+| `fmt.Stringer`（`String()`） | 返回掩码表示（同 `Masked()`），`fmt.Printf("%v")`、`log.Println` 均安全 |
+| `json.Marshaler`（`MarshalJSON()`） | JSON 序列化输出掩码字符串，明文永不进入 JSON |
+| `encoding.TextMarshaler`（`MarshalText()`） | 文本编码器（XML、text/template、结构化日志器）输出掩码 |
+
+获取明文只有一条显式路径：`Reveal()`（或 `Bytes()` 拷贝）。
+
+### Close 与 Release 的区别
+
+| 方法 | 清零数据 | 返回对象池 | 适用 |
+|------|:--------:|:-----------:|------|
+| `Close()` | ✅ | ❌ | 常规一次性使用 |
+| `Release()` | ✅ | ✅ | 高频创建/销毁场景（复用降低分配） |
+
+两者重复调用均安全无副作用。丢弃未关闭的对象也有兜底：GC 终结器会在对象不可达时自动清零（`runtime.SetFinalizer` 在对象首次创建时设置一次，池化复用不重复付出该开销）。
+
+### Masked 输出格式
+
+掩码表示携带锁定状态，便于在日志中核对防护是否生效：
+
+```text
+[SECURE:24 bytes]            // 未启用内存锁定
+[SECURE:24 bytes locked]     // 已锁定
+[SECURE:24 bytes lock-failed] // 锁定失败（结合 MemoryLockError 排查）
+[CLOSED]                      // 已关闭
+[NIL]                         // nil 接收者
+```
+
+### 锁定状态查询
+
+- `IsMemoryLocked()`：当前值内存是否处于锁定状态
+- `MemoryLockError()`：返回最近一次锁定失败的错误（成功或未尝试时为 nil）；严格模式下排查权限问题的首选
+
+### GetSecure 返回防御性副本
+
+`Loader.GetSecure` 返回的 `*SecureValue` 是存储层的**独立副本**，其生命周期与 Loader 互不干扰——调用方负责 `Close`/`Release`，而 Loader 内部持有的原值不受影响。
+
+### ClearBytes
+
+`Bytes()` 返回的拷贝用完后应显式清零：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	sv := env.NewSecureValue("my-secret")
+	defer sv.Release()
+
+	data := sv.Bytes()
+	defer env.ClearBytes(data) // 用完清零，不留残留
+
+	fmt.Println(len(data))
+	// 输出：9
+}
+```
 
 ## 相关文档
 

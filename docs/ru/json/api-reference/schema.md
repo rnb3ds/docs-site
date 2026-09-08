@@ -1,8 +1,8 @@
 ---
-sidebar_label: "Валидатор Validator"
-title: "Validator - CyberGo JSON | Валидатор схем"
-description: "Валидатор CyberGo JSON: интерфейс Validator, структура проверки Schema, ошибка ValidationError и конфигурация SchemaConfig, полная проверка JSON-данных."
-sidebar_position: 2
+sidebar_label: "Валидация Schema"
+title: "Валидация Schema - CyberGo JSON | Гайд по JSON Schema"
+description: "Валидация Schema в CyberGo JSON: ValidateSchema, поля ограничений Schema, значения Format, ValidationError и NewSchemaWithConfig для объектов, строк и массивов."
+sidebar_position: 4.5
 ---
 
 # Проверка по схеме
@@ -73,28 +73,31 @@ func main() {
 
 Поля ограничений, поддерживаемые `Schema` (сгруппированы по категориям):
 
-| Категория | Поле | Применимый тип | Описание |
-|------|------|----------|------|
-| Структура | `Type` | Все | Значения см. в таблице ниже |
-| Структура | `Required` | object | Список обязательных имён свойств |
-| Структура | `Properties` | object | Подсхема для каждого свойства |
-| Структура | `Items` | array | Подсхема для элементов |
-| Структура | `AdditionalProperties` | object | `true` — разрешить дополнительные свойства, `false` — отклонить |
-| Строки | `MinLength` / `MaxLength` | string | Диапазон длины (подсчёт по rune) |
-| Строки | `Pattern` | string | Регулярное выражение |
-| Строки | `Format` | string | Семантический формат (см. [таблицу значений Format](#поддерживаемые-значения-format)) |
-| Числа | `Minimum` / `Maximum` | number | Диапазон значений |
-| Числа | `ExclusiveMinimum` / `ExclusiveMaximum` | number | Исключение граничных значений |
-| Числа | `MultipleOf` | number | Должно быть кратным этому значению |
-| Массивы | `MinItems` / `MaxItems` | array | Диапазон количества элементов |
-| Массивы | `UniqueItems` | array | `true` требует уникальности элементов |
-| Значения | `Enum` | Все | Список допустимых перечислимых значений |
-| Значения | `Const` | Все | Должно быть равно этому фиксированному значению |
+| Категория | Поле | Тип | Применимый тип | Описание |
+|------|------|------|----------|------|
+| Структура | `Type` | `string` | Все | Значения см. в таблице ниже |
+| Структура | `Required` | `[]string` | object | Список обязательных имён свойств |
+| Структура | `Properties` | `map[string]*Schema` | object | Подсхема для каждого свойства |
+| Структура | `Items` | `*Schema` | array | Подсхема для элементов |
+| Структура | `AdditionalProperties` | `bool` | object | `true` — разрешить дополнительные свойства, `false` — отклонить |
+| Строки | `MinLength` / `MaxLength` | `int` | string | Диапазон длины (подсчёт по rune) |
+| Строки | `Pattern` | `string` | string | Регулярное выражение |
+| Строки | `Format` | `string` | string | Семантический формат (см. [таблицу значений Format](#поддерживаемые-значения-format)) |
+| Числа | `Minimum` / `Maximum` | `float64` | number | Диапазон значений |
+| Числа | `ExclusiveMinimum` / `ExclusiveMaximum` | `bool` | number | Исключение граничных значений |
+| Числа | `MultipleOf` | `float64` | number | Должно быть кратным этому значению |
+| Массивы | `MinItems` / `MaxItems` | `int` | array | Диапазон количества элементов |
+| Массивы | `UniqueItems` | `bool` | array | `true` требует уникальности элементов |
+| Значения | `Enum` | `[]any` | Все | Список допустимых перечислимых значений |
+| Значения | `Const` | `any` | Все | Должно быть равно этому фиксированному значению |
+| Метаданные | `Title` / `Description` | `string` | — | Документирующие метаданные, в проверке не участвуют |
+| Метаданные | `Default` | `any` | — | Документирующие метаданные, в проверке не участвуют |
+| Метаданные | `Examples` | `[]any` | — | Документирующие метаданные, в проверке не участвуют |
 
 Поддерживаемые значения `Type`: `object`, `array`, `string`, `number`, `boolean`, `null`.
 
 ::: warning Для числовых типов используйте "number"
-После разбора JSON все числа (включая целые) являются `float64`, поэтому для числовых полей следует использовать `Type: "number"`. Числовые ограничения вроде `MultipleOf` также действуют только при `Type` равном `number`.
+После разбора JSON все числа (включая целые) являются `float64`, поэтому для числовых полей следует использовать `Type: "number"`. Значение `integer` из JSON Schema Draft 7 **не поддерживается** — указание `"integer"` приведёт к ошибке `expected type integer` для всех значений. Числовые ограничения вроде `Minimum`/`Maximum`/`MultipleOf` также действуют только при `Type` равном `number`.
 :::
 
 ## Ограничения объекта: Required / Properties / AdditionalProperties
@@ -231,7 +234,7 @@ func main() {
 }
 ```
 
-`ExclusiveMinimum` / `ExclusiveMaximum` задаются совместно с `Minimum` / `Maximum` через `SchemaConfig` (также указательные поля) для исключения самих граничных значений.
+`ExclusiveMinimum` / `ExclusiveMaximum` задаются совместно с `Minimum` / `Maximum` через `SchemaConfig` (также указательные поля) для исключения самих граничных значений. `MultipleOf` использует сравнение с плавающей точкой и допуском (epsilon 1e-9), поэтому сценарии точности IEEE 754 вроде `0.1 + 0.2` не дают ложных срабатываний.
 
 ## Ограничения массива: Items / MinItems / MaxItems / UniqueItems
 
@@ -277,7 +280,11 @@ func main() {
 }
 ```
 
-`Items` указывает подсхему, которой должен удовлетворять каждый элемент (в примере выше — строка); `UniqueItems` определяет дубликаты по строковому представлению элементов.
+`Items` указывает подсхему, которой должен удовлетворять каждый элемент (в примере выше — строка); `UniqueItems` определяет дубликаты по комбинации «**динамический тип + значение**» — `[1, "1"]` считаются двумя разными элементами, ошибку дают только действительно повторяющиеся значения.
+
+::: tip Защита от глубокой рекурсии
+`Schema` — рекурсивный тип; при проверке действует верхний предел глубины рекурсии (`DefaultMaxNestingDepth` = 200). Самоссылающиеся схемы (например, `s.Items = s`) не приводят к переполнению стека — при превышении предела выдаётся ошибка `schema nesting exceeds maximum depth`.
+:::
 
 ## Перечисление и константа: Enum / Const
 
@@ -317,7 +324,7 @@ func main() {
 
 ## Поддерживаемые значения Format
 
-Семантические форматы, поддерживаемые полем `Format` (неизвестные форматы молча пропускаются — без ошибки и без подтверждения):
+Семантические форматы, поддерживаемые полем `Format` (неизвестные форматы молча пропускаются: без ошибки и без самой проверки):
 
 | Format | Правило проверки |
 |--------|----------|
@@ -336,8 +343,8 @@ func main() {
 
 ```go
 type ValidationError struct {
-    Path    string `json:"path"`    // Путь ошибки (например, "user.email", "tags[1]")
-    Message string `json:"message"` // Сообщение об ошибке
+	Path    string `json:"path"`    // Путь ошибки (например, "user.email", "tags[1]")
+	Message string `json:"message"` // Сообщение об ошибке
 }
 
 func (ve *ValidationError) Error() string
@@ -351,8 +358,8 @@ func (ve *ValidationError) Error() string
 
 ```go
 // 1) Прямой литерал: Type/Required/Properties/Items/Pattern/Format/Enum/Const/
-//    UniqueItems/MultipleOf действуют сразу; но MinLength/MaxLength/Minimum/Maximum/
-//    MinItems/MaxItems/ExclusiveMinimum/ExclusiveMaximum не действуют (см. описание ниже)
+// UniqueItems/MultipleOf действуют сразу; но MinLength/MaxLength/Minimum/Maximum/
+// MinItems/MaxItems/ExclusiveMinimum/ExclusiveMaximum не действуют (см. описание ниже)
 schema := &json.Schema{Type: "string", Pattern: `^\d+$`}
 
 // 2) NewSchemaWithConfig: ограничения задаются через указательные поля SchemaConfig, все ограничения длины/диапазона действуют
@@ -370,6 +377,52 @@ schema := json.DefaultSchema()
 Группа ограничений `MinLength`, `MaxLength`, `Minimum`, `Maximum`, `MinItems`, `MaxItems`, `ExclusiveMinimum`, `ExclusiveMaximum` полагается на внутренний флаг отслеживания `Schema`, не задаваемый извне. Прямое присвоение этих полей в литерале `&json.Schema{...}` **не действует**; их необходимо включать через `NewSchemaWithConfig` с передачей соответствующих **указательных полей** (например, `cfg.MinLength = &v`). `Type`, `Required`, `Properties`, `Items`, `Pattern`, `Format`, `Enum`, `Const`, `UniqueItems`, `MultipleOf` не подпадают под это ограничение и действуют как в литерале, так и через `NewSchemaWithConfig`.
 :::
 
+### DefaultSchema
+
+Сигнатура: `func DefaultSchema() *Schema`
+
+`DefaultSchema` возвращает Schema со значениями по умолчанию: `Properties` инициализирована пустой map, `Required` — пустым срезом, `AdditionalProperties` равна `true` (дополнительные свойства разрешены); подходит как отправная точка для постепенного заполнения.
+
+### DefaultSchemaConfig
+
+Сигнатура: `func DefaultSchemaConfig() SchemaConfig`
+
+`DefaultSchemaConfig` возвращает вход по умолчанию для `NewSchemaWithConfig`: только `AdditionalProperties` предустановлена указателем на `true`, остальные поля — нулевые значения; задав в ней `Type` и указательные поля, можно сразу создавать Schema.
+
+Результаты обоих согласуются: `DefaultSchema()` эквивалентна `NewSchemaWithConfig(DefaultSchemaConfig())` — по умолчанию обе разрешают дополнительные свойства.
+
+### Поля SchemaConfig
+
+Набор полей `SchemaConfig` один к одному соответствует `Schema`; при этом числовые/булевы ограничения являются **указательными типами** — `nil` означает, что ограничение не задано, и только передача не-`nil` указателя заставляет `NewSchemaWithConfig` включить соответствующее ограничение (именно поэтому ограничения длины/диапазона должны задаваться через `NewSchemaWithConfig`, см. [предупреждение выше](#способ-создания-schema)).
+
+| Поле                   | Тип                 | Описание                                                                    |
+| ---------------------- | ------------------- | ---------------------------------------------------------------------------- |
+| `Type`                 | `string`            | JSON-тип (то же, что `Schema.Type`)                                          |
+| `Properties`           | `map[string]*Schema` | Подсхема для каждого свойства (при nil инициализируется пустой map)          |
+| `Items`                | `*Schema`           | Подсхема для элементов массива                                               |
+| `Required`             | `[]string`          | Список обязательных имён свойств (при nil инициализируется пустым срезом)    |
+| `MinLength`            | `*int`              | Минимальная длина (nil = не задано)                                          |
+| `MaxLength`            | `*int`              | Максимальная длина (nil = не задано)                                         |
+| `Minimum`              | `*float64`          | Минимальное значение (nil = не задано)                                       |
+| `Maximum`              | `*float64`          | Максимальное значение (nil = не задано)                                      |
+| `Pattern`              | `string`            | Регулярное выражение                                                         |
+| `Format`               | `string`            | Семантический формат                                                         |
+| `AdditionalProperties` | `*bool`             | Разрешены ли дополнительные свойства (nil трактуется как `true`; в `DefaultSchemaConfig` предустановлен указатель на `true`) |
+| `MinItems`             | `*int`              | Минимальное количество элементов (nil = не задано)                           |
+| `MaxItems`             | `*int`              | Максимальное количество элементов (nil = не задано)                          |
+| `UniqueItems`          | `bool`              | Требовать уникальности элементов                                             |
+| `Enum`                 | `[]any`             | Список допустимых перечислимых значений                                      |
+| `Const`                | `any`               | Фиксированное значение, которому должно равняться значение                   |
+| `MultipleOf`           | `*float64`          | Ограничение кратности (nil = не задано)                                      |
+| `ExclusiveMinimum`     | `*bool`             | Исключить нижнюю границу (nil = не задано)                                   |
+| `ExclusiveMaximum`     | `*bool`             | Исключить верхнюю границу (nil = не задано)                                  |
+| `Title`                | `string`            | Заголовок (метаданные)                                                       |
+| `Description`          | `string`            | Описание (метаданные)                                                        |
+| `Default`              | `any`               | Значение по умолчанию (метаданные)                                           |
+| `Examples`             | `[]any`             | Примеры значений (метаданные)                                                |
+
+Рекомендуется всегда создавать настроенную Schema через `NewSchemaWithConfig` (`func NewSchemaWithConfig(cfg SchemaConfig) *Schema`) — это единственный надёжный способ включить указательные ограничения; кроме того, он автоматически инициализирует `Properties` / `Required` и обрабатывает значение `AdditionalProperties` по умолчанию.
+
 ## Поля Config, связанные с проверкой
 
 | Поле | Тип | Описание |
@@ -384,15 +437,17 @@ schema := json.DefaultSchema()
 ```go
 // Текущая версия: объявлен, но не подключён — регистрация не влияет на операции (зарезервированный интерфейс)
 type Validator interface {
-    Validate(jsonStr string) error
+	Validate(jsonStr string) error
 }
 ```
 
-Для пользовательской проверки до и после операций используйте действующие [перехватчики Hooks](./hooks) (например, `ValidationHook`).
+Для пользовательской проверки до и после операций используйте действующие [перехватчики Hooks](../extensions/hooks) (например, `ValidationHook`).
 :::
 
 ## См. также
 
-- [Определения интерфейсов](../api-reference/interfaces) - интерфейс `Validator` (зарезервированный) и типы, связанные со `Schema`
-- [Параметры конфигурации](../api-reference/config) - поля конфигурации, связанные с проверкой
-- [Перехватчики Hooks](./hooks) - действующий механизм перехвата до и после операций (включая `ValidationHook`)
+- [Определения интерфейсов](./interfaces) — интерфейс `Validator` (зарезервированный) и типы, связанные со `Schema`
+- [Определения типов](./types) — базовые типы (Config / Schema / Stats / AccessResult)
+- [Парсинг и валидация](./functions/parse) — функции Parse / Valid / ValidateSchema
+- [Параметры конфигурации](./config) — поля конфигурации, связанные с проверкой
+- [Перехватчики Hooks](../extensions/hooks) — действующий механизм перехвата до и после операций (включая `ValidationHook`)

@@ -1,5 +1,5 @@
 ---
-sidebar_label: "迭代器与 IterableValue"
+sidebar_label: "迭代器与流式迭代器"
 title: "迭代器与 IterableValue - CyberGo JSON | API 参考"
 description: "CyberGo JSON 迭代器类型：Iterator 顺序遍历、IterableValue 数据访问、StreamIterator/StreamObjectIterator 流式、BatchIterator 批量与 ParallelIterator 并行迭代器构造与方法。"
 sidebar_position: 9
@@ -15,8 +15,8 @@ json 包提供多种迭代器类型，覆盖顺序遍历、流式处理、批量
 
 | 常量 | 说明 |
 |------|------|
-| `IteratorNormal` | 正常继续迭代（默认值） |
-| `IteratorContinue` | 跳过当前项，继续迭代 |
+| `IteratorNormal` | 正常继续迭代（默认值，零值即此） |
+| `IteratorContinue` | 继续迭代。与 `IteratorNormal` 等价（为 API 对称保留的别名）——「跳过当前项」是隐式的，迭代始终会继续 |
 | `IteratorBreak` | 停止迭代 |
 
 **使用场景**
@@ -32,13 +32,13 @@ json 包提供多种迭代器类型，覆盖顺序遍历、流式处理、批量
 
 ## Iterator 类型
 
-Iterator 用于遍历 JSON 数组或对象的低级迭代器。
+`Iterator` 是用于遍历 JSON 数组或对象的低级迭代器，由 `NewIterator` 创建。
 
 ### NewIterator
 
 签名：`func NewIterator(data any, cfg ...Config) *Iterator`
 
-创建迭代器实例。
+创建迭代器实例。可选 `cfg` 参数为保持 API 一致性而保留，当前不影响迭代器行为。
 
 ```go
 data := []any{"apple", "banana", "cherry"}
@@ -48,6 +48,10 @@ for it.HasNext() {
     fmt.Println(val)
 }
 ```
+
+::: tip 迭代顺序确定
+遍历对象时，键按**排序后**的顺序依次产出（Go 原生 map 遍历顺序随机，这里做了确定性处理）；遍历数组时按索引顺序。`Next()` 对数组返回元素本身，对对象返回当前键对应的**值**（不返回键）。
+:::
 
 ### 方法
 
@@ -71,9 +75,13 @@ for it.HasNext() {
 it.Reset() // 清除缓存
 ```
 
+::: warning 并发不安全
+`Reset`/`ResetWith` 不可与另一 goroutine 正在进行的 `HasNext()`/`Next()` 并发调用；需要并发遍历时请为每个 goroutine 创建独立迭代器。
+:::
+
 ### ResetWith
 
-清除迭代器状态并使用新数据初始化，实现迭代器复用。
+清除迭代器状态并使用新数据初始化，实现迭代器复用。并发约束同 `Reset`。
 
 ```go
 it := json.NewIterator(data1)
@@ -93,6 +101,13 @@ for it.HasNext() {
 IterableValue 封装了迭代过程中的当前元素，提供便捷的值访问方法。`Foreach` 系列函数的回调即接收 `*IterableValue`。
 
 ### 方法
+
+| 类别 | 方法 |
+|------|------|
+| 基础取值 | `GetData` / `Get` / `GetString` / `GetInt` / `GetFloat64` / `GetBool` / `GetArray` / `GetObject` |
+| 带默认值取值 | `GetWithDefault` / `GetStringWithDefault` / `GetIntWithDefault` / `GetFloat64WithDefault` / `GetBoolWithDefault` |
+| 状态检查 | `Exists` / `IsNull` / `IsNullData` / `IsEmpty` / `IsEmptyData` |
+| 流程控制 | `Break` / `ForeachNested` / `Release` |
 
 #### GetData
 
@@ -328,6 +343,55 @@ json.Foreach(data, func(key any, item *json.IterableValue) {
 })
 ```
 
+::: tip 可省略的 Release
+迭代函数在回调返回后会**自动**把每个 `IterableValue` 归还对象池，回调内显式调用 `Release()` 是冗余但无害的（内部有防重复归还保护）。注意回调返回后其内部数据即被清空，因此**不要**把 `*IterableValue` 存到回调之外继续使用——需要留存请复制 `GetData()` 取出的数据。
+:::
+
+### IterableValue 完整示例
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	data := `{"users": [
+        {"name": "Alice", "age": 30, "email": null},
+        {"name": "Bob", "tags": []}
+    ]}`
+
+	err := json.ForeachWithError(data, "users", func(key any, item *json.IterableValue) error {
+		idx, _ := key.(int)
+
+		// 带默认值获取
+		name := item.GetStringWithDefault("name", "未知")
+		age := item.GetIntWithDefault("age", 0)
+
+		// 存在性 / null / 空值检查
+		hasEmail := item.Exists("email")
+		emailNull := item.IsNull("email")
+		tagsEmpty := item.IsEmpty("tags")
+
+		fmt.Printf("[%d] name=%s age=%d email存在=%v email为null=%v tags为空=%v\n",
+			idx, name, age, hasEmail, emailNull, tagsEmpty)
+
+		// 找到 Alice 后提前终止
+		if name == "Alice" {
+			return item.Break()
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	// 输出：
+	// [0] name=Alice age=30 email存在=true email为null=true tags为空=true
+}
+```
+
 ---
 
 ## StreamIterator 类型
@@ -338,7 +402,7 @@ StreamIterator 提供内存高效的流式迭代，适用于大型 JSON 数组�
 
 签名：`func NewStreamIterator(reader io.Reader, cfg ...Config) *StreamIterator`
 
-创建流式迭代器。通过 `Config.BufferSize` 设置缓冲区大小。
+创建流式迭代器。通过 `Config.BufferSize` 设置缓冲区大小（默认 32KB，`BufferSize <= 0` 时回落到 32KB）；传入 cfg 时 `MaxJSONSize` 会对**整个流的总字节数**生效，超出即报错。
 
 ```go
 file, _ := os.Open("large-array.json")
@@ -360,13 +424,17 @@ cfg.BufferSize = 64 * 1024 // 64KB 缓冲区
 it2 := json.NewStreamIterator(file, cfg)
 ```
 
+::: tip 顶层输入形态
+`StreamIterator` 面向 JSON **数组**。若顶层是单个标量（如 `"hello"`、`42`），会把它作为唯一元素产出一次；若顶层是对象或其他分隔符开头，`Next()` 返回 false 且 `Err()` 报「expects a JSON array」错误。
+:::
+
 ### 方法
 
 | 方法 | 签名 | 说明 |
 |------|------|------|
 | `Next` | `func (si *StreamIterator) Next() bool` | 前进到下一个元素 |
 | `Value` | `func (si *StreamIterator) Value() any` | 返回当前元素 |
-| `Index` | `func (si *StreamIterator) Index() int` | 返回当前索引 |
+| `Index` | `func (si *StreamIterator) Index() int` | 返回当前索引（从 0 开始） |
 | `Err` | `func (si *StreamIterator) Err() error` | 返回迭代中的错误 |
 
 ---
@@ -379,7 +447,7 @@ StreamObjectIterator 提供内存高效的流式迭代，适用于大型 JSON �
 
 签名：`func NewStreamObjectIterator(reader io.Reader, cfg ...Config) *StreamObjectIterator`
 
-创建流式对象迭代器。
+创建流式对象迭代器。`Config.BufferSize`（默认 32KB）与 `MaxJSONSize`（流总字节数上限）的语义同 `NewStreamIterator`。
 
 ```go
 file, _ := os.Open("large-object.json")
@@ -394,6 +462,10 @@ if err := it.Err(); err != nil {
 }
 ```
 
+::: tip 仅接受顶层对象
+首个 token 不是 `{` 时 `Next()` 直接返回 false 结束（不报错）；键非字符串同样静默结束。读取时按流中**出现顺序**产出键值对（不做排序）。
+:::
+
 ### 方法
 
 | 方法 | 签名 | 说明 |
@@ -407,13 +479,17 @@ if err := it.Err(); err != nil {
 
 ## BatchIterator 类型
 
-BatchIterator 用于高效的批量处理大型数组，减少单元素处理开销。
+BatchIterator 用于高效的批量处理大型数组，减少单元素处理开销，由 `NewBatchIterator` 创建。
 
 ### NewBatchIterator
 
 签名：`func NewBatchIterator(data []any, cfg ...Config) *BatchIterator`
 
-创建批量迭代器。通过 `Config.MaxBatchSize` 设置批量大小。
+创建批量迭代器。通过 `Config.MaxBatchSize` 设置批量大小（未传 cfg 或 `MaxBatchSize <= 0` 时默认每批 100 个元素）。
+
+::: tip 批次切分方式
+`NextBatch` 返回的是底层数组切片的**视图**（`data[current:end]`），不复制数据；末批可能不足 batchSize，修改视图元素会影响原数组。
+:::
 
 ```go
 data := make([]any, 10000)
@@ -434,12 +510,12 @@ for it.HasNext() {
 
 | 方法 | 签名 | 说明 |
 |------|------|------|
-| `NextBatch` | `func (it *BatchIterator) NextBatch() []any` | 返回下一批元素 |
+| `NextBatch` | `func (it *BatchIterator) NextBatch() []any` | 返回下一批元素；无剩余批次时返回 nil |
 | `HasNext` | `func (it *BatchIterator) HasNext() bool` | 检查是否有更多批次 |
 | `Reset` | `func (it *BatchIterator) Reset()` | 重置迭代器到起始位置 |
-| `TotalBatches` | `func (it *BatchIterator) TotalBatches() int` | 返回总批次数 |
-| `CurrentIndex` | `func (it *BatchIterator) CurrentIndex() int` | 返回当前位置 |
-| `Remaining` | `func (it *BatchIterator) Remaining() int` | 返回剩余元素数 |
+| `TotalBatches` | `func (it *BatchIterator) TotalBatches() int` | 返回总批次数（`ceil(len/batchSize)` 向上取整；batchSize 非正时返回 0） |
+| `CurrentIndex` | `func (it *BatchIterator) CurrentIndex() int` | 返回当前已消费到的数组位置 |
+| `Remaining` | `func (it *BatchIterator) Remaining() int` | 返回剩余元素数（消费完为 0） |
 
 ---
 
@@ -451,7 +527,7 @@ ParallelIterator 用于并行处理数组，利用多核 CPU 加速处理。
 
 签名：`func NewParallelIterator(data []any, cfg ...Config) *ParallelIterator`
 
-创建并行迭代器。通过 `Config.MaxConcurrency` 设置工作协程数。
+创建并行迭代器。通过 `Config.MaxConcurrency` 设置工作协程数（未传 cfg 或 `MaxConcurrency <= 0` 时默认 4；实际协程数不超过 `len(data)`，空数据时为 1）。
 
 ```go
 data := make([]any, 10000)
@@ -482,11 +558,15 @@ err := it.ForEach(func(idx int, val any) error {
 })
 ```
 
+::: tip 错误与终止语义
+任一回调返回错误后，其余工作协程尽快停止派发并返回**第一个**错误；`Close` 之后的调用直接返回 nil（不执行回调）；回调 panic 会被捕获并转换为错误返回，不会击穿进程。
+:::
+
 ### ForEachWithContext
 
 签名：`func (it *ParallelIterator) ForEachWithContext(ctx context.Context, fn func(int, any) error) error`
 
-带上下文的并行处理，支持取消操作。
+带上下文的并行处理，支持取消操作。上下文取消时返回 `ctx.Err()`。
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -506,7 +586,7 @@ err := it.ForEachWithContext(ctx, func(idx int, val any) error {
 
 签名：`func (it *ParallelIterator) ForEachBatch(batchSize int, fn func(int, []any) error) error`
 
-并行批量处理。
+并行批量处理。每个批次由单个协程处理；`batchSize <= 0` 时按 100 处理；回调收到的是**批次序号**（第几批）与该批元素。
 
 ```go
 err := it.ForEachBatch(100, func(batchIdx int, batch []any) error {
@@ -519,13 +599,13 @@ err := it.ForEachBatch(100, func(batchIdx int, batch []any) error {
 
 签名：`func (it *ParallelIterator) ForEachBatchWithContext(ctx context.Context, batchSize int, fn func(int, []any) error) error`
 
-带上下文的并行批量处理。
+带上下文的并行批量处理。取消时返回 `ctx.Err()`，Close 后返回 nil。
 
 ### Map
 
 签名：`func (it *ParallelIterator) Map(transform func(int, any) (any, error)) ([]any, error)`
 
-并行转换每个元素，返回新切片。
+并行转换每个元素，返回新切片。每个工作协程写入与元素索引对应的位置，因此**结果顺序与输入一致**；任一转换出错时返回 `(nil, err)`。
 
 ```go
 results, err := it.Map(func(idx int, val any) (any, error) {
@@ -540,7 +620,7 @@ results, err := it.Map(func(idx int, val any) (any, error) {
 
 签名：`func (it *ParallelIterator) Filter(predicate func(int, any) bool) []any`
 
-并行过滤元素，返回满足条件的元素切片。
+并行过滤元素，返回满足条件的元素切片。**保持输入顺序**（非完成顺序）；predicate 无错误返回，回调 panic 会被记录日志而非中断。
 
 ```go
 even := it.Filter(func(idx int, val any) bool {
@@ -555,7 +635,7 @@ even := it.Filter(func(idx int, val any) bool {
 
 签名：`func (it *ParallelIterator) Close()`
 
-释放 ParallelIterator 资源。
+释放 ParallelIterator 资源：通知运行中的协程停止并等待退出。基于 CAS 实现，**可安全重复调用、可多协程并发调用**。
 
 ```go
 it := json.NewParallelIterator(data, cfg)
@@ -572,35 +652,35 @@ defer it.Close()
 package main
 
 import (
-    "fmt"
-    "os"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"os"
 )
 
 func main() {
-    file, err := os.Open("large-array.json")
-    if err != nil {
-        panic(err)
-    }
-    defer file.Close()
+	file, err := os.Open("large-array.json")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
-    it := json.NewStreamIterator(file)
-    count := 0
+	it := json.NewStreamIterator(file)
+	count := 0
 
-    for it.Next() {
-        val := it.Value()
-        // 逐元素处理，内存友好
-        count++
-        if count%1000 == 0 {
-            fmt.Printf("已处理 %d 个元素，当前值: %v\n", count, val)
-        }
-    }
+	for it.Next() {
+		val := it.Value()
+		// 逐元素处理，内存友好
+		count++
+		if count%1000 == 0 {
+			fmt.Printf("已处理 %d 个元素，当前值: %v\n", count, val)
+		}
+	}
 
-    if err := it.Err(); err != nil {
-        panic(err)
-    }
+	if err := it.Err(); err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("总计处理 %d 个元素\n", count)
+	fmt.Printf("总计处理 %d 个元素\n", count)
 }
 ```
 
@@ -610,36 +690,36 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "sync/atomic"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"sync/atomic"
 )
 
 func main() {
-    // 解析 JSON 数组
-    data := `[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]`
-    var arr []any
-    json.Unmarshal([]byte(data), &arr)
+	// 解析 JSON 数组
+	data := `[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]`
+	var arr []any
+	json.Unmarshal([]byte(data), &arr)
 
-    // 创建并行迭代器（4 个工作协程）
-    cfg := json.DefaultConfig()
-    cfg.MaxConcurrency = 4
-    it := json.NewParallelIterator(arr, cfg)
+	// 创建并行迭代器（4 个工作协程）
+	cfg := json.DefaultConfig()
+	cfg.MaxConcurrency = 4
+	it := json.NewParallelIterator(arr, cfg)
 
-    var sum int64
+	var sum int64
 
-    err := it.ForEach(func(idx int, val any) error {
-        if num, ok := val.(float64); ok {
-            atomic.AddInt64(&sum, int64(num))
-        }
-        return nil
-    })
+	err := it.ForEach(func(idx int, val any) error {
+		if num, ok := val.(float64); ok {
+			atomic.AddInt64(&sum, int64(num))
+		}
+		return nil
+	})
 
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("总和：%d\n", sum) // 输出：总和：55
+	fmt.Printf("总和：%d\n", sum) // 输出：总和：55
 }
 ```
 
@@ -649,32 +729,32 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 创建大数据集
-    data := make([]any, 1000)
-    for i := range data {
-        data[i] = map[string]any{"id": i, "value": i * 10}
-    }
+	// 创建大数据集
+	data := make([]any, 1000)
+	for i := range data {
+		data[i] = map[string]any{"id": i, "value": i * 10}
+	}
 
-    // 每批 100 个元素
-    cfg := json.DefaultConfig()
-    cfg.MaxBatchSize = 100
-    it := json.NewBatchIterator(data, cfg)
-    batchNum := 0
+	// 每批 100 个元素
+	cfg := json.DefaultConfig()
+	cfg.MaxBatchSize = 100
+	it := json.NewBatchIterator(data, cfg)
+	batchNum := 0
 
-    for it.HasNext() {
-        batch := it.NextBatch()
-        batchNum++
+	for it.HasNext() {
+		batch := it.NextBatch()
+		batchNum++
 
-        // 批量处理（如批量写入数据库）
-        fmt.Printf("批次 %d: 处理 %d 个元素\n", batchNum, len(batch))
-    }
+		// 批量处理（如批量写入数据库）
+		fmt.Printf("批次 %d: 处理 %d 个元素\n", batchNum, len(batch))
+	}
 
-    fmt.Printf("总批次：%d\n", it.TotalBatches())
+	fmt.Printf("总批次：%d\n", it.TotalBatches())
 }
 ```
 
@@ -684,24 +764,24 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 首次遍历
-    it := json.NewIterator([]any{"a", "b", "c"})
-    for it.HasNext() {
-        val, _ := it.Next()
-        fmt.Println(val)
-    }
+	// 首次遍历
+	it := json.NewIterator([]any{"a", "b", "c"})
+	for it.HasNext() {
+		val, _ := it.Next()
+		fmt.Println(val)
+	}
 
-    // 复用同一迭代器遍历新数据，避免重新分配
-    it.ResetWith([]any{1, 2, 3, 4})
-    for it.HasNext() {
-        val, _ := it.Next()
-        fmt.Println(val)
-    }
+	// 复用同一迭代器遍历新数据，避免重新分配
+	it.ResetWith([]any{1, 2, 3, 4})
+	for it.HasNext() {
+		val, _ := it.Next()
+		fmt.Println(val)
+	}
 }
 ```
 

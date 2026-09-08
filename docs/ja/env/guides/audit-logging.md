@@ -1,9 +1,9 @@
 ---
 sidebar_label: "監査ログ"
 title: "監査ログ - CyberGo env | セキュリティ監査設定"
-description: "CyberGo env 監査ログ設定ガイド。JSONAuditHandler、LogAuditHandler、ChannelAuditHandler の 3 種類のハンドラーとカスタム AuditHandler で変数の読み込み、読み取り、変更、削除操作を記録し、セキュリティ監査、コンプライアンスチェック、問題調査に使用。"
+description: "CyberGo env 監査ログ設定ガイド。JSONAuditHandler、LogAuditHandler、ChannelAuditHandler の 3 種類のハンドラーとカスタム AuditHandler で読み込み・読み取り・変更・削除を記録し、セキュリティ監査や問題調査に使用。"
 sidebar_position: 6
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # 監査ログ
@@ -378,6 +378,78 @@ logrotate で監査ログを管理することを推奨します：
 ```
 
 ---
+
+## 追加の組み込みハンドラー
+
+JSON/Log/Channel の 3 つの一般的なハンドラーに加え、ライブラリは 2 つの追加実装を提供します。
+
+### CloseableChannelHandler（自己管理チャネル）
+
+外部チャネルを受け取る `ChannelAuditHandler` と異なり、`CloseableChannelHandler` はバッファリングされたチャネルを自前で作成・所有し、完全なライフサイクル管理を提供します — `Close()` はハンドラーを終了してチャネルを閉じます；コンシューマーは `Channel()` でイベントを受信します：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	handler := env.NewCloseableChannelHandler(64)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for event := range handler.Channel() {
+			fmt.Printf("%+v\n", event)
+		}
+	}()
+
+	cfg := env.ProductionConfig()
+	cfg.AuditHandler = handler
+	loader, err := env.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	_ = loader.Set("CUSTOM_VAR", "value")
+
+	loader.Close()
+	handler.Close()
+	<-done
+}
+```
+
+### NopAuditHandler（no-op）
+
+すべての監査イベントを破棄します — テストや監査出力の一時的なミュートに有用です：
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.AuditEnabled = true
+cfg.AuditHandler = env.NewNopAuditHandler()
+```
+
+## 監査アクション（AuditAction）
+
+監査イベントはアクション別に分類されます。カスタムハンドラーは `AuditAction` 定数で関心のあるイベントタイプをフィルタリングできます：
+
+| 定数 | 意味 |
+|------|------|
+| `ActionLoad` | ファイルロード |
+| `ActionParse` | env/JSON/YAML ファイルのパース |
+| `ActionGet` | 変数取得（型パース失敗の記録を含む） |
+| `ActionSet` | 変数設定、プロセス環境への適用、またはポリシーによるスキップ |
+| `ActionDelete` | 変数削除 |
+| `ActionValidate` | 検証操作 |
+| `ActionExpand` | 変数展開 |
+| `ActionSecurity` | セキュリティイベント（パス検証失敗、禁止キーなど） |
+| `ActionError` | エラー条件 |
+| `ActionFileAccess` | ファイルシステムアクセス |
+
+`AuditEvent` は構造化イベントです（タイムスタンプ、アクション、キー、理由、成否、所要時間など）。機密キーはイベントに入る前に `MaskKey` で `[MASKED:N chars]`（N = キー長）へマスクされ、非機密キーはそのまま保持されます。
 
 ## 関連ドキュメント
 

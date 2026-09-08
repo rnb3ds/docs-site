@@ -1,19 +1,27 @@
 ---
 sidebar_label: "Iterate"
 title: "Processor Iteration Methods - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor iteration: Foreach, ForeachWithPath, ForeachNested, IterableValue data access, and IteratorControl flow for batch iteration."
+description: "CyberGo JSON Processor iteration: Foreach, ForeachWithPath, ForeachNested, IterableValue data access, IteratorControl flow, ForeachReturn modifying iteration."
 sidebar_position: 10
 ---
 
 # Iteration Methods
 
-Processor provides multiple methods for iterating over JSON arrays and objects.
+The Processor provides multiple methods for iterating JSON arrays and objects.
+
+:::tip Mirror of the package-level iteration functions
+The 8 `Foreach*` methods on this page share their source with the [package-level iteration functions](../functions/iterate) one by one — callback signatures and iteration semantics are identical; see the package-level page for complete examples. The Processor-side differences:
+
+- **cfg semantics**: the optional trailing `cfg` controls that call's security validation (size, depth, dangerous patterns) etc.; when omitted, the processor's own configuration applies.
+- **Cache protection**: the iteration root is first `Get`-ed and then **deep-copied** into a working copy — even if the callback mutates the container returned by `item.GetData()`, neither the processor's parse cache nor the original input is polluted.
+- **Lifecycle**: after the processor is closed, all iteration methods return `ErrProcessorClosed`.
+:::
 
 ## Foreach
 
 Signature: `func (p *Processor) Foreach(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config)`
 
-Iterates over a JSON array or object.
+Iterates a JSON array or object.
 
 ```go
 p.Foreach(data, func(key any, item *json.IterableValue) {
@@ -21,14 +29,14 @@ p.Foreach(data, func(key any, item *json.IterableValue) {
 })
 ```
 
-**When iterating an array**: key is the index (int)
-**When iterating an object**: key is the key name (string)
+**Iterating an array**: key is the index (int)
+**Iterating an object**: key is the key name (string)
 
 ## ForeachWithPath
 
 Signature: `func (p *Processor) ForeachWithPath(jsonStr, path string, fn func(key any, item *IterableValue), cfg ...Config) error`
 
-Iterates by path, returns an error.
+Iterates at a given path and returns an error.
 
 ```go
 err := p.ForeachWithPath(data, "items", func(key any, item *json.IterableValue) {
@@ -36,15 +44,15 @@ err := p.ForeachWithPath(data, "items", func(key any, item *json.IterableValue) 
 })
 ```
 
-Useful for:
+Good for:
 - Iterating nested arrays
-- Iterating objects at a specified path
+- Iterating the object at a given path
 
 ## ForeachNested
 
 Signature: `func (p *Processor) ForeachNested(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config)`
 
-Recursively iterates through all nested levels.
+Recursively iterates all nested levels.
 
 ```go
 p.ForeachNested(data, func(key any, item *json.IterableValue) {
@@ -52,7 +60,7 @@ p.ForeachNested(data, func(key any, item *json.IterableValue) {
 })
 ```
 
-Example data:
+Sample data:
 
 ```json
 {
@@ -81,28 +89,52 @@ Key: tags, Value: []any{...}
 
 Signature: `func (p *Processor) ForeachReturn(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config) (string, error)`
 
-Iterates the JSON data and returns the re-serialized JSON string. The callback is read-only.
+Iterates JSON data and returns the re-serialized JSON string. The callback **may modify** the iterated containers: `item.GetData()` returns a reference to the working copy (deep copy), and additions/deletions/changes to maps / slices are reflected in the final serialized result; scalars cannot be replaced in place. Modifications do not affect the original input or the processor cache.
 
 ```go
-result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {
-    // Read-only processing
-})
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	data := `[{"id":1,"internal":"x"},{"id":2,"internal":"y"}]`
+	result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {
+		if obj, ok := item.GetData().(map[string]any); ok {
+			delete(obj, "internal") // Modify the working copy; written into the result
+		}
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// Output: [{"id":1},{"id":2}]
+}
 ```
 
-Useful for scenarios where you need to continue chained operations after iteration.
+Good for scenarios where you keep chaining operations after iteration.
 
 ## ForeachWithError
 
 Signature: `func (p *Processor) ForeachWithError(jsonStr, path string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-Iterates by path, callback supports returning errors.
+Iterates at a given path, with an error-returning callback.
 
 ```go
 err := p.ForeachWithError(data, "items", func(key any, item *json.IterableValue) error {
     if item.GetInt("id") == 0 {
         return fmt.Errorf("invalid item at index %v", key)
     }
-    return nil // Continue iteration
+    return nil // continue iterating
 })
 ```
 
@@ -110,7 +142,7 @@ err := p.ForeachWithError(data, "items", func(key any, item *json.IterableValue)
 
 Signature: `func (p *Processor) ForeachNestedWithError(jsonStr string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-Recursively iterates through all nested levels, callback supports returning errors.
+Recursively iterates all nested levels, with an error-returning callback.
 
 ```go
 err := p.ForeachNestedWithError(data, func(key any, item *json.IterableValue) error {
@@ -123,15 +155,15 @@ err := p.ForeachNestedWithError(data, func(key any, item *json.IterableValue) er
 
 Signature: `func (p *Processor) ForeachWithPathAndIterator(jsonStr, path string, fn func(key any, item *IterableValue, currentPath string) IteratorControl, cfg ...Config) error`
 
-Iterates by path and provides current path information. Use `IteratorControl` to control the iteration flow.
+Iterates at a given path and provides the current path. Uses `IteratorControl` to steer iteration.
 
 ```go
 err := p.ForeachWithPathAndIterator(data, "items", func(key any, item *json.IterableValue, currentPath string) json.IteratorControl {
     fmt.Printf("Path: %s, Key: %v\n", currentPath, key)
     if item.GetInt("id") == targetID {
-        return json.IteratorBreak // Stop iteration
+        return json.IteratorBreak // stop iterating
     }
-    return json.IteratorNormal // Continue iteration
+    return json.IteratorNormal // continue iterating
 })
 ```
 
@@ -139,7 +171,7 @@ err := p.ForeachWithPathAndIterator(data, "items", func(key any, item *json.Iter
 
 Signature: `func (p *Processor) ForeachWithPathAndControl(jsonStr, path string, fn func(key any, value any) IteratorControl, cfg ...Config) error`
 
-Iterates raw values by path, using `IteratorControl` for flow control.
+Iterates raw values at a given path, using `IteratorControl` to steer the flow.
 
 ```go
 err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.IteratorControl {
@@ -150,36 +182,12 @@ err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.
 
 ## IterableValue
 
-The `IterableValue` in iteration callbacks provides the following capabilities:
-
-| Method | Description |
-|------|------|
-| `GetData() any` | Get current value |
-| `Get(path string) any` | Get value by path |
-| `GetString(key string) string` | Get string value |
-| `GetInt(key string) int` | Get integer value |
-| `GetFloat64(key string) float64` | Get float64 value |
-| `GetBool(key string) bool` | Get boolean value |
-| `GetArray(key string) []any` | Get array value |
-| `GetObject(key string) map[string]any` | Get object value |
-| `GetWithDefault(key string, defaultValue any) any` | Get value (with default) |
-| `GetStringWithDefault(key string, defaultValue string) string` | Get string (with default) |
-| `GetIntWithDefault(key string, defaultValue int) int` | Get integer (with default) |
-| `GetFloat64WithDefault(key string, defaultValue float64) float64` | Get float64 (with default) |
-| `GetBoolWithDefault(key string, defaultValue bool) bool` | Get boolean (with default) |
-| `Exists(key string) bool` | Check if field exists |
-| `IsNull(key string) bool` | Check if field is null |
-| `IsNullData() bool` | Check if current value is null |
-| `IsEmpty(key string) bool` | Check if field is empty |
-| `IsEmptyData() bool` | Check if current value is empty |
-| `Break() error` | Return break signal to stop iteration |
-| `Release()` | Release resources back to object pool |
-| `ForeachNested(path string, fn func(key any, item *IterableValue))` | Recursively iterate nested structures |
+The `IterableValue` in iteration callbacks provides type-safe value access: `Get` / `GetString` / `GetInt` / `GetFloat64` / `GetBool` / `GetArray` / `GetObject` plus default-value variants (`GetWithDefault`, `GetStringWithDefault`, `GetIntWithDefault`, etc.), state checks (`Exists` / `IsNull` / `IsNullData` / `IsEmpty` / `IsEmptyData`), nested iteration via `ForeachNested`, and the `Break()` stop signal. For the full method list and per-method notes see the [IterableValue type](../iterator) — identical to this page's callback usage.
 
 ## Method Comparison
 
-| Method | Path Parameter | Recursive | Return Value | Error Callback |
-|------|:--------:|:----:|--------|:--------:|
+| Method | Path parameter | Recursive | Returns | Error callback |
+|---------|:--------------:|:---------:|---------|:--------------:|
 | `Foreach` | No | No | None | No |
 | `ForeachWithPath` | Yes | No | error | No |
 | `ForeachNested` | No | Yes | None | No |
@@ -193,130 +201,28 @@ The `IterableValue` in iteration callbacks provides the following capabilities:
 
 ## File Iteration Methods
 
-Processor provides methods for iterating directly from files, suitable for processing large JSON files.
+The Processor provides methods that iterate directly from a file — a convenience combo of `LoadFromFile` + the `Foreach` family: path security validation, the `MaxJSONSize` read limit, and per-call `cfg` forwarding all behave the same as file loading.
 
-### ForeachFile
+| Method | Signature essentials | Semantics |
+|--------|----------------------|-----------|
+| `ForeachFile` | `(filePath, fn, cfg...)` | Iterate the file's top-level array / object |
+| `ForeachFileWithPath` | `(filePath, path, fn, cfg...)` | Iterate the collection at a given path inside the file |
+| `ForeachFileChunked` | `(filePath, chunkSize, fn, cfg...)` | Iterate the top-level **array** in batches (default 100 when `chunkSize` ≤0); `ErrTypeMismatch` when the root is not an array |
+| `ForeachFileNested` | `(filePath, fn, cfg...)` | Recursively iterate all nested structures |
 
-Signature: `func (p *Processor) ForeachFile(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
-
-Loads JSON from a file and iterates over it.
-
-**Parameters**
-
-| Name | Type | Description |
-|------|------|------|
-| `filePath` | `string` | JSON file path |
-| `fn` | `func(key any, item *IterableValue) error` | Iteration callback |
+All callbacks are `func(key any, item *json.IterableValue) error`: return `nil` to continue, `item.Break()` for a clean stop, any other error to interrupt and return. Per-method examples are in the [package-level iteration page](../functions/iterate#file-iteration-functions) (only an extra trailing `cfg`; behavior identical); the method-choice table is in [File I/O](./file-io#choosing-a-method).
 
 ```go
 err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
     fmt.Printf("[%v] %v\n", key, item.GetData())
-    return nil // Continue iteration
+    return nil // continue iterating
 })
 ```
-
----
-
-### ForeachFileWithPath
-
-Signature: `func (p *Processor) ForeachFileWithPath(filePath, path string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
-
-Loads JSON from a file and iterates by path.
-
-```go
-// Only iterate the users array
-err := p.ForeachFileWithPath("data.json", ".users", func(key any, item *json.IterableValue) error {
-    name := item.GetString("name")
-    fmt.Printf("User: %s\n", name)
-    return nil
-})
-```
-
----
-
-### ForeachFileChunked
-
-Signature: `func (p *Processor) ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error, cfg ...Config) (err error)`
-
-Iterates a JSON array from a file in chunks, suitable for batch processing large datasets.
-
-**Parameters**
-
-| Name | Type | Description |
-|------|------|------|
-| `filePath` | `string` | JSON file path |
-| `chunkSize` | `int` | Number of items per batch (defaults to 100 when <=0) |
-| `fn` | `func(chunk []*IterableValue) error` | Batch processing callback |
-
-```go
-// Process 100 records per batch
-err := p.ForeachFileChunked("large_data.json", 100, func(chunk []*json.IterableValue) error {
-    // Batch insert into database
-    records := make([]Record, len(chunk))
-    for i, item := range chunk {
-        records[i] = Record{
-            ID:   item.GetInt("id"),
-            Name: item.GetString("name"),
-        }
-    }
-    return db.BatchInsert(records)
-})
-```
-
-::: tip Use Cases
-- Batch database insertion
-- Batched API calls
-- Memory-constrained large file processing
-:::
-
----
-
-### ForeachFileNested
-
-Signature: `func (p *Processor) ForeachFileNested(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
-
-Loads JSON from a file and recursively iterates through all nested structures.
-
-```go
-err := p.ForeachFileNested("config.json", func(key any, item *json.IterableValue) error {
-    // Traverse all key-value pairs at all levels
-    fmt.Printf("Path: %v, Type: %T\n", key, item.GetData())
-    return nil
-})
-```
-
-**Example Data**:
-
-```json
-{
-  "database": {
-    "host": "localhost",
-    "port": 5432,
-    "pool": {
-      "min": 5,
-      "max": 20
-    }
-  }
-}
-```
-
-**Output**:
-
-```text
-Path: database, Type: map[string]any
-Path: host, Type: string
-Path: port, Type: float64
-Path: pool, Type: map[string]any
-Path: min, Type: float64
-Path: max, Type: float64
-```
-
----
 
 ## File Iteration Method Comparison
 
-| Method | Path Parameter | Recursive | Chunked | Suitable For |
-|------|:--------:|:----:|:----:|----------|
+| Method | Path parameter | Recursive | Chunked | Good for |
+|---------|:--------------:|:---------:|:-------:|----------|
 | `ForeachFile` | No | No | No | Simple file traversal |
 | `ForeachFileWithPath` | Yes | No | No | Targeted traversal |
 | `ForeachFileChunked` | No | No | **Yes** | Batch processing, memory-constrained |
@@ -326,40 +232,21 @@ Path: max, Type: float64
 
 ## Iteration Control
 
-### Breaking Iteration
-
-Returning `item.Break()` in the callback function breaks the iteration:
+A callback returning `item.Break()` cleanly interrupts iteration (overall return `nil`); returning any other error interrupts immediately and propagates it verbatim. The two path-aware variants (`ForeachWithPathAndIterator` / `ForeachWithPathAndControl`) steer via the `IteratorControl` constants (`json.IteratorNormal` / `json.IteratorBreak`) — prefer `item.Break()` for everyday cases. For examples and constant descriptions see the [package-level iteration page](../functions/iterate#iteration-control).
 
 ```go
 err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
     if item.GetInt("id") == targetID {
-        // Found target, stop iteration
-        return item.Break()
+        return item.Break() // Target found, clean stop
     }
-    return nil // Continue iteration
+    return nil // continue iterating
 })
-```
-
-### Error Handling
-
-Returning other errors breaks the iteration and returns that error:
-
-```go
-err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
-    if item.GetString("status") == "error" {
-        return fmt.Errorf("found error record: %v", key)
-    }
-    return nil
-})
-if err != nil {
-    log.Printf("Iteration interrupted: %v", err)
-}
 ```
 
 ---
 
-## Related
+## See Also
 
-- [Path Queries](./query) - Get family of methods
+- [Path Queries](./query) - The Get family of methods
 - [Batch Operations](./batch) - ProcessBatch batch processing
-- [File Operations](../functions/file-io) - LoadFromFile/SaveToFile
+- [File I/O](../functions/file-io) - LoadFromFile/SaveToFile

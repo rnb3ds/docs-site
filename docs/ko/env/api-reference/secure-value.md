@@ -1,7 +1,7 @@
 ---
 sidebar_label: "SecureValue"
 title: "SecureValue API - CyberGo env | 보안 값 저장"
-description: "CyberGo env의 SecureValue 보안 값 API 레퍼런스로, NewSecureValue 생성, mlock 메모리 잠금, Reveal 평문 읽기, Masked 마스크, Release 제로화 파괴, IsSensitiveKey 감지를 포함하여 비밀번호, 토큰 및 키를 안전하게 저장합니다."
+description: "CyberGo env의 SecureValue API 레퍼런스로, NewSecureValue 생성, mlock 메모리 잠금, Reveal 평문 읽기, Masked 마스크, Release 제로화와 IsSensitiveKey 감지로 비밀번호, 토큰, 키를 안전하게 저장합니다."
 sidebar_position: 5
 ---
 
@@ -782,6 +782,75 @@ func (sv *SecureValue) clearDataLocked() {
 ```
 
 ---
+
+## 유출 방지 인터페이스와 수명 주기 세부 사항
+
+### 안전한 문자열화 인터페이스
+
+`SecureValue`는 '안전한 문자열화' 인터페이스 집합을 구현하여 기밀 정보가 흔한 포맷팅 경로로 **절대** 유출되지 않게 합니다:
+
+| 인터페이스 | 동작 |
+|------------|------|
+| `fmt.Stringer` (`String()`) | 마스킹 형식 반환(`Masked()`와 동일); `fmt.Printf("%v")`, `log.Println` 안전 |
+| `json.Marshaler` (`MarshalJSON()`) | JSON 직렬화는 마스킹된 문자열 출력; 평문은 JSON에 절대 들어가지 않음 |
+| `encoding.TextMarshaler` (`MarshalText()`) | 텍스트 인코더(XML, text/template, 구조화 로거)도 마스크 출력 |
+
+평문으로 가는 유일한 명시적 경로는 `Reveal()`(또는 `Bytes()` 사본)입니다.
+
+### Close와 Release의 차이
+
+| 메서드 | 데이터 제로화 | 풀 반환 | 용도 |
+|--------|:---:|:---:|------|
+| `Close()` | O | X | 일반 일회성 사용 |
+| `Release()` | O | O | 고빈도 생성/파기 사이클(재사용으로 할당 감소) |
+
+둘 다 반복 호출해도 안전하며 부작용이 없습니다. 닫히지 않은 채 버려진 객체도 보호됩니다: GC 파이널라이저가 객체에 도달 불가능할 때 데이터를 제로화합니다(`runtime.SetFinalizer`는 최초 생성 시 한 번만 설치되며 풀 순환은 이 비용을 반복하지 않음).
+
+### Masked 출력 형식
+
+마스킹 표현은 잠금 상태를 포함해 로그에서 보호 여부를 확인할 수 있게 합니다:
+
+```text
+[SECURE:24 bytes]            // 메모리 잠금 미활성화
+[SECURE:24 bytes locked]     // 잠김
+[SECURE:24 bytes lock-failed] // 잠금 실패(MemoryLockError와 함께 확인)
+[CLOSED]                      // 닫힘
+[NIL]                         // nil receiver
+```
+
+### 잠금 상태 조회
+
+- `IsMemoryLocked()`: 값의 메모리가 현재 잠겨 있는지
+- `MemoryLockError()`: 가장 최근 잠금 시도의 오류(성공 또는 미시도 시 nil); 엄격 모드에서 권한 문제를 진단하는 첫 번째 도구
+
+### GetSecure는 방어적 사본 반환
+
+`Loader.GetSecure`가 반환하는 `*SecureValue`는 저장된 값의 **독립 사본**입니다 — 수명 주기가 Loader와 분리됩니다. 호출자가 `Close`/`Release`를 소유하며 Loader 내부 원본은 영향을 받지 않습니다.
+
+### ClearBytes
+
+`Bytes()`가 반환한 사본은 사용 후 명시적으로 제로화해야 합니다:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	sv := env.NewSecureValue("my-secret")
+	defer sv.Release()
+
+	data := sv.Bytes()
+	defer env.ClearBytes(data) // 사용 후 제로화, 잔여물 없음
+
+	fmt.Println(len(data))
+	// 출력: 9
+}
+```
 
 ## 관련 문서
 

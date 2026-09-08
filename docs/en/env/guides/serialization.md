@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Serialization"
 title: "Serialization - CyberGo env | Multi-format Conversion"
-description: "Serialization guide for CyberGo env, covering Map and struct conversion between .env, JSON, and YAML, including Marshal/Unmarshal function families, Marshaler/Unmarshaler custom interfaces, and DetectFormat auto-detection, for configuration export and format migration."
-sidebar_position: 2
+description: "Serialization guide for CyberGo env: map and struct conversion across .env, JSON, and YAML with Marshal/Unmarshal, custom Marshaler, and DetectFormat."
+sidebar_position: 4
 sidebar_icon: "🔧"
 ---
 
@@ -18,28 +18,28 @@ Use Marshal and Unmarshal functionality to serialize/deserialize environment var
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/env"
+	"fmt"
+	"github.com/cybergodev/env"
 )
 
 func main() {
-    data := map[string]string{
-        "APP_NAME":    "my-app",
-        "APP_VERSION": "1.0.0",
-        "DEBUG":       "true",
-    }
+	data := map[string]string{
+		"APP_NAME":    "my-app",
+		"APP_VERSION": "1.0.0",
+		"DEBUG":       "true",
+	}
 
-    // Serialize to .env format
-    result, err := env.Marshal(data, env.FormatEnv)
-    if err != nil {
-        panic(err)
-    }
+	// Serialize to .env format
+	result, err := env.Marshal(data, env.FormatEnv)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Println(result)
-    // Output:
-    // APP_NAME=my-app
-    // APP_VERSION=1.0.0
-    // DEBUG=true
+	fmt.Println(result)
+	// Output:
+	// APP_NAME=my-app
+	// APP_VERSION=1.0.0
+	// DEBUG=true
 }
 ```
 
@@ -49,28 +49,28 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/env"
+	"fmt"
+	"github.com/cybergodev/env"
 )
 
 func main() {
-    data := map[string]string{
-        "HOST": "localhost",
-        "PORT": "8080",
-    }
+	data := map[string]string{
+		"HOST": "localhost",
+		"PORT": "8080",
+	}
 
-    // Serialize to JSON
-    result, err := env.Marshal(data, env.FormatJSON)
-    if err != nil {
-        panic(err)
-    }
+	// Serialize to JSON
+	result, err := env.Marshal(data, env.FormatJSON)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Println(result)
-    // Output:
-    // {
-    //   "HOST": "localhost",
-    //   "PORT": 8080
-    // }
+	fmt.Println(result)
+	// Output:
+	// {
+	//   "HOST": "localhost",
+	//   "PORT": 8080
+	// }
 }
 ```
 
@@ -80,28 +80,28 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/env"
+	"fmt"
+	"github.com/cybergodev/env"
 )
 
 func main() {
-    data := map[string]string{
-        "DATABASE_HOST": "localhost",
-        "DATABASE_PORT": "5432",
-        "DATABASE_NAME": "myapp",
-    }
+	data := map[string]string{
+		"DATABASE_HOST": "localhost",
+		"DATABASE_PORT": "5432",
+		"DATABASE_NAME": "myapp",
+	}
 
-    // Serialize to YAML
-    result, err := env.Marshal(data, env.FormatYAML)
-    if err != nil {
-        panic(err)
-    }
+	// Serialize to YAML
+	result, err := env.Marshal(data, env.FormatYAML)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Println(result)
-    // Output:
-    // DATABASE_HOST: localhost
-    // DATABASE_NAME: myapp
-    // DATABASE_PORT: 5432
+	fmt.Println(result)
+	// Output:
+	// DATABASE_HOST: localhost
+	// DATABASE_NAME: myapp
+	// DATABASE_PORT: 5432
 }
 ```
 
@@ -201,35 +201,35 @@ func MarshalStruct(v any) (map[string]string, error)
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/env"
+	"fmt"
+	"github.com/cybergodev/env"
 )
 
 type Config struct {
-    Host string `env:"HOST"`
-    Port int64  `env:"PORT"`
-    Debug bool  `env:"DEBUG"`
+	Host string `env:"HOST"`
+	Port int64  `env:"PORT"`
+	Debug bool  `env:"DEBUG"`
 }
 
 func main() {
-    cfg := Config{
-        Host:  "localhost",
-        Port:  8080,
-        Debug: true,
-    }
+	cfg := Config{
+		Host:  "localhost",
+		Port:  8080,
+		Debug: true,
+	}
 
-    // Convert to map
-    data, err := env.MarshalStruct(cfg)
-    if err != nil {
-        panic(err)
-    }
+	// Convert to map
+	data, err := env.MarshalStruct(cfg)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("%+v\n", data)
-    // Output: map[DEBUG:true HOST:localhost PORT:8080]
+	fmt.Printf("%+v\n", data)
+	// Output: map[DEBUG:true HOST:localhost PORT:8080]
 
-    // Can be used to export to file
-    content, _ := env.Marshal(data, env.FormatEnv)
-    fmt.Println(content)
+	// Can be used to export to file
+	content, _ := env.Marshal(data, env.FormatEnv)
+	fmt.Println(content)
 }
 ```
 
@@ -605,31 +605,94 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "os"
-    "github.com/cybergodev/env"
+	"fmt"
+	"os"
+	"github.com/cybergodev/env"
 )
 
 func main() {
-    // Read JSON configuration
-    jsonContent, _ := os.ReadFile("config.json")
+	// Read JSON configuration
+	jsonContent, _ := os.ReadFile("config.json")
 
-    // Parse JSON
-    data, err := env.UnmarshalMap(string(jsonContent), env.FormatJSON)
-    if err != nil {
-        panic(err)
-    }
+	// Parse JSON
+	data, err := env.UnmarshalMap(string(jsonContent), env.FormatJSON)
+	if err != nil {
+		panic(err)
+	}
 
-    // Convert to .env format
-    envContent, err := env.Marshal(data, env.FormatEnv)
-    if err != nil {
-        panic(err)
-    }
+	// Convert to .env format
+	envContent, err := env.Marshal(data, env.FormatEnv)
+	if err != nil {
+		panic(err)
+	}
 
-    // Save as .env file
-    os.WriteFile(".env", []byte(envContent), 0644)
+	// Save as .env file
+	os.WriteFile(".env", []byte(envContent), 0644)
 
-    fmt.Println("Config migrated from JSON to .env")
+	fmt.Println("Config migrated from JSON to .env")
+}
+```
+
+## Round-trip Pitfalls and Format Auto-Detection
+
+### `$` is not escaped: Marshal output may change when read back
+
+`Marshal` does **not** escape `$` in values. If a value contains `$VAR` or `${VAR}` literals, re-parsing the Marshal output with `ExpandVariables` enabled (the default) expands those sequences as variable references:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	data := map[string]string{"PRICE": "100$USD"}
+
+	out, err := env.Marshal(data, env.FormatEnv)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(out)
+	// Output: PRICE=100$USD
+	// Note: writing `out` back to a .env file and loading it with default
+	// config will attempt to expand $USD
+}
+```
+
+Mitigations: set `cfg.ExpandVariables = false` on the reading side, or avoid `Marshal` round-trips for values containing `$`.
+
+### MarshalStruct field handling
+
+When marshaling a struct, fields whose value marshals to an **empty string are omitted** (empty strings, nil pointers, empty slices); scalar zero values (`0`, `false`) are **kept** — they do not marshal to an empty string. Align on the reading side with `envDefault` tags.
+
+### Sorted-key guarantee
+
+`Marshal` output keys are **always sorted lexicographically**, regardless of input map/struct field order — output for the same configuration is stable, which suits diffing and caching.
+
+### FormatAuto content-detection rules
+
+When `UnmarshalMap`/`UnmarshalStruct` receive `FormatAuto`, the format is detected by **content** (not extension):
+
+| Signal | Verdict |
+|--------|---------|
+| Whitespace-only input | `.env` |
+| First character is `{` or `[` | JSON |
+| First non-empty line starts with `- `, or contains `: ` (colon+space) | YAML |
+| Contains `=` | `.env` |
+
+Note that `: ` takes precedence over `=`: a line like `connection: host=db port=5432` is detected as YAML (not `.env`).
+
+### IsMarshalError helper
+
+<!-- check-code: skip -->
+```go
+if _, err := env.Marshal(data); err != nil {
+	if env.IsMarshalError(err) {
+		// Marshaling error: unsupported input type or field conversion failure
+	}
 }
 ```
 

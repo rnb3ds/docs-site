@@ -1,13 +1,17 @@
 ---
 sidebar_label: "大文件处理指南"
 title: "大文件处理 - CyberGo JSON | 指南"
-description: "CyberGo JSON 大文件处理：ForeachFile、ForeachFileChunked、ForeachFileWithPath 与 ForeachFileNested 流式方法，适用日志分析与 ETL。"
+description: "CyberGo JSON 大文件处理：ForeachFile、ForeachFileChunked、ForeachFileWithPath 与 ForeachFileNested 流式方法，配合 NDJSONProcessor 与 StreamIterator 控制内存，适用日志分析与 ETL。"
 sidebar_position: 1
 ---
 
 # 大文件处理
 
 对于大型 JSON 文件（如日志、配置、数据导出），直接加载到内存可能导致内存溢出。json 库提供了多种高效的处理方式。
+
+::: tip 提示
+流式与并行迭代器（StreamIterator、StreamObjectIterator、BatchIterator、ParallelIterator）的类型级 API 参考见 [迭代器](../api-reference/iterator)，并行处理实践见 [并发与并行处理](../advanced/concurrency)。
+:::
 
 ::: warning
 `ForeachFile` 和 `ForeachFileChunked` 在迭代前会将整个文件加载到内存中。"分块"行为仅影响内存中数据的迭代方式，不影响文件的读取方式。对于真正需要控制内存的超大文件处理，请使用 `NDJSONProcessor` 配合 JSONL 格式，或使用 `StreamIterator`。
@@ -20,6 +24,20 @@ sidebar_position: 1
 | **Processor.ForeachFile** | 结构化迭代处理文件 | 加载完整文件，逐条迭代 |
 | **Processor.ForeachFileChunked** | 批量分块迭代处理 | 加载完整文件，分块迭代 |
 | **NDJSONProcessor** | 逐行处理 JSONL 文件 | 内存可控，真正的流式处理 |
+| **StreamIterator** | 逐元素流式解码大数组 | 内存与数组长度无关 |
+
+### ForeachFile 系列四变体
+
+`ForeachFile` 家族共有四个变体，均接受可选 `Config`（用于逐调用解析与安全校验选项），区别在于遍历目标与分组方式：
+
+| 变体 | 遍历目标 | 典型场景 |
+|------|----------|----------|
+| `ForeachFile` | 根数组元素 / 根对象键值 | 顶层即数据集合的日志、导出文件 |
+| `ForeachFileWithPath` | 指定路径下的数组/对象 | 文件中 `users`、`orders` 等子集合 |
+| `ForeachFileChunked` | 根数组元素，按 `chunkSize` 分批 | 批量写入数据库、批量下发 |
+| `ForeachFileNested` | 递归遍历所有嵌套结构 | 深度未知的多层配置、结构统计 |
+
+四者都支持在回调中返回 `item.Break()` 提前停止；`ForeachFileChunked` 要求根节点为 JSON 数组（否则返回 `ErrTypeMismatch`），`chunkSize <= 0` 时按 100 处理。
 
 ## 统一 API：Processor
 
@@ -46,43 +64,43 @@ type Config struct {
 package main
 
 import (
-    "log"
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
+	"log"
 )
 
 func main() {
-    // 创建 Processor（使用默认配置）
-    processor, err := json.New()
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer processor.Close()
+	// 创建 Processor（使用默认配置）
+	processor, err := json.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer processor.Close()
 
-    // 方式 1：逐条处理（推荐）
-    count := 0
-    err = processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
-        count++
+	// 方式 1：逐条处理（推荐）
+	count := 0
+	err = processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
+		count++
 
-        // 使用 IterableValue 便捷访问字段
-        id := item.GetInt("id")
-        name := item.GetString("name")
-        email := item.GetString("email")
+		// 使用 IterableValue 便捷访问字段
+		id := item.GetInt("id")
+		name := item.GetString("name")
+		email := item.GetString("email")
 
-        // 支持路径访问嵌套属性
-        city := item.GetString("profile.city")
-        interests := item.GetArray("profile.interests")
+		// 支持路径访问嵌套属性
+		city := item.GetString("profile.city")
+		interests := item.GetArray("profile.interests")
 
-        if count%10000 == 0 {
-            log.Printf("已处理 %d 条记录，示例: id=%d name=%s email=%s city=%s 兴趣数=%d",
-                count, id, name, email, city, len(interests))
-        }
-        return nil
-    })
+		if count%10000 == 0 {
+			log.Printf("已处理 %d 条记录，示例: id=%d name=%s email=%s city=%s 兴趣数=%d",
+				count, id, name, email, city, len(interests))
+		}
+		return nil
+	})
 
-    if err != nil {
-        log.Fatal(err)
-    }
-    log.Printf("处理完成，共 %d 条记录", count)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("处理完成，共 %d 条记录", count)
 }
 ```
 
@@ -171,9 +189,24 @@ lastTag := item.GetString("tags[-1]")               // 负索引（最后一个�
 nested := item.GetString("data.items[0].name")      // 复杂路径
 ```
 
+::: warning 回调返回后不要持有 IterableValue 引用
+`ForeachFile*`（以及内存态 `Foreach*`）系列为降低分配开销使用了对象池：**回调返回后** `IterableValue` 会被归还池中且内部数据置空。请在回调内提取所需的值（如 `GetString` 的结果），不要把 `item` 本身或 `item.GetData()` 的引用存到回调之外。
+:::
+
 ## 流式处理配置
 
-通过 `Config` 配置流式处理参数：
+通过 `Config` 配置流式处理参数。与流式读取直接相关的字段及其实际行为：
+
+| 字段 | 默认值（`DefaultConfig`） | 行为 |
+|------|--------------------------|------|
+| `MaxJSONSize` | 100MB（`DefaultMaxJSONSize`） | 文件/Reader 读取的总字节上限。`LoadFromFile`/`UnmarshalFromFile`/`LoadFromReader` 在**读取期间**用 `io.LimitReader` 强制执行（读取上限 +1 字节以检测截断，避免 TOCTOU 竞态），`ForeachFile*` 系列经由 `LoadFromFile` 自动继承；传给流式迭代器构造函数的 `cfg.MaxJSONSize > 0` 时对整个流封顶 |
+| `BufferSize` | 64KB | `StreamIterator`/`StreamObjectIterator` 的读取缓冲；传入 `cfg` 但其 `BufferSize <= 0` 时回退 32KB |
+| `ChunkSize` | 1MB | 大文件分块尺寸（校验范围 64KB–100MB） |
+| `MaxMemory` | 100MB | 总内存上限（校验范围 10MB–1GB）；JSONL 流式的内存上限回退链为 `JSONLMaxMemory` → `MaxMemory` |
+| `MaxNestingDepthSecurity` | 200（`DefaultMaxNestingDepth`） | JSONL 每行的嵌套深度上限，解析前逐行检查 |
+| `ValidateFilePath` | `true` | 字段已声明但当前**不作为开关**：文件路径安全校验（路径遍历、符号链接、平台限制）在读取/写入时无条件执行 |
+
+`Config.Validate`/`ValidateWithWarnings` 会把越界值静默钳制回合法区间（如 `BufferSize` 钳至 4KB–1MB），可用 `ValidateWithWarnings` 查看具体调整项。
 
 ```go
 cfg := json.DefaultConfig()
@@ -214,44 +247,215 @@ _, err := json.StreamLinesInto[User](file, func(lineNum int, user User) error {
 package main
 
 import (
-    "sync"
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
+	"sync"
 )
 
 func main() {
-    processor, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer processor.Close()
+	processor, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer processor.Close()
 
-    // 使用 worker pool
-    workers := 4
-    items := make(chan any, 100)
-    var wg sync.WaitGroup
+	// 使用 worker pool
+	workers := 4
+	items := make(chan any, 100)
+	var wg sync.WaitGroup
 
-    // 启动 workers
-    for i := 0; i < workers; i++ {
-        wg.Add(1)
-        go func(id int) {
-            defer wg.Done()
-            for item := range items {
-                // 处理 item（替换为你的业务逻辑）
-                _ = item
-            }
-        }(i)
-    }
+	// 启动 workers
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for item := range items {
+				// 处理 item（替换为你的业务逻辑）
+				_ = item
+			}
+		}(i)
+	}
 
-    // 流式读取并分发
-    processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
-        items <- item.Get("")
-        return nil
-    })
+	// 流式读取并分发
+	processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
+		items <- item.GetData()
+		return nil
+	})
 
-    close(items)
-    wg.Wait()
+	close(items)
+	wg.Wait()
 }
 ```
+
+若数据已在内存中（`[]any`），也可直接使用库内置的 [ParallelIterator](../api-reference/iterator#paralleliterator-类型) 并行迭代器，免去手写 worker pool。
+
+## 流式迭代器与并行迭代器
+
+`ForeachFile*` 需要先加载整个文件；当文件大到不适合整载内存时，应改用本节的迭代器：`StreamIterator`/`StreamObjectIterator` 直接在 `io.Reader` 上边读边解码，内存占用与数据规模无关。类型级完整 API 见[迭代器](../api-reference/iterator)。
+
+### StreamIterator：逐元素流式解码大数组
+
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"strings"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// 演示用小数据；实际场景替换为 os.Open("large-array.json")
+	var src io.Reader = strings.NewReader(`[
+		{"id": 1, "name": "Alice"},
+		{"id": 2, "name": "Bob"},
+		{"id": 3, "name": "Carol"}
+	]`)
+
+	iter := json.NewStreamIterator(src)
+	count := 0
+	for iter.Next() {
+		if obj, ok := iter.Value().(map[string]any); ok {
+			fmt.Printf("index=%d id=%.0f name=%s\n", iter.Index(), obj["id"], obj["name"])
+		}
+		count++
+	}
+	if err := iter.Err(); err != nil {
+		fmt.Println("迭代错误:", err)
+		return
+	}
+	fmt.Println("共迭代元素:", count)
+	// 输出：
+	// index=0 id=1 name=Alice
+	// index=1 id=2 name=Bob
+	// index=2 id=3 name=Carol
+	// 共迭代元素: 3
+}
+```
+
+要点：
+
+- 顶层必须是 JSON 数组；顶层标量会作为单个元素产出一次，顶层对象会被拒绝（`iter.Err()` 返回错误）。
+- 传入的 `cfg.MaxJSONSize > 0` 时对**整个流**的总字节数封顶（默认回退 100MB），超限在迭代中报错。
+- 逐个元素解码，任意时刻内存中只有当前元素。
+
+### StreamObjectIterator：逐键值流式解码大对象
+
+```go
+package main
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	src := strings.NewReader(`{
+		"users":  {"count": 3},
+		"orders": {"count": 128},
+		"events": {"count": 9001}
+	}`)
+
+	iter := json.NewStreamObjectIterator(src)
+	for iter.Next() {
+		if obj, ok := iter.Value().(map[string]any); ok {
+			fmt.Printf("%s: count=%.0f\n", iter.Key(), obj["count"])
+		}
+	}
+	if err := iter.Err(); err != nil {
+		fmt.Println("迭代错误:", err)
+		return
+	}
+	// 输出（按文档顺序，而非 map 随机顺序）：
+	// users: count=3
+	// orders: count=128
+	// events: count=9001
+}
+```
+
+适用于顶层是一个超大对象的场景（如配置表、分区索引），按键值对逐个处理。
+
+### BatchIterator：内存数组分批消费
+
+`BatchIterator` 作用在已加载的 `[]any` 上，按批切片返回，适合把中等规模数组按固定批量送入下游（批量入库、分页计算）：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	data := []any{
+		map[string]any{"id": 1},
+		map[string]any{"id": 2},
+		map[string]any{"id": 3},
+		map[string]any{"id": 4},
+		map[string]any{"id": 5},
+	}
+
+	// 批大小取 Config.MaxBatchSize；默认配置下为 2000
+	cfg := json.DefaultConfig()
+	cfg.MaxBatchSize = 2
+
+	iter := json.NewBatchIterator(data, cfg)
+	fmt.Println("总批数:", iter.TotalBatches())
+	for iter.HasNext() {
+		batch := iter.NextBatch()
+		fmt.Printf("批次 [%d:%d)，元素数=%d\n", iter.CurrentIndex()-len(batch), iter.CurrentIndex(), len(batch))
+	}
+	// 输出：
+	// 总批数: 3
+	// 批次 [0:2)，元素数=2
+	// 批次 [2:4)，元素数=2
+	// 批次 [4:5)，元素数=1
+}
+```
+
+超大批量入库请改用 [`ForeachFileChunked`](#批量处理)（文件源）或 [`StreamJSONLChunked`](./jsonl#streamjsonlchunked)（JSONL 源）；两者的分块回调返回后同样会归还 `IterableValue`，需在回调内完成落库。
+
+### ParallelIterator：CPU 密集型并行处理
+
+`ParallelIterator` 用工作池并行处理内存数组，工作数取 `Config.MaxConcurrency`（默认配置 50）并按数据长度自动收窄。`Map` 的结果按下标写入，保持输入顺序：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	nums := []any{1, 2, 3, 4}
+
+	iter := json.NewParallelIterator(nums)
+	defer iter.Close()
+
+	squares, err := iter.Map(func(idx int, val any) (any, error) {
+		n, ok := val.(int)
+		if !ok {
+			return nil, fmt.Errorf("元素 %d 不是整数", idx)
+		}
+		return n * n, nil
+	})
+	if err != nil {
+		fmt.Println("处理错误:", err)
+		return
+	}
+	fmt.Println("平方结果:", squares)
+	// 输出：平方结果: [1 4 9 16]
+}
+```
+
+`ForEach`/`ForEachWithContext` 任一回调返回错误即停止派发新任务并返回该错误；回调 panic 会被恢复为错误而不是拖垮进程；`Close` 通知所有 worker 收尾，可安全并发调用。带取消/超时场景使用 `ForEachWithContext`/`ForEachBatchWithContext` 变体。
 
 ## 性能优化建议
 

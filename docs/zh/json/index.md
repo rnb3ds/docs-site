@@ -1,7 +1,8 @@
 ---
 sidebar_label: "概述"
 title: "JSON 处理库 - CyberGo JSON | 高性能 Go 库"
-description: "CyberGo JSON 是高性能、线程安全的 Go JSON 处理库，支持 JSONPath 路径查询、流式处理、泛型 API 与 Schema 验证，100% 兼容 encoding/json。"
+description: "CyberGo JSON 是高性能、线程安全的 Go JSON 处理库，支持 JSONPath 路径查询、流式处理、泛型 API、Schema 验证与钩子扩展，内置输入校验、危险模式检测与智能缓存，100% 兼容 encoding/json，可无缝替换标准库。"
+sidebar_icon: "📘"
 ---
 
 # JSON 处理库
@@ -31,39 +32,39 @@ go get github.com/cybergodev/json
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{"name": "CyberGo", "version": 1, "tags": ["json", "go"]}`
+	data := `{"name": "CyberGo", "version": 1, "tags": ["json", "go"]}`
 
-    // 1. 路径获取
-    name := json.GetString(data, "name")
-    fmt.Println("Name:", name)
+	// 1. 路径获取
+	name := json.GetString(data, "name")
+	fmt.Println("Name:", name)
 
-    // 2. 修改值
-    updated, _ := json.Set(data, "version", 2)
-    fmt.Println("Updated:", updated)
+	// 2. 修改值
+	updated, _ := json.Set(data, "version", 2)
+	fmt.Println("Updated:", updated)
 
-    // 3. 验证
-    if json.Valid([]byte(data)) {
-        fmt.Println("Valid JSON")
-    }
+	// 3. 验证
+	if json.Valid([]byte(data)) {
+		fmt.Println("Valid JSON")
+	}
 
-    // 4. 带默认值获取
-    desc := json.GetString(data, "description", "默认描述")
-    fmt.Println("Description:", desc)
+	// 4. 带默认值获取
+	desc := json.GetString(data, "description", "默认描述")
+	fmt.Println("Description:", desc)
 
-    // 5. 解码到结构体
-    type Config struct {
-        Name    string   `json:"name"`
-        Version int      `json:"version"`
-        Tags    []string `json:"tags"`
-    }
-    var config Config
-    json.Unmarshal([]byte(data), &config)
-    fmt.Printf("Config: %+v\n", config)
+	// 5. 解码到结构体
+	type Config struct {
+		Name    string   `json:"name"`
+		Version int      `json:"version"`
+		Tags    []string `json:"tags"`
+	}
+	var config Config
+	json.Unmarshal([]byte(data), &config)
+	fmt.Printf("Config: %+v\n", config)
 }
 ```
 
@@ -74,6 +75,7 @@ func main() {
 | 功能 | 函数 | 说明 |
 |------|------|------|
 | 获取值 | `Get`, `GetString`, `GetInt`... | 支持嵌套路径、数组索引 |
+| 批量获取 | `GetMultiple` | 一次解析取回多个路径的值 |
 | 带默认值获取 | `GetString`, `GetInt` 等 | 传入 defaultValue 参数 |
 | 设置值 | `Set` | 默认自动创建不存在的路径（Config.CreatePaths） |
 | 删除值 | `Delete` | 删除指定路径 |
@@ -92,6 +94,8 @@ func main() {
 |------|-----------|------|
 | 泛型 API | `GetTyped[T]` | 类型安全的泛型获取 |
 | 预解析 | `Processor.PreParse`, `Processor.GetFromParsed` | 一次解析多次查询 |
+| 路径预编译 | `Processor.CompilePath`, `Processor.GetCompiled` | 同一路径高频查询零重复解析 |
+| 并行迭代 | `NewParallelIterator` | 内置 worker 池的并行 Map/Filter/ForEach |
 | 安全获取 | `SafeGet` → `AccessResult` | 链式类型转换 |
 | 流式处理 | `NDJSONProcessor` | 逐行流式，内存可控 |
 | JSONL 处理 | `StreamLinesInto[T]` | 日志/数据管道 |
@@ -111,7 +115,7 @@ func main() {
 
 ## 性能特性
 
-- **零拷贝解析** — 减少内存分配
+- **零分配快速路径** — 单键访问与缓存键构建走栈上缓冲，减少堆分配
 - **智能缓存** — 自动缓存热点路径，支持缓存预热
 - **对象池** — 复用中间对象，降低 GC 压力
 - **并行流处理** — JSONL 流式处理支持多 worker 并行（`StreamJSONLParallel`）
@@ -137,8 +141,11 @@ func main() {
 | 简单查询 | `GetString(data, "path")` |
 | 带默认值 | `GetString(data, "path", "default")` |
 | 类型安全 | `GetTyped[User](data, "user")` |
-| 高频查询 | `Processor` + `PreParse` |
+| 同一 JSON 查多路径 | `Processor` + `PreParse` |
+| 同一路径查多 JSON | `Processor` + `CompilePath` |
 | 大文件 | `Processor.ForeachFile` |
+| 大数组并行处理 | `NewParallelIterator` |
+| JSONL 流水线 | `StreamLinesInto[T]` |
 | 不可信输入 | `SecurityConfig()` |
 
 ## 下一步

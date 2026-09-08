@@ -1,13 +1,21 @@
 ---
 sidebar_label: "迭代方法"
 title: "Processor 迭代方法 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 迭代方法：Foreach、ForeachWithPath、ForeachNested 迭代、IterableValue 数据访问与 IteratorControl 控制流，支持批量迭代实践。"
+description: "CyberGo JSON Processor 迭代方法：Foreach、ForeachWithPath、ForeachNested 迭代、IterableValue 数据访问与 IteratorControl 控制流，支持 ForeachReturn 修改式迭代与批量迭代实践。"
 sidebar_position: 10
 ---
 
 # 迭代方法
 
 Processor 提供多种迭代 JSON 数组和对象的方法。
+
+::: tip 与包级迭代函数的镜像关系
+本页 8 个 `Foreach*` 方法与[包级迭代函数](../functions/iterate)逐条同源，回调签名与迭代语义完全一致，完整示例见包级页。Processor 侧的差异：
+
+- **cfg 语义**：可选尾随 `cfg` 控制该次调用的安全校验（大小、深度、危险模式）等；省略时按处理器自身配置。
+- **缓存保护**：迭代根先 `Get` 再**深拷贝**出工作副本——回调即使修改 `item.GetData()` 返回的容器，也不会污染处理器的解析缓存与原输入。
+- **生命周期**：处理器关闭后所有迭代方法返回 `ErrProcessorClosed`。
+:::
 
 ## Foreach
 
@@ -81,12 +89,36 @@ p.ForeachNested(data, func(key any, item *json.IterableValue) {
 
 签名：`func (p *Processor) ForeachReturn(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config) (string, error)`
 
-迭代 JSON 数据并返回重新序列化后的 JSON 字符串。回调为只读访问。
+迭代 JSON 数据并返回重新序列化后的 JSON 字符串。回调**可以修改**迭代容器：`item.GetData()` 返回工作副本（深拷贝）的引用，对 map / slice 的增删改会反映到最终序列化结果；标量无法原地替换。修改不影响原输入与处理器缓存。
 
 ```go
-result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {
-    // 只读处理
-})
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	data := `[{"id":1,"internal":"x"},{"id":2,"internal":"y"}]`
+	result, err := p.ForeachReturn(data, func(key any, item *json.IterableValue) {
+		if obj, ok := item.GetData().(map[string]any); ok {
+			delete(obj, "internal") // 修改工作副本，写入返回结果
+		}
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// 输出：[{"id":1},{"id":2}]
+}
 ```
 
 适用于需要在迭代后继续链式操作的场景。
@@ -150,31 +182,7 @@ err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.
 
 ## IterableValue
 
-迭代回调中的 `IterableValue` 提供以下能力：
-
-| 方法 | 说明 |
-|------|------|
-| `GetData() any` | 获取当前值 |
-| `Get(path string) any` | 按路径获取值 |
-| `GetString(key string) string` | 获取字符串值 |
-| `GetInt(key string) int` | 获取整数值 |
-| `GetFloat64(key string) float64` | 获取浮点数值 |
-| `GetBool(key string) bool` | 获取布尔值 |
-| `GetArray(key string) []any` | 获取数组值 |
-| `GetObject(key string) map[string]any` | 获取对象值 |
-| `GetWithDefault(key string, defaultValue any) any` | 获取值（带默认值） |
-| `GetStringWithDefault(key string, defaultValue string) string` | 获取字符串（带默认值） |
-| `GetIntWithDefault(key string, defaultValue int) int` | 获取整数（带默认值） |
-| `GetFloat64WithDefault(key string, defaultValue float64) float64` | 获取浮点数（带默认值） |
-| `GetBoolWithDefault(key string, defaultValue bool) bool` | 获取布尔值（带默认值） |
-| `Exists(key string) bool` | 判断字段是否存在 |
-| `IsNull(key string) bool` | 判断字段是否为 null |
-| `IsNullData() bool` | 判断当前值是否为 null |
-| `IsEmpty(key string) bool` | 判断字段是否为空 |
-| `IsEmptyData() bool` | 判断当前值是否为空 |
-| `Break() error` | 返回中断迭代的错误信号 |
-| `Release()` | 释放资源回对象池 |
-| `ForeachNested(path string, fn func(key any, item *IterableValue))` | 递归迭代嵌套结构 |
+迭代回调中的 `IterableValue` 提供类型安全的取值能力：`Get` / `GetString` / `GetInt` / `GetFloat64` / `GetBool` / `GetArray` / `GetObject` 以及带默认值的变体（`GetWithDefault`、`GetStringWithDefault`、`GetIntWithDefault` 等），状态判断（`Exists` / `IsNull` / `IsNullData` / `IsEmpty` / `IsEmptyData`），嵌套迭代 `ForeachNested`，以及 `Break()` 中断信号。完整方法清单与逐个说明见 [IterableValue 类型详解](../iterator)，与本页回调用法完全一致。
 
 ## 方法对比
 
@@ -193,20 +201,16 @@ err := p.ForeachWithPathAndControl(data, "items", func(key any, value any) json.
 
 ## 文件迭代方法
 
-Processor 提供直接从文件迭代的方法，适合处理大型 JSON 文件。
+Processor 提供直接从文件迭代的方法，是 `LoadFromFile` + `Foreach` 系列的便捷组合：路径安全校验、`MaxJSONSize` 读取限制与 per-call `cfg` 透传均与文件加载行为一致。
 
-### ForeachFile
+| 方法 | 签名要点 | 语义 |
+|------|----------|------|
+| `ForeachFile` | `(filePath, fn, cfg...)` | 迭代文件根级数组 / 对象 |
+| `ForeachFileWithPath` | `(filePath, path, fn, cfg...)` | 迭代文件中指定路径下的集合 |
+| `ForeachFileChunked` | `(filePath, chunkSize, fn, cfg...)` | 按批迭代根级**数组**（`chunkSize` ≤0 时默认 100）；根非数组时报 `ErrTypeMismatch` |
+| `ForeachFileNested` | `(filePath, fn, cfg...)` | 递归迭代所有嵌套结构 |
 
-签名：`func (p *Processor) ForeachFile(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
-
-从文件加载 JSON 并迭代。
-
-**参数**
-
-| 名称 | 类型 | 说明 |
-|------|------|------|
-| `filePath` | `string` | JSON 文件路径 |
-| `fn` | `func(key any, item *IterableValue) error` | 迭代回调 |
+回调均为 `func(key any, item *json.IterableValue) error`：返回 `nil` 继续、`item.Break()` 干净停止、其他错误中断并返回。逐方法完整示例见[包级迭代页](../functions/iterate#文件迭代函数)（仅多一个尾随 `cfg`，行为一致），方法选择表见[文件操作](./file-io#方法选择)。
 
 ```go
 err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
@@ -214,104 +218,6 @@ err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error 
     return nil // 继续迭代
 })
 ```
-
----
-
-### ForeachFileWithPath
-
-签名：`func (p *Processor) ForeachFileWithPath(filePath, path string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
-
-从文件加载 JSON 并按路径迭代。
-
-```go
-// 只迭代 users 数组
-err := p.ForeachFileWithPath("data.json", ".users", func(key any, item *json.IterableValue) error {
-    name := item.GetString("name")
-    fmt.Printf("用户: %s\n", name)
-    return nil
-})
-```
-
----
-
-### ForeachFileChunked
-
-签名：`func (p *Processor) ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error, cfg ...Config) (err error)`
-
-分块迭代文件中的 JSON 数组，适合批量处理大数据集。
-
-**参数**
-
-| 名称 | 类型 | 说明 |
-|------|------|------|
-| `filePath` | `string` | JSON 文件路径 |
-| `chunkSize` | `int` | 每批处理的数量（≤0 时默认 100） |
-| `fn` | `func(chunk []*IterableValue) error` | 批处理回调 |
-
-```go
-// 每批处理 100 条记录
-err := p.ForeachFileChunked("large_data.json", 100, func(chunk []*json.IterableValue) error {
-    // 批量插入数据库
-    records := make([]Record, len(chunk))
-    for i, item := range chunk {
-        records[i] = Record{
-            ID:   item.GetInt("id"),
-            Name: item.GetString("name"),
-        }
-    }
-    return db.BatchInsert(records)
-})
-```
-
-::: tip 使用场景
-- 批量数据库插入
-- 分批 API 调用
-- 内存受限的大文件处理
-:::
-
----
-
-### ForeachFileNested
-
-签名：`func (p *Processor) ForeachFileNested(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
-
-从文件加载 JSON 并递归迭代所有嵌套结构。
-
-```go
-err := p.ForeachFileNested("config.json", func(key any, item *json.IterableValue) error {
-    // 遍历所有层级的所有键值对
-    fmt.Printf("路径: %v, 类型: %T\n", key, item.GetData())
-    return nil
-})
-```
-
-**示例数据**：
-
-```json
-{
-  "database": {
-    "host": "localhost",
-    "port": 5432,
-    "pool": {
-      "min": 5,
-      "max": 20
-    }
-  }
-}
-```
-
-**输出**：
-
-```text
-路径：database, 类型：map[string]any
-路径：host, 类型：string
-路径：port, 类型：float64
-路径：pool, 类型：map[string]any
-路径：min, 类型：float64
-路径：max, 类型：float64
-```
-
----
 
 ## 文件迭代方法对比
 
@@ -326,34 +232,15 @@ err := p.ForeachFileNested("config.json", func(key any, item *json.IterableValue
 
 ## 迭代控制
 
-### 中断迭代
-
-在回调函数中返回 `item.Break()` 可中断迭代：
+回调返回 `item.Break()` 可干净中断迭代（整体返回 `nil`）；返回其他错误立即中断并原样返回该错误。带路径信息的两个变体（`ForeachWithPathAndIterator` / `ForeachWithPathAndControl`）通过 `IteratorControl` 常量（`json.IteratorNormal` / `json.IteratorBreak`）控制流程——日常场景优先用 `item.Break()`。示例与常量说明见[包级迭代页](../functions/iterate#迭代控制)。
 
 ```go
 err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
     if item.GetInt("id") == targetID {
-        // 找到目标，停止迭代
-        return item.Break()
+        return item.Break() // 找到目标，干净停止
     }
     return nil // 继续迭代
 })
-```
-
-### 错误处理
-
-返回其他错误会中断迭代并返回该错误：
-
-```go
-err := p.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
-    if item.GetString("status") == "error" {
-        return fmt.Errorf("发现错误记录: %v", key)
-    }
-    return nil
-})
-if err != nil {
-    log.Printf("迭代中断: %v", err)
-}
 ```
 
 ---

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "路径表达式语法"
 title: "路径表达式语法 - CyberGo JSON | JSONPath 查询指南"
-description: "CyberGo JSON 路径表达式语法指南：属性访问 user.name、数组索引 items[0]、切片、通配符、多字段提取，精确定位 Go JSON 数据中的任意节点。"
+description: "CyberGo JSON 路径表达式语法完整指南：属性访问、数组索引与负索引、切片步长、通配符收集、多字段与扁平化提取、追加与 JSON Pointer（RFC 6901），每个语法配输入输出对照，并汇总负索引越界、提取静默未命中等语法陷阱。"
 sidebar_position: 2
 ---
 
@@ -88,15 +88,15 @@ val = json.GetInt(data, "matrix[-1][-1]")  // 9
 
 #### 边界行为
 
-越界索引不会 panic。类型安全的获取函数（GetString、GetInt 等）返回零值，而 Get 函数会返回错误：
+越界索引不会 panic，也不会报错——类型安全的获取函数返回零值，`Get` 返回 nil 结果：
 
 ```go
 data := `{"items": ["a", "b", "c"]}`
 
-// 正索引越界 → 返回零值，不报错
+// 正索引越界 → 零值 / nil，均不报错
 json.GetString(data, "items[10]")   // ""   (空字符串)
 json.GetInt(data, "items[10]")      // 0
-json.Get(data, "items[10]")         // nil, ErrPathNotFound
+json.Get(data, "items[10]")         // nil, nil（注意：err 也是 nil）
 
 // 负索引越界 → 同样返回零值
 json.GetString(data, "items[-10]")  // ""   (空字符串)
@@ -105,7 +105,7 @@ json.GetInt(data, "items[-10]")     // 0
 
 | 函数 | 越界返回值 |
 |------|-----------|
-| `Get` | `(nil, ErrPathNotFound)` |
+| `Get` | `(nil, nil)` — 不报错 |
 | `GetString` | `""` |
 | `GetInt` | `0` |
 | `GetFloat` | `0.0` |
@@ -114,8 +114,8 @@ json.GetInt(data, "items[-10]")     // 0
 
 ::: tip 索引边界
 - 正索引必须在 `[0, len)` 范围内，负索引经过转换后（`len + index`）同理
-- 越界访问返回对应类型的零值，不会 panic，不会报错
-- 如需判断路径是否存在，请使用 `Get` 并检查 error 是否为 `json.ErrPathNotFound`
+- 越界访问返回零值 / nil，不会 panic，不会报错
+- 「对象键不存在」才返回 `ErrPathNotFound`（如 `json.Get(data, "nosuchkey")`）；判断数组元素是否存在要结合返回值，不能只看 err
 :::
 
 ---
@@ -344,9 +344,22 @@ if err != nil {
     panic(err)
 }
 // 结果：{"items": [1, 2, 3, 4, 5]}
+
+// 追加切片值会展开为多个元素，而不是变成嵌套数组
+updated, err = json.Set(updated, "items[+]", []any{6, 7})
+if err != nil {
+    panic(err)
+}
+// 结果：{"items": [1, 2, 3, 4, 5, 6, 7]}
 ```
 
+::: warning [+] 的前置路径必须是已存在的数组
+`items[+]` 只会追加，不会创建数组。目标路径不存在或不是数组时报错（"cannot append to non-array type"）；先 `SetCreate(data, "items", []any{})` 建好数组再追加。
+:::
+
 ### 通配符 `[*]`
+
+通配符匹配数组（或对象）中的**所有元素**，在查询与修改两种场景下都有用：
 
 ```go
 data := `{"items": [1, 2, 3]}`
@@ -357,6 +370,43 @@ if err != nil {
 }
 // 结果：{"items": [0, 0, 0]}
 ```
+
+#### 查询场景：收集字段
+
+通配符后接属性路径时，把每个元素上该字段的值**收集成一个数组**：
+
+```go
+users := `{"users": [{"name": "John"}, {"name": "Jane"}]}`
+
+// [*].field → 收集所有元素的字段值
+names, err := json.Get(users, "users[*].name")
+if err != nil {
+    panic(err)
+}
+fmt.Println(names) // [John Jane]
+
+// 单独作为最后一段时，[*] 等价于数组本身
+arr, _ := json.GetArray(data, "items[*]") // [1, 2, 3]
+```
+
+#### 点号简写 `*`
+
+`*` 可以替代 `[*]`，两种写法等价：
+
+```go
+symbols := `[
+    {"symbol": "AAPL", "price": 180},
+    {"symbol": "GOOG", "price": 140}
+]`
+
+// 开头即通配符：作用于根数组
+a, _ := json.GetArray(symbols, "[*].symbol") // [AAPL GOOG]
+b, _ := json.GetArray(symbols, "*.symbol")   // [AAPL GOOG]，与上等价
+```
+
+::: tip 与 Foreach 的分工
+`[*].field` 适合「只要一个字段」的收集；需要逐元素访问多个字段时，用 [`ForeachWithPath`](./processor-guide) 更直接。
+:::
 
 ---
 
@@ -403,16 +453,53 @@ if err != nil {
 root, err = json.Get(data, ".") // 同上
 ```
 
-### 路径转义
+### JSON Pointer（RFC 6901）
 
-如果键名包含特殊字符，使用转义：
+以 `/` 开头的路径按 JSON Pointer 语法解析（斜杠分隔），与点号语法是两套独立表示，不能混用：
 
 ```go
-data := `{"user.name": "Alice"}`
+data := `{"user": {"name": "Alice"}, "items": ["a", "b"]}`
+
+name := json.GetString(data, "/user/name") // "Alice"
+item := json.GetString(data, "/items/0")   // "a"
+```
+
+- 键名包含 `/` 或 `~` 时用 `~1`、`~0` 转义（`a~1b` 表示键 `a/b`）
+- 数组下标必须是**非负**整数：Pointer 模式不支持负索引，`/items/-1` 找不到目标；`/items/-` 指向末尾尚未存在的位置，同样找不到
+- `Set` 经 JSON Pointer 不能扩容数组（越界直接报错）；需要越界写入时改用点号路径
+- 单独的 `/` 表示根，与 `""`、`.` 等价
+
+### 路径转义
+
+如果键名包含特殊字符，用反斜杠转义。可转义的字符共 6 个：
+
+| 转义写法 | 匹配的键名字符 |
+|----------|----------------|
+| `\\.` | 字面量点号 `.` |
+| `\\\\` | 字面量反斜杠 `\` |
+| `\\[` / `\\]` | 字面量方括号 `[` `]` |
+| `\\{` / `\\}` | 字面量花括号 `{` `}` |
+
+```go
+data := `{
+    "user.name": "Alice",
+    "a[b]": "bracket",
+    "config\\local": "backslash"
+}`
 
 // 包含点的键名
-name := json.GetString(data, "user\\.name")  // "Alice"
+name := json.GetString(data, "user\\.name")    // "Alice"
+
+// 包含方括号的键名
+bracket := json.GetString(data, "a\\[b\\]")    // "bracket"
+
+// 包含反斜杠的键名
+bs := json.GetString(data, "config\\\\local")  // "backslash"
 ```
+
+::: warning Go 字符串与路径转义是两层
+上例写在 Go 源码里是**双反斜杠**（`"user\\.name"`）——Go 字符串字面量先消费一层，路径解析器收到 `user\.name` 再消费一层。若路径来自运行时变量（非字面量），只需单层转义：`"user\\.name"` 字面量 == 运行时的 `user\.name`。
+:::
 
 ---
 
@@ -429,6 +516,85 @@ name := json.GetString(data, "user\\.name")  // "Alice"
 | 字段提取 | `{name,email}` | 提取多个字段 |
 | 扁平化提取 | `{flat:tags}` | 提取并递归展开嵌套数组 |
 | 追加操作 | `items[+]` | 向数组追加元素 |
+| JSON Pointer | `/user/name` | 以 `/` 开头的 RFC 6901 语法 |
+
+---
+
+## 语法陷阱
+
+以下行为均来自库的实际实现，提前了解可以省去不少调试时间。
+
+### 提取未命中不报错
+
+字段提取的「未命中」是静默的——`Get` 返回 `(nil, nil)`，既无值也无错误：
+
+```go
+data := `{"user": {"id": 1}}`
+
+json.Get(data, "user{nonexistent}") // (nil, nil) — 不报错
+json.Get(data, "user{a,b}")         // (nil, nil) — 所有字段都不存在时
+```
+
+因此不能用 `err != nil` 判断提取是否命中，要检查返回值本身。多字段提取只要有一个字段存在，就返回只含命中字段的对象。
+
+### 单字段与多字段提取的返回形状不同
+
+| 路径 | 作用目标 | 返回 |
+|------|----------|------|
+| `user{name}` | 对象 | 字段值本身（裸值，不是对象） |
+| `user{id,name}` | 对象 | 只含命中字段的新对象 |
+| `users{name}` | 数组 | 各元素字段值组成的数组 |
+| `users{id,name}` | 数组 | 各元素提取结果对象组成的数组 |
+
+```go
+data := `{"user": {"id": 1, "name": "Alice", "email": "a@ex.com"}}`
+
+json.Get(data, "user{name}")    // "Alice"（裸值）
+json.Get(data, "user{id,name}") // {"id":1,"name":"Alice"}
+```
+
+### 属性链「穿过」标量返回 nil，不报错
+
+路径中间遇到字符串、数字等标量时，继续取属性得到 `(nil, nil)`；而**键不存在**才返回 `ErrPathNotFound`——两种「找不到」的错误形态不同：
+
+```go
+data := `{"name": "Alice"}`
+
+json.Get(data, "name.foo")   // (nil, nil) — name 是字符串，无法继续取属性
+json.Get(data, "nosuch.foo") // (nil, ErrPathNotFound) — 键 nosuch 不存在
+```
+
+但对标量使用**数组索引**（如 `name[0]` 作用于字符串）是硬错误，返回 "cannot access array index..." 描述性错误。
+
+### 提取跳过「字段整体缺失」的元素，但保留 null 值
+
+数组上的单字段提取中，没有该字段的元素不产生结果项；字段存在且值为 null 的元素会产生一个 null 项：
+
+```go
+data := `{"users": [{"name": "A"}, {"age": 20}, {"name": null}]}`
+
+json.GetArray(data, "users{name}")
+// ["A", null] — 无 name 字段的元素被跳过，值为 null 的保留
+```
+
+### 索引、切片、修改的越界语义各不相同
+
+| 操作 | 越界行为 |
+|------|----------|
+| 索引查询 `items[10]` | 返回零值 / `(nil, nil)`，不报错 |
+| 切片查询 `items[10:20]` | 自动裁剪到有效范围，返回空数组 `[]` |
+| 修改 `Set(data, "items[5]", v)`（len=3） | 默认配置下数组以 `null` 填充扩展到下标 5 |
+
+### JSON Pointer 与点号语法不能混用
+
+路径一旦以 `/` 开头就整体进入 Pointer 模式——`"/user.name"` 会把 `user.name` 当作**一个键名**查找。反过来，这恰是访问含点号/方括号键名最省事的方式（无需反斜杠转义）：
+
+```go
+data := `{"a.b": 1, "c[0]": 2}`
+
+json.GetInt(data, "/a.b")  // 1 — Pointer 模式下点号是键名的一部分
+json.GetInt(data, "/c[0]") // 2
+```
 
 ---
 
@@ -438,12 +604,12 @@ name := json.GetString(data, "user\\.name")  // "Alice"
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{
+	data := `{
         "store": {
             "books": [
                 {"title": "Go 101", "price": 25, "category": "programming"},
@@ -454,35 +620,35 @@ func main() {
         }
     }`
 
-    // 1. 基本访问
-    title := json.GetString(data, "store.books.0.title")
-    fmt.Println("First book:", title)
+	// 1. 基本访问
+	title := json.GetString(data, "store.books.0.title")
+	fmt.Println("First book:", title)
 
-    // 2. 数组切片
-    books := json.GetArray(data, "store.books[0:2]")
-    fmt.Printf("First 2 books: %d items\n", len(books))
+	// 2. 数组切片
+	books := json.GetArray(data, "store.books[0:2]")
+	fmt.Printf("First 2 books: %d items\n", len(books))
 
-    // 3. 切片带步长
-    prices := json.GetArray(data, "store.prices[::2]")
-    fmt.Println("\nEvery other price:", prices)
+	// 3. 切片带步长
+	prices := json.GetArray(data, "store.prices[::2]")
+	fmt.Println("\nEvery other price:", prices)
 
-    // 4. 字段提取
-    extracted, err := json.Get(data, "store.books[0]{title,price}")
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println("\nExtracted fields:", extracted)
+	// 4. 字段提取
+	extracted, err := json.Get(data, "store.books[0]{title,price}")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("\nExtracted fields:", extracted)
 
-    // 5. 追加元素
-    updated, err := json.Set(data, "store.books[+]", map[string]any{
-        "title":    "New Book",
-        "price":    55,
-        "category": "programming",
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println("\nAfter append:", json.Valid([]byte(updated)))
+	// 5. 追加元素
+	updated, err := json.Set(data, "store.books[+]", map[string]any{
+		"title":    "New Book",
+		"price":    55,
+		"category": "programming",
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("\nAfter append:", json.Valid([]byte(updated)))
 }
 ```
 

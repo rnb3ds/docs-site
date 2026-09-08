@@ -1,8 +1,9 @@
 ---
 sidebar_label: "データマスキング"
 title: "データマスキング - CyberGo env | ログセーフティツール"
-description: "CyberGo env 機密データマスキングツールの完全ガイド。IsSensitiveKey でパスワードやキーなどの機密キーを自動検出、MaskValue で機密性に基づき値をマスク、MaskKey でキー名をマスク、SanitizeForLog でログ文字列をクリーンアップ、ClearBytes で安全にゼロクリア。HTTP ミドルウェアと構造化ログの実戦例を付属。"
+description: "CyberGo env 機密データマスキングガイド。IsSensitiveKey で機密キーを自動検出、MaskValue で値を、MaskKey でキー名をマスク、SanitizeForLog でログをクリーンアップ、ClearBytes でゼロクリア。HTTP ミドルウェアの実戦例を付属。"
 sidebar_position: 2
+sidebar_icon: "🛡️"
 ---
 
 # 機密データマスキング
@@ -124,7 +125,7 @@ func main() {
 func MaskKey(key string) string
 ```
 
-キー名自体をマスクし、キーの存在を示す必要があるがキーの意味を露出したくないシーンで使用します（内部的に `DefaultMaskKey` を呼び出し）：
+キー名自体をマスクし、キーの存在を示す必要があるがキーの意味を露出したくないシーンで使用します（公開 API `MaskKey` は内部マスキングルーチンのラッパーであり、エラー報告・監査ログと同一の実装を共有します）：
 
 | 条件 | 戻り値 |
 |------|--------|

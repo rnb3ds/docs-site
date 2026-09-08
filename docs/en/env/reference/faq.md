@@ -1,7 +1,7 @@
 ---
 sidebar_label: "FAQ"
 title: "FAQ - CyberGo env | Environment Variable Common Questions"
-description: "Frequently asked questions for CyberGo env, covering global vs instance mode selection, Load single initialization limitation, JSON/YAML nested key access, GetSlice generic function design, thread-safe concurrent access, SecureValue lifecycle management, OverwriteExisting override strategy, and test isolation for high-frequency questions."
+description: "Frequently asked questions about CyberGo env: global vs instance mode, Load initialization, nested key access, SecureValue lifecycle, and test isolation."
 sidebar_position: 2
 ---
 
@@ -316,6 +316,28 @@ func TestGlobalMode(t *testing.T) {
 :::tip
 See the [Testing](/en/env/guides/testing) guide for complete testing documentation.
 :::
+
+## Security and Lifecycle
+
+### Are process-environment variables still there after Close?
+
+**Yes.** `Close()` zeroes only the in-memory copies; it does not unset variables previously applied to `os.Environ` (deliberate design: the process environment may already have been inherited by child processes, so rollback semantics would be unreliable). To remove them, call `Delete` per key before closing — only keys this loader wrote get unset.
+
+### How do I stop a configuration file from reading process secrets?
+
+When the configuration file comes from an untrusted source (user uploads, external delivery), the default expansion scope lets `${VAR}` fall back to the process environment, risking secrets being captured into variable values. Enable the file-only scope to block it:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.ExpansionScope = env.ExpansionFileOnly // ${VAR} resolves file-local variables only
+```
+
+See [Variable Expansion · Expansion Scope](/en/env/guides/variable-expansion).
+
+### Why did the `$` in my value change when read back?
+
+With variable expansion enabled by default, `$VAR`/`${VAR}` sequences are expanded at load time. If a value contains literal dollar signs (prices, template strings), load with `cfg.ExpandVariables = false`, or see [Serialization · Round-trip Pitfalls](/en/env/guides/serialization) for the analogous problem when Marshal output is read back.
 
 ## Related Documentation
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Определения интерфейсов"
-title: "Определения интерфейсов - CyberGo env | иерархия основных интерфейсов"
-description: "Справочник определений ключевых интерфейсов CyberGo env: тонкозернистый дизайн с поддержкой внедрения зависимостей, включает композитный интерфейс EnvLoader и субинтерфейсы EnvFileLoader, EnvGetter, EnvSetter, Validator, FullAuditLogger, EnvParser, FileSystem."
+title: "Определения интерфейсов - CyberGo env | дизайн API"
+description: "Справочник интерфейсов CyberGo env: композитный EnvLoader, субинтерфейсы EnvGetter, EnvSetter, EnvParser и FileSystem для внедрения зависимостей."
 sidebar_position: 6
 ---
 

@@ -2,7 +2,7 @@
 sidebar_label: "構造体マッピング"
 title: "構造体マッピング - CyberGo env | 環境変数から構造体へ"
 description: "CyberGo env 構造体マッピングガイド。env、envDefault タグで環境変数を Go 構造体フィールドに自動マッピング。ネスト構造体、ポインタとスライス、カスタム型デコード、フィールド無視、デフォルト値と必須検証をカバーし、型安全な設定読み込みを実現。"
-sidebar_position: 1
+sidebar_position: 2
 sidebar_icon: "🔧"
 ---
 

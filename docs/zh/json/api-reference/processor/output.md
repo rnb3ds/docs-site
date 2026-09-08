@@ -13,9 +13,11 @@ Processor 提供多种 JSON 编码输出方法。
 
 ### Encode
 
+<Badge type="danger" text="已废弃" />
+
 签名：`func (p *Processor) Encode(value any, config ...Config) (string, error)`
 
-将任意值编码为 JSON 字符串。
+将任意值编码为 JSON 字符串。请使用 [`EncodeWithConfig`](#encodewithconfig)。
 
 ::: warning 已废弃
 `Processor.Encode` 直接委托给 [`EncodeWithConfig`](#encodewithconfig)。请改用 `EncodeWithConfig`。`Encode` 将在未来的主版本中移除。
@@ -122,6 +124,10 @@ result, err := p.EncodeStream(values)
 
 将 Go 值编码为 JSON 字节切片。100% 兼容 `encoding/json.Marshal`。
 
+::: tip 输出始终 HTML 转义
+与 `encoding/json.Marshal` 一致，本方法输出**始终** HTML 转义——即使传入的 `cfg` 设置 `EscapeHTML=false` 也会在该路径被覆盖。需要调用方控制转义时请用 [`EncodeWithConfig`](#encodewithconfig)。
+:::
+
 ```go
 data, err := p.Marshal(map[string]any{"name": "CyberGo"})
 if err != nil {
@@ -164,7 +170,7 @@ if err != nil {
 
 签名：`func (p *Processor) Prettify(jsonStr string, cfg ...Config) (string, error)`
 
-将 JSON 字符串格式化为缩进形式。
+将 JSON 字符串格式化为缩进形式。默认 2 空格缩进；通过 `cfg` 的 `Indent` / `Prefix` 字段可自定义。
 
 ```go
 pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
@@ -173,6 +179,11 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 //   "name": "Alice",
 //   "age": 30
 // }
+
+// 4 空格缩进
+cfg := json.DefaultConfig()
+cfg.Indent = "    "
+pretty, err = p.Prettify(`{"name":"Alice","age":30}`, cfg)
 ```
 
 ### Print (已移除)
@@ -201,7 +212,7 @@ fmt.Println(pretty)
 
 签名：`func (p *Processor) ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
 
-验证 JSON 数据是否符合指定的 Schema。
+验证 JSON 数据是否符合指定的 Schema。**违反 Schema 的细节通过返回的 `[]ValidationError` 报告**；`error` 仅在解析或前置校验失败（如 JSON 非法、`schema` 为 `nil`）时非空——校验通过时返回 `(nil, nil)`，校验失败但流程正常时返回 `(非空切片, nil)`。
 
 ```go
 schema := &json.Schema{
@@ -230,6 +241,10 @@ for _, ve := range errors {
 
 压缩 JSON 字符串，移除所有空白字符。
 
+::: warning 方法与包级函数的命名差异
+「字符串进、字符串出」的压缩在两个入口下**名字不同**：包级是 `json.CompactString(s)`，方法版是 `p.Compact(s)`。包级 `json.Compact(dst, src)` 是 `encoding/json.Compact` 兼容的 **Buffer 形式**，对应的方法是 [`CompactBuffer`](#compactbuffer)，而非本方法。
+:::
+
 ```go
 compact, err := p.Compact(`{"name": "CyberGo"}`)
 // 输出：{"name":"CyberGo"}
@@ -239,7 +254,7 @@ compact, err := p.Compact(`{"name": "CyberGo"}`)
 
 签名：`func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-将 JSON 压缩后写入 Buffer。
+将 JSON 压缩后写入 Buffer。与 `encoding/json.Compact` 签名兼容，是 [`Compact`](#compact) 的 Buffer 形式（包级对应 `json.Compact`）。
 
 ```go
 var buf bytes.Buffer

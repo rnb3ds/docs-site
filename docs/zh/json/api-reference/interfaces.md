@@ -1,7 +1,7 @@
 ---
 sidebar_label: "接口定义"
 title: "接口定义 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 扩展接口：CustomEncoder、TypeEncoder、Validator、Hook、PathParser 与 DangerousPattern，灵活扩展编码、验证与安全防护能力。"
+description: "CyberGo JSON 扩展接口：CustomEncoder、TypeEncoder、Validator、Hook、PathParser 与 DangerousPattern，含 HookContext 上下文与预定义钩子，灵活扩展编码、验证与安全防护能力。"
 sidebar_position: 6
 ---
 
@@ -95,7 +95,7 @@ if err != nil {
 ## 验证器接口
 
 ::: warning 未连接的扩展字段
-`Validator` 接口当前版本**已声明但尚未在操作流水线中挂接**。通过 `Config.CustomValidators` 或 `Config.AddValidator()` 设置后不会产生效果，是为未来版本预留的。当前可用的验证方式是 `ValidateSchema`（见[验证器](../extensions/validator)）。
+`Validator` 接口当前版本**已声明但尚未在操作流水线中挂接**。通过 `Config.CustomValidators` 或 `Config.AddValidator()` 设置后不会产生效果，是为未来版本预留的。当前可用的验证方式是 `ValidateSchema`（见[Schema 校验](./schema)）。
 :::
 
 ### Validator
@@ -152,6 +152,8 @@ type Hook interface {
 }
 ```
 
+**执行顺序**：多个钩子按注册顺序执行 `Before`（任一返回错误即中止，不再执行后续钩子与操作本身）；`After` 则按**注册的逆序**执行（类似中间件洋葱模型）。钩子内部 panic 会被捕获：`Before` 的 panic 转为错误中止操作，`After` 的 panic 记录日志后跳过该钩子，均不会击穿处理器。
+
 ### HookContext
 
 钩子上下文，提供操作信息。
@@ -166,6 +168,19 @@ type HookContext struct {
     StartTime time.Time     // 操作开始时间
 }
 ```
+
+| 字段        | 类型       | 说明                                                            |
+| ----------- | ---------- | --------------------------------------------------------------- |
+| `Operation` | `string`   | 操作类型：`"get"`、`"set"`、`"delete"`、`"marshal"`、`"unmarshal"` |
+| `JSONStr`   | `string`   | 输入 JSON 字符串（marshal 时可能为空）；**可能包含敏感数据**    |
+| `Path`      | `string`   | 目标路径（marshal/unmarshal 时可能为空）                        |
+| `Value`     | `any`      | set 操作要写入的值                                              |
+| `Config`    | `*Config`  | 当前操作使用的活动配置                                          |
+| `StartTime` | `time.Time` | 操作开始时间（在 `After` 调用前设置）                           |
+
+::: warning JSONStr 含敏感数据
+`JSONStr` 可能包含密码、令牌、API 密钥、PII（个人身份信息）等敏感数据——**不要**将该字段写入日志；记录日志请只使用 `Operation` 与 `Path`，确需检查内容时只针对特定路径读取。
+:::
 
 **使用示例**
 
@@ -199,7 +214,7 @@ cfg.Hooks = []json.Hook{&LoggingHook{logger: slog.Default()}}
 
 ### HookFunc
 
-结构体适配器，允许使用函数作为钩子。
+结构体适配器，允许使用函数作为钩子。两个函数字段均可选：未设置的一方按「直通」处理（`Before` 返回 nil，`After` 原样返回结果与错误）。
 
 ```go
 type HookFunc struct {
@@ -207,6 +222,11 @@ type HookFunc struct {
     AfterFn  func(ctx HookContext, result any, err error) (any, error)
 }
 ```
+
+| 字段       | 类型                                                          | 说明                                                    |
+| ---------- | ------------------------------------------------------------- | ------------------------------------------------------- |
+| `BeforeFn` | `func(ctx HookContext) error`                                 | 操作前回调；返回错误以中止操作。未设置时 `Before` 直通返回 `nil` |
+| `AfterFn`  | `func(ctx HookContext, result any, err error) (any, error)`   | 操作后回调；可转换结果或错误。未设置时 `After` 原样返回结果与错误 |
 
 **使用示例**
 
@@ -305,6 +325,8 @@ const (
 )
 ```
 
+**String 方法**：`func (pl PatternLevel) String() string` 返回 `"critical"` / `"warning"` / `"info"`（未知值返回 `"unknown"`），便于日志输出。
+
 ### DangerousPattern
 
 危险模式结构体，用于定义自定义安全规则。
@@ -321,6 +343,12 @@ type DangerousPattern struct {
     Level PatternLevel
 }
 ```
+
+| 字段      | 类型           | 说明                                       |
+| --------- | -------------- | ------------------------------------------ |
+| `Pattern` | `string`       | 要在输入中检测的子字符串                   |
+| `Name`    | `string`       | 该安全风险的描述性名称                     |
+| `Level`   | `PatternLevel` | 严重级别，决定命中后的处理方式（阻止/警告/仅记录） |
 
 **使用示例**
 
@@ -365,6 +393,10 @@ func (p *CustomPathParser) ParsePath(path string) ([]json.PathSegment, error) {
     return nil, nil // 实现自定义解析
 }
 ```
+
+::: warning 预留状态
+`CustomPathParser` 当前版本**尚未在路径解析流水线中挂接**：通过 `Config.CustomPathParser` 设置后，路径解析仍使用内置解析器（该字段目前只参与处理器缓存键的"是否设置"判定，设置后配置将不走处理器缓存）。与 `CustomEncoder`、`CustomValidators` 一样属未来版本预留接口。
+:::
 
 ## 基础类型
 
@@ -413,7 +445,7 @@ if num, ok := obj["large_number"].(json.Number); ok {
 
 ## 标准库兼容接口
 
-`json` 包导出以下与 `encoding/json` 兼容的标准接口，用于自定义类型的编码和解码行为。
+`json` 包导出以下与 `encoding/json` 兼容的标准接口，用于自定义类型的编码和解码行为：编码侧为 `Marshaler` 与 `TextMarshaler`（实战见[自定义编码器](../extensions/custom-encoder)），解码侧为 `Unmarshaler` 与 `TextUnmarshaler`。
 
 ### Marshaler
 
@@ -423,6 +455,8 @@ type Marshaler interface {
 }
 ```
 
+实现 `MarshalJSON` 的类型在编码时完全接管自身的 JSON 表示，返回值必须是合法 JSON。
+
 ### Unmarshaler
 
 ```go
@@ -430,6 +464,8 @@ type Unmarshaler interface {
     UnmarshalJSON(data []byte) error
 }
 ```
+
+实现 `UnmarshalJSON` 的类型在解码时接管自身的解析：解码器把对应的 JSON 值原样传入，由类型自行填充目标，方法返回的错误原样向上传播。通常实现于**指针接收者**（解码需要修改接收者自身）。
 
 ### TextMarshaler
 
@@ -439,6 +475,8 @@ type TextMarshaler interface {
 }
 ```
 
+实现 `MarshalText` 的类型被编码为以文本内容为值的 JSON 字符串（自动补引号与转义）。
+
 ### TextUnmarshaler
 
 ```go
@@ -446,6 +484,8 @@ type TextUnmarshaler interface {
     UnmarshalText(text []byte) error
 }
 ```
+
+实现 `UnmarshalText` 的类型从 JSON 字符串的**内容**（去掉引号与转义后的文本）自行解析，适合用文本即可完整表达的类型（自定义时间、ID 等）。同一类型同时实现 `Unmarshaler` 时，`UnmarshalJSON` 优先。
 
 **使用示例**
 
@@ -655,5 +695,5 @@ func (ve *ValidationError) Error() string
 ## 相关
 
 - [Hook 钩子系统](../extensions/hooks) - 钩子详细使用指南
-- [Validator 验证器](../extensions/validator) - 验证器详细使用指南
+- [Schema 校验](./schema) - Schema 验证详细指南
 - [CustomEncoder](../extensions/custom-encoder) - 自定义编码器指南

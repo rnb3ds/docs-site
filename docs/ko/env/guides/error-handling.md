@@ -1,9 +1,9 @@
 ---
 sidebar_label: "오류 처리"
 title: "오류 처리 - CyberGo env | 센티널 오류와 복구 전략"
-description: "CyberGo env 오류 처리 가이드로, 16개 센티널 오류의 errors.Is 정확한 매칭, ParseError/FileError/SecurityError 등 구조화된 오류의 errors.As 컨텍스트 추출, 복구 저하 전략과 오류 체인 Unwrap 추적을 상세히 설명하며, 프로덕션 환경 오류 분류 실천을 포함합니다."
+description: "CyberGo env 오류 처리 가이드로, 센티널 오류의 errors.Is 매칭, ParseError 등 구조화된 오류의 errors.As 컨텍스트 추출, 복구 저하 전략과 오류 체인 Unwrap 추적을 설명하며 프로덕션 오류 분류 실천을 포함합니다."
 sidebar_position: 5
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # 오류 처리
@@ -570,6 +570,46 @@ func handleValidationError(err error) {
     log.Fatalf("검증 실패: %v", err)
 }
 ```
+
+## 오류 유형 전체 대조
+
+라이브러리의 구조화된 오류 유형은 모두 `errors.As`로 컨텍스트를 추출할 수 있습니다:
+
+| 유형 | 시나리오 | 핵심 정보 |
+|------|----------|-----------|
+| `ParseError` | 파일 파싱 실패 | 파일명, 줄 번호, 내용(마스킹됨) |
+| `ValidationError` | 구성/키/값 검증 실패 | 필드, 규칙, 메시지 |
+| `SecurityError` | 보안 정책 위반(금지 키, 경로 검증 등) | 위반 세부 정보 |
+| `FileError` | 파일 작업 실패 | 경로, 작업, 크기/상한 |
+| `ExpansionError` | 변수 전개 실패 | `Kind`(실패 원인 분류) |
+| `JSONError` | JSON 파싱 실패 | 위치 정보 |
+| `YAMLError` | YAML 파싱 실패 | 위치 정보 |
+| `MarshalError` | 마샬링/언마샬링 실패 | 작업과 원인 |
+
+### ExpansionErrorKind
+
+`ExpansionError`는 `Kind` 필드로 두 가지 실패 클래스를 구분하여 정밀한 처리를 돕습니다:
+
+| 상수 | 의미 |
+|------|------|
+| `ExpansionDepthKind` | 재귀 깊이 초과 또는 순환 참조 감지 |
+| `ExpansionRequiredKind` | `${VAR:?message}`가 참조한 변수가 설정되지 않음 |
+
+### 추가 센티널 오류
+
+[센티널 오류](#센티널-오류) 절에 나열된 흔한 항목 외에:
+
+| 센티널 | 의미 |
+|--------|------|
+| `ErrClosed` | 닫힌(또는 nil) Loader를 계속 조작 |
+| `ErrInvalidConfig` | 구성이 유효하지 않음; `New()`는 구체적 검증 오류를 래핑해 반환 |
+| `ErrNotInitialized` | 전역 모드에서 `Load()` 이전에 쓰기 함수 사용 |
+| `ErrAlreadyInitialized` | 기본 Loader 초기화 후 `Load()` 재호출 |
+| `ErrDuplicateKey` | 예약됨: 현재 중복 키는 `OverwriteExisting=false`일 때 조용히 건너뛰며 반환 경로 없음 |
+
+### 판별 보조 함수
+
+`IsMarshalError(err)`는 `errors.As`로 오류가 `*MarshalError`인지 판별합니다 — 수동 어서션 불필요.
 
 ## 관련 문서
 

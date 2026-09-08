@@ -1,8 +1,9 @@
 ---
 sidebar_label: "Security Overview"
 title: "Security Overview - CyberGo env | Security Architecture"
-description: "Security architecture overview for CyberGo env, covering SecureValue memory locking and auto-zeroing, key-value validation filtering control characters and null bytes, DefaultForbiddenKeys forbidding PATH and LD_PRELOAD, IsSensitiveKey auto-detection, security presets, and audit tracking."
+description: "Security architecture overview for CyberGo env: SecureValue memory locking and zeroing, key-value validation, sensitive-key detection, and audit tracking."
 sidebar_position: 1
+sidebar_icon: "🛡️"
 ---
 
 # Security Overview
@@ -152,6 +153,10 @@ cfg := env.ProductionConfig()
 cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
 cfg.AllowedKeys = []string{"APP_NAME", "PORT", "DB_HOST", "API_KEY"}
 ```
+
+## Expansion Scope Isolation
+
+Variable expansion resolves file-first, process-environment-second by default. For untrusted configuration sources, `ExpansionScope: ExpansionFileOnly` restricts references to inside the file, blocking a config file from probing and capturing process secrets (cloud credentials, tokens, etc.) (SEC-03). Configuration and attack scenarios are covered in [Variable Expansion · Expansion Scope](/en/env/guides/variable-expansion).
 
 ## Related Documentation
 

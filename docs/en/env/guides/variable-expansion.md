@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Variable Expansion"
-title: "Variable Expansion - CyberGo env | ${VAR} References and Default Value Syntax"
-description: "Variable expansion syntax guide for CyberGo env, covering ${VAR} and ${VAR:-default} references, ${VAR:=default} defaults, ${VAR:?error} required validation, $VAR shorthand, circular reference detection, and MaxExpansionDepth depth limits for configuration reuse and dynamic value substitution."
-sidebar_position: 4
+title: "Variable Expansion - CyberGo env | ${VAR} and Defaults"
+description: "Variable expansion syntax for CyberGo env: ${VAR} and ${VAR:-default} references, ${VAR:?error} validation, and circular reference detection."
+sidebar_position: 3
 sidebar_icon: "🔧"
 ---
 
@@ -266,6 +266,31 @@ func main() {
 ```
 
 ---
+
+## Expansion Scope (Security Isolation)
+
+By default, variable expansion resolves references file-first, then process environment — when `${VAR}` is not found in the file, lookup falls back to the process environment (`os.LookupEnv`). This matches traditional dotenv semantics, but it becomes a risk when the configuration file comes from a **not fully trusted source** (user uploads, files delivered by external systems): a file containing `${AWS_SECRET_ACCESS_KEY}` can capture unrelated process secrets into variable values, which may then leak out through logging, serialization, or export operations.
+
+`ParsingConfig.ExpansionScope` controls this behavior:
+
+| Value | Behavior | Use case |
+|-------|----------|----------|
+| `ExpansionFileThenProcess` (default) | File-local variables first, process environment fallback | Trusted config files, traditional dotenv semantics |
+| `ExpansionFileOnly` | Only file-local variables are visible; process-environment references expand to empty strings | Untrusted config sources, secret probing prevention (SEC-03) |
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+// Only allow references to file-local variables; block process-environment reads
+cfg.ExpansionScope = env.ExpansionFileOnly
+loader, _ := env.New(cfg)
+```
+
+::: warning SEC-03
+`ExpansionFileOnly` is the security switch that prevents configuration files from "harvesting" process secrets. If your application loads externally provided configuration files, keep this scope enabled at all times.
+:::
+
+Note: `ExpansionScope` is an enum, not a boolean field. Even if it is the only field set on a `Config`, `IsZero()` correctly recognizes the Config as initialized and it will not be silently replaced by defaults.
 
 ## Related Documentation
 

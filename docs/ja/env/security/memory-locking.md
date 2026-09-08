@@ -1,8 +1,9 @@
 ---
 sidebar_label: "メモリロック"
 title: "メモリロック - CyberGo env | mlock メモリ保護"
-description: "CyberGo env メモリロックガイド。SetMemoryLockEnabled の有効化、IsMemoryLockSupported の検出、SetMemoryLockStrict モードと NewSecureValueStrict のエラー処理を詳解。Linux CAP_IPC_LOCK、Windows VirtualLock の権限と SecureValue ライフサイクル管理をカバー。"
+description: "CyberGo env メモリロックガイド。SetMemoryLockEnabled と IsMemoryLockSupported、SetMemoryLockStrict モードを詳解。CAP_IPC_LOCK や VirtualLock の権限、SecureValue ライフサイクル管理をカバー。"
 sidebar_position: 3
+sidebar_icon: "🛡️"
 ---
 
 # メモリロック

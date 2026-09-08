@@ -1,8 +1,8 @@
 ---
 sidebar_label: "직렬화"
 title: "직렬화 - CyberGo env | 다중 형식 변환"
-description: "CyberGo env 직렬화 가이드로, .env, JSON, YAML 간의 Map과 구조체 변환을 상세히 설명합니다. Marshal/Unmarshal 함수군, Marshaler/Unmarshaler 커스텀 인터페이스, DetectFormat 자동 감지를 다루며, 구성 내보내기와 형식 마이그레이션 등 실용적인 시나리오를 포함합니다."
-sidebar_position: 2
+description: "CyberGo env 직렬화 가이드로, .env, JSON, YAML 간의 Map과 구조체 변환을 설명합니다. Marshal/Unmarshal 함수군, 커스텀 인터페이스, DetectFormat 자동 감지와 구성 내보내기, 형식 마이그레이션 시나리오를 다룹니다."
+sidebar_position: 4
 sidebar_icon: "🔧"
 ---
 
@@ -630,6 +630,68 @@ func main() {
     os.WriteFile(".env", []byte(envContent), 0644)
 
     fmt.Println("Config migrated from JSON to .env")
+}
+```
+
+## 라운드트립 함정과 형식 자동 감지
+
+### `$`는 이스케이프되지 않음: Marshal 출력을 다시 읽으면 변형될 수 있음
+
+`Marshal`은 값의 `$`를 이스케이프하지 **않습니다**. 값에 `$VAR` 또는 `${VAR}` 리터럴이 포함된 경우, 기본값으로 활성화된 `ExpandVariables` 상태에서 Marshal 출력을 다시 파싱하면 해당 시퀀스가 변수 참조로 전개됩니다:
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
+func main() {
+    data := map[string]string{"PRICE": "100$USD"}
+
+    out, err := env.Marshal(data, env.FormatEnv)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(out)
+    // 출력: PRICE=100$USD
+    // 참고: `out`을 .env에 다시 쓰고 기본 설정으로 로드하면 $USD 전개 시도
+}
+```
+
+완화 방법: 읽는 쪽에서 `cfg.ExpandVariables = false` 설정, 또는 `$`를 포함한 값의 `Marshal` 라운드트립 자체를 피하기.
+
+### MarshalStruct 필드 처리
+
+구조체를 마샬링할 때 빈 문자열로 마샬링되는 필드는 **생략**됩니다(빈 문자열, nil 포인터, 빈 슬라이스); 스칼라 영값(`0`, `false`)은 **유지**됩니다 — 빈 문자열로 마샬링되지 않기 때문입니다. 읽는 쪽에서 `envDefault` 태그로 기본값을 보정하세요.
+
+### 정렬된 키 보장
+
+`Marshal`의 출력 키는 입력 map/구조체 필드 순서와 무관하게 **항상 사전순으로 정렬**됩니다 — 동일한 구성의 출력이 안정적이어서 diff와 캐싱에 적합합니다.
+
+### FormatAuto 콘텐츠 감지 규칙
+
+`UnmarshalMap`/`UnmarshalStruct`에 `FormatAuto`를 전달하면 확장자가 아닌 **콘텐츠**로 형식을 감지합니다:
+
+| 신호 | 판정 |
+|------|------|
+| 공백만 있는 입력 | `.env` |
+| 첫 글자가 `{` 또는 `[` | JSON |
+| 첫 유효 행이 `- `로 시작하거나 `: `(콜론+공백) 포함 | YAML |
+| `=` 포함 | `.env` |
+
+`: `가 `=`보다 우선한다는 점에 유의: `connection: host=db port=5432` 형태의 행은 `.env`가 아닌 YAML로 판정됩니다.
+
+### IsMarshalError 보조 판별
+
+<!-- check-code: skip -->
+```go
+if _, err := env.Marshal(data); err != nil {
+    if env.IsMarshalError(err) {
+        // 마샬링 오류: 지원하지 않는 입력 타입 또는 필드 변환 실패
+    }
 }
 ```
 

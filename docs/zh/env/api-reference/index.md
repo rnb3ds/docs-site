@@ -1,5 +1,5 @@
 ---
-sidebar_label: "概述"
+sidebar_label: "API 导览"
 title: "API 参考 - CyberGo env | 完整接口文档"
 description: "CyberGo env 完整 API 参考导航，涵盖包级便捷函数、Config 配置、Loader 加载器、SecureValue 安全值、核心接口定义、ComponentFactory 组件工厂与常量错误等七大模块的详细入口与方法签名索引。"
 sidebar_position: 1

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Component Factory"
 title: "ComponentFactory API - CyberGo env | Component Factory"
-description: "ComponentFactory API reference for CyberGo env, providing unified creation of Validator validators, Auditor audit loggers, FileSystem filesystem adapters, and variable expanders, with RegisterParser for custom parser registration and Close lifecycle management."
+description: "ComponentFactory API reference for CyberGo env: unified creation of Validator, Auditor, and FileSystem components, and RegisterParser for custom parsers."
 sidebar_position: 8
 ---
 

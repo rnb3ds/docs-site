@@ -1,9 +1,9 @@
 ---
 sidebar_label: "Audit Logging"
 title: "Audit Logging - CyberGo env | Security Audit Configuration"
-description: "Audit logging configuration guide for CyberGo env, covering JSONAuditHandler, LogAuditHandler, and ChannelAuditHandler handlers, and custom AuditHandler for recording variable loading, reading, modification, and deletion operations for security auditing, compliance checking, and troubleshooting."
+description: "Audit logging guide for CyberGo env: JSONAuditHandler, LogAuditHandler, and ChannelAuditHandler record variable loads, reads, and changes for auditing."
 sidebar_position: 6
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # Audit Logging
@@ -378,6 +378,78 @@ Recommend using logrotate to manage audit logs:
 ```
 
 ---
+
+## More Built-in Handlers
+
+Beyond the three common handlers (JSON/Log/Channel), the library ships two additional ready-to-use implementations.
+
+### CloseableChannelHandler (self-managed channel)
+
+Unlike `ChannelAuditHandler`, which accepts an external channel, `CloseableChannelHandler` creates and owns a buffered channel with full lifecycle management — `Close()` shuts the handler down and closes the channel; consumers receive events via `Channel()`:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	handler := env.NewCloseableChannelHandler(64)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for event := range handler.Channel() {
+			fmt.Printf("%+v\n", event)
+		}
+	}()
+
+	cfg := env.ProductionConfig()
+	cfg.AuditHandler = handler
+	loader, err := env.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	_ = loader.Set("CUSTOM_VAR", "value")
+
+	loader.Close()
+	handler.Close()
+	<-done
+}
+```
+
+### NopAuditHandler (no-op)
+
+Discards all audit events — useful for tests or temporarily silencing audit output:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.AuditEnabled = true
+cfg.AuditHandler = env.NewNopAuditHandler()
+```
+
+## Audit Actions (AuditAction)
+
+Audit events are categorized by action. Custom handlers can filter the event types they care about using the `AuditAction` constants:
+
+| Constant | Meaning |
+|----------|---------|
+| `ActionLoad` | File loading |
+| `ActionParse` | env/JSON/YAML file parsing |
+| `ActionGet` | Variable retrieval (including type parse-failure records) |
+| `ActionSet` | Variable set, applied to process environment, or skipped by policy |
+| `ActionDelete` | Variable deletion |
+| `ActionValidate` | Validation operations |
+| `ActionExpand` | Variable expansion |
+| `ActionSecurity` | Security events (path validation failures, forbidden keys, etc.) |
+| `ActionError` | Error conditions |
+| `ActionFileAccess` | File system access |
+
+`AuditEvent` is a structured event (timestamp, action, key, reason, success/failure, duration, and more). Sensitive keys are masked by `MaskKey` into `[MASKED:N chars]` (N = key length) before entering the event; non-sensitive keys are kept as-is.
 
 ## Related Documentation
 

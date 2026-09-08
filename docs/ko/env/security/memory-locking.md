@@ -1,8 +1,9 @@
 ---
 sidebar_label: "메모리 잠금"
 title: "메모리 잠금 - CyberGo env | mlock 메모리 보호"
-description: "CyberGo env 메모리 잠금 가이드로, SetMemoryLockEnabled 활성화, IsMemoryLockSupported 감지, SetMemoryLockStrict 모드와 NewSecureValueStrict 오류 처리를 상세히 설명하며, Linux CAP_IPC_LOCK, Windows VirtualLock 권한 및 SecureValue 수명 주기 관리를 다룹니다."
+description: "CyberGo env 메모리 잠금 가이드로, SetMemoryLockEnabled 활성화, SetMemoryLockStrict 모드를 설명하며 Linux CAP_IPC_LOCK, Windows VirtualLock 권한과 SecureValue 수명 주기를 다룹니다."
 sidebar_position: 3
+sidebar_icon: "🛡️"
 ---
 
 # 메모리 잠금

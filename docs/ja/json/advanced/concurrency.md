@@ -1,35 +1,35 @@
 ---
-sidebar_label: "並行性と並列処理"
-title: "並行性 - CyberGo JSON | 実戦ガイド"
-description: "CyberGo JSON 並行性と並列処理：Processor スレッド安全性、ParallelIterator、StreamJSONLParallel、SetGlobalProcessor と MaxConcurrency で大規模データセットを並列処理。"
+sidebar_label: "並行・並列処理"
+title: "並行・並列処理 - CyberGo JSON | 実践ガイド"
+description: "CyberGo JSON の並行・並列処理：Processor のスレッド安全保証、ParallelIterator 並列イテレータ、StreamJSONLParallel、SetGlobalProcessor グローバル共有、MaxConcurrency 並行制限、大規模データの並行処理レシピも解説。"
 sidebar_position: 4
 ---
 
-# 並行性と並列処理
+# 並行・並列処理
 
-CyberGo JSON のすべての操作は**並行性安全**で、すぐに使える並列 API（`ParallelIterator`、並列 JSONL ストリーミング）を提供します。このページはスレッド安全性セマンティクス、内蔵並列 API、並行性使用パターンを文書化します。
+CyberGo JSON のすべての操作は**並行安全**で、すぐに使える並列処理 API（`ParallelIterator`、並列 JSONL ストリーム）を提供します。本ページはスレッド安全セマンティクス、内蔵並列 API、並行使用パターンを文書化します。
 
-:::tip ヒント パフォーマンスページとの役割分担
-[パフォーマンス最適化](./performance)の「並行処理」節は配列処理を手動で並列化する**汎用 Go パターン**（`sync.WaitGroup` + セマフォ + Worker Pool）を示します。このページは**ライブラリ内蔵**並列 API を文書化し、両ページは相補的です。
+:::tip パフォーマンス最適化ページとの分担
+[パフォーマンス最適化](./performance)の「並行処理」の節で示しているのは**一般的な Go パターン**（`sync.WaitGroup` + セマフォ + Worker Pool）による手動の配列並行処理です。本ページが文書化するのは**ライブラリ内蔵**の並列 API で、両者は補完関係にあります。
 :::
 
-## スレッド安全性保証
+## スレッド安全の保証
 
-`Processor` はスレッドセーフな処理エンジンです（ソースコメント: `Processor is the main JSON processing engine with thread safety`）:
+`Processor` はスレッド安全なメイン処理エンジンです（ソースコメント：`Processor is the main JSON processing engine with thread safety`）：
 
-- **単一の Processor インスタンスを複数ゴルーチンで共有可能** — すべての公開メソッド（`Get`/`Set`/`Delete`/`Marshal` など）は内部的にアトミック操作と並行性ガバナンス（`beginGovernedOp`/`endGovernedOp`）で保護されます。
-- **パッケージレベル関数**（`json.Get`, `json.GetString` など）は1つのグローバル Processor を共有し、デフォルトで並行性安全です。
-- **`PreParse` が返す `*ParsedJSON` は並行読み取り可能** — 複数ゴルーチンが同じ `ParsedJSON` に対して同時に `GetFromParsed` を呼べます。
+- **単一の Processor インスタンスを複数 goroutine で共有できる**——すべての公開メソッド（`Get`/`Set`/`Delete`/`Marshal` など）は内部でアトミック操作と並行ガバナンス（`beginGovernedOp`/`endGovernedOp`）で保護されています。
+- **パッケージレベル関数**（`json.Get`、`json.GetString` など）は単一のグローバル Processor を共有し、自然に並行安全です。
+- **`PreParse` が返す `*ParsedJSON` は並行読み取り可能**——複数 goroutine が同じ `ParsedJSON` に対して同時に `GetFromParsed` を呼べます。
 
-:::warning 警告 共有すべきでないとき
-`Processor` は共有可能ですが、**可変な Go コンテナをゴルーチン間で共有しないでください**（例: `Get` が返した `map[string]any` を複数ゴルーチンに渡して変更）。返されたコンテナはデフォルトでコピーなので（`CacheSharedResults` がオンでない限り）、戻り値を変更してもキャッシュに影響しません。ただし1つのコンテナの並行変更には呼び出し元側のロックが必要です。
+:::warning 共有してはならないケース
+`Processor` は共有できますが、**ミュータブルな Go コンテナを goroutine 間で共有しないでください**（`Get` が返す `map[string]any` を複数 goroutine で書き換えるなど）。ライブラリが返すコンテナはデフォルトでコピーです（`CacheSharedResults` 有効時を除く）。戻り値を書き換えてもキャッシュには影響しませんが、複数 goroutine による同じコンテナの書き換えには呼び出し側が自前でロックが必要です。
 :::
 
 ## ParallelIterator 並列イテレータ
 
-`ParallelIterator` は複数コアにまたがり配列処理を並列化し、ワーカープール、エラー集約、panic リカバリを内蔵しているため手作りのゴルーチンプールより安全です。
+`ParallelIterator` はマルチコア CPU で配列を並列処理します。worker プール、エラー集約、panic リカバリーを内蔵し、手書き goroutine プールより安全です。
 
-### 基本的な並列反復
+### 基本的な並行走査
 
 ```go
 package main
@@ -45,7 +45,7 @@ func main() {
 	data := `{"items":[1,2,3,4,5,6,7,8]}`
 	items := json.GetArray(data, "items")
 
-	// ワーカー数の既定は Config.MaxConcurrency（配列長でクランプ）
+	// worker 数はデフォルトで Config.MaxConcurrency（配列長でクリップされる）
 	iter := json.NewParallelIterator(items)
 	defer iter.Close()
 
@@ -65,9 +65,9 @@ func main() {
 }
 ```
 
-### 並列 Map
+### 並列マップ Map
 
-`Map` は各要素を並列に変換し、結果は**入力順序を保持**します（各ワーカーが自身のインデックスに書き込むためロック不要）。
+`Map` は各要素を並列変換し、結果は**元の順序を保持します**（各 worker が自分のインデックス位置に書き込むため、ロック不要）。
 
 ```go
 package main
@@ -85,7 +85,7 @@ func main() {
 	iter := json.NewParallelIterator(items)
 	defer iter.Close()
 
-	// 並列マップ: 各要素 * 10、結果順序は入力と同じ
+	// 並列マップ：各要素を *10。結果の順序は入力と一致
 	doubled, err := iter.Map(func(_ int, val any) (any, error) {
 		return int(val.(float64)) * 10, nil
 	})
@@ -97,27 +97,88 @@ func main() {
 }
 ```
 
-### ParallelIterator API 概要
+### バッチ並列 ForEachBatch / ForEachBatchWithContext
+
+要素ごとのコールバックオーバーヘッドが大きい場合（要素ごとにシステムコールやネットワークリクエストが発生するなど）、`ForEachBatch` は要素を固定サイズのバッチに切り分け、**各バッチを 1 つの goroutine で処理**します——バッチ内は直列、バッチ間は並列で、スケジューリングと同期のコストを償却します。
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	data := `{"records":[10,20,30,40,50,60,70,80,90,100]}`
+	records := json.GetArray(data, "records")
+
+	iter := json.NewParallelIterator(records)
+	defer iter.Close()
+
+	// 10 件のレコードを 1 バッチ 3 件に分割 → 4 バッチ（末尾バッチは 1 件）。batchIdx で独立した添字に書き込むためロック不要
+	subtotals := make([]int, 4)
+	err := iter.ForEachBatch(3, func(batchIdx int, batch []any) error {
+		sum := 0
+		for _, v := range batch {
+			sum += int(v.(float64))
+		}
+		subtotals[batchIdx] = sum
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// 全バッチ完了後に順次消費（実行順序は保証されないが、結果は添字通りに配置される）
+	for i, s := range subtotals {
+		fmt.Printf("バッチ %d 小計 = %d\n", i, s)
+	}
+
+	// タイムアウト制御版：ctx の期限後、未ディスパッチのバッチは実行されず、実行中のバッチはキャンセルを検出して終了
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	err = iter.ForEachBatchWithContext(ctx, 100, func(batchIdx int, batch []any) error {
+		return nil // 単一バッチ処理をシミュレート
+	})
+	fmt.Println("タイムアウト付きバッチ処理完了、エラー:", err)
+}
+
+// 出力:
+// バッチ 0 小計 = 60
+// バッチ 1 小計 = 150
+// バッチ 2 小計 = 240
+// バッチ 3 小計 = 100
+// タイムアウト付きバッチ処理完了、エラー: <nil>
+```
+
+`batchSize <= 0` の場合は 100 として扱います。コールバックのエラーは `ForEach` と同じです：最初のエラーが勝ち、新しいバッチのディスパッチを停止します。バッチの**ディスパッチ**順序は入力と一致します（`batchIdx` は増加）が、**実行**順序は保証されません——順序保持出力の方法が上の例です：添字に配置し、完了後に順次消費します。
+
+### ParallelIterator API 一覧
 
 | API | シグネチャ | 説明 |
 |-----|------|------|
-| `NewParallelIterator` | `func NewParallelIterator(data []any, cfg ...Config) *ParallelIterator` | イテレータを生成。ワーカー数は `cfg.MaxConcurrency` から取得 |
-| `ForEach` | `func (it *ParallelIterator) ForEach(fn func(int, any) error) error` | 並列反復、最初のエラーを返す |
+| `NewParallelIterator` | `func NewParallelIterator(data []any, cfg ...Config) *ParallelIterator` | イテレータを作成。worker 数は `cfg.MaxConcurrency`（デフォルト 50、配列長を超える場合はクリップ。`<= 0` は 4 にフォールバック） |
+| `ForEach` | `func (it *ParallelIterator) ForEach(fn func(int, any) error) error` | 並行走査、最初のエラーを返す |
 | `ForEachWithContext` | `func (it *ParallelIterator) ForEachWithContext(ctx context.Context, fn func(int, any) error) error` | context キャンセル対応 |
-| `ForEachBatch` | `func (it *ParallelIterator) ForEachBatch(batchSize int, fn func(int, []any) error) error` | バッチ単位の並列処理 |
-| `Map` | `func (it *ParallelIterator) Map(transform func(int, any) (any, error)) ([]any, error)` | 並列変換、順序保持 |
-| `Filter` | `func (it *ParallelIterator) Filter(predicate func(int, any) bool) []any` | 並列フィルタ |
-| `Close` | `func (it *ParallelIterator) Close()` | リソース解放（使い終わったら呼ぶ） |
+| `ForEachBatch` | `func (it *ParallelIterator) ForEachBatch(batchSize int, fn func(int, []any) error) error` | バッチ並列処理。バッチ内直列、バッチ間並列 |
+| `ForEachBatchWithContext` | `func (it *ParallelIterator) ForEachBatchWithContext(ctx context.Context, batchSize int, fn func(int, []any) error) error` | バッチ並列 + context キャンセル |
+| `Map` | `func (it *ParallelIterator) Map(transform func(int, any) (any, error)) ([]any, error)` | 並列変換、順序保持で返す |
+| `Filter` | `func (it *ParallelIterator) Filter(predicate func(int, any) bool) []any` | 並列フィルタ、順序保持で返す（エラー戻り値なし） |
+| `Close` | `func (it *ParallelIterator) Close()` | リソース解放（実行中 goroutine に停止をシグナル、複数回呼んでも安全） |
 
-完全なシグネチャと使用法は[イテレータ型](../api-reference/iterator#paralleliterator-型)で確認してください。
+完全なシグネチャと使い方は[イテレータ型](../api-reference/iterator#paralleliterator-型)を参照してください。
 
-:::tip ヒント エラーと panic の扱い
-`ForEach` は最初のエラーを返し新しいタスクのディスパッチを停止します。ワーカー内の panic はリカバリ（`recover`）されてエラーに変換されるため、コールバックの panic がプロセスをクラッシュさせることはありません。キャンセルが必要な場合は `ForEachWithContext` を使い、`ctx.Done()` で graceful に終了します。
+:::tip エラーと panic の処理
+`ForEach` は**最初の**エラーを返すと新しいタスクのディスパッチを停止します。worker 内の panic は回復（`recover`）されてエラーに変換され、プロセスは落ちません。キャンセルが必要な場合は `ForEachWithContext` を使い、`ctx.Done()` でグレースフルに終了します。
 :::
 
 ## 並列 JSONL ストリーム処理
 
-大きな JSONL（NDJSON）ファイルを処理する際、`StreamJSONLParallel` が複数ワーカーで各行を並列処理します。
+大型 JSONL（NDJSON）ファイルの処理では、`StreamJSONLParallel` が複数 worker で各行を並列処理します。
 
 ```go
 package main
@@ -131,7 +192,7 @@ import (
 )
 
 func main() {
-	// JSONL データのシミュレーション（1行に1つの JSON オブジェクト）
+	// JSONL データをシミュレート（1 行 1 JSON オブジェクト）
 	jsonlData := `{"id":1,"score":95}
 {"id":2,"score":82}
 {"id":3,"score":78}
@@ -147,7 +208,7 @@ func main() {
 	var total int64
 	var count int64
 
-	// 4ワーカーで各行を並列処理
+	// 4 worker で各行を並列処理
 	err = processor.StreamJSONLParallel(strings.NewReader(jsonlData), 4, func(lineNum int, item *json.IterableValue) error {
 		score := int64(item.GetInt("score"))
 		mu.Lock()
@@ -159,26 +220,26 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("%d件処理、合計スコア %d\n", count, total)
-	// 出力: 4件処理、合計スコア 345
+	fmt.Printf("%d 件を処理、合計 %d\n", count, total)
+	// 出力: 4 件を処理、合計 345
 }
 ```
 
 | API | 説明 |
 |-----|------|
-| `StreamJSONLParallel(reader, workers, fn)` | マルチワーカー並列 JSONL 処理 |
-| `StreamJSONLParallelWithContext(ctx, reader, workers, fn)` | 同上、context キャンセル/タイムアウト対応 |
-| `StreamJSONLChunked(reader, chunkSize, fn)` | チャンクベース処理、メモリ効率的 |
+| `StreamJSONLParallel(reader, workers, fn)` | 複数 worker で JSONL を並列処理 |
+| `StreamJSONLParallelWithContext(ctx, reader, workers, fn)` | 同上。context のキャンセルとタイムアウト対応 |
+| `StreamJSONLChunked(reader, chunkSize, fn)` | チャンク処理、メモリに優しい |
 
-完全なシグネチャと設定（`JSONLWorkers`/`JSONLChunkSize` など）は[JSONL 処理](../api-reference/processor/jsonl)と[JSONL ストリーミング](../streaming/jsonl)で確認してください。
+完全なシグネチャと設定（`JSONLWorkers`/`JSONLChunkSize` など）は [JSONL 処理](../api-reference/processor/jsonl)と [JSONL ストリーミング](../streaming/jsonl)を参照してください。
 
-:::tip ヒント 行の順序
-並列モードでもコールバックの `lineNum` は元の行番号を反映しますが、**実行順序は保証されません**。順序保持出力が必要な場合は、事前確保したスライスの `lineNum` 位置に書き込んでください。
+:::tip 行順序
+並列モードでもコールバックの `lineNum` は元の行番号を反映しますが、**実行順序は保証されません**。順序保持出力が必要な場合は、コールバック内で `lineNum` に基づき事前確保したスライスの対応位置に書き込んでください。
 :::
 
-## 並行性のためのグローバルプロセッサ
+## グローバルプロセッサの並行使用
 
-`SetGlobalProcessor` はすべてのパッケージレベル関数に1つのカスタム Processor を共有させます。統一設定（キャッシュパラメータ、フック、セキュリティ制限）が必要なマルチゴルーチンサービスに適しています。
+`SetGlobalProcessor` により、すべてのパッケージレベル関数が同じカスタム Processor を共有します。統一設定（キャッシュパラメータ、フック、セキュリティ制限）が必要なマルチ goroutine サービスに適します。
 
 ```go
 package main
@@ -191,18 +252,18 @@ import (
 )
 
 func main() {
-	// カスタムグローバルプロセッサ（すべてのパッケージレベル関数が共有、並行性安全）
+	// カスタムグローバルプロセッサ（すべてのパッケージレベル関数が共有、並行安全）
 	cfg := json.DefaultConfig()
 	processor, err := json.New(cfg)
 	if err != nil {
 		panic(err)
 	}
-	json.SetGlobalProcessor(processor) // 以前のグローバル Processor は自動的に閉じられる
-	defer json.ShutdownGlobalProcessor() // アプリ終了時にクリーンに終了
+	json.SetGlobalProcessor(processor)   // 古いグローバル Processor は自動クローズされる
+	defer json.ShutdownGlobalProcessor() // アプリケーション終了時にクリーンにクローズ
 
 	data := `{"user":{"name":"Alice","age":30}}`
 
-	// 複数ゴルーチンがパッケージレベル関数を並行使用（同じグローバル Processor を共有）
+	// 複数 goroutine がパッケージレベル関数を並行使用（同一グローバル Processor を共有）
 	var wg sync.WaitGroup
 	results := make([]string, 3)
 	for i := 0; i < 3; i++ {
@@ -225,49 +286,49 @@ func main() {
 }
 ```
 
-:::warning 警告 所有権の移転
-`SetGlobalProcessor` 後、その Processor のライフサイクルはグローバルが管理します。手動で `Close()` しては**いけません**。さもなくばグローバルのシャットダウンロジックと競合します。終了時に `ShutdownGlobalProcessor()` を呼んでクリーンに終了しリソースを解放してください。
+:::warning 所有権の移転
+`SetGlobalProcessor` 後、その Processor のライフサイクルはグローバル管理に委ねられます——手動で `Close()` しては**いけません**。グローバルのクローズロジックと衝突します。終了時に `ShutdownGlobalProcessor()` を呼べばクリーンにクローズされ、リソースも解放されます。
 :::
 
-## MaxConcurrency 同時実行制限
+## 並行制限 MaxConcurrency
 
-`Config.MaxConcurrency`（既定 50）は Processor ごとの**ソフト同時実行上限**です。アトミックカウンティングセマフォが進行中の操作数を制限します。上限に達すると新しい操作は `ErrConcurrencyLimit`（再試行可能）を返します。
+`Config.MaxConcurrency`（デフォルト 50）は単一 Processor の**ソフト並行上限**です：アトミックカウントのセマフォで進行中の操作数を制限します。上限に達すると、新しい操作は `ErrConcurrencyLimit` を返します（リトライ可能）。
 
 ```go
 cfg := json.DefaultConfig()
-cfg.MaxConcurrency = 100 // Processor ごとの同時実行上限を引き上げ
+cfg.MaxConcurrency = 100 // 単一 Processor の並行上限を引き上げ
 ```
 
-- `ErrConcurrencyLimit` は**再試行可能な**一時的エラーです（[エラー処理](./error-handling#システムエラー)を参照）。
-- 並列ストリーミング（`StreamJSONLParallel`）のワーカー数は明示的な引数から取得し、`MaxConcurrency` に直接束縛されませんが、同じガバナンススロットを共有します。
-- `ParallelIterator` のワーカー数は `cfg.MaxConcurrency`（既定 50）から取得し、配列長でクランプされます。
+- `ErrConcurrencyLimit` は**リトライ可能**な一時的エラーです（[エラー処理](./error-handling#システムエラー)を参照）。
+- 並列ストリーム処理（`StreamJSONLParallel`）の worker 数は引数で明示指定され、`MaxConcurrency` に直接束縛されませんが、同じガバナンススロットを共有します。
+- `ParallelIterator` の worker 数は `cfg.MaxConcurrency`（デフォルト 50）から取られますが、配列長でクリップされます。
 
 ## ベストプラクティスと落とし穴
 
-### 1. Processor を再利用、リクエストごとに新規作成しない
+### 1. Processor を再利用し、リクエストごとに新規作成しない
 
-`Processor` はキャッシュ、再帰プロセッサなどの状態を保持しています。**同じインスタンスを再利用**してこそキャッシュがヒットします。リクエストごとに `json.New()` を呼ぶとキャッシュの恩恵を失い割り当てが増えます。
+`Processor` は内部にキャッシュや再帰プロセッサなどの状態を保持します。**同じインスタンスを再利用**してこそキャッシュがヒットします。リクエストごとに `json.New()` するとキャッシュの恩恵を失い、割り当ても増えます。
 
-### 2. インスタンス共有は安全、戻り値コンテナの共有は注意
+### 2. インスタンス共有は安全、戻り値コンテナの共有は慎重に
 
-`Processor` はゴルーチン間で共有可能です。ただし `Get` が返した `map`/`slice` をゴルーチン間で変更する場合は呼び出し元側のロックが必要です（または `CacheSharedResults` で読み取り専用として扱う）。
+`Processor` は goroutine 間で共有可能です。ただし `Get` が返す `map`/`slice` を複数 goroutine 間で共有して書き換える場合は、呼び出し側が自前でロックする必要があります（または `CacheSharedResults` 有効化後に読み取り専用として扱う）。
 
-### 3. Close でリソース解放
+### 3. Close でリソースを解放
 
-長期実行サービスでは明示的に `defer processor.Close()` と `defer iter.Close()` を呼び、キャッシュゴルーチンとメモリリークを避けてください。`SetGlobalProcessor` で設定したインスタンスは代わりに `ShutdownGlobalProcessor` を使います。
+長時間実行サービスでは明示的に `defer processor.Close()` と `defer iter.Close()` を行い、キャッシュ goroutine とメモリのリークを避けてください。`SetGlobalProcessor` で設定したインスタンスは `ShutdownGlobalProcessor` を使います。
 
-### 4. CPU 集約的なときだけ並列化の価値あり
+### 4. CPU 集約型だけが並列化に値する
 
-並列処理にはスケジューリングと同期のオーバーヘッドがあります。小さな配列（< `ParallelThreshold`、既定 10）は直列の方が高速です。JSONL の行数が多く行ごとの処理が重いときに並列化の恩恵が明確です。
+並列化にはスケジューリングと同期のオーバーヘッドがあります。小さい配列（`ParallelThreshold` デフォルト 10 未満）は直列の方が速く、JSONL の行数が多く 1 行の処理が重い場合に並列化の恩恵が顕著です。
 
-### 5. 並列モードで順序に注意
+### 5. 並列モードでは行順序に注意
 
-`StreamJSONLParallel` は処理順序を保証しません。順序保持結果が必要な場合は `lineNum` 位置に書き込み、順番に消費してください。
+`StreamJSONLParallel` は処理順序を保証しません。順序保持が必要な場合は `lineNum` に基づいて対応位置に書き込み、処理完了後に順次消費してください。
 
 ## 関連
 
-- [パフォーマンス最適化](./performance) — Processor 再利用、汎用 Go 並行性パターン、ベンチマーク
-- [イテレータ型](../api-reference/iterator) — 完全な `ParallelIterator` API
+- [パフォーマンス最適化](./performance) — プロセッサ再利用、一般的な Go 並行パターン、ベンチマーク
+- [イテレータ型](../api-reference/iterator) — `ParallelIterator` の完全な API
 - [JSONL 処理](../api-reference/processor/jsonl) — 並列 JSONL API 詳細
-- [キャッシュと事前パース](./caching) — キャッシュメカニズムと PreParse
-- [エラー処理](./error-handling) — `ErrConcurrencyLimit` とエラー分類
+- [キャッシュと事前解析](./caching) — キャッシュ機構と PreParse 事前解析
+- [エラー処理](./error-handling) — `ErrConcurrencyLimit` などのエラー分類

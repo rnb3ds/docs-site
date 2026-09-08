@@ -1,5 +1,6 @@
 {
   "label": "보안",
   "position": 5,
-  "collapsed": true
+  "collapsed": true,
+  "icon": "🔒"
 }

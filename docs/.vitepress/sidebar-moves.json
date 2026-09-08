@@ -257,7 +257,7 @@
   },
   {
     "from": "json/api-reference/validator",
-    "to": "json/extensions/validator"
+    "to": "json/api-reference/schema"
   },
   {
     "from": "json/cheatsheet",
@@ -302,5 +302,13 @@
   {
     "from": "env/advanced/error-handling",
     "to": "env/guides/error-handling"
+  },
+  {
+    "from": "json/extensions/validator",
+    "to": "json/api-reference/schema"
+  },
+  {
+    "from": "json/api-reference/print",
+    "to": "json/getting-started/print"
   }
 ]

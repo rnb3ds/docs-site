@@ -1,7 +1,7 @@
 ---
 sidebar_label: "컴포넌트 팩토리"
 title: "ComponentFactory API - CyberGo env | 컴포넌트 팩토리"
-description: "CyberGo env의 ComponentFactory 컴포넌트 팩토리 API 레퍼런스로, Validator 검증기, Auditor 감사기, FileSystem 파일 시스템 어댑터와 변수 확장기를 통합 생성하고, RegisterParser로 커스텀 파서를 등록하며 Close 수명 주기 관리를 제공합니다."
+description: "CyberGo env의 ComponentFactory API 레퍼런스로, Validator, Auditor, FileSystem 등 컴포넌트를 통합 생성하고 RegisterParser로 커스텀 파서를 등록하며 Close 수명 주기 관리를 제공합니다."
 sidebar_position: 8
 ---
 

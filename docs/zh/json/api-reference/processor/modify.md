@@ -1,13 +1,13 @@
 ---
 sidebar_label: "修改操作"
 title: "Processor 数据修改 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 修改方法：Set 设置、SetMultiple 批量、SetCreate 自动创建路径、SetMultipleCreate 批量创建，所有方法支持链式调用。"
+description: "CyberGo JSON Processor 修改方法：Set 设置、SetMultiple 批量、SetCreate 自动创建路径、SetMultipleCreate 批量创建，不可变返回新字符串，配合 SetFromParsed 预解析连续修改，所有方法支持链式调用。"
 sidebar_position: 3
 ---
 
 # 数据修改方法
 
-Processor 提供数据修改方法，所有方法**返回修改后的新 JSON 字符串**（不可变语义，原字符串不变），支持链式调用。删除相关方法见[删除操作](./delete)。
+Processor 提供数据修改方法，所有方法**返回修改后的新 JSON 字符串**（不可变语义，原字符串不变），支持链式调用。删除相关方法见[删除操作](./delete)。方法行为与[包级修改函数](../functions/modify)一致，本页聚焦 Processor 侧的配置语义（`CreatePaths` 优先级、`ContinueOnError`）与链式模式。
 
 ## 不可变语义
 
@@ -32,25 +32,25 @@ result, err := p.Set(original, "nonexistent.deep.path", "x")
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    original := `{"user":{"name":"Alice"}}`
-    modified, err := p.Set(original, "user.name", "Bob")
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(original) // 输出：{"user":{"name":"Alice"}}
-    fmt.Println(modified) // 输出：{"user":{"name":"Bob"}}
+	original := `{"user":{"name":"Alice"}}`
+	modified, err := p.Set(original, "user.name", "Bob")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(original) // 输出：{"user":{"name":"Alice"}}
+	fmt.Println(modified) // 输出：{"user":{"name":"Bob"}}
 }
 ```
 
@@ -92,25 +92,25 @@ result, _ = p.Set(data, "items", []any{"a", "b", "c"})
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"Alice","address":{"city":"Beijing"}}}`
-    result, err := p.Set(data, "user.address.city", "Shanghai")
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result)
-    // 输出：{"user":{"address":{"city":"Shanghai"},"name":"Alice"}}
+	data := `{"user":{"name":"Alice","address":{"city":"Beijing"}}}`
+	result, err := p.Set(data, "user.address.city", "Shanghai")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// 输出：{"user":{"address":{"city":"Shanghai"},"name":"Alice"}}
 }
 ```
 
@@ -134,31 +134,36 @@ result, err := p.SetMultiple(data, map[string]any{
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"Alice","age":25,"email":"a@x.com"}}`
-    result, err := p.SetMultiple(data, map[string]any{
-        "user.name":  "Bob",
-        "user.age":   26,
-        "user.email": "b@x.com",
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result)
-    // 输出：{"user":{"age":26,"email":"b@x.com","name":"Bob"}}
+	data := `{"user":{"name":"Alice","age":25,"email":"a@x.com"}}`
+	result, err := p.SetMultiple(data, map[string]any{
+		"user.name":  "Bob",
+		"user.age":   26,
+		"user.email": "b@x.com",
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// 输出：{"user":{"age":26,"email":"b@x.com","name":"Bob"}}
 }
 ```
+
+::: tip ContinueOnError 与确定性顺序
+- 默认（`ContinueOnError=false`）遇到第一个失败路径即返回原字符串与错误；开启后跳过失败路径继续写入其余路径，仅当全部失败时才返回错误。该字段只作用于 `SetMultiple`，与 [`ProcessBatch`](./batch) 内置的逐操作隔离无关。
+- 更新按**路径字典序**依次应用，重叠路径（如 `a` 与 `a.b`）结果确定：`a` 先落地，`a.b` 总写入新创建的容器，不受 map 迭代随机序影响。
+:::
 
 ## SetCreate
 
@@ -180,35 +185,35 @@ result, err := p.SetCreate(data, "user.profile.bio", "Developer")
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"Alice"}}`
+	data := `{"user":{"name":"Alice"}}`
 
-    // 创建嵌套对象：user.profile.bio
-    result, err := p.SetCreate(data, "user.profile.bio", "Developer")
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result)
-    // 输出：{"user":{"name":"Alice","profile":{"bio":"Developer"}}}
+	// 创建嵌套对象：user.profile.bio
+	result, err := p.SetCreate(data, "user.profile.bio", "Developer")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// 输出：{"user":{"name":"Alice","profile":{"bio":"Developer"}}}
 
-    // 创建数组：user.tags[0] 不存在时创建数组并填入索引 0
-    result, err = p.SetCreate(data, "user.tags[0]", "admin")
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result)
-    // 输出：{"user":{"name":"Alice","tags":["admin"]}}
+	// 创建数组：user.tags[0] 不存在时创建数组并填入索引 0
+	result, err = p.SetCreate(data, "user.tags[0]", "admin")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// 输出：{"user":{"name":"Alice","tags":["admin"]}}
 }
 ```
 
@@ -231,28 +236,28 @@ result, err := p.SetMultipleCreate(data, map[string]any{
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{}`
-    result, err := p.SetMultipleCreate(data, map[string]any{
-        "user.name":        "Alice",
-        "user.profile.bio": "Developer",
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result)
-    // 输出：{"user":{"name":"Alice","profile":{"bio":"Developer"}}}
+	data := `{}`
+	result, err := p.SetMultipleCreate(data, map[string]any{
+		"user.name":        "Alice",
+		"user.profile.bio": "Developer",
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// 输出：{"user":{"name":"Alice","profile":{"bio":"Developer"}}}
 }
 ```
 
@@ -278,25 +283,25 @@ result, err = p.Set(data, "items[+]", []any{"c", "d"})
 package main
 
 import (
-    "fmt"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"items":["a","b"]}`
-    result, err := p.Set(data, "items[+]", "c")
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result)
-    // 输出：{"items":["a","b","c"]}
+	data := `{"items":["a","b"]}`
+	result, err := p.Set(data, "items[+]", "c")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// 输出：{"items":["a","b","c"]}
 }
 ```
 

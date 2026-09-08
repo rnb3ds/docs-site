@@ -1,8 +1,8 @@
 ---
 sidebar_label: "マルチフォーマット設定"
 title: "マルチフォーマット設定 - CyberGo env | .env/JSON/YAML"
-description: "CyberGo env マルチフォーマット設定読み込みガイド。.env、JSON、YAML の自動検出と混在読み込みをサポート。ネストオブジェクトと配列のフラット化キー名、キー値マージ優先度、Marshal/UnmarshalMap フォーマット相互変換、RegisterParser カスタムフォーマットを詳解し、マイクロサービスやコンテナ化シーンに適応。"
-sidebar_position: 3
+description: "CyberGo env マルチフォーマット設定読み込みガイド。.env、JSON、YAML の自動検出と混在読み込みをサポート。フラット化キー名、マージ優先度、フォーマット相互変換、RegisterParser カスタムフォーマットを詳解し、マイクロサービスやコンテナに適応。"
+sidebar_position: 1
 sidebar_icon: "🔧"
 ---
 
@@ -651,6 +651,39 @@ func main() {
     fmt.Println(exported)
 }
 ```
+
+## 構造化パースの詳細とプレフィックスフィルタリング
+
+### JSON/YAML のフラット化ルール
+
+ネストした構造はロード時に環境変数キーへフラット化されます。デフォルトの規則：
+
+| 規則 | 例 |
+|------|-----|
+| ネストしたキーをアンダースコアで連結 | `{"database": {"host": "..."}}` → `DATABASE_HOST` |
+| 配列要素は `キー_インデックス` | `{"hosts": ["a", "b"]}` → `HOSTS_0`、`HOSTS_1` |
+| `null` は空文字列へ | `{"name": null}` → `NAME=""` |
+| 数値とブール値は文字列へ | `{"port": 5432}` → `PORT="5432"` |
+| ネスト深さの上限はデフォルト 10 | `JSONMaxDepth`/`YAMLMaxDepth` で制御（1–100） |
+
+ファイルロード時の変換動作は `Config` の `JSONConfig`/`YAMLConfig` で制御されます（例：`JSONNullAsEmpty`、`JSONNumberAsString`）；`UnmarshalMap`/`UnmarshalStruct` の文字列パース経路は組み込みのデフォルト規則を使用し、これらの設定は読みません。
+
+### プレフィックスフィルタリング（Prefix）
+
+`ComponentConfig.Prefix` は指定プレフィックスで始まる変数のみロードするよう制限します（大文字小文字を無視）。共有設定ファイルから自アプリケーションの分だけ取り出す場合によく使われます：
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.Prefix = "MYAPP_" // MYAPP_ で始まるキーのみロード
+loader, _ := env.New(cfg)
+```
+
+プレフィックスフィルタリングは `OverwriteExisting` ポリシーと組み合わされて適用されます：フィルタされたキーは上書きも保存もされません。
+
+### 未知の拡張子のフォールバック動作
+
+`DetectFormat` は未知の拡張子に `FormatAuto` を返し、その場合ローダーは **`.env` パーサーへフォールバック**して行単位でパースします。したがって `config.conf` や `config.txt` のようなファイルも、内容が `KEY=value` 形式であれば正常にロードできます。
 
 ## 関連ドキュメント
 

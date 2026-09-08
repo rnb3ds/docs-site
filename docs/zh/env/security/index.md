@@ -3,6 +3,7 @@ sidebar_label: "安全概述"
 title: "安全概述 - CyberGo env | 安全架构"
 description: "CyberGo env 安全架构概览，详解 SecureValue 内存锁定与自动清零、键值验证过滤控制字符与空字节、DefaultForbiddenKeys 禁止 PATH 与 LD_PRELOAD、IsSensitiveKey 自动检测、安全预设与审计追踪。"
 sidebar_position: 1
+sidebar_icon: "🛡️"
 ---
 
 # 安全概述
@@ -152,6 +153,10 @@ cfg := env.ProductionConfig()
 cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
 cfg.AllowedKeys = []string{"APP_NAME", "PORT", "DB_HOST", "API_KEY"}
 ```
+
+## 展开作用域隔离
+
+变量展开默认按「先文件、后进程环境」解析。对不可信配置来源，`ExpansionScope: ExpansionFileOnly` 可将引用范围限制在文件内部，阻断配置文件对进程机密（云凭证、令牌等）的探测与捕获（SEC-03）。配置方式与攻击场景详见[变量展开 · 展开作用域](/zh/env/guides/variable-expansion)。
 
 ## 相关文档
 

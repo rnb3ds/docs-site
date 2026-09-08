@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Константы и ошибки"
-title: "Константы и ошибки - CyberGo env | сигнальные ошибки и константы безопасности"
-description: "Справочник констант и ошибок CyberGo env: ограничения DefaultMaxFileSize и MaxVariables, сигнальные ошибки ErrFileNotFound, тип ParseError, запрещённые ключи DefaultForbiddenKeys и служебные функции IsSensitiveKey, MaskValue."
+title: "Константы и ошибки - CyberGo env | сигнальные ошибки"
+description: "Справочник констант и ошибок CyberGo env: ограничения DefaultMaxFileSize и DefaultMaxVariables, сигнальные ошибки и функции IsSensitiveKey, MaskValue."
 sidebar_position: 7
 ---
 
@@ -751,6 +751,30 @@ func main() {
     }
 }
 ```
+
+## Запрещённые ключи по умолчанию и шаблон ключей
+
+### Полный список DefaultForbiddenKeys
+
+Библиотека по умолчанию отказывается записывать следующие критичные системные переменные, сгруппированные по поверхности атаки:
+
+| Категория | Ключи | Защита от |
+|----------|-------|-----------|
+| Инъекция пути | `PATH` | Перехват поиска исполняемых файлов |
+| Динамический линковщик (Linux/macOS) | `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_DEBUG`, `LD_AUDIT`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64`, `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH` | Атаки предзагрузки библиотек |
+| Shell-эскейпы | `SHELL`, `ENV`, `BASH_ENV`, `IFS` | Инъекции в shell |
+| Инъекции интерпретаторов | `PYTHONPATH`, `PERL5OPT`, `RUBYLIB`, `NODE_PATH` | Внедрение кода в языковые рантаймы |
+| Специфика Windows | `COMSPEC`, `PATHEXT`, `SYSTEMROOT`, `WINDIR` | Перехват системных переменных Windows |
+
+Свои дополнения — через `ValidationConfig.ForbiddenKeys`; снятие встроенных ограничений требует собственного замещающего валидатора.
+
+### DefaultKeyPattern
+
+`DefaultKeyPattern` экспортируется как `nil` — проверка ключей по умолчанию идёт по **быстрому побайтовому пути** (эквивалент регулярного выражения `^[A-Za-z][A-Za-z0-9_]*$`), примерно на порядок быстрее регэкспа. Задание пользовательского `KeyPattern` переключает на регэксп и подвергает его четырём пробам из [проверок KeyPattern](/ru/env/api-reference/config).
+
+### ExpansionErrorKind
+
+Два значения `ExpansionError.Kind`: `ExpansionDepthKind` (превышение глубины/обнаружен цикл) и `ExpansionRequiredKind` (обязательная переменная `${VAR:?}` не задана). См. [руководство по обработке ошибок](/ru/env/guides/error-handling).
 
 ## Связанная документация
 

@@ -1,229 +1,323 @@
 ---
 sidebar_label: "JSONL Data Pipeline"
-title: "JSONL Data Pipeline - CyberGo JSON | Streaming & Conversion"
-description: "Build JSONL pipelines with CyberGo JSON: StreamLinesInto for streaming transforms, ToJSONL/ToJSONLString for batch conversion and ForeachFile for large files."
+title: "JSONL Data Pipeline - CyberGo JSON | Streaming & Batch"
+description: "CyberGo JSON JSONL data pipelines: StreamLinesInto streaming, ToJSONL/ToJSONLString batch format conversion, NDJSONProcessor and ForeachFile for large files."
 sidebar_position: 5
 ---
 
-# JSONL Data Pipeline
+# JSONL Data Pipelines
 
-This guide demonstrates how to build JSONL (newline-delimited JSON) data pipelines with CyberGo JSON: streaming reads, field transformation, batch format conversion, and large-file processing.
+This page shows how to build JSONL (newline-delimited JSON) data pipelines with CyberGo JSON: streaming reads, field transformation, batch format conversion, and large-file handling.
 
-## Stream-Read and Transform JSONL
+## Streaming Reads with Conversion
 
-Use the generic `StreamLinesInto[T]` to read a JSONL stream line by line and deserialize into a struct, transform fields in the callback, then write back to JSONL format with `ToJSONLString`.
+Use the generic `StreamLinesInto[T]` to read a JSONL stream line by line into structs, transform fields in the callback, and write everything back as JSONL in bulk with `ToJSONLString`.
 
 ```go
 package main
 
 import (
-    "fmt"
-    "strings"
+	"fmt"
+	"strings"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
-// LogEntry represents a single JSON log line
+// LogEntry represents one line of JSON log
 type LogEntry struct {
-    Timestamp string `json:"timestamp"`
-    Level     string `json:"level"`
-    Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+	Level     string `json:"level"`
+	Message   string `json:"message"`
 }
 
-// EnrichedLog is the transformed log (renamed fields plus a new category)
+// EnrichedLog is the transformed log (fields renamed plus a new category)
 type EnrichedLog struct {
-    Timestamp string `json:"ts"`
-    Level     string `json:"level"`
-    Message   string `json:"msg"`
-    Category  string `json:"category"`
+	Timestamp string `json:"ts"`
+	Level     string `json:"level"`
+	Message   string `json:"msg"`
+	Category  string `json:"category"`
 }
 
 func main() {
-    // Simulate a JSONL log stream (could come from a file or network in practice)
-    jsonlStream := `{"timestamp":"2024-01-01T10:00:00Z","level":"INFO","message":"service started"}
+	// Simulated JSONL log stream (in practice it could come from a file or network)
+	jsonlStream := `{"timestamp":"2024-01-01T10:00:00Z","level":"INFO","message":"service started"}
 {"timestamp":"2024-01-01T10:00:05Z","level":"ERROR","message":"database connection failed"}
 {"timestamp":"2024-01-01T10:00:10Z","level":"WARN","message":"response time exceeded threshold"}
-{"timestamp":"2024-01-01T10:00:15Z","level":"INFO","message":"reconnected"}`
+{"timestamp":"2024-01-01T10:00:15Z","level":"INFO","message":"reconnected successfully"}`
 
-    reader := strings.NewReader(jsonlStream)
+	reader := strings.NewReader(jsonlStream)
 
-    // 1. Stream-read and transform each log line
-    var enriched []any
-    entries, err := json.StreamLinesInto[LogEntry](reader, func(lineNum int, entry LogEntry) error {
-        // Categorize by level
-        category := "normal"
-        if entry.Level == "ERROR" {
-            category = "critical"
-        } else if entry.Level == "WARN" {
-            category = "warning"
-        }
+	// 1. Stream-read and transform each log line
+	var enriched []any
+	entries, err := json.StreamLinesInto[LogEntry](reader, func(lineNum int, entry LogEntry) error {
+		// Categorize by level
+		category := "normal"
+		if entry.Level == "ERROR" {
+			category = "critical"
+		} else if entry.Level == "WARN" {
+			category = "warning"
+		}
 
-        enriched = append(enriched, EnrichedLog{
-            Timestamp: entry.Timestamp,
-            Level:     entry.Level,
-            Message:   entry.Message,
-            Category:  category,
-        })
-        return nil
-    })
-    if err != nil {
-        panic(err)
-    }
+		enriched = append(enriched, EnrichedLog{
+			Timestamp: entry.Timestamp,
+			Level:     entry.Level,
+			Message:   entry.Message,
+			Category:  category,
+		})
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
 
-    // 2. Batch-convert back to JSONL format
-    output, err := json.ToJSONLString(enriched)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("processed %d log lines\n", len(entries))
-    fmt.Print(output)
+	// 2. Convert back to JSONL in bulk
+	output, err := json.ToJSONLString(enriched)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Processed %d log lines\n", len(entries))
+	fmt.Print(output)
 }
+
 // Output:
-// processed 4 log lines
+// Processed 4 log lines
 // {"ts":"2024-01-01T10:00:00Z","level":"INFO","msg":"service started","category":"normal"}
 // {"ts":"2024-01-01T10:00:05Z","level":"ERROR","msg":"database connection failed","category":"critical"}
 // {"ts":"2024-01-01T10:00:10Z","level":"WARN","msg":"response time exceeded threshold","category":"warning"}
-// {"ts":"2024-01-01T10:00:15Z","level":"INFO","msg":"reconnected","category":"normal"}
+// {"ts":"2024-01-01T10:00:15Z","level":"INFO","msg":"reconnected successfully","category":"normal"}
 ```
 
 ## Processing JSONL Files
 
-`NDJSONProcessor` processes a JSONL file line by line; the callback receives a `map[string]any` (handy when fields are not fixed). Aggregate results with `ToJSONL` to batch-convert to JSONL bytes.
+`NDJSONProcessor` processes a JSONL file line by line, handing the callback a `map[string]any` (suited to non-fixed fields). Aggregate results become JSONL bytes in bulk via `ToJSONL`.
 
 ```go
 package main
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
+	"fmt"
+	"os"
+	"path/filepath"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // Create a temp JSONL file so the example runs standalone
-    tmpDir, err := os.MkdirTemp("", "cybergo-pipeline-*")
-    if err != nil {
-        panic(err)
-    }
-    defer os.RemoveAll(tmpDir)
+	// Create a temp JSONL file so the example runs standalone
+	tmpDir, err := os.MkdirTemp("", "cybergo-pipeline-*")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
 
-    jsonlPath := filepath.Join(tmpDir, "events.jsonl")
-    jsonData := `{"event":"login","user":"alice","ts":"2024-01-01T10:00:00Z"}
+	jsonlPath := filepath.Join(tmpDir, "events.jsonl")
+	jsonData := `{"event":"login","user":"alice","ts":"2024-01-01T10:00:00Z"}
 {"event":"logout","user":"alice","ts":"2024-01-01T11:00:00Z"}
 {"event":"login","user":"bob","ts":"2024-01-01T12:00:00Z"}
 {"event":"purchase","user":"bob","ts":"2024-01-01T12:30:00Z"}`
-    if err := os.WriteFile(jsonlPath, []byte(jsonData), 0644); err != nil {
-        panic(err)
-    }
+	if err := os.WriteFile(jsonlPath, []byte(jsonData), 0644); err != nil {
+		panic(err)
+	}
 
-    // 1. Process line by line with NDJSONProcessor (each line parsed into map[string]any)
-    processor := json.NewNDJSONProcessor()
-    loginCount := 0
-    err = processor.ProcessFile(jsonlPath, func(lineNum int, obj map[string]any) error {
-        event, _ := obj["event"].(string)
-        user, _ := obj["user"].(string)
-        fmt.Printf("Line %d: %s by %s\n", lineNum, event, user)
-        if event == "login" {
-            loginCount++
-        }
-        return nil
-    })
-    if err != nil {
-        panic(err)
-    }
+	// 1. Process line by line with NDJSONProcessor (each line parsed as map[string]any)
+	processor := json.NewNDJSONProcessor()
+	loginCount := 0
+	err = processor.ProcessFile(jsonlPath, func(lineNum int, obj map[string]any) error {
+		event, _ := obj["event"].(string)
+		user, _ := obj["user"].(string)
+		fmt.Printf("Line %d: %s by %s\n", lineNum, event, user)
+		if event == "login" {
+			loginCount++
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
 
-    // 2. Convert aggregated results to JSONL (batch format conversion)
-    summary := []any{
-        map[string]any{"metric": "logins", "count": loginCount},
-        map[string]any{"metric": "total_events", "count": 4},
-    }
-    jsonlBytes, err := json.ToJSONL(summary)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Login events: %d\n", loginCount)
-    fmt.Printf("Aggregated:\n%s", string(jsonlBytes))
+	// 2. Convert the aggregate result to JSONL (batch format conversion)
+	summary := []any{
+		map[string]any{"metric": "logins", "count": loginCount},
+		map[string]any{"metric": "total_events", "count": 4},
+	}
+	jsonlBytes, err := json.ToJSONL(summary)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Login events: %d\n", loginCount)
+	fmt.Printf("Aggregated result:\n%s", string(jsonlBytes))
 }
+
 // Output:
 // Line 1: login by alice
 // Line 2: logout by alice
 // Line 3: login by bob
 // Line 4: purchase by bob
 // Login events: 2
-// Aggregated:
+// Aggregated result:
 // {"metric":"logins","count":2}
 // {"metric":"total_events","count":4}
 ```
 
-## Streaming Large JSON Array Files
+## Parallel Pipeline: StreamJSONLParallel + JSONLWriter Output
 
-For a **single large JSON array file** (not JSONL), use `ForeachFile` to iterate element by element without loading the entire file into memory at once.
+With many lines and heavy per-line work (transformation, validation, enrichment), `StreamJSONLParallel` consumes the stream with multiple workers; after collecting results in original line order, `JSONLWriter.WriteRaw` writes them back as JSONL without re-encoding:
 
 ```go
 package main
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
+	"bytes"
+	"fmt"
+	"slices"
+	"strings"
+	"sync"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    tmpDir, err := os.MkdirTemp("", "cybergo-big-*")
-    if err != nil {
-        panic(err)
-    }
-    defer os.RemoveAll(tmpDir)
+	// Simulated event-log stream (in practice from a large file — swap
+	// strings.NewReader for the *os.File from os.Open)
+	jsonlStream := `{"event":"login","user":"alice","ts":"10:00"}
+{"event":"page_view","user":"alice","ts":"10:01"}
+{"event":"login","user":"bob","ts":"10:02"}
+{"event":"purchase","user":"bob","ts":"10:03"}
+{"event":"login","user":"carol","ts":"10:04"}`
 
-    // Create a large JSON array file (simulating a big dataset)
-    arrayPath := filepath.Join(tmpDir, "records.json")
-    records := []any{
-        map[string]any{"id": 1, "amount": 100, "currency": "USD"},
-        map[string]any{"id": 2, "amount": 250, "currency": "EUR"},
-        map[string]any{"id": 3, "amount": 80, "currency": "USD"},
-        map[string]any{"id": 4, "amount": 500, "currency": "GBP"},
-        map[string]any{"id": 5, "amount": 120, "currency": "USD"},
-    }
-    if err := json.SaveToFile(arrayPath, records); err != nil {
-        panic(err)
-    }
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    // Stream over each element of the array with ForeachFile
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	// 1. Filter and transform in parallel: keep only login events, rewritten
+	//    as {user, at}. The callback runs concurrently across workers: lock
+	//    when writing shared state; store by lineNum and restore order afterwards
+	var mu sync.Mutex
+	logins := make(map[int][]byte)
 
-    totalUSD := 0
-    err = p.ForeachFile(arrayPath, func(key any, item *json.IterableValue) error {
-        currency := item.GetString("currency")
-        amount := item.GetInt("amount")
-        if currency == "USD" {
-            totalUSD += amount
-        }
-        return nil // return item.Break() to stop early
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Total USD: %d\n", totalUSD)
+	err = p.StreamJSONLParallel(strings.NewReader(jsonlStream), 4, func(lineNum int, item *json.IterableValue) error {
+		if item.GetString("event") != "login" {
+			return nil // Skip non-target events; return item.Break() to stop the whole stream cleanly
+		}
+		encoded, err := json.Marshal(map[string]any{
+			"user": item.GetString("user"),
+			"at":   item.GetString("ts"),
+		})
+		if err != nil {
+			return err // Returning an error stops dispatching and is reported verbatim
+		}
+		mu.Lock()
+		logins[lineNum] = encoded
+		mu.Unlock()
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// 2. Write results in original line order (WriteRaw writes already-encoded
+	// lines, only appending newlines)
+	lineNums := make([]int, 0, len(logins))
+	for n := range logins {
+		lineNums = append(lineNums, n)
+	}
+	slices.Sort(lineNums)
+
+	var out bytes.Buffer
+	writer := json.NewJSONLWriter(&out)
+	for _, n := range lineNums {
+		if err := writer.WriteRaw(logins[n]); err != nil {
+			panic(err)
+		}
+	}
+
+	fmt.Printf("Filtered %d login events (wrote %d lines)\n", len(logins), writer.Stats().LinesProcessed)
+	fmt.Print(out.String())
 }
+
+// Output:
+// Filtered 3 login events (wrote 3 lines)
+// {"at":"10:00","user":"alice"}
+// {"at":"10:02","user":"bob"}
+// {"at":"10:04","user":"carol"}
+```
+
+:::tip Parallel pipeline essentials
+- **Ordering**: parallel callbacks have no guaranteed execution order, but `lineNum` always maps to the original line number — collect by line number, sort, then write to preserve order.
+- **Worker count**: given explicitly by the second argument (4 in the example); for timeout/cancellation use `StreamJSONLParallelWithContext(ctx, reader, workers, fn)`.
+- **Throughput**: versus serial `StreamJSONL`, the gain depends on per-line cost — light extraction-only callbacks improve little, while heavy enrichment/validation callbacks improve markedly.
+:::
+
+## Streaming Traversal of Large JSON Array Files
+
+For a **large JSON array in a single file** (not JSONL), stream element by element with `ForeachFile` — no need to load the entire file into memory.
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	tmpDir, err := os.MkdirTemp("", "cybergo-big-*")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Create a large JSON array file (simulating a big dataset)
+	arrayPath := filepath.Join(tmpDir, "records.json")
+	records := []any{
+		map[string]any{"id": 1, "amount": 100, "currency": "USD"},
+		map[string]any{"id": 2, "amount": 250, "currency": "EUR"},
+		map[string]any{"id": 3, "amount": 80, "currency": "USD"},
+		map[string]any{"id": 4, "amount": 500, "currency": "GBP"},
+		map[string]any{"id": 5, "amount": 120, "currency": "USD"},
+	}
+	if err := json.SaveToFile(arrayPath, records); err != nil {
+		panic(err)
+	}
+
+	// Stream over each element of the array with ForeachFile
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	totalUSD := 0
+	err = p.ForeachFile(arrayPath, func(key any, item *json.IterableValue) error {
+		currency := item.GetString("currency")
+		amount := item.GetInt("amount")
+		if currency == "USD" {
+			totalUSD += amount
+		}
+		return nil // return item.Break() to interrupt early
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Total USD: %d\n", totalUSD)
+}
+
 // Output: Total USD: 320
 ```
 
-:::tip
+:::tip Note
 - **JSONL files** (one independent JSON object per line): use `StreamLinesInto[T]`, `NDJSONProcessor`, or `StreamJSONLFile`.
-- **Large JSON array files** (a single JSON array with many elements): use `ForeachFile` to stream without loading everything into memory.
+- **Large JSON array files** (a single JSON array with many elements): use `ForeachFile` to stream, avoiding a full in-memory load.
 :::
 
 ## Next Steps
 
-- [JSONL Streaming](../streaming/jsonl) — full JSONL processing guide
-- [Large File Processing](../streaming/large-files) — streaming large files in depth
-- [Basic Examples](./index) — basic JSONL read/write usage
-- [Cheat Sheet](../getting-started/cheatsheet) — quick API reference
+- [JSONL Streaming](../streaming/jsonl) — The complete JSONL guide
+- [Large File Handling](../streaming/large-files) — Streaming large files in detail
+- [Basic Examples](./index) — Basic JSONL read/write usage
+- [Cheat Sheet](../getting-started/cheatsheet) — Quick API reference

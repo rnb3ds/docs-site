@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Config"
 title: "Config API - CyberGo env | подробности конфигурации"
-description: "Справочник API структуры конфигурации Config CyberGo env: пути поиска файлов, ограничения размера и количества, валидация ключей и значений, параметры разбора JSON/YAML, подстановка переменных, конфигурация аудита и шаблоны пресетов Development/Production, доступ через вложенные структуры и поднятие полей."
+description: "Справочник Config API CyberGo env: пути поиска, ограничения размера, валидация ключей, разбор JSON/YAML и пресеты Development/Production."
 sidebar_position: 4
 ---
 
@@ -86,9 +86,10 @@ type YAMLConfig struct {
 
 // ParsingConfig управляет общим поведением разбора
 type ParsingConfig struct {
-    AllowExportPrefix bool // Разрешать синтаксис export KEY=value
-    AllowYamlSyntax   bool // Разрешать значения в стиле YAML
-    ExpandVariables   bool // Развертывать ли ссылки ${VAR}
+    AllowExportPrefix bool            // Разрешать синтаксис export KEY=value
+    AllowYamlSyntax   bool            // Разрешать значения в стиле YAML
+    ExpandVariables   bool            // Развертывать ли ссылки ${VAR}
+    ExpansionScope    ExpansionScope  // Область, из которой разрешаются ссылки ${VAR}
 }
 
 // ComponentConfig — пользовательские компоненты и расширенные опции
@@ -769,6 +770,59 @@ loader, _ := env.New(cfg)
 ```
 
 ---
+
+## Сравнение пресетов и подводные камни конфигурации
+
+### Полные различия четырёх пресетов
+
+| Параметр | Default | Development | Testing | Production |
+|----------|---------|-------------|---------|------------|
+| `FailOnMissingFile` | false | false | false | **true** |
+| `OverwriteExisting` | false | **true** | **true** | false |
+| `ValidateValues` | true | true | true | true |
+| `AllowExportPrefix` | true | true | true | true |
+| `AllowYamlSyntax` | false | **true** | false | false |
+| `ExpandVariables` | true | true | true | true |
+| `MaxFileSize` | 2 МБ | 10 МБ | 64 КБ | 64 КБ |
+| `MaxVariables` | 500 | 500 | 50 | 50 |
+| `JSONMaxDepth`/`YAMLMaxDepth` | 10 | 10 | 10 | 10 |
+| `AuditEnabled` | false | false | false | **true** |
+
+Суть: `DevelopmentConfig` ослабляет **удобство** (перезапись, YAML-синтаксис, размер файла) — валидация значений включена в каждом пресете; ни один пресет не жертвует защитой от инъекций.
+
+### Ключевые значения DefaultConfig
+
+| Пункт | По умолчанию |
+|-------|--------------|
+| Шаблон ключей | Встроенная побайтовая проверка (эквивалент `^[A-Za-z][A-Za-z0-9_]*$`) |
+| `ValidateValues` | true |
+| `JSONNullAsEmpty`/`JSONNumberAsString`/`JSONBoolAsString` | true |
+| `ExpandVariables` | true (область `ExpansionFileThenProcess`) |
+| `Prefix` | пусто (без фильтрации) |
+
+### Ловушка IsZero: всегда начинайте с DefaultConfig()
+
+`New()` автоматически применяет `DefaultConfig()` к **нулевому** Config. `IsZero()` решает по принципу «все ли обычные поля по умолчанию нулевые» — Config с несколькими заданными полями не ошибочно считается нулевым, но правило зависит от перечня полей, и **присвоение по одному полю из нулевой структуры** легко попадает на границы. Рекомендуемый шаблон — всегда:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig() // изменяйте поверх полных значений по умолчанию
+cfg.Filenames = []string{".env.production"}
+cfg.OverwriteExisting = true
+```
+
+### Пробы безопасности KeyPattern (SEC-06)
+
+Пользовательский `KeyPattern` проходит четыре пробы в `Config.Validate()`; провал любой отклоняет конфигурацию:
+
+1. Должен сопоставлять валидный ключ (например, `TEST_KEY`)
+2. Должен отвергать пустую строку
+3. Должен отвергать ключи, начинающиеся с цифры (например, `123_INVALID`)
+4. Должен отвергать ключи с `=`, `:`, переводами строк или управляющими символами — чтобы ключи с разделителями не переразбирались в **другие строки** после round-trip сериализации (инъекция round-trip)
+
+### ExpansionScope
+
+См. раздел «Область развёртки» в [руководстве по развёртке переменных](/ru/env/guides/variable-expansion). `ExpansionFileOnly` предназначен для недоверенных файлов конфигурации (SEC-03) и запрещает ссылкам `${VAR}` читать окружение процесса.
 
 ## Связанная документация
 

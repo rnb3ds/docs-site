@@ -1,13 +1,13 @@
 ---
-title: "Файловый ввод-вывод - CyberGo JSON | API справочник"
-description: "Файловый ввод-вывод CyberGo JSON: LoadFromFile/SaveToFile чтение/запись, LoadFromReader/SaveToWriter потоки и MarshalToFile/UnmarshalFromFile сериализация."
-sidebar_label: "Файловый ввод-вывод"
+sidebar_label: "Файловые операции"
+title: "Функции файловых операций - CyberGo JSON | Справочник API"
+description: "Функции файловых операций CyberGo JSON: LoadFromFile/SaveToFile, потоковые LoadFromReader/SaveToWriter и MarshalToFile/UnmarshalFromFile."
 sidebar_position: 9
 ---
 
-# Функции файлового ввода-вывода
+# Функции файловых операций
 
-Функции файловых операций из пакета json поддерживают чтение/запись файлов, потоковый ввод-вывод и типизированную сериализацию. Все пути файлов проходят проверку безопасности перед чтением/записью (см. [Проверка путей файлов](#проверка-путей-файлов-безопасность)).
+Функции файловых операций пакета json: чтение/запись файлов, потоковый ввод-вывод и типизированная сериализация. Все пути файлов перед чтением/записью проходят проверку безопасности (см. [Проверка путей файлов](#безопасность-проверка-путей-файлов)).
 
 ## Чтение и запись файлов
 
@@ -15,19 +15,19 @@ sidebar_position: 9
 
 Сигнатура: `func LoadFromFile(filePath string, cfg ...Config) (string, error)`
 
-Загружает JSON-данные из файла, возвращает **исходную строку** (без перекодирования, сохраняя порядок байтов и пробельные символы из файла). Размер файла ограничен `Config.MaxJSONSize`.
+Загружает JSON-данные из файла и возвращает **исходную строку** (без перекодирования: порядок байтов и пробелы из файла сохраняются). Размер файла ограничен `Config.MaxJSONSize`.
 
 **Параметры**
 
 | Имя | Тип | Обязателен | Описание |
 |------|------|------|------|
 | `filePath` | `string` | да | Путь к файлу (должен пройти проверку безопасности) |
-| `cfg` | `Config` | нет | Необязательная конфигурация (например, ужесточение `MaxJSONSize`) |
+| `cfg` | `Config` | нет | Необязательная конфигурация (например, ужесточить `MaxJSONSize`) |
 
 ```go
 data, err := json.LoadFromFile("config.json")
 if err != nil {
-    panic(err)
+	panic(err)
 }
 fmt.Println(data) // Исходная JSON-строка
 ```
@@ -36,62 +36,62 @@ fmt.Println(data) // Исходная JSON-строка
 
 Сигнатура: `func SaveToFile(filePath string, data any, cfg ...Config) error`
 
-Сохраняет данные в JSON-файл. Автоматически создаёт несуществующие родительские каталоги; использует **атомарную запись** (сначала запись во временный файл, затем rename — сбой не приведёт к усечению существующего файла). Строки / `[]byte` предварительно разбираются во избежание двойного экранирования.
+Сохраняет данные в JSON-файл. Автоматически создаёт несуществующие родительские каталоги; используется **атомарная запись** (сначала временный файл, затем rename — сбой не обрежет существующий файл). Входные данные string / `[]byte` предварительно парсятся, чтобы избежать двойного экранирования.
 
 **Параметры**
 
 | Имя | Тип | Обязателен | Описание |
 |------|------|------|------|
 | `filePath` | `string` | да | Путь к файлу (должен пройти проверку безопасности) |
-| `data` | `any` | да | Данные для сохранения (Go-значение или JSON-строка) |
+| `data` | `any` | да | Сохраняемые данные (значение Go или JSON-строка) |
 | `cfg` | `Config` | нет | Необязательная конфигурация (например, `PrettyConfig()` для форматированного вывода) |
 
 ```go
 // Компактное сохранение (по умолчанию)
 err := json.SaveToFile("output.json", map[string]any{
-    "name": "Alice",
-    "age":  30,
+	"name": "Alice",
+	"age":  30,
 })
 
 // Сохранение с форматированием
 err = json.SaveToFile("output.json", data, json.PrettyConfig())
 ```
 
-**Полный пример: круговой SaveToFile + LoadFromFile**
+**Полный пример: цикл SaveToFile + LoadFromFile**
 
 ```go
 package main
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // Создание временного файла для автономного запуска примера
-    tmp, err := os.CreateTemp("", "cybergo-*.json")
-    if err != nil {
-        panic(err)
-    }
-    path := tmp.Name()
-    tmp.Close()
-    defer os.Remove(path)
+	// Создаём временный файл, чтобы пример был самодостаточным
+	tmp, err := os.CreateTemp("", "cybergo-*.json")
+	if err != nil {
+		panic(err)
+	}
+	path := tmp.Name()
+	tmp.Close()
+	defer os.Remove(path)
 
-    // Запись: map кодируется с сортировкой ключей
-    err = json.SaveToFile(path, map[string]any{"name": "Alice", "age": 30})
-    if err != nil {
-        panic(err)
-    }
+	// Запись: map кодируется с сортировкой ключей
+	err = json.SaveToFile(path, map[string]any{"name": "Alice", "age": 30})
+	if err != nil {
+		panic(err)
+	}
 
-    // Чтение обратно: возвращает исходное содержимое файла
-    data, err := json.LoadFromFile(path)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data)
-    // Вывод: {"age":30,"name":"Alice"}
+	// Чтение обратно: возвращается исходное содержимое файла
+	data, err := json.LoadFromFile(path)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data)
+	// Вывод: {"age":30,"name":"Alice"}
 }
 ```
 
@@ -101,7 +101,7 @@ func main() {
 
 Сигнатура: `func LoadFromReader(reader io.Reader, cfg ...Config) (string, error)`
 
-Загружает JSON-данные из `io.Reader` и возвращает исходную строку. Количество прочитанных байт ограничено `Config.MaxJSONSize` (защита от исчерпания памяти), подходит для сетевых соединений, тел HTTP-ответов, каналов и других потоковых источников данных.
+Загружает JSON-данные из `io.Reader` и возвращает исходную строку. Объём прочитанных байтов ограничен `Config.MaxJSONSize` (защита от исчерпания памяти); подходит для сетевых соединений, тел HTTP-ответов, пайпов и других потоковых источников.
 
 **Параметры**
 
@@ -126,30 +126,30 @@ data, err = json.LoadFromReader(strings.NewReader(`{"name":"test"}`))
 package main
 
 import (
-    "fmt"
-    "strings"
+	"fmt"
+	"strings"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // Чтение из strings.Reader (исходное содержимое возвращается как есть)
-    reader := strings.NewReader(`{"name":"Alice","age":30}`)
-    data, err := json.LoadFromReader(reader)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data)
-    // Вывод: {"name":"Alice","age":30}
+	// Чтение из strings.Reader (исходное содержимое возвращается как есть)
+	reader := strings.NewReader(`{"name":"Alice","age":30}`)
+	data, err := json.LoadFromReader(reader)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data)
+	// Вывод: {"name":"Alice","age":30}
 }
 ```
 
-Чтение из `os.File` выполняется аналогично — `os.File` реализует `io.Reader`:
+Чтение из `os.File` выполняется так же — `os.File` реализует `io.Reader`:
 
 ```go
 file, err := os.Open("data.json")
 if err != nil {
-    panic(err)
+	panic(err)
 }
 defer file.Close()
 
@@ -160,14 +160,14 @@ data, err := json.LoadFromReader(file)
 
 Сигнатура: `func SaveToWriter(writer io.Writer, data any, cfg ...Config) error`
 
-Кодирует данные в JSON и записывает в `io.Writer`. Как и `SaveToFile`, предварительно разбирает строки / `[]byte` для предотвращения двойного экранирования, но **не выполняет проверку пути файла** (цель контролируется вызывающим).
+Кодирует данные в JSON и записывает в `io.Writer`. Как и `SaveToFile`, предварительно парсит входные данные string / `[]byte` против двойного экранирования, но **не проверяет путь файла** (цель контролирует вызывающая сторона).
 
 **Параметры**
 
 | Имя | Тип | Обязателен | Описание |
 |------|------|------|------|
 | `writer` | `io.Writer` | да | Цель вывода |
-| `data` | `any` | да | Данные для записи |
+| `data` | `any` | да | Записываемые данные |
 | `cfg` | `Config` | нет | Необязательная конфигурация |
 
 ```go
@@ -181,28 +181,28 @@ err := json.SaveToWriter(&buf, map[string]any{"name": "test"}, json.PrettyConfig
 package main
 
 import (
-    "bytes"
-    "fmt"
+	"bytes"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    var buf bytes.Buffer
-    err := json.SaveToWriter(&buf, map[string]any{"name": "Alice", "age": 30}, json.PrettyConfig())
-    if err != nil {
-        panic(err)
-    }
-    fmt.Print(buf.String())
-    // Вывод:
-    // {
-    //   "age": 30,
-    //   "name": "Alice"
-    // }
+	var buf bytes.Buffer
+	err := json.SaveToWriter(&buf, map[string]any{"name": "Alice", "age": 30}, json.PrettyConfig())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Print(buf.String())
+	// Вывод:
+	// {
+	//   "age": 30,
+	//   "name": "Alice"
+	// }
 }
 ```
 
-Запись в `os.File` выполняется аналогично — просто передайте файловый дескриптор.
+Запись в `os.File` аналогична — просто передайте дескриптор файла.
 
 ## Удобные методы сериализации
 
@@ -210,15 +210,15 @@ func main() {
 
 Сигнатура: `func MarshalToFile(filePath string, data any, cfg ...Config) error`
 
-Сериализует данные в JSON и записывает в файл. Отличие от `SaveToFile`: `MarshalToFile` напрямую вызывает `Marshal` / `MarshalIndent` (без предварительного разбора строк), подходит для записи структур, map и других Go-значений; `SaveToFile` подходит, когда ввод может уже быть JSON-строкой / `[]byte`. Оба автоматически создают родительские каталоги и используют атомарную запись.
+Сериализует данные в JSON и записывает в файл. **В текущей версии использует тот же конвейер «кодирование + атомарная запись», что и `SaveToFile`**: так же автоматически создаёт родительские каталоги, выполняет атомарную запись (временный файл + rename) и предварительно парсит входные данные string / `[]byte` против двойного экранирования; переданный `cfg` **действует полностью** (отступы, экранирование, обработка чисел и др. — в исторических версиях читался только флаг `Pretty`, остальные параметры кодирования молча отбрасывались). Поведение эквивалентно — выбирайте по смыслу: `MarshalToFile` для записи значений Go, `SaveToFile`, когда акцент на «сохранении JSON-документа».
 
 **Параметры**
 
 | Имя | Тип | Обязателен | Описание |
 |------|------|------|------|
 | `filePath` | `string` | да | Путь к файлу |
-| `data` | `any` | да | Данные для сериализации |
-| `cfg` | `Config` | нет | Необязательная конфигурация (`PrettyConfig()` для вывода с отступами) |
+| `data` | `any` | да | Сериализуемые данные |
+| `cfg` | `Config` | нет | Необязательная конфигурация (`PrettyConfig()` даёт вывод с отступами) |
 
 ```go
 err := json.MarshalToFile("data.json", myStruct)
@@ -229,7 +229,7 @@ err = json.MarshalToFile("data.json", myStruct, json.PrettyConfig())
 
 Сигнатура: `func UnmarshalFromFile(filePath string, v any, cfg ...Config) error`
 
-Читает JSON из файла и десериализует в целевую переменную. Это удобное объединение «чтение файла + `Unmarshal`», процесс чтения ограничен `MaxJSONSize`.
+Читает JSON из файла и десериализует в целевую переменную. Удобное сочетание «чтение файла + `Unmarshal`»; чтение ограничено `MaxJSONSize`.
 
 **Параметры**
 
@@ -244,110 +244,110 @@ var config MyConfig
 err := json.UnmarshalFromFile("config.json", &config)
 ```
 
-**Полный пример: круговой MarshalToFile + UnmarshalFromFile со структурой**
+**Полный пример: цикл MarshalToFile + UnmarshalFromFile для структуры**
 
 ```go
 package main
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 type User struct {
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
 func main() {
-    tmp, err := os.CreateTemp("", "cybergo-*.json")
-    if err != nil {
-        panic(err)
-    }
-    path := tmp.Name()
-    tmp.Close()
-    defer os.Remove(path)
+	tmp, err := os.CreateTemp("", "cybergo-*.json")
+	if err != nil {
+		panic(err)
+	}
+	path := tmp.Name()
+	tmp.Close()
+	defer os.Remove(path)
 
-    // Сериализация структуры в файл
-    err = json.MarshalToFile(path, User{Name: "Alice", Age: 30})
-    if err != nil {
-        panic(err)
-    }
+	// Сериализация структуры в файл
+	err = json.MarshalToFile(path, User{Name: "Alice", Age: 30})
+	if err != nil {
+		panic(err)
+	}
 
-    // Чтение из файла и десериализация
-    var user User
-    err = json.UnmarshalFromFile(path, &user)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("%s, %d\n", user.Name, user.Age)
-    // Вывод: Alice, 30
+	// Чтение из файла и десериализация
+	var user User
+	err = json.UnmarshalFromFile(path, &user)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s, %d\n", user.Name, user.Age)
+	// Вывод: Alice, 30
 }
 ```
 
 ## Безопасность: проверка путей файлов
 
-Все функции файлового ввода-вывода (`LoadFromFile` / `SaveToFile` / `MarshalToFile` / `UnmarshalFromFile`) перед операцией выполняют многоуровневую проверку безопасности путей, управляемую `Config.ValidateFilePath` (по умолчанию `true`). Проверка покрывает следующие векторы атак:
+Все файловые функции (`LoadFromFile` / `SaveToFile` / `MarshalToFile` / `UnmarshalFromFile`) перед операцией выполняют многоуровневую проверку пути; она управляется `Config.ValidateFilePath` (по умолчанию `true`). Проверка покрывает следующие векторы атак:
 
-| Защита | Описание |
+| Мера защиты | Описание |
 |--------|------|
-| Обход пути (path traversal) | Обнаружение `..`, `..\` и их URL-кодированных вариантов (`%2e%2e`, многоуровневое кодирование), Unicode-омоглифы (полноширинные точки / косые черты) |
-| Внедрение нуль-байта | Отказ от `\x00` в пути |
-| Выход по символической ссылке | Разрешение реального пути symlink для предотвращения указания на ограниченные области |
+| Обход пути (path traversal) | Обнаружение `..`, `..\` и их URL-кодированных вариантов (`%2e%2e`, многослойное кодирование), Unicode-омоглифов (полноширинные точка/слэш) |
+| Внедрение нулевого байта | Отклонение `\x00` в пути |
+| Побег по символическим ссылкам | Разрешение реального пути symlink против выхода в закрытые области |
 | Системные каталоги (Unix) | Блокировка доступа к `/dev/`, `/proc/`, `/etc/passwd`, `/root/` и другим чувствительным путям |
-| Зарезервированные имена Windows | Отказ от `CON`, `PRN`, `COM1-9`, `LPT1-9`, UNC-путей, альтернативных потоков данных (ADS) |
-| Размер файла | Проверка перед чтением, что существующий файл не превышает `MaxJSONSize`; при чтении используется `io.LimitReader` для защиты от TOCTOU |
+| Зарезервированные имена Windows | Отклонение `CON`, `PRN`, `COM1-9`, `LPT1-9`, UNC-путей, альтернативных потоков данных (ADS) |
+| Размер файла | Перед чтением проверяется, не превышает ли существующий файл `MaxJSONSize`; при чтении `io.LimitReader` защищает от TOCTOU |
 
 ```go
-// Атака обхода пути будет отклонена, возвращается security error
+// Атака обходом пути будет отклонена с возвратом security error
 _, err := json.LoadFromFile("../../etc/passwd")
 // err не nil: path traversal pattern detected
 
-// Нормальные пути не затрагиваются
+// Обычные пути не затрагиваются
 data, err := json.LoadFromFile("config/app.json")
 ```
 
-::: warning Внимание
-Проверка путей файлов всегда действует для файловых операций (`LoadFromReader` / `SaveToWriter` не связаны с путями, поэтому не проверяются). При обработке имён файлов, предоставленных пользователем, эти проверки — часть эшелонированной защиты, но на уровне приложения также следует использовать белые списки.
+::: warning Примечание
+Проверка пути файлов всегда действует для файловых операций (`LoadFromReader` / `SaveToWriter` пути не касаются и потому не проверяются). При работе с пользовательскими именами файлов эти проверки — один из уровней эшелонированной обороны, но на уровне приложения всё равно следует применять white-list ограничения.
 :::
 
 ## Функции итерации файлов
 
-Пакет json предоставляет семейство функций `ForeachFile`, напрямую итерирующих JSON-массивы / объекты из файла без ручного чтения и разбора:
+Пакет json предоставляет серию функций `ForeachFile`, выполняющих итерацию JSON-массива/объекта прямо из файла, без ручного чтения + разбора:
 
 | Функция | Назначение |
 |------|------|
-| `ForeachFile(path, fn, cfg...)` | Итерация корневого массива / объекта файла |
-| `ForeachFileWithPath(path, pathExpr, fn, cfg...)` | Итерация коллекции по указанному пути в файле |
+| `ForeachFile(path, fn, cfg...)` | Итерация корневого массива/объекта файла |
+| `ForeachFileWithPath(path, pathExpr, fn, cfg...)` | Итерация коллекции по указанному пути внутри файла |
 | `ForeachFileChunked(path, chunkSize, fn, cfg...)` | Итерация большого массива порциями (chunk) |
 | `ForeachFileNested(path, fn, cfg...)` | Рекурсивная итерация всех вложенных структур |
 
 ```go
 err := json.ForeachFile("users.json", func(key any, item *json.IterableValue) error {
-    fmt.Println(item.GetString("name"))
-    return nil
+	fmt.Println(item.GetString("name"))
+	return nil
 })
 ```
 
-Эти функции — удобное объединение `LoadFromFile` + `Foreach`, подходящее для обработки больших коллекций. Подробности потоковой обработки и оптимизации памяти см. в [Потоковая обработка](../../streaming/large-files).
+Это удобное сочетание `LoadFromFile` + `Foreach`, подходящее для больших коллекций. Подробности потоковой обработки и оптимизации памяти см. в [Потоковой обработке](../../streaming/large-files).
 
 ## Выбор метода
 
 | Сценарий | Рекомендуемая функция |
 |------|----------|
-| Чтение файла для получения исходной строки | `LoadFromFile` |
-| Чтение файла и десериализация в структуру | `UnmarshalFromFile` |
-| Чтение из Reader / HTTP Body | `LoadFromReader` |
-| Сохранение Go-значения в файл (компактно) | `SaveToFile` / `MarshalToFile` |
-| Сохранение с форматированием | `SaveToFile(path, data, json.PrettyConfig())` |
-| Запись в Writer / Buffer | `SaveToWriter` |
-| Итерация коллекции в файле | Семейство `ForeachFile` |
+| Прочитать файл в исходную строку | `LoadFromFile` |
+| Прочитать файл и десериализовать в структуру | `UnmarshalFromFile` |
+| Читать из Reader / HTTP Body | `LoadFromReader` |
+| Сохранить значение Go в файл (компактно) | `SaveToFile` / `MarshalToFile` |
+| Сохранить с форматированием | `SaveToFile(path, data, json.PrettyConfig())` |
+| Записать в Writer / Buffer | `SaveToWriter` |
+| Итерировать коллекцию из файла | серия `ForeachFile` |
 
 ## См. также
 
-- [Функции обработки JSONL](./jsonl) - ParseJSONL, StreamLinesInto и др. для JSON с разделителями-новыми строками
-- [Функции кодирования и вывода](./output) - Marshal, Unmarshal и др. операции сериализации
-- [Потоковая обработка](../../streaming/large-files) - потоковый процессор и итерация больших файлов
+- [Функции обработки JSONL](./jsonl) - обработка JSON с разделением строками ParseJSONL, StreamLinesInto и др.
+- [Функции кодирования и вывода](./output) - операции сериализации Marshal, Unmarshal и др.
+- [Потоковая обработка](../../streaming/large-files) - подробный разбор потоковых обработчиков и итерации больших файлов
 - [Файловые операции Processor](../processor/file-io) - соответствующие методы экземпляра Processor

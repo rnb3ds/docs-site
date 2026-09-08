@@ -1,7 +1,7 @@
 ---
 sidebar_label: "安全模式"
 title: "安全模式 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 安全 API：安全配置、AddDangerousPattern 危险模式与输入验证，防御 JSON 注入、原型污染与 XSS 等威胁。"
+description: "CyberGo JSON 安全 API：安全配置、AddDangerousPattern 注册自定义危险模式、PatternLevel 三级严重度与内置危险模式，配合输入验证防御 JSON 注入、原型污染与 XSS 等威胁，命中即拒绝且匹配大小写不敏感。"
 sidebar_position: 2
 ---
 
@@ -63,7 +63,19 @@ const (
 func (pl PatternLevel) String() string
 ```
 
-返回 PatternLevel 的字符串表示。
+返回 PatternLevel 的字符串表示（`"critical"`、`"warning"`、`"info"`、未知值返回 `"unknown"`）。
+
+### PatternLevel 行为矩阵
+
+| 级别 | 语义意图（接口文档） | 当前实现的实际行为 |
+|------|----------------------|--------------------|
+| `PatternLevelCritical` | 始终阻止操作 | 命中即拒绝（`ErrSecurityViolation`） |
+| `PatternLevelWarning` | 严格模式下阻止，宽松模式记录警告 | **同样命中即拒绝**——`StrictMode` 字段当前不参与模式拦截决策 |
+| `PatternLevelInfo` | 仅记录，从不阻止 | **同样命中即拒绝** |
+
+::: warning 请按「会拦截」规划 Warning/Info 模式
+当前版本的模式扫描（内置模式、`Config.AdditionalDangerousPatterns`、全局注册模式三者走同一扫描路径）对任何通过词边界上下文检查的命中都会拒绝操作，`Level` 不改变拦截结果，仅作为语义标注供审计/日志区分严重度。因此**不要**注册一个「只想记录、不想拦截」的 `PatternLevelInfo` 级模式并放行含该模式的输入——它今天会拦截。所有匹配均为大小写不敏感。
+:::
 
 ---
 
@@ -237,10 +249,69 @@ for _, p := range patterns {
 }
 ```
 
-::: tip 全局模式 vs Config 模式
-- **全局模式**（`RegisterDangerousPattern`）：所有 Processor 实例共享，适合应用级安全策略
-- **Config 模式**（`Config.AddDangerousPattern`）：仅影响使用该 Config 的 Processor，适合实例级定制
-:::
+### 全局注册 vs Config 追加
+
+| 维度 | 全局注册（`RegisterDangerousPattern`） | Config 追加（`AddDangerousPattern` / `AdditionalDangerousPatterns`） |
+|------|----------------------------------------|---------------------------------------------------------------------|
+| 作用域 | 进程内**所有** Processor，含已创建的实例（扫描时实时读取注册表） | 仅使用该 Config 创建的 Processor（构造时固化进安全校验器） |
+| 移除方式 | `UnregisterDangerousPattern(pattern)` 即时生效 | 无运行期移除，需换新 Config 重建 Processor |
+| 查询方式 | `ListDangerousPatterns()` | 读取 `cfg.AdditionalDangerousPatterns` 字段 |
+| 与 `DisableDefaultPatterns` 的关系 | 不受影响（显式加入的模式始终扫描） | 不受影响（同左） |
+| 典型用途 | 应用级安全策略、合规黑名单，`main` 启动时注册 | 单个实例的业务定制（如仅某个租户的 Processor 拦截特定关键词） |
+
+完整对比示例：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// 全局注册：对所有 Processor 生效（含已创建的实例）
+	json.RegisterDangerousPattern(json.DangerousPattern{
+		Pattern: "internal_only",
+		Name:    "内部标识符",
+		Level:   json.PatternLevelCritical,
+	})
+	defer json.UnregisterDangerousPattern("internal_only")
+
+	// Config 追加：仅影响使用该 Config 的 Processor
+	cfg := json.DefaultConfig()
+	cfg.AddDangerousPattern(json.DangerousPattern{
+		Pattern: "project_secret",
+		Name:    "项目机密",
+		Level:   json.PatternLevelCritical,
+	})
+
+	withCfg, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer withCfg.Close()
+
+	withoutCfg, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer withoutCfg.Close()
+
+	_, err1 := withCfg.Get(`{"v": "project_secret"}`, "v")
+	_, err2 := withoutCfg.Get(`{"v": "project_secret"}`, "v")
+	_, err3 := withoutCfg.Get(`{"v": "internal_only"}`, "v")
+
+	fmt.Println("局部模式拦截配置处理器:", err1 != nil)
+	fmt.Println("局部模式拦截普通处理器:", err2 != nil)
+	fmt.Println("全局模式拦截普通处理器:", err3 != nil)
+	// 输出：
+	// 局部模式拦截配置处理器: true
+	// 局部模式拦截普通处理器: false
+	// 全局模式拦截普通处理器: true
+}
+```
 
 ---
 
@@ -252,40 +323,43 @@ for _, p := range patterns {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 方式一：通过配置字段
-    cfg := json.DefaultConfig()
-    cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
-        {Pattern: "company_secret", Name: "公司敏感信息", Level: json.PatternLevelCritical},
-    }
+	// 方式一：通过配置字段
+	cfg := json.DefaultConfig()
+	cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
+		{Pattern: "company_secret", Name: "公司敏感信息", Level: json.PatternLevelCritical},
+	}
 
-    // 方式二：通过配置方法
-    cfg.AddDangerousPattern(json.DangerousPattern{
-        Pattern: "internal_api",
-        Name:    "内部 API 引用",
-        Level:   json.PatternLevelWarning,
-    })
+	// 方式二：通过配置方法
+	cfg.AddDangerousPattern(json.DangerousPattern{
+		Pattern: "internal_api",
+		Name:    "内部 API 引用",
+		Level:   json.PatternLevelWarning,
+	})
 
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    // 测试危险模式检测
-    _, err = p.Get(`{"data": "company_secret_info"}`, "data")
-    if err != nil {
-        fmt.Println("检测到危险模式：", err)
-    }
+	// 测试危险模式检测（模式作为整词匹配：两侧不能紧邻字母/数字/下划线）
+	_, err = p.Get(`{"data": "company_secret"}`, "data")
+	fmt.Println("检测到危险模式:", err != nil)
+	// 输出：检测到危险模式: true
 
-    // 查看已注册的模式
-    fmt.Printf("自定义模式数量：%d\n", len(cfg.AdditionalDangerousPatterns))
+	// 查看已注册的模式
+	fmt.Printf("自定义模式数量：%d\n", len(cfg.AdditionalDangerousPatterns))
 }
 ```
+
+::: tip 匹配是「整词」的
+模式命中后会做词边界上下文检查：模式两侧紧邻字母、数字或下划线时视为普通标识符的一部分而不拦截。例如模式 `company_secret` 在 `"company_secret"` 中触发，在 `"company_secret_info"` 中不触发（后跟 `_` 属词内字符）；以 `(`、`[`、`:`、`.` 等分隔符结尾的模式（如 `eval(`）则不受后缀影响。这也是库内置模式（如 `eval(`、`__proto__`）的匹配方式。
+:::
 
 ### 禁用默认模式
 
@@ -318,7 +392,7 @@ cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "suspicious_but_allowed",
     Name:    "可疑但允许",
-    Level:   json.PatternLevelInfo, // 仅记录，不阻止
+    Level:   json.PatternLevelInfo, // 语义标注；当前实现命中同样会拦截（见 PatternLevel 行为矩阵）
 })
 
 // 查看已注册的自定义模式
@@ -326,6 +400,27 @@ for _, p := range cfg.AdditionalDangerousPatterns {
     fmt.Printf("模式: %s, 名称: %s, 级别: %s\n", p.Pattern, p.Name, p.Level)
 }
 ```
+
+---
+
+## 扫描开关
+
+三个 Config 字段控制「怎么扫」：
+
+| 字段 | 默认 | 作用 |
+|------|------|------|
+| `FullSecurityScan` | `false` | `true` 时对所有输入不分大小做全量扫描；`false` 时小输入（< 4KB）全量、大输入走分层优化扫描（见下节，同样保证 100% 覆盖）。全量模式对 >100KB 输入约有 10–30% 额外开销 |
+| `DisableDefaultPatterns` | `false` | `true` 时跳过内置的非关键模式（HTML 标签、事件处理器等），仅保留 3 个关键模式 + 自定义模式 |
+| `AdditionalDangerousPatterns` | `nil` | 在内置模式之外叠加自定义模式（见上文） |
+
+```go
+cfg := json.SecurityConfig() // 已开启 FullSecurityScan 并收紧各项限制
+// 等价于手动设置：
+// cfg := json.DefaultConfig()
+// cfg.FullSecurityScan = true
+```
+
+开启建议：处理**不可信输入**（公网 API、用户提交、外部 webhook）、涉及敏感数据（认证、金融、个人信息）或有合规全量审计要求时启用 `FullSecurityScan`；可信内部服务的大报文可保持默认的分层扫描以兼顾吞吐。
 
 ---
 
@@ -349,5 +444,5 @@ for _, p := range cfg.AdditionalDangerousPatterns {
 ## 相关
 
 - [Config](../api-reference/config) - 配置选项
-- [Validator](../extensions/validator) - 验证器
+- [Schema 校验](../api-reference/schema) - Schema 验证
 - [Hook 钩子系统](../extensions/hooks) - 操作拦截

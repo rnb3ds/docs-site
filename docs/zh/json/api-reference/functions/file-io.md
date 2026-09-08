@@ -63,35 +63,35 @@ err = json.SaveToFile("output.json", data, json.PrettyConfig())
 package main
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 创建临时文件，确保示例可独立运行
-    tmp, err := os.CreateTemp("", "cybergo-*.json")
-    if err != nil {
-        panic(err)
-    }
-    path := tmp.Name()
-    tmp.Close()
-    defer os.Remove(path)
+	// 创建临时文件，确保示例可独立运行
+	tmp, err := os.CreateTemp("", "cybergo-*.json")
+	if err != nil {
+		panic(err)
+	}
+	path := tmp.Name()
+	tmp.Close()
+	defer os.Remove(path)
 
-    // 写入：map 按键名排序编码
-    err = json.SaveToFile(path, map[string]any{"name": "Alice", "age": 30})
-    if err != nil {
-        panic(err)
-    }
+	// 写入：map 按键名排序编码
+	err = json.SaveToFile(path, map[string]any{"name": "Alice", "age": 30})
+	if err != nil {
+		panic(err)
+	}
 
-    // 读回：返回文件的原始内容
-    data, err := json.LoadFromFile(path)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data)
-    // 输出：{"age":30,"name":"Alice"}
+	// 读回：返回文件的原始内容
+	data, err := json.LoadFromFile(path)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data)
+	// 输出：{"age":30,"name":"Alice"}
 }
 ```
 
@@ -126,21 +126,21 @@ data, err = json.LoadFromReader(strings.NewReader(`{"name":"test"}`))
 package main
 
 import (
-    "fmt"
-    "strings"
+	"fmt"
+	"strings"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 从 strings.Reader 读取（原始内容原样返回）
-    reader := strings.NewReader(`{"name":"Alice","age":30}`)
-    data, err := json.LoadFromReader(reader)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data)
-    // 输出：{"name":"Alice","age":30}
+	// 从 strings.Reader 读取（原始内容原样返回）
+	reader := strings.NewReader(`{"name":"Alice","age":30}`)
+	data, err := json.LoadFromReader(reader)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data)
+	// 输出：{"name":"Alice","age":30}
 }
 ```
 
@@ -181,24 +181,24 @@ err := json.SaveToWriter(&buf, map[string]any{"name": "test"}, json.PrettyConfig
 package main
 
 import (
-    "bytes"
-    "fmt"
+	"bytes"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    var buf bytes.Buffer
-    err := json.SaveToWriter(&buf, map[string]any{"name": "Alice", "age": 30}, json.PrettyConfig())
-    if err != nil {
-        panic(err)
-    }
-    fmt.Print(buf.String())
-    // 输出：
-    // {
-    //   "age": 30,
-    //   "name": "Alice"
-    // }
+	var buf bytes.Buffer
+	err := json.SaveToWriter(&buf, map[string]any{"name": "Alice", "age": 30}, json.PrettyConfig())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Print(buf.String())
+	// 输出：
+	// {
+	//   "age": 30,
+	//   "name": "Alice"
+	// }
 }
 ```
 
@@ -210,7 +210,7 @@ func main() {
 
 签名：`func MarshalToFile(filePath string, data any, cfg ...Config) error`
 
-将数据序列化为 JSON 并写入文件。与 `SaveToFile` 的区别：`MarshalToFile` 直接调用 `Marshal` / `MarshalIndent`（不做字符串预解析），适合写入结构体、map 等 Go 值；`SaveToFile` 适合输入可能已经是 JSON 字符串 / `[]byte` 的场景。两者均自动创建父目录并原子写入。
+将数据序列化为 JSON 并写入文件。**当前版本与 `SaveToFile` 共用同一条「编码 + 原子写入」流水线**：同样自动创建父目录、原子写入（临时文件 + rename），同样对字符串 / `[]byte` 输入做预解析以避免二次转义；传入的 `cfg` **全量生效**（缩进、转义、数字处理等——历史版本只读取 `Pretty` 标志，其余编码选项会被静默丢弃）。两者行为等价，按语义选用即可：写入 Go 值用 `MarshalToFile`，强调「保存 JSON 文档」用 `SaveToFile`。
 
 **参数**
 
@@ -250,40 +250,40 @@ err := json.UnmarshalFromFile("config.json", &config)
 package main
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 type User struct {
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
 func main() {
-    tmp, err := os.CreateTemp("", "cybergo-*.json")
-    if err != nil {
-        panic(err)
-    }
-    path := tmp.Name()
-    tmp.Close()
-    defer os.Remove(path)
+	tmp, err := os.CreateTemp("", "cybergo-*.json")
+	if err != nil {
+		panic(err)
+	}
+	path := tmp.Name()
+	tmp.Close()
+	defer os.Remove(path)
 
-    // 序列化结构体写入文件
-    err = json.MarshalToFile(path, User{Name: "Alice", Age: 30})
-    if err != nil {
-        panic(err)
-    }
+	// 序列化结构体写入文件
+	err = json.MarshalToFile(path, User{Name: "Alice", Age: 30})
+	if err != nil {
+		panic(err)
+	}
 
-    // 从文件读取并反序列化
-    var user User
-    err = json.UnmarshalFromFile(path, &user)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("%s, %d\n", user.Name, user.Age)
-    // 输出：Alice, 30
+	// 从文件读取并反序列化
+	var user User
+	err = json.UnmarshalFromFile(path, &user)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s, %d\n", user.Name, user.Age)
+	// 输出：Alice, 30
 }
 ```
 

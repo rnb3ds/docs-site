@@ -1,7 +1,7 @@
 ---
 sidebar_label: "JSONL 数据管道"
 title: "JSONL 数据管道 - CyberGo JSON | 流式处理与批量转换"
-description: "CyberGo JSON 构建 JSONL 数据管道：StreamLinesInto 流式读取并转换、ToJSONL/ToJSONLString 批量格式转换、NDJSONProcessor 与 ForeachFile 处理大文件。"
+description: "CyberGo JSON 构建 JSONL 数据管道：StreamLinesInto 流式读取并转换、ToJSONL/ToJSONLString 批量格式转换、NDJSONProcessor 与 ForeachFile 处理大文件，实现字段富化与批量转换。"
 sidebar_position: 5
 ---
 
@@ -17,67 +17,68 @@ sidebar_position: 5
 package main
 
 import (
-    "fmt"
-    "strings"
+	"fmt"
+	"strings"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 // LogEntry 表示一行 JSON 日志
 type LogEntry struct {
-    Timestamp string `json:"timestamp"`
-    Level     string `json:"level"`
-    Message   string `json:"message"`
+	Timestamp string `json:"timestamp"`
+	Level     string `json:"level"`
+	Message   string `json:"message"`
 }
 
 // EnrichedLog 是转换后的日志（重命名字段并新增分类）
 type EnrichedLog struct {
-    Timestamp string `json:"ts"`
-    Level     string `json:"level"`
-    Message   string `json:"msg"`
-    Category  string `json:"category"`
+	Timestamp string `json:"ts"`
+	Level     string `json:"level"`
+	Message   string `json:"msg"`
+	Category  string `json:"category"`
 }
 
 func main() {
-    // 模拟 JSONL 日志流（实际可来自文件或网络）
-    jsonlStream := `{"timestamp":"2024-01-01T10:00:00Z","level":"INFO","message":"服务启动"}
+	// 模拟 JSONL 日志流（实际可来自文件或网络）
+	jsonlStream := `{"timestamp":"2024-01-01T10:00:00Z","level":"INFO","message":"服务启动"}
 {"timestamp":"2024-01-01T10:00:05Z","level":"ERROR","message":"数据库连接失败"}
 {"timestamp":"2024-01-01T10:00:10Z","level":"WARN","message":"响应时间超过阈值"}
 {"timestamp":"2024-01-01T10:00:15Z","level":"INFO","message":"重连成功"}`
 
-    reader := strings.NewReader(jsonlStream)
+	reader := strings.NewReader(jsonlStream)
 
-    // 1. 流式读取并转换每行日志
-    var enriched []any
-    entries, err := json.StreamLinesInto[LogEntry](reader, func(lineNum int, entry LogEntry) error {
-        // 根据级别分类
-        category := "normal"
-        if entry.Level == "ERROR" {
-            category = "critical"
-        } else if entry.Level == "WARN" {
-            category = "warning"
-        }
+	// 1. 流式读取并转换每行日志
+	var enriched []any
+	entries, err := json.StreamLinesInto[LogEntry](reader, func(lineNum int, entry LogEntry) error {
+		// 根据级别分类
+		category := "normal"
+		if entry.Level == "ERROR" {
+			category = "critical"
+		} else if entry.Level == "WARN" {
+			category = "warning"
+		}
 
-        enriched = append(enriched, EnrichedLog{
-            Timestamp: entry.Timestamp,
-            Level:     entry.Level,
-            Message:   entry.Message,
-            Category:  category,
-        })
-        return nil
-    })
-    if err != nil {
-        panic(err)
-    }
+		enriched = append(enriched, EnrichedLog{
+			Timestamp: entry.Timestamp,
+			Level:     entry.Level,
+			Message:   entry.Message,
+			Category:  category,
+		})
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
 
-    // 2. 批量转换回 JSONL 格式
-    output, err := json.ToJSONLString(enriched)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("处理了 %d 行日志\n", len(entries))
-    fmt.Print(output)
+	// 2. 批量转换回 JSONL 格式
+	output, err := json.ToJSONLString(enriched)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("处理了 %d 行日志\n", len(entries))
+	fmt.Print(output)
 }
+
 // 输出：
 // 处理了 4 行日志
 // {"ts":"2024-01-01T10:00:00Z","level":"INFO","msg":"服务启动","category":"normal"}
@@ -94,58 +95,59 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
+	"fmt"
+	"os"
+	"path/filepath"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 创建临时 JSONL 文件确保示例可独立运行
-    tmpDir, err := os.MkdirTemp("", "cybergo-pipeline-*")
-    if err != nil {
-        panic(err)
-    }
-    defer os.RemoveAll(tmpDir)
+	// 创建临时 JSONL 文件确保示例可独立运行
+	tmpDir, err := os.MkdirTemp("", "cybergo-pipeline-*")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
 
-    jsonlPath := filepath.Join(tmpDir, "events.jsonl")
-    jsonData := `{"event":"login","user":"alice","ts":"2024-01-01T10:00:00Z"}
+	jsonlPath := filepath.Join(tmpDir, "events.jsonl")
+	jsonData := `{"event":"login","user":"alice","ts":"2024-01-01T10:00:00Z"}
 {"event":"logout","user":"alice","ts":"2024-01-01T11:00:00Z"}
 {"event":"login","user":"bob","ts":"2024-01-01T12:00:00Z"}
 {"event":"purchase","user":"bob","ts":"2024-01-01T12:30:00Z"}`
-    if err := os.WriteFile(jsonlPath, []byte(jsonData), 0644); err != nil {
-        panic(err)
-    }
+	if err := os.WriteFile(jsonlPath, []byte(jsonData), 0644); err != nil {
+		panic(err)
+	}
 
-    // 1. 用 NDJSONProcessor 逐行处理（每行解析为 map[string]any）
-    processor := json.NewNDJSONProcessor()
-    loginCount := 0
-    err = processor.ProcessFile(jsonlPath, func(lineNum int, obj map[string]any) error {
-        event, _ := obj["event"].(string)
-        user, _ := obj["user"].(string)
-        fmt.Printf("第 %d 行: %s by %s\n", lineNum, event, user)
-        if event == "login" {
-            loginCount++
-        }
-        return nil
-    })
-    if err != nil {
-        panic(err)
-    }
+	// 1. 用 NDJSONProcessor 逐行处理（每行解析为 map[string]any）
+	processor := json.NewNDJSONProcessor()
+	loginCount := 0
+	err = processor.ProcessFile(jsonlPath, func(lineNum int, obj map[string]any) error {
+		event, _ := obj["event"].(string)
+		user, _ := obj["user"].(string)
+		fmt.Printf("第 %d 行: %s by %s\n", lineNum, event, user)
+		if event == "login" {
+			loginCount++
+		}
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
 
-    // 2. 聚合结果转为 JSONL（批量格式转换）
-    summary := []any{
-        map[string]any{"metric": "logins", "count": loginCount},
-        map[string]any{"metric": "total_events", "count": 4},
-    }
-    jsonlBytes, err := json.ToJSONL(summary)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("登录事件数: %d\n", loginCount)
-    fmt.Printf("聚合结果:\n%s", string(jsonlBytes))
+	// 2. 聚合结果转为 JSONL（批量格式转换）
+	summary := []any{
+		map[string]any{"metric": "logins", "count": loginCount},
+		map[string]any{"metric": "total_events", "count": 4},
+	}
+	jsonlBytes, err := json.ToJSONL(summary)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("登录事件数: %d\n", loginCount)
+	fmt.Printf("聚合结果:\n%s", string(jsonlBytes))
 }
+
 // 输出：
 // 第 1 行: login by alice
 // 第 2 行: logout by alice
@@ -157,6 +159,94 @@ func main() {
 // {"metric":"total_events","count":4}
 ```
 
+## 并行管道：StreamJSONLParallel + JSONLWriter 写出
+
+行数多、单行处理重（转换、校验、富化）时，`StreamJSONLParallel` 用多 worker 并行消费流；结果按原始行序收集后，用 `JSONLWriter.WriteRaw` 免再编码写回 JSONL：
+
+```go
+package main
+
+import (
+	"bytes"
+	"fmt"
+	"slices"
+	"strings"
+	"sync"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// 模拟事件日志流（实际可来自大文件，把 strings.NewReader 换成 os.Open 的 *os.File）
+	jsonlStream := `{"event":"login","user":"alice","ts":"10:00"}
+{"event":"page_view","user":"alice","ts":"10:01"}
+{"event":"login","user":"bob","ts":"10:02"}
+{"event":"purchase","user":"bob","ts":"10:03"}
+{"event":"login","user":"carol","ts":"10:04"}`
+
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	// 1. 并行过滤并转换：只保留 login 事件，改写为 {user, at} 结构。
+	//    回调在多个 worker 中并发执行：写共享 map 须加锁；按 lineNum 存储，完成后恢复原顺序
+	var mu sync.Mutex
+	logins := make(map[int][]byte)
+
+	err = p.StreamJSONLParallel(strings.NewReader(jsonlStream), 4, func(lineNum int, item *json.IterableValue) error {
+		if item.GetString("event") != "login" {
+			return nil // 跳过非目标事件；返回 item.Break() 可干净地停止整个流
+		}
+		encoded, err := json.Marshal(map[string]any{
+			"user": item.GetString("user"),
+			"at":   item.GetString("ts"),
+		})
+		if err != nil {
+			return err // 返回错误会停止派发并原样上报
+		}
+		mu.Lock()
+		logins[lineNum] = encoded
+		mu.Unlock()
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// 2. 按原始行序写出结果（WriteRaw 直接写已编码行，仅补换行）
+	lineNums := make([]int, 0, len(logins))
+	for n := range logins {
+		lineNums = append(lineNums, n)
+	}
+	slices.Sort(lineNums)
+
+	var out bytes.Buffer
+	writer := json.NewJSONLWriter(&out)
+	for _, n := range lineNums {
+		if err := writer.WriteRaw(logins[n]); err != nil {
+			panic(err)
+		}
+	}
+
+	fmt.Printf("筛出 %d 条登录事件（写出 %d 行）\n", len(logins), writer.Stats().LinesProcessed)
+	fmt.Print(out.String())
+}
+
+// 输出：
+// 筛出 3 条登录事件（写出 3 行）
+// {"at":"10:00","user":"alice"}
+// {"at":"10:02","user":"bob"}
+// {"at":"10:04","user":"carol"}
+```
+
+:::tip 并行管道要点
+- **顺序**：并行回调的执行顺序不保证，但 `lineNum` 始终对应原始行号——按行号收集、排序后写出即可保序。
+- **worker 数**：由第二个参数显式指定（示例为 4）；需要超时/取消时改用 `StreamJSONLParallelWithContext(ctx, reader, workers, fn)`。
+- **吞吐**：与串行 `StreamJSONL` 相比，收益取决于单行处理开销——纯提取类轻回调提升有限，富化/校验类重回调提升明显。
+:::
+
 ## 流式遍历大型 JSON 数组文件
 
 对于**单文件大 JSON 数组**（非 JSONL），用 `ForeachFile` 逐元素流式遍历，无需一次性载入整个文件到内存。
@@ -165,54 +255,55 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "os"
-    "path/filepath"
+	"fmt"
+	"os"
+	"path/filepath"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    tmpDir, err := os.MkdirTemp("", "cybergo-big-*")
-    if err != nil {
-        panic(err)
-    }
-    defer os.RemoveAll(tmpDir)
+	tmpDir, err := os.MkdirTemp("", "cybergo-big-*")
+	if err != nil {
+		panic(err)
+	}
+	defer os.RemoveAll(tmpDir)
 
-    // 创建大型 JSON 数组文件（模拟大数据集）
-    arrayPath := filepath.Join(tmpDir, "records.json")
-    records := []any{
-        map[string]any{"id": 1, "amount": 100, "currency": "USD"},
-        map[string]any{"id": 2, "amount": 250, "currency": "EUR"},
-        map[string]any{"id": 3, "amount": 80, "currency": "USD"},
-        map[string]any{"id": 4, "amount": 500, "currency": "GBP"},
-        map[string]any{"id": 5, "amount": 120, "currency": "USD"},
-    }
-    if err := json.SaveToFile(arrayPath, records); err != nil {
-        panic(err)
-    }
+	// 创建大型 JSON 数组文件（模拟大数据集）
+	arrayPath := filepath.Join(tmpDir, "records.json")
+	records := []any{
+		map[string]any{"id": 1, "amount": 100, "currency": "USD"},
+		map[string]any{"id": 2, "amount": 250, "currency": "EUR"},
+		map[string]any{"id": 3, "amount": 80, "currency": "USD"},
+		map[string]any{"id": 4, "amount": 500, "currency": "GBP"},
+		map[string]any{"id": 5, "amount": 120, "currency": "USD"},
+	}
+	if err := json.SaveToFile(arrayPath, records); err != nil {
+		panic(err)
+	}
 
-    // 用 ForeachFile 流式遍历数组的每个元素
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	// 用 ForeachFile 流式遍历数组的每个元素
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    totalUSD := 0
-    err = p.ForeachFile(arrayPath, func(key any, item *json.IterableValue) error {
-        currency := item.GetString("currency")
-        amount := item.GetInt("amount")
-        if currency == "USD" {
-            totalUSD += amount
-        }
-        return nil // 返回 item.Break() 可提前中断
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("USD 总额: %d\n", totalUSD)
+	totalUSD := 0
+	err = p.ForeachFile(arrayPath, func(key any, item *json.IterableValue) error {
+		currency := item.GetString("currency")
+		amount := item.GetInt("amount")
+		if currency == "USD" {
+			totalUSD += amount
+		}
+		return nil // 返回 item.Break() 可提前中断
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("USD 总额: %d\n", totalUSD)
 }
+
 // 输出：USD 总额: 320
 ```
 

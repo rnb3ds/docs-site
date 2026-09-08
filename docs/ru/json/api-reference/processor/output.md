@@ -1,21 +1,23 @@
 ---
 sidebar_label: "Кодирование и вывод"
-title: "Processor: вывод - CyberGo JSON | API"
-description: "Методы вывода Processor CyberGo JSON: Encode, EncodePretty, EncodeWithConfig, EncodeBatch/EncodeFields, Compact/Indent/HTMLEscape."
+title: "Кодирование и вывод Processor - CyberGo JSON | API"
+description: "Методы вывода CyberGo JSON Processor: Encode, EncodePretty, EncodeWithConfig, пакетные EncodeBatch/EncodeFields и форматирование Compact/Indent/HTMLEscape."
 sidebar_position: 5
 ---
 
 # Методы вывода
 
-Processor предоставляет различные методы кодирования и вывода JSON.
+Processor предоставляет множество методов кодирования JSON для вывода.
 
 ## Базовый вывод
 
 ### Encode
 
+<Badge type="danger" text="Устарело" />
+
 Сигнатура: `func (p *Processor) Encode(value any, config ...Config) (string, error)`
 
-Кодирует любое значение в строку JSON.
+Кодирует произвольное значение в JSON-строку.
 
 ::: warning Устарело
 `Processor.Encode` напрямую делегирует [`EncodeWithConfig`](#encodewithconfig). Используйте `EncodeWithConfig`. `Encode` будет удалён в будущей мажорной версии.
@@ -24,7 +26,7 @@ Processor предоставляет различные методы кодир�
 ```go
 result, err := p.Encode(map[string]any{"name": "CyberGo"})
 if err != nil {
-    panic(err)
+	panic(err)
 }
 fmt.Println(result)
 ```
@@ -33,38 +35,38 @@ fmt.Println(result)
 
 Сигнатура: `func (p *Processor) EncodePretty(value any, config ...Config) (string, error)`
 
-Кодирует любое значение в форматированную строку JSON.
+Кодирует произвольное значение в форматированную JSON-строку.
 
 ```go
 result, err := p.EncodePretty(user)
 if err != nil {
-    panic(err)
+	panic(err)
 }
 ```
 
-## Продвинутое кодирование
+## Расширенное кодирование
 
 ### EncodeWithConfig
 
 Сигнатура: `func (p *Processor) EncodeWithConfig(value any, cfg ...Config) (string, error)`
 
-Кодирует значение в строку JSON с использованием указанной конфигурации.
+Кодирует значение в JSON-строку с указанной конфигурацией.
 
 **Параметры**
 
-| Имя | Тип | Обязательный | Описание |
-|-----|-----|:------------:|----------|
-| `value` | `any` | Да | Значение для кодирования |
-| `cfg` | `Config` | Нет | Конфигурация кодирования (необязательно) |
+| Имя | Тип | Обязателен | Описание |
+|------|------|------|------|
+| `value` | `any` | да | Кодируемое значение |
+| `cfg` | `Config` | нет | Конфигурация кодирования (необязательно) |
 
 ```go
-// Использование PrettyConfig
+// С PrettyConfig
 result, err := p.EncodeWithConfig(data, json.PrettyConfig())
 
-// Использование SecurityConfig
+// С SecurityConfig
 result, err = p.EncodeWithConfig(data, json.SecurityConfig())
 
-// Использование пользовательской конфигурации
+// С пользовательской конфигурацией
 cfg := json.DefaultConfig()
 cfg.Pretty = true
 cfg.SortKeys = true
@@ -76,12 +78,12 @@ result, err = p.EncodeWithConfig(data, cfg)
 
 Сигнатура: `func (p *Processor) EncodeBatch(pairs map[string]any, cfg ...Config) (string, error)`
 
-Массовое кодирование пар ключ-значение в JSON-объект.
+Пакетно кодирует пары ключ-значение в JSON-объект.
 
 ```go
 result, err := p.EncodeBatch(map[string]any{
-    "name": "CyberGo",
-    "version": "1.0.0",
+	"name":    "CyberGo",
+	"version": "1.0.0",
 })
 ```
 
@@ -89,17 +91,17 @@ result, err := p.EncodeBatch(map[string]any{
 
 Сигнатура: `func (p *Processor) EncodeFields(value any, fields []string, cfg ...Config) (string, error)`
 
-Кодирует только указанные поля, часто используется для частичной сериализации.
+Кодирует только указанные поля; часто используется для частичной сериализации.
 
 ```go
 type User struct {
-    Name    string `json:"name"`
-    Email   string `json:"email"`
-    Private string `json:"private"`
+	Name    string `json:"name"`
+	Email   string `json:"email"`
+	Private string `json:"private"`
 }
 
 user := User{Name: "CyberGo", Email: "test@example.com", Private: "secret"}
-// Кодировать только поля name и email
+// Кодируем только поля name и email
 result, err := p.EncodeFields(user, []string{"name", "email"})
 ```
 
@@ -107,7 +109,7 @@ result, err := p.EncodeFields(user, []string{"name", "email"})
 
 Сигнатура: `func (p *Processor) EncodeStream(values any, cfg ...Config) (string, error)`
 
-Кодирует несколько значений в поток JSON-массива (array stream). `values` обычно представляет собой срез или перечислимую коллекцию, выводя строку JSON-массива вида `[v1,v2,...]`.
+Кодирует несколько значений в поток-массив JSON (array stream). `values` обычно срез или перечислимая коллекция; на выходе JSON-массив вида `[v1,v2,...]`.
 
 ```go
 values := []any{"item1", "item2", "item3"}
@@ -120,12 +122,16 @@ result, err := p.EncodeStream(values)
 
 Сигнатура: `func (p *Processor) Marshal(value any, cfg ...Config) ([]byte, error)`
 
-Кодирует значение Go в байтовый срез JSON. 100% совместимо с `encoding/json.Marshal`.
+Кодирует значение Go в срез JSON-байтов. 100% совместим с `encoding/json.Marshal`.
+
+::: tip Вывод всегда экранирует HTML
+Как и `encoding/json.Marshal`, вывод этого метода **всегда** проходит HTML-экранирование — даже если переданный `cfg` задал `EscapeHTML=false`, на этом пути он будет переопределён. Когда экранированием должен управлять вызывающий код, используйте [`EncodeWithConfig`](#encodewithconfig).
+:::
 
 ```go
 data, err := p.Marshal(map[string]any{"name": "CyberGo"})
 if err != nil {
-    panic(err)
+	panic(err)
 }
 fmt.Println(string(data)) // {"name":"CyberGo"}
 ```
@@ -134,12 +140,12 @@ fmt.Println(string(data)) // {"name":"CyberGo"}
 
 Сигнатура: `func (p *Processor) MarshalIndent(value any, prefix, indent string, cfg ...Config) ([]byte, error)`
 
-Кодирует значение Go в форматированный байтовый срез JSON. 100% совместимо с `encoding/json.MarshalIndent`.
+Кодирует значение Go в форматированный срез JSON-байтов. 100% совместим с `encoding/json.MarshalIndent`.
 
 ```go
 data, err := p.MarshalIndent(user, "", "  ")
 if err != nil {
-    panic(err)
+	panic(err)
 }
 fmt.Println(string(data))
 ```
@@ -148,13 +154,13 @@ fmt.Println(string(data))
 
 Сигнатура: `func (p *Processor) Unmarshal(data []byte, value any, cfg ...Config) error`
 
-Парсит байтовый срез JSON в целевую переменную. 100% совместимо с `encoding/json.Unmarshal`.
+Парсит срез JSON-байтов в целевую переменную. 100% совместим с `encoding/json.Unmarshal`.
 
 ```go
 var user User
 err := p.Unmarshal([]byte(`{"name":"Alice","age":30}`), &user)
 if err != nil {
-    panic(err)
+	panic(err)
 }
 ```
 
@@ -164,7 +170,7 @@ if err != nil {
 
 Сигнатура: `func (p *Processor) Prettify(jsonStr string, cfg ...Config) (string, error)`
 
-Форматирует строку JSON с отступами.
+Форматирует JSON-строку с отступами. По умолчанию отступ 2 пробела; настраивается через поля `Indent` / `Prefix` в `cfg`.
 
 ```go
 pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
@@ -173,25 +179,30 @@ pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
 //   "name": "Alice",
 //   "age": 30
 // }
+
+// Отступ в 4 пробела
+cfg := json.DefaultConfig()
+cfg.Indent = "    "
+pretty, err = p.Prettify(`{"name":"Alice","age":30}`, cfg)
 ```
 
-### Print (удалено)
+### Print (удалён)
 
-::: warning Изменение API
-Print, PrintE, PrintPretty, PrintPrettyE удалены из библиотеки и больше не предоставляются. Используйте следующие альтернативы:
+::: warning Примечание к изменению API
+Print, PrintE, PrintPretty, PrintPrettyE удалены из библиотеки и больше не предоставляются. Используйте следующие замены:
 
 ```go
 // Компактный вывод
 s, err := p.EncodeWithConfig(data)
 if err != nil {
-    log.Fatal(err)
+	log.Fatal(err)
 }
 fmt.Println(s)
 
 // Форматированный вывод
 pretty, err := p.EncodePretty(data)
 if err != nil {
-    log.Fatal(err)
+	log.Fatal(err)
 }
 fmt.Println(pretty)
 ```
@@ -201,24 +212,24 @@ fmt.Println(pretty)
 
 Сигнатура: `func (p *Processor) ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
 
-Проверяет, соответствует ли JSON-данные указанной Schema.
+Проверяет, соответствуют ли JSON-данные указанной Schema. **Детали нарушений Schema сообщаются через возвращаемый `[]ValidationError`**; `error` не пуст только при сбое разбора или предварительной проверки (некорректный JSON, `schema` равен `nil`) — при пройденной валидации возвращается `(nil, nil)`, при проваленной, но штатной — `(непустой срез, nil)`.
 
 ```go
 schema := &json.Schema{
-    Type:     "object",
-    Required: []string{"name", "email"},
-    Properties: map[string]*json.Schema{
-        "name":  {Type: "string", MinLength: 1},
-        "email": {Type: "string", Format: "email"},
-    },
+	Type:     "object",
+	Required: []string{"name", "email"},
+	Properties: map[string]*json.Schema{
+		"name":  {Type: "string", MinLength: 1},
+		"email": {Type: "string", Format: "email"},
+	},
 }
 
 errors, err := p.ValidateSchema(jsonStr, schema)
 if err != nil {
-    panic(err)
+	panic(err)
 }
 for _, ve := range errors {
-    fmt.Printf("Путь %s: %s\n", ve.Path, ve.Message)
+	fmt.Printf("Путь %s: %s\n", ve.Path, ve.Message)
 }
 ```
 
@@ -228,7 +239,11 @@ for _, ve := range errors {
 
 Сигнатура: `func (p *Processor) Compact(jsonStr string, cfg ...Config) (string, error)`
 
-Сжимает строку JSON, удаляя все пробельные символы.
+Сжимает JSON-строку, удаляя все пробельные символы.
+
+::: warning Различие имён метода и функции уровня пакета
+Сжатие «строка на входе, строка на выходе» на двух входах называется **по-разному**: на уровне пакета — `json.CompactString(s)`, в версии-методе — `p.Compact(s)`. Пакетный `json.Compact(dst, src)` — совместимая с `encoding/json.Compact` **форма с Buffer**; соответствующий метод — [`CompactBuffer`](#compactbuffer), а не этот.
+:::
 
 ```go
 compact, err := p.Compact(`{"name": "CyberGo"}`)
@@ -239,7 +254,7 @@ compact, err := p.Compact(`{"name": "CyberGo"}`)
 
 Сигнатура: `func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-Сжимает JSON и записывает в Buffer.
+Сжимает JSON и записывает в Buffer. Сигнатура совместима с `encoding/json.Compact`; это Buffer-форма [`Compact`](#compact) (на уровне пакета соответствует `json.Compact`).
 
 ```go
 var buf bytes.Buffer
@@ -268,7 +283,7 @@ var buf bytes.Buffer
 p.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
 ```
 
-## Связанные разделы
+## См. также
 
-- [Config](../config) - Параметры конфигурации
-- [Парсинг и загрузка](./parse) - Методы Parse/Load
+- [Config](../config) - параметры конфигурации
+- [Парсинг и загрузка](./parse) - методы Parse/Load

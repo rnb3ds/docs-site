@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Delete Operations"
 title: "Processor Delete Methods - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor delete methods: Delete removes by path, DeleteClean removes and auto-cleans empty values and empty arrays, preserving chaining."
+description: "CyberGo JSON Processor delete: Delete removes by path and DeleteClean cleans empty values/arrays/parents, with wildcard, slice, multi-field paths."
 sidebar_position: 4
 ---
 

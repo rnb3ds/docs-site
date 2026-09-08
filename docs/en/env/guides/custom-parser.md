@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Custom Parser"
 title: "Custom Parser - CyberGo env | Extending File Formats"
-description: "Custom parser guide for CyberGo env, implementing the EnvParser interface's Parse method and registering via RegisterParser, using ComponentFactory to obtain Validator and Auditor, with complete TOML and INI parser examples and best practices."
+description: "Custom parser guide for CyberGo env: implement the EnvParser interface's Parse method and register via RegisterParser, with TOML and INI examples."
 sidebar_position: 8
 sidebar_icon: "⚙️"
 ---
@@ -642,6 +642,26 @@ func main() {
 ```
 
 ---
+
+## Overriding Built-in Parsers (ForceRegisterParser)
+
+For security reasons, `RegisterParser` **refuses** to override the three built-in formats (`FormatEnv`, `FormatJSON`, `FormatYAML`); registering the same custom format twice also returns an error. If you genuinely need to replace a built-in parser — for example to add multi-line value syntax to `.env`, attach custom security checks, or inject a mock parser in tests — use `ForceRegisterParser`:
+
+<!-- check-code: skip -->
+```go
+err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, factory *env.ComponentFactory) (env.EnvParser, error) {
+    return &MyCustomEnvParser{
+        validator: factory.Validator(),
+        auditor:   factory.Auditor(),
+    }, nil
+})
+```
+
+::: warning Security warning
+Overriding built-in parsers can introduce vulnerabilities: if the replacement lacks key validation, value validation, or size limits, you lose the library's default protections. Only use this when your parser implements equivalent security checks in full.
+:::
+
+**Registration timing**: parser factories are snapshotted when a Loader is created (`createParsers` inside `New()`), so `RegisterParser`/`ForceRegisterParser` must be called before `env.New()`; already-created Loaders are unaffected by later registrations.
 
 ## Related Documentation
 

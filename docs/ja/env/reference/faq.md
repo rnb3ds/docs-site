@@ -1,7 +1,7 @@
 ---
 sidebar_label: "よくある質問"
 title: "よくある質問 - CyberGo env | 環境変数に関する FAQ"
-description: "CyberGo env のよくある質問と回答。グローバルモードとインスタンスモードの選択、Load の 1 回初期化制限、JSON/YAML ネストキーへのアクセス、GetSlice ジェネリック関数の設計、スレッドセーフな並行アクセス、SecureValue ライフサイクル管理、OverwriteExisting 上書き戦略とテスト分離などの高頻度質問をカバー。"
+description: "CyberGo env のよくある質問と回答。グローバルとインスタンスモードの選択、Load の 1 回制限、ネストキーへのアクセス、スレッドセーフ、SecureValue ライフサイクル、OverwriteExisting テスト分離などの高頻度質問をカバー。"
 sidebar_position: 2
 ---
 
@@ -316,6 +316,28 @@ func TestGlobalMode(t *testing.T) {
 ::: tip 完全なテストガイド
 詳しくは [テスト](/ja/env/guides/testing) ガイドを参照してください。
 :::
+
+## セキュリティとライフサイクル
+
+### Close 後もプロセス環境の変数は残りますか？
+
+**残ります。** `Close()` はメモリのコピーのみゼロ化し、それまでに `os.Environ` へ適用した変数を unset しません（意図的な設計：プロセス環境は既に子プロセスへ継承されている可能性があり、ロールバックの意味論が信頼できないため）。除去するには閉じる前にキーごとに `Delete` を呼びます — この Loader が書き込んだキーのみ unset されます。
+
+### 設定ファイルがプロセスの機密を読むのを防ぐには？
+
+設定ファイルが信頼できないソース（ユーザーアップロード、外部配信）から来る場合、デフォルトの展開スコープは `${VAR}` のプロセス環境へのフォールバックを許し、機密が変数値に捕獲されるリスクがあります。ファイル専用スコープを有効にして遮断します：
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.ExpansionScope = env.ExpansionFileOnly // ${VAR} はファイル内変数のみ解決
+```
+
+[変数展開・展開スコープ](/ja/env/guides/variable-expansion)を参照。
+
+### 値の中の `$` が読み戻すと変わったのはなぜ？
+
+変数展開がデフォルトで有効なため、`$VAR`/`${VAR}` シーケンスはロード時に展開されます。値にリテラルのドル記号（価格、テンプレート文字列）が含まれる場合は `cfg.ExpandVariables = false` でロードするか、Marshal 出力を読み戻す際の同種の問題は[直列化・ラウンドトリップの落とし穴](/ja/env/guides/serialization)を参照してください。
 
 ## 関連ドキュメント
 

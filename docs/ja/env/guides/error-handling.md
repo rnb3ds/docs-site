@@ -1,9 +1,9 @@
 ---
 sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo env | センチネルエラーと復旧戦略"
-description: "CyberGo env エラー処理ガイド。16 個のセンチネルエラーの errors.Is 精密マッチング、ParseError/FileError/SecurityError などの構造化エラーの errors.As コンテキスト抽出、復旧・デグラデーション戦略とエラーチェーン Unwrap 追跡を詳解。本番環境のエラー分類プラクティスを付属。"
+description: "CyberGo env エラー処理ガイド。16 個のセンチネルエラーの errors.Is マッチング、ParseError などの構造化エラーの errors.As コンテキスト抽出、復旧・デグラデーション戦略とエラーチェーン Unwrap 追跡を詳解し、本番のエラー分類にも対応。"
 sidebar_position: 5
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # エラー処理
@@ -570,6 +570,46 @@ func handleValidationError(err error) {
     log.Fatalf("検証失敗: %v", err)
 }
 ```
+
+## エラータイプ完全対照
+
+ライブラリの構造化エラータイプはすべて `errors.As` でコンテキストを抽出できます：
+
+| タイプ | シナリオ | 主な情報 |
+|--------|----------|----------|
+| `ParseError` | ファイルのパース失敗 | ファイル名、行番号、内容（サニタイズ済み） |
+| `ValidationError` | 設定/キー/値の検証失敗 | フィールド、ルール、メッセージ |
+| `SecurityError` | セキュリティポリシー違反（禁止キー、パス検証など） | 違反の詳細 |
+| `FileError` | ファイル操作の失敗 | パス、操作、サイズ/上限 |
+| `ExpansionError` | 変数展開の失敗 | `Kind`（失敗原因の分類） |
+| `JSONError` | JSON パース失敗 | 位置情報 |
+| `YAMLError` | YAML パース失敗 | 位置情報 |
+| `MarshalError` | マーシャリング/アンマーシャリング失敗 | 操作と原因 |
+
+### ExpansionErrorKind
+
+`ExpansionError` は `Kind` フィールドで 2 種類の失敗クラスを区別し、精密な処理を可能にします：
+
+| 定数 | 意味 |
+|------|------|
+| `ExpansionDepthKind` | 再帰深さの超過または循環参照の検出 |
+| `ExpansionRequiredKind` | `${VAR:?message}` が参照する変数が未設定 |
+
+### 追加のセンチネルエラー
+
+[センチネルエラー](#センチネルエラー)の節に列挙した一般的な項目以外に：
+
+| センチネル | 意味 |
+|------------|------|
+| `ErrClosed` | 閉じた（または nil の）Loader を操作し続けた |
+| `ErrInvalidConfig` | 設定が無効；`New()` は具体的な検証エラーをラップして返す |
+| `ErrNotInitialized` | グローバルモードで `Load()` 前に書き込み関数を使用 |
+| `ErrAlreadyInitialized` | デフォルト Loader 初期化後に再び `Load()` を呼んだ |
+| `ErrDuplicateKey` | 予約：現在、重複キーは `OverwriteExisting=false` のとき黙ってスキップされ、これを返す経路はない |
+
+### 判定補助関数
+
+`IsMarshalError(err)` は `errors.As` でエラーが `*MarshalError` かを判定します — 手動のアサーションは不要です。
 
 ## 関連ドキュメント
 

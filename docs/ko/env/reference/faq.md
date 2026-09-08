@@ -1,7 +1,7 @@
 ---
 sidebar_label: "자주 묻는 질문"
 title: "자주 묻는 질문 - CyberGo env | 환경 변수 FAQ"
-description: "CyberGo env 자주 묻는 질문 답변으로, 글로벌 모드와 인스턴스 모드 선택, Load 단일 초기화 제한, JSON/YAML 중첩 키 접근, GetSlice 제네릭 함수 설계, 스레드 안전 동시 접근, SecureValue 수명 주기 관리, OverwriteExisting 덮어쓰기 전략과 테스트 격리 등 고빈도 질문을 다룹니다."
+description: "CyberGo env 자주 묻는 질문 답변으로, 글로벌 모드와 인스턴스 모드 선택, Load 단일 초기화 제한, JSON/YAML 중첩 키 접근, 스레드 안전 동시 접근, SecureValue 수명 주기 관리와 테스트 격리 등 고빈도 질문을 다룹니다."
 sidebar_position: 2
 ---
 
@@ -316,6 +316,28 @@ func TestGlobalMode(t *testing.T) {
 :::tip 완전한 테스트 가이드
 자세한 내용은 [테스트](/ko/env/guides/testing) 가이드를 참조하세요.
 :::
+
+## 보안과 수명 주기
+
+### Close 후에도 프로세스 환경의 변수가 남아 있나요?
+
+**남습니다.** `Close()`는 메모리 사본만 제로화하며 이전에 `os.Environ`에 적용된 변수를 unset하지 않습니다(의도된 설계: 프로세스 환경은 이미 자식 프로세스에 상속되었을 수 있어 롤백 의미론이 신뢰할 수 없음). 제거하려면 닫기 전에 키별로 `Delete`를 호출하세요 — 이 loader가 쓴 키만 unset됩니다.
+
+### 구성 파일이 프로세스의 기밀 정보를 읽지 못하게 하려면?
+
+구성 파일이 신뢰할 수 없는 출처(사용자 업로드, 외부 전달)에서 오면 기본 전개 범위가 `${VAR}`의 프로세스 환경 폴백을 허용해 기밀 정보가 변수 값으로 포획될 위험이 있습니다. 파일 전용 범위를 활성화해 차단하세요:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.ExpansionScope = env.ExpansionFileOnly // ${VAR}는 파일 내 변수만 해석
+```
+
+[변수 전개 · 전개 범위](/ko/env/guides/variable-expansion) 참조.
+
+### 값의 `$`를 다시 읽으면 왜 변했나요?
+
+변수 전개가 기본 켜져 있어 `$VAR`/`${VAR}` 시퀀스는 로드 시 전개됩니다. 값에 리터럴 달러 기호(가격, 템플릿 문자열)가 포함된 경우 `cfg.ExpandVariables = false`로 로드하거나, Marshal 출력을 다시 읽을 때의 유사한 문제는 [직렬화 · 라운드트립 함정](/ko/env/guides/serialization)을 참조하세요.
 
 ## 관련 문서
 

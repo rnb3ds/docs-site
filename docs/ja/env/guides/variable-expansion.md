@@ -2,7 +2,7 @@
 sidebar_label: "変数展開"
 title: "変数展開 - CyberGo env | ${VAR} 参照とデフォルト値構文"
 description: "CyberGo env 変数展開構文ガイド。${VAR} と ${VAR:-default} 参照、${VAR:=default} デフォルト値、${VAR:?error} 必須検証、$VAR 省略記法、循環参照検出と MaxExpansionDepth 深さ制限を詳解し、設定再利用と動的値置換を実現。"
-sidebar_position: 4
+sidebar_position: 3
 sidebar_icon: "🔧"
 ---
 
@@ -266,6 +266,31 @@ func main() {
 ```
 
 ---
+
+## 展開スコープ（セキュリティ分離）
+
+デフォルトでは変数展開は「ファイル優先、次にプロセス環境」の順で参照を解決します — `${VAR}` がファイル内で見つからない場合、プロセス環境（`os.LookupEnv`）へフォールバックします。これは伝統的な dotenv の意味論と一致しますが、設定ファイルが**完全には信頼できないソース**（ユーザーアップロード、外部システムからの配信）から来る場合にリスクとなります：ファイルに `${AWS_SECRET_ACCESS_KEY}` と書いておけば、ロード後にプロセスの無関係な機密を変数値へ「捕獲」でき、その後のロギング・直列化・エクスポートで持ち出される恐れがあります。
+
+`ParsingConfig.ExpansionScope` がこの動作を制御します：
+
+| 値 | 動作 | 適用シナリオ |
+|-----|------|--------------|
+| `ExpansionFileThenProcess`（デフォルト） | ファイル内変数を優先、欠落時はプロセス環境へフォールバック | 信頼できる設定ファイル、伝統的 dotenv 意味論 |
+| `ExpansionFileOnly` | ファイル内変数のみ可視；プロセス環境参照は空文字列に展開 | 信頼できない設定ソース、機密探索の防止（SEC-03） |
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+// ファイル内変数への参照のみ許可し、プロセス環境の読み取りを遮断
+cfg.ExpansionScope = env.ExpansionFileOnly
+loader, _ := env.New(cfg)
+```
+
+::: warning SEC-03
+`ExpansionFileOnly` は設定ファイルがプロセスの機密を「収穫」するのを防ぐセキュリティスイッチです。アプリケーションが外部から提供された設定ファイルをロードする場合は、常にこのスコープを有効にしてください。
+:::
+
+注意：`ExpansionScope` はブール値ではなく列挙型フィールドです。`Config` にこのフィールドのみ設定されていても `IsZero()` は初期化済みの設定として正しく認識し、デフォルト値で黙って上書きされることはありません。
 
 ## 関連ドキュメント
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Testing"
 title: "Testing - CyberGo env | Unit Test Best Practices"
-description: "Testing best practices guide for CyberGo env, including TestingConfig configuration with OverwriteExisting for test isolation, FileSystem interface for in-memory filesystem mocking, per-test independent loaders, table-driven and benchmark testing, and ResetDefaultLoader state cleanup strategies for stable and reproducible tests."
+description: "Testing guide for CyberGo env: TestingConfig with OverwriteExisting for isolation, in-memory FileSystem mocking, and ResetDefaultLoader cleanup."
 sidebar_position: 7
 sidebar_icon: "🧪"
 ---

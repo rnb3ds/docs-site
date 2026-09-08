@@ -2,7 +2,7 @@
 sidebar_label: "序列化"
 title: "序列化 - CyberGo env | 多格式转换"
 description: "CyberGo env 序列化指南，详解 .env、JSON、YAML 间的 Map 与结构体转换，含 Marshal/Unmarshal 函数族、Marshaler/Unmarshaler 自定义接口与 DetectFormat 自动检测，覆盖配置导出与格式迁移等实用场景。"
-sidebar_position: 2
+sidebar_position: 4
 sidebar_icon: "🔧"
 ---
 
@@ -18,28 +18,28 @@ sidebar_icon: "🔧"
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/env"
+	"fmt"
+	"github.com/cybergodev/env"
 )
 
 func main() {
-    data := map[string]string{
-        "APP_NAME":    "my-app",
-        "APP_VERSION": "1.0.0",
-        "DEBUG":       "true",
-    }
+	data := map[string]string{
+		"APP_NAME":    "my-app",
+		"APP_VERSION": "1.0.0",
+		"DEBUG":       "true",
+	}
 
-    // 序列化为 .env 格式
-    result, err := env.Marshal(data, env.FormatEnv)
-    if err != nil {
-        panic(err)
-    }
+	// 序列化为 .env 格式
+	result, err := env.Marshal(data, env.FormatEnv)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Println(result)
-    // 输出：
-    // APP_NAME=my-app
-    // APP_VERSION=1.0.0
-    // DEBUG=true
+	fmt.Println(result)
+	// 输出：
+	// APP_NAME=my-app
+	// APP_VERSION=1.0.0
+	// DEBUG=true
 }
 ```
 
@@ -49,28 +49,28 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/env"
+	"fmt"
+	"github.com/cybergodev/env"
 )
 
 func main() {
-    data := map[string]string{
-        "HOST": "localhost",
-        "PORT": "8080",
-    }
+	data := map[string]string{
+		"HOST": "localhost",
+		"PORT": "8080",
+	}
 
-    // 序列化为 JSON
-    result, err := env.Marshal(data, env.FormatJSON)
-    if err != nil {
-        panic(err)
-    }
+	// 序列化为 JSON
+	result, err := env.Marshal(data, env.FormatJSON)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Println(result)
-    // 输出：
-    // {
-    //   "HOST": "localhost",
-    //   "PORT": 8080
-    // }
+	fmt.Println(result)
+	// 输出：
+	// {
+	//   "HOST": "localhost",
+	//   "PORT": 8080
+	// }
 }
 ```
 
@@ -80,28 +80,28 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/env"
+	"fmt"
+	"github.com/cybergodev/env"
 )
 
 func main() {
-    data := map[string]string{
-        "DATABASE_HOST": "localhost",
-        "DATABASE_PORT": "5432",
-        "DATABASE_NAME": "myapp",
-    }
+	data := map[string]string{
+		"DATABASE_HOST": "localhost",
+		"DATABASE_PORT": "5432",
+		"DATABASE_NAME": "myapp",
+	}
 
-    // 序列化为 YAML
-    result, err := env.Marshal(data, env.FormatYAML)
-    if err != nil {
-        panic(err)
-    }
+	// 序列化为 YAML
+	result, err := env.Marshal(data, env.FormatYAML)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Println(result)
-    // 输出：
-    // DATABASE_HOST: localhost
-    // DATABASE_NAME: myapp
-    // DATABASE_PORT: 5432
+	fmt.Println(result)
+	// 输出：
+	// DATABASE_HOST: localhost
+	// DATABASE_NAME: myapp
+	// DATABASE_PORT: 5432
 }
 ```
 
@@ -201,35 +201,35 @@ func MarshalStruct(v any) (map[string]string, error)
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/env"
+	"fmt"
+	"github.com/cybergodev/env"
 )
 
 type Config struct {
-    Host string `env:"HOST"`
-    Port int64  `env:"PORT"`
-    Debug bool  `env:"DEBUG"`
+	Host string `env:"HOST"`
+	Port int64  `env:"PORT"`
+	Debug bool  `env:"DEBUG"`
 }
 
 func main() {
-    cfg := Config{
-        Host:  "localhost",
-        Port:  8080,
-        Debug: true,
-    }
+	cfg := Config{
+		Host:  "localhost",
+		Port:  8080,
+		Debug: true,
+	}
 
-    // 转换为 map
-    data, err := env.MarshalStruct(cfg)
-    if err != nil {
-        panic(err)
-    }
+	// 转换为 map
+	data, err := env.MarshalStruct(cfg)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("%+v\n", data)
-    // 输出：map[DEBUG:true HOST:localhost PORT:8080]
+	fmt.Printf("%+v\n", data)
+	// 输出：map[DEBUG:true HOST:localhost PORT:8080]
 
-    // 可用于导出到文件
-    content, _ := env.Marshal(data, env.FormatEnv)
-    fmt.Println(content)
+	// 可用于导出到文件
+	content, _ := env.Marshal(data, env.FormatEnv)
+	fmt.Println(content)
 }
 ```
 
@@ -605,31 +605,93 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "os"
-    "github.com/cybergodev/env"
+	"fmt"
+	"os"
+	"github.com/cybergodev/env"
 )
 
 func main() {
-    // 读取 JSON 配置
-    jsonContent, _ := os.ReadFile("config.json")
+	// 读取 JSON 配置
+	jsonContent, _ := os.ReadFile("config.json")
 
-    // 解析 JSON
-    data, err := env.UnmarshalMap(string(jsonContent), env.FormatJSON)
-    if err != nil {
-        panic(err)
-    }
+	// 解析 JSON
+	data, err := env.UnmarshalMap(string(jsonContent), env.FormatJSON)
+	if err != nil {
+		panic(err)
+	}
 
-    // 转换为 .env 格式
-    envContent, err := env.Marshal(data, env.FormatEnv)
-    if err != nil {
-        panic(err)
-    }
+	// 转换为 .env 格式
+	envContent, err := env.Marshal(data, env.FormatEnv)
+	if err != nil {
+		panic(err)
+	}
 
-    // 保存为 .env 文件
-    os.WriteFile(".env", []byte(envContent), 0644)
+	// 保存为 .env 文件
+	os.WriteFile(".env", []byte(envContent), 0644)
 
-    fmt.Println("Config migrated from JSON to .env")
+	fmt.Println("Config migrated from JSON to .env")
+}
+```
+
+## 往返陷阱与格式自动检测
+
+### `$` 不转义：Marshal 输出再读回可能变形
+
+`Marshal` **不会**转义值中的 `$`。若值包含 `$VAR` 或 `${VAR}` 字面量，在默认开启 `ExpandVariables` 的情况下重新解析 Marshal 输出时，这些序列会被当作变量引用展开：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	data := map[string]string{"PRICE": "100$USD"}
+
+	out, err := env.Marshal(data, env.FormatEnv)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(out)
+	// 输出：PRICE=100$USD
+	// 注意：若将 out 重新写回 .env 并以默认配置加载，$USD 会被尝试展开
+}
+```
+
+规避方式：读取侧设置 `cfg.ExpandVariables = false`，或对含 `$` 的值避免使用 `Marshal` 往返。
+
+### MarshalStruct 的字段取舍
+
+结构体序列化时，**编组为空字符串的字段会被省略**（空字符串、nil 指针、空切片）；标量零值（`0`、`false`）**保留**——因为它们不会编组为空字符串。读取侧用 `envDefault` 标签补默认值即可对齐。
+
+### 键排序保证
+
+`Marshal` 的输出键**始终按字典序排序**，与输入 map/结构体的字段顺序无关——这保证同一份配置的输出是稳定的，便于 diff 与缓存。
+
+### FormatAuto 内容检测规则
+
+`UnmarshalMap`/`UnmarshalStruct` 传入 `FormatAuto` 时按**内容**（而非扩展名）检测格式：
+
+| 特征 | 判定 |
+|------|------|
+| 空白输入 | `.env` |
+| 首字符为 `{` 或 `[` | JSON |
+| 首个有效行以 `- ` 开头，或包含 `: `（冒号+空格） | YAML |
+| 包含 `=` | `.env` |
+
+注意 `: ` 优先于 `=` 判定：形如 `connection: host=db port=5432` 的行会被判为 YAML（而非 `.env`）。
+
+### IsMarshalError 辅助判断
+
+<!-- check-code: skip -->
+```go
+if _, err := env.Marshal(data); err != nil {
+	if env.IsMarshalError(err) {
+		// 序列化错误：输入类型不支持或字段转换失败
+	}
 }
 ```
 

@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Пользовательский кодировщик"
 title: "CustomEncoder - CyberGo JSON | Пользовательский кодировщик"
-description: "Пользовательский кодировщик CyberGo JSON: интерфейс CustomEncoder и TypeEncoder, определение, реализация и регистрация логики JSON-сериализации для Go-типов."
-sidebar_position: 3
+description: "Пользовательский кодировщик CyberGo JSON: интерфейсы CustomEncoder и TypeEncoder, json.Marshaler, TextMarshaler и CustomEscapes для сериализации Go-типов."
+sidebar_position: 2
 ---
 
 # Пользовательское кодирование
@@ -26,11 +26,11 @@ sidebar_position: 3
 
 ```go
 type Marshaler interface {
-    MarshalJSON() ([]byte, error)
+	MarshalJSON() ([]byte, error)
 }
 ```
 
-Ниже определяется тип `Hex`, кодирующий `uint64` как шестнадцатеричную строку с префиксом `0x`:
+Ниже определяется тип Hex, кодирующий `uint64` как шестнадцатеричную строку с префиксом `0x`:
 
 ```go
 package main
@@ -67,7 +67,11 @@ func main() {
 ```
 
 ::: warning Избегайте бесконечной рекурсии
-Если внутри `MarshalJSON` нужен «обычный кодировщик» в качестве помощника, используйте стандартную библиотеку `stdjson.Marshal` или вызывайте библиотечный `Marshal` для **другого конкретного типа». Прямой повторный вызов `Marshal` для этого же типа снова войдёт в `MarshalJSON`, образуя бесконечную рекурсию.
+Если внутри `MarshalJSON` нужен «обычный кодировщик» в качестве помощника, используйте стандартную библиотеку `stdjson.Marshal` или вызывайте библиотечный `Marshal` для **другого конкретного типа**. Прямой повторный вызов `Marshal` для этого же типа снова войдёт в `MarshalJSON`, образуя бесконечную рекурсию.
+:::
+
+::: tip Ошибки и особые типы
+Ошибки, возвращаемые `MarshalJSON`/`MarshalText`, оборачиваются в `MarshalerError` (с сохранением возможностей `errors.As`/`Unwrap`) и передаются наверх; возвращаемое значение должно быть корректным JSON. Есть ещё два особых случая, согласованных со стандартной библиотекой: `[]byte` кодируется как base64-строка (массив `[N]byte` — нет); типы, реализующие `MarshalText`, также используются как форма кодирования ключей map.
 :::
 
 ## Интерфейс encoding.TextMarshaler
@@ -78,11 +82,11 @@ func main() {
 
 ```go
 type TextMarshaler interface {
-    MarshalText() ([]byte, error)
+	MarshalText() ([]byte, error)
 }
 ```
 
-Ниже определяется тип `Slug`, автоматически нормализуемый при кодировании к нижнему регистру с дефисами:
+Ниже определяется тип Slug, автоматически нормализуемый при кодировании к нижнему регистру с дефисами:
 
 ```go
 package main
@@ -225,11 +229,11 @@ func main() {
 ```go
 // Текущая версия: следующие два поля объявлены, но не подключены — установка не даёт эффекта (зарезервированные интерфейсы)
 type CustomEncoder interface {
-    Encode(value any) (string, error)
+	Encode(value any) (string, error)
 }
 
 type TypeEncoder interface {
-    Encode(v reflect.Value) (string, error)
+	Encode(v reflect.Value) (string, error)
 }
 ```
 :::

@@ -1,8 +1,8 @@
 ---
 sidebar_label: "自定义编码器"
 title: "CustomEncoder - CyberGo JSON | 自定义编码器"
-description: "CyberGo JSON 自定义编码器：CustomEncoder 接口与 TypeEncoder 类型编码器的定义与实现，为 Go 类型注册 JSON 序列化逻辑。"
-sidebar_position: 3
+description: "CyberGo JSON 自定义编码器：CustomEncoder 接口与 TypeEncoder 类型编码器的定义与实现，实践 json.Marshaler 与 TextMarshaler 接口及 CustomEscapes 转义映射，为 Go 类型注册 JSON 序列化逻辑。"
+sidebar_position: 2
 ---
 
 # 自定义编码
@@ -30,7 +30,7 @@ type Marshaler interface {
 }
 ```
 
-下面定义一个 `Hex` 类型，把 `uint64` 编码为带 `0x` 前缀的十六进制字符串：
+下面定义一个 Hex 类型，把 `uint64` 编码为带 `0x` 前缀的十六进制字符串：
 
 ```go
 package main
@@ -70,6 +70,10 @@ func main() {
 在 `MarshalJSON` 内部若需要「常规编码」辅助，请使用标准库 `stdjson.Marshal` 或针对一个**不同的具体类型**调用本库。直接对本类型再次调用 `Marshal` 会重新进入 `MarshalJSON`，形成无限递归。
 :::
 
+::: tip 错误与特殊类型
+`MarshalJSON`/`MarshalText` 返回的错误会被包装为 `MarshalerError`（保留 `errors.As`/`Unwrap` 能力）向上传播；返回值必须是合法 JSON。另有两个与标准库一致的特殊处理：`[]byte` 编码为 base64 字符串（`[N]byte` 数组不会）；实现 `MarshalText` 的类型也会被用作 map 键的编码形式。
+:::
+
 ## encoding.TextMarshaler 接口
 
 未实现 `MarshalJSON` 但实现了 `MarshalText() ([]byte, error)` 的类型，会被编码为以文本内容为值的 JSON 字符串（自动补引号与转义）。适合用文本即可完整表达形态的类型。
@@ -82,7 +86,7 @@ type TextMarshaler interface {
 }
 ```
 
-下面定义一个 `Slug` 类型，编码时自动规范化为小写连字符形式：
+下面定义一个 Slug 类型，编码时自动规范化为小写连字符形式：
 
 ```go
 package main
@@ -124,7 +128,7 @@ func main() {
 
 ## time.Time 的内置处理
 
-库对 `time.Time` 做了内置处理，统一输出 RFC3339Nano 格式（保留亚秒精度，与标准库 `encoding/json` 一致）。无需任何配置：
+`time.Time` 无需任何配置即可正确编码：它自身实现了 `MarshalJSON`（值接收者，输出 RFC3339Nano，保留亚秒精度），库通过上文的 [`json.Marshaler`](#json-marshaler-接口) 机制直接采用，行为与标准库 `encoding/json` 一致。
 
 ```go
 package main

@@ -1,19 +1,19 @@
 ---
 sidebar_label: "Generics"
 title: "Generic Operations - CyberGo JSON | API Reference"
-description: "CyberGo JSON generic API: GetTyped[T] getter, Result[T] result type, and AccessResult dynamic access using Go 1.18+ generics for compile-time type safety."
+description: "CyberGo JSON generic APIs: GetTyped[T] typed gets, Result[T], AccessResult dynamic access, Go 1.18+ compile-time type safety, defaults, array unwrapping."
 sidebar_position: 10
 ---
 
 # Generic Operations
 
-The json library provides generic type-safe operations using Go 1.18+ generics for compile-time type checking.
+The json library provides generic type-safe operations built on Go 1.18+ generics for compile-time type checking.
 
 ## GetTyped
 
 Signature: `func GetTyped[T any](jsonStr, path string, defaultValue ...T) T`
 
-Gets a value of the specified type from JSON. Supports custom types. Returns `T` with no error. Returns the zero value or `defaultValue` when the path does not exist or type conversion fails.
+Gets a value of the given type from JSON. Custom types are supported. Returns `T`, no error. When the path does not exist or the type conversion fails, returns the zero value or the default given via `defaultValue`.
 
 **Parameters**
 
@@ -21,48 +21,52 @@ Gets a value of the specified type from JSON. Supports custom types. Returns `T`
 |------|------|----------|-------------|
 | `jsonStr` | `string` | Yes | JSON string |
 | `path` | `string` | Yes | JSON path |
-| `defaultValue` | `...T` | No | Optional default value, returned when path does not exist or type conversion fails |
+| `defaultValue` | `...T` | No | Optional default, returned when the path does not exist or the conversion fails |
 
-**Return Value**
+**Returns**
 
-| Return Value | Type | Description |
+| Return value | Type | Description |
 |--------------|------|-------------|
-| Single return value | `T` | Retrieved value, returns zero value or default when path does not exist or type conversion fails |
+| Single return value | `T` | The retrieved value; the zero value or the default when the path does not exist or the conversion fails |
 
-**Supported Types**
+**Supported types**
 
 - Basic types: `string`, `int`, `int64`, `float64`, `bool`
 - Slice types: `[]any`
 - Map types: `map[string]any`
 - Custom structs
 
+:::tip Single-element arrays are auto-unwrapped
+When the target type is not a slice and the retrieved value is an **array with exactly one element**, the element is automatically unwrapped and then converted (serving distributed-path access, such as the `choices.message.content` case). No unwrapping happens when the target is a slice type.
+:::
+
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{"user": {"name": "Alice", "age": 30}}`
+	data := `{"user": {"name": "Alice", "age": 30}}`
 
-    // Get string
-    name := json.GetTyped[string](data, "user.name")
-    fmt.Println(name) // Output: Alice
+	// Get a string
+	name := json.GetTyped[string](data, "user.name")
+	fmt.Println(name) // Output: Alice
 
-    // Get integer
-    age := json.GetTyped[int](data, "user.age")
-    fmt.Println(age) // Output: 30
+	// Get an integer
+	age := json.GetTyped[int](data, "user.age")
+	fmt.Println(age) // Output: 30
 
-    // Get array
-    arrData := `{"items": [1, 2, 3]}`
-    items := json.GetTyped[[]any](arrData, "items")
-    fmt.Println(items) // Output: [1 2 3]
+	// Get an array
+	arrData := `{"items": [1, 2, 3]}`
+	items := json.GetTyped[[]any](arrData, "items")
+	fmt.Println(items) // Output: [1 2 3]
 
-    // Use default value
-    email := json.GetTyped[string](data, "user.email", "unknown@example.com")
-    fmt.Println(email) // Output: unknown@example.com
+	// Use a default value
+	email := json.GetTyped[string](data, "user.email", "unknown@example.com")
+	fmt.Println(email) // Output: unknown@example.com
 }
 ```
 
@@ -70,7 +74,7 @@ func main() {
 
 ## AccessResult
 
-`AccessResult` is a dynamic type access result that provides type conversion methods for dynamic type handling. Obtained via `SafeGet()`.
+`AccessResult` is a dynamically typed access result that provides conversion methods for dynamic type handling. Obtained via `SafeGet()`.
 
 ### Struct Definition
 
@@ -93,7 +97,7 @@ Checks whether the value exists.
 ```go
 result := json.SafeGet(data, "user.name")
 if result.Ok() {
-    // Value exists
+    // The value exists
 }
 ```
 
@@ -101,7 +105,7 @@ if result.Ok() {
 
 Signature: `func (r AccessResult) Unwrap() any`
 
-Gets the value, returns nil if it does not exist.
+Gets the value; returns nil when absent.
 
 ```go
 value := result.Unwrap()
@@ -111,7 +115,7 @@ value := result.Unwrap()
 
 Signature: `func (r AccessResult) UnwrapOr(defaultValue any) any`
 
-Gets the value or a default value.
+Gets the value or a default.
 
 ```go
 value := result.UnwrapOr("default")
@@ -121,13 +125,13 @@ value := result.UnwrapOr("default")
 
 Signature: `func (r AccessResult) AsString() (string, error)`
 
-Safely converts to string. Only succeeds when the value itself is a string type.
+Safely converts to a string. Succeeds only when the value itself is a string.
 
 ```go
 result := json.SafeGet(data, "user.name")
 name, err := result.AsString()
 if err != nil {
-    // Type mismatch or path does not exist
+    // Type mismatch or path not found
 }
 ```
 
@@ -135,47 +139,47 @@ if err != nil {
 
 Signature: `func (r AccessResult) AsInt() (int, error)`
 
-Safely converts to integer. Supports all integer types and floats (if the value is a whole number). **Note: bool is not converted to int.**
+Safely converts to an integer. Supports all integer types and floats with integral values. **Note: bool is not converted to int.**
 
 #### AsFloat64
 
 Signature: `func (r AccessResult) AsFloat64() (float64, error)`
 
-Safely converts to float64. Supports all numeric types. **Note: bool is not converted to float64.**
+Safely converts to a float. Supports all numeric types. **Note: bool is not converted to float64.**
 
 #### AsBool
 
 Signature: `func (r AccessResult) AsBool() (bool, error)`
 
-Safely converts to boolean. Supports bool and string types ("true", "false", "1", "0", etc.).
+Safely converts to a boolean. Supports bool and string types ("true", "false", "1", "0", etc.).
 
-### Chained Type Conversion Methods
+### Chained Conversion Methods
 
-`AccessResult` provides the following type conversion methods:
+`AccessResult` provides the following conversion methods:
 
-| Method | Return Type | Description |
+| Method | Return type | Description |
 |--------|-------------|-------------|
-| `AsString()` | `(string, error)` | Convert to string (strict type checking) |
-| `AsStringConverted()` | `(string, error)` | Format-convert to string |
-| `AsInt()` | `(int, error)` | Convert to integer (bool not converted) |
+| `AsString()` | `(string, error)` | Convert to a string (strict type check) |
+| `AsStringConverted()` | `(string, error)` | Format-convert to a string |
+| `AsInt()` | `(int, error)` | Convert to an integer (bool not converted) |
 | `AsFloat64()` | `(float64, error)` | Convert to float64 (bool not converted) |
-| `AsBool()` | `(bool, error)` | Convert to boolean |
+| `AsBool()` | `(bool, error)` | Convert to a boolean |
 
 ### AsString vs AsStringConverted
 
-| Method | Behavior | Use Case |
+| Method | Behavior | Use case |
 |--------|----------|----------|
-| `AsString()` | Strict type checking, only succeeds for string type | Need to ensure original type |
-| `AsStringConverted()` | Format any type to string | Need string representation |
+| `AsString()` | Strict type check; only string succeeds | When the original type must be guaranteed |
+| `AsStringConverted()` | Formats any type into a string | When a string representation is wanted |
 
 ```go
-// Scenario: Get a value that may be a number or string
+// Scenario: a value that may be a number or a string
 result := json.SafeGet(data, "user.id")
 
-// Strict mode - only succeeds when value is string
+// Strict mode - succeeds only when the value is a string
 id, err := result.AsString()
 
-// Lenient mode - numbers also convert to string
+// Lenient mode - numbers also become strings
 idStr, err := result.AsStringConverted()
 ```
 
@@ -185,51 +189,59 @@ idStr, err := result.AsStringConverted()
 
 Signature: `func StreamLinesInto[T any](reader io.Reader, fn func(lineNum int, data T) error, cfg ...Config) ([]T, error)`
 
-Reads JSON line by line from an `io.Reader`, parsing each line as type `T` and calling the callback function. Suitable for processing large JSONL format files.
+Reads JSON line by line from an `io.Reader`, parses each line as type `T`, and invokes the callback. Well suited to large JSONL files.
 
 **Parameters**
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `reader` | `io.Reader` | Yes | Data source |
-| `fn` | `func(lineNum int, data T) error` | Yes | Callback function for each line, receives line number and parsed data |
+| `fn` | `func(lineNum int, data T) error` | Yes | Per-line callback receiving the line number and the parsed data |
 | `cfg` | `...Config` | No | Optional configuration |
 
-**Return Values**
+**Returns**
 
-| Return Value | Type | Description |
+| Return value | Type | Description |
 |--------------|------|-------------|
 | First | `[]T` | All successfully parsed results |
 | Second | `error` | Error information |
+
+**Behavior details** (all controlled by the JSONL-related Config fields, see [Config](./config#the-config-struct)):
+
+- Empty lines are skipped by default (`JSONLSkipEmpty: true`); with `JSONLSkipComments: true`, lines starting with `#`/`//` are skipped
+- A failing line: by default returns a `line N: <reason>` error with a nil result; with `JSONLContinueOnErr: true` the line is skipped and processing continues
+- A callback error: stops immediately and returns that error (result is nil); callback panics are captured and converted into errors — the process is never taken down
+- Read buffer and single-line caps are controlled by `JSONLBufferSize` (64KB) and `JSONLMaxLineSize` (1MB)
+- Without cfg it uses the global default processor (affected by `SetGlobalProcessor`); with cfg, the processor is selected per that configuration
 
 ```go
 package main
 
 import (
-    "fmt"
-    "strings"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"strings"
 )
 
 func main() {
-    jsonl := `{"name":"Alice","age":30}
+	jsonl := `{"name":"Alice","age":30}
 {"name":"Bob","age":25}
 {"name":"Charlie","age":35}`
 
-    type Person struct {
-        Name string `json:"name"`
-        Age  int    `json:"age"`
-    }
+	type Person struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
 
-    reader := strings.NewReader(jsonl)
-    results, err := json.StreamLinesInto[Person](reader, func(lineNum int, data Person) error {
-        fmt.Printf("Line %d: %s, %d years old\n", lineNum, data.Name, data.Age)
-        return nil
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Total processed %d records\n", len(results))
+	reader := strings.NewReader(jsonl)
+	results, err := json.StreamLinesInto[Person](reader, func(lineNum int, data Person) error {
+		fmt.Printf("Line %d: %s, %d years old\n", lineNum, data.Name, data.Age)
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Processed %d records in total\n", len(results))
 }
 ```
 
@@ -243,19 +255,19 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 type DatabaseConfig struct {
-    Host     string `json:"host"`
-    Port     int    `json:"port"`
-    Database string `json:"database"`
-    SSL      bool   `json:"ssl"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Database string `json:"database"`
+	SSL      bool   `json:"ssl"`
 }
 
 func main() {
-    config := `{
+	config := `{
         "database": {
             "host": "localhost",
             "port": 5432,
@@ -264,25 +276,25 @@ func main() {
         }
     }`
 
-    // Parse configuration into struct
-    dbConfig := json.GetTyped[DatabaseConfig](config, "database")
+	// Parse the configuration into a struct
+	dbConfig := json.GetTyped[DatabaseConfig](config, "database")
 
-    fmt.Printf("Host: %s:%d\n", dbConfig.Host, dbConfig.Port)
+	fmt.Printf("Host: %s:%d\n", dbConfig.Host, dbConfig.Port)
 }
 ```
 
-### Multi-Type Processing
+### Multi-Type Handling
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{
+	data := `{
         "name": "Alice",
         "age": 30,
         "active": true,
@@ -290,18 +302,18 @@ func main() {
         "tags": ["admin", "user"]
     }`
 
-    // Generic gets for different types
-    name := json.GetTyped[string](data, "name")
-    age := json.GetTyped[int](data, "age")
-    active := json.GetTyped[bool](data, "active")
-    score := json.GetTyped[float64](data, "score")
-    tags := json.GetTyped[[]any](data, "tags")
+	// Generic gets of different types
+	name := json.GetTyped[string](data, "name")
+	age := json.GetTyped[int](data, "age")
+	active := json.GetTyped[bool](data, "active")
+	score := json.GetTyped[float64](data, "score")
+	tags := json.GetTyped[[]any](data, "tags")
 
-    fmt.Printf("Name: %s\n", name)
-    fmt.Printf("Age: %d\n", age)
-    fmt.Printf("Active: %v\n", active)
-    fmt.Printf("Score: %.1f\n", score)
-    fmt.Printf("Tags: %v\n", tags)
+	fmt.Printf("Name: %s\n", name)
+	fmt.Printf("Age: %d\n", age)
+	fmt.Printf("Active: %v\n", active)
+	fmt.Printf("Score: %.1f\n", score)
+	fmt.Printf("Tags: %v\n", tags)
 }
 ```
 
@@ -311,23 +323,23 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    config := `{"timeout": 30}`
+	config := `{"timeout": 30}`
 
-    timeout := json.GetTyped[int](config, "timeout")
-    fmt.Printf("Timeout: %d\n", timeout) // Output: 30
+	timeout := json.GetTyped[int](config, "timeout")
+	fmt.Printf("Timeout: %d\n", timeout) // Output: 30
 
-    // Path does not exist, returns zero value
-    retries := json.GetTyped[int](config, "retries")
-    fmt.Printf("Retries: %d\n", retries) // Output: 0 (zero value)
+	// Missing path returns the zero value
+	retries := json.GetTyped[int](config, "retries")
+	fmt.Printf("Retries: %d\n", retries) // Output: 0 (zero value)
 
-    // Path does not exist, use default value
-    retries = json.GetTyped[int](config, "retries", 3)
-    fmt.Printf("Retries: %d\n", retries) // Output: 3 (default value)
+	// Missing path with a default value
+	retries = json.GetTyped[int](config, "retries", 3)
+	fmt.Printf("Retries: %d\n", retries) // Output: 3 (default value)
 }
 ```
 
@@ -335,19 +347,24 @@ func main() {
 
 ## Performance Notes
 
-Generic operations use reflection for type conversion at runtime, making them slightly slower than type-specific getters like `GetString` and `GetInt`. For performance-sensitive scenarios, prefer type-specific functions.
+Conversion in `GetTyped[T]` is two-tier: **basic types** (string/int/float64/bool plus their slices and maps) go through an internal fast path that converts directly; **complex types such as custom structs** fall back to the generic "re-marshal → Unmarshal" path, so it is slightly slower than the type-specific getters (`GetString`, `GetInt`, etc.).
 
-| Method | Performance | Recommended Scenario |
-|--------|-------------|---------------------|
-| `GetString`, `GetInt`, etc. | Fastest | Performance-sensitive, type known |
-| `GetTyped[T]` | Medium | Need custom types |
-| `SafeGet` + `AccessResult` | Medium | Dynamic type processing |
+| Method | Performance | Recommended scenario |
+|---------|-------------|------------------------|
+| `GetString`, `GetInt`, etc. | Fastest (dedicated to basic types) | Performance-sensitive, type known |
+| `GetTyped[T]` (basic types) | Fast (fast conversion path) | Basic-type reads in generic code |
+| `GetTyped[T]` (structs) | Medium (via re-marshal) | Configuration parsing, one-off reads |
+| `SafeGet` + `AccessResult` | Medium | Dynamic type handling |
+
+:::tip
+When repeatedly reading the same struct on a hot path, it is faster to `Parse`/`Unmarshal` once into the struct, or to `GetTyped` once and reuse the result — rather than calling `GetTyped[Struct]` for every path.
+:::
 
 ---
 
-## Result[T] Type
+## The Result[T] Type
 
-`Result[T]` is a type-safe generic operation result for scenarios requiring a specific type and error handling.
+`Result[T]` is a type-safe generic operation result for scenarios that need an explicit type and error handling.
 
 ### Struct Definition
 
@@ -361,63 +378,77 @@ type Result[T any] struct {
 
 ### Methods
 
-| Method | Return Type | Description |
-|--------|-------------|-------------|
-| `Ok()` | `bool` | Check if result is valid (no error and found) |
-| `Unwrap()` | `T` | Return value, returns zero value on failure |
-| `UnwrapOr(default T)` | `T` | Return value or default value on failure |
+| Method | Return type | Description |
+|---------|-------------|-------------|
+| `Ok()` | `bool` | Checks the result is valid (no error and found) |
+| `Unwrap()` | `T` | Returns the value; the zero value on failure |
+| `UnwrapOr(default T)` | `T` | Returns the value, or the default on failure |
 
 ### Usage Example
+
+`Result[T]` has no "library function returns it directly" entry point — it is for you to **construct manually**, typically to wrap your own query functions and hand the caller a single explicit return value combining "value + exists + error":
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"errors"
+	"fmt"
+
+	"github.com/cybergodev/json"
 )
 
+// Wrap a config reader with an explicit error using Result[T]
+func readConfig(data, path string) json.Result[string] {
+	val, err := json.Get(data, path)
+	if err != nil {
+		return json.Result[string]{Error: err}
+	}
+	s, ok := val.(string)
+	if !ok {
+		return json.Result[string]{Error: fmt.Errorf("%s: %w", path, json.ErrTypeMismatch)}
+	}
+	return json.Result[string]{Value: s, Exists: true}
+}
+
 func main() {
-    data := `{"user": {"name": "Alice", "age": 30}}`
+	data := `{"env": "production"}`
 
-    // GetTyped returns T
-    name := json.GetTyped[string](data, "user.name")
-    fmt.Println("Name:", name)
+	r := readConfig(data, "env")
+	if r.Ok() {
+		fmt.Println("Env:", r.Unwrap()) // Output: Env: production
+	}
 
-    // Non-existent path returns zero value
-    email := json.GetTyped[string](data, "user.email")
-    fmt.Println("Email:", email) // Output: "" (zero value)
-
-    // Use default value
-    email = json.GetTyped[string](data, "user.email", "none@example.com")
-    fmt.Println("Email:", email) // Output: none@example.com
+	missing := readConfig(data, "region")
+	fmt.Println(missing.Exists, errors.Is(missing.Error, nil)) // Output: false true
+	fmt.Println(missing.UnwrapOr("cn-north-1"))                // Output: cn-north-1
 }
 ```
 
 ---
 
-## Result[T] vs AccessResult Comparison
+## Result[T] vs AccessResult
 
 | Feature | Result[T] | AccessResult |
 |---------|-----------|--------------|
-| Type safety | Generic T | any type |
+| Type safety | Generic T | `any` type |
 | Existence check | `Exists bool` | `Exists bool` |
-| Error handling | Built-in Error field | Type conversion methods return error |
-| Chained calls | Not supported | Supports chained type conversion |
-| How to obtain | `GetTyped[T]` | `SafeGet()` |
-| Use case | Known type retrieval | Dynamic type processing |
+| Error handling | Built-in Error field | Conversion methods return errors |
+| Chaining | Not supported | Chained type conversion supported |
+| How to obtain | Manual construction (no library entry point) | `SafeGet()` |
+| Best for | Wrapping your own query functions | Dynamic type handling |
 
-### Selection Guide
+### Selection Advice
 
-- **Known type**: Use `Result[T]` and `GetTyped[T]`
-- **Dynamic type**: Use `AccessResult` and `SafeGet()`
-- **Need chained conversion**: Use `AccessResult`
-- **Need error handling**: Use `Result[T]`'s Error field or `AccessResult`'s type conversion methods
+- **Known type, error details irrelevant**: `GetTyped[T]` (zero-value/default fallback)
+- **Dynamic types**: use `AccessResult` and `SafeGet()`
+- **Chained conversions needed**: use `AccessResult`
+- **A unified return shape**: use `Result[T]` as the return type of your own functions
 
 ---
 
 ## See Also
 
 - [Package Functions](./functions/) - Type-specific getter functions
-- [Type Definitions](./types) - AccessResult detailed definition
-- [Configuration](./config) - Config configuration options
+- [Type Definitions](./types) - Detailed AccessResult definition
+- [Config](./config) - Configuration options

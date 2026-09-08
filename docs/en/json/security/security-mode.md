@@ -1,37 +1,37 @@
 ---
 sidebar_label: "Security Mode"
-title: "Security - CyberGo JSON | API Reference"
-description: "CyberGo JSON security API: security config, AddDangerousPattern dangerous patterns, and input validation against JSON injection, prototype pollution, and XSS."
+title: "Security Mode - CyberGo JSON | API Reference"
+description: "CyberGo JSON security mode: AddDangerousPattern registration, PatternLevel severity, input validation against JSON injection, prototype pollution, and XSS."
 sidebar_position: 2
 ---
 
-# Security
+# Security Mode
 
-Security mode provides dangerous pattern detection functionality to prevent JSON injection attacks, prototype pollution, and other security threats.
+Security mode provides dangerous-pattern detection to prevent JSON injection attacks, prototype pollution, and other security threats.
 
-## DangerousPattern Struct
+## The DangerousPattern Struct
 
 DangerousPattern represents a security risk pattern. It is a struct type.
 
 ```go
 type DangerousPattern struct {
-    Pattern string       // Substring to detect in input
+    Pattern string       // Substring to detect in the input
     Name    string       // Descriptive name of the pattern
-    Level   PatternLevel // Severity level determining how to handle the pattern
+    Level   PatternLevel // Severity level determining how the pattern is handled
 }
 ```
 
-### Field Descriptions
+### Field Description
 
 | Field | Type | Description |
-|------|------|------|
-| `Pattern` | `string` | Substring to detect in input |
+|-------|------|-------------|
+| `Pattern` | `string` | Substring to detect in the input |
 | `Name` | `string` | Descriptive name of the pattern |
-| `Level` | `PatternLevel` | Severity level determining how to handle the pattern |
+| `Level` | `PatternLevel` | Severity level determining how the pattern is handled |
 
 ---
 
-## PatternLevel Type
+## The PatternLevel Type
 
 PatternLevel represents the severity level of a dangerous pattern.
 
@@ -43,27 +43,39 @@ type PatternLevel int
 
 ```go
 const (
-    // PatternLevelCritical always blocks the operation
-    // Used for patterns that pose an immediate security risk (e.g., prototype pollution)
+    // PatternLevelCritical always blocks the operation.
+    // For patterns that pose an immediate security risk (e.g. prototype pollution).
     PatternLevelCritical PatternLevel = iota
 
-    // PatternLevelWarning blocks in strict mode, logs a warning in permissive mode
-    // Used for patterns that may indicate malicious intent but have legitimate uses
+    // PatternLevelWarning blocks in strict mode, logs a warning in lenient mode.
+    // For patterns that may signal malicious intent but have legitimate uses.
     PatternLevelWarning
 
-    // PatternLevelInfo only logs, never blocks
-    // Used for audit/tracking purposes without interrupting operations
+    // PatternLevelInfo logs only, never blocks.
+    // For audit/tracking purposes, without interrupting operations.
     PatternLevelInfo
 )
 ```
 
-### String Method
+### The String Method
 
 ```go
 func (pl PatternLevel) String() string
 ```
 
-Returns the string representation of PatternLevel.
+Returns the string form of a PatternLevel (`"critical"`, `"warning"`, `"info"`; `"unknown"` for unrecognized values).
+
+### PatternLevel Behavior Matrix
+
+| Level | Semantic intent (interface docs) | Actual behavior of the current implementation |
+|-------|----------------------------------|-----------------------------------------------|
+| `PatternLevelCritical` | Always blocks the operation | Rejects on any hit (`ErrSecurityViolation`) |
+| `PatternLevelWarning` | Blocks in strict mode, logs in lenient mode | **Also rejects on any hit** — the `StrictMode` field currently plays no part in pattern-blocking decisions |
+| `PatternLevelInfo` | Logs only, never blocks | **Also rejects on any hit** |
+
+::: warning Plan for Warning/Info patterns as "will block"
+The current pattern scanning (built-in patterns, `Config.AdditionalDangerousPatterns`, and globally registered patterns all share one scanning path) rejects the operation on any hit that passes the word-boundary context check; `Level` does not change the blocking outcome and serves only as a semantic label distinguishing severity in audits/logs. So do **not** register a `PatternLevelInfo` pattern expecting "log but don't block" and then feed input containing it — today it blocks. All matching is case-insensitive.
+:::
 
 ---
 
@@ -72,48 +84,48 @@ Returns the string representation of PatternLevel.
 ### Default Patterns
 
 ::: warning Internal API
-The built-in pattern list is managed by internal functions and is no longer exported as a public API. Custom patterns can be managed via the Config's `AdditionalDangerousPatterns` field.
+The built-in pattern list is managed by internal functions and no longer exported as public API. Manage custom patterns via the Config `AdditionalDangerousPatterns` field.
 :::
 
-The following are built-in dangerous patterns, all at Critical level:
+The built-in dangerous patterns, all Critical level:
 
 | Pattern | Name | Category |
-|------|------|------|
-| `__proto__` | prototype pollution | Prototype Pollution |
-| `constructor[` | constructor access | Constructor Access |
-| `prototype.` | prototype manipulation | Prototype Manipulation |
-| `<script` | script tag injection | HTML Injection |
-| `<iframe` | iframe injection | HTML Injection |
-| `<object` | object injection | HTML Injection |
-| `<embed` | embed injection | HTML Injection |
-| `<svg` | svg injection | HTML Injection |
-| `javascript:` | javascript protocol | Protocol Injection |
-| `vbscript:` | vbscript protocol | Protocol Injection |
-| `eval(` | dynamic code execution | Code Execution |
-| `setTimeout(` | timer manipulation | Code Execution |
-| `setInterval(` | interval manipulation | Code Execution |
-| `require(` | code injection | Code Execution |
-| `new function(` | dynamic function creation | Code Execution |
-| `document.cookie` | cookie access | DOM Access |
-| `window.location` | redirect manipulation | DOM Access |
-| `innerhtml` | DOM manipulation | DOM Access |
-| `onerror`, `onload`, `onclick`, `onmouseover`, `onfocus` | event handler injection | Event Handlers |
-| `fromcharcode(` | character encoding bypass | Encoding Bypass |
-| `atob(` | base64 decoding | Encoding Bypass |
-| `expression(` | CSS expression injection | CSS Injection |
-| `__defineGetter__` | getter definition | Prototype Pollution |
-| `__defineSetter__` | setter definition | Prototype Pollution |
+|---------|------|----------|
+| `__proto__` | prototype pollution | Prototype pollution |
+| `constructor[` | constructor access | Constructor access |
+| `prototype.` | prototype manipulation | Prototype manipulation |
+| `<script` | script tag injection | HTML injection |
+| `<iframe` | iframe injection | HTML injection |
+| `<object` | object injection | HTML injection |
+| `<embed` | embed injection | HTML injection |
+| `<svg` | svg injection | HTML injection |
+| `javascript:` | javascript protocol | Protocol injection |
+| `vbscript:` | vbscript protocol | Protocol injection |
+| `eval(` | dynamic code execution | Code execution |
+| `setTimeout(` | timer manipulation | Code execution |
+| `setInterval(` | interval manipulation | Code execution |
+| `require(` | code injection | Code execution |
+| `new function(` | dynamic function creation | Code execution |
+| `document.cookie` | cookie access | DOM access |
+| `window.location` | redirect manipulation | DOM access |
+| `innerhtml` | DOM manipulation | DOM access |
+| `onerror`, `onload`, `onclick`, `onmouseover`, `onfocus` | event handler injection | Event handlers |
+| `fromcharcode(` | character encoding bypass | Encoding bypass |
+| `atob(` | base64 decoding | Encoding bypass |
+| `expression(` | CSS expression injection | CSS injection |
+| `__defineGetter__` | getter definition | Prototype pollution |
+| `__defineSetter__` | setter definition | Prototype pollution |
 
 ### Critical Patterns
 
 ::: warning Internal API
-GetCriticalPatterns has been converted to an internal function and is no longer exported as a public API. Critical patterns (`__proto__`, `constructor[`, `prototype.`) are always enforced and cannot be disabled.
+GetCriticalPatterns has become an internal function and is no longer exported as public API. The critical patterns (`__proto__`, `constructor[`, `prototype.`) are always enforced and cannot be disabled.
 :::
 
 The following critical patterns are always fully scanned regardless of JSON size:
 
 | Pattern | Description |
-|------|------|
+|---------|-------------|
 | `__proto__` | prototype pollution |
 | `constructor[` | constructor access |
 | `prototype.` | prototype manipulation |
@@ -122,7 +134,7 @@ The following critical patterns are always fully scanned regardless of JSON size
 
 ## Pattern Registration Methods
 
-Dangerous patterns are configured via the `Config` struct rather than global registration functions.
+Dangerous patterns are configured through the `Config` struct rather than global registration functions.
 
 ### Config.AddDangerousPattern
 
@@ -134,7 +146,7 @@ Adds a custom dangerous pattern to the configuration.
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "malicious_keyword",
-    Name:    "Custom dangerous pattern",
+    Name:    "custom dangerous pattern",
     Level:   json.PatternLevelCritical,
 })
 
@@ -147,7 +159,7 @@ defer processor.Close()
 
 ### Config.AdditionalDangerousPatterns
 
-You can also directly set the `Config.AdditionalDangerousPatterns` field:
+You can also set the `Config.AdditionalDangerousPatterns` field directly:
 
 ```go
 cfg := json.DefaultConfig()
@@ -173,7 +185,7 @@ func (c *Config) AddDangerousPattern(pattern DangerousPattern)
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "custom_dangerous_string",
-    Name:    "Custom dangerous string",
+    Name:    "custom dangerous string",
     Level:   json.PatternLevelWarning,
 })
 ```
@@ -187,9 +199,10 @@ type Config struct {
     // AdditionalDangerousPatterns adds security patterns beyond the defaults
     AdditionalDangerousPatterns []DangerousPattern
 
-    // DisableDefaultPatterns disables built-in default security patterns (except critical ones)
-    // When true, only AdditionalDangerousPatterns are used
-    // Note: Critical patterns (__proto__, constructor[, prototype.) are always enforced and cannot be disabled
+    // DisableDefaultPatterns disables the built-in default security patterns
+    // (except the critical ones). When true, only AdditionalDangerousPatterns
+    // are used. Note: the critical patterns (__proto__, constructor[, prototype.)
+    // are always enforced and cannot be disabled.
     DisableDefaultPatterns bool
 }
 ```
@@ -198,18 +211,18 @@ type Config struct {
 
 ## Global Pattern Registration
 
-In addition to instance-level patterns configured via `Config`, you can manage global pattern registries via package-level functions. Patterns in the global registry are effective across all Processor instances.
+Beyond instance-level patterns configured via `Config`, package-level functions manage a global pattern registry. Patterns in the global registry apply to all Processor instances.
 
 ### RegisterDangerousPattern
 
 Signature: `func RegisterDangerousPattern(pattern DangerousPattern)`
 
-Adds a custom dangerous pattern to the global registry. Registered patterns are effective across all Processor instances.
+Adds a custom dangerous pattern to the global registry. Registered patterns take effect across all Processor instances.
 
 ```go
 json.RegisterDangerousPattern(json.DangerousPattern{
     Pattern: "malicious_keyword",
-    Name:    "Custom dangerous pattern",
+    Name:    "custom dangerous pattern",
     Level:   json.PatternLevelCritical,
 })
 ```
@@ -218,7 +231,7 @@ json.RegisterDangerousPattern(json.DangerousPattern{
 
 Signature: `func UnregisterDangerousPattern(pattern string)`
 
-Removes the specified pattern from the global registry.
+Removes a pattern from the global registry.
 
 ```go
 json.UnregisterDangerousPattern("malicious_keyword")
@@ -237,14 +250,73 @@ for _, p := range patterns {
 }
 ```
 
-::: tip Global Patterns vs Config Patterns
-- **Global patterns** (`RegisterDangerousPattern`): Shared across all Processor instances, suitable for application-level security policies
-- **Config patterns** (`Config.AddDangerousPattern`): Only affect Processors using that Config, suitable for instance-level customization
-:::
+### Global Registration vs Config Append
+
+| Dimension | Global registration (`RegisterDangerousPattern`) | Config append (`AddDangerousPattern` / `AdditionalDangerousPatterns`) |
+|-----------|---------------------------------------------------|------------------------------------------------------------------------|
+| Scope | **All** Processors in the process, including already-created instances (the registry is read live at scan time) | Only Processors created with that Config (fixed into the security validator at construction) |
+| Removal | `UnregisterDangerousPattern(pattern)` takes effect immediately | No runtime removal; rebuild the Processor with a new Config |
+| Querying | `ListDangerousPatterns()` | Read the `cfg.AdditionalDangerousPatterns` field |
+| Relation to `DisableDefaultPatterns` | Unaffected (explicitly added patterns always scan) | Unaffected (same as left) |
+| Typical use | Application-wide security policy, compliance blacklists, registered at `main` startup | Per-instance business customization (e.g. only one tenant's Processor blocks specific keywords) |
+
+Full comparison example:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// Global registration: applies to all Processors (including already-created ones)
+	json.RegisterDangerousPattern(json.DangerousPattern{
+		Pattern: "internal_only",
+		Name:    "internal identifier",
+		Level:   json.PatternLevelCritical,
+	})
+	defer json.UnregisterDangerousPattern("internal_only")
+
+	// Config append: affects only Processors using this Config
+	cfg := json.DefaultConfig()
+	cfg.AddDangerousPattern(json.DangerousPattern{
+		Pattern: "project_secret",
+		Name:    "project secret",
+		Level:   json.PatternLevelCritical,
+	})
+
+	withCfg, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer withCfg.Close()
+
+	withoutCfg, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer withoutCfg.Close()
+
+	_, err1 := withCfg.Get(`{"v": "project_secret"}`, "v")
+	_, err2 := withoutCfg.Get(`{"v": "project_secret"}`, "v")
+	_, err3 := withoutCfg.Get(`{"v": "internal_only"}`, "v")
+
+	fmt.Println("Local pattern blocks config processor:", err1 != nil)
+	fmt.Println("Local pattern blocks plain processor:", err2 != nil)
+	fmt.Println("Global pattern blocks plain processor:", err3 != nil)
+	// Output:
+	// Local pattern blocks config processor: true
+	// Local pattern blocks plain processor: false
+	// Global pattern blocks plain processor: true
+}
+```
 
 ---
 
-## Complete Example
+## Complete Examples
 
 ### Custom Security Policy
 
@@ -252,48 +324,52 @@ for _, p := range patterns {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // Method 1: Via config field
-    cfg := json.DefaultConfig()
-    cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
-        {Pattern: "company_secret", Name: "Company sensitive information", Level: json.PatternLevelCritical},
-    }
+	// Option 1: via the configuration field
+	cfg := json.DefaultConfig()
+	cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
+		{Pattern: "company_secret", Name: "company sensitive data", Level: json.PatternLevelCritical},
+	}
 
-    // Method 2: Via config method
-    cfg.AddDangerousPattern(json.DangerousPattern{
-        Pattern: "internal_api",
-        Name:    "Internal API reference",
-        Level:   json.PatternLevelWarning,
-    })
+	// Option 2: via the configuration method
+	cfg.AddDangerousPattern(json.DangerousPattern{
+		Pattern: "internal_api",
+		Name:    "internal API reference",
+		Level:   json.PatternLevelWarning,
+	})
 
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    // Test dangerous pattern detection
-    _, err = p.Get(`{"data": "company_secret_info"}`, "data")
-    if err != nil {
-        fmt.Println("Dangerous pattern detected:", err)
-    }
+	// Test dangerous-pattern detection (patterns match as whole words: no
+	// letter/digit/underscore may sit directly adjacent on either side)
+	_, err = p.Get(`{"data": "company_secret"}`, "data")
+	fmt.Println("Dangerous pattern detected:", err != nil)
+	// Output: Dangerous pattern detected: true
 
-    // View registered patterns
-    fmt.Printf("Custom pattern count: %d\n", len(cfg.AdditionalDangerousPatterns))
+	// Inspect the registered patterns
+	fmt.Printf("Custom pattern count: %d\n", len(cfg.AdditionalDangerousPatterns))
 }
 ```
+
+::: tip Matching is "whole-word"
+After a pattern hit, a word-boundary context check runs: if letters, digits, or underscores sit directly adjacent on either side, the hit counts as part of an ordinary identifier and is not blocked. For example, the pattern `company_secret` triggers inside `"company_secret"` but not inside `"company_secret_info"` (the trailing `_` is a word character); patterns ending with separators like `(`, `[`, `:`, `.` (e.g. `eval(`) are unaffected by suffixes. This is also how the library's built-in patterns (like `eval(`, `__proto__`) match.
+:::
 
 ### Disabling Default Patterns
 
 ```go
 cfg := json.DefaultConfig()
 
-// Disable built-in default patterns (except critical ones), use only custom patterns
-// Note: Critical patterns (__proto__, constructor[, prototype.) are always enforced
+// Disable the built-in defaults (except critical ones); use custom patterns only
+// Note: the critical patterns (__proto__, constructor[, prototype.) are always enforced
 cfg.DisableDefaultPatterns = true
 
 // Add custom patterns
@@ -317,11 +393,11 @@ defer p.Close()
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "suspicious_but_allowed",
-    Name:    "Suspicious but allowed",
-    Level:   json.PatternLevelInfo, // Only log, do not block
+    Name:    "suspicious but allowed",
+    Level:   json.PatternLevelInfo, // Semantic label; the current implementation also blocks on a hit (see the PatternLevel behavior matrix)
 })
 
-// View registered custom patterns
+// Inspect the registered custom patterns
 for _, p := range cfg.AdditionalDangerousPatterns {
     fmt.Printf("Pattern: %s, Name: %s, Level: %s\n", p.Pattern, p.Name, p.Level)
 }
@@ -329,25 +405,46 @@ for _, p := range cfg.AdditionalDangerousPatterns {
 
 ---
 
+## Scanning Switches
+
+Three Config fields control "how to scan":
+
+| Field | Default | Effect |
+|-------|---------|--------|
+| `FullSecurityScan` | `false` | When `true`, fully scans every input regardless of size; when `false`, small inputs (< 4KB) get full scans while large inputs take the tiered optimized scan (next section; still 100% coverage). Full mode adds roughly 10–30% overhead on >100KB inputs |
+| `DisableDefaultPatterns` | `false` | When `true`, skips the built-in non-critical patterns (HTML tags, event handlers, etc.), keeping the 3 critical patterns + custom patterns |
+| `AdditionalDangerousPatterns` | `nil` | Layers custom patterns on top of the built-ins (see above) |
+
+```go
+cfg := json.SecurityConfig() // Already enables FullSecurityScan and tightens every limit
+// Equivalent to setting manually:
+// cfg := json.DefaultConfig()
+// cfg.FullSecurityScan = true
+```
+
+When to enable: turn on `FullSecurityScan` when handling **untrusted input** (public APIs, user submissions, external webhooks), touching sensitive data (authentication, financial, personal), or under compliance requirements for full auditing; trusted internal services moving large payloads can keep the default tiered scan for throughput.
+
+---
+
 ## Security Scanning Strategy
 
 ### Small JSON (< 4KB)
 
-Always performs a full security scan, checking each dangerous pattern one by one.
+Always fully security-scanned, checking every dangerous pattern one by one.
 
-### Larger JSON (≥ 4KB)
+### Larger JSON (>= 4KB)
 
-Uses a multi-level optimized scan that **guarantees 100% coverage** (no sampling blind spots):
+A multi-tier optimized scan with **guaranteed 100% coverage** (no sampling blind spots):
 
-- Critical patterns (`__proto__`, `constructor[`, `prototype.`) are always fully scanned
-- An indicator-character check is performed first: if no dangerous characters are present, the scan is skipped quickly
-- Suspicious character density is detected: when the density is too high, a full scan is performed to prevent attackers from hiding malicious content in dense regions
-- The remaining patterns use a 32KB **sliding window** scan (with overlap) to ensure cross-boundary patterns are not missed
+- The critical patterns (`__proto__`, `constructor[`, `prototype.`) are always fully scanned
+- An indicator-character check runs first: if no dangerous characters are present, scanning is skipped quickly
+- Suspicious character density is measured: overly dense regions fall back to a full scan, preventing attackers from hiding malicious content in dense areas
+- The remaining patterns use a 32KB **rolling window** scan (with overlap), so patterns straddling boundaries are never missed
 
 ---
 
-## Related
+## See Also
 
 - [Config](../api-reference/config) - Configuration options
-- [Validator](../extensions/validator) - Validator
+- [Schema Validation](../api-reference/schema) - Schema validation
 - [Hook System](../extensions/hooks) - Operation interception

@@ -28,7 +28,7 @@ CyberGo JSON 内置一套**自动缓存子系统**：解析结果与路径查询
 
 ## 监控缓存命中率
 
-`GetStats()` 返回 `Stats`，包含命中次数、未命中次数、命中率与当前条目数。
+`GetStats()` 返回 `Stats`，包含命中次数、未命中次数、命中率与当前条目数。首次查询未命中（解析缓存与结果缓存各记一次 miss），重复查询同一 `(JSON, path)` 则命中：
 
 ```go
 package main
@@ -48,25 +48,23 @@ func main() {
 
 	data := `{"user":{"name":"Alice","email":"alice@example.com"},"version":1}`
 
-	// 预热常用路径：内部对各路径执行一次 Get 并写入缓存
-	paths := []string{"user.name", "user.email", "version"}
-	result, err := processor.WarmupCache(data, paths)
+	// 首次查询：结果与解析均未命中
+	_, err = processor.Get(data, "user.name")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("预热成功：%d/%d（成功率 %.0f%%）\n", result.Successful, result.TotalPaths, result.SuccessRate)
-	// 输出：预热成功：3/3（成功率 100%）
 
-	// 相同 (JSON, path) 查询命中缓存
-	name, err := processor.Get(data, "user.name")
+	// 再次查询同一 (JSON, path)：结果缓存直接命中
+	_, err = processor.Get(data, "user.name")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("user.name = %v\n", name)
-	// 输出：user.name = Alice
 
-	// 查看缓存配置与状态
 	stats := processor.GetStats()
+	fmt.Printf("命中 %d 次，未命中 %d 次（命中率 %.1f%%）\n",
+		stats.HitCount, stats.MissCount, stats.HitRatio*100)
+	// 输出：命中 1 次，未命中 2 次（命中率 33.3%）
+
 	fmt.Printf("缓存启用：%v，TTL：%v\n", stats.CacheEnabled, stats.CacheTTL)
 	// 输出：缓存启用：true，TTL：5m0s
 }
@@ -90,6 +88,45 @@ func main() {
 ```
 
 `WarmupResult` 包含 `TotalPaths`/`Successful`/`Failed`/`SuccessRate`/`FailedPaths`，可用于校验预热是否完整（例如配置文件中的路径拼写错误会体现为 `FailedPaths`）。
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	processor, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer processor.Close()
+
+	data := `{"db":{"host":"db.local","port":5432},"cache":{"ttl":300}}`
+
+	// 服务启动时预热高频路径（内部对每个路径执行一次 Get 并写入缓存）
+	hotPaths := []string{"db.host", "db.port", "cache.ttl"}
+	result, err := processor.WarmupCache(data, hotPaths)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("预热：%d/%d 成功（成功率 %.0f%%）\n",
+		result.Successful, result.TotalPaths, result.SuccessRate)
+	// 输出：预热：3/3 成功（成功率 100%）
+
+	// 预热完成后，首批业务查询即命中（首个路径解析未命中、后续路径共享解析缓存）
+	_, err = processor.Get(data, "db.host")
+	if err != nil {
+		panic(err)
+	}
+	stats := processor.GetStats()
+	fmt.Printf("命中 %d 次 / 未命中 %d 次\n", stats.HitCount, stats.MissCount)
+	// 输出：命中 3 次 / 未命中 4 次
+}
+```
 
 :::warning 前提条件
 `EnableCache` 为 `false` 时调用 `WarmupCache` 会返回错误（缓存未启用无法预热）。预热必须在**同一个 Processor 实例**上进行——包级函数（如 `json.GetString`）使用的是全局 Processor，与自定义实例的缓存相互隔离。
@@ -175,8 +212,8 @@ import (
 
 func main() {
 	cfg := json.DefaultConfig()
-	cfg.MaxCacheSize = 256            // 容纳更多热数据
-	cfg.CacheTTL = 10 * time.Minute   // 延长有效期
+	cfg.MaxCacheSize = 256          // 容纳更多热数据
+	cfg.CacheTTL = 10 * time.Minute // 延长有效期
 
 	processor, err := json.New(cfg)
 	if err != nil {
@@ -192,6 +229,14 @@ func main() {
 	fmt.Println("查询完成")
 	// 输出：查询完成
 }
+```
+
+读多写少、结果只读的场景可再叠加零拷贝开关：
+
+```go
+// 契约：启用后调用方不得修改 Get 返回的 map/slice（原始值始终安全）
+cfg := json.DefaultConfig()
+cfg.CacheSharedResults = true
 ```
 
 ### CacheSharedResults 零拷贝契约
@@ -253,9 +298,28 @@ func main() {
 	fmt.Printf("数据库主机：%v\n", host)
 	// 输出：数据库主机：db.local
 
-	// 3. 运行期监控命中率，低于阈值时告警
+	// 3. 业务查询持续命中（预热与预解析已填充缓存）
+	for _, path := range []string{"db.host", "db.port", "cache.ttl"} {
+		_, err = processor.Get(configJSON, path)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// 4. 运行期监控命中率，低于阈值时告警
 	stats := processor.GetStats()
-	fmt.Printf("当前命中率：%.2f%%\n", stats.HitRatio*100)
+	fmt.Printf("命中 %d / 未命中 %d（命中率 %.1f%%）\n",
+		stats.HitCount, stats.MissCount, stats.HitRatio*100)
+	// 输出：命中 6 / 未命中 4（命中率 60.0%）
+	if stats.HitRatio < 0.5 {
+		fmt.Println("告警：命中率低于 50%，检查工作负载或调整 CacheTTL/MaxCacheSize")
+	}
+
+	// 5. 配置轮换（数据源变化）时手动清空，避免读到旧值
+	processor.ClearCache()
+	stats = processor.GetStats()
+	fmt.Printf("清空后缓存条目：%d\n", stats.CacheSize)
+	// 输出：清空后缓存条目：0
 }
 ```
 

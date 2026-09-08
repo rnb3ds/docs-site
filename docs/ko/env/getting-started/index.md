@@ -1,7 +1,7 @@
 ---
 sidebar_label: "빠른 시작"
 title: "빠른 시작 - CyberGo env | 5분 입문 가이드"
-description: "5분 안에 CyberGo env 환경 변수 관리 라이브러리를 시작하세요. go get 설치, .env 로드, 타입 안전 읽기, GetSecure 보안 값, 구조체 매핑, 변수 확장과 errors.Is 오류 처리를 다루며, 네 가지 구성 프리셋과 다중 환경 다중 파일 로드를 설명합니다. 실행 가능한 완전한 코드 예제로 빠르게 입문할 수 있습니다."
+description: "5분 안에 CyberGo env 환경 변수 관리 라이브러리를 시작하세요. go get 설치, .env 로드, 타입 안전 읽기, GetSecure 보안 값, 구조체 매핑과 errors.Is 오류 처리를 다루며, 구성 프리셋과 다중 파일 로드를 실행 가능한 예제로 설명합니다."
 sidebar_position: 1
 ---
 
@@ -38,6 +38,10 @@ LOG_LEVEL=info
 # 다중 값(쉼표 구분)
 ALLOWED_HOSTS=localhost,example.com,api.example.com
 ```
+
+::: tip 전체 문법 참조
+`.env` 파일의 따옴표, 이스케이프, 여러 줄 값 등 전체 문법 규칙은 [파일 형식](/ko/env/reference/file-format)을 참조하세요.
+:::
 
 ## 최소 사용법
 
