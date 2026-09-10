@@ -137,14 +137,16 @@ const STDLIB_FIELDS = new Set([
   'Timeout' // net/http.Transport
 ])
 
-// OS-level API / syscall function names referenced for cross-platform context
-// (e.g. "Linux `mlock` / Windows `VirtualLock`"). These are not Go exports at
-// all — they are platform C APIs — but PascalCase members like `VirtualLock`
-// match the IDENT_RE pattern. Lowercase siblings (mlock, mmap) never trigger
-// because they fail the [A-Z…] anchor. If a cybergodev export ever collides
-// with one of these, drop it here so it is checked against source instead of
-// being silently passed.
-const OS_API_FUNCTIONS = new Set(['VirtualLock'])
+// OS-level API / syscall names referenced for cross-platform context (e.g.
+// "Linux `mlock` / Windows `VirtualLock`", its paired unlock API
+// `VirtualUnlock`, and Windows privilege names like `SeLockMemoryPrivilege`
+// cited in memory-locking docs). These are not Go exports at all — they are
+// platform C APIs and OS privilege constants — but PascalCase members like
+// `VirtualLock` match the IDENT_RE pattern. Lowercase siblings (mlock,
+// munlock, mmap) never trigger because they fail the [A-Z…] anchor. If a
+// cybergodev export ever collides with one of these, drop it here so it is
+// checked against source instead of being silently passed.
+const OS_API_FUNCTIONS = new Set(['VirtualLock', 'VirtualUnlock', 'SeLockMemoryPrivilege'])
 
 function isLikelyNotSymbol(s: string): boolean {
   return (

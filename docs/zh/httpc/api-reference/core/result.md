@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Result"
 title: "Result - CyberGo HTTPC | Result 响应类型"
-description: "HTTPC Result 响应类型 API 参考：StatusCode/Body 基础方法、状态判断、Cookie 操作、Unmarshal JSON 解析、SaveToFile 文件保存与 RequestInfo/ResponseInfo 子类型。"
+description: "HTTPC Result 响应类型 API 参考：StatusCode/Body 等全部 17 个 nil 安全方法、状态判断、Cookie 操作、Unmarshal 解析、SaveToFile 保存与 RequestInfo/ResponseInfo/RequestMeta 子类型（含 ProxyURL 代理字段）。"
 sidebar_position: 3
 ---
 
@@ -29,6 +29,10 @@ fmt.Println(result.Body())       // {"id":1,"name":"test"}
 
 :::tip
 Result 每次请求新建，GC 自动回收，无需手动释放。
+:::
+
+:::tip 访问风格
+优先使用 nil 安全的访问方法（`StatusCode`、`Body`、`GetCookie` 等）。`Request`/`Response`/`Meta` 三个字段导出主要是为了在测试与 mock 中直接构造 Result；对客户端返回的 Result 直接读字段前需对嵌套指针判空（请求失败时 `Response` 可能为 nil）。
 :::
 
 ## 基础方法
@@ -180,8 +184,8 @@ func (r *Result) Unmarshal(v any) error
 
 | 错误 | 触发条件 |
 |------|----------|
-| `ErrResponseBodyEmpty` | 响应体为空 |
-| `ErrResponseBodyTooLarge` | 响应体超过 50MB JSON 解析大小限制 |
+| `ErrResponseBodyEmpty` | 响应体为空（含 Result 或 Response 为 nil 的情形） |
+| `ErrResponseBodyTooLarge` | 响应体超过 50MB JSON 解析大小限制（错误信息附实际字节数） |
 
 ```go
 var user User
@@ -199,11 +203,12 @@ fmt.Println(user.Name)
 func (r *Result) SaveToFile(filePath string) error
 ```
 
-将响应体保存到文件。文件路径经过安全验证（路径遍历防护、符号链接检查、系统路径保护）。
+将响应体保存到文件。文件路径经过安全验证（路径遍历防护、符号链接检查、系统路径保护），文件以 `0644` 权限写入。
 
 | 错误 | 触发条件 |
 |------|----------|
-| `ErrResponseBodyEmpty` | 响应体为空 |
+| `ErrResponseBodyEmpty` | 响应体为 nil（含 Result 或 Response 为 nil 的情形） |
+| 包装错误 | 路径校验失败或写入失败 |
 
 ```go
 result, _ := client.Get("https://example.com/data.csv")
@@ -221,7 +226,9 @@ if err := result.SaveToFile("/tmp/data.csv"); err != nil {
 func (r *Result) String() string
 ```
 
-返回人类可读的字符串表示。敏感头部自动脱敏，响应体截断至 200 字符。
+返回人类可读的字符串表示。敏感头部自动脱敏，响应体截断至 200 字符（截断时追加 `...[truncated]`）。Result 为 nil 或无响应时返回 `Result{}`。
+
+脱敏的头部：`Authorization`、`Cookie`、`Set-Cookie`、`X-Api-Key`、`X-Auth-Token`、`Proxy-Authorization`，在头部列表中显示为 `名称: ***`。
 
 ```go
 result, _ := client.Get(url)
@@ -267,6 +274,7 @@ type ResponseInfo struct {
 type RequestMeta struct {
     Duration      time.Duration
     Attempts      int
+    ProxyURL      string
     RedirectChain []string
     RedirectCount int
 }
@@ -274,12 +282,54 @@ type RequestMeta struct {
 
 请求执行元数据。通过 `result.Meta` 访问。
 
+| 字段 | 说明 |
+|------|------|
+| `Duration` | 从请求发起到响应完成的总耗时 |
+| `Attempts` | 含重试在内的总尝试次数 |
+| `ProxyURL` | 最终一次尝试实际使用的代理 URL（`Connection.ProxyURL` 或代理池选中的条目）；直连时为空字符串，系统代理（`EnableSystemProxy`）同样不记录（仍为空）——需要逐请求观测出口时请显式配置 `Connection.ProxyURL` 或 `ProxyPool`。代理轮换场景下每次重试可能换用不同代理，此字段报告产生当前响应的那一次 |
+| `RedirectChain` | 重定向跟随过的 URL 链 |
+| `RedirectCount` | 跟随的重定向次数 |
+
 ```go
 result, _ := client.Get(url)
 
 fmt.Println(result.Meta.Duration)      // 125ms
 fmt.Println(result.Meta.Attempts)       // 2（重试了 1 次）
 fmt.Println(result.Meta.RedirectCount)  // 1（跟随了 1 次重定向）
+fmt.Println(result.Meta.ProxyURL)       // ""（直连）或 "http://proxy:8080"
+```
+
+## 完整示例
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	result, err := httpc.Get("https://api.example.com/users/1")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(result.StatusCode()) // 200
+	fmt.Println(result.IsSuccess())  // true
+
+	var user struct {
+		Name string `json:"name"`
+	}
+	if err := result.Unmarshal(&user); err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(user.Name) // test
+
+	fmt.Println(result.Meta.Attempts) // 1
+}
 ```
 
 ## 另见

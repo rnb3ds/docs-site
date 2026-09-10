@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Error Handling"
 title: "Error Handling - CyberGo JSON | Best Practices"
-description: "CyberGo JSON error handling: JsonsError type checking, errors.Is/As matching, SafeError safe output and RedactedPath for robust exception handling."
+description: "CyberGo JSON error handling: JsonsError type checks, errors.Is/As matching, SafeError/RedactedPath redaction, Op/Path failure location, default-value fallbacks."
 sidebar_position: 2
 ---
 
 # Error Handling
 
-Properly handling errors in JSON operations.
+Handle errors from JSON operations correctly.
 
 ## Error Types
 
@@ -30,13 +30,32 @@ var (
 )
 ```
 
+### Sentinel Error Classification
+
+The 12 exported sentinel errors fall into four categories by **how to handle them**:
+
+| Error | Meaning / typical trigger | Category | Handling advice |
+|-------|---------------------------|----------|-----------------|
+| `ErrInvalidJSON` | Input is not valid JSON (syntax error, invalid UTF-8) | User input | Return a friendly message and ask for corrected data |
+| `ErrPathNotFound` | Path does not exist (missing nested key, array index out of range) | User input | Fall back to a default or apply business semantics |
+| `ErrTypeMismatch` | Value at the path does not match the expected type | User input | Report a field type error |
+| `ErrInvalidPath` | Illegal path syntax (e.g. `a..b`) | User input | Report a path format error |
+| `ErrUnsupportedPath` | The path operation is unsupported | User input | Check the path/operation combination |
+| `ErrSizeLimit` | Input exceeds `Config.MaxJSONSize` | Security limit | Reject and apply rate-limit policy |
+| `ErrDepthLimit` | Nesting depth exceeds `MaxNestingDepthSecurity` | Security limit | Reject (deep nesting often signals malicious input) |
+| `ErrSecurityViolation` | Dangerous pattern detected (prototype pollution, etc.) | Security limit | Log and reject; do not echo details |
+| `ErrConcurrencyLimit` | In-flight operations reached `MaxConcurrency` (soft cap — immediate rejection, no blocking) | Transient system | **Retryable** — retry shortly or raise the cap |
+| `ErrProcessorClosed` | Methods called after the processor was Closed | System state | Rebuild the `Processor` or check the lifecycle |
+| `ErrOperationTimeout` | — (kept for compatibility) | Deprecated | No operation returns it today; do not branch on it |
+| `ErrResourceExhausted` | — (kept for compatibility) | Deprecated | No operation returns it today; do not branch on it |
+
 ### Error Checking
 
 ```go
 val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrPathNotFound) {
-        // Path not found
+        // Path does not exist
         return defaultName
     }
     if errors.Is(err, json.ErrTypeMismatch) {
@@ -51,12 +70,12 @@ if err != nil {
 
 ### Structure
 
-`JsonsError` is the library's primary error type, containing operation context information:
+`JsonsError` is the library's primary error type, carrying operation context:
 
 ```go
 type JsonsError struct {
     Op      string `json:"op"`      // Operation type: "get", "set", "delete", "marshal", etc.
-    Path    string `json:"path"`    // JSON path (if any)
+    Path    string `json:"path"`    // JSON path, if any
     Message string `json:"message"` // Human-readable error message
     Err     error  `json:"err"`     // Underlying error
 }
@@ -71,15 +90,15 @@ func (e *JsonsError) Is(target error) bool
 ```go
 val, err := json.Get(data, "user.name")
 if err != nil {
-    // Use errors.Is to check error type
+    // Check the error type with errors.Is
     if errors.Is(err, json.ErrPathNotFound) {
-        // Path not found
+        // Path does not exist
     }
     if errors.Is(err, json.ErrTypeMismatch) {
         // Type mismatch
     }
 
-    // Use errors.As to get detailed context
+    // Get detailed context with errors.As
     var jsonErr *json.JsonsError
     if errors.As(err, &jsonErr) {
         fmt.Printf("Operation: %s\n", jsonErr.Op)
@@ -89,18 +108,59 @@ if err != nil {
 }
 ```
 
-## Error Handling Patterns
+### Locating Failures with Op / Path
 
-### Provide Default Values
+The `Op` (failed operation) and `Path` (failed path) combination pinpoints the problem without parsing error strings:
 
 ```go
-// Type-safe getter functions have built-in default value support
+package main
+
+import (
+	"errors"
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	data := `{"user":{"name":"Alice"},"perms":["read"]}`
+
+	// Two typical failures: path not found / invalid JSON
+	for _, tc := range []struct {
+		jsonStr, path string
+	}{
+		{data, "user.email"},  // path not found
+		{`{"broken"`, "user"}, // invalid JSON
+	} {
+		_, err := json.Get(tc.jsonStr, tc.path)
+		var jsonErr *json.JsonsError
+		if errors.As(err, &jsonErr) {
+			fmt.Printf("op=%s path=%q reason=%v\n", jsonErr.Op, jsonErr.Path, json.SafeError(err))
+		}
+	}
+}
+
+// Output:
+// op=get path="user.email" reason=path not found
+// op=parse path="" reason=invalid JSON format
+```
+
+:::tip The localization method
+`Op` answers "which operation failed" (`get`/`set`/`delete`/`get_multiple`/`warmup_cache`; parse failures are uniformly recorded as `parse`), and `Path` answers "on which path". Logging these two fields (instead of the whole `Error()` string) both pinpoints the problem and avoids writing sensitive key names from paths into logs — pair with [`RedactedPath`](#redactedpath-log-redaction) masking whenever you do output a path.
+:::
+
+## Error-Handling Patterns
+
+### Providing Default Values
+
+```go
+// Type-safe getters have built-in default-value support
 name := json.GetString(data, "user.name", "anonymous")
 age := json.GetInt(data, "user.age", 0)
 active := json.GetBool(data, "user.active", false)
 ```
 
-### Collect Multiple Errors
+### Collecting Multiple Errors
 
 ```go
 type MultiError struct {
@@ -140,7 +200,7 @@ if multiErr.HasError() {
 ```go
 val, err := json.Get(data, "config.api_key")
 if err != nil {
-    return fmt.Errorf("failed to read API key: %w", err)
+    return fmt.Errorf("reading API key failed: %w", err)
 }
 ```
 
@@ -192,13 +252,13 @@ if err != nil {
 ```go
 func auditLog(op string, path string, err error) {
     if err != nil {
-        log.Warn("Operation failed",
+        log.Warn("operation failed",
             "operation", op,
             "path", path,
             "error", err,
         )
     } else {
-        log.Info("Operation succeeded",
+        log.Info("operation succeeded",
             "operation", op,
             "path", path,
         )
@@ -208,19 +268,38 @@ func auditLog(op string, path string, err error) {
 
 ## Recovery Strategies
 
-### SafeError Safe Output
+### SafeError for Safe Output
 
-`SafeError` returns a client-safe error message, stripping internal context information:
+`SafeError` returns a client-safe error message with internal context removed (operation, path, structural details) — suitable for HTTP/API responses (CWE-209):
 
 ```go
 // Signature: func SafeError(err error) string
 
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
-    // SafeError strips internal details like paths and operation context
+    // The full Error() contains "JSON get failed at path '...': ..." — never send it as-is
+    // SafeError returns only the underlying sentinel message, e.g. "path not found"
     safeMsg := json.SafeError(err)
-    http.Error(w, safeMsg, http.StatusBadRequest)
+    _ = safeMsg // http.Error(w, safeMsg, http.StatusBadRequest)
+    _ = val
     return
+}
+```
+
+### RedactedPath Log Redaction
+
+Paths can carry sensitive key names (`user.password`, `token`, etc.). Mask them with `RedactedPath` before logging — any non-empty path is replaced with `***`, leaking no fragment:
+
+```go
+// Signature: func RedactedPath(path string) string
+
+var jsonErr *json.JsonsError
+if errors.As(err, &jsonErr) {
+    // Log only the masked path, keeping sensitive key names out of the log system
+    log.Warn("JSON operation failed",
+        "op", jsonErr.Op,
+        "path", json.RedactedPath(jsonErr.Path), // ***
+    )
 }
 ```
 
@@ -250,7 +329,7 @@ err := withRetry(func() error {
 func getConfig(data string) Config {
     cfg := json.DefaultConfig()
 
-    // Use type-safe getter functions with built-in default values
+    // Use type-safe getters with built-in defaults
     cfg.StrictMode = json.GetBool(data, "config.strict", true)
 
     return cfg
@@ -261,18 +340,18 @@ func getConfig(data string) Config {
 
 ### User Input Errors
 
-Caused by user-provided JSON data or paths:
+Caused by user-supplied JSON data or paths:
 
 ```go
 val, err := json.Get(data, "user.name")
 if err != nil {
     switch {
     case errors.Is(err, json.ErrInvalidJSON):
-        // JSON format error
-        return fmt.Errorf("data format error: %w", err)
+        // Malformed JSON
+        return fmt.Errorf("malformed data: %w", err)
     case errors.Is(err, json.ErrPathNotFound):
-        // Path not found
-        return fmt.Errorf("field not found: %w", err)
+        // Path does not exist
+        return fmt.Errorf("field does not exist: %w", err)
     case errors.Is(err, json.ErrTypeMismatch):
         // Type mismatch
         return fmt.Errorf("type error: %w", err)
@@ -288,18 +367,18 @@ if err != nil {
 
 ### Security-Related Errors
 
-Potential security threats detected:
+A potential security threat was detected:
 
 ```go
 val, err := json.Get(untrustedInput, "data")
 if err != nil {
     if errors.Is(err, json.ErrSecurityViolation) {
-        // Security violation, log and reject
-        log.Warn("Security violation", "error", err)
+        // Security violation: log and reject
+        log.Warn("security violation", "error", err)
         return errors.New("invalid input")
     }
     if errors.Is(err, json.ErrSizeLimit) {
-        return fmt.Errorf("data exceeds size limit: %w", err)
+        return fmt.Errorf("data exceeds the size limit: %w", err)
     }
     if errors.Is(err, json.ErrDepthLimit) {
         return fmt.Errorf("nesting depth exceeded: %w", err)
@@ -310,59 +389,59 @@ if err != nil {
 
 ### System Errors
 
-System-level transient errors:
+Transient system-level errors:
 
 ```go
 val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrOperationTimeout) {
-        // Operation timeout, retryable <Badge type="danger" text="Deprecated" />
+        // Operation timed out, retryable <Badge type="danger" text="Deprecated" />
         return fmt.Errorf("transient error, please retry: %w", err)
     }
     if errors.Is(err, json.ErrConcurrencyLimit) {
-        // Concurrency limit (returned when MaxConcurrency is reached, retryable)
+        // Concurrency limit (returned at MaxConcurrency; retryable)
         return fmt.Errorf("system busy, please try later: %w", err)
     }
     if errors.Is(err, json.ErrResourceExhausted) {
-        // Resource exhausted <Badge type="danger" text="Deprecated" />
+        // Resources exhausted <Badge type="danger" text="Deprecated" />
         return fmt.Errorf("insufficient system resources: %w", err)
     }
     if errors.Is(err, json.ErrProcessorClosed) {
-        // Processor is closed
+        // Processor closed
         return fmt.Errorf("processor unavailable: %w", err)
     }
     return err
 }
 ```
 
-## Error Handling Best Practices
+## Error-Handling Best Practices
 
-### 1. Distinguish Error Types
+### 1. Distinguish error types
 
 ```go
 func processJSON(data string) error {
     val, err := json.Get(data, "user.name")
     if err != nil {
-        // Use errors.Is to distinguish error types
+        // Distinguish error types with errors.Is
         switch {
         case errors.Is(err, json.ErrInvalidJSON),
             errors.Is(err, json.ErrPathNotFound),
             errors.Is(err, json.ErrTypeMismatch),
             errors.Is(err, json.ErrInvalidPath):
-            // User input error, return friendly message
-            return fmt.Errorf("data format error: %w", err)
+            // User input error: return a friendly message
+            return fmt.Errorf("malformed data: %w", err)
         case errors.Is(err, json.ErrSecurityViolation):
-            // Security error, log and reject
-            log.Warn("Security violation", "error", err)
+            // Security error: log and reject
+            log.Warn("security violation", "error", err)
             return errors.New("invalid input")
         case errors.Is(err, json.ErrConcurrencyLimit):
-            // Concurrency limit, can retry later
+            // Concurrency cap: retryable later
             return fmt.Errorf("system busy, please retry later: %w", err)
-        case errors.Is(err, json.ErrOperationTimeout): // Deprecated (not returned currently, kept for compatibility)
+        case errors.Is(err, json.ErrOperationTimeout): // Deprecated (never returned today; kept for compatibility)
             return fmt.Errorf("transient error, please retry: %w", err)
         default:
             // System error
-            log.Error("System error", "error", err)
+            log.Error("system error", "error", err)
             return errors.New("internal error")
         }
     }
@@ -370,7 +449,7 @@ func processJSON(data string) error {
 }
 ```
 
-### 2. Use errors.As for Context
+### 2. Use errors.As for context
 
 ```go
 func handleWithDetail(data string, path string) error {
@@ -387,7 +466,7 @@ func handleWithDetail(data string, path string) error {
 }
 ```
 
-### 3. Error Chain Tracing
+### 3. Error chain tracing
 
 ```go
 func deepProcess(data string) error {
@@ -399,7 +478,7 @@ func deepProcess(data string) error {
 
 func processLevel1(data string) error {
     if err := processLevel2(data); err != nil {
-        return fmt.Errorf("level 1 failed (path data.field): %w", err)
+        return fmt.Errorf("level-1 processing failed (path data.field): %w", err)
     }
     return nil
 }
@@ -409,8 +488,9 @@ func processLevel2(data string) error {
     return err
 }
 
-// Error chain example:
-// Deep processing failed: level 1 failed (path data.field): path not found
+// Example error chain (JsonsError carries Op/Path; %w layers preserve the
+// underlying cause):
+// deep processing failed: level-1 processing failed (path data.field): JSON get failed at path 'data.field': ... (caused by: path not found)
 ```
 
 ## See Also

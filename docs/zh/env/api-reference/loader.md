@@ -811,6 +811,50 @@ func main() {
 }
 ```
 
+## 生命周期与进程环境语义
+
+### Close 不会回滚 os.Environ
+
+`Close()` 只清零**内存中的**变量副本，**不会**取消此前通过 `Apply`、`AutoApply` 或（`AutoApply` 开启时的）`Set` 写入进程环境的变量。若需要在关闭前从进程环境移除，先逐键调用 `Delete`：
+
+<!-- check-code: skip -->
+```go
+loader.Delete("API_KEY") // 仅当该键由本 loader 写入进程环境时才会 unset
+loader.Close()
+```
+
+### Delete 的逐键归属跟踪
+
+Loader 记录**自己**写入进程环境的键（`appliedKeys`）。`Delete` 只 unset 这些键，**绝不触碰**非本 loader 设置的进程变量（`HOME`、`TERM` 等）。这保证了多 Loader 场景下互不干扰。
+
+### Apply 区分「未设置」与「显式空值」
+
+`Apply` 使用 `LookupEnv` 判断进程环境已有值：显式设置为空字符串的变量被视为「已存在」，在 `OverwriteExisting=false` 时同样会被跳过——不会误判为未设置而覆盖。
+
+### 状态与元数据方法
+
+| 方法 | 说明 |
+|------|------|
+| `Config()` | 返回 loader 的只读配置快照；修改返回值不影响运行中的 loader |
+| `IsClosed()` | loader 是否已关闭（nil receiver 返回 true） |
+| `IsApplied()` | 变量是否已应用到 os.Environ |
+| `LoadTime()` | 最近一次加载完成的时间（未加载过返回零值） |
+
+### 读取路径的键名解析细节
+
+- **精确匹配优先**：先按原键查找，未命中时尝试大写形式回退
+- **点号路径**：`database.host` 展开为 `DATABASE_HOST`（JSON/YAML 扁平化键）；索引路径 `service.cors.origins.0` 未命中时回退到逗号分隔值
+- **不做 trim**：`Lookup` 返回存储原值——`.env` 值在解析期已 trim，JSON/YAML 值可能保留首尾空白
+- **无锁快路径**：单键读取（`Lookup`/`GetSecure`）通过原子闭态标志绕过 loader 级读锁，高并发下避免读锁计数成为瓶颈；与 `Close` 竞争时表现为「读到值或读到清空后状态」的优雅降级
+
+### Set 的静默跳过语义
+
+`OverwriteExisting=false` 时对已存在键调用 `Set` **静默跳过并返回 nil**（不报错）。需要感知跳过时，可通过审计日志（`skipped (no overwrite)` 事件）观察。
+
+### 文件加载的纵深防御（TOCTOU）
+
+加载文件时在 `Stat()` 大小检查与实际读取之间存在理论上的替换窗口，库通过两层机制兜底：解析器在内部以强制大小上限的加固读取路径包装文件流；即使文件在检查后增长，也会在硬性上限（100 MB）处截断，防止内存耗尽。
+
 ## 相关文档
 
 - [包函数](/zh/env/api-reference/functions) - 包级便捷函数

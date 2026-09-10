@@ -1,7 +1,7 @@
 ---
 sidebar_label: "출력 형식"
 title: "출력 형식 - CyberGo html | Markdown·JSON 출력"
-description: "CyberGo html 출력 형식 API: ExtractToMarkdown, ExtractToJSON 패키지 함수와 Processor 메서드로 바이트나 파일을 Markdown·JSON 으로 변환하며 InlineImageFormat·InlineLinkFormat 옵션을 제공합니다."
+description: "CyberGo html 출력 형식 API: ExtractToMarkdown·ExtractToJSON 함수와 Processor 메서드로 바이트·파일을 Markdown·JSON 변환, InlineImageFormat·InlineLinkFormat 옵션과 캐시 격리를 다룹니다."
 sidebar_position: 1
 ---
 

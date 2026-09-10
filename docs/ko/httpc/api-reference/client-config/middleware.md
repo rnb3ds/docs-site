@@ -1,5 +1,5 @@
 ---
-sidebar_label: "미들웨어"
+sidebar_label: "내장 미들웨어"
 title: "미들웨어 - CyberGo HTTPC | 7개 내장 미들웨어"
 description: "HTTPC 미들웨어 시스템 API 레퍼런스: Chain 양파 모델 조합, 7개 내장 미들웨어(Recovery/Logging/Timeout/Metrics/Audit 등), 각 미들웨어 설정 구조체와 Default 생성자, AuditEvent 감사 이벤트 구조체."
 sidebar_position: 5

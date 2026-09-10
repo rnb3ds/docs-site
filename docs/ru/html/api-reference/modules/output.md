@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Форматы вывода"
 title: "Форматы вывода - CyberGo html | Markdown и JSON"
-description: "API форматов вывода CyberGo html: ExtractToMarkdown и ExtractToJSON — функции пакета и методы Processor для преобразования в Markdown/JSON."
+description: "ExtractToMarkdown и ExtractToJSON CyberGo html: функции пакета и методы Processor, ввод из байтов или файлов, изоляция кэша временного Processor."
 sidebar_position: 1
 ---
 

@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Lifecycle"
 title: "Processor Lifecycle - CyberGo JSON | API Reference"
-description: "CyberGo JSON Processor lifecycle: New, Close resource release, IsClosed state, GetStats statistics, and GetHealthStatus for safe concurrent shutdown."
+description: "CyberGo JSON Processor lifecycle: New, idempotent Close release, IsClosed, GetStats, GetHealthStatus, ClearCache, WarmupCache — safe concurrent shutdown."
 sidebar_position: 11
 ---
 
 # Lifecycle & Statistics
 
-Processor provides complete lifecycle management, cache control, and health monitoring capabilities.
+The Processor provides complete lifecycle management, cache control, and health monitoring.
 
 ## Lifecycle
 
@@ -15,18 +15,25 @@ Processor provides complete lifecycle management, cache control, and health moni
 
 Signature: `func (p *Processor) Close() error`
 
-Closes the processor and releases resources. This method should be called after using the Processor.
+Closes the processor and releases resources (cache, security validators, hook references). Call this method after using the Processor.
 
 ```go
 processor, _ := json.New(json.DefaultConfig())
 defer processor.Close()
 ```
 
+:::tip Close semantics
+- **Idempotent and thread-safe**: repeated `Close` calls take effect only once.
+- **Drains in-flight operations first**: `Close` waits for ongoing operations to finish (with a timeout cap); after the timeout, the processor rejects new operations (`IsClosed()` returns `true`) but resources stay intact so in-flight operations run to completion undisturbed.
+- After closing, all operations return `ErrProcessorClosed`.
+- `Close` does **not** clean up global caches shared across instances (path-type cache, struct encoder cache); for full cleanup before process exit, use [`ShutdownGlobalProcessor`](#global-processor-management).
+:::
+
 ### IsClosed
 
 Signature: `func (p *Processor) IsClosed() bool`
 
-Checks whether the processor is closed.
+Checks whether the processor is closed. During the "closing (draining)" state it also returns `true` — new operations are already rejected in that window.
 
 ```go
 if processor.IsClosed() {
@@ -47,15 +54,15 @@ processor.ClearCache()
 ```
 
 Useful for:
-- Data source has changed
+- The data source has changed
 - Memory usage is too high
-- Need to force a refresh
+- A forced refresh is needed
 
 ### WarmupCache
 
 Signature: `func (p *Processor) WarmupCache(jsonStr string, paths []string, cfg ...Config) (*WarmupResult, error)`
 
-Warms up the cache to improve subsequent operation performance.
+Warms up the cache to improve subsequent operation performance. Requires the processor's cache to be enabled (it is by default); otherwise returns an error. For full examples and the `WarmupResult` fields see [Batch Operations](./batch#cache-warm-up-warmupcache).
 
 ```go
 paths := []string{"user.name", "user.email", "items[*].id"}
@@ -65,26 +72,6 @@ if err != nil {
 }
 fmt.Printf("Successfully warmed up %d paths\n", result.Successful)
 ```
-
-**WarmupResult Struct**:
-
-```go
-type WarmupResult struct {
-    TotalPaths  int      `json:"total_paths"`            // Total path count
-    Successful  int      `json:"successful"`             // Successfully warmed up path count
-    Failed      int      `json:"failed"`                 // Failed path count
-    SuccessRate float64  `json:"success_rate"`           // Success rate (percentage)
-    FailedPaths []string `json:"failed_paths,omitempty"` // List of failed paths
-}
-```
-
-| Field | Type | Description |
-|------|------|------|
-| `TotalPaths` | `int` | Total path count |
-| `Successful` | `int` | Successfully warmed up path count |
-| `Failed` | `int` | Failed path count |
-| `SuccessRate` | `float64` | Success rate (0-100) |
-| `FailedPaths` | `[]string` | List of failed paths |
 
 ## Statistics
 
@@ -100,7 +87,7 @@ fmt.Printf("Cache hit ratio: %.2f%%\n", stats.HitRatio * 100)
 fmt.Printf("Cache size: %d\n", stats.CacheSize)
 ```
 
-**Stats Struct**:
+**Stats struct**:
 
 ```go
 type Stats struct {
@@ -120,7 +107,7 @@ type Stats struct {
 ```
 
 | Field | Type | Description |
-|------|------|------|
+|-------|------|-------------|
 | `CacheSize` | `int64` | Current cache entry count |
 | `CacheMemory` | `int64` | Cache memory usage (bytes) |
 | `MaxCacheSize` | `int` | Maximum cache size limit |
@@ -133,6 +120,13 @@ type Stats struct {
 | `MemoryEfficiency` | `float64` | Memory efficiency |
 | `OperationCount` | `int64` | Total operation count |
 | `ErrorCount` | `int64` | Total error count |
+
+**Reading the fields**:
+
+- `OperationCount` / `ErrorCount`: accumulated by read/write operations (`Get` / `GetMultiple` / `Set` / `SetMultiple` / `Delete`, etc.); lifecycle rejections (processor closed, concurrency limit exceeded) are not counted as errors.
+- `HitRatio`: in the 0–1 range (0.85 means 85%); no hit data when `CacheEnabled=false`.
+- `CacheSize` / `CacheMemory` are live cache figures; `MaxCacheSize` / `CacheTTL` are configured caps (see [Config](../config)).
+- `IsClosed`: consistent with [`IsClosed()`](#isclosed); useful in monitoring to detect unexpectedly closed processors.
 
 ## Health Check
 
@@ -155,7 +149,7 @@ if status.Healthy {
 }
 ```
 
-**HealthStatus Struct**:
+**HealthStatus struct** (overall status in `HealthStatus`, per-check results in `CheckResult`):
 
 ```go
 type HealthStatus struct {
@@ -170,11 +164,24 @@ type CheckResult struct {
 }
 ```
 
+`HealthStatus` fields:
+
 | Field | Type | Description |
-|------|------|------|
+|-------|------|-------------|
 | `Timestamp` | `time.Time` | Check time |
 | `Healthy` | `bool` | Whether overall healthy |
 | `Checks` | `map[string]CheckResult` | Details of each check |
+
+`CheckResult` fields:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Healthy` | `bool` | Whether this check is healthy |
+| `Message` | `string` | Status message (failure reason, etc.) |
+
+:::tip Interpretation
+`Checks` maps each individual check (metrics collection, etc.); if any check is unhealthy, `Healthy=false`. A nil processor or an uninitialized metrics collector returns `Healthy=false` directly, with the reason given in `Checks` (e.g. `processor is nil`). The metrics collector is created only when `EnableMetrics=true` — without it, `GetHealthStatus` returns `Healthy=false` and notes `Metrics collector not initialized` in `Checks`; the `Config.EnableHealthCheck` field is reserved and does not affect this behavior (see [Config](../config#input-and-observability-toggles)).
+:::
 
 ## Extension Hooks
 
@@ -199,7 +206,7 @@ Hooks are called before and after each operation, useful for:
 
 Signature: `func (p *Processor) SetLogger(logger *slog.Logger)`
 
-Sets the processor's logger. Used for debugging and runtime diagnostics.
+`SetLogger` atomically replaces the processor's structured logger (automatically attaching the `component=json-processor` field); passing `nil` falls back to `slog.Default()`. Used for debugging and runtime diagnostics.
 
 ```go
 processor, _ := json.New()
@@ -212,7 +219,7 @@ processor.SetLogger(slog.Default().With("component", "json-processor"))
 
 Signature: `func (p *Processor) GetConfig() Config`
 
-Gets a copy of the processor's current configuration. The returned configuration can be safely modified without affecting the processor.
+`GetConfig` returns a deep copy of the processor's current configuration (internally via `Config.Clone`); modifying the return value does not affect the processor. Calling on a nil processor returns a zero-value Config.
 
 ```go
 processor, _ := json.New()
@@ -222,6 +229,13 @@ cfg := processor.GetConfig()
 fmt.Printf("Cache enabled: %v\n", cfg.EnableCache)
 fmt.Printf("Max JSON size: %d\n", cfg.MaxJSONSize)
 ```
+
+## Global Processor Management
+
+Package-level functions rely on an internal global processor, and the two package-level management functions also belong to the lifecycle (signatures and full examples in the [Processor Overview](./index#global-processor-management)):
+
+- `json.SetGlobalProcessor(p)` — sets a custom processor as global: passing `nil` is a no-op, the old global processor is closed first, and the function is thread-safe.
+- `json.ShutdownGlobalProcessor()` — shuts down and removes the global processor, also clearing the global caches shared across instances and the per-config processor cache; suitable to call before a long-lived service exits.
 
 ## Usage Recommendations
 
@@ -266,7 +280,7 @@ go func() {
 }()
 ```
 
-## Related
+## See Also
 
 - [Config](../config) - Configuration options (cache size, TTL, etc.)
 - [Hook System](../../extensions/hooks) - Detailed hook usage guide

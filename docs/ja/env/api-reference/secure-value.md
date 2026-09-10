@@ -783,6 +783,75 @@ func (sv *SecureValue) clearDataLocked() {
 
 ---
 
+## 漏洩防止インターフェースとライフサイクルの詳細
+
+### 安全な文字列化インターフェース
+
+`SecureValue` は「安全な文字列化」インターフェースのセットを実装し、機密がよくあるフォーマット経路から**決して**漏れないようにします：
+
+| インターフェース | 動作 |
+|------------------|------|
+| `fmt.Stringer`（`String()`） | マスク形式を返す（`Masked()` と同じ）；`fmt.Printf("%v")`、`log.Println` は安全 |
+| `json.Marshaler`（`MarshalJSON()`） | JSON 直列化はマスク文字列を出力；平文は決して JSON に入らない |
+| `encoding.TextMarshaler`（`MarshalText()`） | テキストエンコーダー（XML、text/template、構造化ロガー）もマスクを出力 |
+
+平文への唯一の明示的な経路は `Reveal()`（または `Bytes()` のコピー）です。
+
+### Close と Release の違い
+
+| メソッド | データをゼロ化 | プールへ返す | 用途 |
+|----------|:---:|:---:|------|
+| `Close()` | 〇 | × | 通常の一回限りの使用 |
+| `Release()` | 〇 | 〇 | 高頻度の生成/破棄サイクル（再利用で割り当ち削減） |
+
+どちらも繰り返し呼び出しても安全で副作用はありません。閉じずに放棄されたオブジェクトも保護されます：GC ファイナライザーがオブジェクトが到達不能になった時点でデータをゼロ化します（`runtime.SetFinalizer` は初回生成時に一度だけ設定され、プール循環でこのコストを繰り返しません）。
+
+### Masked 出力形式
+
+マスク表現はロック状態を含むため、ログから保護の有無を確認できます：
+
+```text
+[SECURE:24 bytes]            // メモリロック無効
+[SECURE:24 bytes locked]     // ロック済み
+[SECURE:24 bytes lock-failed] // ロック失敗（MemoryLockError と合わせて確認）
+[CLOSED]                      // 閉鎖済み
+[NIL]                         // nil レシーバー
+```
+
+### ロック状態の照会
+
+- `IsMemoryLocked()`：値のメモリが現在ロックされているか
+- `MemoryLockError()`：直近のロック試行のエラー（成功または未試行なら nil）；厳格モードで権限問題を診断する最初のツール
+
+### GetSecure は防御的コピーを返す
+
+`Loader.GetSecure` が返す `*SecureValue` は格納値の**独立したコピー**です — ライフサイクルは Loader から切り離されます。呼び出し側が `Close`/`Release` を所有し、Loader 内部の原本は影響を受けません。
+
+### ClearBytes
+
+`Bytes()` が返すコピーは使用後に明示的にゼロ化すべきです：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	sv := env.NewSecureValue("my-secret")
+	defer sv.Release()
+
+	data := sv.Bytes()
+	defer env.ClearBytes(data) // 使用後にゼロ化、残渣なし
+
+	fmt.Println(len(data))
+	// 出力：9
+}
+```
+
 ## 関連ドキュメント
 
 - [定数とエラー](/ja/env/api-reference/constants) - 禁止キー、機密キーパターン、エラー型

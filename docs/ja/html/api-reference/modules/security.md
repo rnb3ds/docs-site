@@ -1,7 +1,7 @@
 ---
 sidebar_label: "セキュリティ保護"
 title: "セキュリティ保護 - CyberGo html | 多層セキュリティ API リファレンス"
-description: "CyberGo html セキュリティ API：コンテンツサニタイズ、入力制限、DOM 深度、パストラバーサル防御と AllowedBaseDir サンドボックス、HighSecurityConfig プリセット、セキュリティエラー型を提供します。"
+description: "CyberGo html 多層セキュリティ保護 API リファレンス：コンテンツサニタイズ、MaxInputSize、MaxDepth、パストラバーサル防御、AllowedBaseDir サンドボックス、HighSecurityConfig プリセット、InputError などエラー型を収録します。"
 sidebar_position: 5
 ---
 
@@ -145,8 +145,20 @@ defer p.Close()
 | `ErrInvalidFilePath` | ファイルパス検証失敗（パストラバーサル含む） |
 | `ErrInternalPanic` | 内部パニックがリカバリされた |
 
+### 構造化エラー型
+
+上記のセンチネルエラーは、実際には 3 つの構造化エラー型でラップされて返され、原因特定に必要なコンテキストフィールドを運びます：
+
+| 型 | フィールド | メソッド | `Unwrap()` の宛先 |
+|------|------|------|-----------------|
+| `*InputError` | `Op` / `Size` / `MaxSize` / `InputErr` | `Error` | `InputErr`（非 nil の場合）、それ以外は `ErrInputTooLarge` |
+| `*ConfigError` | `Field` / `Value` / `Message` | `Error` | `ErrInvalidConfig` |
+| `*FileError` | `Op` / `Path` / `FileErr` | `Error` / `SafePath` / `MarshalJSON` | `ErrFileNotFound` / 元のエラー / `ErrInvalidFilePath` |
+
+`errors.Is(err, html.ErrXxx)` でセンチネルのカテゴリを判定し、`errors.As(err, &typedErr)` で構造化コンテキスト（`InputError.Size`/`MaxSize`、`ConfigError.Field` など）を取り出す、という組み合わせで使用します。
+
 :::info
-完全なエラー型定義（`InputError`、`ConfigError`、`FileError`）と `errors.Is`/`errors.As` の使い方は [定数とエラー](../types/constants) を参照してください。
+3 つのエラー型の完全な定義と `errors.Is`/`errors.As` を使ったエラー処理パターンは [定数とエラー](../types/constants) を参照してください。
 :::
 
 ## パニックリカバリ

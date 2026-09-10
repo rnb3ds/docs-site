@@ -1,7 +1,7 @@
 ---
 sidebar_label: "常量与错误"
 title: "常量与错误 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 常量与错误：DefaultMaxJSONSize、DefaultMaxNestingDepth 限制、ErrPathNotFound 错误变量与 MergeMode 合并模式，支撑 Go 配置。"
+description: "CyberGo JSON 常量与错误：DefaultMaxJSONSize、DefaultMaxNestingDepth 限制、ErrPathNotFound 错误变量与 MergeMode 合并模式，含 JsonsError 结构、触发场景速查与常量默认值对照，支撑 Go 配置。"
 sidebar_position: 7
 ---
 
@@ -34,6 +34,29 @@ var (
     ErrResourceExhausted = errors.New("system resources exhausted")
 )
 ```
+
+### 触发场景速查
+
+每个哨兵错误的典型触发场景，便于按错误分支编写恢复逻辑：
+
+| 错误 | 典型触发场景 | 建议处理 |
+|------|--------------|----------|
+| `ErrInvalidJSON` | 输入不是合法 JSON（多余字符、未闭合等） | 拒绝输入，检查来源 |
+| `ErrPathNotFound` | `Get` 的路径在数据中不存在 | 业务常见，用默认值兜底 |
+| `ErrTypeMismatch` | 路径存在但类型不符（如对字符串路径用 `[0]`） | 检查数据结构假设 |
+| `ErrInvalidPath` | 路径语法错误（`CompilePath` / 路径解析失败） | 修正路径表达式 |
+| `ErrProcessorClosed` | `Close()`（或关闭中）之后继续调用方法 | 检查生命周期，`IsClosed` 预判 |
+| `ErrSizeLimit` | 输入超过 `MaxJSONSize` / `MaxSecurityValidationSize` | 调大限制或拒绝超大输入 |
+| `ErrDepthLimit` | 嵌套超过 `MaxNestingDepthSecurity` | 拒绝深嵌套输入（可能是攻击） |
+| `ErrConcurrencyLimit` | 受控操作并发超过 `MaxConcurrency` | 降低并发或调大限制 |
+| `ErrSecurityViolation` | 命中危险模式、超 `MaxObjectKeys`/`MaxArrayElements` | 记录审计日志并拒绝 |
+| `ErrUnsupportedPath` | 对当前数据形态不支持该路径段（如对非数组用切片） | 检查数据结构假设 |
+| `ErrOperationTimeout` | 预留，当前无操作返回（已废弃） | 错误分支无需处理 |
+| `ErrResourceExhausted` | 预留，当前无操作返回（已废弃） | 错误分支无需处理 |
+
+::: tip 两个 Deprecated 哨兵
+`ErrOperationTimeout` 与 `ErrResourceExhausted` 当前**没有任何操作会返回**，仅为未来版本保留——错误分支中不必处理它们。
+:::
 
 ### 错误检查
 
@@ -68,13 +91,27 @@ type JsonsError struct {
 }
 ```
 
+**字段说明**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Op` | `string` | 失败的操作名称 |
+| `Path` | `string` | 错误发生的 JSON 路径 |
+| `Message` | `string` | 人类可读的错误消息 |
+| `Err` | `error` | 底层错误（可为 `nil`），经 `Unwrap` 支持 `errors.Is` / `errors.As` 链上溯 |
+
 ### 方法
 
 ```go
-func (e *JsonsError) Error() string
-func (e *JsonsError) Unwrap() error
+func (e *JsonsError) Error() string   // "JSON <op> failed at path '<path>': <msg> (caused by: ...)"
+func (e *JsonsError) Unwrap() error   // 返回底层错误（支持 errors.As/Is 链）
 func (e *JsonsError) Is(target error) bool
 ```
+
+`Is` 的匹配规则：
+
+- 目标是 `*JsonsError` 时，逐字段比较 `Op`、`Path`、`Err` 三者（`Message` 为派生信息，**有意排除**在比较之外）
+- 目标是其他错误（如哨兵错误）时，退化为对底层 `Err` 做 `errors.Is`——因此 `errors.Is(err, json.ErrPathNotFound)` 对包装后的 `JsonsError` 依然成立
 
 ### 使用示例
 
@@ -126,6 +163,22 @@ const (
     DefaultCacheTTL = 5 * time.Minute
 )
 ```
+
+### 常量与 Config 字段对照
+
+| 常量 | 默认值 | 对应 Config 字段 | 说明 |
+|------|--------|------------------|------|
+| `DefaultMaxJSONSize` | 100MB | `MaxJSONSize` | 单个 JSON 输入的大小上限 |
+| `DefaultMaxNestingDepth` | 200 | `MaxNestingDepthSecurity` | JSON 嵌套深度上限 |
+| `DefaultMaxPathDepth` | 50 | `MaxPathDepth` | 路径段数量上限（如 `a.b.c.d...` 的层数） |
+| `DefaultMaxDepth` | 100 | `MaxDepth` | 编解码（Marshal/Unmarshal）默认嵌套深度 |
+| `DefaultMaxConcurrency` | 50 | `MaxConcurrency` | 并发操作数上限 |
+| `DefaultMaxSecuritySize` | 10MB | `MaxSecurityValidationSize` | 超过该大小的文档改用采样式安全检查 |
+| `DefaultMaxObjectKeys` | 100000 | `MaxObjectKeys` | 对象键数量上限 |
+| `DefaultMaxArrayElements` | 100000 | `MaxArrayElements` | 数组元素数量上限 |
+| `DefaultMaxBatchSize` | 2000 | `MaxBatchSize` | 单次 `ProcessBatch` 的操作数上限，超出返回 `ErrSizeLimit` |
+| `DefaultParallelThreshold` | 10 | `ParallelThreshold` | 并行处理阈值：操作数低于该值时使用顺序处理 |
+| `DefaultCacheTTL` | 5 分钟 | `CacheTTL` | 缓存条目存活时间 |
 
 ## 配置预设函数
 

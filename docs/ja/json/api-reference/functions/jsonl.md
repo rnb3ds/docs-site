@@ -1,27 +1,27 @@
 ---
 sidebar_label: "JSONL"
 title: "JSONL 処理関数 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON JSONL 関数：ParseJSONL/ToJSONL/ToJSONLString 変換、StreamJSONL/ForeachJSONL ストリーミング、StreamLinesInto[T] ジェネリックと NewJSONLWriter ライタ。"
+description: "CyberGo JSON JSONL 処理関数：ParseJSONL/ToJSONL/ToJSONLString 変換、StreamJSONL/ForeachJSONL ストリーミング処理、StreamLinesInto[T] ジェネリクスストリーム、NewJSONLWriter ライターを提供します。"
 sidebar_position: 8
 ---
 
 # JSONL 処理関数
 
-json パッケージが提供する JSONL（JSON Lines）処理関数。改行区切りの JSON データのパース、ストリーミング読み込み、変換、書き込みをサポートします。
+json パッケージが提供する JSONL（JSON Lines）処理関数。改行区切り JSON データの解析、ストリーミング読み込み、変換、書き込みをサポートします。
 
-::: tip 完全チュートリアル
-JSONL/NDJSON の概念、ストリーミング処理パターン、実戦的な使い方を知りたいですか？[JSONL プロセッサ](../../streaming/jsonl) の完全チュートリアルを参照してください。
+::: tip 完全なチュートリアル
+JSONL/NDJSON の概念、ストリーミング処理パターン、実践的な使い方を知りたいですか？[JSONL プロセッサ](../../streaming/jsonl)の完全チュートリアルを参照してください。
 :::
 
 ## JSONL 処理関数
 
-JSONL（JSON Lines）は改行区切りの JSON フォーマットで、1 行に 1 つの独立した JSON オブジェクトが含まれます。
+JSONL（JSON Lines）は改行区切りの JSON フォーマットで、1 行に 1 つの独立した JSON オブジェクトが入ります。
 
 ### ParseJSONL
 
 シグネチャ：`func ParseJSONL(data []byte, cfg ...Config) ([]any, error)`
 
-JSONL（改行区切り JSON）データをパースします。
+JSONL（改行区切り JSON）データを解析します。
 
 **パラメータ**
 
@@ -34,21 +34,21 @@ JSONL（改行区切り JSON）データをパースします。
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    jsonl := `{"name":"Alice"}
+	jsonl := `{"name":"Alice"}
 {"name":"Bob"}
 {"name":"Charlie"}`
-    results, err := json.ParseJSONL([]byte(jsonl))
-    if err != nil {
-        panic(err)
-    }
-    for i, r := range results {
-        fmt.Printf("[%d] %v\n", i, r)
-    }
+	results, err := json.ParseJSONL([]byte(jsonl))
+	if err != nil {
+		panic(err)
+	}
+	for i, r := range results {
+		fmt.Printf("[%d] %v\n", i, r)
+	}
 }
 ```
 
@@ -56,7 +56,7 @@ func main() {
 
 シグネチャ：`func StreamLinesInto[T any](reader io.Reader, fn func(lineNum int, data T) error, cfg ...Config) ([]T, error)`
 
-io.Reader から JSONL データをストリーミング読み込みし、コールバック関数で各行を処理します。推奨されるジェネリック JSONL 処理方法です。
+io.Reader から JSONL データをストリーミング読み込みし、各行をコールバック関数で処理します。推奨されるジェネリクス JSONL 処理方式です。
 
 **パラメータ**
 
@@ -70,35 +70,35 @@ io.Reader から JSONL データをストリーミング読み込みし、コー
 
 | 型 | 説明 |
 |------|------|
-| `[]T` | 処理後のすべての結果スライス |
+| `[]T` | 処理済みのすべての結果スライス |
 | `error` | エラー情報 |
 
 ```go
 package main
 
 import (
-    "fmt"
-    "strings"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"strings"
 )
 
 type User struct {
-    Name string `json:"name"`
+	Name string `json:"name"`
 }
 
 func main() {
-    src := `{"name":"Alice"}
+	src := `{"name":"Alice"}
 {"name":"Bob"}`
 
-    // 基本的な使用方法
-    results, err := json.StreamLinesInto[User](strings.NewReader(src), func(lineNum int, user User) error {
-        fmt.Printf("行 %d: ユーザー %s\n", lineNum, user.Name)
-        return nil // error を返すと処理を中断
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("合計 %d 件のレコードを処理\n", len(results))
+	// 基本的な使い方
+	results, err := json.StreamLinesInto[User](strings.NewReader(src), func(lineNum int, user User) error {
+		fmt.Printf("%d 行目: ユーザー %s\n", lineNum, user.Name)
+		return nil // error を返すと処理を中断可能
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("合計 %d 件のレコードを処理\n", len(results))
 }
 ```
 
@@ -106,7 +106,7 @@ func main() {
 
 シグネチャ：`func ToJSONL(data []any, cfg ...Config) ([]byte, error)`
 
-データスライスを JSONL フォーマットに変換します。
+データスライスを JSONL 形式に変換します。
 
 **パラメータ**
 
@@ -119,22 +119,22 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    items := []any{
-        map[string]any{"name": "Alice"},
-        map[string]any{"name": "Bob"},
-    }
-    jsonl, err := json.ToJSONL(items)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(string(jsonl))
-    // {"name":"Alice"}
-    // {"name":"Bob"}
+	items := []any{
+		map[string]any{"name": "Alice"},
+		map[string]any{"name": "Bob"},
+	}
+	jsonl, err := json.ToJSONL(items)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(jsonl))
+	// {"name":"Alice"}
+	// {"name":"Bob"}
 }
 ```
 
@@ -155,46 +155,65 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    items := []any{
-        map[string]any{"name": "Alice"},
-        map[string]any{"name": "Bob"},
-    }
-    jsonlStr, err := json.ToJSONLString(items)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(jsonlStr)
+	items := []any{
+		map[string]any{"name": "Alice"},
+		map[string]any{"name": "Bob"},
+	}
+	jsonlStr, err := json.ToJSONLString(items)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(jsonlStr)
 }
 ```
 
 ## JSONL ストリーミング処理関数（パッケージレベル）
 
-json パッケージが提供する JSONL ストリーミング処理パッケージレベル便捷関数。シグネチャは対応する Processor メソッドと一致し、末尾にオプションの `cfg ...Config` 引数を追加で受け取ります。内部では `cfg` ごとにキャッシュされたグローバル Processor を使用するため、インスタンスを手動作成する必要がなく、一回限りの処理シナリオに適しています。複数回の処理や同一設定の共有が必要な場合は、[`json.New(cfg)`](../processor/#new) で独立した Processor を作成することを推奨します。
+json パッケージが提供する JSONL ストリーミング処理のパッケージレベル便利関数。シグネチャは対応する Processor メソッドと同一で、末尾にオプションの `cfg ...Config` が追加で受け取れます。内部では `cfg` ごとにキャッシュされたグローバル Processor を使用するため、手動でインスタンスを作る必要がなく、単発の処理シナリオに適しています。複数回の処理や同じ設定の共有が必要な場合は、[`json.New(cfg)`](../processor/#new) で独立した Processor を作成することを推奨します。
 
-完全な使用方法とサンプルは [JSONL ストリーミング処理ガイド](../../streaming/jsonl#パッケージレベル関数) および [Processor JSONL メソッド](../processor/jsonl) を参照してください。
+完全な使い方とサンプルは [JSONL ストリーミング処理ガイド](../../streaming/jsonl#パッケージレベル関数)と [Processor JSONL メソッド](../processor/jsonl)を参照してください。
+
+**選定**
+
+| シナリオ | 推奨 |
+|------|------|
+| 行単位処理（順序センシティブ） | `StreamJSONL` / `ForeachJSONL` |
+| CPU 集約的な行処理（順序非依存） | `StreamJSONLParallel` |
+| 途中キャンセル/タイムアウトが必要 | `StreamJSONLParallelWithContext` |
+| バッチ書き出しなどチャンク消費 | `StreamJSONLChunked` |
+| 具体的な構造体 `T` へのデコード | `StreamLinesInto[T]` |
+| 変換 / 集約 / フィルタ / 先頭検索 | `MapJSONL` / `ReduceJSONL` / `FilterJSONL` / `FirstJSONL` |
+| 全量収集 | `CollectJSONL`（全量がメモリに載るため、大規模ファイルでは注意） |
+
+**動作の要点**
+
+- **不良行の処理**：`StreamJSONL` ファミリーは解析不能な行に遭遇すると**即座に中止**し、`line N: ...` 形式のエラーを返します。`Config.JSONLContinueOnErr` に従うのは `StreamLinesInto` のみです（`true` のとき不良行をスキップして継続）。
+- **深さガードレール**：各行の解析前にネスト深度チェック（`MaxNestingDepthSecurity`、デフォルト 200）を実行し、深くネストした行によるスタックオーバーフローを防止します。
+- **並列セマンティクス**：`StreamJSONLParallel` は `workers <= 0` の場合 4 として扱います。コールバックは複数の goroutine で並行実行されるため、並行安全性は自前で保証してください。コールバックが `item.Break()` を返すのは**正常な**早期終了です（戻り値は `nil`）。その他のエラーを返すと残りのタスクをキャンセルし、そのエラーが関数の戻り値になります。
+- **メモリガードレール**：`JSONLMaxMemory`（未設定時は `MaxMemory` にフォールバック）が処理済み総バイト数を制限し、超過すると中止します。
 
 ### StreamJSONL
 
 シグネチャ：`func StreamJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-JSONL をストリーミングで行ごとに処理し、各行を `IterableValue` にパースしてからコールバックを呼び出します。
+JSONL を行単位でストリーミング処理します。各行を `IterableValue` に解析してからコールバックを呼び出します。
 
 ### StreamJSONLParallel
 
 シグネチャ：`func StreamJSONLParallel(reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-`workers` 個の並列 goroutine で JSONL を処理します（CPU 集約型シナリオ向け）。
+`workers` 個の並列 goroutine で JSONL を処理します（CPU 集約型シナリオ）。
 
 ### StreamJSONLParallelWithContext
 
 シグネチャ：`func StreamJSONLParallelWithContext(ctx context.Context, reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-コンテキストのキャンセル/タイムアウトをサポートする並列 JSONL 処理。
+コンテキストのキャンセル/タイムアウトに対応した並列 JSONL 処理です。
 
 ### StreamJSONLChunked
 
@@ -206,25 +225,25 @@ JSONL をストリーミングで行ごとに処理し、各行を `IterableValu
 
 シグネチャ：`func ForeachJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-JSONL を反復します（`StreamJSONL` と同じ動作のエイリアス）。
+JSONL を走査します（動作は `StreamJSONL` と同じエイリアス）。
 
 ### MapJSONL
 
 シグネチャ：`func MapJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) (any, error), cfg ...Config) ([]any, error)`
 
-各行を新しい値にマッピングし、結果のスライスを返します。
+各行を新しい値にマッピングし、結果スライスを返します。
 
 ### ReduceJSONL
 
 シグネチャ：`func ReduceJSONL(reader io.Reader, initial any, fn func(acc any, item *IterableValue) any, cfg ...Config) (any, error)`
 
-JSONL を単一の値に畳み込みます。`initial` はアキュムレータの初期値です。
+JSONL を単一の値にリデュースします。`initial` はアキュムレータの初期値です。
 
 ### FilterJSONL
 
 シグネチャ：`func FilterJSONL(reader io.Reader, predicate func(item *IterableValue) bool, cfg ...Config) ([]*IterableValue, error)`
 
-述語でフィルタリングし、一致する要素のスライスを返します。
+述語でフィルタリングし、マッチした項目のスライスを返します。
 
 ### StreamJSONLFile
 
@@ -236,13 +255,13 @@ JSONL ファイル全体を直接ストリーミング処理します。
 
 シグネチャ：`func CollectJSONL(reader io.Reader, cfg ...Config) ([]*IterableValue, error)`
 
-JSONL の全行を読み込んでスライスに収集します（注意：全量をメモリにロードします。大ファイルには `StreamJSONL` を推奨）。
+すべての JSONL 行を読み取ってスライスに収集します（注意：全量がメモリにロードされます。大規模ファイルには `StreamJSONL` を推奨）。
 
 ### FirstJSONL
 
 シグネチャ：`func FirstJSONL(reader io.Reader, predicate func(item *IterableValue) bool, cfg ...Config) (*IterableValue, bool, error)`
 
-述語を満たす最初の要素を返します。第 2 戻り値は見つかったかどうかを示します。
+述語を満たす最初の要素を返します。2 番目の戻り値は見つかったかどうかを示します。
 
 ## JSONL 設定
 
@@ -256,19 +275,19 @@ JSONLConfig 独立構造体と `DefaultJSONLConfig()` 関数は削除されま�
 cfg := json.DefaultConfig()
 
 // JSONL 設定
-cfg.JSONLBufferSize    = 64 * 1024    // 読み込みバッファサイズ (デフォルト：64KB)
-cfg.JSONLMaxLineSize   = 1024 * 1024  // 1 行の最大サイズ (デフォルト：1MB)
-cfg.JSONLSkipEmpty     = true         // 空行をスキップ (デフォルト：true)
-cfg.JSONLSkipComments  = false        // コメント行をスキップ (デフォルト：false)
-cfg.JSONLContinueOnErr = false        // エラー時も継続 (デフォルト：false)
-cfg.JSONLWorkers       = 4            // 並列ワーカーゴルーチン数 (デフォルト：4)
-cfg.JSONLChunkSize     = 1000         // バッチあたりの処理行数 (デフォルト：1000)
-cfg.JSONLMaxMemory     = 100 * 1024 * 1024 // 最大メモリ (デフォルト：100MB)
+cfg.JSONLBufferSize    = 64 * 1024    // 読み取りバッファサイズ (デフォルト: 64KB)
+cfg.JSONLMaxLineSize   = 1024 * 1024  // 1 行の最大サイズ (デフォルト: 1MB)
+cfg.JSONLSkipEmpty     = true         // 空行をスキップ (デフォルト: true)
+cfg.JSONLSkipComments  = false        // コメント行をスキップ (デフォルト: false)
+cfg.JSONLContinueOnErr = false        // エラー時も継続 (デフォルト: false)
+cfg.JSONLWorkers       = 4            // 並列ワーカー goroutine 数 (デフォルト: 4)
+cfg.JSONLChunkSize     = 1000         // 1 バッチの処理行数 (デフォルト: 1000)
+cfg.JSONLMaxMemory     = 100 * 1024 * 1024 // 最大メモリ (デフォルト: 100MB)
 
 processor, err := json.New(cfg)
 ```
 
-詳しくは [Config 設定](../config#config-構造体) を参照してください。
+詳しくは [Config 設定](../config#config-構造体)を参照してください。
 
 ## JSONL ライター
 
@@ -282,31 +301,67 @@ JSONL ライターを作成します。
 package main
 
 import (
-    "os"
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
+	"os"
 )
 
 func main() {
-    file, err := os.Create("output.jsonl")
-    if err != nil {
-        panic(err)
-    }
-    defer file.Close()
-    jw := json.NewJSONLWriter(file)
-    jw.Write(map[string]any{"id": 1, "name": "Alice"})
-    jw.Write(map[string]any{"id": 2, "name": "Bob"})
+	file, err := os.Create("output.jsonl")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	jw := json.NewJSONLWriter(file)
+	jw.Write(map[string]any{"id": 1, "name": "Alice"})
+	jw.Write(map[string]any{"id": 2, "name": "Bob"})
 }
 ```
 
-**JSONLWriter メソッド**
+### JSONLWriter メソッド
 
 | メソッド | シグネチャ | 説明 |
 |------|------|------|
-| `Write` | `(data any) error` | 1 行書き込み |
-| `WriteAll` | `(data []any) error` | 複数行書き込み |
-| `WriteRaw` | `(line []byte) error` | 生バイト行の書き込み |
-| `Err` | `() error` | 蓄積されたエラーを返す |
-| `Stats` | `() JSONLStats` | 書き込み統計を返す |
+| `Write` | `func (w *JSONLWriter) Write(data any) error` | 単一の値を 1 行の JSON にエンコードして書き込む |
+| `WriteAll` | `func (w *JSONLWriter) WriteAll(data []any) error` | 複数の値を順に書き込む。最初のエラーで即座に停止 |
+| `WriteRaw` | `func (w *JSONLWriter) WriteRaw(line []byte) error` | エンコード済みの生の JSON 行を書き込む |
+| `Err` | `func (w *JSONLWriter) Err() error` | キャッシュされた最初の書き込みエラーを返す |
+| `Stats` | `func (w *JSONLWriter) Stats() JSONLStats` | 書き込み統計を返す |
+
+#### Write
+
+シグネチャ：`func (w *JSONLWriter) Write(data any) error`
+
+単一の JSON 値を 1 行にエンコードして下層 writer に書き込みます。行末に `\n` を自動的に追記します。
+
+**パラメータ**
+
+| 名前 | 型 | 必須 | 説明 |
+|------|------|------|------|
+| `data` | `any` | はい | エンコードして書き込む値 |
+
+**戻り値**
+
+| 型 | 説明 |
+|------|------|
+| `error` | エンコードまたは書き込みエラー。エラー発生後はライターにキャッシュされます（下記の「動作の詳細」を参照） |
+
+#### WriteAll
+
+シグネチャ：`func (w *JSONLWriter) WriteAll(data []any) error`
+
+複数の値を順に複数行としてエンコードして書き込みます。最初のエラーで即座に停止して返します。
+
+**パラメータ**
+
+| 名前 | 型 | 必須 | 説明 |
+|------|------|------|------|
+| `data` | `[]any` | はい | 書き込む値のスライス |
+
+**戻り値**
+
+| 型 | 説明 |
+|------|------|
+| `error` | `Write` が返した最初のエラー（すべて成功すれば `nil`） |
 
 ```go
 jw := json.NewJSONLWriter(file)
@@ -324,8 +379,108 @@ if err := jw.Err(); err != nil {
 }
 ```
 
+#### WriteRaw
+
+シグネチャ：`func (w *JSONLWriter) WriteRaw(line []byte) error`
+
+**エンコード済み**の生の JSON 行を書き込み、二重エンコードのオーバーヘッドを避けます。行末に `\n` がない場合は自動で 1 つ補います。
+
+**パラメータ**
+
+| 名前 | 型 | 必須 | 説明 |
+|------|------|------|------|
+| `line` | `[]byte` | はい | エンコード済みの JSON 行（改行文字の包含は不要） |
+
+**戻り値**
+
+| 型 | 説明 |
+|------|------|
+| `error` | 書き込みエラー。エラー発生後はライターにキャッシュされます |
+
+#### Err
+
+シグネチャ：`func (w *JSONLWriter) Err() error`
+
+キャッシュされた最初の書き込み/エンコードエラーを返します（エラーなしは `nil`）。バッチ書き込み後の一括チェックに適します。
+
+**戻り値**
+
+| 型 | 説明 |
+|------|------|
+| `error` | 最初のキャッシュ済みエラー。一度もエラーがなければ `nil` |
+
+#### Stats
+
+シグネチャ：`func (w *JSONLWriter) Stats() JSONLStats`
+
+書き込み統計（正常に書き込んだ行数とバイト数）を返します。
+
+**戻り値**
+
+| 型 | 説明 |
+|------|------|
+| `JSONLStats` | 書き込み統計。フィールドは下記の [JSONLStats](#jsonlstats) を参照 |
+
+### JSONLStats
+
+`Stats()` が返す書き込み統計の型です。
+
+```go
+type JSONLStats struct {
+    LinesProcessed int64 // 正常に書き込んだ行数
+    BytesWritten   int64 // 書き込んだ合計バイト数（行末の改行文字を含む）
+}
+```
+
+| フィールド | 型 | 説明 |
+|------|------|------|
+| `LinesProcessed` | `int64` | 正常に書き込んだ行数（失敗した行は数えない） |
+| `BytesWritten` | `int64` | 下層 writer に書き込んだ合計バイト数（自動補完された改行文字を含む） |
+
+**動作の詳細**
+
+- `Write`：値を 1 行の JSON にエンコードして `\n` を追記します。`<`/`>`/`&` をエスケープするかは `Config.EscapeHTML`（デフォルト `true`）で決まります
+- `WriteRaw`：**エンコード済み**の生の行を書き込み、二重エンコードのオーバーヘッドを避けます。行末に `\n` がない場合は自動で 1 つ補います
+- **エラーの粘着性**：いずれかの書き込みまたはエンコードでエラーが発生すると、そのエラーはライターにキャッシュされ、以降の `Write`/`WriteRaw` は下層 writer に書き込まず、直接そのエラーを返します——半書き込み状態への追記を防ぎます
+- `Err()` はキャッシュされたエラーを読み取ります（エラーなしは `nil`）。`Stats()` は `JSONLStats` を返します。フィールドは上の表を参照してください
+
+### 使用例
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	jw := json.NewJSONLWriter(os.Stdout)
+
+	// 3 件のレコードを 1 行ずつ書き込み
+	for i := 1; i <= 3; i++ {
+		if err := jw.Write(map[string]int{"id": i}); err != nil {
+			panic(err)
+		}
+	}
+
+	stats := jw.Stats()
+	if err := jw.Err(); err != nil {
+		panic(err)
+	}
+	fmt.Printf("%d 行、計 %d バイトを書き込みました\n", stats.LinesProcessed, stats.BytesWritten)
+	// {"id":1}
+	// {"id":2}
+	// {"id":3}
+	// 3 行、計 27 バイトを書き込みました
+}
+```
+
 ## 関連
 
-- [ファイル操作関数](./file-io) - LoadFromFile、SaveToFile などのファイル操作
-- [Processor JSONL メソッド](../processor/jsonl) - Processor レベルの JSONL メソッドの詳細
-- [ストリーミング処理](../../streaming/large-files) - ストリーミングプロセッサの詳細
+- [ファイル操作関数](./file-io) - LoadFromFile, SaveToFile などのファイル操作
+- [Processor JSONL メソッド](../processor/jsonl) - Processor レベルの JSONL メソッド詳解
+- [JSONL プロセッサ](../../streaming/jsonl#jsonlwriter) - JSONL/NDJSON の概念とストリーミング実践チュートリアル
+- [ストリーミング処理](../../streaming/large-files) - ストリーミングプロセッサ詳解

@@ -1,8 +1,9 @@
 ---
 sidebar_label: "데이터 마스킹"
 title: "데이터 마스킹 - CyberGo env | 로그 보안 도구"
-description: "CyberGo env 민감 데이터 마스킹 도구 완전한 가이드로, IsSensitiveKey 자동 감지로 비밀번호와 키 등 민감 키를 식별하고, MaskValue로 민감도별 값을 마스킹하며, MaskKey로 키 이름을 마스킹하고, SanitizeForLog로 로그 문자열을 정리하며 ClearBytes로 안전하게 제로화합니다. HTTP 미들웨어와 구조화된 로그 실전 예제를 포함합니다."
+description: "CyberGo env 민감 데이터 마스킹 가이드로, IsSensitiveKey 자동 감지, MaskValue 값 마스킹, MaskKey 키 이름 마스킹, SanitizeForLog 로그 정리, ClearBytes 제로화 도구를 설명하며 HTTP 미들웨어 실전 예제를 포함합니다."
 sidebar_position: 2
+sidebar_icon: "🛡️"
 ---
 
 # 민감 데이터 마스킹
@@ -124,7 +125,7 @@ func main() {
 func MaskKey(key string) string
 ```
 
-키 이름 자체를 마스킹하며, 키의 존재는 보여야 하지만 키의 의미를 노출하지 않아야 하는 시나리오에 사용됩니다(내부적으로 `DefaultMaskKey` 호출):
+키 이름 자체를 마스킹하며, 키의 존재는 보여야 하지만 키의 의미를 노출하지 않아야 하는 시나리오에 사용됩니다(공개 API `MaskKey`는 내부 마스킹 루틴의 래퍼로, 오류 보고·감사 로그와 동일한 구현을 공유합니다):
 
 | 조건 | 반환값 |
 |------|--------|

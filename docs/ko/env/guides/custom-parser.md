@@ -1,7 +1,7 @@
 ---
 sidebar_label: "커스텀 파서"
 title: "커스텀 파서 - CyberGo env | 파일 형식 확장"
-description: "CyberGo env 커스텀 파서 가이드로, EnvParser 인터페이스의 Parse 메서드를 구현하고 RegisterParser로 등록하며, ComponentFactory를 통해 Validator와 Auditor를 획득합니다. TOML과 INI 파서의 완전한 예제와 모범 사례를 포함합니다."
+description: "CyberGo env 커스텀 파서 가이드로, EnvParser 인터페이스의 Parse 메서드를 구현하고 RegisterParser로 등록하며 ComponentFactory로 Validator와 Auditor를 획득합니다. TOML과 INI 파서 예제를 포함합니다."
 sidebar_position: 8
 sidebar_icon: "⚙️"
 ---
@@ -641,6 +641,26 @@ func main() {
 ```
 
 ---
+
+## 내장 파서 재정의 (ForceRegisterParser)
+
+보안상 `RegisterParser`는 세 가지 내장 형식(`FormatEnv`, `FormatJSON`, `FormatYAML`)의 재정의를 **거부**합니다; 같은 커스텀 형식을 중복 등록해도 오류를 반환합니다. 내장 파서를 정말 교체해야 한다면 — 예를 들어 `.env`에 여러 줄 값 문법 확장 추가, 커스텀 보안 검사 부착, 테스트에서 mock 파서 주입 — `ForceRegisterParser`를 사용하세요:
+
+<!-- check-code: skip -->
+```go
+err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, factory *env.ComponentFactory) (env.EnvParser, error) {
+    return &MyCustomEnvParser{
+        validator: factory.Validator(),
+        auditor:   factory.Auditor(),
+    }, nil
+})
+```
+
+::: warning 보안 경고
+내장 파서 재정의는 취약점을 유발할 수 있습니다: 교체 구현에 키 검증, 값 검증, 크기 제한이 없으면 라이브러리의 기본 보호를 잃습니다. 파서가 동등한 보안 검사를 완전히 구현한 경우에만 사용하세요.
+:::
+
+**등록 시점**: 파서 팩토리는 Loader 생성 시 스냅샷으로 호출됩니다(`New()` 내부의 `createParsers`). 따라서 `RegisterParser`/`ForceRegisterParser`는 `env.New()` 이전에 완료해야 하며, 이미 생성된 Loader는 이후 등록의 영향을 받지 않습니다.
 
 ## 관련 문서
 

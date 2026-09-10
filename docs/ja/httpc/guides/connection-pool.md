@@ -1,15 +1,15 @@
 ---
-sidebar_label: "コネクションプールとプロキシ"
-title: "コネクションプールとプロキシ - CyberGo HTTPC | プールチューニングとプロキシ設定"
-description: "HTTPC コネクションプールとプロキシ設定ガイド：MaxIdleConns プールパラメータチューニングとシナリオ推奨、ProxyURL 手動プロキシと SOCKS5、EnableSystemProxy システムプロキシ検出、ProxyPool プロキシプールローテーションとパッシブサーキットブレーキング、ProxyRotatePerRequest リクエストごとのローテーション、ProxyRotateOnStatus ステータスコードローテーション、DoH と HTTP/2 設定プラクティス。"
-sidebar_position: 8
+sidebar_label: "コネクションプールと DNS"
+title: "コネクションプールと DNS - CyberGo HTTPC | プールチューニングと DNS 解決"
+description: "HTTPC コネクションプールと DNS ガイド：MaxIdleConns/MaxConnsPerHost チューニング、アイドル接続と総接続上限、TIME_WAIT 対策、オブジェクトプール再利用、並列リクエストパターン、DoH フォールバックと HTTP/2 多重化実践、高並列シナリオの推奨パラメータ。"
+sidebar_position: 10
 ---
 
-# コネクションプールとプロキシ
+# コネクションプールと DNS
 
 ## コネクションプール設定
 
-コネクションプールは HTTP クライアントのパフォーマンスの重要な要素です。HTTPC は `ConnectionConfig` でコネクションプールを管理します。
+コネクションプールは HTTP クライアントのパフォーマンスを左右する重要な要素です。HTTPC は `ConnectionConfig` でコネクションプールを管理します。
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -17,239 +17,108 @@ cfg := httpc.DefaultConfig()
 // コネクションプールパラメータ
 cfg.Connection.MaxIdleConns = 100         // グローバル最大アイドル接続数
 cfg.Connection.MaxConnsPerHost = 20       // ホストあたりの最大接続数
-cfg.Timeouts.IdleConn = 120 * time.Second // アイドル接続維持時間
+cfg.Timeouts.IdleConn = 120 * time.Second // アイドル接続の維持時間
 ```
 
 ### パラメータの説明
 
 | パラメータ | デフォルト | 説明 |
-|-----------|-----------|------|
+|------|------|------|
 | `MaxIdleConns` | 50 | グローバル最大アイドル接続数 |
-| `MaxConnsPerHost` | 10 | ホストあたりの最大接続数（アクティブ + アイドル含む） |
+| `MaxConnsPerHost` | 10 | ホストあたりの最大接続数（アクティブ + アイドルを含む） |
 | `IdleConn` | 90s | アイドル接続タイムアウト。超過するとクローズ |
-| `Dial` | 10s | 接続確立タイムアウト |
-| `TLSHandshake` | 10s | TLS ハンドシェイクライムアウト |
+| `Dial` | 10s | 接続確立のタイムアウト |
+| `TLSHandshake` | 10s | TLS ハンドシェイクタイムアウト |
 | `ResponseHeader` | 0 | 無効（Request タイムアウトを使用） |
+| `MaxResponseHeaderBytes` | 0 | レスポンスヘッダーのサイズ上限。0 = Go 標準ライブラリのデフォルト 10MB |
 
 ### シナリオ別推奨
 
 | シナリオ | MaxIdleConns | MaxConnsPerHost | IdleConn |
-|---------|-------------|-----------------|----------|
+|------|-------------|-----------------|----------|
 | 高並列 API | 100 | 20 | 120s |
 | 通常サービス | 50 | 10 | 90s |
 | 低頻度リクエスト | 10 | 2 | 30s |
 | マイクロサービス内部 | 50 | 10 | 60s |
 
 :::tip
-`MaxConnsPerHost` はアクティブ接続とアイドル接続の両方を含みます。この制限を超える新しいリクエストは接続の解放を待ってキューに入ります。
+`MaxConnsPerHost` はアクティブ接続とアイドル接続の両方を含みます。この制限を超える新しいリクエストは、接続の解放を待ってキューに入ります。
 :::
 
-## プロキシ
+### 派生パラメータと内部上限
 
-HTTPC は 4 つのプロキシモードをサポートし、優先度に従って自動的に選択されます。すべてのプロキシ設定は `ConnectionConfig` で構成します。
+一部の接続パラメータには独立した設定項目がなく、エンジンが既存のパラメータから**導出**するか、固定値を使用します：
 
-### 手動プロキシ
+| パラメータ | 値 | 出所 |
+|------|-----|------|
+| `MaxIdleConnsPerHost` | `clamp(MaxConnsPerHost/2, 2, 10)`。`MaxConnsPerHost=0` の場合は 10 | `MaxConnsPerHost` から導出、独立フィールドなし |
+| 1 クライアントあたりの総接続上限 | 1000（アクティブ + アイドル） | 固定値。超過するとコネクションプール枯渇エラーを返す |
+| TCP KeepAlive プローブ間隔 | 30s | 固定値 |
+| `ExpectContinueTimeout` | 1s | 固定値（`Expect: 100-continue` の待機時間） |
 
-`ProxyURL` で固定プロキシを指定します（最高優先度）:
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyURL = "http://proxy.example.com:8080"
-
-client, _ := httpc.New(cfg)
-```
-
-認証付きプロキシ:
-
-```go
-cfg.Connection.ProxyURL = "http://user:password@proxy.example.com:8080"
-```
-
-:::tip
-`Config.String()` メソッドはプロキシ URL のユーザー名とパスワードを自動的にマスクします。
+:::warning 総接続上限の挙動
+総接続上限の 1000 に達すると、新規接続はエラーで終了し、`ClientError`（`ErrorTypeNetwork`、Message は `connection pool exhausted`）に分類されます。デフォルトの `MaxIdleConns=50` / `MaxConnsPerHost=10` ではほぼ発生しません。極端な並列時の最終防線と考えてください。
 :::
 
-### SOCKS5 プロキシ
+### アイドル接続の管理
 
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyURL = "socks5://proxy.example.com:1080"
-```
+- **`IdleConn`（デフォルト 90s）**：アイドル接続はトランスポート層のタイムアウト後に自動的にクローズされます。大きくすれば接続の再利用率が上がり、小さくすれば対向側のリソースをより速く解放できます（高頻度の短命接続シナリオでは TIME_WAIT の蓄積に注意）。
+- **プロキシローテーション時のアクティブクリーンアップ**：`ProxyRotatePerRequest` やステータスコードローテーションのリトライパスを有効にすると、**すべてのアイドル接続が自動的にクローズ**され、次のリクエストでプロキシが再選択されます——そうしないと、HTTP/2 の CONNECT トンネル経由の接続再利用がプロキシ選択をバイパスし、ローテーションを無効化してしまうためです。プロキシ設定とローテーション戦略の詳細は [プロキシとプロキシプール](./proxy) を参照してください。
+- **`client.Close()`**：すべてのアイドル接続、DoH リゾルバー、内部リソースをクローズします。以降のリクエストは `ErrClientClosed` を返します。
+- **ホストごとの統計の自動クリーンアップ**：内部ではホストごとに接続カウントを維持し、30 分間アクティビティがなくアクティブ接続もないエントリが周期的にクリーンアップされます（最大で毎分 1 回、ホストエントリの上限は 10000）。長期実行でメモリが無限に増えることはありません。
 
-### システムプロキシの自動検出
+### レスポンス解凍の特別な扱い
 
-OS のプロキシ設定を自動的に検出します:
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.EnableSystemProxy = true
-```
-
-| プラットフォーム | 検出ソース |
-|----------------|-----------|
-| Windows | レジストリ Internet Settings |
-| macOS | システム環境設定ネットワークプロキシ |
-| Linux | 環境変数 `HTTP_PROXY` / `HTTPS_PROXY` |
-
-### プロキシプール
-
-複数のプロキシ IP にリクエストを分散する必要がある場合（スクレイピング、負荷分散、IP ローテーション）、プロキシプールは自動回転、パッシブサーキットブレーキング、ステータスコードベースの切り替えを提供します — 外部コンポーネント不要。
-
-#### 基本的な使い方
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyPool = []string{
-    "http://proxy1:8080",
-    "http://proxy2:8080",
-    "http://proxy3:8080",
-}
-cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin // デフォルト
-
-client, err := httpc.New(cfg)
-```
-
-各リクエストはプールからプロキシを自動的に選択します。`http`、`https`、`socks5`、`socks5h` プロトコルをサポートします。
-
-| フィールド | 型 | デフォルト | 説明 |
-|-----------|-----|---------|------|
-| `ProxyPool` | `[]string` | `nil` | プロキシ URL のリスト |
-| `ProxyPoolStrategy` | `ProxyStrategy` | `RoundRobin` | 選択戦略 |
-| `ProxyFailureThreshold` | `int` | `3`（0 でフォールバック） | 連続失敗サーキットブレーク閾値 |
-| `ProxyCooldown` | `time.Duration` | `30s`（0 でフォールバック） | サーキットブレークプロキシのクールダウン |
-| `ProxyRotatePerRequest` | `bool` | `false` | 各リクエストでプロキシを強制切り替え（アイドル接続の再利用を無効化） |
-| `ProxyRotateOnStatus` | `[]int` | `nil` | プロキシ回転をトリガーするステータスコード |
-
-#### 選択戦略
-
-| 戦略 | 定数 | 説明 |
-|------|------|------|
-| ラウンドロビン | `ProxyStrategyRoundRobin` | 順番に循環選択、リトライ時に自動的に次のプロキシに移動 |
-| ランダム | `ProxyStrategyRandom` | 正常なプロキシから均一にランダム選択 |
-
-ラウンドロビン（デフォルト）はリトライ時に自動的に異なるプロキシ IP を選択します — 各リトライがカーソルを進め、自然に次のプロキシに移動します。
-
-#### パッシブサーキットブレーキング
-
-プロキシプールはパッシブヘルスチェックを内蔵しています。**接続レベルの失敗**（dial/TLS）のみがサーキットブレークをトリガーし、HTTP ステータスコードはトリガーしません:
-
-```text
-プロキシ接続失敗
-    ↓
-失敗カウント +1
-    ↓
-連続失敗 ≥ ProxyFailureThreshold → サーキットオープン（回転から除外）
-    ↓
-ProxyCooldown 待機 → ハーフオープンプローブ（回転に復元）
-    ↓
-成功 → カウントリセット、サーキットクローズ
-初回失敗 → サーキット再オープン
-```
-
-```go
-cfg.Connection.ProxyFailureThreshold = 5           // より寛容に、一時的な問題を許容
-cfg.Connection.ProxyCooldown = 60 * time.Second    // より長いクールダウン
-```
-
-すべてのプロキシがサーキットブレークされた場合、クールダウンが最も短い（復元に最も近い）プロキシがフォールバックとして返され、即座に失敗することはありません。
-
-#### ステータスコード回転
-
-Cloudflare/WAF などの IP ブロックシナリオで — 特定のステータスコード返却時に自動的に異なるプロキシでリトライします:
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyPool = []string{
-    "http://proxy1:8080",
-    "http://proxy2:8080",
-    "http://proxy3:8080",
-}
-cfg.Connection.ProxyRotateOnStatus = []int{403}  // 403 受信時にプロキシ回転
-cfg.Retry.MaxRetries = 3                          // リトライ有効化必須
-
-client, err := httpc.New(cfg)
-```
-
-:::warning ステータスコード回転 ≠ サーキットブレーキング
-`ProxyRotateOnStatus` でトリガーされた回転はプロキシをサーキットブレーク**しません** — IP ブロックはターゲット固有であることが多いです（サイト A でブロックされたプロキシがサイト B では正常に動作する場合があります）。サーキットブレーキングは接続レベルの失敗のみでトリガーされます。`Retry.MaxRetries > 0` が必要です。
-
-`ProxyRotateOnStatus` が設定され、プールに複数のプロキシがある場合、リトライ予算が自動的に `len(ProxyPool) - 1` に引き上げられます（`MaxRetries` 上限 10 で制限）、すべてのプロキシが試行される機会を保証します。
-:::
-
-#### リクエストごとのローテーション
-
-`ProxyRotatePerRequest` は**接続再利用**によってプロキシトンネルが固定化される問題を解決します：HTTP コネクションプールは確立済みの TCP 接続を再利用し、そのプロキシトンネルも含まれます。つまり同一ホストへの連続リクエストは、`ProxyPoolStrategy` がセレクタのカーソルをローテーションしていても、前回のリクエストのプロキシを再利用してしまいます。
-
-有効化すると、毎回のリクエスト開始時にすべてのアイドル接続をクローズし、Transport にプロキシプールを再評価させます——代償は接続再利用なし（毎回のリクエストで新規接続 + プロキシトンネル）ですが、リクエストごとのローテーションを保証します：
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyPool = []string{
-    "http://proxy1:8080",
-    "http://proxy2:8080",
-    "http://proxy3:8080",
-}
-cfg.Connection.ProxyRotatePerRequest = true  // 毎回のリクエストでプロキシを切り替え
-
-client, err := httpc.New(cfg)
-```
-
-:::tip 適用シナリオ
-同一ホストのスクレイピング/データ収集に適しています——毎回のリクエストの送信元 IP が異なり、ターゲットサイトの IP ブロックのリスクを低減します。異なるホストへのリクエストの場合、接続再利用は同一プロキシに束縛されないため、通常は有効化の必要はありません。
-:::
-
-`ProxyRotateOnStatus` と同様に、`ProxyRotatePerRequest` もプロキシプールに複数のプロキシがある場合、リトライ予算を自動的に `len(ProxyPool) - 1` に引き上げ、各プロキシが少なくとも 1 回は試行されることを保証します。
-
-### プロキシ優先度
-
-複数のプロキシモードを同時に構成した場合、優先度に従って適用されます:
-
-| 優先度 | 設定 | 動作 |
-|--------|------|------|
-| 1（最高） | `ProxyURL` | 常に指定されたプロキシを使用（単一プロキシモード） |
-| 2 | `ProxyPool` | プロキシプールで回転 |
-| 3 | `EnableSystemProxy` | システムプロキシを自動検出 |
-| 4（最低） | なし | 直接接続 |
-
-:::tip
-`ProxyURL` と `ProxyPool` を両方設定した場合、`ProxyURL` が有効になります。プロキシプールを使用するには、`ProxyURL` を空にしてください。
-:::
-
-### 内蔵セキュリティ
-
-プロキシ関連機能は以下のセキュリティ詳細を自動的に処理します — 手動構成不要:
-
-- **SSRF免除**: プロキシホストアドレスが自動的に SSRF 免除リストに追加され、プライベート IP チェックでブロックされません
-- **重複排除**: 同一 `host:port` のエントリが自動的にマージされ、回転バイアスと重複カウントを防ぎます
-- **URL 検証**: すべてのプロキシ URL がセキュリティ検証されます（CRLF インジェクション防止、プロトコルホワイトリスト）
-
-完全なフィールド説明は [設定 API — プロキシプール](../api-reference/client-config/config#プロキシプール) を参照してください。
+トランスポート層では**標準ライブラリの自動解凍を無効化**しており、HTTPC がレスポンス処理層で `gzip` / `deflate` を手動で処理します。解凍は `Security.MaxDecompressedBodySize`（デフォルト 100MB）の制約を受け、解凍爆弾攻撃を防ぎます。日常的にこの層を意識する必要はありません——`Result.RawBody()` が返すのはすでに解凍済みのバイトであることだけ知っておけば十分です。
 
 ## DNS-over-HTTPS
 
-DoH を有効にして DNS 解決遅延を削減し、DNS ハイジャックを防止:
+DoH を有効にすると、DNS 解決は暗号化された HTTPS 経路で行われ、キャリアによるハイジャックや DNS ポイズニングを防止できます。さらに、複数プロバイダーによる耐障害性を内蔵しています：
 
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Connection.EnableDoH = true
-cfg.Connection.DoHCacheTTL = 5 * time.Minute
+cfg.Connection.DoHCacheTTL = 5 * time.Minute // 0 を渡しても 5 分にフォールバック
 ```
 
-デフォルトの DoH プロバイダー（優先度順）:
+デフォルトの DoH プロバイダー（優先度順）：
 
 | プロバイダー | アドレス | 説明 |
-|-------------|---------|------|
-| Cloudflare | `1.1.1.1/dns-query` | 最速、プライバシー重視 |
+|--------|------|------|
+| Cloudflare | `1.1.1.1/dns-query` | 最速、プライバシー優先 |
 | Google | `dns.google/resolve` | グローバルカバレッジ |
-| AliDNS | `dns.alidns.com/resolve` | 中国地域最適化 |
+| AliDNS | `dns.alidns.com/resolve` | 中国地域向けに最適化 |
 
-:::tip
-DoH を有効にすると、DNS 解決結果が `DoHCacheTTL` の間キャッシュされます。すべての DoH プロバイダーが利用できない場合、システム DNS にフォールバックします。
-:::
+### 仕組み
+
+- **A + AAAA の並行クエリ**：毎回の解決で IPv4 と IPv6 のレコードを同時にクエリし、結果をマージします。
+- **デュアルフォーマット解析**：レスポンスの `Content-Type` に応じて JSON（Google/AliDNS 方式）か RFC 1035 wire フォーマット（Cloudflare 方式）を自動選択します。欠落または未識別の場合は先に JSON、次に wire を試み、設定に異常があるサーバーとも互換性を保ちます。
+- **並行マージ**：同一ホストの並行キャッシュミスは 1 回のネットワーク往復にマージされ（singleflight）、キャッシュスタンプでプロバイダーを圧倒しません。
+- **独立した内部クライアント**：DoH リクエストは独立した HTTP クライアント（5s タイムアウト、HTTP/2 有効）で行われ、業務のコネクションプールもリクエストタイムアウトのバジェットも消費しません。
+
+### フォールバックチェーン
+
+```text
+Cloudflare (1.1.1.1) → Google (dns.google) → AliDNS → システム DNS リゾルバー
+```
+
+いずれか 1 つのプロバイダーが成功すればその結果を返します。すべて失敗した場合は自動的にシステム DNS リゾルバーへフォールバックし、両層のエラーをエラーメッセージに統合します。単一プロバイダーの障害でリクエストが失敗することはありません。
+
+### キャッシュ
+
+| 項目 | 値 |
+|----|-----|
+| TTL | `DoHCacheTTL`（デフォルト 5 分） |
+| 容量上限 | 1000 件。満杯時はまず期限切れエントリを、次に期限切れが最も近いエントリを退避 |
+| レスポンスサイズ上限 | 64KB（悪意のある DNS レスポンスによるメモリ圧迫を防止） |
+
+### SSRF 防護との連携
+
+DoH で解決された IP は、まず SSRF フィルタを通過し（プライベート/予約アドレスの除去、`SSRFExemptCIDRs` の尊重）、その後**検証済みの IP に直接ダイヤル**します——検証とダイヤルの間に 2 回目の DNS 解決は存在しないため、DNS rebinding 攻撃を根元から防げます。プロキシアドレスは DoH 解決の対象外です（プロキシは開発者が明示的に設定するため、プロキシホストへ直接ダイヤルします。[プロキシとプロキシプール](./proxy) を参照）。詳細は [SSRF 防護](../security/ssrf) を参照してください。
 
 ## HTTP/2
 
-デフォルトで HTTP/2 が有効です（TLS が必要）:
+デフォルトで HTTP/2 が有効です（TLS が必要）：
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -257,23 +126,26 @@ cfg.Connection.EnableHTTP2 = false // HTTP/2 を無効化
 ```
 
 HTTP/2 の特徴：
+
 - 多重化：単一接続で複数の並列リクエストを処理
-- ヘッダー圧縮：繰り返しヘッダーの転送を削減
+- ヘッダー圧縮：重複ヘッダーの転送を削減
 - サーバープッシュ
 
-## オブジェクトプール再利用
+無効化すると、トランスポート層は HTTP/2 ネゴシエーションを一切試行しなくなります（カスタム TLS 設定シナリオでの強制試行を含む）。平文 HTTP/2（h2c）はサポートされません。HTTP/2 の多重化により「同一ホストへの並列リクエストが 1 本の接続を共有する」点に注意——これがプロキシローテーションのシナリオでアイドル接続をクローズする必要がある理由です（[プロキシとプロキシプール](./proxy) のリクエストごとのローテーションを参照）。
 
-HTTPC は内部でエンジンのレスポンスオブジェクトと文字列ビルダーを sync.Pool で再利用し、GC 負荷を軽減します。Result 自体はリクエストごとに新規作成され、GC が自動的に回収します。
+## オブジェクトプールの再利用
+
+HTTPC は内部で、エンジンのレスポンスオブジェクトと文字列ビルダーを sync.Pool で再利用し、GC 負荷を削減します。Result はリクエストごとに新規作成され、GC が自動的に回収します。
 
 ```go
 result, err := client.Get(url)
 if err != nil {
     return err
 }
-// Result はリクエストごとに新規作成、GC が自動回収、手動解放不要
+// Result はリクエストごとに新規作成、GC が自動回収、手動解放は不要
 ```
 
-高並列シナリオでは、内部オブジェクトプールの再利用により GC 負荷を大幅に軽減できます。
+高並列シナリオでは、内部オブジェクトプールの再利用により GC 負荷を大幅に削減できます。
 
 ## 並列リクエストパターン
 
@@ -306,17 +178,19 @@ func fetchAll(ctx context.Context, urls []string) ([]*httpc.Result, error) {
 ## よくある問題
 
 | 問題 | 原因 | 解決策 |
-|------|------|--------|
-| 大量の TIME_WAIT | アイドル接続タイムアウトが短すぎる | `IdleConn` タイムアウトを増加 |
-| 接続拒否 | ホストあたりの接続数が不足 | `MaxConnsPerHost` を増加 |
-| リクエストがキューで待機 | コネクションプールが小さすぎる | `MaxIdleConns` を増加 |
-| プロキシが動作しない | `ProxyURL` と `ProxyPool` を同時設定 | `ProxyURL` を空にし、`ProxyPool` のみ使用 |
-| プロキシが頻繁にサーキットブレーク | `ProxyFailureThreshold` が低すぎる | 閾値または `ProxyCooldown` を増加 |
+|------|------|----------|
+| 大量の TIME_WAIT | アイドル接続タイムアウトが短すぎる | `IdleConn` タイムアウトを増やす |
+| 接続が拒否される | ホストあたりの接続数が不足 | `MaxConnsPerHost` を増やす |
+| リクエストがキューで待機 | コネクションプールが小さすぎる | `MaxIdleConns` を増やす |
+| ホストあたりのアイドル接続数を制御したい | 独立した設定フィールドがない | `MaxConnsPerHost` から導出（÷2、2–10 の間にクランプ） |
+| DoH 有効後に解決が失敗する | すべての DoH プロバイダーが到達不能/タイムアウト | システム DNS へのフォールバックを内蔵済み。出口ネットワークを確認するかデフォルトのままにする |
+| プロキシが効かない・頻繁にサーキットブレーク | プロキシ設定と接続再利用の相互作用 | [プロキシとプロキシプール](./proxy) のよくある問題を参照 |
 
-完全なパフォーマンスアンチパターンと最適化の提案は [パフォーマンス最適化](./performance) をご覧ください。
+パフォーマンスアンチパターンと最適化提案の全貌は [パフォーマンス最適化](./performance) を参照してください。
 
 ## 次のステップ
 
 - [パフォーマンス最適化](./performance) - パフォーマンスチューニングガイド
-- [設定 API](../api-reference/client-config/config) - 接続・プロキシフィールドリファレンス
+- [プロキシとプロキシプール](./proxy) - 単一プロキシ、システムプロキシ、プロキシプールのローテーションとサーキットブレーカー
+- [設定 API](../api-reference/client-config/config) - 接続設定フィールドのリファレンス
 - [セキュリティ概要](../security/) - SSRF と TLS セキュリティ

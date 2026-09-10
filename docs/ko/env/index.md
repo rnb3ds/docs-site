@@ -1,7 +1,7 @@
 ---
 sidebar_label: "개요"
 title: "환경 변수 관리 - CyberGo env | 보안 환경 변수 구성"
-description: "CyberGo env는 고보안 Go 환경 변수 관리 라이브러리로, .env, JSON, YAML 다중 형식 자동 감지 로드와 타입 안전 변환을 지원합니다. SecureValue 메모리 잠금 및 자동 제거, 분할 잠금 스레드 안전, ${VAR} 변수 확장, env 태그 구조체 매핑, 완전한 감사 로그를 내장하여 마이크로서비스 및 클라우드 네이티브 구성 관리에 적합합니다."
+description: "CyberGo env는 고보안 Go 환경 변수 관리 라이브러리로, .env, JSON, YAML 자동 감지 로드와 타입 안전 변환을 지원합니다. SecureValue 메모리 잠금, ${VAR} 변수 확장, 구조체 매핑, 감사 로그를 내장하여 마이크로서비스에 적합합니다."
 ---
 
 # env

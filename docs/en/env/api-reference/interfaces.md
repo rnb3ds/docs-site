@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Interfaces"
 title: "Interfaces - CyberGo env | Core Interface Hierarchy"
-description: "Core interface definitions reference for CyberGo env, using fine-grained design to support dependency injection, including EnvLoader composite interface and EnvFileLoader, EnvGetter, EnvSetter, Validator, FullAuditLogger, EnvParser, FileSystem sub-interfaces."
+description: "Core interface definitions for CyberGo env: EnvLoader composite plus EnvFileLoader, EnvGetter, EnvSetter, Validator, and EnvParser sub-interfaces for DI."
 sidebar_position: 6
 ---
 

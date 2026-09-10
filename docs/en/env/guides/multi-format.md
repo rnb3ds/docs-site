@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Multi-format Config"
 title: "Multi-format Config - CyberGo env | .env/JSON/YAML"
-description: "Multi-format configuration loading guide for CyberGo env, supporting .env, JSON, and YAML auto-detection and mixed loading, covering nested object and array flattening to key names, key-value merge priority, Marshal/UnmarshalMap format conversion, and RegisterParser for custom formats, suitable for microservices and containerized scenarios."
-sidebar_position: 3
+description: "Multi-format config guide for CyberGo env: .env, JSON, and YAML auto-detection with mixed loading, nested object flattening, and merge priority."
+sidebar_position: 1
 sidebar_icon: "🔧"
 ---
 
@@ -651,6 +651,39 @@ func main() {
     fmt.Println(exported)
 }
 ```
+
+## Structured Parsing Details and Prefix Filtering
+
+### JSON/YAML flattening rules
+
+Nested structures are flattened into environment variable keys on load, with these defaults:
+
+| Rule | Example |
+|------|---------|
+| Nested keys joined with underscores | `{"database": {"host": "..."}}` → `DATABASE_HOST` |
+| Array elements use `key_index` | `{"hosts": ["a", "b"]}` → `HOSTS_0`, `HOSTS_1` |
+| `null` becomes an empty string | `{"name": null}` → `NAME=""` |
+| Numbers and booleans become strings | `{"port": 5432}` → `PORT="5432"` |
+| Nesting depth cap defaults to 10 | Controlled by `JSONMaxDepth`/`YAMLMaxDepth` (1–100) |
+
+During file loading, conversion behavior is controlled by `Config`'s `JSONConfig`/`YAMLConfig` (e.g. `JSONNullAsEmpty`, `JSONNumberAsString`); the string-parsing paths of `UnmarshalMap`/`UnmarshalStruct` use built-in default rules and do not read these settings.
+
+### Prefix filtering (Prefix)
+
+`ComponentConfig.Prefix` restricts loading to variables starting with the given prefix (case-insensitive) — commonly used to take only your application's slice from a shared configuration file:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.Prefix = "MYAPP_" // Only load keys starting with MYAPP_
+loader, _ := env.New(cfg)
+```
+
+Prefix filtering combines with the `OverwriteExisting` policy: filtered-out keys neither overwrite nor enter storage.
+
+### Unknown-extension fallback
+
+`DetectFormat` returns `FormatAuto` for unknown extensions, in which case the loader **falls back to the `.env` parser** for line-by-line parsing. Therefore files like `config.conf` or `config.txt` still load correctly as long as their content is `KEY=value` shaped.
 
 ## Related Documentation
 

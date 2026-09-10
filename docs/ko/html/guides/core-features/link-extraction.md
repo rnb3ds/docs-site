@@ -1,7 +1,7 @@
 ---
 sidebar_label: "링크 추출 실전"
 title: "링크 추출 실전 - CyberGo html | 리소스 수집 가이드"
-description: "CyberGo html 링크 추출 실전: ExtractAllLinks 로 이미지·스크립트·CSS 리소스 링크를 추출하고 GroupLinksByType 으로 유형별 그룹화, Include 필터, 상대 URL 해석, 크롤러 모범 사례를 설명합니다."
+description: "CyberGo html 링크 추출 실전: ExtractAllLinks 로 이미지·스크립트·CSS 리소스 링크를 추출하고 GroupLinksByType 으로 유형별 그룹화, Include 필터, URL 정규화 해석과 BaseURL 자동 감지, 크롤러와 리소스 수집 모범 사례를 설명합니다."
 sidebar_position: 4
 ---
 

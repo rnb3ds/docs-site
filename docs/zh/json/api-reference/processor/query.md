@@ -9,6 +9,10 @@ sidebar_position: 2
 
 Processor 提供多种类型安全的路径查询方法。
 
+::: tip 与包级函数的镜像关系
+本页方法与[包级查询函数](../functions/query)是同一套行为的两种入口：路径语法、返回类型与错误语义完全一致。本页聚焦 Processor 侧的配置语义与复用模式，完整函数级示例见包级页。
+:::
+
 ## 基础查询
 
 ### Get
@@ -70,6 +74,10 @@ rate := p.GetFloat(data, "rate", 0.5)
 enabled := p.GetBool(data, "enabled")
 debug := p.GetBool(data, "debug", false)
 ```
+
+::: tip 类型化获取不接受 cfg
+`GetString`/`GetInt` 等 typed getters 的可变参数是**默认值**而非 `Config`（Go 仅允许一个可变参数，这是官方设计的三个例外之一）。需要按 `Config` 控制的类型化读取时，用 `New(cfg)` 构建处理器后调用其 `GetString`/`GetInt` 等类型化方法，或改用 `SafeGet` + `AsInt()` 等转换方法。
+:::
 
 ### GetWithContext
 
@@ -216,18 +224,92 @@ value, err = p.GetCompiled(data2, cp)
 
 使用预编译路径获取值。适合对多条 JSON 数据重复查询相同路径。
 
-```go
-cp, _ := p.CompilePath("items[0].id")
-defer cp.Release()
+::: warning 与 Get 的两点差异
+- **不接受 per-call `cfg`**：输入校验（大小、深度、危险模式）始终按处理器自身配置执行。
+- **不查结果缓存**：省掉的是路径解析开销，JSON 本身每次仍会解析；若想连解析也复用，配合 [`PreParse`](#preparse) 使用。
+:::
 
-for _, jsonStr := range jsonStrings {
-    id, err := p.GetCompiled(jsonStr, cp)
-    if err != nil {
-        continue
-    }
-    fmt.Println(id)
+**完整示例：对一批文档重复查询同一路径**
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	cp, err := p.CompilePath("user.name")
+	if err != nil {
+		panic(err)
+	}
+	defer cp.Release()
+
+	docs := []string{
+		`{"user":{"name":"Alice"}}`,
+		`{"user":{"name":"Bob"}}`,
+	}
+	for _, doc := range docs {
+		name, err := p.GetCompiled(doc, cp)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(name)
+	}
 }
+
+// 输出：
+// Alice
+// Bob
 ```
+
+## 预解析查询
+
+### PreParse
+
+签名：`func (p *Processor) PreParse(jsonStr string, cfg ...Config) (*ParsedJSON, error)`
+
+预解析 JSON 文档，返回可复用的 `*ParsedJSON`。对同一 JSON 多次查询时只解析一次，后续查询直接导航。
+
+```go
+parsed, err := p.PreParse(largeJSON)
+if err != nil {
+    panic(err)
+}
+defer parsed.Release() // 用完释放解析树引用
+
+// 多次查询复用解析结果
+name, _ := p.GetFromParsed(parsed, "user.name")
+email, _ := p.GetFromParsed(parsed, "user.email")
+tags, _ := p.GetFromParsed(parsed, "tags")
+```
+
+### GetFromParsed
+
+签名：`func (p *Processor) GetFromParsed(parsed *ParsedJSON, path string, cfg ...Config) (any, error)`
+
+在预解析结果上按路径取值，跳过 JSON 解析步骤。
+
+容器类结果（`map[string]any` / `[]any`）默认做防御性深拷贝后返回，基本类型直接返回；处理器开启 `Config.CacheSharedResults`（调用方承诺不修改返回值）时跳过拷贝。`GetFromParsed` 本身**不写结果缓存**——预解析复用的是解析树本身，而非查询结果。
+
+**ParsedJSON 方法**
+
+| 方法 | 说明 |
+|------|------|
+| `Data() any` | 取底层解析结果（`map[string]any` / `[]any`） |
+| `Release()` | 置空内部数据引用，使解析树可被 GC（调用后 `Data()` 返回 `nil`，应配合 `defer` 使用） |
+
+::: tip 与 CompilePath 的分工
+`PreParse` 省「同一 JSON 重复解析」，`CompilePath` 省「同一路径重复解析」；`SetFromParsed`（见[解析验证](./parse#setfromparsed)）支持在预解析结果上链式修改。两者选择标准见 [Processor 入门](../../getting-started/processor-guide)。
+:::
 
 ## 相关
 

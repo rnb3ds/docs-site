@@ -1,7 +1,7 @@
 ---
 sidebar_label: "リクエストとレスポンスミューテータ"
 title: "リクエストとレスポンスミューテータ - CyberGo HTTPC | Mutator インターフェース"
-description: "HTTPC ミドルウェア読み書き契約の詳細：RequestMutator と ResponseMutator は httpc がミドルウェアに公開する 2 つの合成インターフェースで、それぞれリクエストとレスポンスの全読み取りメソッドと書き込みメソッドを提供し、ミューテータ経由でリクエストヘッダーを書き換え、レスポンスステータスコードを読み取るコンパイル可能な例を付属。"
+description: "HTTPC ミドルウェア読み書き契約の詳細：RequestMutator と ResponseMutator の全読み書きメソッド、WithOnRequest/WithOnResponse コールバックオプションの使い方、ミューテータ経由でリクエストヘッダーを書き換えレスポンスステータスコードを読み取るコンパイル可能な例を付属します。"
 sidebar_position: 2
 ---
 
@@ -165,6 +165,70 @@ req.SetHeader("X-Trace-ID", generateTraceID())
 
 ほとんどのミドルウェアは型アサーションを**必要としません**——`RequestMutator`/`ResponseMutator` インターフェースがすべての一般的な読み書き操作をカバーしています。コールバックや SSRF 上書きが必要な場合のみ具象型へのアサーションが必要です。
 
+## リクエストオプションのコールバック：WithOnRequest / WithOnResponse
+
+ミドルウェアのほかに、ミューテータに直接関係するリクエストオプションのペアがあります：`WithOnRequest` はリクエスト送信前にコールバックされ、引数がまさに `RequestMutator` です。`WithOnResponse` はレスポンス受信後にコールバックされ、引数が `ResponseMutator` です。ミドルウェアを書かなくてもミューテータを取得して、検査や軽微な書き換えができます。
+
+<!-- check-code: skip -->
+```go
+func WithOnRequest(callback func(req RequestMutator) error) RequestOption
+func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
+```
+
+| オプション | コールバックのタイミング | コールバック引数 | エラー時の動作 |
+|------|---------|---------|---------|
+| `WithOnRequest` | リクエスト送信前 | `RequestMutator` | いずれかのコールバックがエラーを返すとリクエストは中止 |
+| `WithOnResponse` | レスポンス受信後 | `ResponseMutator` | いずれかのコールバックがエラーを返すとリクエストはそのエラーで失敗 |
+
+複数のコールバックをチェーン登録でき、追加順に順次実行されます。nil コールバックを渡すとオプション適用時にエラーが返ります（`"onRequest callback cannot be nil"` / `"onResponse callback cannot be nil"`）。
+
+:::tip コールバックとミドルウェアの使い分け
+コールバックには `next` がなく、リクエストをショートサーキットできず、レスポンス段階でのラップもできません——「検査 + 軽微な書き換え」にのみ適しています。実行順序の制御、ショートサーキットリターン、レスポンスのラップが必要な場合はミドルウェアを書いてください（[Handler とミドルウェアチェーン](./handler-chain) を参照）。
+:::
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	client, err := httpc.NewDefault()
+	if err != nil {
+		log.Fatalf("クライアントの作成に失敗: %v", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	result, err := client.Get("https://httpbin.org/get",
+		// リクエスト送信前：RequestMutator でリクエストを検査しヘッダーを注入
+		httpc.WithOnRequest(func(req httpc.RequestMutator) error {
+			fmt.Printf("送信 %s %s\n", req.Method(), req.URL())
+			req.SetHeader("X-Trace-ID", "trace-42")
+			return nil
+		}),
+		// レスポンス受信後：ResponseMutator でステータスを読み取り
+		httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
+			fmt.Printf("ステータスコード %d を受信\n", resp.StatusCode())
+			return nil
+		}),
+	)
+	if err != nil {
+		log.Fatalf("リクエスト失敗: %v", err)
+	}
+	fmt.Println("成功:", result.IsSuccess())
+	// 出力例：
+	// 送信 GET https://httpbin.org/get
+	// ステータスコード 200 を受信
+	// 成功: true
+}
+```
+
+すべてのリクエストオプションの項目別リファレンスは [リクエストオプション](../core/options) を参照してください。
+
 ## SanitizedURL キャッシュ
 
 複数のミドルウェアがマスク済み URL（認証情報を削除した URL）を記録する必要がある場合があります。重複計算を避けるため、HTTPC はリクエストオブジェクト上にマスク結果をキャッシュし、同一リクエストの複数ミドルウェアで共有します。
@@ -317,4 +381,5 @@ func main() {
 
 - [Handler とミドルウェアチェーン](./handler-chain) — 二重階層アーキテクチャとオニオンモデルの概要
 - [内蔵ミドルウェア](../client-config/middleware) — HeaderMiddleware などはミューテータ経由で動作する完成例です
+- [リクエストオプション](../core/options) — WithOnRequest/WithOnResponse とすべての WithXxx オプション
 - [インターフェース定義](../types/interfaces) — ミューテータの型エイリアス定義

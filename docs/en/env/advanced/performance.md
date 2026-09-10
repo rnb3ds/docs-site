@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Performance"
 title: "Performance - CyberGo env | High-Concurrency Tuning"
-description: "Performance optimization guide for CyberGo env, covering RWMutex read-write locks and sharded locks for concurrency safety, sync.Pool object pooling to significantly reduce allocations, mlock memory locking overhead tradeoffs, and large-file streaming parsing, with benchmark comparisons, concurrent throughput analysis, and MaxFileSize/MaxVariables tuning recommendations."
+description: "Performance guide for CyberGo env: concurrency-safe sharded locks, sync.Pool object pooling, mlock overhead tradeoffs, and large-file streaming parsing."
 sidebar_position: 1
 ---
 
@@ -438,6 +438,37 @@ func init() {
     env.Load(".env")
 }
 ```
+
+## Concurrency Internals Deep Dive
+
+This section explains the library's concurrency optimizations at the source level to help with evaluation and tuning.
+
+### Sharded storage (secureMap)
+
+All variables are stored as `SecureValue` in 8 shards; keys are placed by FNV-1a hash and each shard holds its own `sync.RWMutex` — reads and writes on different shards proceed fully in parallel, spreading lock contention.
+
+### Bucketed batch writes
+
+`secureMap.SetAll`/`secureMap.SetAllIfAbsent` (the file-loading path) bucket the whole batch into a single flat allocation and then lock **each shard only once** for the entire batch; existing keys are updated in place (reusing the `SecureValue` object), avoiding pool round-trips and extra allocations.
+
+### Lock optimizations on the read path
+
+- **Lock-free single-key reads**: `Lookup`/`GetSecure` bypass the loader-level read lock via an atomic closed flag — under high concurrency the RWMutex's own reader count is the bottleneck
+- **Zero-allocation `secureMap.Has`**: reads only the closed flag atomically, never copying the value string
+- **`Get` skips a second lock**: the shard read lock already guarantees `SecureValue` data stability, so the object-level lock is skipped (that lock was once a 23.6% atomic-operations hotspot in profiles)
+- **`Set` fast path**: with `OverwriteExisting=true` and `AutoApply` off, only a read lock is needed — concurrent `Set` calls don't serialize on the loader mutex
+
+### Object pool and finalizer
+
+`SecureValue` is reused through `sync.Pool`; the GC finalizer is installed **once at first creation** (~60% of the creation cost) and pool cycles don't repay it. Overwriting an existing key resets in place, further reducing allocations.
+
+### Approximate snapshot semantics
+
+`Len` returns in O(1) via an atomic counter; `Keys`/`ToMap` size their allocation from the counter then sweep the shards. Under concurrent writes the result may be a **slightly stale approximation** (modifications during the sweep aren't guaranteed visible) — synchronize externally if you need an exact snapshot.
+
+### Performance awareness for auditing
+
+With auditing enabled, the load path gains `time.Now` and event-construction overhead (entirely avoided when disabled). For high-throughput scenarios, enable auditing only under the Production preset, or consume asynchronously with `ChannelAuditHandler`.
 
 ## Related Documentation
 

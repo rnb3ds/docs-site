@@ -2,7 +2,7 @@
 sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo HTTPC | 分類とセンチネル"
 description: "HTTPC エラー処理ガイド：ErrorType 12 種エラー分類、ClientError フィールドと IsRetryable 判定、errors.Is/As センチネルエラーマッチング、リトライ枯渇処理、context タイムアウトとキャンセル、ミドルウェア統一エラー処理とタイムアウト階層化のベストプラクティス。"
-sidebar_position: 5
+sidebar_position: 7
 ---
 
 # エラー処理

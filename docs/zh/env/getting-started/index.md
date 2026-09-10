@@ -39,6 +39,10 @@ LOG_LEVEL=info
 ALLOWED_HOSTS=localhost,example.com,api.example.com
 ```
 
+::: tip 完整语法参考
+`.env` 文件的引号、转义、多行值等完整语法规则，参见[文件格式](/zh/env/reference/file-format)。
+:::
+
 ## 最简用法
 
 ```go

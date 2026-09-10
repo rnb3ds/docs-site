@@ -3,7 +3,7 @@ sidebar_label: "审计日志"
 title: "审计日志 - CyberGo env | 安全审计配置"
 description: "CyberGo env 审计日志配置指南，涵盖 JSONAuditHandler、LogAuditHandler 与 ChannelAuditHandler 三种处理器，及自定义 AuditHandler 记录变量加载、读取、修改与删除操作，用于安全审计、合规检查与问题排查。"
 sidebar_position: 6
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # 审计日志
@@ -378,6 +378,78 @@ chown app:app /var/log/app/env-audit.log
 ```
 
 ---
+
+## 更多内置处理器
+
+除 JSON/Log/Channel 三种常用处理器外，库还提供两个开箱即用的实现。
+
+### CloseableChannelHandler（自管理通道）
+
+与 `ChannelAuditHandler` 接收外部 channel 不同，`CloseableChannelHandler` 自建并持有带缓冲的 channel，提供完整的生命周期管理——`Close()` 会关闭处理器并关闭通道，消费方通过 `Channel()` 接收事件：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/env"
+)
+
+func main() {
+	handler := env.NewCloseableChannelHandler(64)
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		for event := range handler.Channel() {
+			fmt.Printf("%+v\n", event)
+		}
+	}()
+
+	cfg := env.ProductionConfig()
+	cfg.AuditHandler = handler
+	loader, err := env.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	_ = loader.Set("CUSTOM_VAR", "value")
+
+	loader.Close()
+	handler.Close()
+	<-done
+}
+```
+
+### NopAuditHandler（空操作）
+
+丢弃所有审计事件，适用于测试或临时静默审计输出的场景：
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.AuditEnabled = true
+cfg.AuditHandler = env.NewNopAuditHandler()
+```
+
+## 审计动作（AuditAction）
+
+审计事件按动作分类。自定义处理器可通过 `AuditAction` 常量过滤关注的事件类型：
+
+| 常量 | 含义 |
+|------|------|
+| `ActionLoad` | 文件加载 |
+| `ActionParse` | env/JSON/YAML 文件解析 |
+| `ActionGet` | 变量读取（含类型解析失败记录） |
+| `ActionSet` | 变量设置、应用到进程环境或按策略跳过 |
+| `ActionDelete` | 变量删除 |
+| `ActionValidate` | 校验操作 |
+| `ActionExpand` | 变量展开 |
+| `ActionSecurity` | 安全事件（路径校验失败、禁止键等） |
+| `ActionError` | 错误条件 |
+| `ActionFileAccess` | 文件系统访问 |
+
+`AuditEvent` 为结构化事件（含时间戳、动作、键、原因、成败与耗时等字段）。敏感键在进入事件前已被 `MaskKey` 掩码为 `[MASKED:N chars]`（N 为键长），非敏感键原样保留。
 
 ## 相关文档
 

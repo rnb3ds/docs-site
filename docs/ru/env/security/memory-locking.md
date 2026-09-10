@@ -1,8 +1,9 @@
 ---
 sidebar_label: "Блокировка памяти"
 title: "Блокировка памяти - CyberGo env | защита памяти mlock"
-description: "Руководство по блокировке памяти CyberGo env: включение через SetMemoryLockEnabled, проверка IsMemoryLockSupported, режим SetMemoryLockStrict и обработка ошибок NewSecureValueStrict, охватывая Linux CAP_IPC_LOCK, права Windows VirtualLock и управление жизненным циклом SecureValue."
+description: "Руководство по блокировке памяти CyberGo env: SetMemoryLockEnabled, IsMemoryLockSupported и строгий режим mlock/VirtualLock для защиты SecureValue."
 sidebar_position: 3
+sidebar_icon: "🛡️"
 ---
 
 # Блокировка памяти

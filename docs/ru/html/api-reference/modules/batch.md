@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Пакетная обработка"
 title: "Пакетная обработка - CyberGo html | параллельные пакеты"
-description: "Параллельный пакетный API CyberGo html: ExtractBatch и ExtractBatchFiles с версиями контекста, поддержка параллелизма, до 10000 элементов в пакете."
+description: "Пакетный API CyberGo html: ExtractBatch и ExtractBatchFiles с WithContext, параллелизм, до 10000 элементов, BatchResult и частичные неудачи."
 sidebar_position: 3
 ---
 

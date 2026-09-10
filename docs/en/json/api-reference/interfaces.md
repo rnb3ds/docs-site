@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Interfaces"
 title: "Interface Definitions - CyberGo JSON | API Reference"
-description: "CyberGo JSON extension interfaces: CustomEncoder, TypeEncoder, Validator, Hook, PathParser, and DangerousPattern to extend encoding, validation, and security."
+description: "CyberGo JSON extension interfaces: CustomEncoder, TypeEncoder, Validator, Hook, PathParser, and DangerousPattern, with HookContext and predefined hooks."
 sidebar_position: 6
 ---
 
@@ -11,22 +11,22 @@ The json package provides multiple extension interfaces for customizing JSON pro
 
 ## Encoder Interfaces
 
-::: warning Unwired extension fields
-The `CustomEncoder` and `TypeEncoder` interfaces are declared in the current version but **not yet wired into the encoding pipeline**. Setting them via `Config.CustomEncoder` / `Config.CustomTypeEncoders` has no effect; they are reserved for future versions. The currently available way to customize encoding is to implement the `json.Marshaler` or `encoding.TextMarshaler` interface (see [Custom Encoder](../extensions/custom-encoder)).
+::: warning Extension fields not yet wired
+The `CustomEncoder` and `TypeEncoder` interfaces are **declared but not yet wired into the encoding pipeline** in the current version. Setting them via `Config.CustomEncoder` / `Config.CustomTypeEncoders` has no effect — they are reserved for future releases. The currently available way to customize encoding is to implement the `json.Marshaler` or `encoding.TextMarshaler` interfaces (see [Custom Encoders](../extensions/custom-encoder)).
 :::
 
 ### CustomEncoder
 
-Custom JSON encoder interface.
+The custom JSON encoder interface.
 
 ```go
 type CustomEncoder interface {
-    // Encode converts a Go value to a JSON string
+    // Encode converts a Go value into a JSON string
     Encode(value any) (string, error)
 }
 ```
 
-**Usage Example**
+**Usage example**
 
 ```go
 import stdjson "encoding/json"
@@ -39,7 +39,7 @@ func (e *UpperCaseEncoder) Encode(value any) (string, error) {
     case string:
         return fmt.Sprintf(`"%s"`, strings.ToUpper(v)), nil
     default:
-        // Use standard encoding (avoid infinite recursion)
+        // Use standard encoding (avoids infinite recursion)
         data, err := stdjson.Marshal(v)
         if err != nil {
             return "", err
@@ -48,7 +48,7 @@ func (e *UpperCaseEncoder) Encode(value any) (string, error) {
     }
 }
 
-// Configure usage
+// Configure and use
 cfg := json.DefaultConfig()
 cfg.CustomEncoder = &UpperCaseEncoder{}
 processor, err := json.New(cfg)
@@ -59,16 +59,16 @@ if err != nil {
 
 ### TypeEncoder
 
-Type-specific encoder interface.
+The per-type encoder interface.
 
 ```go
 type TypeEncoder interface {
-    // Encode encodes a value of a specific type to a JSON string
+    // Encode encodes a value of the specific type into a JSON string
     Encode(v reflect.Value) (string, error)
 }
 ```
 
-**Usage Example**
+**Usage example**
 
 ```go
 type TimeEncoder struct{}
@@ -81,7 +81,7 @@ func (e *TimeEncoder) Encode(v reflect.Value) (string, error) {
     return "", fmt.Errorf("unsupported type: %v", v.Type())
 }
 
-// Register type encoder
+// Register the type encoder
 cfg := json.DefaultConfig()
 cfg.CustomTypeEncoders = map[reflect.Type]json.TypeEncoder{
     reflect.TypeOf(time.Time{}): &TimeEncoder{},
@@ -92,25 +92,25 @@ if err != nil {
 }
 ```
 
-## Validator Interface
+## Validator Interfaces
 
-::: warning Unwired extension fields
-The `Validator` interface is declared in the current version but **not yet wired into the operation pipeline**. Setting it via `Config.CustomValidators` or `Config.AddValidator()` has no effect; it is reserved for future versions. The currently available validation method is `ValidateSchema` (see [Validator](../extensions/validator)).
+::: warning Extension fields not yet wired
+The `Validator` interface is **declared but not yet wired into the operation pipeline** in the current version. Setting it via `Config.CustomValidators` or `Config.AddValidator()` has no effect — it is reserved for future releases. The currently available validation mechanism is `ValidateSchema` (see [Schema Validation](./schema)).
 :::
 
 ### Validator
 
-JSON validator interface.
+The JSON validator interface.
 
 ```go
 type Validator interface {
-    // Validate checks if the JSON string has issues
-    // Returns nil if valid, otherwise returns an error describing the problem
+    // Validate checks a JSON string for problems.
+    // Returns nil when valid, otherwise an error describing the problem.
     Validate(jsonStr string) error
 }
 ```
 
-**Usage Example**
+**Usage example**
 
 ```go
 type SizeValidator struct {
@@ -118,14 +118,14 @@ type SizeValidator struct {
 }
 
 func (v *SizeValidator) Validate(jsonStr string) error {
-    // Check input data size
+    // Check the size of the input data
     if int64(len(jsonStr)) > v.MaxSize {
         return fmt.Errorf("JSON exceeds maximum size: %d", v.MaxSize)
     }
     return nil
 }
 
-// Set validator
+// Set the validator
 cfg := json.DefaultConfig()
 cfg.CustomValidators = []json.Validator{&SizeValidator{MaxSize: 1024 * 1024}} // 1MB
 processor, err := json.New(cfg)
@@ -134,40 +134,55 @@ if err != nil {
 }
 ```
 
-## Hook Interface
+## Hook Interfaces
 
 ### Hook
 
-Operation interception interface, supporting before/after processing.
+The operation interception interface, supporting before/after processing.
 
 ```go
 type Hook interface {
-    // Before is called before the operation
-    // Return an error to abort the operation
+    // Before is invoked before the operation.
+    // Return an error to abort the operation.
     Before(ctx HookContext) error
 
-    // After is called after the operation completes
-    // Can modify the result or check for errors
+    // After is invoked once the operation completes.
+    // It may modify the result or inspect the error.
     After(ctx HookContext, result any, err error) (any, error)
 }
 ```
 
+**Execution order**: with multiple hooks, `Before` runs in registration order (any error aborts — later hooks and the operation itself do not run); `After` runs in **reverse registration order** (like the middleware onion model). Panics inside hooks are caught: a `Before` panic becomes an error that aborts the operation; an `After` panic is logged and that hook is skipped — neither ever takes down the processor.
+
 ### HookContext
 
-Hook context, providing operation information.
+The hook context, providing operation information.
 
 ```go
 type HookContext struct {
     Operation string        // Operation type: "get", "set", "delete", "marshal", "unmarshal"
-    JSONStr   string        // Input JSON string (may be empty during marshal). Security warning: may contain sensitive data
-    Path      string        // Target path (may be empty during marshal/unmarshal)
+    JSONStr   string        // Input JSON string (may be empty for marshal). Security warning: may contain sensitive data
+    Path      string        // Target path (may be empty for marshal/unmarshal)
     Value     any           // Value for set operations
     Config    *Config       // Active configuration
     StartTime time.Time     // Operation start time
 }
 ```
 
-**Usage Example**
+| Field       | Type        | Description                                                                                  |
+| ----------- | ----------- | -------------------------------------------------------------------------------------------- |
+| `Operation` | `string`    | Operation type: `"get"`, `"set"`, `"delete"`, `"marshal"`, `"unmarshal"`                       |
+| `JSONStr`   | `string`    | Input JSON string (may be empty for marshal); **may contain sensitive data**                  |
+| `Path`      | `string`    | Target path (may be empty for marshal/unmarshal)                                              |
+| `Value`     | `any`       | Value to write for set operations                                                             |
+| `Config`    | `*Config`   | Active configuration used by the current operation                                            |
+| `StartTime` | `time.Time` | Operation start time (set before `After` is called)                                           |
+
+::: warning JSONStr carries sensitive data
+`JSONStr` may contain passwords, tokens, API keys, PII (personally identifiable information), and other sensitive data — do **not** write this field to logs; log only with `Operation` and `Path`, and when you must inspect the content, read only the specific paths involved.
+:::
+
+**Usage example**
 
 ```go
 type LoggingHook struct {
@@ -175,7 +190,7 @@ type LoggingHook struct {
 }
 
 func (h *LoggingHook) Before(ctx json.HookContext) error {
-    h.logger.Info("Operation started",
+    h.logger.Info("operation started",
         "operation", ctx.Operation,
         "path", ctx.Path,
     )
@@ -183,7 +198,7 @@ func (h *LoggingHook) Before(ctx json.HookContext) error {
 }
 
 func (h *LoggingHook) After(ctx json.HookContext, result any, err error) (any, error) {
-    h.logger.Info("Operation completed",
+    h.logger.Info("operation completed",
         "operation", ctx.Operation,
         "path", ctx.Path,
         "duration", time.Since(ctx.StartTime),
@@ -192,14 +207,14 @@ func (h *LoggingHook) After(ctx json.HookContext, result any, err error) (any, e
     return result, err
 }
 
-// Add hook
+// Add the hook
 cfg := json.DefaultConfig()
 cfg.Hooks = []json.Hook{&LoggingHook{logger: slog.Default()}}
 ```
 
 ### HookFunc
 
-Struct adapter that allows using functions as hooks.
+A struct adapter that lets functions act as hooks. Both function fields are optional: an unset side behaves as "pass-through" (`Before` returns nil; `After` returns the result and error unchanged).
 
 ```go
 type HookFunc struct {
@@ -208,10 +223,15 @@ type HookFunc struct {
 }
 ```
 
-**Usage Example**
+| Field      | Type                                                        | Description                                                                      |
+| --------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `BeforeFn` | `func(ctx HookContext) error`                               | Pre-operation callback; return an error to abort the operation. When unset, `Before` passes through returning `nil` |
+| `AfterFn`  | `func(ctx HookContext, result any, err error) (any, error)` | Post-operation callback; may transform the result or error. When unset, `After` returns the result and error unchanged |
+
+**Usage example**
 
 ```go
-// Only need After
+// Only After is needed
 p.AddHook(&json.HookFunc{
     AfterFn: func(ctx json.HookContext, result any, err error) (any, error) {
         log.Printf("%s completed in %v", ctx.Operation, time.Since(ctx.StartTime))
@@ -219,7 +239,7 @@ p.AddHook(&json.HookFunc{
     },
 })
 
-// Only need Before
+// Only Before is needed
 p.AddHook(&json.HookFunc{
     BeforeFn: func(ctx json.HookContext) error {
         log.Printf("starting %s on path %s", ctx.Operation, ctx.Path)
@@ -244,7 +264,7 @@ p.AddHook(json.LoggingHook(slog.Default()))
 
 Signature: `func TimingHook(recorder interface{ Record(op string, duration time.Duration) }) Hook`
 
-Creates a timing hook.
+Creates a timing-recording hook.
 
 ```go
 type MetricsRecorder struct{}
@@ -260,7 +280,7 @@ p.AddHook(json.TimingHook(&MetricsRecorder{}))
 
 Signature: `func ValidationHook(validator func(jsonStr, path string) error) Hook`
 
-Creates an input validation hook.
+Creates an input-validation hook.
 
 ```go
 p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
@@ -275,57 +295,65 @@ p.AddHook(json.ValidationHook(func(jsonStr, path string) error {
 
 Signature: `func ErrorHook(handler func(ctx HookContext, err error) error) Hook`
 
-Creates an error interception hook.
+Creates an error-interception hook.
 
 ```go
 p.AddHook(json.ErrorHook(func(ctx json.HookContext, err error) error {
     sentry.CaptureException(err)
-    return err // Return original or transformed error
+    return err // Return the original or a transformed error
 }))
 ```
 
-## Security Pattern Interfaces
+## Security Mode Interfaces
 
 ### PatternLevel
 
-Dangerous pattern severity level.
+Severity levels for dangerous patterns.
 
 ```go
 type PatternLevel int
 
 const (
-    // PatternLevelCritical - Always blocks operation
+    // PatternLevelCritical - always blocks the operation
     PatternLevelCritical PatternLevel = iota
 
-    // PatternLevelWarning - Blocks in strict mode, logs warning in lenient mode
+    // PatternLevelWarning - blocks in strict mode, logs a warning in lenient mode
     PatternLevelWarning
 
-    // PatternLevelInfo - Only logs, never blocks
+    // PatternLevelInfo - logs only, never blocks
     PatternLevelInfo
 )
 ```
 
+**String method**: `func (pl PatternLevel) String() string` returns `"critical"` / `"warning"` / `"info"` (`"unknown"` for unrecognized values), convenient for logging.
+
 ### DangerousPattern
 
-Dangerous pattern struct for defining custom security rules.
+The dangerous-pattern struct, used to define custom security rules.
 
 ```go
 type DangerousPattern struct {
-    // Pattern is the substring to detect in input
+    // Pattern is the substring to detect in the input
     Pattern string
 
     // Name is a descriptive name for the pattern
     Name string
 
-    // Level determines the severity and how to handle this pattern
+    // Level is the severity level determining how the pattern is handled
     Level PatternLevel
 }
 ```
 
-**Usage Example**
+| Field     | Type           | Description                                                                  |
+| -------- | -------------- | ---------------------------------------------------------------------------- |
+| `Pattern` | `string`       | Substring to detect in the input                                             |
+| `Name`    | `string`       | Descriptive name of the security risk                                        |
+| `Level`   | `PatternLevel` | Severity level, deciding how a hit is handled (block / warn / log only)      |
+
+**Usage example**
 
 ```go
-// Create a custom dangerous pattern using struct literal
+// Create a custom dangerous pattern with a struct literal
 customPattern := json.DangerousPattern{
     Pattern: "eval(",
     Name:    "JavaScript eval call",
@@ -337,16 +365,16 @@ cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(customPattern)
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "internal_api",
-    Name:    "Internal API reference",
+    Name:    "internal API reference",
     Level:   json.PatternLevelWarning,
 })
 ```
 
-## Path Parser Interface
+## Path Parsing Interfaces
 
 ### PathParser
 
-Path parser interface.
+The path parser interface.
 
 ```go
 type PathParser interface {
@@ -355,7 +383,7 @@ type PathParser interface {
 }
 ```
 
-**Usage Example**
+**Usage example**
 
 ```go
 type CustomPathParser struct{}
@@ -366,32 +394,36 @@ func (p *CustomPathParser) ParsePath(path string) ([]json.PathSegment, error) {
 }
 ```
 
+::: warning Reserved status
+`CustomPathParser` is **not yet wired into the path-parsing pipeline** in the current version: after setting `Config.CustomPathParser`, path parsing still uses the built-in parser (the field currently only participates in the "is it set" check of the processor cache key; setting it means the configuration bypasses the processor cache). Like `CustomEncoder` and `CustomValidators`, it is reserved for future releases.
+:::
+
 ## Basic Types
 
 ### Number
 
-JSON number type for preserving number precision. Use when handling large numbers or needing exact decimals.
+The JSON number type, used to preserve numeric precision. Use it for very large numbers or when exact decimals matter.
 
 ```go
 type Number string
 ```
 
-::: tip Compatibility Note
+:::tip Compatibility note
 The library's `Number` type is 100% compatible with `encoding/json.Number` and can be used as a direct replacement.
 :::
 
 **Methods**:
 
 ```go
-func (n Number) String() string              // Returns the literal text of the number
+func (n Number) String() string              // Returns the literal number text
 func (n Number) Float64() (float64, error)   // Converts to float64
 func (n Number) Int64() (int64, error)       // Converts to int64
 ```
 
-**Usage Example**:
+**Usage example**:
 
 ```go
-// Get Number type (via Decoder.UseNumber to preserve full precision)
+// Get a Number (full precision preserved via Decoder.UseNumber)
 decoder := json.NewDecoder(strings.NewReader(data))
 decoder.UseNumber()
 
@@ -400,9 +432,9 @@ if err := decoder.Decode(&obj); err != nil {
     panic(err)
 }
 
-// Type assertion to get Number
+// Obtain the Number via a type assertion
 if num, ok := obj["large_number"].(json.Number); ok {
-    // Number preserves original precision
+    // Number preserves the original precision
     fmt.Println(num.String()) // "9007199254740993" (full precision)
 
     // Convert to other types
@@ -411,9 +443,9 @@ if num, ok := obj["large_number"].(json.Number); ok {
 }
 ```
 
-## Standard Library Compatible Interfaces
+## Standard Library Compatibility Interfaces
 
-The `json` package exports the following standard interfaces compatible with `encoding/json` for customizing encoding and decoding behavior of custom types.
+The `json` package exports the following `encoding/json`-compatible standard interfaces for customizing how custom types encode and decode: on the encoding side, `Marshaler` and `TextMarshaler` (in practice, see [Custom Encoders](../extensions/custom-encoder)); on the decoding side, `Unmarshaler` and `TextUnmarshaler`.
 
 ### Marshaler
 
@@ -423,6 +455,8 @@ type Marshaler interface {
 }
 ```
 
+A type implementing `MarshalJSON` fully takes over its own JSON representation when encoded; the return value must be valid JSON.
+
 ### Unmarshaler
 
 ```go
@@ -430,6 +464,8 @@ type Unmarshaler interface {
     UnmarshalJSON(data []byte) error
 }
 ```
+
+A type implementing `UnmarshalJSON` takes over its own parsing when decoded: the decoder hands it the corresponding JSON value verbatim, the type fills in its target itself, and any error returned by the method propagates upward unchanged. Usually implemented on a **pointer receiver** (decoding needs to mutate the receiver itself).
 
 ### TextMarshaler
 
@@ -439,6 +475,8 @@ type TextMarshaler interface {
 }
 ```
 
+A type implementing `MarshalText` is encoded as a JSON string whose value is the text content (quoting and escaping applied automatically).
+
 ### TextUnmarshaler
 
 ```go
@@ -447,19 +485,21 @@ type TextUnmarshaler interface {
 }
 ```
 
-**Usage Example**
+A type implementing `UnmarshalText` parses itself from the **content** of the JSON string (the text with quotes and escapes removed) — a good fit for types fully expressible as text (custom times, IDs, etc.). If the same type also implements `Unmarshaler`, `UnmarshalJSON` wins.
+
+**Usage example**
 
 ```go
 type Person struct {
     Name string
 }
 
-// Implement Marshaler interface
+// Implement the Marshaler interface
 func (p Person) MarshalJSON() ([]byte, error) {
     return []byte(`{"name":"` + p.Name + `"}`), nil
 }
 
-// Implement Unmarshaler interface
+// Implement the Unmarshaler interface
 func (p *Person) UnmarshalJSON(data []byte) error {
     var v struct{ Name string `json:"name"` }
     if err := json.Unmarshal(data, &v); err != nil {
@@ -470,19 +510,19 @@ func (p *Person) UnmarshalJSON(data []byte) error {
 }
 ```
 
-`Encoder`, `Decoder`, `Token`, `Delim`, `Number` and other encoding/decoding types are detailed in [Type Definitions](./types#encoder-json-encoder).
+For `Encoder`, `Decoder`, `Token`, `Delim`, `Number`, and other codec types, see [Type Definitions](./types#encoder-json-encoder).
 
 ## Type Definitions
 
 ### Result[T]
 
-Type-safe operation result with generic result handling.
+A type-safe operation result providing generic result handling.
 
 ```go
 type Result[T any] struct {
     Value  T     // Result value
     Exists bool  // Whether the path exists
-    Error  error // Error information (if any)
+    Error  error // Error information, if any
 }
 ```
 
@@ -490,18 +530,18 @@ type Result[T any] struct {
 
 | Method | Signature | Description |
 |--------|-----------|-------------|
-| `Ok` | `func (r Result[T]) Ok() bool` | Whether result is valid (no error and exists) |
-| `Unwrap` | `func (r Result[T]) Unwrap() T` | Get value, returns zero value if invalid |
-| `UnwrapOr` | `func (r Result[T]) UnwrapOr(defaultValue T) T` | Get value or default value |
+| `Ok` | `func (r Result[T]) Ok() bool` | Whether the result is valid (no error and exists) |
+| `Unwrap` | `func (r Result[T]) Unwrap() T` | Gets the value; the zero value when invalid |
+| `UnwrapOr` | `func (r Result[T]) UnwrapOr(defaultValue T) T` | Gets the value or a default |
 
-**Usage Example**:
+**Usage example**:
 
 ```go
-// Use generic getter
+// Get a value generically
 name := json.GetTyped[string](data, "user.name")
 fmt.Println(name)
 
-// Get with default value
+// Get with a default value
 name = json.GetTyped[string](data, "user.name", "unknown")
 ```
 
@@ -509,7 +549,7 @@ name = json.GetTyped[string](data, "user.name", "unknown")
 
 ### AccessResult
 
-Dynamic type access result, returned by Processor.SafeGet.
+A dynamically typed access result, returned by Processor.SafeGet.
 
 ```go
 type AccessResult struct {
@@ -519,9 +559,9 @@ type AccessResult struct {
 }
 
 // Methods
-func (r AccessResult) Ok() bool                           // Whether exists
-func (r AccessResult) Unwrap() any                        // Get value
-func (r AccessResult) UnwrapOr(defaultValue any) any      // Get value or default
+func (r AccessResult) Ok() bool                           // Whether it exists
+func (r AccessResult) Unwrap() any                        // Gets the value
+func (r AccessResult) UnwrapOr(defaultValue any) any      // Gets the value or a default
 func (r AccessResult) AsString() (string, error)          // Strict conversion
 func (r AccessResult) AsStringConverted() (string, error) // Format conversion
 func (r AccessResult) AsInt() (int, error)                // Strict conversion
@@ -529,31 +569,31 @@ func (r AccessResult) AsFloat64() (float64, error)        // Strict conversion
 func (r AccessResult) AsBool() (bool, error)              // Strict conversion
 ```
 
-**Type Conversion Method Details**:
+**Conversion method notes**:
 
-| Method | Conversion Behavior | Description |
-|--------|---------------------|-------------|
-| `AsString()` | Strict | Only accepts string type, non-strings return an error |
-| `AsStringConverted()` | Format | Uses fmt.Sprintf to convert any value to string representation |
-| `AsInt()` | Strict | Does not convert bool to int, only accepts integers and parseable numbers |
-| `AsFloat64()` | Strict | Does not convert bool to float, only accepts floats and parseable numbers |
-| `AsBool()` | Strict | Only accepts bool and strings accepted by `strconv.ParseBool` ("1"/"t"/"T"/"TRUE"/"true"/"True", "0"/"f"/"F"/"FALSE"/"false"/"False") |
+| Method | Conversion | Description |
+|--------|------------|-------------|
+| `AsString()` | Strict | Accepts only the string type; non-strings return an error |
+| `AsStringConverted()` | Formatting | Turns any value into its string representation via fmt.Sprintf |
+| `AsInt()` | Strict | Does not convert bool to int; accepts only integers and parseable numbers |
+| `AsFloat64()` | Strict | Does not convert bool to float; accepts only floats and parseable numbers |
+| `AsBool()` | Strict | Accepts only bool and parseable strings (`strconv.ParseBool` rules: `1/t/true/True/TRUE`, `0/f/false/False/FALSE`) |
 
 ```go
 result := p.SafeGet(data, "user.age")
 
-// Strict conversion - returns error if value is not an integer
+// Strict conversion - errors if the value is not an integer
 age, err := result.AsInt()
 
-// Format conversion - converts any value to string
-str, err := result.AsStringConverted() // e.g., 30 -> "30"
+// Format conversion - turns any value into a string
+str, err := result.AsStringConverted() // e.g. 30 -> "30"
 ```
 
-## Schema Type
+## Schema Types
 
 ### Schema
 
-JSON Schema defined as a struct, supporting type-safe schema definitions.
+The JSON Schema defined as a struct, supporting type-safe schema definitions.
 
 ```go
 type Schema struct {
@@ -583,7 +623,7 @@ type Schema struct {
 }
 ```
 
-**Usage Example**:
+**Usage example**:
 
 ```go
 schema := &json.Schema{
@@ -598,7 +638,7 @@ schema := &json.Schema{
 
 ### SchemaConfig
 
-Schema validation configuration. Used to create Schema instances via `NewSchemaWithConfig`.
+The schema validation configuration. Used to create Schema instances via `NewSchemaWithConfig`.
 
 ```go
 type SchemaConfig struct {
@@ -628,7 +668,7 @@ type SchemaConfig struct {
 }
 ```
 
-**Usage Example**:
+**Usage example**:
 
 ```go
 cfg := json.DefaultSchemaConfig()
@@ -641,7 +681,7 @@ schema := json.NewSchemaWithConfig(cfg)
 
 ### ValidationError
 
-Schema validation error.
+A schema validation error.
 
 ```go
 type ValidationError struct {
@@ -655,5 +695,5 @@ func (ve *ValidationError) Error() string
 ## See Also
 
 - [Hook System](../extensions/hooks) - Detailed hook usage guide
-- [Validator](../extensions/validator) - Detailed validator usage guide
+- [Schema Validation](./schema) - Detailed schema validation guide
 - [CustomEncoder](../extensions/custom-encoder) - Custom encoder guide

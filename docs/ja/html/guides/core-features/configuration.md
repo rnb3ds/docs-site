@@ -25,7 +25,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -156,7 +155,7 @@ cfg.PreserveAudios = false
 
 | フィールド | 説明 |
 |------|------|
-| `Scorer` | カスタムコンテンツスコアラー、nil の場合は DefaultScorer を使用 |
+| `Scorer` | カスタムコンテンツスコアラー。nil の場合は組み込みのデフォルトスコアラー（内部実装）を使用 |
 
 カスタム Scorer で特定のウェブサイト向けに記事認識を最適化できます。詳細は [テストとカスタム拡張](../integration/testing-custom) を参照してください。
 

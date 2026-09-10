@@ -1,7 +1,7 @@
 ---
 sidebar_label: "프로덕션 체크리스트"
 title: "프로덕션 체크리스트 - CyberGo html | 런칭 보안 점검"
-description: "CyberGo html 프로덕션 배포 보안 체크리스트: HighSecurityConfig 프리셋, Processor 생명주기 관리, 감사 모니터링, 컨텍스트 타임아웃, 오류 처리, 정제 활성화 등 P0·P1·P2 우선순위 안전 항목을 다룹니다."
+description: "CyberGo html 프로덕션 배포 보안 체크리스트: HighSecurityConfig 프리셋, Processor 생명주기 관리와 자원 해제, 감사 모니터링, 컨텍스트 타임아웃, 오류 처리, 정제 활성화 등 P0·P1·P2 우선순위 안전 항목을 다룹니다."
 sidebar_position: 3
 ---
 
@@ -174,7 +174,7 @@ case errors.Is(err, html.ErrFileNotFound),
 **이유**:
 
 - `AllowedBaseDir`은 파일 읽기의 샌드박스입니다. **OS 파일 핸들로 실제 경로를 해석**하여, `filepath.EvalSymlinks`가 처리할 수 없는 Windows junction/reparse points 와 크로스 플랫폼 symlink 탈출을 차단합니다. 비워 두면 = `..` 순회 감지만 유지하고 샌드박스는 활성화하지 않음 — 경로가 사용자 입력에서 온다면 반드시 명시적으로 설정해야 합니다.
-- 라이브러리 내부는 이미 `ReadAll`로 메모리에 적재하기 전에 `Stat`으로 파일 크기를 사전 점검하고 한도 초과 파일을 거부하여, 「모두 읽은 후 한도 초과 발견」의 메모리 피크 윈도우를 닫았습니다. 외부 비즈니스에서 크기 사전 점검을 한 번 더 하는 것은 심층 방어에 해당합니다.
+- 라이브러리 내부는 이미 `io.ReadAll`로 메모리에 적재하기 전에 `os.Stat`으로 파일 크기를 사전 점검하고 한도 초과 파일을 거부하여, 「모두 읽은 후 한도 초과 발견」의 메모리 피크 윈도우를 닫았습니다. 외부 비즈니스에서 크기 사전 점검을 한 번 더 하는 것은 심층 방어에 해당합니다.
 
 ## 배포 전 자체 점검 스크립트
 

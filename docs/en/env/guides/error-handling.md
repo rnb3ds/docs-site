@@ -1,9 +1,9 @@
 ---
 sidebar_label: "Error Handling"
 title: "Error Handling - CyberGo env | Sentinel Errors and Recovery"
-description: "Error handling guide for CyberGo env, covering errors.Is exact matching for 16 sentinel errors, errors.As context extraction for structured errors like ParseError/FileError/SecurityError, recovery and degradation strategies, error chain Unwrap tracing, and production error classification practices."
+description: "Error handling guide for CyberGo env: errors.Is for 16 sentinel errors, errors.As for structured context, Unwrap tracing, and recovery strategies."
 sidebar_position: 5
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # Error Handling
@@ -570,6 +570,46 @@ func handleValidationError(err error) {
     log.Fatalf("Validation failed: %v", err)
 }
 ```
+
+## Complete Error Type Reference
+
+All structured error types can be unwrapped with `errors.As` for context:
+
+| Type | Scenario | Key information |
+|------|----------|-----------------|
+| `ParseError` | File parsing failure | File, line, content (sanitized) |
+| `ValidationError` | Config/key/value validation failure | Field, rule, message |
+| `SecurityError` | Security policy violation (forbidden keys, path checks) | Violation details |
+| `FileError` | File operation failure | Path, operation, size/limit |
+| `ExpansionError` | Variable expansion failure | `Kind` (failure category) |
+| `JSONError` | JSON parsing failure | Position information |
+| `YAMLError` | YAML parsing failure | Position information |
+| `MarshalError` | Marshaling/unmarshaling failure | Operation and cause |
+
+### ExpansionErrorKind
+
+`ExpansionError` distinguishes two failure classes via its `Kind` field for precise handling:
+
+| Constant | Meaning |
+|----------|---------|
+| `ExpansionDepthKind` | Recursion depth exceeded or cycle detected |
+| `ExpansionRequiredKind` | Variable referenced by `${VAR:?message}` is unset |
+
+### Additional sentinel errors
+
+Beyond the common items listed in the [sentinel errors](#sentinel-errors) section:
+
+| Sentinel | Meaning |
+|----------|---------|
+| `ErrClosed` | Operating on a closed (or nil) Loader |
+| `ErrInvalidConfig` | Invalid configuration; `New()` wraps the specific validation error |
+| `ErrNotInitialized` | Using write functions in global mode before calling `Load()` |
+| `ErrAlreadyInitialized` | Calling `Load()` again after the default loader is initialized |
+| `ErrDuplicateKey` | Reserved: duplicate keys are currently silently skipped when `OverwriteExisting=false`; no code path returns it yet |
+
+### Helper predicates
+
+`IsMarshalError(err)` uses `errors.As` to test whether an error is a `*MarshalError` — no manual assertion needed.
 
 ## Related Documentation
 

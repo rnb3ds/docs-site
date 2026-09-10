@@ -1,7 +1,7 @@
 ---
 sidebar_label: "테스트"
 title: "테스트 - CyberGo env | 단위 테스트 모범 사례"
-description: "CyberGo env 테스트 모범 사례 가이드로, TestingConfig 구성과 OverwriteExisting 테스트 격리, FileSystem 인터페이스 모의 메모리 파일 시스템, 각 테스트 독립 로더, 테이블 기반 및 벤치마크 테스트, ResetDefaultLoader 상태 정리 전략을 포함하여 테스트 안정성과 재현성을 보장합니다."
+description: "CyberGo env 테스트 모범 사례 가이드로, TestingConfig와 OverwriteExisting 테스트 격리, FileSystem 모의 파일 시스템, 독립 로더, ResetDefaultLoader 상태 정리로 테스트 안정성과 재현성을 보장합니다."
 sidebar_position: 7
 sidebar_icon: "🧪"
 ---

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Production Checklist"
 title: "Production Checklist - CyberGo html | Launch Safety Review"
-description: "CyberGo html production checklist: HighSecurityConfig preset, Processor lifecycle, audit monitoring, context timeouts, error handling and resource management."
+description: "CyberGo html production checklist by P0/P1/P2 priority: HighSecurityConfig, Processor lifecycle, auditing, context timeouts, error handling, resource release."
 sidebar_position: 3
 ---
 
@@ -174,7 +174,7 @@ case errors.Is(err, html.ErrFileNotFound),
 **Why**:
 
 - `AllowedBaseDir` is the sandbox for file reads. It resolves real paths through an **OS file handle**, so it can intercept Windows junction/reparse points and cross-platform symlink escapes that `filepath.EvalSymlinks` cannot handle. Leaving it empty means only `..` traversal detection is kept and the sandbox is not enabled — whenever the path comes from user input, you must set it explicitly.
-- The library already pre-checks the file size with `Stat` before `ReadAll` loads it into memory and rejects oversized files, closing the "read everything then find out it is over the limit" memory-peak window. An additional outer size check is defense in depth.
+- The library already pre-checks the file size with `os.Stat` before `io.ReadAll` loads it into memory and rejects oversized files, closing the "read everything then find out it is over the limit" memory-peak window. An additional outer size check is defense in depth.
 
 ## Pre-deployment Self-check Script
 

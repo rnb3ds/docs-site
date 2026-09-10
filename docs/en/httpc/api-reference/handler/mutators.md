@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Request & Response Mutators"
 title: "Request & Response Mutators - CyberGo HTTPC | Mutator API"
-description: "HTTPC middleware read/write contracts in detail: RequestMutator and ResponseMutator are the two public composite interfaces httpc exposes to middleware, providing all read and write methods for the request and response respectively, with compilable examples of rewriting request headers and reading response status codes via mutators."
+description: "HTTPC middleware contracts: all read/write methods of RequestMutator and ResponseMutator, WithOnRequest/WithOnResponse options, and compilable examples."
 sidebar_position: 2
 ---
 
@@ -29,15 +29,15 @@ The following methods read request data. Call them when middleware only needs to
 |------|----------|------|
 | `Method()` | `string` | HTTP method |
 | `URL()` | `string` | Request URL |
-| `Headers()` | `map[string]string` | All request headers (key -> single value) |
+| `Headers()` | `map[string]string` | All request headers (key → single value) |
 | `QueryParams()` | `map[string]any` | Query parameters |
 | `Body()` | `any` | Request body |
 | `Timeout()` | `time.Duration` | Request timeout |
 | `MaxRetries()` | `int` | Max retry count |
 | `Context()` | `context.Context` | Request context |
 | `Cookies()` | `[]http.Cookie` | Request cookies |
-| `FollowRedirects()` | `*bool` | Whether to follow redirects (nil = use default) |
-| `MaxRedirects()` | `*int` | Max redirect count (nil = use default) |
+| `FollowRedirects()` | `*bool` | Whether to follow redirects (nil means use the default) |
+| `MaxRedirects()` | `*int` | Max redirect count (nil means use the default) |
 | `StreamBody()` | `bool` | Whether to stream the request body |
 
 ### Write methods
@@ -69,8 +69,8 @@ The following methods modify request data. Call them when middleware only needs 
 | Scenario | Method combination | Description |
 |----------|----------|------|
 | Modify request headers | `SetHeader(key, val)` / `Headers()` + `SetHeader` | Inject auth headers, trace IDs, API version |
-| Modify query parameters | `QueryParams()` -> add/remove -> `SetQueryParams` | Append common query parameters |
-| Modify request body | `Body()` -> transform -> `SetBody` | Request-body compression, signature injection |
+| Modify query parameters | `QueryParams()` → add/remove → `SetQueryParams` | Append common query parameters |
+| Modify request body | `Body()` → transform → `SetBody` | Request-body compression, signature injection |
 | Set timeout | `SetTimeout(d)` | Dynamically adjust timeout per request path |
 | Set context | `SetContext(ctx)` | Middleware-level timeout (how `TimeoutMiddleware` works) |
 
@@ -165,6 +165,72 @@ These engine-specific methods include:
 
 The vast majority of middleware **does not** need type assertion — the `RequestMutator`/`ResponseMutator` interfaces already cover all common read/write operations. You only need to assert to the concrete type when you need callbacks or SSRF overrides.
 
+## Request-Option Callbacks: WithOnRequest / WithOnResponse
+
+Besides middleware, there is a pair of request options directly tied to the mutators: `WithOnRequest` fires a callback before the request is sent, with the `RequestMutator` as its parameter; `WithOnResponse` fires after the response is received, with the `ResponseMutator` as its parameter. You can get hold of the mutators for inspection or lightweight rewriting without writing any middleware.
+
+<!-- check-code: skip -->
+```go
+func WithOnRequest(callback func(req RequestMutator) error) RequestOption
+func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
+```
+
+| Option | Callback timing | Callback parameter | Error behavior |
+|------|---------|---------|---------|
+| `WithOnRequest` | Before the request is sent | `RequestMutator` | Any callback returning an error aborts the request |
+| `WithOnResponse` | After the response is received | `ResponseMutator` | Any callback returning an error fails the request with that error |
+
+Multiple callbacks can be registered in a chain and execute in order of addition; passing a nil callback returns an error when the option is applied (`"onRequest callback cannot be nil"` / `"onResponse callback cannot be nil"`).
+
+:::tip Callbacks vs middleware
+Callbacks have no `next`: they cannot short-circuit the request, nor wrap it at the response stage — they only suit "inspect + lightweight rewrite". When you need to control execution order, short-circuit, or wrap the response, write a middleware instead (see [Handler & Middleware Chain](./handler-chain)).
+:::
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	client, err := httpc.NewDefault()
+	if err != nil {
+		log.Fatalf("failed to create client: %v", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	result, err := client.Get("https://httpbin.org/get",
+		// Before the request is sent: inspect the request and inject
+		// a header via RequestMutator
+		httpc.WithOnRequest(func(req httpc.RequestMutator) error {
+			fmt.Printf("Sending %s %s\n", req.Method(), req.URL())
+			req.SetHeader("X-Trace-ID", "trace-42")
+			return nil
+		}),
+		// After the response is received: read the status via
+		// ResponseMutator
+		httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
+			fmt.Printf("Received status code %d\n", resp.StatusCode())
+			return nil
+		}),
+	)
+	if err != nil {
+		log.Fatalf("request failed: %v", err)
+	}
+	fmt.Println("success:", result.IsSuccess())
+	// Sample output:
+	// Sending GET https://httpbin.org/get
+	// Received status code 200
+	// success: true
+}
+```
+
+For the item-by-item reference of all request options, see [Request Options](../core/options).
+
 ## SanitizedURL Cache
 
 Multiple middlewares may all need to log the sanitized URL (a URL with credentials removed). To avoid recomputing it, HTTPC caches the sanitized result on the request object so it is shared across middlewares for the same request.
@@ -173,8 +239,8 @@ Multiple middlewares may all need to log the sanitized URL (a URL with credentia
 getOrComputeSanitizedURL(req):
   ① Does req implement the sanitizedURLer interface (SanitizedURL/SetSanitizedURL)?
      - *engine.Request implements this interface
-  ② Cached? -> return the cached value directly
-  ③ Not cached? -> compute SanitizeURL(req.URL()), cache it, return it
+  ② Cached? → return the cached value directly
+  ③ Not cached? → compute SanitizeURL(req.URL()), cache it, return it
 ```
 
 The built-in `LoggingMiddleware`, `MetricsMiddleware`, and `AuditMiddleware` all use `getOrComputeSanitizedURL` to share the sanitized result, so URL sanitization is **computed only once** across the entire chain. Custom middleware that logs URLs should use this mechanism too, rather than calling `req.URL()` directly (which may contain credentials).
@@ -243,7 +309,7 @@ func main() {
 
 ## Practical Example: Request/Response Logging Middleware
 
-A complete logging middleware that demonstrates the read/write capabilities of both `RequestMutator` and `ResponseMutator` — reading the request method/URL and response status code/duration/retry info via mutators and formatting the output uniformly.
+A complete logging middleware that demonstrates the read/write capabilities of both `RequestMutator` and `ResponseMutator` — reading the request method/URL and the response status code/duration/retry info via mutators and formatting the output uniformly.
 
 ```go
 package main
@@ -257,7 +323,8 @@ import (
 	"github.com/cybergodev/httpc"
 )
 
-// loggingMiddleware reads full request and response info via mutators and formats the output
+// loggingMiddleware reads full request and response info via mutators
+// and formats the output
 func loggingMiddleware() httpc.MiddlewareFunc {
 	return func(next httpc.Handler) httpc.Handler {
 		return func(ctx context.Context, req httpc.RequestMutator) (httpc.ResponseMutator, error) {
@@ -276,7 +343,8 @@ func loggingMiddleware() httpc.MiddlewareFunc {
 				return nil, err
 			}
 
-			// Response phase: read status code, duration, retry count, redirect chain
+			// Response phase: read status code, duration, retry
+			// count, redirect chain
 			log.Printf("[RESP] %s %s -> %d (%v, attempts=%d, redirects=%d)",
 				req.Method(),
 				req.URL(),
@@ -317,4 +385,5 @@ func main() {
 
 - [Handler & Middleware Chain](./handler-chain) — overview of the two-layer architecture and the onion model
 - [Built-in Middleware](../client-config/middleware) — HeaderMiddleware and others are ready-made examples that work via mutators
+- [Request Options](../core/options) — WithOnRequest/WithOnResponse and all the other WithXxx options
 - [Interfaces](../types/interfaces) — type alias definitions for the mutators

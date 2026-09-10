@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Output Formats"
 title: "Output Formats - CyberGo html | Markdown & JSON Output"
-description: "CyberGo html output format API: ExtractToMarkdown and ExtractToJSON package functions and Processor methods for converting bytes or files to Markdown/JSON."
+description: "CyberGo html output API: ExtractToMarkdown and ExtractToJSON functions and Processor methods, from bytes or files, with temporary Processor cache isolation."
 sidebar_position: 1
 ---
 

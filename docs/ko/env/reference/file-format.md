@@ -1,7 +1,7 @@
 ---
 sidebar_label: "파일 형식"
 title: "파일 형식 - CyberGo env | .env/JSON/YAML 구문"
-description: "CyberGo env 구성 파일 형식 레퍼런스로, .env, JSON, YAML 세 가지 형식의 구문 규칙, 인용부호와 export 접두사, 변수 확장 ${VAR}, 여러 줄 문자열, 중첩 객체와 배열 평탄화, UTF-8 인코딩 및 DetectFormat 자동 감지 메커니즘을 상세히 설명합니다."
+description: "CyberGo env 구성 파일 형식 레퍼런스로, .env, JSON, YAML 구문 규칙, 인용부호와 export 접두사, 변수 확장 ${VAR}, 여러 줄 문자열, 중첩 객체 평탄화, UTF-8 인코딩 및 DetectFormat 자동 감지를 설명합니다."
 sidebar_position: 1
 ---
 

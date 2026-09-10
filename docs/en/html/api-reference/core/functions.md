@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Package Functions"
 title: "Package Functions - CyberGo html | Usage & Examples"
-description: "CyberGo html package-level convenience functions: Extract, ExtractText, ExtractToMarkdown and more, reusing Processor via sync.Pool for one-off calls."
+description: "CyberGo html package-level functions: Extract, ExtractText, ExtractToMarkdown, ExtractToJSON, ExtractBatch; sync.Pool reuse, cache disabled, one-off calls."
 sidebar_position: 1
 ---
 
@@ -33,6 +33,18 @@ The `cfg ...Config` of all package functions is an optional variadic parameter, 
 :::warning
 When a custom `Config` is passed, the call does **not** go through `sync.Pool` — the pool only stores Processors based on `DefaultConfig()` and cannot safely reuse instances with different configs. In this case each call `New`s a temporary Processor and `Close`s it when done. If you need to reuse a custom config across high-frequency calls, create a [Processor](./processor) directly.
 :::
+
+## Constructors
+
+### New
+
+Creates a dedicated `Processor` instance — the sole entry point for caching, statistics, and audit capabilities.
+
+```go
+func New(cfg ...Config) (*Processor, error)
+```
+
+`cfg ...Config` follows the same resolution rules as the table above (omitted uses `DefaultConfig()`; two or more return `ErrMultipleConfigs`), followed by `Config.Validate()`. Unlike the pooled/temporary instances of package functions, the instance returned by `New` **holds a long-lived cache and cumulative statistics**. For the full method list and lifecycle see [Processor](./processor).
 
 ## Content Extraction
 
@@ -169,6 +181,14 @@ For detailed usage and examples see [Output Formats](../modules/output).
 | `ExtractAllLinksFromFile` | `(filePath string, cfg ...Config) ([]LinkResource, error)` | Extract links from a file |
 | `ExtractAllLinksWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | With context |
 | `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | File + context |
+
+Companion grouping helper:
+
+```go
+func GroupLinksByType(links []LinkResource) map[string][]LinkResource
+```
+
+Groups link resources into a `map[string][]LinkResource` keyed by the `LinkResource.Type` field (`link`/`image`/`css`, etc.).
 
 For detailed usage and examples see [Link Extraction](../modules/links).
 

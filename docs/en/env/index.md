@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Overview"
-title: "Environment Variables - CyberGo env | Secure Config Management"
-description: "CyberGo env is a high-security Go environment variable management library with .env, JSON, YAML multi-format auto-detection, type-safe conversion, SecureValue memory locking with auto-zeroing, sharded-lock thread safety, ${VAR} variable expansion, env-tag struct mapping, and full audit logging for microservices and cloud-native configuration."
+title: "Environment Variables - CyberGo env | Secure Config Library"
+description: "CyberGo env: high-security Go library for .env, JSON, and YAML management with SecureValue memory locking, variable expansion, and audit logging."
 ---
 
 # env

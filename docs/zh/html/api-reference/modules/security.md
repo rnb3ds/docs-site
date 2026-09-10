@@ -145,8 +145,20 @@ defer p.Close()
 | `ErrInvalidFilePath` | 文件路径校验失败（含路径遍历） |
 | `ErrInternalPanic` | 内部 panic 被恢复 |
 
+### 结构化错误类型
+
+上述哨兵错误实际以三个结构化错误类型包裹返回，携带定位所需的上下文字段：
+
+| 类型 | 字段 | 方法 | `Unwrap()` 目标 |
+|------|------|------|-----------------|
+| `*InputError` | `Op` / `Size` / `MaxSize` / `InputErr` | `Error` | `InputErr`（非 nil 时），否则 `ErrInputTooLarge` |
+| `*ConfigError` | `Field` / `Value` / `Message` | `Error` | `ErrInvalidConfig` |
+| `*FileError` | `Op` / `Path` / `FileErr` | `Error` / `SafePath` / `MarshalJSON` | `ErrFileNotFound` / 原始错误 / `ErrInvalidFilePath` |
+
+配合使用 `errors.Is(err, html.ErrXxx)` 判定哨兵类别，`errors.As(err, &typedErr)` 取回结构化上下文（如 `InputError.Size`/`MaxSize`、`ConfigError.Field`）。
+
 :::info
-完整的错误类型定义（`InputError`、`ConfigError`、`FileError`）和 `errors.Is`/`errors.As` 用法详见 [常量与错误](../types/constants)。
+三个错误类型的完整定义与 `errors.Is`/`errors.As` 错误处理模式详见 [常量与错误](../types/constants)。
 :::
 
 ## 恐慌恢复

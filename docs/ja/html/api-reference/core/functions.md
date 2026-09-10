@@ -1,7 +1,7 @@
 ---
 sidebar_label: "パッケージ関数"
 title: "パッケージ関数 - CyberGo html | 使い方・パラメータ・サンプル"
-description: "CyberGo html パッケージ関数リファレンス：Extract、ExtractText、ExtractToMarkdown、ExtractToJSON などの API 一覧。内部で sync.Pool により Processor を再利用し、単発呼び出しに適した使い方やパラメータ、設定解釈を解説します。"
+description: "CyberGo html パッケージ関数リファレンス：Extract、ExtractText、ExtractToMarkdown、ExtractToJSON、ExtractBatch などのシグネチャを詳解。sync.Pool で Processor を再利用しキャッシュを無効化し、単発呼び出し向きです。"
 sidebar_position: 1
 ---
 
@@ -33,6 +33,18 @@ sidebar_position: 1
 :::warning 重要な違い
 カスタム `Config` を渡した場合**`sync.Pool` を経由しません**——プールには `DefaultConfig()` ベースの Processor しか格納されず、設定の異なるインスタンスを安全に再利用できないためです。この場合は毎回 `New` で一時 Processor を作成し、使い終わったら `Close` します。高頻度呼び出しでカスタム設定を再利用したい場合は、直接 [Processor](./processor) を作成してください。
 :::
+
+## コンストラクタ
+
+### New
+
+独立した `Processor` インスタンスを作成します。キャッシュ、統計、監査の機能への唯一の入口です。
+
+```go
+func New(cfg ...Config) (*Processor, error)
+```
+
+`cfg ...Config` は同じく上表の解釈ルールに従い（省略時は `DefaultConfig()`、2 つ以上で `ErrMultipleConfigs` を返す）、その後 `Config.Validate()` を実行します。パッケージ関数のプール/一時インスタンスとは異なり、`New` が返すインスタンスは**キャッシュと累積統計を長期にわたり保持します**。完全なメソッド一覧とライフサイクルは [Processor](./processor) を参照してください。
 
 ## コンテンツ抽出
 
@@ -169,6 +181,14 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractAllLinksFromFile` | `(filePath string, cfg ...Config) ([]LinkResource, error)` | ファイルからリンクを抽出 |
 | `ExtractAllLinksWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | コンテキスト付き |
 | `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | ファイル + コンテキスト |
+
+関連するグループ化ユーティリティ関数：
+
+```go
+func GroupLinksByType(links []LinkResource) map[string][]LinkResource
+```
+
+`LinkResource.Type` フィールド（`link`/`image`/`css` など）の値ごとにリンクリソースを `map[型][]LinkResource` へグループ化します。
 
 詳細な使い方と例は [リンク抽出](../modules/links) を参照してください。
 

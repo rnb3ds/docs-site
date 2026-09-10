@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Система аудита на практике"
 title: "Система аудита - CyberGo html | конвейер аудита"
-description: "Система аудита CyberGo html на практике: от включения до многоуровневого конвейера — события, Sink, фильтры уровней и мониторинг."
+description: "Аудит CyberGo html на практике: от включения до многоуровневого конвейера — 8 типов событий, Sink Stderr/File/Channel, фильтрация Info/Warn/Error."
 sidebar_position: 2
 ---
 

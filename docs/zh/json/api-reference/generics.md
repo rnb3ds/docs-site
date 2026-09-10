@@ -1,7 +1,7 @@
 ---
 sidebar_label: "泛型操作"
 title: "泛型操作 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 泛型 API：GetTyped[T] 泛型获取、Result[T] 结果类型、AccessResult 动态访问，利用 Go 1.18+ 泛型实现编译时类型安全检查。"
+description: "CyberGo JSON 泛型 API：GetTyped[T] 泛型获取、Result[T] 结果类型、AccessResult 动态访问，利用 Go 1.18+ 泛型实现编译时类型安全检查，支持基本类型与自定义结构体、默认值回退及单元素数组自动解包。"
 sidebar_position: 10
 ---
 
@@ -36,33 +36,37 @@ json 库提供泛型类型安全操作，使用 Go 1.18+ 泛型特性实现编�
 - 映射类型：`map[string]any`
 - 自定义结构体
 
+::: tip 单元素数组自动解包
+目标类型为非切片时，若取到的值是**恰好一个元素的数组**，会自动解包取其元素再转换（服务于分布式路径访问，如 `choices.message.content` 场景）。目标为切片类型时不解包。
+:::
+
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{"user": {"name": "Alice", "age": 30}}`
+	data := `{"user": {"name": "Alice", "age": 30}}`
 
-    // 获取字符串
-    name := json.GetTyped[string](data, "user.name")
-    fmt.Println(name) // 输出：Alice
+	// 获取字符串
+	name := json.GetTyped[string](data, "user.name")
+	fmt.Println(name) // 输出：Alice
 
-    // 获取整数
-    age := json.GetTyped[int](data, "user.age")
-    fmt.Println(age) // 输出：30
+	// 获取整数
+	age := json.GetTyped[int](data, "user.age")
+	fmt.Println(age) // 输出：30
 
-    // 获取数组
-    arrData := `{"items": [1, 2, 3]}`
-    items := json.GetTyped[[]any](arrData, "items")
-    fmt.Println(items) // 输出：[1 2 3]
+	// 获取数组
+	arrData := `{"items": [1, 2, 3]}`
+	items := json.GetTyped[[]any](arrData, "items")
+	fmt.Println(items) // 输出：[1 2 3]
 
-    // 使用默认值
-    email := json.GetTyped[string](data, "user.email", "unknown@example.com")
-    fmt.Println(email) // 输出：unknown@example.com
+	// 使用默认值
+	email := json.GetTyped[string](data, "user.email", "unknown@example.com")
+	fmt.Println(email) // 输出：unknown@example.com
 }
 ```
 
@@ -202,34 +206,42 @@ idStr, err := result.AsStringConverted()
 | 第一个 | `[]T` | 成功解析的所有结果 |
 | 第二个 | `error` | 错误信息 |
 
+**行为细节**（均由 JSONL 相关 Config 字段控制，见 [Config](./config#config-结构体)）：
+
+- 空行默认跳过（`JSONLSkipEmpty: true`）；`JSONLSkipComments: true` 时跳过 `#`/`//` 开头的行
+- 某行解析失败：默认返回 `line N: <原因>` 错误且结果为 nil；`JSONLContinueOnErr: true` 时跳过该行继续
+- 回调返回错误：立即停止并返回该错误（结果为 nil）；回调 panic 被捕获转为错误，不会击穿进程
+- 读取缓冲与单行上限由 `JSONLBufferSize`（64KB）与 `JSONLMaxLineSize`（1MB）控制
+- 无 cfg 时走全局默认处理器（受 `SetGlobalProcessor` 影响）；传 cfg 时按该配置选取处理器
+
 ```go
 package main
 
 import (
-    "fmt"
-    "strings"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"strings"
 )
 
 func main() {
-    jsonl := `{"name":"Alice","age":30}
+	jsonl := `{"name":"Alice","age":30}
 {"name":"Bob","age":25}
 {"name":"Charlie","age":35}`
 
-    type Person struct {
-        Name string `json:"name"`
-        Age  int    `json:"age"`
-    }
+	type Person struct {
+		Name string `json:"name"`
+		Age  int    `json:"age"`
+	}
 
-    reader := strings.NewReader(jsonl)
-    results, err := json.StreamLinesInto[Person](reader, func(lineNum int, data Person) error {
-        fmt.Printf("第 %d 行: %s, %d 岁\n", lineNum, data.Name, data.Age)
-        return nil
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("共处理 %d 条记录\n", len(results))
+	reader := strings.NewReader(jsonl)
+	results, err := json.StreamLinesInto[Person](reader, func(lineNum int, data Person) error {
+		fmt.Printf("第 %d 行: %s, %d 岁\n", lineNum, data.Name, data.Age)
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("共处理 %d 条记录\n", len(results))
 }
 ```
 
@@ -243,19 +255,19 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 type DatabaseConfig struct {
-    Host     string `json:"host"`
-    Port     int    `json:"port"`
-    Database string `json:"database"`
-    SSL      bool   `json:"ssl"`
+	Host     string `json:"host"`
+	Port     int    `json:"port"`
+	Database string `json:"database"`
+	SSL      bool   `json:"ssl"`
 }
 
 func main() {
-    config := `{
+	config := `{
         "database": {
             "host": "localhost",
             "port": 5432,
@@ -264,10 +276,10 @@ func main() {
         }
     }`
 
-    // 解析配置到结构体
-    dbConfig := json.GetTyped[DatabaseConfig](config, "database")
+	// 解析配置到结构体
+	dbConfig := json.GetTyped[DatabaseConfig](config, "database")
 
-    fmt.Printf("Host: %s:%d\n", dbConfig.Host, dbConfig.Port)
+	fmt.Printf("Host: %s:%d\n", dbConfig.Host, dbConfig.Port)
 }
 ```
 
@@ -277,12 +289,12 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{
+	data := `{
         "name": "Alice",
         "age": 30,
         "active": true,
@@ -290,18 +302,18 @@ func main() {
         "tags": ["admin", "user"]
     }`
 
-    // 不同类型的泛型获取
-    name := json.GetTyped[string](data, "name")
-    age := json.GetTyped[int](data, "age")
-    active := json.GetTyped[bool](data, "active")
-    score := json.GetTyped[float64](data, "score")
-    tags := json.GetTyped[[]any](data, "tags")
+	// 不同类型的泛型获取
+	name := json.GetTyped[string](data, "name")
+	age := json.GetTyped[int](data, "age")
+	active := json.GetTyped[bool](data, "active")
+	score := json.GetTyped[float64](data, "score")
+	tags := json.GetTyped[[]any](data, "tags")
 
-    fmt.Printf("Name: %s\n", name)
-    fmt.Printf("Age: %d\n", age)
-    fmt.Printf("Active: %v\n", active)
-    fmt.Printf("Score: %.1f\n", score)
-    fmt.Printf("Tags: %v\n", tags)
+	fmt.Printf("Name: %s\n", name)
+	fmt.Printf("Age: %d\n", age)
+	fmt.Printf("Active: %v\n", active)
+	fmt.Printf("Score: %.1f\n", score)
+	fmt.Printf("Tags: %v\n", tags)
 }
 ```
 
@@ -311,23 +323,23 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    config := `{"timeout": 30}`
+	config := `{"timeout": 30}`
 
-    timeout := json.GetTyped[int](config, "timeout")
-    fmt.Printf("Timeout: %d\n", timeout) // 输出：30
+	timeout := json.GetTyped[int](config, "timeout")
+	fmt.Printf("Timeout: %d\n", timeout) // 输出：30
 
-    // 路径不存在，返回零值
-    retries := json.GetTyped[int](config, "retries")
-    fmt.Printf("Retries: %d\n", retries) // 输出：0（零值）
+	// 路径不存在，返回零值
+	retries := json.GetTyped[int](config, "retries")
+	fmt.Printf("Retries: %d\n", retries) // 输出：0（零值）
 
-    // 路径不存在，使用默认值
-    retries = json.GetTyped[int](config, "retries", 3)
-    fmt.Printf("Retries: %d\n", retries) // 输出：3（默认值）
+	// 路径不存在，使用默认值
+	retries = json.GetTyped[int](config, "retries", 3)
+	fmt.Printf("Retries: %d\n", retries) // 输出：3（默认值）
 }
 ```
 
@@ -335,13 +347,18 @@ func main() {
 
 ## 性能说明
 
-泛型操作在运行时使用反射进行类型转换，比类型特定的 getter（如 `GetString`、`GetInt`）略慢。对于性能敏感的场景，建议使用类型特定的函数。
+`GetTyped[T]` 的转换分两级：**基本类型**（string/int/float64/bool 及其切片映射）走内部快速路径直接转换；**自定义结构体等复杂类型**回退到「重新 Marshal → Unmarshal」的通用路径，因此比类型特定的 getter（`GetString`、`GetInt` 等）略慢。
 
 | 方法 | 性能 | 推荐场景 |
 |------|------|----------|
-| `GetString`, `GetInt` 等 | 最快 | 性能敏感、类型已知 |
-| `GetTyped[T]` | 中等 | 需要自定义类型 |
+| `GetString`, `GetInt` 等 | 最快（基本类型专用） | 性能敏感、类型已知 |
+| `GetTyped[T]`（基本类型） | 快（快速转换路径） | 泛型代码中的基本类型读取 |
+| `GetTyped[T]`（结构体） | 中等（经 re-marshal 转换） | 配置解析、一次性读取 |
 | `SafeGet` + `AccessResult` | 中等 | 动态类型处理 |
+
+::: tip
+热路径上反复读取同一结构体时，更快的做法是 `Parse`/`Unmarshal` 一次到结构体，或 `GetTyped` 一次后复用结果，而不是每条路径各调一次 `GetTyped[Struct]`。
+:::
 
 ---
 
@@ -369,28 +386,42 @@ type Result[T any] struct {
 
 ### 使用示例
 
+`Result[T]` 没有「库函数直接返回」的入口——它供你**手动构造**，常用于封装自己的查询函数，把「值 + 是否存在 + 错误」作为一个明确的返回值传给调用方：
+
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"errors"
+	"fmt"
+
+	"github.com/cybergodev/json"
 )
 
+// 用 Result[T] 封装一个带明确错误的配置读取函数
+func readConfig(data, path string) json.Result[string] {
+	val, err := json.Get(data, path)
+	if err != nil {
+		return json.Result[string]{Error: err}
+	}
+	s, ok := val.(string)
+	if !ok {
+		return json.Result[string]{Error: fmt.Errorf("%s: %w", path, json.ErrTypeMismatch)}
+	}
+	return json.Result[string]{Value: s, Exists: true}
+}
+
 func main() {
-    data := `{"user": {"name": "Alice", "age": 30}}`
+	data := `{"env": "production"}`
 
-    // GetTyped 返回 T
-    name := json.GetTyped[string](data, "user.name")
-    fmt.Println("名称：", name)
+	r := readConfig(data, "env")
+	if r.Ok() {
+		fmt.Println("环境:", r.Unwrap()) // 输出：环境: production
+	}
 
-    // 不存在的路径返回零值
-    email := json.GetTyped[string](data, "user.email")
-    fmt.Println("邮箱：", email) // 输出：""（零值）
-
-    // 使用默认值
-    email = json.GetTyped[string](data, "user.email", "none@example.com")
-    fmt.Println("邮箱：", email) // 输出：none@example.com
+	missing := readConfig(data, "region")
+	fmt.Println(missing.Exists, errors.Is(missing.Error, nil)) // 输出：false true
+	fmt.Println(missing.UnwrapOr("cn-north-1"))                // 输出：cn-north-1
 }
 ```
 
@@ -404,15 +435,15 @@ func main() {
 | 存在判断 | `Exists bool` | `Exists bool` |
 | 错误处理 | 内置 Error 字段 | 类型转换方法返回 error |
 | 链式调用 | 不支持 | 支持链式类型转换 |
-| 获取方式 | `GetTyped[T]` | `SafeGet()` |
-| 适用场景 | 已知类型获取 | 动态类型处理 |
+| 获取方式 | 手动构造（无库函数入口） | `SafeGet()` |
+| 适用场景 | 封装自己的查询函数 | 动态类型处理 |
 
 ### 选择建议
 
-- **已知类型**：使用 `Result[T]` 和 `GetTyped[T]`
+- **已知类型、不关心错误细节**：`GetTyped[T]`（零值/默认值兜底）
 - **动态类型**：使用 `AccessResult` 和 `SafeGet()`
 - **需要链式转换**：使用 `AccessResult`
-- **需要错误处理**：使用 `Result[T]` 的 Error 字段或 `AccessResult` 的类型转换方法
+- **封装统一返回形态**：用 `Result[T]` 作为自己函数的返回类型
 
 ---
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Audit System"
 title: "Audit System - CyberGo html | Pluggable Audit API"
-description: "CyberGo html pluggable audit API: AuditConfig configuration, 8 event types, 3 severity levels, the AuditEntry struct, and six built-in sinks."
+description: "CyberGo html audit API: AuditConfig, 8 event types, Info/Warning/Critical levels, AuditEntry, six sinks (Logger/Writer/Channel/Filtered/LevelFiltered/Multi)."
 sidebar_position: 4
 ---
 

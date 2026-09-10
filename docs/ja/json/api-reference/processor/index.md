@@ -1,19 +1,19 @@
 ---
 sidebar_label: "概要"
 title: "Processor プロセッサ - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON Processor プロセッサ：New 作成、GetString/Set/Delete 操作、Foreach 反復、Encode エンコードと Close ライフサイクルで、高頻度再利用に適します。"
+description: "CyberGo JSON の Processor プロセッサ：New 生成、GetString/Set/Delete 操作、Foreach 反復、Encode エンコード、Close ライフサイクル。内蔵キャッシュで繰り返し操作を高速化し、チェーン呼び出しとグローバル管理に対応、高頻度再利用に適しています。"
 sidebar_position: 1
 ---
 
 # Processor
 
-Processor は高性能、カスタマイズ性、柔軟な再利用能力を提供し、同じデータソースに対する複数回の操作に適しています。
+Processor は高性能、カスタマイズ性、より柔軟な再利用能力を提供し、同じデータソースへの複数回操作に適しています。
 
 ## 特徴
 
 - **高性能**：内部キャッシュ機構により、繰り返し操作がより効率的
-- **設定可能**：複数の設定オプションをサポート
-- **メソッドチェーン**：メソッドは変更後の JSON を返し、連続操作をサポート
+- **設定可能**：多様な設定オプションをサポート
+- **メソッドチェーン**：メソッドは変更後の JSON を返し、連続操作に対応
 - **リソース管理**：明示的なライフサイクル制御
 
 ## Processor の作成
@@ -22,28 +22,28 @@ Processor は高性能、カスタマイズ性、柔軟な再利用能力を提�
 
 シグネチャ：`func New(cfg ...Config) (*Processor, error)`
 
-Processor インスタンスを作成します。オプションの Config パラメータでプロセッサを設定します。
+Processor インスタンスを作成します。オプションの Config 引数でプロセッサを設定します。
 
 ```go
-// デフォルト設定で使用
+// デフォルト設定を使用
 processor, err := json.New()
 if err != nil {
     panic(err)
 }
 defer processor.Close()
 
-// カスタム設定で使用
+// カスタム設定を使用
 cfg := json.DefaultConfig()
 cfg.StrictMode = true
 processor, err = json.New(cfg)
 
-// セキュリティ設定で使用
+// セキュリティ設定を使用
 processor, err = json.New(json.SecurityConfig())
 ```
 
 ## メソッドチェーン
 
-Processor のメソッドは変更後の JSON 文字列を返し、連続操作をサポートします：
+Processor のメソッドは変更後の JSON 文字列を返すため、連続操作が可能です：
 
 ```go
 processor, _ := json.New()
@@ -54,20 +54,20 @@ result2, _ := processor.Set(result1, "user.version", "1.0.0")
 finalResult, _ := processor.Delete(result2, "user.temporary")
 ```
 
-## API 目次
+## API カタログ
 
-| カテゴリ | 説明 |
-|----------|------|
-| [クエリと取得](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
+| カテゴリー | 説明 |
+|------|------|
+| [クエリと取得](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled/PreParse/GetFromParsed |
 | [変更操作](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/MergeJSON/MergeMany/CompareJSON |
 | [削除操作](./delete) | Delete/DeleteClean |
-| [エンコードと出力](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
-| [パースと検証](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal |
+| [エンコード出力](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream/ValidateSchema |
+| [解析と検証](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal |
 | [バッチ操作](./batch) | ProcessBatch/WarmupCache |
 | [JSONL](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
-| [ファイル I/O](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [ファイル操作](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile/ForeachFile 系 |
 | [反復メソッド](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachReturn/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachWithPathAndControl/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
-| [ライフサイクル](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
+| [ライフサイクル](./lifecycle) | Close/IsClosed/GetConfig/AddHook/SetLogger/ClearCache/WarmupCache/GetStats/GetHealthStatus/SetGlobalProcessor/ShutdownGlobalProcessor |
 
 ---
 
@@ -91,30 +91,30 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 package main
 
 import (
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // カスタム設定のプロセッサを作成
-    cfg := json.SecurityConfig()
-    processor, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
+	// カスタム設定のプロセッサを作成
+	cfg := json.SecurityConfig()
+	processor, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
 
-    // グローバルプロセッサとして設定
-    json.SetGlobalProcessor(processor)
+	// グローバルプロセッサとして設定
+	json.SetGlobalProcessor(processor)
 
-    // 以降のパッケージレベル関数はセキュリティ設定を使用
-    data, err := json.Get(`{"name":"Alice"}`, "name")
-    // SecurityConfig の制限が適用される
-    _ = data
+	// 以降、すべてのパッケージレベル関数がセキュリティ設定を使用
+	data, err := json.Get(`{"name":"Alice"}`, "name")
+	// SecurityConfig の制限が適用される
+	_ = data
 }
 ```
 
 ::: warning 注意
-- `nil` を渡した場合、何も実行されません
-- 前のグローバルプロセッサは自動的に閉じられます
+- `nil` を渡すと何も実行されません
+- 前のグローバルプロセッサは自動的にクローズされます
 - この関数はスレッドセーフです
 :::
 
@@ -122,33 +122,33 @@ func main() {
 
 シグネチャ：`func ShutdownGlobalProcessor()`
 
-グローバルプロセッサを閉じて削除します。以降のパッケージレベル操作では新しいデフォルトプロセッサが作成されます。
+グローバルプロセッサをクローズして削除します。以降のパッケージレベル操作は新しいデフォルトプロセッサを作成します。
 
 ```go
 package main
 
 import (
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // グローバルプロセッサを使用
-    data, _ := json.Get(`{"key":"value"}`, "key")
-    _ = data
+	// グローバルプロセッサを使用
+	data, _ := json.Get(`{"key":"value"}`, "key")
+	_ = data
 
-    // アプリケーション終了時にクリーンアップ
-    json.ShutdownGlobalProcessor()
+	// アプリケーション終了時にクリーンアップ
+	json.ShutdownGlobalProcessor()
 
-    // 以降の操作は新しいデフォルトプロセッサを作成
-    data2, _ := json.Get(`{"key":"value2"}`, "key")
-    _ = data2
+	// 以降の操作は新しいデフォルトプロセッサを作成する
+	data2, _ := json.Get(`{"key":"value2"}`, "key")
+	_ = data2
 }
 ```
 
-::: tip 使用例
-- 長時間稼働するサービスの終了時にリソースをクリーンアップ
-- プロセッサ設定をリセットする必要がある場合
-- テスト環境で異なるテストケースを分離する場合
+::: tip 使用シーン
+- 長時間実行されるサービスの終了時のリソースクリーンアップ
+- プロセッサ設定のリセットが必要なとき
+- テスト環境で異なるテストケースを隔離するとき
 :::
 
 ---
@@ -158,4 +158,4 @@ func main() {
 - [パッケージ関数](../functions/) - トップレベル関数リファレンス
 - [Config](../config) - 設定オプション
 - [インターフェース定義](../interfaces) - Hook インターフェース
-- [Hook フックシステム](../../extensions/hooks) - フックの詳細な使用ガイド
+- [Hook フックシステム](../../extensions/hooks) - フックの詳細な使い方ガイド

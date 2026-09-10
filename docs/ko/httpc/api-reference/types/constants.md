@@ -406,5 +406,5 @@ result, err := client.Get(url, httpc.WithSecureCookie(strict))
 
 - [오류 타입](./errors) - ClientError, ErrorType과 오류 변수의 완전한 레퍼런스
 - [요청 옵션](../core/options) - BodyKind의 WithBody 사용
-- [미들웨어](../client-config/middleware) - AuditMiddleware와 감사 구성
+- [내장 미들웨어](../client-config/middleware) - AuditMiddleware와 감사 구성
 - [세션 관리](../client-config/session) - SessionManager와 CookieSecurityConfig의 세션 수준 사용

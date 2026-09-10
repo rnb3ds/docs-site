@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Пользовательский парсер"
-title: "Пользовательский парсер - CyberGo env | расширение форматов файлов"
-description: "Руководство по пользовательскому парсеру CyberGo env: реализация метода Parse интерфейса EnvParser и регистрация через RegisterParser, использование ComponentFactory для получения Validator и Auditor, с полными примерами парсеров TOML и INI и лучшими практиками."
+title: "Пользовательский парсер - CyberGo env | расширение форматов"
+description: "Руководство по пользовательским парсерам CyberGo env: интерфейс EnvParser, регистрация RegisterParser, ComponentFactory и примеры парсеров TOML и INI."
 sidebar_position: 8
 sidebar_icon: "⚙️"
 ---
@@ -640,6 +640,26 @@ func main() {
 ```
 
 ---
+
+## Переопределение встроенных парсеров (ForceRegisterParser)
+
+Из соображений безопасности `RegisterParser` **отказывает** в переопределении трёх встроенных форматов (`FormatEnv`, `FormatJSON`, `FormatYAML`); повторная регистрация того же пользовательского формата тоже возвращает ошибку. Если действительно нужно заменить встроенный парсер — например, добавить в `.env` синтаксис многострочных значений, прикрепить собственные проверки безопасности или внедрить mock-парсер в тестах — используйте `ForceRegisterParser`:
+
+<!-- check-code: skip -->
+```go
+err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, factory *env.ComponentFactory) (env.EnvParser, error) {
+    return &MyCustomEnvParser{
+        validator: factory.Validator(),
+        auditor:   factory.Auditor(),
+    }, nil
+})
+```
+
+::: warning Предупреждение безопасности
+Переопределение встроенных парсеров может привнести уязвимости: если замена лишена валидации ключей, валидации значений или лимитов размеров, вы теряете защиту по умолчанию. Используйте только если ваш парсер полностью реализует эквивалентные проверки.
+:::
+
+**Момент регистрации**: фабрики парсеров вызываются как снимок при создании Loader (`createParsers` внутри `New()`), поэтому `RegisterParser`/`ForceRegisterParser` должны быть вызваны до `env.New()`; уже созданные Loader не зависят от последующих регистраций.
 
 ## Связанная документация
 

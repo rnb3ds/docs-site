@@ -1,7 +1,7 @@
 ---
 sidebar_label: "编码输出"
 title: "编码输出函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 编码输出函数：Marshal/Unmarshal 序列化、Compact/Indent/HTMLEscape 格式化与 Encode/EncodePretty/Prettify 配置化编码，100% 兼容标准库。"
+description: "CyberGo JSON 编码输出函数：Marshal/Unmarshal 序列化、Compact/Indent/HTMLEscape 格式化与 Encode/EncodePretty/Prettify 配置化编码，兼有 EncodeFields 字段过滤与流式编解码，100% 兼容标准库。"
 sidebar_position: 5
 ---
 
@@ -31,6 +31,10 @@ fmt.Println(string(data)) // {"name":"test"}
 data, err = json.Marshal(value, json.PrettyConfig())
 ```
 
+::: warning Marshal 输出始终 HTML 转义
+与 `encoding/json.Marshal` 一致，`Marshal` 的输出**总是**经过 HTML 转义——即使传入 `cfg.EscapeHTML = false`，该路径也会将其覆盖为开启。需要由调用方控制转义行为时，改用 [`EncodeWithConfig`](#encodewithconfig)。
+:::
+
 ### Unmarshal
 
 签名：`func Unmarshal(data []byte, value any, cfg ...Config) error`
@@ -49,6 +53,10 @@ err := json.Unmarshal([]byte(`{"name":"test"}`), &result)
 // 带配置
 err = json.Unmarshal(data, &v, json.SecurityConfig())
 ```
+
+::: tip 无 cfg 快速路径仍执行安全校验
+无 cfg 调用时，`Unmarshal` 在委托 `encoding/json` 之前，仍会按处理器内置的安全限制（大小、嵌套深度、危险模式）校验输入——即作为标准库的 drop-in 替换也不会绕过安全防线。
+:::
 
 ### MarshalIndent
 
@@ -93,9 +101,14 @@ fmt.Println(buf.String()) // {"name":"test"}
 
 以字符串输入/字符串输出形式压缩 JSON，移除不必要的空白字符。是 `Processor.Compact` 的包级镜像，与 `Prettify`（镜像 `Processor.Prettify`）对称。
 
-::: info Compact vs CompactString
-- `Compact(dst, src)`：buffer 形式，兼容 `encoding/json.Compact`，镜像 `Processor.CompactBuffer`
-- `CompactString(s)`：字符串形式，镜像 `Processor.Compact`
+::: info 签名不对称：Compact 家族与 Processor 的镜像关系
+包级 `Compact` 保留的是 `encoding/json.Compact` 的兼容签名（buffer 入参），因此它与 Processor 方法版**名字错位**——Processor 的 `Compact(jsonStr) (string, error)` 在包级叫 `CompactString`，其 buffer 形式叫 `CompactBuffer`：
+
+| 包级函数 | 签名形式 | 镜像的 Processor 方法 |
+|----------|----------|------------------------|
+| `Compact(dst *bytes.Buffer, src []byte)` | buffer 入参（encoding/json 兼容） | `CompactBuffer(dst, src)` |
+| `CompactString(jsonStr string) (string, error)` | 字符串进、字符串出 | `Compact(jsonStr)` |
+| `Prettify(jsonStr string) (string, error)` | 字符串进、字符串出 | `Prettify(jsonStr)` |
 :::
 
 ```go
@@ -164,9 +177,11 @@ fmt.Println(pretty)
 
 ### Encode
 
+<Badge type="danger" text="已废弃" />
+
 签名：`func Encode(value any, cfg ...Config) (string, error)`
 
-将 Go 值编码为 JSON 字符串，支持可选配置参数。
+将 Go 值编码为 JSON 字符串，支持可选配置参数。请使用 [`EncodeWithConfig`](#encodewithconfig)。
 
 ::: warning 已废弃
 `Encode` 在功能上与 [`EncodeWithConfig`](#encodewithconfig) 完全相同（两者委托同一实现）。请改用 `EncodeWithConfig`，或在 `[]byte` 输出可接受时使用 [`Marshal`](#marshal)。`Encode` 将在未来的主版本中移除。
@@ -233,7 +248,7 @@ result, err := json.EncodeWithConfig(data, json.SecurityConfig())
 
 签名：`func EncodeBatch(pairs map[string]any, cfg ...Config) (string, error)`
 
-将键值对批量编码为 JSON 对象字符串。
+将键值对批量编码为 JSON 对象字符串。等价于 `EncodeWithConfig(map[string]any(pairs), cfg)`，键按字典序输出（与 `encoding/json` 一致）。
 
 ```go
 result, err := json.EncodeBatch(map[string]any{
@@ -251,7 +266,7 @@ fmt.Println(result) // {"age":30,"email":"alice@example.com","name":"Alice"}
 
 签名：`func EncodeFields(value any, fields []string, cfg ...Config) (string, error)`
 
-仅编码指定字段，实现字段过滤输出。
+仅编码指定字段，实现字段过滤输出。`fields` 中**实际不存在**的键被静默忽略（只输出两边交集）；`value` 编码后不是 JSON 对象时返回 `ErrTypeMismatch`（`value is not an object, cannot filter fields`）。
 
 ```go
 user := struct {
@@ -274,7 +289,7 @@ fmt.Println(result) // {"name":"Alice","email":"a@b.com"}
 
 签名：`func EncodeStream(values any, cfg ...Config) (string, error)`
 
-将多个值编码为 JSON 数组流（array stream）。`values` 通常是切片或可枚举集合，输出形如 `[v1,v2,...]` 的 JSON 数组字符串。
+将多个值编码为 JSON 数组流（array stream）。`values` 通常是切片或可枚举集合，输出形如 `[v1,v2,...]` 的 JSON 数组字符串。等价于 `EncodeWithConfig(values, cfg)`：`values` 是切片时输出 JSON 数组；传入非集合值时按 `EncodeWithConfig` 的语义输出该值本身。
 
 ```go
 values := []map[string]any{
@@ -336,7 +351,31 @@ p.HTMLEscape(&buf, []byte(`{"html":"<script>"}`))
 ```
 
 :::tip
-完整的 Processor 文档请参阅 [Processor](../interfaces)。
+完整的 Processor 方法文档请参阅 [Processor](../processor/)。
+:::
+
+## 流式编解码
+
+`NewEncoder(w)` / `NewDecoder(r)` 与 `encoding/json` 完全兼容（含 `SetIndent`、`SetEscapeHTML`、`UseNumber`、`Token` 等方法），支持从 `io.Writer`/`io.Reader` 流式编解码：
+
+```go
+// 流式编码到 stdout
+enc := json.NewEncoder(os.Stdout)
+enc.SetIndent("", "  ")
+_ = enc.Encode(user)
+
+// 流式解码（逐个读取 JSON 值）
+dec := json.NewDecoder(resp.Body)
+for dec.More() {
+    var msg Message
+    if err := dec.Decode(&msg); err != nil {
+        break
+    }
+}
+```
+
+:::tip
+`Encoder`/`Decoder` 的完整方法表见 [类型定义](../types#encoder-json-编码器)。
 :::
 
 ## 配置预设

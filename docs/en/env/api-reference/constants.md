@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Constants & Errors"
-title: "Constants & Errors - CyberGo env | Sentinel Errors and Security Constants"
-description: "Constants and errors reference for CyberGo env, including DefaultMaxFileSize and MaxVariables limits, ErrFileNotFound sentinel errors, ParseError type, DefaultForbiddenKeys forbidden keys, and IsSensitiveKey, MaskValue utility functions."
+title: "Constants & Errors - CyberGo env | Sentinel Errors"
+description: "Constants and errors reference for CyberGo env: DefaultMaxFileSize/MaxVariables limits, ErrFileNotFound sentinel errors, ParseError, and forbidden keys."
 sidebar_position: 7
 ---
 
@@ -751,6 +751,30 @@ func main() {
     }
 }
 ```
+
+## Default Forbidden Keys and Key Pattern
+
+### Complete DefaultForbiddenKeys list
+
+The library refuses to write the following system-critical variables by default, grouped by attack surface:
+
+| Category | Keys | Defends against |
+|----------|------|-----------------|
+| Path injection | `PATH` | Executable lookup hijacking |
+| Dynamic linker (Linux/macOS) | `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_DEBUG`, `LD_AUDIT`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64`, `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH` | Library preloading attacks |
+| Shell escapes | `SHELL`, `ENV`, `BASH_ENV`, `IFS` | Shell injection |
+| Interpreter injection | `PYTHONPATH`, `PERL5OPT`, `RUBYLIB`, `NODE_PATH` | Language-runtime code injection |
+| Windows-specific | `COMSPEC`, `PATHEXT`, `SYSTEMROOT`, `WINDIR` | Windows system variable hijacking |
+
+Append your own with `ValidationConfig.ForbiddenKeys`; lifting the built-in restrictions requires supplying a replacement validator.
+
+### DefaultKeyPattern
+
+`DefaultKeyPattern` is exported as `nil` — default key validation takes the **byte-level fast path** (equivalent to the regex `^[A-Za-z][A-Za-z0-9_]*$`), roughly an order of magnitude faster than regex. Setting a custom `KeyPattern` switches to regex validation and subjects it to the four security probes documented in [KeyPattern probes](/en/env/api-reference/config).
+
+### ExpansionErrorKind
+
+The two values of `ExpansionError.Kind`: `ExpansionDepthKind` (depth exceeded/cycle detected) and `ExpansionRequiredKind` (`${VAR:?}` required variable unset). See the [error handling guide](/en/env/guides/error-handling).
 
 ## Related Documentation
 

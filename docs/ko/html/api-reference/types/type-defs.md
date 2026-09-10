@@ -1,7 +1,7 @@
 ---
 sidebar_label: "데이터 타입"
 title: "타입 정의 - CyberGo html | 데이터 타입 참조"
-description: "CyberGo html 데이터 타입: Result 추출 결과, ImageInfo·LinkInfo·VideoInfo·AudioInfo 미디어, LinkResource, Statistics 통계, BatchResult 배치 결과 등 핵심 타입의 필드와 직렬화를 설명합니다."
+description: "CyberGo html 데이터 타입: Result, ImageInfo·LinkInfo·VideoInfo·AudioInfo 미디어, LinkResource, Statistics 통계, BatchResult 등 타입의 필드와 커스텀 MarshalJSON 직렬화를 설명합니다."
 sidebar_position: 2
 ---
 
@@ -59,7 +59,7 @@ type ImageInfo struct {
 
 | 필드 | 설명 |
 |------|------|
-| `URL` | 이미지의 `src` 속성값; 유효한 URL 만 포함(`IsValidURL`로 검증), 유효하지 않은 URL 의 `<img>`는 결과에 나타나지 않음 |
+| `URL` | 이미지의 `src` 속성값; 유효한 URL 만 포함(내부 검증, 익스포트되지 않음), 유효하지 않은 URL 의 `<img>`는 결과에 나타나지 않음 |
 | `Alt` | `alt` 속성 원문; 비어 있으면 `IsDecorative`가 `true` |
 | `Title` | `title` 속성 원문(페이지 제목이 아님) |
 | `Width`/`Height` | HTML 속성의 **원본 문자열**(예: `"640"`, `"50%"`), 숫자로 파싱되지 않음 — 페이지마다 표기가 다를 수 있음 |
@@ -89,8 +89,8 @@ type LinkInfo struct {
 
 | 필드 | 설명 |
 |------|------|
-| `URL` | `href` 속성값; 유효한 URL 만 포함(`IsValidURL`로 검증), 유효하지 않은 URL 의 `<a>`는 Position 을 소비하지만 슬라이스에 추가되지 않음 |
-| `Text` | `<a>` 태그 내 모든 텍스트 노드의 연결(재귀적 `GetTextContent`) |
+| `URL` | `href` 속성값; 유효한 URL 만 포함(내부 검증, 익스포트되지 않음), 유효하지 않은 URL 의 `<a>`는 Position 을 소비하지만 슬라이스에 추가되지 않음 |
+| `Text` | `<a>` 태그 내 모든 텍스트 노드의 재귀적 연결(중첩 태그 안의 텍스트 포함) |
 | `Title` | `title` 속성 원문(링크 텍스트가 아님) |
 | `IsExternal` | URL 자체가 절대 외부 주소인지로 판정, **`BaseURL`과의 도메인 비교를 하지 않음** — 이는 `ExtractAllLinks`의 내/외부 링크 판정과 다름 |
 | `IsNoFollow` | `rel` 속성에 `nofollow` 포함 시(대소문자 구분 없음, ASCII 폴딩 매칭) `true` |
@@ -152,11 +152,13 @@ OGG 컨테이너는 비디오 또는 오디오를 담을 수 있으며, `.ogg` U
 
 ```go
 type LinkResource struct {
-    URL   string // 링크 주소
+    URL   string // 링크 주소(ResolveRelativeURLs 활성화 시 BaseURL 기준으로 절대 주소로 해석됨)
     Title string // 링크 제목
-    Type  string // 링크 유형
+    Type  string // 링크 유형: "link", "image", "video", "audio", "css", "js", "icon", "media"
 }
 ```
+
+각 `Type` 값에 대응하는 HTML 태그 출처와 제어 스위치는 [링크 추출](../modules/links#링크-유형-상세)을 참조하세요.
 
 ## Statistics
 

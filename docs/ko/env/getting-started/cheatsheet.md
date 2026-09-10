@@ -1,7 +1,7 @@
 ---
 sidebar_label: "치트시트"
 title: "치트시트 - CyberGo env | 자주 쓰는 API"
-description: "CyberGo env 자주 쓰는 API 치트시트로, 파일 로드, 타입 읽기, 구조체 매핑, 변수 확장, 검증, SecureValue 저장, Marshal/Unmarshal 직렬화, 센티넬 오류 errors.Is와 감사 로그 등 고빈도 작업의 핵심 코드 조각을 한 페이지에 정리하여 일상적인 참고에 편리합니다."
+description: "CyberGo env 자주 쓰는 API 치트시트로, 파일 로드, 타입 읽기, 구조체 매핑, 변수 확장, SecureValue 저장, Marshal/Unmarshal 직렬화, 센티넬 오류 errors.Is, 감사 로그 등 고빈도 작업의 핵심 코드 조각을 한 페이지에 정리합니다."
 sidebar_position: 2
 ---
 

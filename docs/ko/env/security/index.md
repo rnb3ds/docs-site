@@ -1,8 +1,9 @@
 ---
 sidebar_label: "보안 개요"
 title: "보안 개요 - CyberGo env | 보안 아키텍처"
-description: "CyberGo env 보안 아키텍처 개요로, SecureValue 메모리 잠금과 자동 제로화, 키-값 검증으로 제어 문자와 널 바이트 필터링, DefaultForbiddenKeys로 PATH와 LD_PRELOAD 금지, IsSensitiveKey 자동 감지, 보안 프리셋과 감사 추적을 상세히 설명합니다."
+description: "CyberGo env 보안 아키텍처 개요로, SecureValue 메모리 잠금과 자동 제로화, 키-값 검증, DefaultForbiddenKeys로 위험 키 금지, IsSensitiveKey 자동 감지, 보안 프리셋과 감사 추적을 설명합니다."
 sidebar_position: 1
+sidebar_icon: "🛡️"
 ---
 
 # 보안 개요
@@ -152,6 +153,10 @@ cfg := env.ProductionConfig()
 cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
 cfg.AllowedKeys = []string{"APP_NAME", "PORT", "DB_HOST", "API_KEY"}
 ```
+
+## 전개 범위 격리
+
+변수 전개는 기본적으로 '파일 우선, 프로세스 환경 차선'으로 해석됩니다. 신뢰할 수 없는 구성 출처에는 `ExpansionScope: ExpansionFileOnly`가 참조를 파일 내부로 제한하여, 구성 파일이 프로세스 기밀 정보(클라우드 자격 증명, 토큰 등)를 탐색·포획하는 것을 차단합니다(SEC-03). 구성 방법과 공격 시나리오는 [변수 전개 · 전개 범위](/ko/env/guides/variable-expansion) 참조.
 
 ## 관련 문서
 

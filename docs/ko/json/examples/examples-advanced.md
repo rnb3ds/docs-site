@@ -1,7 +1,7 @@
 ---
 sidebar_label: "고급 예제"
 title: "고급 기능 예제 - CyberGo JSON | 심화 사용법"
-description: "CyberGo JSON 고급 예제: EncodeBatch, EncodeFields, PreParse, SafeGet, WarmupCache, 메모리 풀 최적화로 프로덕션급 Go 성능 기법을 보여줍니다."
+description: "CyberGo JSON 고급 예제: EncodeBatch 배치 인코딩, EncodeFields 필드 선택 민감 정보 필터링, PreParse 사전 파싱, SafeGet 안전 가져오기와 WarmupCache 워밍업에 훅과 고급 설정 실행 가능 예제로 성능을 높입니다."
 sidebar_position: 2
 ---
 
@@ -19,34 +19,34 @@ sidebar_position: 2
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 분산된 데이터에서 JSON 구성
-    pairs := map[string]any{
-        "id":      1001,
-        "name":    "Alice",
-        "email":   "alice@example.com",
-        "active":  true,
-        "tags":    []string{"admin", "user"},
-        "balance": 1250.50,
-    }
+	// 분산된 데이터에서 JSON 구성
+	pairs := map[string]any{
+		"id":      1001,
+		"name":    "Alice",
+		"email":   "alice@example.com",
+		"active":  true,
+		"tags":    []string{"admin", "user"},
+		"balance": 1250.50,
+	}
 
-    // EncodeBatch 로 JSON 객체에 배치 인코딩
-    result, err := json.EncodeBatch(pairs)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result)
+	// EncodeBatch 로 JSON 객체에 배치 인코딩
+	result, err := json.EncodeBatch(pairs)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
 
-    // EncodeBatch 와 PrettyConfig 를 조합하여 포맷팅 출력
-    pretty, err := json.EncodeBatch(pairs, json.PrettyConfig())
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(pretty)
+	// EncodeBatch 와 PrettyConfig 를 조합하여 포맷팅 출력
+	pretty, err := json.EncodeBatch(pairs, json.PrettyConfig())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(pretty)
 }
 ```
 
@@ -60,35 +60,35 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 type User struct {
-    ID       int    `json:"id"`
-    Name     string `json:"name"`
-    Email    string `json:"email"`
-    Password string `json:"password"`
-    Salt     string `json:"salt"`
+	ID       int    `json:"id"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Salt     string `json:"salt"`
 }
 
 func main() {
-    user := User{
-        ID:       1,
-        Name:     "Alice",
-        Email:    "alice@example.com",
-        Password: "secret123",
-        Salt:     "randomsalt",
-    }
+	user := User{
+		ID:       1,
+		Name:     "Alice",
+		Email:    "alice@example.com",
+		Password: "secret123",
+		Salt:     "randomsalt",
+	}
 
-    // 공개 필드만 인코딩 (민감한 정보 제외)
-    publicFields := []string{"id", "name", "email"}
-    result, err := json.EncodeFields(user, publicFields)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result)
-    // {"id":1,"name":"Alice","email":"alice@example.com"}
+	// 공개 필드만 인코딩 (민감한 정보 제외)
+	publicFields := []string{"id", "name", "email"}
+	result, err := json.EncodeFields(user, publicFields)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result)
+	// {"id":1,"name":"Alice","email":"alice@example.com"}
 }
 ```
 
@@ -99,13 +99,13 @@ JSON 을 미리 파싱하여 반복 파싱을 피하고 여러 쿼리의 성능�
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 대용량 JSON 데이터
-    largeJSON := `{
+	// 대용량 JSON 데이터
+	largeJSON := `{
         "users": [
             {"id": 1, "name": "Alice", "email": "alice@example.com"},
             {"id": 2, "name": "Bob", "email": "bob@example.com"},
@@ -118,32 +118,87 @@ func main() {
         }
     }`
 
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    // 사전 파싱 (한 번만 파싱)
-    parsed, err := p.PreParse(largeJSON)
-    if err != nil {
-        panic(err)
-    }
+	// 사전 파싱 (한 번만 파싱); 사용 후 Release 로 파싱 트리 참조 해제
+	parsed, err := p.PreParse(largeJSON)
+	if err != nil {
+		panic(err)
+	}
+	defer parsed.Release()
 
-    // 여러 쿼리에서 사전 파싱 결과 재사용
-    total, _ := p.GetFromParsed(parsed, "metadata.total")
-    page, _ := p.GetFromParsed(parsed, "metadata.page")
+	// 여러 쿼리에서 사전 파싱 결과 재사용
+	total, _ := p.GetFromParsed(parsed, "metadata.total")
+	page, _ := p.GetFromParsed(parsed, "metadata.page")
 
-    // 사용자 순회
-    for i := 0; i < 3; i++ {
-        path := fmt.Sprintf("users.%d.name", i)
-        name, _ := p.GetFromParsed(parsed, path)
-        fmt.Printf("사용자 %d: %v\n", i, name)
-    }
+	// 사용자 순회
+	for i := 0; i < 3; i++ {
+		path := fmt.Sprintf("users.%d.name", i)
+		name, _ := p.GetFromParsed(parsed, path)
+		fmt.Printf("사용자 %d: %v\n", i, name)
+	}
 
-    fmt.Printf("총: %v, 페이지: %v\n", total, page)
+	fmt.Printf("총: %v, 페이지: %v\n", total, page)
 }
 ```
+
+## 고빈도 경로 사전 컴파일
+
+### CompilePath + GetCompiled
+
+`PreParse` 가 최적화하는 것은 '같은 JSON 에서 여러 경로 쿼리'입니다; 반대로 **같은 경로**로 수많은 서로 다른 JSON 을 쿼리할 때 (예: 매 요청마다 `user.name` 조회) 는 `CompilePath` 로 경로 파싱 결과를 사전 컴파일해 재사용하고, 매번 발생하는 경로 파싱 오버헤드를 제거합니다:
+
+```go
+package main
+
+import (
+	"fmt"
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
+
+	// 계속 도착하는 서로 다른 JSON 문서 시뮬레이션
+	docs := []string{
+		`{"user":{"name":"Alice","age":28}}`,
+		`{"user":{"name":"Bob","age":34}}`,
+		`{"user":{"name":"Carol","age":25}}`,
+	}
+
+	// 한 번 사전 컴파일; 경로 파싱 결과는 전역 컴파일 캐시에 들어가고, 사용 후 Release 로 반납
+	cp, err := p.CompilePath("user.name")
+	if err != nil {
+		panic(err)
+	}
+	defer cp.Release()
+
+	for _, doc := range docs {
+		name, err := p.GetCompiled(doc, cp)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println("name =", name)
+	}
+}
+
+// 출력:
+// name = Alice
+// name = Bob
+// name = Carol
+```
+
+:::tip PreParse 와의 역할 분담
+`GetCompiled` 는 매 호출 시 입력 보안 검증과 JSON 파싱을 여전히 수행하며, **생략되는 것은 경로 파싱** 단계뿐입니다. 두 기능은 핫스팟 방향에 따라 선택하세요: 같은 문서를 반복 쿼리 → `PreParse`; 같은 경로를 반복 사용 → `CompilePath`. 현재 `Set`/`Delete` 에는 Compiled 변형이 없어, 사전 컴파일 경로는 쿼리에만 사용됩니다.
+:::
 
 ## 안전한 가져오기
 ### SafeGet
@@ -152,12 +207,12 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{
+	data := `{
         "user": {
             "id": 1001,
             "name": "Alice",
@@ -167,40 +222,40 @@ func main() {
         }
     }`
 
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    // 단일 필드 안전하게 가져오기
-    nameResult := p.SafeGet(data, "user.name")
-    if nameResult.Ok() {
-        name, _ := nameResult.AsString()
-        fmt.Println("이름:", name)
-    }
+	// 단일 필드 안전하게 가져오기
+	nameResult := p.SafeGet(data, "user.name")
+	if nameResult.Ok() {
+		name, _ := nameResult.AsString()
+		fmt.Println("이름:", name)
+	}
 
-    // 안전하게 가져오고 타입 변환
-    ageResult := p.SafeGet(data, "user.age")
-    if ageResult.Ok() {
-        age, _ := ageResult.AsInt()
-        fmt.Println("나이:", age)
-    }
+	// 안전하게 가져오고 타입 변환
+	ageResult := p.SafeGet(data, "user.age")
+	if ageResult.Ok() {
+		age, _ := ageResult.AsInt()
+		fmt.Println("나이:", age)
+	}
 
-    // 불리언 값 안전하게 가져오기
-    activeResult := p.SafeGet(data, "user.active")
-    if activeResult.Ok() {
-        active, _ := activeResult.AsBool()
-        fmt.Println("활성:", active)
-    }
+	// 불리언 값 안전하게 가져오기
+	activeResult := p.SafeGet(data, "user.active")
+	if activeResult.Ok() {
+		active, _ := activeResult.AsBool()
+		fmt.Println("활성:", active)
+	}
 
-    // 존재하지 않는 경로는 panic 을 발생시키지 않음
-    emailResult := p.SafeGet(data, "user.email")
-    fmt.Println("이메일 존재:", emailResult.Ok()) // false
+	// 존재하지 않는 경로는 panic 을 발생시키지 않음
+	emailResult := p.SafeGet(data, "user.email")
+	fmt.Println("이메일 존재:", emailResult.Ok()) // false
 
-    // 기본값 사용
-    email := emailResult.UnwrapOr("N/A")
-    fmt.Println("이메일:", email)
+	// 기본값 사용
+	email := emailResult.UnwrapOr("N/A")
+	fmt.Println("이메일:", email)
 }
 ```
 
@@ -211,13 +266,13 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 대용량 JSON 데이터 (시뮬레이션)
-    largeJSON := `{
+	// 대용량 JSON 데이터 (시뮬레이션)
+	largeJSON := `{
         "products": [
             {"id": 1, "name": "Product A", "price": 100},
             {"id": 2, "name": "Product B", "price": 200},
@@ -227,40 +282,40 @@ func main() {
         "settings": {"currency": "USD", "taxRate": 0.1}
     }`
 
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    // 자주 사용하는 경로 정의
-    commonPaths := []string{
-        "products",
-        "products.0.id",
-        "products.0.name",
-        "products.1.id",
-        "products.1.name",
-        "categories",
-        "settings.currency",
-    }
+	// 자주 사용하는 경로 정의
+	commonPaths := []string{
+		"products",
+		"products.0.id",
+		"products.0.name",
+		"products.1.id",
+		"products.1.name",
+		"categories",
+		"settings.currency",
+	}
 
-    // 캐시 웜업
-    result, err := p.WarmupCache(largeJSON, commonPaths)
-    if err != nil {
-        panic(err)
-    }
+	// 캐시 웜업
+	result, err := p.WarmupCache(largeJSON, commonPaths)
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("웜업 완료: %d/%d 성공\n", result.Successful, result.TotalPaths)
-    if len(result.FailedPaths) > 0 {
-        fmt.Println("실패한 경로:", result.FailedPaths)
-    }
+	fmt.Printf("웜업 완료: %d/%d 성공\n", result.Successful, result.TotalPaths)
+	if len(result.FailedPaths) > 0 {
+		fmt.Println("실패한 경로:", result.FailedPaths)
+	}
 
-    // 이후 쿼리는 캐시를 사용
-    for i := 0; i < 3; i++ {
-        path := fmt.Sprintf("products.%d.name", i)
-        name := p.GetString(largeJSON, path)
-        fmt.Printf("상품 %d: %s\n", i, name)
-    }
+	// 이후 쿼리는 캐시를 사용
+	for i := 0; i < 3; i++ {
+		path := fmt.Sprintf("products.%d.name", i)
+		name := p.GetString(largeJSON, path)
+		fmt.Printf("상품 %d: %s\n", i, name)
+	}
 }
 ```
 
@@ -271,36 +326,36 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := `{"users": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]}`
+	data := `{"users": [{"id": 1, "name": "Alice"}, {"id": 2, "name": "Bob"}]}`
 
-    // 배치 작업 정의 (ID 는 결과에서 각 작업을 식별하는 데 사용)
-    operations := []json.BatchOperation{
-        {ID: "get-name", Type: "get", Path: "users.0.name", JSONStr: data},
-        {ID: "get-users", Type: "get", Path: "users", JSONStr: data},
-        {ID: "set-name", Type: "set", Path: "users.0.name", Value: "Updated", JSONStr: data},
-        {ID: "del-id", Type: "delete", Path: "users.0.id", JSONStr: data},
-    }
+	// 배치 작업 정의 (ID 는 결과에서 각 작업을 식별하는 데 사용)
+	operations := []json.BatchOperation{
+		{ID: "get-name", Type: "get", Path: "users.0.name", JSONStr: data},
+		{ID: "get-users", Type: "get", Path: "users", JSONStr: data},
+		{ID: "set-name", Type: "set", Path: "users.0.name", Value: "Updated", JSONStr: data},
+		{ID: "del-id", Type: "delete", Path: "users.0.id", JSONStr: data},
+	}
 
-    // 배치 작업 실행
-    results, err := json.ProcessBatch(operations)
-    if err != nil {
-        panic(err)
-    }
+	// 배치 작업 실행
+	results, err := json.ProcessBatch(operations)
+	if err != nil {
+		panic(err)
+	}
 
-    // 결과 확인
-    for _, r := range results {
-        fmt.Printf("ID: %s\n", r.ID)
-        if r.Error != nil {
-            fmt.Printf("  오류: %v\n", r.Error)
-        } else if r.Result != nil {
-            fmt.Printf("  값: %v\n", r.Result)
-        }
-    }
+	// 결과 확인
+	for _, r := range results {
+		fmt.Printf("ID: %s\n", r.ID)
+		if r.Error != nil {
+			fmt.Printf("  오류: %v\n", r.Error)
+		} else if r.Result != nil {
+			fmt.Printf("  값: %v\n", r.Result)
+		}
+	}
 }
 ```
 
@@ -312,29 +367,29 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 라이브러리는 내부적으로 중복 키 - 값에 메모리 풀을 자동 사용
-    // 대량의 데이터를 처리할 때 중복 문자열 키 - 값이 자동으로 메모리를 재사용
-    records := make([]map[string]any, 10000)
-    for i := range records {
-        records[i] = map[string]any{
-            "status": "active",
-            "type":   "user",
-            "role":   "member",
-        }
-    }
+	// 라이브러리는 내부적으로 중복 키 - 값에 메모리 풀을 자동 사용
+	// 대량의 데이터를 처리할 때 중복 문자열 키 - 값이 자동으로 메모리를 재사용
+	records := make([]map[string]any, 10000)
+	for i := range records {
+		records[i] = map[string]any{
+			"status": "active",
+			"type":   "user",
+			"role":   "member",
+		}
+	}
 
-    // 배치 인코딩 시 라이브러리가 내부적으로 메모리 최적화
-    result, _ := json.Marshal(map[string]any{
-        "status": "active",
-        "type":   "user",
-    })
+	// 배치 인코딩 시 라이브러리가 내부적으로 메모리 최적화
+	result, _ := json.Marshal(map[string]any{
+		"status": "active",
+		"type":   "user",
+	})
 
-    fmt.Println("샘플:", string(result))
+	fmt.Println("샘플:", string(result))
 }
 ```
 

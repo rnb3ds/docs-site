@@ -289,5 +289,5 @@ func main() {
 ## 下一步
 
 - [内容提取实战](./content-extraction) - 提取流程与文章识别
-- [错误处理](../error-handling) - 哨兵错误与结构化错误处理
+- [错误处理](../performance/error-handling) - 哨兵错误与结构化错误处理
 - [API 参考：配置](../../api-reference/core/config) - Encoding 字段与所有配置选项

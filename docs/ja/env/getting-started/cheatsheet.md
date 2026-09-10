@@ -1,7 +1,7 @@
 ---
 sidebar_label: "チートシート"
 title: "チートシート - CyberGo env | よく使う API 早見表"
-description: "CyberGo env よく使う API のチートシート。ファイル読み込み、型読み取り、構造体マッピング、変数展開、検証、SecureValue ストレージ、Marshal/Unmarshal シリアライズ、センチネルエラー errors.Is、監査ログなど高頻度操作のコアコードスニペットを 1 ページにまとめ、日常的な参照に便利です。"
+description: "CyberGo env よく使う API のチートシート。ファイル読み込み、型読み取り、構造体マッピング、変数展開、検証、SecureValue、エラー処理、監査ログなど高頻度操作のコアコードスニペットを 1 ページにまとめた、日常開発に役立つクイックリファレンスです。"
 sidebar_position: 2
 ---
 

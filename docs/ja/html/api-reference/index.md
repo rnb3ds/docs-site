@@ -1,7 +1,7 @@
 ---
 sidebar_label: "概要"
 title: "API リファレンス - CyberGo html | 全関数・型インデックス"
-description: "CyberGo html 完全 API 索引：パッケージ関数と Processor の 2 つの呼び出し方式で、コンテンツ抽出、出力フォーマット、リンク抽出、バッチ処理、設定、監査システム、型定義モジュールを網羅して解説する完全リファレンスです。"
+description: "CyberGo html 完全 API リファレンス索引：パッケージ関数と Processor の 2 方式を比較し、コンテンツ抽出、出力フォーマット、リンク抽出、バッチ処理、Config 設定、セキュリティ保護、プラグイン監査、型定義、エラー定数など主要モジュールのドキュメントへ案内します。"
 sidebar_position: 1
 ---
 

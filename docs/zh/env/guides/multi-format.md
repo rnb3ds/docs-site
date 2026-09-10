@@ -2,7 +2,7 @@
 sidebar_label: "多格式配置"
 title: "多格式配置 - CyberGo env | .env/JSON/YAML"
 description: "CyberGo env 多格式配置加载指南，支持 .env、JSON、YAML 自动检测与混合加载，详解嵌套对象与数组的扁平化键名、键值合并优先级、Marshal/UnmarshalMap 格式互转与 RegisterParser 自定义格式，适配微服务与容器化场景。"
-sidebar_position: 3
+sidebar_position: 1
 sidebar_icon: "🔧"
 ---
 
@@ -651,6 +651,39 @@ func main() {
     fmt.Println(exported)
 }
 ```
+
+## 结构化解析细节与前缀过滤
+
+### JSON/YAML 扁平化规则
+
+嵌套结构在加载时被扁平化为环境变量键，默认规则：
+
+| 规则 | 示例 |
+|------|------|
+| 嵌套键以下划线连接 | `{"database": {"host": "..."}}` → `DATABASE_HOST` |
+| 数组元素使用 `键_索引` | `{"hosts": ["a", "b"]}` → `HOSTS_0`、`HOSTS_1` |
+| `null` 转为空字符串 | `{"name": null}` → `NAME=""` |
+| 数字与布尔转为字符串 | `{"port": 5432}` → `PORT="5432"` |
+| 嵌套深度上限默认 10 | 由 `JSONMaxDepth`/`YAMLMaxDepth` 控制（1–100） |
+
+文件加载时的转换行为受 `Config` 的 `JSONConfig`/`YAMLConfig` 控制（如 `JSONNullAsEmpty`、`JSONNumberAsString`）；而 `UnmarshalMap`/`UnmarshalStruct` 的字符串解析路径使用内置默认规则，不读取这些配置。
+
+### 前缀过滤（Prefix）
+
+`ComponentConfig.Prefix` 限定只加载以指定前缀开头的变量（大小写不敏感），常用于共享配置文件中只取本应用的部分：
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.Prefix = "MYAPP_" // 只加载 MYAPP_ 开头的键
+loader, _ := env.New(cfg)
+```
+
+前缀过滤与 `OverwriteExisting` 策略叠加生效：被过滤掉的键不会覆盖也不会进入存储。
+
+### 未知扩展名的回退行为
+
+`DetectFormat` 对未知扩展名返回 `FormatAuto`，此时加载器**回退到 `.env` 解析器**按行解析。因此 `config.conf`、`config.txt` 等文件若内容是 `KEY=value` 形式，仍可正常加载。
 
 ## 相关文档
 

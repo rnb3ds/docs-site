@@ -1,7 +1,7 @@
 ---
 sidebar_label: "패키지 함수"
 title: "패키지 함수 - CyberGo env | 전역 편의 함수"
-description: "CyberGo env 패키지 수준 편의 함수 API 레퍼런스로, Load, GetString, GetInt, GetBool, GetDuration, GetSlice, GetSecure, Lookup, Keys, ParseInto 등 글로벌 기본 Loader 기반의 스레드 안전 인터페이스를 제공합니다."
+description: "CyberGo env 패키지 수준 편의 함수 API 레퍼런스로, Load, GetString, GetInt, GetBool, GetSlice, GetSecure 등 글로벌 기본 Loader 기반의 스레드 안전 인터페이스를 제공합니다."
 sidebar_position: 2
 ---
 
@@ -953,6 +953,49 @@ func main() {
     fmt.Printf("Loaded %d variables\n", env.Len())
 }
 ```
+
+## 타입화된 읽기 보충
+
+### GetUint64 / GetFloat64
+
+자주 쓰는 타입 외에 패키지 수준 함수와 Loader 메서드 모두 부호 없는 정수와 부동소수점 읽기를 제공합니다:
+
+<!-- check-code: skip -->
+```go
+limit := env.GetUint64("RATE_LIMIT", 1000)     // uint64
+rate := env.GetFloat64("SAMPLE_RATE", 0.5)      // float64
+u := loader.GetUint64("RATE_LIMIT", 1000)       // Loader 메서드도 동일 서명
+f := loader.GetFloat64("SAMPLE_RATE", 0.5)
+```
+
+### 유연한 불리언 파싱
+
+`GetBool`은 대소문자 구분 없이 다음 표기를 허용합니다:
+
+| 참 | 거짓 |
+|----|------|
+| `true`, `yes`, `on`, `1`, `enabled` | `false`, `no`, `off`, `0`, `disabled` |
+
+빈 문자열은 `false`로 파싱됩니다; 그 외 값은 `ValidationError`를 일으키며 **기본값을 반환**합니다(감사 이벤트도 기록됨).
+
+### 파싱 실패와 기본값의 관계
+
+모든 `Get*` 함수는 키가 **없거나** 값 파싱에 **실패할 때** 기본값(미제공 시 영값)을 반환합니다 — panic이나 error를 반환하지 않습니다. 파싱 실패는 `parse failed`로 감사 로그에 기록되어 더러운 구성을 추적하기 쉽습니다.
+
+### GetSliceFrom의 두 가지 실패 의미론
+
+인스턴스 모드에서 `GetSliceFrom[T](loader, key)`는 인덱스 키(`KEY_0`, `KEY_1`, ...)에서 요소를 수집하며, 미스 시 쉼표 구분 값으로 폴백합니다. 출처별 파싱 실패 의미론:
+
+| 출처 | 요소 파싱 실패 시 |
+|------|--------------------|
+| 인덱스 키(`KEY_0`...) | 해당 요소를 **건너뜀**(감사 기록 후); 나머지 유지 |
+| 쉼표 구분 폴백 | **전체 실패**; 기본값(또는 nil) 반환 |
+
+제네릭 요소 타입 제약: `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`. 슬라이스 길이 상한은 10000(방어적 제한, 초과 시 감사 기록).
+
+### LoadWithConfig는 AutoApply 강제
+
+`Load()`와 `LoadWithConfig()`는 전달된 구성과 무관하게 `AutoApply=true`를 **강제**합니다 — 패키지 수준 편의 함수는 변수가 프로세스 환경에 들어가 있어야 하기 때문입니다. 적용 시점을 수동으로 제어하려면 `New()` 인스턴스 모드를 사용하세요.
 
 ## 관련 문서
 

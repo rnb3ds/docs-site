@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Content Extraction"
 title: "Content Extraction - CyberGo html | Workflow Guide"
-description: "CyberGo html content extraction in practice: extraction workflow, smart article recognition, Result fields, custom Scorer, and encoding detection handling."
+description: "CyberGo html content extraction: full pipeline of validation, encoding detection, DOM parsing, sanitization, article recognition, Result fields, custom Scorer."
 sidebar_position: 1
 ---
 
@@ -123,7 +123,7 @@ When `ExtractArticle` is `true` (default), the library automatically identifies 
 
 ### Default Scorer Signal Dimensions
 
-The built-in `DefaultScorer` scores based on multiple signals, selecting the highest-scoring container:
+The built-in default scorer (internal implementation, not exported) scores based on multiple signals, selecting the highest-scoring container:
 
 | Dimension | Positive signals | Negative signals |
 |-----------|-----------------|------------------|

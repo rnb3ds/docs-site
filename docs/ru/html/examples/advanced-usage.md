@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Продвинутые примеры"
 title: "Продвинутые примеры - CyberGo html | сценарии"
-description: "Продвинутые примеры CyberGo html: пользовательский Scorer, многокомпонентный конвейер аудита, пакетная обработка, пул Processor и мониторинг."
+description: "Продвинутые примеры CyberGo html: пользовательский Scorer, аудит с несколькими Sink, пакетные файлы, пул Processor, hit-rate кэша, Web-сервис для продакшена."
 sidebar_position: 2
 ---
 
@@ -494,3 +494,9 @@ func main() {
     fmt.Printf("Заголовок: %s\nДлина текста: %d\n", result.Title, len(result.Text))
 }
 ```
+
+## Следующие шаги
+
+- [Часто задаваемые вопросы](../faq/) - типичные вопросы и подходы к диагностике
+- [Контрольный список для продакшена](../guides/security/production-checklist) - проверка безопасности перед развёртыванием
+- [Справочник API: интерфейсы](../api-reference/types/interfaces) - расширяемые интерфейсы Scorer, AuditSink и др.

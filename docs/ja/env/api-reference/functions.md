@@ -1,7 +1,7 @@
 ---
 sidebar_label: "パッケージ関数"
 title: "パッケージ関数 - CyberGo env | グローバル便利関数"
-description: "CyberGo env パッケージレベル便利関数の API リファレンス。Load、GetString、GetInt、GetBool、GetDuration、GetSlice、GetSecure、Lookup、Keys、ParseInto などグローバルデフォルト Loader に基づくスレッドセーフなインターフェースを提供。"
+description: "CyberGo env パッケージレベル便利関数の API リファレンス。Load、GetString、GetInt、GetBool、GetDuration、GetSlice、GetSecure などグローバルデフォルト Loader に基づくスレッドセーフなインターフェースを提供。"
 sidebar_position: 2
 ---
 
@@ -953,6 +953,49 @@ func main() {
     fmt.Printf("Loaded %d variables\n", env.Len())
 }
 ```
+
+## 型付き読み取りの補足
+
+### GetUint64 / GetFloat64
+
+よく使う型に加え、パッケージレベル関数と Loader メソッドの両方が符号なし整数と浮動小数点の読み取りを提供します：
+
+<!-- check-code: skip -->
+```go
+limit := env.GetUint64("RATE_LIMIT", 1000)     // uint64
+rate := env.GetFloat64("SAMPLE_RATE", 0.5)      // float64
+u := loader.GetUint64("RATE_LIMIT", 1000)       // Loader メソッドも同一シグネチャ
+f := loader.GetFloat64("SAMPLE_RATE", 0.5)
+```
+
+### 緩いブール値パース
+
+`GetBool` は大文字小文字を区別せず以下の表記を受け付けます：
+
+| 真値 | 偽値 |
+|------|------|
+| `true`、`yes`、`on`、`1`、`enabled` | `false`、`no`、`off`、`0`、`disabled` |
+
+空文字列は `false` としてパースされます；その他の値は `ValidationError` を起こし**デフォルト値を返します**（監査イベントも記録）。
+
+### パース失敗とデフォルト値の関係
+
+すべての `Get*` 関数は、キーが**存在しない**場合も値の**パース失敗**時もデフォルト値（未指定ならゼロ値）を返します — panic も error も返しません。パース失敗は `parse failed` として監査ログに記録され、汚れた設定の切り分けに役立ちます。
+
+### GetSliceFrom の 2 種類の失敗意味論
+
+インスタンスモードの `GetSliceFrom[T](loader, key)` はインデックスキー（`KEY_0`、`KEY_1`、…）から要素を収集し、ミス時はカンマ区切り値へフォールバックします。ソースごとのパース失敗の意味論：
+
+| ソース | 要素のパース失敗時 |
+|--------|---------------------|
+| インデックスキー（`KEY_0`…） | その要素を**スキップ**（監査記録の後）；残りは保持 |
+| カンマ区切りフォールバック | **リスト全体が失敗**；デフォルト値（または nil）を返す |
+
+ジェネリック要素型の制約：`string`、`int`、`int64`、`uint`、`uint64`、`bool`、`float64`、`time.Duration`。スライス長の上限は 10000（防御的制限、超過は監査記録）。
+
+### LoadWithConfig は AutoApply を強制する
+
+`Load()` と `LoadWithConfig()` は渡された設定にかかわらず `AutoApply=true` を**強制**します — パッケージレベルの便利関数は変数がプロセス環境に入っていることに依存するためです。適用タイミングを手動制御するには `New()`（インスタンスモード）を使ってください。
 
 ## 関連ドキュメント
 

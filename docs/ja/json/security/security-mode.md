@@ -1,7 +1,7 @@
 ---
 sidebar_label: "セキュリティモード"
 title: "セキュリティモード - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON セキュリティ API：セキュリティ設定、AddDangerousPattern 危険パターンと入力バリデーションで、JSON インジェクション、プロトタイプ汚染、XSS などの脅威を防御します。"
+description: "CyberGo JSON セキュリティ API：セキュリティ設定、AddDangerousPattern による独自危険パターン登録、PatternLevel の 3 段階重大度と組み込み危険パターン、入力バリデーションで JSON インジェクション、プロトタイプ汚染、XSS などを防御。"
 sidebar_position: 2
 ---
 
@@ -63,7 +63,19 @@ const (
 func (pl PatternLevel) String() string
 ```
 
-PatternLevel の文字列表現を返します。
+PatternLevel の文字列表現を返します（`"critical"`、`"warning"`、`"info"`、未知の値は `"unknown"`）。
+
+### PatternLevel 動作マトリクス
+
+| レベル | 意味的な意図（インターフェースドキュメント） | 現在の実装の実際の動作 |
+|------|----------------------|--------------------|
+| `PatternLevelCritical` | 常に操作をブロック | 命中即拒否（`ErrSecurityViolation`） |
+| `PatternLevelWarning` | 厳格モードでブロック、緩やかモードでは警告を記録 | **同様に命中即拒否**——`StrictMode` フィールドは現時点でパターンブロックの判断に参加しない |
+| `PatternLevelInfo` | 記録のみ、ブロックしない | **同様に命中即拒否** |
+
+::: warning Warning/Info パターンは「ブロックされる」前提で計画してください
+現在のバージョンのパターンスキャン（組み込みパターン、`Config.AdditionalDangerousPatterns`、グローバル登録パターンの 3 者は同一のスキャンパスを通る）は、単語境界コンテキストチェックを通過した命中すべてに対して操作を拒否します。`Level` はブロック結果を変えず、監査/ログで重大度を区別するための意味的注記としてのみ機能します。したがって、「記録だけしてブロックしたくない」`PatternLevelInfo` レベルのパターンを登録し、そのパターンを含む入力を通過させることは**しないでください**——現時点ではブロックされます。すべての一致は大文字小文字を区別しません。
+:::
 
 ---
 
@@ -237,10 +249,69 @@ for _, p := range patterns {
 }
 ```
 
-::: tip グローバルパターン vs Config パターン
-- **グローバルパターン**（`RegisterDangerousPattern`）：すべての Processor インスタンスで共有。アプリケーションレベルのセキュリティポリシーに適しています
-- **Config パターン**（`Config.AddDangerousPattern`）：その Config を使用する Processor のみに影響。インスタンスレベルのカスタマイズに適しています
-:::
+### グローバル登録 vs Config 追加
+
+| 観点 | グローバル登録（`RegisterDangerousPattern`） | Config 追加（`AddDangerousPattern` / `AdditionalDangerousPatterns`） |
+|------|----------------------------------------|---------------------------------------------------------------------|
+| スコープ | プロセス内の**すべて**の Processor。作成済みインスタンスを含む（スキャン時にリアルタイムでレジストリを読み取り） | その Config で作成された Processor のみ（構築時にセキュリティ検証へ固定） |
+| 削除方法 | `UnregisterDangerousPattern(pattern)` が即時有効 | 実行時の削除なし。新しい Config で Processor を再構築する必要あり |
+| 照会方法 | `ListDangerousPatterns()` | `cfg.AdditionalDangerousPatterns` フィールドを読み取り |
+| `DisableDefaultPatterns` との関係 | 影響を受けない（明示的に追加されたパターンは常にスキャン） | 影響を受けない（同上） |
+| 典型的な用途 | アプリケーションレベルのセキュリティポリシー、コンプライアンスのブラックリスト。`main` 起動時に登録 | 単一インスタンスのビジネスカスタマイズ（例: 特定テナントの Processor だけが特定キーワードをブロック） |
+
+完全な比較サンプル：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// グローバル登録: すべての Processor で有効（作成済みインスタンスを含む）
+	json.RegisterDangerousPattern(json.DangerousPattern{
+		Pattern: "internal_only",
+		Name:    "内部識別子",
+		Level:   json.PatternLevelCritical,
+	})
+	defer json.UnregisterDangerousPattern("internal_only")
+
+	// Config 追加: その Config を使用する Processor のみに影響
+	cfg := json.DefaultConfig()
+	cfg.AddDangerousPattern(json.DangerousPattern{
+		Pattern: "project_secret",
+		Name:    "プロジェクト機密",
+		Level:   json.PatternLevelCritical,
+	})
+
+	withCfg, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer withCfg.Close()
+
+	withoutCfg, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer withoutCfg.Close()
+
+	_, err1 := withCfg.Get(`{"v": "project_secret"}`, "v")
+	_, err2 := withoutCfg.Get(`{"v": "project_secret"}`, "v")
+	_, err3 := withoutCfg.Get(`{"v": "internal_only"}`, "v")
+
+	fmt.Println("ローカルパターンが設定付きプロセッサをブロック:", err1 != nil)
+	fmt.Println("ローカルパターンが通常プロセッサをブロック:", err2 != nil)
+	fmt.Println("グローバルパターンが通常プロセッサをブロック:", err3 != nil)
+	// 出力:
+	// ローカルパターンが設定付きプロセッサをブロック: true
+	// ローカルパターンが通常プロセッサをブロック: false
+	// グローバルパターンが通常プロセッサをブロック: true
+}
+```
 
 ---
 
@@ -252,40 +323,43 @@ for _, p := range patterns {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 方法 1：設定フィールドで
-    cfg := json.DefaultConfig()
-    cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
-        {Pattern: "company_secret", Name: "会社の機密情報", Level: json.PatternLevelCritical},
-    }
+	// 方法 1: 設定フィールドで
+	cfg := json.DefaultConfig()
+	cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
+		{Pattern: "company_secret", Name: "会社の機密情報", Level: json.PatternLevelCritical},
+	}
 
-    // 方法 2：設定メソッドで
-    cfg.AddDangerousPattern(json.DangerousPattern{
-        Pattern: "internal_api",
-        Name:    "内部 API 参照",
-        Level:   json.PatternLevelWarning,
-    })
+	// 方法 2: 設定メソッドで
+	cfg.AddDangerousPattern(json.DangerousPattern{
+		Pattern: "internal_api",
+		Name:    "内部 API 参照",
+		Level:   json.PatternLevelWarning,
+	})
 
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    // 危険パターン検出のテスト
-    _, err = p.Get(`{"data": "company_secret_info"}`, "data")
-    if err != nil {
-        fmt.Println("危険パターンを検出：", err)
-    }
+	// 危険パターン検出のテスト（パターンは単語全体として一致: 両側に英字/数字/アンダースコアが隣接しない）
+	_, err = p.Get(`{"data": "company_secret"}`, "data")
+	fmt.Println("危険パターンを検出:", err != nil)
+	// 出力: 危険パターンを検出: true
 
-    // 登録済みパターンの確認
-    fmt.Printf("カスタムパターン数：%d\n", len(cfg.AdditionalDangerousPatterns))
+	// 登録済みパターンの確認
+	fmt.Printf("カスタムパターン数: %d\n", len(cfg.AdditionalDangerousPatterns))
 }
 ```
+
+::: tip マッチングは「単語全体」で行われる
+パターンが命中すると、単語境界コンテキストチェックが行われます: パターンの両側に英字、数字、アンダースコアが隣接している場合は通常の識別子の一部とみなされ、ブロックされません。例えばパターン `company_secret` は `"company_secret"` ではトリガーされますが、`"company_secret_info"` ではトリガーされません（後続の `_` は単語内文字のため）。`(`、`[`、`:`、`.` などの区切り文字で終わるパターン（`eval(` など）は後続文字の影響を受けません。これがライブラリ組み込みパターン（`eval(`、`__proto__` など）のマッチ方式です。
+:::
 
 ### デフォルトパターンの無効化
 
@@ -293,7 +367,7 @@ func main() {
 cfg := json.DefaultConfig()
 
 // 組み込みデフォルトパターンを無効化し（重要パターン以外）、カスタムパターンのみ使用
-// 注意：重要パターン（__proto__、constructor[、prototype.）は常に強制実行
+// 注意: 重要パターン（__proto__、constructor[、prototype.）は常に強制実行
 cfg.DisableDefaultPatterns = true
 
 // カスタムパターンの追加
@@ -318,7 +392,7 @@ cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
     Pattern: "suspicious_but_allowed",
     Name:    "疑わしいが許可",
-    Level:   json.PatternLevelInfo, // ログ記録のみ、ブロックしない
+    Level:   json.PatternLevelInfo, // 意味的注記。現在の実装では命中すると同様にブロックされる（PatternLevel 動作マトリクスを参照）
 })
 
 // 登録済みカスタムパターンの確認
@@ -326,6 +400,27 @@ for _, p := range cfg.AdditionalDangerousPatterns {
     fmt.Printf("パターン: %s, 名前: %s, レベル: %s\n", p.Pattern, p.Name, p.Level)
 }
 ```
+
+---
+
+## スキャンスイッチ
+
+3 つの Config フィールドが「どうスキャンするか」を制御します:
+
+| フィールド | デフォルト | 作用 |
+|------|------|------|
+| `FullSecurityScan` | `false` | `true` ではすべての入力をサイズにかかわらず全量スキャン。`false` では小さい入力（< 4KB）を全量、大きい入力は階層的最適化スキャン（次節を参照、同じく 100% カバレッジを保証）。全量モードは >100KB の入力に約 10–30% の追加オーバーヘッド |
+| `DisableDefaultPatterns` | `false` | `true` では組み込みの非重要パターン（HTML タグ、イベントハンドラなど）をスキップし、3 つの重要パターン + カスタムパターンのみ残す |
+| `AdditionalDangerousPatterns` | `nil` | 組み込みパターンに加えてカスタムパターンを追加（前述を参照） |
+
+```go
+cfg := json.SecurityConfig() // FullSecurityScan 有効 + 各制限を引き締め済み
+// 手動設定と等価:
+// cfg := json.DefaultConfig()
+// cfg.FullSecurityScan = true
+```
+
+有効化の推奨: **信頼できない入力**（パブリック API、ユーザー投稿、外部 webhook）を扱う場合、機密データ（認証、金融、個人情報）に関わる場合、またはコンプライアンスによる全量監査の要件がある場合は `FullSecurityScan` を有効にしてください。信頼できる内部サービスの大きなペイロードは、デフォルトの階層スキャンのままにしてスループットを両立できます。
 
 ---
 
@@ -337,11 +432,11 @@ for _, p := range cfg.AdditionalDangerousPatterns {
 
 ### より大きな JSON（≥ 4KB）
 
-多層最適化スキャンを採用し、**100% カバレッジを保証**します（サンプリングの盲域なし）：
+多層最適化スキャンを採用し、**100% カバレッジを保証**します（サンプリングの盲域なし）:
 
 - 重要パターン（`__proto__`、`constructor[`、`prototype.`）は常に完全スキャン
-- まず指示文字のチェック：危険文字が 1 つもない場合は高速にスキップ
-- 疑わしい文字密度を検出：密度が高すぎる場合は全量スキャンにフォールバックし、攻撃者が密集領域に悪意ある内容を隠すのを防止
+- まず指示文字のチェック: 危険文字が 1 つもない場合は高速にスキップ
+- 疑わしい文字密度を検出: 密度が高すぎる場合は全量スキャンにフォールバックし、攻撃者が密集領域に悪意ある内容を隠すのを防止
 - その他のパターンは 32KB **スライディングウィンドウ**でスキャン（ウィンドウはオーバーラップ付き）、境界をまたぐパターンの見落としを防止
 
 ---
@@ -349,5 +444,5 @@ for _, p := range cfg.AdditionalDangerousPatterns {
 ## 関連
 
 - [Config](../api-reference/config) - 設定オプション
-- [Validator](../extensions/validator) - バリデータ
-- [Hook フックシステム](../extensions/hooks) - 操作インターセプト
+- [スキーマ検証](../api-reference/schema) - Schema 検証
+- [Hook フックシステム](../extensions/hooks) - 操作のインターセプト

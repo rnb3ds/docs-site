@@ -1,8 +1,8 @@
 ---
 sidebar_label: "치트시트"
 title: "치트시트 - CyberGo html | API 한눈에 보기"
-description: "CyberGo html 주요 API 치트시트: 패키지 함수 Extract·ExtractText, Processor 메서드, Config 프리셋, 주요 설정 항목, errors.Is 오류 판별, 감사 설정을 함수 시그니처와 함께 한 페이지에 정리합니다."
-sidebar_position: 3
+description: "CyberGo html 주요 API 치트시트: Extract·ExtractToMarkdown 등 패키지 함수, Processor 메서드, 4종 Config 프리셋, errors.Is 오류 판별, AuditConfig 감사 설정의 시그니처와 사용법을 한 페이지에 정리합니다."
+sidebar_position: 2
 ---
 
 # 치트시트
@@ -47,7 +47,7 @@ batch := html.ExtractBatchFiles(paths)
 
 ### 컨텍스트 버전
 
-모든 함수에는 `ExtractWithContext` 변형이 있습니다:
+모든 함수에는 `*WithContext` 변형이 있습니다:
 
 ```go
 result, err := html.ExtractWithContext(ctx, data)
@@ -243,3 +243,9 @@ p.ClearAuditLog()             // 메모리 감사 로그 비우기
 p.ClearCache()                // 캐시 비우기 (통계 유지)
 p.ResetStatistics()           // 통계 카운터 재설정 (캐시 유지)
 ```
+
+## 다음 단계
+
+- [콘텐츠 추출 실전](../guides/core-features/content-extraction) - 추출 흐름과 문서 인식
+- [Processor 재사용과 캐시](../guides/performance/processor-cache) - 라이프사이클과 캐시 튜닝
+- [API 레퍼런스](../api-reference/) - 전체 API 문서

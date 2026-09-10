@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Link Extraction"
 title: "Link Extraction - CyberGo html | Resource Link API"
-description: "CyberGo html link extraction API: ExtractAllLinks family and GroupLinksByType to extract resource links, group them by type, with configurable filtering."
+description: "CyberGo html link extraction API: ExtractAllLinks family and GroupLinksByType for script, style, and image links, type grouping, filtering, URL dedup, sorting."
 sidebar_position: 2
 ---
 
@@ -101,7 +101,7 @@ cfg.BaseURL = "https://example.com"
 
 When `ResolveRelativeURLs=true` (default), relative URLs of all types are uniformly resolved to absolute URLs based on `BaseURL`:
 
-- The resolution logic is centralized in `resolveURLIfEnabled`, treating content links, images, media, source, script, embed, and link tags **identically**
+- The resolution logic is handled centrally inside the library (not exported), treating content links, images, media, source, script, embed, and link tags **identically**
 - Setting `BaseURL` explicitly **skips auto-detection** and directly uses the value provided by the caller
 - When `BaseURL` is empty and `ResolveRelativeURLs=true`, BaseURL is auto-derived from the document (see the tip below)
 
@@ -111,8 +111,8 @@ Content links (`<a href>`) control internal and external links via two separate 
 
 | Switch | Scope | Determination |
 |--------|-------|---------------|
-| `IncludeContentLinks` | Internal links | The URL itself is a relative path, or shares the same domain as `BaseURL` |
-| `IncludeExternalLinks` | External links | The URL is an absolute path and on a different domain than `BaseURL` (`IsDifferentDomain`) |
+| `IncludeContentLinks` | Internal links | The URL itself is a relative path, or (when `BaseURL` is set) resolves to the same domain as `BaseURL` |
+| `IncludeExternalLinks` | External links | The URL itself is an absolute external address (`http(s)://` or protocol-relative `//`), or (when `BaseURL` is set) resolves to a different domain than `BaseURL` |
 
 Both default to `true` (extracting all content links). Other resource types (images, CSS, JS, etc.) are not subject to the internal/external distinction and are controlled only by their respective `Include*` switches.
 

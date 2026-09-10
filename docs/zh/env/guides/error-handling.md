@@ -3,7 +3,7 @@ sidebar_label: "错误处理"
 title: "错误处理 - CyberGo env | 哨兵错误与恢复策略"
 description: "CyberGo env 错误处理指南，详解 16 个哨兵错误的 errors.Is 精确匹配、ParseError/FileError/SecurityError 等结构化错误的 errors.As 上下文提取、恢复降级策略与错误链 Unwrap 追踪，附生产环境错误分类实践。"
 sidebar_position: 5
-sidebar_icon: "🛡️"
+sidebar_icon: "🔧"
 ---
 
 # 错误处理
@@ -570,6 +570,46 @@ func handleValidationError(err error) {
     log.Fatalf("验证失败: %v", err)
 }
 ```
+
+## 错误类型完整对照
+
+库的结构化错误类型均可用 `errors.As` 提取上下文：
+
+| 类型 | 场景 | 关键信息 |
+|------|------|----------|
+| `ParseError` | 文件解析失败 | 文件名、行号、内容（已脱敏） |
+| `ValidationError` | 配置/键值校验失败 | 字段、规则、消息 |
+| `SecurityError` | 安全策略违规（禁止键、路径校验等） | 违规详情 |
+| `FileError` | 文件操作失败 | 路径、操作、大小/上限 |
+| `ExpansionError` | 变量展开失败 | `Kind`（失败原因分类） |
+| `JSONError` | JSON 解析失败 | 位置信息 |
+| `YAMLError` | YAML 解析失败 | 位置信息 |
+| `MarshalError` | 序列化/反序列化失败 | 操作与原因 |
+
+### ExpansionErrorKind
+
+`ExpansionError` 通过 `Kind` 字段区分两类失败，便于精确处理：
+
+| 常量 | 含义 |
+|------|------|
+| `ExpansionDepthKind` | 超出递归深度上限或检测到循环引用 |
+| `ExpansionRequiredKind` | `${VAR:?message}` 引用的变量未设置 |
+
+### 补充哨兵错误
+
+除[哨兵错误](#哨兵错误)一节列出的常用项外，还有：
+
+| 哨兵 | 含义 |
+|------|------|
+| `ErrClosed` | Loader 已关闭（或为 nil）后继续操作 |
+| `ErrInvalidConfig` | 配置无效，`New()` 返回时会包裹具体的校验错误 |
+| `ErrNotInitialized` | 全局模式下未先调用 `Load()` 即使用写入类函数 |
+| `ErrAlreadyInitialized` | 默认 Loader 已初始化，重复调用 `Load()` |
+| `ErrDuplicateKey` | 保留字段：当前重复键在 `OverwriteExisting=false` 时静默跳过，暂无代码路径返回 |
+
+### 判断辅助函数
+
+`IsMarshalError(err)` 用 `errors.As` 判断错误是否为 `*MarshalError`，无需手动断言。
 
 ## 相关文档
 

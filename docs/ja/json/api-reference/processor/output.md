@@ -1,24 +1,26 @@
 ---
-sidebar_label: "エンコードと出力"
-title: "Processor 出力 - CyberGo JSON | API リファレンス"
-description: "CyberGo JSON Processor 出力メソッド：Encode、EncodePretty、EncodeWithConfig、EncodeBatch/EncodeFields、Compact/Indent/HTMLEscape で多様な出力に対応します。"
+sidebar_label: "エンコード出力"
+title: "Processor エンコード出力 - CyberGo JSON | API リファレンス"
+description: "CyberGo JSON Processor 出力メソッド：Encode、EncodePretty、EncodeWithConfig、EncodeBatch/EncodeFields バッチ、Compact/Indent/HTMLEscape フォーマットを提供します。"
 sidebar_position: 5
 ---
 
 # 出力メソッド
 
-Processor は複数の JSON エンコード出力メソッドを提供します。
+Processor は多様な JSON エンコード出力メソッドを提供します。
 
 ## 基本出力
 
 ### Encode
+
+<Badge type="danger" text="非推奨" />
 
 シグネチャ：`func (p *Processor) Encode(value any, config ...Config) (string, error)`
 
 任意の値を JSON 文字列にエンコードします。
 
 ::: warning 非推奨
-`Processor.Encode` は直接 [`EncodeWithConfig`](#encodewithconfig) に委譲します。代わりに `EncodeWithConfig` を使用してください。`Encode` は将来のメジャーバージョンで削除されます。
+`Processor.Encode` は [`EncodeWithConfig`](#encodewithconfig) に直接委譲します。`EncodeWithConfig` に置き換えてください。`Encode` は将来のメジャーバージョンで削除されます。
 :::
 
 ```go
@@ -33,7 +35,7 @@ fmt.Println(result)
 
 シグネチャ：`func (p *Processor) EncodePretty(value any, config ...Config) (string, error)`
 
-任意の値をフォーマットされた JSON 文字列にエンコードします。
+任意の値を整形済み JSON 文字列にエンコードします。
 
 ```go
 result, err := p.EncodePretty(user)
@@ -48,7 +50,7 @@ if err != nil {
 
 シグネチャ：`func (p *Processor) EncodeWithConfig(value any, cfg ...Config) (string, error)`
 
-指定した設定で値を JSON 文字列にエンコードします。
+指定設定で値を JSON 文字列にエンコードします。
 
 **パラメータ**
 
@@ -76,7 +78,7 @@ result, err = p.EncodeWithConfig(data, cfg)
 
 シグネチャ：`func (p *Processor) EncodeBatch(pairs map[string]any, cfg ...Config) (string, error)`
 
-キーと値のペアをバッチで JSON オブジェクトにエンコードします。
+キー・バリューをまとめて JSON オブジェクトにエンコードします。
 
 ```go
 result, err := p.EncodeBatch(map[string]any{
@@ -89,7 +91,7 @@ result, err := p.EncodeBatch(map[string]any{
 
 シグネチャ：`func (p *Processor) EncodeFields(value any, fields []string, cfg ...Config) (string, error)`
 
-指定したフィールドのみをエンコードします。部分シリアライズに便利です。
+指定フィールドのみをエンコードします。部分シリアライズによく使われます。
 
 ```go
 type User struct {
@@ -107,20 +109,24 @@ result, err := p.EncodeFields(user, []string{"name", "email"})
 
 シグネチャ：`func (p *Processor) EncodeStream(values any, cfg ...Config) (string, error)`
 
-複数の値を JSON 配列ストリーム（array stream）としてエンコードします。`values` は通常スライスまたは列挙可能なコレクションで、`[v1,v2,...]` 形式の JSON 配列文字列を出力します。
+複数の値を JSON 配列ストリーム（array stream）にエンコードします。`values` は通常スライスか列挙可能なコレクションで、`[v1,v2,...]` 形式の JSON 配列文字列を出力します。
 
 ```go
 values := []any{"item1", "item2", "item3"}
 result, err := p.EncodeStream(values)
 ```
 
-## エンコード / デコード
+## エンコード/デコード
 
 ### Marshal
 
 シグネチャ：`func (p *Processor) Marshal(value any, cfg ...Config) ([]byte, error)`
 
-Go の値を JSON バイトスライスにエンコードします。`encoding/json.Marshal` と 100% 互換性があります。
+Go 値を JSON バイトスライスにエンコードします。`encoding/json.Marshal` と 100% 互換です。
+
+::: tip 出力は常に HTML エスケープされる
+`encoding/json.Marshal` と同様に、本メソッドの出力は**常に** HTML エスケープされます——渡された `cfg` で `EscapeHTML=false` を設定しても、このパスでは上書きされます。エスケープを呼び出し側で制御する場合は [`EncodeWithConfig`](#encodewithconfig) を使ってください。
+:::
 
 ```go
 data, err := p.Marshal(map[string]any{"name": "CyberGo"})
@@ -134,7 +140,7 @@ fmt.Println(string(data)) // {"name":"CyberGo"}
 
 シグネチャ：`func (p *Processor) MarshalIndent(value any, prefix, indent string, cfg ...Config) ([]byte, error)`
 
-Go の値をフォーマットされた JSON バイトスライスにエンコードします。`encoding/json.MarshalIndent` と 100% 互換性があります。
+Go 値を整形済み JSON バイトスライスにエンコードします。`encoding/json.MarshalIndent` と 100% 互換です。
 
 ```go
 data, err := p.MarshalIndent(user, "", "  ")
@@ -148,7 +154,7 @@ fmt.Println(string(data))
 
 シグネチャ：`func (p *Processor) Unmarshal(data []byte, value any, cfg ...Config) error`
 
-JSON バイトスライスをターゲット変数にパースします。`encoding/json.Unmarshal` と 100% 互換性があります。
+JSON バイトスライスをターゲット変数に解析します。`encoding/json.Unmarshal` と 100% 互換です。
 
 ```go
 var user User
@@ -164,21 +170,26 @@ if err != nil {
 
 シグネチャ：`func (p *Processor) Prettify(jsonStr string, cfg ...Config) (string, error)`
 
-JSON 文字列をインデント付きでフォーマットします。
+JSON 文字列をインデント形式にフォーマットします。デフォルトは 2 スペースインデント。`cfg` の `Indent` / `Prefix` フィールドでカスタマイズできます。
 
 ```go
 pretty, err := p.Prettify(`{"name":"Alice","age":30}`)
-// 出力：
+// 出力:
 // {
 //   "name": "Alice",
 //   "age": 30
 // }
+
+// 4 スペースインデント
+cfg := json.DefaultConfig()
+cfg.Indent = "    "
+pretty, err = p.Prettify(`{"name":"Alice","age":30}`, cfg)
 ```
 
-### Print（削除）
+### Print（削除済み）
 
-::: warning API 変更のお知らせ
-Print、PrintE、PrintPretty、PrintPrettyE はライブラリから削除され、提供されなくなりました。以下の代替手段を使用してください：
+::: warning API 変更の説明
+Print、PrintE、PrintPretty、PrintPrettyE はライブラリから削除され、提供されなくなりました。以下の代替案を使用してください：
 
 ```go
 // コンパクト出力
@@ -188,7 +199,7 @@ if err != nil {
 }
 fmt.Println(s)
 
-// フォーマット出力
+// 整形出力
 pretty, err := p.EncodePretty(data)
 if err != nil {
     log.Fatal(err)
@@ -201,7 +212,7 @@ fmt.Println(pretty)
 
 シグネチャ：`func (p *Processor) ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
 
-JSON データが指定した Schema に準拠しているか検証します。
+JSON データが指定 Schema に適合するか検証します。**Schema 違反の詳細は返される `[]ValidationError` で報告されます**。`error` が非 nil になるのは解析や事前検証の失敗時（JSON が不正、`schema` が `nil` など）のみです——検証通過時は `(nil, nil)`、検証失敗だがフローは正常な場合は `(非空スライス, nil)` を返します。
 
 ```go
 schema := &json.Schema{
@@ -228,18 +239,22 @@ for _, ve := range errors {
 
 シグネチャ：`func (p *Processor) Compact(jsonStr string, cfg ...Config) (string, error)`
 
-JSON 文字列を圧縮し、すべての空白文字を削除します。
+JSON 文字列を圧縮し、すべての空白文字を除去します。
+
+::: warning メソッドとパッケージレベル関数の命名差異
+「文字列イン、文字列アウト」の圧縮は 2 つの入口で**名前が異なります**：パッケージレベルは `json.CompactString(s)`、メソッド版は `p.Compact(s)` です。パッケージレベルの `json.Compact(dst, src)` は `encoding/json.Compact` 互換の **Buffer 形式**で、対応するメソッドは [`CompactBuffer`](#compactbuffer) であり、本メソッドではありません。
+:::
 
 ```go
 compact, err := p.Compact(`{"name": "CyberGo"}`)
-// 出力：{"name":"CyberGo"}
+// 出力: {"name":"CyberGo"}
 ```
 
 ### CompactBuffer
 
 シグネチャ：`func (p *Processor) CompactBuffer(dst *bytes.Buffer, src []byte, cfg ...Config) error`
 
-JSON を圧縮して Buffer に書き込みます。
+JSON を圧縮して Buffer に書き込みます。`encoding/json.Compact` とシグネチャ互換で、[`Compact`](#compact) の Buffer 形式です（パッケージレベルの対応は `json.Compact`）。
 
 ```go
 var buf bytes.Buffer
@@ -271,4 +286,4 @@ p.HTMLEscape(&buf, []byte(`{"html":"<script>alert(1)</script>"}`))
 ## 関連
 
 - [Config](../config) - 設定オプション
-- [解析と読み込み](./parse) - Parse/Load メソッド
+- [解析とロード](./parse) - Parse/Load メソッド

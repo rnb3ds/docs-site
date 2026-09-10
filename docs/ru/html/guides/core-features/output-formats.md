@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Форматы вывода на практике"
 title: "Форматы вывода - CyberGo html | сравнение форматов"
-description: "Форматы вывода на практике CyberGo html: сравнение текста, Markdown и JSON — особенности, сценарии и параметры конфигурации форматов."
+description: "Форматы вывода CyberGo html: текст, Markdown и JSON — сравнение и сценарии (поиск, блоги, API), опции InlineImageFormat и InlineLinkFormat."
 sidebar_position: 3
 ---
 
@@ -174,7 +174,7 @@ jsonBytes, err := html.ExtractToJSONFromFile("page.html")
 
 ## Версии с контекстом
 
-Все функции форматирования имеют варианты `ExtractWithContext` с поддержкой тайм-аута и отмены:
+Все функции форматирования имеют варианты `*WithContext`, поддерживающие тайм-аут и отмену:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

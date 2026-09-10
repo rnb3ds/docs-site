@@ -9,6 +9,10 @@ sidebar_position: 10
 
 无需创建 Processor 实例，直接调用的迭代函数。与 [Processor 迭代方法](../processor/iterate) 一一对应（双层设计）。
 
+::: tip 迭代顺序确定
+对象迭代按键名**字典序**进行，数组按自然顺序——Go map 原生迭代顺序是随机的，库内部做了排序，因此同一输入的回调顺序可复现、输出可测试。
+:::
+
 ## Foreach
 
 签名：`func Foreach(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config)`
@@ -44,7 +48,7 @@ err := json.ForeachWithPath(data, "items", func(key any, item *json.IterableValu
 
 签名：`func ForeachNested(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config)`
 
-递归迭代所有嵌套层级。
+递归迭代所有嵌套层级。递归深度上限为 200（防止深嵌套结构导致栈溢出，超出的子树不再深入）。
 
 ```go
 json.ForeachNested(data, func(key any, item *json.IterableValue) {
@@ -81,7 +85,7 @@ json.ForeachNested(data, func(key any, item *json.IterableValue) {
 
 签名：`func ForeachReturn(jsonStr string, fn func(key any, item *IterableValue), cfg ...Config) (string, error)`
 
-迭代 JSON 数据并通过回调访问每个元素，返回重新序列化后的 JSON 字符串。回调可经由 `GetData()` 对 map/slice 做修改，修改会反映到返回值。
+迭代 JSON 数据并通过回调访问每个元素，返回重新序列化后的 JSON 字符串。回调可经由 `GetData()` 对 map/slice 做修改，修改会反映到返回值。注意两点：只能改动**容器内部**（map 增删键、slice 改元素）——无法通过 `IterableValue` 原地替换标量元素；迭代运行在解析结果的**深拷贝**上，不会污染处理器缓存。
 
 ```go
 result, err := json.ForeachReturn(data, func(key any, item *json.IterableValue) {
@@ -180,6 +184,10 @@ err := json.ForeachWithPathAndControl(data, "items", func(key any, value any) js
 | `ForeachNestedWithError` | 无 | 是 | error | 是 |
 | `ForeachWithPathAndIterator` | 有 | 否 | error | IteratorControl |
 | `ForeachWithPathAndControl` | 有 | 否 | error | IteratorControl |
+
+::: warning void 变体不报错
+`Foreach` / `ForeachNested` 返回值为空：处理器不可用等设置错误被静默忽略，回调 panic 被捕获并记录日志后停止迭代（不会击穿进程）。error 变体（`*WithError` 系列）则把回调 panic 转换为错误返回。需要错误信息时，一律用带 `error` 返回值的变体。
+:::
 
 ---
 
@@ -325,7 +333,7 @@ err := json.ForeachFileNested("config.json", func(key any, item *json.IterableVa
 | 常量 | 说明 |
 |------|------|
 | `IteratorNormal` | 正常继续迭代 |
-| `IteratorContinue` | 跳过当前项，继续迭代 |
+| `IteratorContinue` | `IteratorNormal` 的 no-op 别名（为 API 对称保留）——「跳过当前项」是隐式的：不产生任何副作用，迭代照常继续 |
 | `IteratorBreak` | 停止迭代 |
 
 ### 中断迭代

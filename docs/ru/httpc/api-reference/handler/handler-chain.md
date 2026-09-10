@@ -1,6 +1,6 @@
 ---
-sidebar_label: "Handler и цепочка middleware"
-title: "Handler и middleware - CyberGo HTTPC | Конвейер обработки"
+sidebar_label: "Handler и кастомное middleware"
+title: "Handler и кастомное middleware - CyberGo HTTPC | Конвейер обработки"
 description: "Подробное описание архитектуры конвейера Handler HTTPC: как в двухслойном дизайне метод API Layer 1 собирает луковую цепочку MiddlewareFunc и выполняет Handler, принципы комбинатора Chain, механизм clientImpl.middlewareChain и примеры написания пользовательского middleware."
 sidebar_position: 1
 ---

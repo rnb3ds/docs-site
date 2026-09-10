@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Result"
 title: "Result - CyberGo HTTPC | Result 응답 타입"
-description: "HTTPC Result 응답 타입 API 레퍼런스: StatusCode/Body 기본 메서드, 상태 판단, Cookie 조작, Unmarshal JSON 파싱, SaveToFile 파일 저장과 RequestInfo/ResponseInfo 하위 타입."
+description: "HTTPC Result 응답 타입 API 레퍼런스: StatusCode/Body 등 nil-안전 메서드, Cookie 조작, Unmarshal, SaveToFile, RequestInfo/ResponseInfo/RequestMeta 하위 타입(ProxyURL 포함)."
 sidebar_position: 3
 ---
 
@@ -267,12 +267,20 @@ type ResponseInfo struct {
 type RequestMeta struct {
     Duration      time.Duration
     Attempts      int
+    ProxyURL      string
     RedirectChain []string
     RedirectCount int
 }
 ```
 
 요청 실행 메타데이터. `result.Meta`로 접근합니다.
+| 필드 | 설명 |
+|------|------|
+| `Duration` | 요청 시작부터 응답 완료까지의 총 소요 시간 |
+| `Attempts` | 재시도를 포함한 총 시도 횟수 |
+| `ProxyURL` | 최종 시도에서 실제로 사용된 프록시 URL(`Connection.ProxyURL` 또는 풀에서 선택된 항목); 직접 연결이면 빈 문자열이며 시스템 프록시(`EnableSystemProxy`)도 마찬가지로 기록되지 않습니다(계속 빈 값). 요청마다 송출을 확인해야 한다면 `Connection.ProxyURL` 또는 `ProxyPool`을 명시적으로 설정하세요. 회전 시나리오에서는 재시도마다 다른 프록시를 쓸 수 있으며, 이 필드는 반환된 응답을 만들어낸 시도의 값을 보고합니다 |
+| `RedirectChain` | 리다이렉트로 거쳐 간 URL 체인 |
+| `RedirectCount` | 따라간 리다이렉트 횟수 |
 
 ```go
 result, _ := client.Get(url)
@@ -280,6 +288,7 @@ result, _ := client.Get(url)
 fmt.Println(result.Meta.Duration)      // 125ms
 fmt.Println(result.Meta.Attempts)       // 2(1회 재시도)
 fmt.Println(result.Meta.RedirectCount)  // 1(1회 리다이렉트 따라감)
+fmt.Println(result.Meta.ProxyURL)        // ""(직접 연결) 또는 "http://proxy:8080"
 ```
 
 ## 관련 항목

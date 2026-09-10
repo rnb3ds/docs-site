@@ -1,13 +1,13 @@
 ---
 sidebar_label: "보안 개요"
 title: "보안 개요 - CyberGo HTTPC | 보안 기능 총람"
-description: "HTTPC 보안 기능 개요: TLS 1.2+ 버전 제어, SSRF 사설 IP 차단과 CIDR 면제, CRLF 주입 방어, Cookie 보안 검증, 압축 폭탄 방어, 리다이렉트 허용 목록, 응답 본문과 요청 본문 크기 제한 및 보안 경고 메커니즘."
+description: "HTTPC 보안 기능 총람: 심층 방어 계층 지도, 기본/수동 활성화 비교표, SSRF 사설 IP 차단과 CIDR 면제, TLS 버전·암호 제품군 제어, 인증서 고정, CRLF 주입 방어, Cookie 검증, 압축 해제 폭탄 방어, URL 자격 증명 마스킹과 보안 경고 메커니즘."
 sidebar_position: 1
 ---
 
 # 보안 개요
 
-HTTPC는 "기본 보안(Secure by Default)" 원칙을 따릅니다: 모든 핵심 보안 기능이 바로 사용 가능하며, 추가 구성 없이 일반적인 공격 표면을 방어합니다. 사용자 제공 URL 처리, 외부 신뢰할 수 없는 서비스 호출, 또는 높은 보안 요구사항 시나리오(금융, 의료, 정부)에서 실행할 때 HTTPC의 다층 방어는 신뢰할 수 있는 기준선이 됩니다.
+HTTPC는 "기본 보안(Secure by Default)" 원칙을 따릅니다: 모든 핵심 보안 기능이 바로 사용 가능하며, 추가 구성 없이 일반적인 공격 표면을 방어합니다. 사용자 제공 URL 처리, 외부의 신뢰할 수 없는 서비스 호출, 또는 높은 보안 요구사항 시나리오(금융, 의료, 정부)에서 실행할 때 HTTPC의 다층 방어는 신뢰할 수 있는 기준선이 됩니다.
 
 ## 보안 기능 매트릭스
 
@@ -15,27 +15,83 @@ HTTPC는 "기본 보안(Secure by Default)" 원칙을 따릅니다: 모든 핵�
 
 | 기능 | Config 필드 | 기본값 | 관련 함수 / 옵션 |
 |------|-------------|--------|------------------|
-| TLS 최소 버전 | `Security.MinTLSVersion` | TLS 1.2 | — |
-| TLS 최대 버전 | `Security.MaxTLSVersion` | TLS 1.3 | — |
-| 커스텀 TLS 구성 | `Security.TLSConfig` | `nil`(기본값 사용) | — |
-| 인증서 검증 건너뛰기 | `Security.InsecureSkipVerify` | `false` | 테스트 전용 |
-| 인증서 고정 | `Security.CertificatePinner` | `nil`(비활성화) | `NewSPKIHashPinner` 등 |
-| SSRF 방어 | `Security.AllowPrivateIPs` | `false`(활성화) | `WithAllowPrivateIPs` |
-| SSRF 정밀 면제 | `Security.SSRFExemptCIDRs` | `nil` | — |
-| URL 검증 | `Security.ValidateURL` | `true` | — |
-| 요청 헤더 검증 | `Security.ValidateHeaders` | `true` | — |
-| Content-Length 엄격 검사 | `Security.StrictContentLength` | `true` | — |
-| Cookie 보안 검증 | `Security.CookieSecurity` | `nil`(검증 안 함) | `StrictCookieSecurityConfig`, `WithSecureCookie` |
-| 응답 본문 크기 제한 | `Security.MaxResponseBodySize` | 10MB | — |
-| 요청 본문 크기 제한 | `Security.MaxRequestBodySize` | 0(제한 없음) | 명시적 설정 필요 |
-| 압축 해제 폭탄 방어 | `Security.MaxDecompressedBodySize` | 100MB | — |
-| 응답 헤더 크기 제한 | `Connection.MaxResponseHeaderBytes` | 0(Go 기본값 10MB) | — |
-| 리다이렉트 허용 목록 | `Security.RedirectWhitelist` | `nil`(전체 허용) | — |
-| 리다이렉트 횟수 제한 | `Defaults.MaxRedirects` | 10 | `WithMaxRedirects` |
-| 리다이렉트 따르기 여부 | `Defaults.FollowRedirects` | `true` | `WithFollowRedirects` |
+| TLS 최소 버전 | `SecurityConfig.MinTLSVersion` | TLS 1.2 | — |
+| TLS 최대 버전 | `SecurityConfig.MaxTLSVersion` | TLS 1.3 | — |
+| 커스텀 TLS 구성 | `SecurityConfig.TLSConfig` | `nil`(기본값 사용) | — |
+| 인증서 검증 건너뛰기 | `SecurityConfig.InsecureSkipVerify` | `false` | 테스트 전용 |
+| 인증서 고정 | `SecurityConfig.CertificatePinner` | `nil`(비활성화) | `NewSPKIHashPinner` 등 |
+| SSRF 방어 | `SecurityConfig.AllowPrivateIPs` | `false`(활성화) | `WithAllowPrivateIPs` |
+| SSRF 정밀 면제 | `SecurityConfig.SSRFExemptCIDRs` | `nil` | — |
+| URL 검증 | `SecurityConfig.ValidateURL` | `true` | — |
+| 요청 헤더 검증 | `SecurityConfig.ValidateHeaders` | `true` | — |
+| Content-Length 엄격 검사 | `SecurityConfig.StrictContentLength` | `true` | — |
+| Cookie 보안 검증 | `SecurityConfig.CookieSecurity` | `nil`(검증 안 함) | `StrictCookieSecurityConfig`, `WithSecureCookie` |
+| 응답 본문 크기 제한 | `SecurityConfig.MaxResponseBodySize` | 10MB | — |
+| 요청 본문 크기 제한 | `SecurityConfig.MaxRequestBodySize` | 0(제한 없음) | 명시적 설정 필요 |
+| 압축 해제 폭탄 방어 | `SecurityConfig.MaxDecompressedBodySize` | 100MB | — |
+| 응답 헤더 크기 제한 | `ConnectionConfig.MaxResponseHeaderBytes` | 0(Go 기본값 10MB) | — |
+| 리다이렉트 허용 목록 | `SecurityConfig.RedirectWhitelist` | `nil`(전체 허용) | — |
+| 리다이렉트 횟수 제한 | `RequestDefaults.MaxRedirects` | 10 | `WithMaxRedirects` |
+| 리다이렉트 따르기 여부 | `RequestDefaults.FollowRedirects` | `true` | `WithFollowRedirects` |
 
 :::tip
-사용자 제공 URL을 처리할 때 `httpc.SecureConfig()`를 직접 사용하면 가장 엄격한 보안 기준선을 얻을 수 있습니다: 리다이렉트 비활성화, 5MB 응답 상한, 더 짧은 타임아웃, URL/요청 헤더 검증 활성화.
+사용자 제공 URL을 처리할 때 `httpc.SecureConfig()`를 사용하는 것만으로 가장 엄격한 보안 기준선을 얻을 수 있습니다: 리다이렉트 비활성화, 5MB 응답 상한, 더 짧은 타임아웃, URL/요청 헤더 검증 활성화.
+:::
+
+## 다층 방어 지도
+
+HTTPC의 보안 능력은 요청 수명 주기의 여러 계층에 분포하며, 어느 한 계층이 우회되어도 다음 계층이 방어합니다:
+
+| 계층 | 시점 | 커버 범위 | 구현 위치 |
+|------|------|----------|----------|
+| 사전 검증 계층 | 요청 전송 전 | URL 형식/프로토콜/길이 검증, SSRF 호스트명 빠른 조회(localhost, IP 리터럴, 전통적 표기), 요청 헤더 CRLF/제어 문자, 요청 본문 크기 | `internal/security/validator.go` |
+| 리다이렉트 계층 | 매 홉 30x | 리다이렉트 도메인 허용 목록 → SSRF 대상 검증 → 크로스 도메인 민감 헤더 제거 → 순환 리다이렉트 검출 → 횟수 상한 | `internal/engine/transport.go` |
+| 연결 계층 | 실제 다이얼 시 | DNS를 한 번만 해석하고 해석된 IP를 개별 검증하며, 사설 주소를 필터링한 뒤 검증된 IP에 직접 연결(DNS 리바인딩 TOCTOU 방지) | `internal/connection/pool.go` |
+| TLS 계층 | 핸드셰이크 시 | 버전 범위(기본 1.2-1.3), ECDHE+AEAD 암호 제품군 허용 목록, 타원 곡선 선호, 재협상 금지, 인증서 고정 | `internal/connection/pool.go` |
+| 응답 계층 | 응답 읽기 시 | 응답 본문/해제 이중 상한, Content-Length 엄격 검사, 스트리밍 읽기 제한 | `internal/engine/response.go` |
+| 출력 정화 계층 | 로그/오류/감사 기록 시 | URL 자격 증명 마스킹, 민감한 쿼리 파라미터 `[REDACTED]`, 민감한 요청 헤더 마스킹 | `internal/validation/sanitize.go` |
+| 다운로드 계층 | 파일 기록 시 | 5계층 경로 방어(UNC/제어 문자/시스템 디렉토리/트래버설/심볼릭 링크)와 SHA-256 무결성 검증 | `download.go` |
+
+SSRF를 예로 한 3계층 협력: 사전 검증 계층이 먼저 호스트명 기준으로 `localhost`와 사설망 IP 리터럴을 차단하고(DNS 해석 없이, 네트워크 오버헤드 제로), 리다이렉트 계층이 매 홉 대상에 대해 반복 검증하며, 연결 계층은 다이얼 전에 DNS를 해석해 실제 IP를 검증하므로 공격자가 DNS 리바인딩을 써도 우회하기 어렵습니다. 자세한 내용은 [SSRF 방어](./ssrf)를 참조하세요.
+
+## 기본 동작: 바로 사용 vs 수동 활성화
+
+항목별로 소스 코드 기본값(`types.go`의 `DefaultConfig()`)을 기준으로 합니다.
+
+### 기본 활성화(구성 불필요)
+
+| 능력 | 기본값 | 설명 |
+|------|--------|------|
+| SSRF 방어 | `AllowPrivateIPs = false` | 사설/예약/루프백/링크 로컬 IP 차단, IPv6와 혼합 표기 우회 포함 |
+| URL 검증 | `ValidateURL = true` | http/https만 허용, scheme과 host 비어 있지 않음 요구 |
+| 요청 헤더 검증 | `ValidateHeaders = true` | CRLF 주입과 제어 문자 거부, Connection/Transfer-Encoding 토큰 검증 |
+| TLS 버전 범위 | TLS 1.2 – 1.3 | TLS 1.0/1.1 거부; 필드가 0이면 자동으로 1.2/1.3 폴백 |
+| TLS 암호 제품군 | ECDHE+AEAD 허용 목록 | 순방향 비밀성을 강제하는 6개 제품군; `RenegotiateNever`로 재협상 금지 |
+| 리다이렉트 SSRF 검증 | 매 홉 실행 | 리다이렉트 대상도 동일하게 SSRF 검증 거침 |
+| 크로스 도메인 리다이렉트 헤더 제거 | 자동 | 다른 호스트로 이동 시 Authorization/Cookie/Proxy-Authorization 제거 |
+| 순환 리다이렉트 검출 | 자동 | A→B→A식 순환 검출(연속 동일 URL 제외) |
+| 리다이렉트 상한 | 10회 | 구성 상한 50, '무제한' 모드 없음 |
+| 응답 본문 상한 | 10MB | 초과 시 오류 반환 |
+| 압축 해제 폭탄 방어 | 100MB | 해제 후 실제 크기 제한 |
+| Content-Length 엄격 검사 | `StrictContentLength = true` | 응답 바이트 수와 Content-Length 불일치 시 오류(HEAD 제외) |
+| 로그/오류 마스킹 | 자동 | URL 자격 증명을 `***:***`로, token/password 등 파라미터를 `[REDACTED]`로 교체 |
+| 다운로드 경로 방어 | 자동 | 5계층 검사 + 검증 실패 시 다운로드 파일 자동 삭제 |
+| HTTP/2 | `EnableHTTP2 = true` | TLS에서 ALPN 협상 |
+
+### 기본 비활성화(명시적 활성화 필요)
+
+| 능력 | 기본값 | 활성화 방법 |
+|------|--------|----------|
+| 인증서 고정 | `CertificatePinner = nil` | `NewSPKIHashPinner` 등으로 생성 후 할당, [TLS와 인증서 고정](./tls-certpin) 참조 |
+| Cookie 보안 검증 | `CookieSecurity = nil`(검증 안 함) | `StrictCookieSecurityConfig()` |
+| 리다이렉트 도메인 허용 목록 | `RedirectWhitelist = nil`(전체 허용) | 도메인/와일드카드 목록 구성 |
+| 요청 본문 상한 | `MaxRequestBodySize = 0`(제한 없음, 폴백 없음) | 바이트 수 명시적 설정 |
+| transport 수준 응답 헤더 타임아웃 | `ResponseHeader = 0`(비활성화) | Slowloris 방어 심층 방어가 필요할 때 설정 |
+| Cookie jar | `EnableCookies = false` | true로 설정하거나 DomainClient 사용 |
+| DoH | `EnableDoH = false` | true로 설정 |
+
+:::tip
+"기본 비활성화" 항목은 결함이 아니라, 비즈니스 요구를 미리 알 수 없는 옵션입니다: 인증서 고정에는 대상 서비스의 실제 지문이 필요하고, 요청 본문 상한은 비즈니스 메시지 크기에 따라 달라집니다. 신뢰할 수 없는 URL을 처리할 때 `SecureConfig()`가 이 중 여러 항목을 한 번에 조입니다(리다이렉트 금지, 5MB 응답 상한, 더 짧은 타임아웃).
 :::
 
 ## TLS 보안
@@ -51,8 +107,17 @@ cfg.Security.MaxTLSVersion = tls.VersionTLS13
 
 TLS 1.3 강제가 필요한 경우(더 높은 보안 요구, 클라이언트와 서버 모두 지원), `MinTLSVersion = tls.VersionTLS13`을 설정하면 됩니다. `TLSConfig`를 설정하면 `MinTLSVersion`/`MaxTLSVersion`은 무시됩니다 — `TLSConfig`가 우선합니다.
 
+기본 TLS 구성(`TLSConfig` 미설정 시)에는 다음 강화 항목도 포함됩니다:
+
+- **암호 제품군 허용 목록**: 순방향 비밀성을 강제하는 6개의 ECDHE + AEAD 제품군만 허용(ECDSA/RSA × AES-128-GCM/AES-256-GCM/ChaCha20-Poly1305), CBC와 정적 RSA 키 교환 제외
+- **타원 곡선 선호**: X25519, P-256, P-384
+- **재협상 금지**: `RenegotiateNever`, 재협상류 공격 방지
+- **세션 재사용**: 클라이언트 세션 티켓 LRU 캐시(256개), 반복 연결의 핸드셰이크 가속
+
+위 강화 항목은 HTTPC가 transport를 생성할 때 일괄 주입합니다(`internal/connection/pool.go`의 `createTLSConfig`). 커스텀 `TLSConfig`를 설정하면 해당 구성이 우선합니다 — 인증서 고정 주입은 여전히 적용되지만, 나머지 제품군/곡선 설정은 더 이상 효력이 없습니다.
+
 :::warning
-`InsecureSkipVerify`는 테스트 전용입니다. 프로덕션 환경에서는 절대 `true`로 설정하지 마세요, 그렇지 않으면 TLS 암호화가 무의미해지며 중간자가 임의로 도청하고 변조할 수 있습니다. 설정하면 HTTPC가 비테스트 환경의 `stderr`에 보안 경고를 출력합니다(아래 "보안 경고 메커니즘" 참조).
+`InsecureSkipVerify`는 테스트 전용입니다. 프로덕션 환경에서는 절대 `true`로 설정하지 마세요. 그렇지 않으면 TLS 암호화가 무의미해지며 중간자가 마음대로 도청하고 변조할 수 있습니다. 설정하면 HTTPC가 비테스트 환경의 `stderr`에 보안 경고를 출력합니다(아래 "보안 경고 메커니즘" 참조).
 :::
 
 더 많은 TLS 세부 정보(암호 제품군, 인증서 고정, mTLS, 커스텀 CA)는 [TLS와 인증서 고정](./tls-certpin)을 참조하세요.
@@ -105,6 +170,29 @@ httpc.WithHeader("X-Bad", "value\x00null")                // 제어 문자
 ```
 
 검증은 O(1) 룩업 테이블을 사용하여 성능 오버헤드가 극히 낮으며, `PerformanceConfig()`도 이 검증을 유지합니다.
+
+CRLF와 제어 문자 외에도, 다중 토큰 요청 헤더(RFC 9110 문법)는 **토큰 허용 목록 검증**을 수행합니다: `Connection`은 `keep-alive`/`close`/`upgrade`만 허용하고, `Transfer-Encoding`은 `chunked`/`compress`/`deflate`/`gzip`/`identity`만 허용하여 요청 헤더 밀반입(request smuggling)을 방지합니다.
+
+## 입력 정화와 로그 마스킹
+
+HTTPC는 **출력 측**에도 방어가 있습니다: 로그, 오류 메시지, 감사 이벤트에 들어가는 모든 URL은 `SanitizeURL`로 정화되며(`internal/validation/sanitize.go`), 자격 증명과 민감한 파라미터의 2차 유출을 방지합니다:
+
+```go
+// 정화 전: https://user:pass@example.com/api?token=abc123&file=1
+// 정화 후: https://***:***@example.com/api?token=[REDACTED]&file=1
+```
+
+| 마스킹 규칙 | 설명 |
+|----------|------|
+| URL 자격 증명 마스킹 | `user:pass@host` → `***:***@host` |
+| 민감한 쿼리 파라미터 마스킹 | `token`, `access_token`, `api_key`, `password`, `signature` 등 20여 개 파라미터 이름(대소문자 구분 없음) → `[REDACTED]` |
+| 프래그먼트 제거 | OAuth 암시적 권한 부여 프래그먼트가 로그에 기록되는 것을 방지 |
+
+이 정화는 자동으로 적용됩니다: 오류 분류 시 URL(`ClientError`에 원본 자격 증명이 나타나지 않음), `LoggingMiddleware`의 요청 로그, `AuditMiddleware`의 감사 이벤트, `Config.String()`의 프록시 자격 증명 마스킹.
+
+:::tip
+이 마스킹 계층이 방어하는 것은 "2차 유출"입니다 — 공격이 다른 계층에서 이미 차단되었더라도, 로그와 오류 집계 시스템(ELK, Sentry)은 여전히 자격 증명이 모이는 곳이 될 수 있습니다. HTTPC는 기본적으로 근원에서 마스킹하며 추가 구성이 필요 없습니다.
+:::
 
 ## Cookie 보안
 
@@ -216,6 +304,16 @@ cfg.Security.RedirectWhitelist = []string{
 
 `RedirectWhitelist`는 정확한 매칭과 와일드카드를 지원합니다: `*.example.com`은 `api.example.com` 등 엄격한 서브도메인을 매칭하지만, 네이키드 도메인 `example.com`은 매칭하지 않습니다(둘 다 개별적으로 나열해야 함). 허용 목록이 아닌 도메인으로의 리다이렉트는 차단됩니다. 리다이렉트 대상은 SSRF IP 검증도 동시에 거칩니다.
 
+허용 목록 외에도 매 홉 리다이렉트는 순서대로 다음 검사를 거칩니다(하나라도 실패하면 해당 홉을 거부, 구현은 `internal/engine/transport.go`의 `checkRedirect`):
+
+1. **프로토콜 검사**: http/https만 허용, `file://` 등 다른 scheme 거부
+2. **SSRF 대상 검증**: 리다이렉트 주소의 호스트명을 SSRF 규칙으로 검증하며, `http://169.254.169.254/` 같은 대상은 즉시 거부
+3. **크로스 도메인 민감 헤더 제거**: 대상 호스트가 시작 호스트와 다르면 `Authorization`, `Cookie`, `Proxy-Authorization`을 자동 제거 — 리다이렉트가 허용되더라도 자격 증명이 제3자 도메인으로 전달되지 않음
+4. **순환 리다이렉트 검출**: A→B→A식 순환을 검출하여 오류를 반환(연속 동일 URL의 A→A는 순환으로 간주하지 않음. 서버가 매번 다른 응답을 반환할 수 있기 때문)
+5. **횟수 상한**: 기본 10회, 구성 하드 상한 50(`MaxRedirects`), '무제한' 모드는 존재하지 않음
+
+리다이렉트 따라가기 제어, 체인 추적, 수동 처리는 [리다이렉트 가이드](../guides/redirects)를 참조하세요.
+
 ## 응답 헤더 크기 제한
 
 `MaxResponseHeaderBytes`는 서버 응답 헤더 크기를 제한하여, 악의적인 서버가 초대형 응답 헤더를 보내 메모리를 고갈시키는 것을 방지합니다:
@@ -244,7 +342,7 @@ HTTPC는 고위험 구성에 대해 비테스트 환경에서 `stderr` 경고를
 // 커스텀 writer로 리다이렉트(예: 구조화된 로그)
 httpc.SetSecurityWarnOutput(os.Stdout)
 
-// 완전 억제(권장하지 않음 — 경고는 보안 가이드라인이며 조용히 무시해서는 안 됨)
+// 완전 억제(권장하지 않음 — 경고는 보안 가이드 레일이며 조용히 무시해서는 안 됨)
 httpc.SetSecurityWarnOutput(io.Discard)
 ```
 

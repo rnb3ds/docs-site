@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Операции удаления"
 title: "Методы удаления Processor - CyberGo JSON | API справочник"
-description: "Методы удаления CyberGo JSON Processor: Delete удаляет по пути, DeleteClean с автоочисткой null и пустых массивов, поддержка цепочечных вызовов."
+description: "Методы удаления CyberGo JSON Processor: Delete по пути, DeleteClean с каскадной очисткой null и пустых родителей; поддержка срезов и подстановочных знаков."
 sidebar_position: 4
 ---
 
@@ -19,7 +19,7 @@ Processor предоставляет методы удаления данных,
 ```go
 p, err := json.New()
 if err != nil {
-    panic(err)
+	panic(err)
 }
 defer p.Close()
 

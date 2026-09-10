@@ -1,13 +1,13 @@
 ---
 sidebar_label: "解析验证"
 title: "Processor 解析与验证 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 解析方法：Valid 验证、Parse 解析、ParseAny 任意类型、PreParse 预解析优化与 GetFromParsed 快速查询，支持配置化解析。"
+description: "CyberGo JSON Processor 解析方法：Valid 验证并返回失败原因、ValidBytes 快速判定、Parse 解析、ParseAny 任意类型、PreParse 预解析优化与 GetFromParsed 快速查询，支持配置化解析。"
 sidebar_position: 6
 ---
 
 # 解析与验证方法
 
-Processor 提供 JSON 解析与有效性验证方法。文件读写与流式加载见[文件操作](./file-io)。
+Processor 提供 JSON 解析与有效性验证方法。文件读写与流式加载见[文件操作](./file-io)。解析/验证行为与[包级解析函数](../functions/parse)镜像一致；包级 `Valid` 返回单个 `bool`（标准库兼容），需要失败原因时用本页的 `Valid` 或包级 `ValidWithConfig`。
 
 ## 验证方法
 
@@ -21,26 +21,27 @@ Processor 提供 JSON 解析与有效性验证方法。文件读写与流式加�
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    cases := []string{
-        `{"name":"CyberGo","age":25}`,
-        `{"name":}`,
-    }
-    for _, c := range cases {
-        valid, err := p.Valid(c)
-        fmt.Printf("valid=%-5v 有错误=%v\n", valid, err != nil)
-    }
+	cases := []string{
+		`{"name":"CyberGo","age":25}`,
+		`{"name":}`,
+	}
+	for _, c := range cases {
+		valid, err := p.Valid(c)
+		fmt.Printf("valid=%-5v 有错误=%v\n", valid, err != nil)
+	}
 }
+
 // 输出：
 // valid=true  有错误=false
 // valid=false 有错误=true
@@ -56,20 +57,21 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    fmt.Println(p.ValidBytes([]byte(`{"ok":true}`))) // true
-    fmt.Println(p.ValidBytes([]byte(`{not json}`)))   // false
+	fmt.Println(p.ValidBytes([]byte(`{"ok":true}`))) // true
+	fmt.Println(p.ValidBytes([]byte(`{not json}`)))  // false
 }
+
 // 输出：
 // true
 // false
@@ -87,38 +89,39 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 type User struct {
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"name":"CyberGo","age":25}`
+	data := `{"name":"CyberGo","age":25}`
 
-    // 解析到 map[string]any（数字默认为 float64）
-    var obj map[string]any
-    if err := p.Parse(data, &obj); err != nil {
-        panic(err)
-    }
-    fmt.Printf("map: name=%v age=%T(%v)\n", obj["name"], obj["age"], obj["age"])
+	// 解析到 map[string]any（数字默认为 float64）
+	var obj map[string]any
+	if err := p.Parse(data, &obj); err != nil {
+		panic(err)
+	}
+	fmt.Printf("map: name=%v age=%T(%v)\n", obj["name"], obj["age"], obj["age"])
 
-    // 解析到结构体
-    var u User
-    if err := p.Parse(data, &u); err != nil {
-        panic(err)
-    }
-    fmt.Printf("struct: %+v\n", u)
+	// 解析到结构体
+	var u User
+	if err := p.Parse(data, &u); err != nil {
+		panic(err)
+	}
+	fmt.Printf("struct: %+v\n", u)
 }
+
 // 输出：
 // map: name=CyberGo age=float64(25)
 // struct: {Name:CyberGo Age:25}
@@ -134,67 +137,69 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data, err := p.ParseAny(`{"name":"CyberGo","age":25}`)
-    if err != nil {
-        panic(err)
-    }
-    obj := data.(map[string]any)
-    fmt.Printf("name=%v age=%v\n", obj["name"], obj["age"])
+	data, err := p.ParseAny(`{"name":"CyberGo","age":25}`)
+	if err != nil {
+		panic(err)
+	}
+	obj := data.(map[string]any)
+	fmt.Printf("name=%v age=%v\n", obj["name"], obj["age"])
 }
+
 // 输出：
 // name=CyberGo age=25
 ```
 
 ### PreserveNumbers 模式
 
-默认（`PreserveNumbers=false`）所有 JSON 数字都解析为 `float64`，这会丢失大整数精度并改变小数书写形式。开启 `PreserveNumbers=true` 后，数字保留为 `json.Number`（底层即原始字符串），完整保留原文格式与精度，适合金额、大整数、科学计数法等场景。下例用 `%T` 直观展示两种模式下数字的 Go 类型差异：
+默认（`PreserveNumbers=false`）所有 JSON 数字都解析为 `float64`，这会丢失大整数精度并改变小数书写形式。开启 `PreserveNumbers=true` 后，数字保留为库内 `Number` 类型（`%T` 打印为 `json.Number`——库包名与标准库同名；底层即原始字符串，API 与标准库 `json.Number` 完全一致），完整保留原文格式与精度，适合金额、大整数、科学计数法等场景。下例用 `%T` 直观展示两种模式下数字的 Go 类型差异：
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"id":42,"price":19.99}`
+	data := `{"id":42,"price":19.99}`
 
-    // 默认模式：所有数字解析为 float64
-    var def any
-    if err := p.Parse(data, &def); err != nil {
-        panic(err)
-    }
-    defM := def.(map[string]any)
-    fmt.Printf("默认   : id 类型=%T 值=%v\n", defM["id"], defM["id"])
+	// 默认模式：所有数字解析为 float64
+	var def any
+	if err := p.Parse(data, &def); err != nil {
+		panic(err)
+	}
+	defM := def.(map[string]any)
+	fmt.Printf("默认   : id 类型=%T 值=%v\n", defM["id"], defM["id"])
 
-    // PreserveNumbers 模式：数字保留为 json.Number
-    cfg := json.DefaultConfig()
-    cfg.PreserveNumbers = true
-    var preserved any
-    if err := p.Parse(data, &preserved, cfg); err != nil {
-        panic(err)
-    }
-    preM := preserved.(map[string]any)
-    fmt.Printf("保留数字: id 类型=%T 值=%v\n", preM["id"], preM["id"])
+	// PreserveNumbers 模式：数字保留为 json.Number
+	cfg := json.DefaultConfig()
+	cfg.PreserveNumbers = true
+	var preserved any
+	if err := p.Parse(data, &preserved, cfg); err != nil {
+		panic(err)
+	}
+	preM := preserved.(map[string]any)
+	fmt.Printf("保留数字: id 类型=%T 值=%v\n", preM["id"], preM["id"])
 }
+
 // 输出：
 // 默认   : id 类型=float64 值=42
 // 保留数字: id 类型=json.Number 值=42
@@ -228,56 +233,57 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"CyberGo","age":25},"meta":{"version":2,"env":"prod"}}`
+	data := `{"user":{"name":"CyberGo","age":25},"meta":{"version":2,"env":"prod"}}`
 
-    // 方式一：每次包级 Get 都要重新解析 JSON
-    name1, err := json.Get(data, "user.name")
-    if err != nil {
-        panic(err)
-    }
-    age1, err := json.Get(data, "user.age")
-    if err != nil {
-        panic(err)
-    }
-    ver1, err := json.Get(data, "meta.version")
-    if err != nil {
-        panic(err)
-    }
+	// 方式一：每次包级 Get 都要重新解析 JSON
+	name1, err := json.Get(data, "user.name")
+	if err != nil {
+		panic(err)
+	}
+	age1, err := json.Get(data, "user.age")
+	if err != nil {
+		panic(err)
+	}
+	ver1, err := json.Get(data, "meta.version")
+	if err != nil {
+		panic(err)
+	}
 
-    // 方式二：PreParse 解析一次，GetFromParsed 复用解析结果（推荐用于多次查询）
-    parsed, err := p.PreParse(data)
-    if err != nil {
-        panic(err)
-    }
-    defer parsed.Release()
+	// 方式二：PreParse 解析一次，GetFromParsed 复用解析结果（推荐用于多次查询）
+	parsed, err := p.PreParse(data)
+	if err != nil {
+		panic(err)
+	}
+	defer parsed.Release()
 
-    name2, err := p.GetFromParsed(parsed, "user.name")
-    if err != nil {
-        panic(err)
-    }
-    age2, err := p.GetFromParsed(parsed, "user.age")
-    if err != nil {
-        panic(err)
-    }
-    ver2, err := p.GetFromParsed(parsed, "meta.version")
-    if err != nil {
-        panic(err)
-    }
+	name2, err := p.GetFromParsed(parsed, "user.name")
+	if err != nil {
+		panic(err)
+	}
+	age2, err := p.GetFromParsed(parsed, "user.age")
+	if err != nil {
+		panic(err)
+	}
+	ver2, err := p.GetFromParsed(parsed, "meta.version")
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Println("Get     :", name1, age1, ver1)
-    fmt.Println("PreParse:", name2, age2, ver2)
+	fmt.Println("Get     :", name1, age1, ver1)
+	fmt.Println("PreParse:", name2, age2, ver2)
 }
+
 // 输出：
 // Get     : CyberGo 25 2
 // PreParse: CyberGo 25 2
@@ -293,37 +299,38 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    parsed, err := p.PreParse(`{"user":{"name":"CyberGo","age":25}}`)
-    if err != nil {
-        panic(err)
-    }
-    defer parsed.Release()
+	parsed, err := p.PreParse(`{"user":{"name":"CyberGo","age":25}}`)
+	if err != nil {
+		panic(err)
+	}
+	defer parsed.Release()
 
-    // SetFromParsed 返回新的 ParsedJSON，原数据保持不变
-    modified, err := p.SetFromParsed(parsed, "user.name", "Bob")
-    if err != nil {
-        panic(err)
-    }
-    defer modified.Release()
+	// SetFromParsed 返回新的 ParsedJSON，原数据保持不变
+	modified, err := p.SetFromParsed(parsed, "user.name", "Bob")
+	if err != nil {
+		panic(err)
+	}
+	defer modified.Release()
 
-    oldName, _ := p.GetFromParsed(parsed, "user.name")
-    newName, _ := p.GetFromParsed(modified, "user.name")
-    ageAfter, _ := p.GetFromParsed(modified, "user.age")
-    fmt.Println("原数据 name :", oldName)
-    fmt.Println("修改后 name :", newName)
-    fmt.Println("修改后 age :", ageAfter)
+	oldName, _ := p.GetFromParsed(parsed, "user.name")
+	newName, _ := p.GetFromParsed(modified, "user.name")
+	ageAfter, _ := p.GetFromParsed(modified, "user.age")
+	fmt.Println("原数据 name :", oldName)
+	fmt.Println("修改后 name :", newName)
+	fmt.Println("修改后 age :", ageAfter)
 }
+
 // 输出：
 // 原数据 name : CyberGo
 // 修改后 name : Bob

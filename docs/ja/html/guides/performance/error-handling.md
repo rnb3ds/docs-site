@@ -1,8 +1,8 @@
 ---
 sidebar_label: "エラー処理"
 title: "エラー処理 - CyberGo html | 堅牢なエラー処理ガイド"
-description: "CyberGo html エラー処理ガイド：入力・設定・ファイル・処理・システムの 5 種類のエラー分類、errors.Is/As 判定パターン、context キャンセル、バッチ部分失敗処理で堅牢なエラーハンドリングロジックを構築します。"
-sidebar_position: 5
+description: "CyberGo html エラー処理ガイド：入力・設定・ファイル・処理・システムの 5 種のエラー分類、errors.Is のセンチネルエラー判定、errors.As の構造化エラー抽出、context のタイムアウト・キャンセル、バッチ部分失敗と panic リカバリ戦略とベストプラクティスを解説します。"
+sidebar_position: 4
 ---
 
 # エラー処理
@@ -398,7 +398,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/cybergodev/html"
@@ -725,3 +724,10 @@ func main() {
 :::tip ヒント
 構造化ログの鍵は、文字列を結合するのではなく**フィールド**を抽出することです。例えば `inputErr.Size` と `inputErr.MaxSize` を記録しておけば、ログシステムで `size > max_size * 0.9` のクエリで制限に接近したリクエストを見つけ、早期に容量問題を発見できます。`FileError` では、ログファイル自体が情報漏洩源になるのを防ぐため、`Path` フィールドではなく常に `SafePath()` を使用してください。
 :::
+
+## 次のステップ
+
+- [本番チェックリスト](../security/production-checklist) - デプロイ前のセキュリティチェック
+- [パフォーマンス最適化](./performance) - スループットの向上とタイムアウト設定
+- [API リファレンス：定数とエラー](../../api-reference/types/constants) - センチネルエラーの完全なリスト
+- [API リファレンス：Processor](../../api-reference/core/processor) - Processor のライフサイクルと統計

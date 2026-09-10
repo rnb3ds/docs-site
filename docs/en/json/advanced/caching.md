@@ -1,34 +1,34 @@
 ---
 sidebar_label: "Caching & Pre-Parsing"
-title: "Caching & Pre-Parsing - CyberGo JSON | Cache Strategies"
-description: "CyberGo JSON caching and pre-parsing: EnableCache auto-caching, GetStats monitoring, WarmupCache warmup and PreParse for high-frequency queries."
+title: "Caching & Pre-Parsing - CyberGo JSON | Cache Strategy"
+description: "CyberGo JSON caching and pre-parsing: EnableCache auto caching, GetStats monitoring, WarmupCache warm-up, and PreParse parse-once query-many."
 sidebar_position: 3
 ---
 
-# Caching & Pre-Parsing Strategies
+# Caching and Pre-Parsing Strategies
 
-CyberGo JSON ships with an **automatic caching subsystem**: parse results and path-query results are cached for you, no hand-rolled `sync.Map` required. This page covers configuring, monitoring, and warming the built-in cache, the `PreParse` pre-parsing pattern, and selection guidance.
+CyberGo JSON ships with an **automatic caching subsystem**: parse results and path query results are cached automatically — no hand-rolled `sync.Map` needed. This page covers configuring, monitoring, and warming the built-in cache plus the PreParse pattern, and closes with a selection guide.
 
-:::tip Scope split with the Performance page
-The "Caching strategy" section of [Performance](./performance) shows a **user-built** `sync.Map` cache; this page documents the **library's built-in** cache (`EnableCache`/`WarmupCache`/`PreParse`). They are complementary.
+:::tip Division of labor with the performance page
+The "caching strategy" section of [Performance Optimization](./performance) shows a **user-built** `sync.Map` cache; this page documents the **library-built-in** cache (`EnableCache`/`WarmupCache`/`PreParse`) — the two complement each other.
 :::
 
-## How the built-in cache works
+## How the Built-in Cache Works
 
 When `Config.EnableCache` is `true` (default) and `CacheResults` is `true` (default), query operations such as `Get` cache automatically:
 
-1. **Parse cache**: JSON string -> parsed `any` tree (keyed by FNV-1a hash)
-2. **Result cache**: `(JSON, path)` -> query result
+1. **Parse cache**: JSON string → parsed `any` tree (keyed by FNV-1a hash)
+2. **Result cache**: `(JSON, path)` → query result
 
-A second query on the same JSON skips parsing and goes straight to path navigation; an identical `(JSON, path)` pair returns the cached result directly.
+The second query against the same JSON skips parsing and goes straight to path navigation; an identical `(JSON, path)` combination returns the cached result directly.
 
-:::warning Automatic invalidation on writes
-Mutation operations (`Set`/`Delete`) **automatically invalidate** related cache entries (cleared in bulk by JSON-hash prefix) — no manual action needed. You only need `ClearCache` when an external data source changes or memory pressure is high.
+:::warning Writes invalidate automatically
+Mutating operations such as `Set`/`Delete` **automatically invalidate** the related cache entries (bulk-cleared by JSON-hash prefix) — no manual intervention needed. Manual `ClearCache` is only needed when an external data source changes or memory pressure is high.
 :::
 
-## Monitoring cache hit ratio
+## Monitoring the Cache Hit Ratio
 
-`GetStats()` returns a `Stats` struct with hit/miss counts, hit ratio, and current entry count.
+`GetStats()` returns `Stats` with hit count, miss count, hit ratio, and current entry count. The first query misses (one miss each for the parse cache and the result cache); repeating the same `(JSON, path)` hits:
 
 ```go
 package main
@@ -48,56 +48,94 @@ func main() {
 
 	data := `{"user":{"name":"Alice","email":"alice@example.com"},"version":1}`
 
-	// Warm up frequently used paths: internally runs one Get per path and stores results
-	paths := []string{"user.name", "user.email", "version"}
-	result, err := processor.WarmupCache(data, paths)
+	// First query: result and parse both miss
+	_, err = processor.Get(data, "user.name")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Warmed up: %d/%d (success rate %.0f%%)\n", result.Successful, result.TotalPaths, result.SuccessRate)
-	// Output: Warmed up: 3/3 (success rate 100%)
 
-	// The same (JSON, path) query now hits the cache
-	name, err := processor.Get(data, "user.name")
+	// Query the same (JSON, path) again: result cache hits directly
+	_, err = processor.Get(data, "user.name")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("user.name = %v\n", name)
-	// Output: user.name = Alice
 
-	// Inspect cache config and state
 	stats := processor.GetStats()
+	fmt.Printf("Hits %d, misses %d (hit ratio %.1f%%)\n",
+		stats.HitCount, stats.MissCount, stats.HitRatio*100)
+	// Output: Hits 1, misses 2 (hit ratio 33.3%)
+
 	fmt.Printf("Cache enabled: %v, TTL: %v\n", stats.CacheEnabled, stats.CacheTTL)
 	// Output: Cache enabled: true, TTL: 5m0s
 }
 ```
 
-Key `Stats` fields (full struct in [Lifecycle & Stats](../api-reference/processor/lifecycle#statistics)):
+Key `Stats` fields (full structure in [Lifecycle & Statistics](../api-reference/processor/lifecycle#statistics)):
 
 | Field | Description |
-|------|------|
-| `HitRatio` | Hit ratio (0–1); below 0.5 warrants a workload or tuning review |
-| `HitCount` / `MissCount` | Cumulative hit / miss counts |
-| `CacheSize` | Current number of cache entries |
-| `CacheTTL` | Cache entry expiry |
+|-------|-------------|
+| `HitRatio` | Hit ratio (0–1); below 0.5, inspect the workload or tune parameters |
+| `HitCount` / `MissCount` | Cumulative hits / misses |
+| `CacheSize` | Current cache entry count |
+| `CacheTTL` | Cache expiration time |
 
-## Warming the cache with WarmupCache
+## Warming the Cache with WarmupCache
 
-`WarmupCache(jsonStr, paths, cfg...)` bulk-populates the cache ahead of real queries, eliminating first-request cold-start latency. Ideal for services that serve traffic immediately after startup.
+`WarmupCache(jsonStr, paths, cfg...)` bulk-fills the cache before real queries arrive, eliminating first-request "cold start" latency. Suited to services that take traffic immediately after startup.
 
 ```go
 // Signature: func (p *Processor) WarmupCache(jsonStr string, paths []string, cfg ...Config) (*WarmupResult, error)
 ```
 
-`WarmupResult` carries `TotalPaths`/`Successful`/`Failed`/`SuccessRate`/`FailedPaths`, useful for verifying warmup completeness (a typo in a config path surfaces as a `FailedPaths` entry).
+`WarmupResult` contains `TotalPaths`/`Successful`/`Failed`/`SuccessRate`/`FailedPaths`, useful for verifying the warm-up completed (e.g. a typo in a config-file path shows up in `FailedPaths`).
 
-:::warning Prerequisite
-Calling `WarmupCache` with `EnableCache = false` returns an error (cannot warm a disabled cache). Warmup must happen on the **same Processor instance** you query — package-level functions (e.g. `json.GetString`) use the global Processor, whose cache is isolated from a custom instance.
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	processor, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer processor.Close()
+
+	data := `{"db":{"host":"db.local","port":5432},"cache":{"ttl":300}}`
+
+	// Warm up hot paths at service startup (internally runs one Get per path and fills the cache)
+	hotPaths := []string{"db.host", "db.port", "cache.ttl"}
+	result, err := processor.WarmupCache(data, hotPaths)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Warm-up: %d/%d succeeded (success rate %.0f%%)\n",
+		result.Successful, result.TotalPaths, result.SuccessRate)
+	// Output: Warm-up: 3/3 succeeded (success rate 100%)
+
+	// After warm-up, the first business queries already hit (the first path's
+	// parse missed; later paths share the parse cache)
+	_, err = processor.Get(data, "db.host")
+	if err != nil {
+		panic(err)
+	}
+	stats := processor.GetStats()
+	fmt.Printf("Hits %d / misses %d\n", stats.HitCount, stats.MissCount)
+	// Output: Hits 3 / misses 4
+}
+```
+
+:::warning Prerequisites
+Calling `WarmupCache` with `EnableCache` set to `false` returns an error (cannot warm up with the cache disabled). Warm-up must happen on **the same Processor instance** — package-level functions (e.g. `json.GetString`) use the global Processor, whose cache is isolated from your custom instance's.
 :::
 
-## The PreParse pattern
+## The PreParse Pattern
 
-When the **same JSON is queried across many paths**, `PreParse` + `GetFromParsed` is the most direct pattern: parse once, then query the parsed result multiple times, bypassing cache-key lookups entirely.
+When **the same JSON needs queries at many different paths**, `PreParse` + `GetFromParsed` is the most direct pattern: parse once, share the parse result across queries, and bypass cache-key lookups entirely.
 
 ```go
 package main
@@ -117,14 +155,14 @@ func main() {
 
 	data := `{"users":[{"id":1,"name":"Alice"},{"id":2,"name":"Bob"}],"total":2}`
 
-	// Parse once, query many times (skips repeated parsing)
+	// Parse once, query many times (skips repeated parsing cost)
 	parsed, err := processor.PreParse(data)
 	if err != nil {
 		panic(err)
 	}
 	defer parsed.Release()
 
-	// Multiple paths share the same parsed result
+	// Multiple paths share the same parse result
 	for _, path := range []string{"users[0].name", "users[1].name", "total"} {
 		val, err := processor.GetFromParsed(parsed, path)
 		if err != nil {
@@ -142,26 +180,26 @@ func main() {
 Key APIs:
 
 | API | Signature | Description |
-|-----|------|------|
+|-----|-----------|-------------|
 | `PreParse` | `func (p *Processor) PreParse(jsonStr string, cfg ...Config) (*ParsedJSON, error)` | Parses and returns a reusable `*ParsedJSON` |
 | `GetFromParsed` | `func (p *Processor) GetFromParsed(parsed *ParsedJSON, path string, cfg ...Config) (any, error)` | Queries the pre-parsed result, skipping the parse step |
 | `(*ParsedJSON).Release` | `func (p *ParsedJSON) Release()` | Releases the reference; call when done (usually via `defer`) |
 
-:::tip PreParse vs automatic cache
-`PreParse` explicitly holds the parsed-result handle, suited to local "parse once, consume many" flows; the automatic cache deduplicates **globally by JSON content**, suited to the same JSON being queried repeatedly across call sites. They coexist: `PreParse` also writes into the parse cache internally.
+:::tip PreParse vs automatic caching
+`PreParse` holds an explicit handle to the parse result — a good fit for local flows of "parse in one place, consume in many". The automatic cache deduplicates **globally by JSON content**, fitting the same JSON queried repeatedly from different call sites. The two coexist: `PreParse` also writes the parse cache internally.
 :::
 
-## Tuning cache configuration
+## Tuning Cache Configuration
 
-Cache behavior is governed by several `Config` fields (full list in [Config](../api-reference/config#config-struct)):
+Cache behavior is controlled by several `Config` fields (complete list in [Config](../api-reference/config#the-config-struct)):
 
 | Field | Default | Description |
-|------|--------|------|
-| `EnableCache` | `true` | Master switch; when off, all caching is skipped (`Get` takes a fast path) |
+|-------|---------|-------------|
+| `EnableCache` | `true` | Master switch; when off, all cache logic is skipped (`Get` takes the fast path) |
 | `CacheResults` | `true` | Whether to cache query results; `false` keeps only the parse cache |
-| `CacheTTL` | `5 minutes` | Entry expiry |
-| `MaxCacheSize` | `128` | Max entries (LRU eviction) |
-| `CacheSharedResults` | `false` | Share cached results, skipping the defensive deep copy (high-perf read-only) |
+| `CacheTTL` | `5 minutes` | Entry expiration time |
+| `MaxCacheSize` | `128` | Maximum entries (LRU eviction) |
+| `CacheSharedResults` | `false` | Share cached results, skipping the defensive deep copy (high-performance read-only scenarios) |
 
 ```go
 package main
@@ -175,8 +213,8 @@ import (
 
 func main() {
 	cfg := json.DefaultConfig()
-	cfg.MaxCacheSize = 256            // hold more hot data
-	cfg.CacheTTL = 10 * time.Minute   // extend validity
+	cfg.MaxCacheSize = 256          // Hold more hot data
+	cfg.CacheTTL = 10 * time.Minute // Extend validity
 
 	processor, err := json.New(cfg)
 	if err != nil {
@@ -194,26 +232,35 @@ func main() {
 }
 ```
 
-### The CacheSharedResults zero-copy contract
+Read-heavy, read-only-result workloads can additionally enable the zero-copy switch:
 
-With `CacheSharedResults = true`, a cache hit on `Get`/`GetFromParsed` returns the cached value **directly**, skipping the defensive deep copy and dramatically cutting overhead for repeated reads of large objects.
+```go
+// Contract: once enabled, callers must not mutate the map/slice returned by Get
+// (primitives are always safe)
+cfg := json.DefaultConfig()
+cfg.CacheSharedResults = true
+```
+
+### The CacheSharedResults Zero-Copy Contract
+
+With `CacheSharedResults = true`, cache hits in `Get`/`GetFromParsed` **return the cached value directly**, skipping the defensive deep copy and significantly cutting the cost of repeatedly reading large objects.
 
 :::danger Read-only contract
-When enabled, **callers must not mutate** the returned `map[string]any` / `[]any`, or the shared cache is corrupted and subsequent reads poisoned. Primitives (`bool`/`float64`/`string`/`json.Number`/`nil`) are immutable and always safe. Enable only when callers treat results as read-only (e.g. analytical workloads that repeatedly read the same large subtree).
+Once enabled, **callers must not mutate** the returned `map[string]any` / `[]any`; otherwise the shared cache is corrupted and subsequent reads polluted. Primitives (`bool`/`float64`/`string`/`json.Number`/`nil`) are immutable and always safe. Enable only when callers treat results as read-only (e.g. analytical loads repeatedly reading the same large subtree).
 :::
 
-## Cleanup & invalidation
+## Cleanup and Invalidation
 
-| Operation | API | When |
-|------|-----|----------|
-| Manual clear | `processor.ClearCache()` | Data source changed, memory pressure, forced refresh |
-| Automatic post-write invalidation | internal call inside `Set`/`Delete` | No manual cleanup after mutations; entries are cleared by JSON-hash prefix |
+| Operation | API | When it fires |
+|-----------|-----|---------------|
+| Manual clear | `processor.ClearCache()` | Data source changed, memory pressure, forced refresh needed |
+| Automatic invalidation after writes | Internal to `Set`/`Delete` | No manual cleanup after mutations; entries clear automatically by JSON-hash prefix |
 
-`ClearCache` fits "one Processor running long-term with rotating data sources." One-off scripts need no manual clear — `Close()` reclaims all resources.
+`ClearCache` suits the "one long-lived Processor with rotating data sources" scenario. One-off scripts need no manual cleanup — `Close()` reclaims all resources.
 
-## Recipe: high-frequency query caching
+## Practical Recipe: High-Frequency Query Caching
 
-This recipe combines warmup, PreParse, and monitoring — suited to API gateways / config centers with high read volume.
+The following pattern combines warm-up, PreParse, and monitoring — a good fit for API gateways / config centers and other read-heavy scenarios.
 
 ```go
 package main
@@ -239,7 +286,7 @@ func main() {
 		panic(err)
 	}
 
-	// 2. Extract multiple fields from the same config (PreParse pattern)
+	// 2. Batch field extraction on the same config (PreParse pattern)
 	parsed, err := processor.PreParse(configJSON)
 	if err != nil {
 		panic(err)
@@ -250,29 +297,48 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("DB host: %v\n", host)
-	// Output: DB host: db.local
+	fmt.Printf("Database host: %v\n", host)
+	// Output: Database host: db.local
 
-	// 3. Monitor hit ratio at runtime; alert below a threshold
+	// 3. Business queries keep hitting (warm-up and pre-parsing filled the cache)
+	for _, path := range []string{"db.host", "db.port", "cache.ttl"} {
+		_, err = processor.Get(configJSON, path)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	// 4. Monitor the hit ratio at runtime; alert below a threshold
 	stats := processor.GetStats()
-	fmt.Printf("Current hit ratio: %.2f%%\n", stats.HitRatio*100)
+	fmt.Printf("Hits %d / misses %d (hit ratio %.1f%%)\n",
+		stats.HitCount, stats.MissCount, stats.HitRatio*100)
+	// Output: Hits 6 / misses 4 (hit ratio 60.0%)
+	if stats.HitRatio < 0.5 {
+		fmt.Println("Alert: hit ratio below 50%, inspect the workload or adjust CacheTTL/MaxCacheSize")
+	}
+
+	// 5. On config rotation (data source change), clear manually to avoid stale reads
+	processor.ClearCache()
+	stats = processor.GetStats()
+	fmt.Printf("Cache entries after clear: %d\n", stats.CacheSize)
+	// Output: Cache entries after clear: 0
 }
 ```
 
-## Selection guidance
+## Selection Guide
 
-| Scenario | Recommendation | Why |
-|------|----------|------|
-| One-off query / script | Default config | Built-in cache adds no burden to a single call; `Get` has a fast path |
-| Same JSON queried repeatedly (different call sites) | Keep `EnableCache=true` | Auto-dedup by JSON content, zero code change |
-| One JSON, parse once, query many paths in a batch | `PreParse` + `GetFromParsed` | Explicitly reuses the parse result, bypasses cache-key cost |
-| Service serving traffic right after startup | `WarmupCache` | Eliminates first-batch cold-start latency |
-| Repeatedly reading the same large read-only subtree | `CacheSharedResults=true` | Skips deep copy for zero-copy performance |
-| Untrusted input / security-sensitive | `SecurityConfig()` (shorter TTL) | Security preset uses conservative cache parameters |
+| Scenario | Recommended approach | Why |
+|----------|----------------------|-----|
+| One-off query / script | Default configuration | The built-in cache adds no burden to single calls; `Get` has a fast path |
+| Same JSON queried repeatedly (different call sites) | Keep `EnableCache=true` | Automatic dedup by JSON content, zero code changes |
+| Same JSON, one parse, many paths in a batch | `PreParse` + `GetFromParsed` | Explicit reuse of the parse result, bypassing cache-key overhead |
+| Service taking traffic right after startup | `WarmupCache` warm-up | Eliminates first-request cold-start latency |
+| Repeatedly reading the same large read-only subtree | `CacheSharedResults=true` | Skips the deep copy for zero-copy performance |
+| Untrusted input / security-sensitive | `SecurityConfig()` (shorter TTL) | The security preset ships conservative cache parameters |
 
 ## See Also
 
-- [Performance](./performance) — processor reuse, memory optimization, benchmarks
-- [Lifecycle & Stats](../api-reference/processor/lifecycle#statistics) — `GetStats`/`WarmupCache`/`ClearCache` API details
-- [Config](../api-reference/config) — full cache field reference
-- [Concurrency & Parallel Processing](./concurrency) — Processor thread safety and parallel iterators
+- [Performance Optimization](./performance) — Processor reuse, memory optimization, benchmarks
+- [Lifecycle & Statistics](../api-reference/processor/lifecycle#statistics) — `GetStats`/`WarmupCache`/`ClearCache` API details
+- [Config](../api-reference/config) — Complete documentation of cache-related fields
+- [Concurrency & Parallelism](./concurrency) — Processor thread safety and parallel iterators

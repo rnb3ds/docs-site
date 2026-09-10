@@ -1,7 +1,7 @@
 ---
 sidebar_label: "設定"
 title: "設定 - CyberGo html | Config フィールド詳解"
-description: "CyberGo html Config 設定詳解：リソース管理、セキュリティ、コンテンツ抽出、出力フォーマット、リンクフィルタの全フィールドとデフォルト値、Validate 検証メソッドによる設定エラーの事前検出と HighSecurityConfig などのプリセットを解説します。"
+description: "CyberGo html Config 構造体フィールド詳解：リソース管理、セキュリティ、コンテンツ抽出、出力フォーマット、リンクフィルタの 30+ フィールドを網羅し、DefaultConfig など 4 種のプリセット、設定制約、ゼロ値のセマンティクス、Validate 検証を解説します。"
 sidebar_position: 3
 ---
 
@@ -24,6 +24,8 @@ sidebar_position: 3
 
 :::tip ヒント
 `MaxCacheEntries`、`CacheCleanup`、`ProcessingTimeout`を `0` に設定することはエラーではなく、明確な意味を持ちます（それぞれキャッシュ無効化、バックグラウンドクリーンアップ無効化、タイムアウトなしを意味します）。一方、`MaxInputSize`、`WorkerPoolSize`、`MaxDepth`は正の数でなければならず、そうでない場合は `ConfigError` が発生します。
+
+そのため**ゼロ値 `Config{}` は `Validate()` を通過できず、そのまま使用できません**——必ず `DefaultConfig()`（または他のプリセット）を出発点とし、必要に応じてフィールドを上書きしてください。
 :::
 
 ### セキュリティ

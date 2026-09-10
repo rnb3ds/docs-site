@@ -1,7 +1,7 @@
 ---
 sidebar_label: "설정"
 title: "설정 - CyberGo html | Config 필드 상세"
-description: "CyberGo html Config 설정 상세: 리소스 관리, 보안 제한, 콘텐츠 추출, 출력 형식, 링크 필터링 필드와 Validate 검증 메서드를 통해 30개 이상의 설정 항목과 기본값, 4종 프리셋을 다룹니다."
+description: "CyberGo html Config 구조체 필드 상세: 리소스, 보안, 콘텐츠 추출, 출력 형식, 링크 필터링, 확장 6개 분야 30개 이상 필드와 DefaultConfig 등 4종 프리셋, Validate 검증으로 추출 동작을 정밀하게 맞춤 설정합니다."
 sidebar_position: 3
 ---
 
@@ -24,6 +24,8 @@ sidebar_position: 3
 
 :::tip 팁
 `MaxCacheEntries`, `CacheCleanup`, `ProcessingTimeout`을 `0`으로 설정하는 것은 오류가 아니라 명확한 의미를 가집니다 (각각 캐시 비활성화, 백그라운드 정리 비활성화, 시간 제한 없음을 의미). 반면 `MaxInputSize`, `WorkerPoolSize`, `MaxDepth`는 반드시 양수여야 하며, 그렇지 않으면 `ConfigError`가 발생합니다.
+
+따라서 **제로값 `Config{}`는 `Validate()`를 통과할 수 없으므로 직접 사용할 수 없습니다** — 항상 `DefaultConfig()`(또는 다른 프리셋)에서 시작해 필요에 따라 필드만 덮어쓰세요.
 :::
 
 ### 보안

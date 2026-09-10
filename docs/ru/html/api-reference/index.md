@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Обзор"
 title: "Справочник API - CyberGo html | функции и типы"
-description: "Полный индекс API CyberGo html: функции пакета и Processor — извлечение, форматы вывода, ссылки, пакетная обработка, конфигурация, аудит и типы."
+description: "Полный индекс API CyberGo html: функции пакета и Processor — извлечение, форматы вывода, ссылки, пакеты, Config, безопасность, аудит, интерфейсы, типы и ошибки."
 sidebar_position: 1
 ---
 

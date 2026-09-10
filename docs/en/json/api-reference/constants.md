@@ -1,7 +1,7 @@
 ---
-sidebar_label: "Constants & Errors"
+sidebar_label: "Constants and Errors"
 title: "Constants and Errors - CyberGo JSON | API Reference"
-description: "CyberGo JSON constants and errors: DefaultMaxJSONSize, DefaultMaxNestingDepth, ErrPathNotFound variables, and MergeMode enums for Go error handling."
+description: "CyberGo JSON constants and errors: DefaultMaxJSONSize/DefaultMaxNestingDepth limits, ErrPathNotFound, MergeMode modes, and JsonsError trigger scenarios."
 sidebar_position: 7
 ---
 
@@ -29,11 +29,34 @@ var (
     ErrSecurityViolation = errors.New("security violation detected")
     ErrUnsupportedPath   = errors.New("unsupported path operation")
 
-    // Resource and performance errors (both Deprecated: not returned by any operation currently, retained for future use)
+    // Resource and performance errors (both Deprecated: not returned by any operation today, kept for future use)
     ErrOperationTimeout  = errors.New("operation timeout")
     ErrResourceExhausted = errors.New("system resources exhausted")
 )
 ```
+
+### Trigger Scenarios at a Glance
+
+Typical trigger scenarios for each sentinel error, to help you write recovery logic per error branch:
+
+| Error | Typical trigger | Suggested handling |
+|-------|-----------------|--------------------|
+| `ErrInvalidJSON` | Input is not valid JSON (trailing characters, unclosed brackets, etc.) | Reject the input; check the source |
+| `ErrPathNotFound` | The path of a `Get` does not exist in the data | Common in practice; fall back to a default |
+| `ErrTypeMismatch` | Path exists but the type is wrong (e.g. `[0]` on a string path) | Check your data-structure assumptions |
+| `ErrInvalidPath` | Path syntax error (`CompilePath` / path parsing failure) | Fix the path expression |
+| `ErrProcessorClosed` | Methods called after `Close()` (or while closing) | Check the lifecycle; pre-check with `IsClosed` |
+| `ErrSizeLimit` | Input exceeds `MaxJSONSize` / `MaxSecurityValidationSize` | Raise the limit or reject oversized input |
+| `ErrDepthLimit` | Nesting exceeds `MaxNestingDepthSecurity` | Reject deeply nested input (possibly an attack) |
+| `ErrConcurrencyLimit` | Controlled-operation concurrency exceeds `MaxConcurrency` | Reduce concurrency or raise the limit |
+| `ErrSecurityViolation` | Dangerous pattern hit, or `MaxObjectKeys`/`MaxArrayElements` exceeded | Write an audit log and reject |
+| `ErrUnsupportedPath` | A path segment unsupported for the current data shape (e.g. a slice on a non-array) | Check your data-structure assumptions |
+| `ErrOperationTimeout` | Reserved, no operation currently returns it (deprecated) | No handling needed in error branches |
+| `ErrResourceExhausted` | Reserved, no operation currently returns it (deprecated) | No handling needed in error branches |
+
+:::tip Two deprecated sentinels
+No operation currently returns `ErrOperationTimeout` or `ErrResourceExhausted`; they are kept for future releases only — no need to handle them in error branches.
+:::
 
 ### Error Checking
 
@@ -43,19 +66,19 @@ Use `errors.Is` to check error types:
 val, err := json.Get(data, "user.name")
 if err != nil {
     if errors.Is(err, json.ErrPathNotFound) {
-        // Path not found
+        // Path does not exist
         fmt.Println("Path not found")
     } else if errors.Is(err, json.ErrTypeMismatch) {
         // Type mismatch
         fmt.Println("Type mismatch")
     } else if errors.Is(err, json.ErrInvalidJSON) {
-        // JSON format error
+        // Malformed JSON
         fmt.Println("Invalid JSON")
     }
 }
 ```
 
-## JsonsError Type
+## The JsonsError Type
 
 ### Struct Definition
 
@@ -68,13 +91,27 @@ type JsonsError struct {
 }
 ```
 
+**Field Reference**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `Op` | `string` | Name of the operation that failed |
+| `Path` | `string` | JSON path where the error occurred |
+| `Message` | `string` | Human-readable error message |
+| `Err` | `error` | Underlying error (may be `nil`); `Unwrap` supports `errors.Is` / `errors.As` chain traversal |
+
 ### Methods
 
 ```go
-func (e *JsonsError) Error() string
-func (e *JsonsError) Unwrap() error
+func (e *JsonsError) Error() string   // "JSON <op> failed at path '<path>': <msg> (caused by: ...)"
+func (e *JsonsError) Unwrap() error   // Returns the underlying error (supports errors.As/Is chains)
 func (e *JsonsError) Is(target error) bool
 ```
+
+Matching rules of `Is`:
+
+- When the target is a `*JsonsError`, the three fields `Op`, `Path`, and `Err` are compared field by field (`Message` is derived information and **deliberately excluded** from comparison)
+- When the target is another error (e.g. a sentinel), it degrades to `errors.Is` on the underlying `Err` — so `errors.Is(err, json.ErrPathNotFound)` still holds for a wrapped `JsonsError`
 
 ### Usage Example
 
@@ -95,12 +132,12 @@ if err != nil {
 
 ## Error Helper Functions
 
-In addition to the error types above, the library provides two error-handling helper functions (see [Helper Utilities](./helpers#safeerror) for full details):
+Beyond the error types above, the library provides two error-handling helpers (full description in [Helper Functions](./helpers#safeerror)):
 
 | Function | Signature | Description |
 |----------|-----------|-------------|
 | `SafeError` | `func SafeError(err error) string` | Returns a client-safe error message, omitting internal details such as path names (CWE-209) |
-| `RedactedPath` | `func RedactedPath(path string) string` | Returns a redacted path (non-empty paths are masked as `"***"`) for use in logs and error responses |
+| `RedactedPath` | `func RedactedPath(path string) string` | Returns a redacted path (non-empty paths masked as `"***"`), for logs and error responses |
 
 ## Configuration Presets
 
@@ -112,7 +149,7 @@ const (
     DefaultMaxJSONSize     = 100 * 1024 * 1024  // 100MB
     DefaultMaxNestingDepth = 200
     DefaultMaxPathDepth    = 50
-    DefaultMaxDepth        = 100                 // Default encoding/decoding nesting depth (Config.MaxDepth)
+    DefaultMaxDepth        = 100                 // Default encode/decode nesting depth (Config.MaxDepth)
     DefaultMaxConcurrency  = 50
 
     // Security limits
@@ -126,6 +163,22 @@ const (
     DefaultCacheTTL = 5 * time.Minute
 )
 ```
+
+### Constants vs Config Fields
+
+| Constant | Default | Config field | Description |
+|----------|---------|--------------|-------------|
+| `DefaultMaxJSONSize` | 100MB | `MaxJSONSize` | Size cap for a single JSON input |
+| `DefaultMaxNestingDepth` | 200 | `MaxNestingDepthSecurity` | JSON nesting depth cap |
+| `DefaultMaxPathDepth` | 50 | `MaxPathDepth` | Cap on path segment count (the depth of `a.b.c.d...`) |
+| `DefaultMaxDepth` | 100 | `MaxDepth` | Default nesting depth for encode/decode (Marshal/Unmarshal) |
+| `DefaultMaxConcurrency` | 50 | `MaxConcurrency` | Cap on concurrent operations |
+| `DefaultMaxSecuritySize` | 10MB | `MaxSecurityValidationSize` | Documents above this size fall back to sampled security checks |
+| `DefaultMaxObjectKeys` | 100000 | `MaxObjectKeys` | Object key count cap |
+| `DefaultMaxArrayElements` | 100000 | `MaxArrayElements` | Array element count cap |
+| `DefaultMaxBatchSize` | 2000 | `MaxBatchSize` | Cap on operations per `ProcessBatch` call; exceeding it returns `ErrSizeLimit` |
+| `DefaultParallelThreshold` | 10 | `ParallelThreshold` | Parallel processing threshold: below this operation count, processing is sequential |
+| `DefaultCacheTTL` | 5 minutes | `CacheTTL` | Cache entry lifetime |
 
 ## Configuration Preset Functions
 
@@ -148,7 +201,7 @@ defer processor.Close()
 
 Signature: `func SecurityConfig() Config`
 
-Returns a security configuration suitable for processing untrusted input.
+Returns the security configuration, suitable for handling untrusted input.
 
 ```go
 // Recommended for:
@@ -165,18 +218,18 @@ if err != nil {
 defer processor.Close()
 ```
 
-**Security Configuration Features:**
+**Security configuration characteristics**:
 
 - Full security scanning
 - Strict mode
 - Conservative limit values
-- Caching enabled
+- Cache enabled
 
 ### PrettyConfig
 
 Signature: `func PrettyConfig() Config`
 
-Returns a formatted output configuration.
+Returns the pretty-print configuration.
 
 ```go
 result, err := json.EncodeWithConfig(data, json.PrettyConfig())
@@ -185,72 +238,72 @@ result, err := json.EncodeWithConfig(data, json.PrettyConfig())
 ## Merge Mode Constants
 
 ```go
-// MergeMode is the merge mode type (exported from internal package)
+// MergeMode is the merge mode type (exported from the internal package)
 type MergeMode = internal.MergeMode
 
 const (
-    // MergeUnion - Union merge (default)
-    // Objects: merge all keys, conflicting values take the override value
+    // MergeUnion - union merge (default)
+    // Objects: merge all keys; conflicting values take the overriding value
     // Arrays: merge all elements and deduplicate
     MergeUnion = internal.MergeUnion
 
-    // MergeIntersection - Intersection merge
-    // Objects: only keep common keys
-    // Arrays: only keep common elements
+    // MergeIntersection - intersection merge
+    // Objects: keep only shared keys
+    // Arrays: keep only shared elements
     MergeIntersection = internal.MergeIntersection
 
-    // MergeDifference - Difference merge
-    // Objects: only keep keys present in base but not in override
-    // Arrays: only keep elements present in base but not in override
+    // MergeDifference - difference merge
+    // Objects: keep only keys present in the base but absent from the override
+    // Arrays: keep only elements present in the base but absent from the override
     MergeDifference = internal.MergeDifference
 )
 ```
 
-## Path Segment Type
+## The PathSegment Type
 
-`PathSegment` is a path segment type exported from the `internal` package, used to represent parsed path components.
+`PathSegment` is the path-segment type exported from the `internal` package, representing the components of a parsed path.
 
 ```go
 type PathSegment = internal.PathSegment
 ```
 
-::: warning Internal implementation alias
-`PathSegment` is a type alias for `internal.PathSegment`. Its specific fields, field types (such as PathSegmentType, PathSegmentFlags) and methods belong to the `internal` package, are **not exported as public API**, and may change between versions — do not rely on its internal structure directly in your business code.
+::: warning An alias over an internal type
+`PathSegment` is a type alias of `internal.PathSegment`. Its fields, field types (PathSegmentType, PathSegmentFlags), and methods belong to the `internal` package, are **not exported as public API**, and may change between versions — do not depend on its internals in business code.
 
-- When implementing custom path syntax, return `[]PathSegment` via the `ParsePath` method of the [`PathParser`](./interfaces#pathparser) interface.
-- For precompiled paths, use [`Processor.CompilePath`](./processor/query#compilepath), which returns `*CompiledPath`.
+- When implementing custom path syntax, return `[]PathSegment` from the `ParsePath` method of the [`PathParser`](./interfaces#pathparser) interface.
+- For pre-compiled paths, use [`Processor.CompilePath`](./processor/query#compilepath), which returns `*CompiledPath`.
 :::
 
-## Security Pattern Level
+## Security Pattern Levels
 
 ```go
 type PatternLevel int
 
 const (
-    // PatternLevelCritical - Critical risk, always blocks operation
+    // PatternLevelCritical - critical risk, always blocks the operation
     PatternLevelCritical PatternLevel = iota
 
-    // PatternLevelWarning - Warning level, blocks in strict mode
+    // PatternLevelWarning - warning level, blocked in strict mode
     PatternLevelWarning
 
-    // PatternLevelInfo - Info level, only logs
+    // PatternLevelInfo - informational level, logged only
     PatternLevelInfo
 )
 ```
 
-### DangerousPattern Structure
+### The DangerousPattern Struct
 
 ```go
 type DangerousPattern struct {
-    Pattern string       // Substring to detect in input
-    Name    string       // Human-readable security risk description
+    Pattern string       // Substring to detect
+    Name    string       // Human-readable description of the security risk
     Level   PatternLevel // Handling level
 }
 ```
 
-## Error Handling Best Practices
+## Error-Handling Best Practices
 
-### Use errors.Is to Check Types
+### Check types with errors.Is
 
 ```go
 result, err := json.Get(data, path)
@@ -262,7 +315,7 @@ if errors.Is(err, json.ErrTypeMismatch) {
 }
 ```
 
-### Use errors.As to Get Details
+### Get details with errors.As
 
 ```go
 var jsonErr *json.JsonsError
@@ -272,17 +325,17 @@ if errors.As(err, &jsonErr) {
 }
 ```
 
-### Error Wrapping
+### Error wrapping
 
 ```go
 val := json.GetString(data, path)
 if val == "" {
-    return fmt.Errorf("getting config %s returned empty value", path)
+    return fmt.Errorf("getting config %s returned an empty value", path)
 }
 ```
 
 ## See Also
 
-- [Error Handling](../advanced/error-handling) - Advanced error handling guide
+- [Error Handling](../advanced/error-handling) - Advanced error-handling guide
 - [Config](./config) - Configuration options
 - [Security Overview](../security/) - Security best practices

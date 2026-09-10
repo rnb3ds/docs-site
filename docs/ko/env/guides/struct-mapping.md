@@ -2,7 +2,7 @@
 sidebar_label: "구조체 매핑"
 title: "구조체 매핑 - CyberGo env | 환경 변수를 구조체로"
 description: "CyberGo env 구조체 매핑 가이드로, env, envDefault 태그를 통해 환경 변수를 Go 구조체 필드에 자동 매핑합니다. 중첩 구조체, 포인터와 슬라이스, 커스텀 타입 디코딩, 필드 무시, 기본값과 필수 검증을 다루어 타입 안전한 구성 로딩을 구현합니다."
-sidebar_position: 1
+sidebar_position: 2
 sidebar_icon: "🔧"
 ---
 

@@ -101,7 +101,7 @@ cfg.BaseURL = "https://example.com"
 
 `ResolveRelativeURLs=true`(기본값)일 때, 모든 유형의 상대 URL 은 `BaseURL`을 기준으로 절대 URL 로 통일하여 해석됩니다:
 
-- 해석 로직은 `resolveURLIfEnabled`가 중앙에서 처리하며, 콘텐츠 링크, 이미지, 미디어, source, script, embed, link 태그를 **동일하게 취급**합니다
+- 해석 로직은 라이브러리 내부에서 통일되어 중앙 처리되며(익스포트되지 않음), 콘텐츠 링크, 이미지, 미디어, source, script, embed, link 태그를 **동일하게 취급**합니다
 - `BaseURL`을 명시적으로 설정하면 **자동 감지를 건너뛰고** 호출자가 제공한 값을 직접 사용합니다
 - `BaseURL`이 비어 있고 `ResolveRelativeURLs=true`일 때, 문서에서 BaseURL 을 자동으로 유추합니다 (아래 팁 참조)
 
@@ -111,8 +111,8 @@ cfg.BaseURL = "https://example.com"
 
 | 스위치 | 제어 범위 | 판정 방식 |
 |------|----------|----------|
-| `IncludeContentLinks` | 내부 링크 | URL 자체가 상대 경로이거나, `BaseURL`과 같은 도메인 |
-| `IncludeExternalLinks` | 외부 링크 | URL 이 절대 경로이고 `BaseURL`과 다른 도메인(`IsDifferentDomain`) |
+| `IncludeContentLinks` | 내부 링크 | URL 자체가 상대 경로이거나, (`BaseURL` 설정 시) 해석 후 `BaseURL`과 같은 도메인 |
+| `IncludeExternalLinks` | 외부 링크 | URL 자체가 절대 외부 주소(`http(s)://` 또는 프로토콜 상대 `//`)이거나, (`BaseURL` 설정 시) 해석 후 `BaseURL`과 다른 도메인 |
 
 기본값은 둘 다 `true`입니다 (모든 콘텐츠 링크 추출). 나머지 리소스 유형(이미지, CSS, JS 등)은 내/외부 구분의 영향을 받지 않으며, 각자의 `Include*` 스위치로만 제어됩니다.
 

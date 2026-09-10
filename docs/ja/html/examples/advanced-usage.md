@@ -1,7 +1,7 @@
 ---
 sidebar_label: "高度なサンプル"
 title: "高度なサンプル - CyberGo html | 応用シナリオ集"
-description: "CyberGo html 高度なサンプル集：カスタム Scorer 実装、マルチ Sink 監査パイプライン、バッチ並行制御、Processor プーリング再利用、HighSecurityConfig によるセキュア抽出など、実践的な応用シナリオ向けの実行可能コードを提供します。"
+description: "CyberGo html 高度なサンプル集：カスタム Scorer スコアリング、マルチ Sink 監査パイプライン、バッチ並行処理、Processor プーリング再利用、キャッシュ命中率最適化、Web シングルトンパターンなど複雑シナリオの実行可能コードで本番ニーズに対応します。"
 sidebar_position: 2
 ---
 
@@ -494,3 +494,9 @@ func main() {
     fmt.Printf("タイトル：%s\nテキスト長：%d\n", result.Title, len(result.Text))
 }
 ```
+
+## 次のステップ
+
+- [FAQ](../faq/) - よくある質問とトラブルシューティングのヒント
+- [本番チェックリスト](../guides/security/production-checklist) - デプロイ前のセキュリティチェック
+- [API リファレンス：インターフェース定義](../api-reference/types/interfaces) - Scorer、AuditSink などの拡張インターフェース

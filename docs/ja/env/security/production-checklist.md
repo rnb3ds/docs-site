@@ -1,8 +1,9 @@
 ---
 sidebar_label: "本番チェックリスト"
 title: "本番チェックリスト - CyberGo env | セキュリティ稼働前チェック"
-description: "CyberGo env 本番デプロイのセキュリティチェックリスト。.env ファイルの 600 権限と .gitignore 保護、RequiredKeys/AllowedKeys 必須キー検証、監査ログ有効化、SecureValue 処理とパフォーマンスパラメータチューニングをカバーし、本番稼働時のセキュリティを保証。"
+description: "CyberGo env 本番デプロイのセキュリティチェックリスト。.env の 600 権限と .gitignore 保護、RequiredKeys/AllowedKeys 検証、監査ログ有効化、SecureValue とパフォーマンスチューニングをカバーし、本番のセキュリティを保証。"
 sidebar_position: 4
+sidebar_icon: "🛡️"
 ---
 
 # 本番チェックリスト

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Loader"
 title: "Loader API - CyberGo env | Loader Reference"
-description: "Loader API reference for CyberGo env, the core type providing multi-format LoadFiles loading, type-safe GetString/GetInt/GetSlice reading, Set/Delete modification, Validate validation, serialization export, and Close lifecycle management, all methods thread-safe."
+description: "Loader API reference for CyberGo env: multi-format LoadFiles, type-safe GetString/GetInt/GetSlice reads, Set/Delete, Validate, and Close, all thread-safe."
 sidebar_position: 3
 ---
 
@@ -810,6 +810,50 @@ func main() {
     fmt.Printf("Load time: %v\n", loader.LoadTime())
 }
 ```
+
+## Lifecycle and Process-Environment Semantics
+
+### Close does not roll back os.Environ
+
+`Close()` zeroes only the **in-memory** copies of variables; it does **not** unset variables previously written to the process environment via `Apply`, `AutoApply`, or `Set` (with `AutoApply` on). To remove them before closing, call `Delete` per key:
+
+<!-- check-code: skip -->
+```go
+loader.Delete("API_KEY") // unsets in the process env only if this loader set it
+loader.Close()
+```
+
+### Per-key ownership tracking in Delete
+
+The loader records which keys **it** wrote to the process environment (`appliedKeys`). `Delete` unsets only those keys and **never touches** process variables it did not set (`HOME`, `TERM`, ...). Multiple loaders therefore never interfere with each other.
+
+### Apply distinguishes "unset" from "explicitly empty"
+
+`Apply` uses `LookupEnv` to detect existing values: a variable explicitly set to an empty string counts as "present" and is likewise skipped when `OverwriteExisting=false` — it is not mistaken for unset and overwritten.
+
+### State and metadata methods
+
+| Method | Description |
+|--------|-------------|
+| `Config()` | Read-only snapshot of the loader's configuration; mutating the return value does not affect the running loader |
+| `IsClosed()` | Whether the loader is closed (nil receiver returns true) |
+| `IsApplied()` | Whether variables have been applied to os.Environ |
+| `LoadTime()` | Time of the most recent load (zero value if never loaded) |
+
+### Key-resolution details on the read path
+
+- **Exact match first**: lookup tries the key as-is, then falls back to the uppercase form
+- **Dot paths**: `database.host` expands to `DATABASE_HOST` (JSON/YAML flattened keys); an indexed path like `service.cors.origins.0` falls back to the comma-separated value when the indexed key is missing
+- **No trimming**: `Lookup` returns the stored value as-is — `.env` values were trimmed at parse time, JSON/YAML values may keep surrounding whitespace
+- **Lock-free fast path**: single-key reads (`Lookup`/`GetSecure`) bypass the loader-level read lock via an atomic closed flag, avoiding reader-count contention under high concurrency; races with `Close` degrade gracefully to "read the value or read the cleared state"
+
+### Silent-skip semantics of Set
+
+With `OverwriteExisting=false`, calling `Set` on an existing key is **silently skipped and returns nil** (no error). To observe skips, watch the audit log (`skipped (no overwrite)` events).
+
+### Defense-in-depth for file loading (TOCTOU)
+
+Between the `Stat()` size check and the actual read there is a theoretical replacement window; the library mitigates it with two layers: parsers internally wrap the file stream in a hardened read path enforcing the size cap, so even a file that grows after the check is cut off at the hard cap (100 MB), preventing memory exhaustion.
 
 ## Related Documentation
 

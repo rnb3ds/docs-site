@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Package Functions"
-title: "Package Functions - CyberGo env | Global Convenience Functions"
-description: "Package-level convenience function API reference for CyberGo env, providing Load, GetString, GetInt, GetBool, GetDuration, GetSlice, GetSecure, Lookup, Keys, and ParseInto as thread-safe interfaces based on the global default Loader."
+title: "Package Functions - CyberGo env | Global Functions"
+description: "Global convenience functions for CyberGo env: Load, GetString, GetInt, GetBool, GetDuration, GetSlice, GetSecure, and ParseInto, all thread-safe."
 sidebar_position: 2
 ---
 
@@ -953,6 +953,49 @@ func main() {
     fmt.Printf("Loaded %d variables\n", env.Len())
 }
 ```
+
+## Typed Access Supplement
+
+### GetUint64 / GetFloat64
+
+Beyond the common types, both package-level and Loader methods provide unsigned-integer and float access:
+
+<!-- check-code: skip -->
+```go
+limit := env.GetUint64("RATE_LIMIT", 1000)     // uint64
+rate := env.GetFloat64("SAMPLE_RATE", 0.5)      // float64
+u := loader.GetUint64("RATE_LIMIT", 1000)       // same signature on Loader
+f := loader.GetFloat64("SAMPLE_RATE", 0.5)
+```
+
+### Lenient boolean parsing
+
+`GetBool` accepts the following spellings case-insensitively:
+
+| Truthy | Falsy |
+|--------|-------|
+| `true`, `yes`, `on`, `1`, `enabled` | `false`, `no`, `off`, `0`, `disabled` |
+
+An empty string parses as `false`; any other value raises a `ValidationError` and **returns the default** (an audit event is recorded as well).
+
+### Parse failures vs. defaults
+
+All `Get*` functions return the default (or zero value) when the key is **missing** or the value **fails to parse** — they never panic or return an error. Parse failures are recorded in the audit log as `parse failed` for easier diagnosis of dirty configuration.
+
+### Two failure semantics of GetSliceFrom
+
+In instance mode, `GetSliceFrom[T](loader, key)` collects elements from indexed keys (`KEY_0`, `KEY_1`, ...) with comma-separated fallback. Parse failures behave differently per source:
+
+| Source | On element parse failure |
+|--------|--------------------------|
+| Indexed keys (`KEY_0`...) | The element is **skipped** (after an audit record); the rest is kept |
+| Comma-separated fallback | The **whole list fails**; the default (or nil) is returned |
+
+The generic element type is constrained to: `string`, `int`, `int64`, `uint`, `uint64`, `bool`, `float64`, `time.Duration`. Slice length is capped at 10000 (defensive limit; exceeding it is audited).
+
+### LoadWithConfig forces AutoApply
+
+Both `Load()` and `LoadWithConfig()` **force** `AutoApply=true` regardless of the passed configuration — package-level convenience functions rely on variables being in the process environment. Use `New()` (instance mode) when you need manual control over application timing.
 
 ## Related Documentation
 

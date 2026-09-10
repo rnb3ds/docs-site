@@ -1,41 +1,59 @@
 ---
 sidebar_label: "Large Files Guide"
-title: "Large File Processing - CyberGo JSON | Guide"
-description: "CyberGo JSON large-file guide and API reference: ForeachFile* method signatures, parameter tables, memory control, and NDJSONProcessor streaming for Go ETL."
+title: "Large File Handling - CyberGo JSON | Guide"
+description: "CyberGo JSON large files: ForeachFile, ForeachFileChunked, ForeachFileWithPath, ForeachFileNested, NDJSONProcessor, StreamIterator — memory control for ETL."
 sidebar_position: 1
 ---
 
-# Large File Processing
+# Large File Handling
 
-For large JSON files (such as logs, configurations, data exports), loading them directly into memory may cause out-of-memory errors. The json library provides multiple efficient processing methods.
+For large JSON files (logs, configurations, data exports), loading everything into memory can cause OOM. The json library provides several efficient approaches.
 
-::: warning
-`ForeachFile` and `ForeachFileChunked` load the entire file into memory before iterating. The "chunked" behavior only affects how data in memory is iterated, not how the file is read. For truly memory-controlled processing of very large files, use `NDJSONProcessor` with JSONL format, or use `StreamIterator`.
+::: tip Note
+For the type-level API reference of the streaming and parallel iterators (StreamIterator, StreamObjectIterator, BatchIterator, ParallelIterator) see [Iterators](../api-reference/iterator); for parallel-processing practices see [Concurrency & Parallelism](../advanced/concurrency).
 :::
 
-## Available Approaches
+::: warning
+`ForeachFile` and `ForeachFileChunked` load the entire file into memory before iterating. The "chunked" behavior only affects how the in-memory data is iterated, not how the file is read. For truly memory-bounded processing of very large files, use `NDJSONProcessor` with the JSONL format, or use `StreamIterator`.
+:::
 
-| Approach | Use Case | Memory Usage |
-|----------|----------|--------------|
-| **Processor.ForeachFile** | Structured iteration over file contents | Loads complete file, iterates item by item |
-| **Processor.ForeachFileChunked** | Batch chunked iteration | Loads complete file, iterates in chunks |
-| **NDJSONProcessor** | Line-by-line JSONL file processing | Memory-controllable, true streaming |
+## Available Options
 
-## Unified API: Processor
+| Option | Fits | Memory footprint |
+|--------|------|------------------|
+| **Processor.ForeachFile** | Structured iteration over a file | Loads the whole file, iterates item by item |
+| **Processor.ForeachFileChunked** | Batched, chunked iteration | Loads the whole file, iterates in chunks |
+| **NDJSONProcessor** | Line-by-line JSONL file processing | Bounded memory, true streaming |
+| **StreamIterator** | Element-by-element streaming decode of large arrays | Independent of array length |
+
+### The Four ForeachFile Variants
+
+The `ForeachFile` family has four variants, all accepting an optional `Config` (for per-call parsing and security-validation options); they differ in traversal target and grouping:
+
+| Variant | Traversal target | Typical scenario |
+|---------|------------------|------------------|
+| `ForeachFile` | Root array elements / root object key-values | Logs and exports whose top level is the data collection |
+| `ForeachFileWithPath` | The array/object at a given path | Sub-collections such as `users`, `orders` inside a file |
+| `ForeachFileChunked` | Root array elements, batched by `chunkSize` | Bulk database writes, batched dispatch |
+| `ForeachFileNested` | Recursively traverses all nested structures | Multi-level configs of unknown depth, structural statistics |
+
+All four support returning `item.Break()` from the callback for early stopping; `ForeachFileChunked` requires the root to be a JSON array (otherwise `ErrTypeMismatch`), and `chunkSize <= 0` is treated as 100.
+
+## The Unified API: Processor
 
 ### Configuration Options
 
-Large file processing configuration is integrated into `Config`:
+Large-file handling configuration is integrated into `Config`:
 
 ```go
 type Config struct {
     // ... other configuration ...
 
-    // Large file processing configuration
+    // Large-file handling configuration
     ChunkSize       int64 // Chunk size (default 1MB)
     MaxMemory       int64 // Maximum memory usage (default 100MB)
     BufferSize      int   // Read buffer size (default 64KB)
-    SamplingEnabled bool  // Whether to enable sampling (default true)
+    SamplingEnabled bool  // Whether sampling is enabled (default true)
     SampleSize      int   // Sample count (default 1000)
 }
 ```
@@ -46,83 +64,85 @@ type Config struct {
 package main
 
 import (
-    "log"
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
+	"log"
 )
 
 func main() {
-    // Create Processor (with default configuration)
-    processor, err := json.New()
-    if err != nil {
-        log.Fatal(err)
-    }
-    defer processor.Close()
+	// Create a Processor (default configuration)
+	processor, err := json.New()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer processor.Close()
 
-    // Method 1: Item-by-item processing (recommended)
-    count := 0
-    err = processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
-        count++
+	// Option 1: item by item (recommended)
+	count := 0
+	err = processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
+		count++
 
-        // Use IterableValue convenience methods to access fields
-        id := item.GetInt("id")
-        name := item.GetString("name")
-        email := item.GetString("email")
+		// Convenient field access with IterableValue
+		id := item.GetInt("id")
+		name := item.GetString("name")
+		email := item.GetString("email")
 
-        // Supports path access for nested properties
-        city := item.GetString("profile.city")
-        interests := item.GetArray("profile.interests")
+		// Path access to nested properties is supported
+		city := item.GetString("profile.city")
+		interests := item.GetArray("profile.interests")
 
-        if count%10000 == 0 {
-            log.Printf("Processed %d records, sample: id=%d name=%s email=%s city=%s interests=%d",
-                count, id, name, email, city, len(interests))
-        }
-        return nil
-    })
+		if count%10000 == 0 {
+			log.Printf("Processed %d records, sample: id=%d name=%s email=%s city=%s interests=%d",
+				count, id, name, email, city, len(interests))
+		}
+		return nil
+	})
 
-    if err != nil {
-        log.Fatal(err)
-    }
-    log.Printf("Processing complete, %d records total", count)
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Done, %d records in total", count)
 }
 ```
 
 ### Batch Processing
 
 ```go
-// Method 2: Batch processing (suitable for batch database writes)
+// Option 2: batched (good for bulk database writes)
 err := processor.ForeachFileChunked("large-data.json", 1000, func(chunk []*json.IterableValue) error {
     log.Printf("Processing batch: %d records", len(chunk))
 
-    // Batch write to database
+    // Bulk write to the database
     for _, item := range chunk {
         id := item.GetInt("id")
         name := item.GetString("name")
-        // ... process data
+        // ... process the data
     }
     return nil
 })
 ```
 
-### With Interrupt Control
+### Interruptible Processing
+
 ```go
-// Method 3: With interrupt control (stop after finding specific data)
-// Return item.Break() to stop iteration, return nil to continue
+// Option 3: interruptible (stop after finding specific data)
+// Return item.Break() to stop iterating, nil to continue
 err := processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
     id := item.GetInt("id")
 
     if id == targetID {
-        // Found target, stop iteration
+        // Target found, stop iterating
         fmt.Printf("Found target: ID=%d, Name=%s\n", id, item.GetString("name"))
-        return item.Break() // Stop iteration (return break signal)
+        return item.Break() // stop iterating (returns the break signal)
     }
 
-    return nil // Continue iteration
+    return nil // continue iterating
 })
 ```
 
 ### Processing Object Files
+
 ```go
-// Method 4: Process JSON object files (key-value structure)
+// Option 4: process a JSON object file (key-value structure)
 // File format: {"user1": {...}, "user2": {...}, ...}
 err := processor.ForeachFile("config-map.json", func(key any, item *json.IterableValue) error {
     fmt.Printf("Key: %s, Name: %s\n", key, item.GetString("name"))
@@ -131,11 +151,12 @@ err := processor.ForeachFile("config-map.json", func(key any, item *json.Iterabl
 ```
 
 ### Custom Configuration
+
 ```go
-// Custom large file processing configuration
+// Custom large-file configuration
 cfg := json.DefaultConfig()
 cfg.ChunkSize = 10 * 1024 * 1024   // 10MB chunks
-cfg.MaxMemory = 500 * 1024 * 1024  // 500MB memory limit
+cfg.MaxMemory = 500 * 1024 * 1024  // 500MB memory cap
 cfg.BufferSize = 128 * 1024        // 128KB buffer
 
 processor, err := json.New(cfg)
@@ -147,40 +168,56 @@ defer processor.Close()
 
 ## IterableValue Convenience Methods
 
-The `ForeachFile*` family of methods provides an `IterableValue` interface that supports convenient data access:
+The `ForeachFile*` family provides the `IterableValue` interface with convenient data access:
 
 | Method | Description | Example |
 |--------|-------------|---------|
-| `Get(path)` | Get value | `item.Get("field")` |
-| `GetString(path)` | Get string | `item.GetString("name")` |
-| `GetInt(path)` | Get integer | `item.GetInt("id")` |
-| `GetFloat64(path)` | Get float | `item.GetFloat64("score")` |
-| `GetBool(path)` | Get boolean | `item.GetBool("active")` |
-| `GetArray(path)` | Get array | `item.GetArray("tags")` |
-| `GetObject(path)` | Get object | `item.GetObject("profile")` |
-| `Exists(path)` | Check if field exists | `item.Exists("email")` |
-| `IsNull(path)` | Check if null | `item.IsNull("deleted_at")` |
-| `IsEmpty(path)` | Check if empty | `item.IsEmpty("notes")` |
-| `Break()` | Return break signal | `return item.Break()` |
+| `Get(path)` | Get a value | `item.Get("field")` |
+| `GetString(path)` | Get a string | `item.GetString("name")` |
+| `GetInt(path)` | Get an integer | `item.GetInt("id")` |
+| `GetFloat64(path)` | Get a float | `item.GetFloat64("score")` |
+| `GetBool(path)` | Get a boolean | `item.GetBool("active")` |
+| `GetArray(path)` | Get an array | `item.GetArray("tags")` |
+| `GetObject(path)` | Get an object | `item.GetObject("profile")` |
+| `Exists(path)` | Check a field exists | `item.Exists("email")` |
+| `IsNull(path)` | Check for null | `item.IsNull("deleted_at")` |
+| `IsEmpty(path)` | Check for empty | `item.IsEmpty("notes")` |
+| `Break()` | Return the break signal | `return item.Break()` |
 
-**Supports Path Navigation**
+**Path navigation supported**
+
 ```go
-city := item.GetString("profile.address.city")      // Nested object
-firstTag := item.GetString("tags[0]")               // Array index
-lastTag := item.GetString("tags[-1]")               // Negative index (last)
-nested := item.GetString("data.items[0].name")      // Complex path
+city := item.GetString("profile.address.city")      // nested object
+firstTag := item.GetString("tags[0]")               // array index
+lastTag := item.GetString("tags[-1]")               // negative index (last)
+nested := item.GetString("data.items[0].name")      // complex path
 ```
 
-## Stream Processing Configuration
+::: warning Do not hold IterableValue references after the callback returns
+The `ForeachFile*` (and in-memory `Foreach*`) families use an object pool to cut allocation overhead: **after the callback returns**, the `IterableValue` goes back to the pool with its internal data nulled. Extract the values you need inside the callback (e.g. the result of `GetString`); do not stash `item` itself or the reference from `item.GetData()` beyond the callback.
+:::
 
-Configure stream processing parameters through `Config`:
+## Streaming Configuration
+
+Configure streaming parameters via `Config`. The fields directly relevant to streaming reads and their actual behavior:
+
+| Field | Default (`DefaultConfig`) | Behavior |
+|-------|---------------------------|----------|
+| `MaxJSONSize` | 100MB (`DefaultMaxJSONSize`) | Total byte cap for file/Reader reads. `LoadFromFile`/`UnmarshalFromFile`/`LoadFromReader` enforce it **during the read** with `io.LimitReader` (reading cap+1 bytes to detect truncation, avoiding TOCTOU races); the `ForeachFile*` family inherits it via `LoadFromFile`; a `cfg.MaxJSONSize > 0` passed to streaming iterator constructors caps the whole stream |
+| `BufferSize` | 64KB | Read buffer for `StreamIterator`/`StreamObjectIterator`; falls back to 32KB when `cfg` is passed with `BufferSize <= 0` |
+| `ChunkSize` | 1MB | Large-file chunk size (validation range 64KB–100MB) |
+| `MaxMemory` | 100MB | Total memory cap (validation range 10MB–1GB); the JSONL streaming memory fallback chain is `JSONLMaxMemory` -> `MaxMemory` |
+| `MaxNestingDepthSecurity` | 200 (`DefaultMaxNestingDepth`) | Per-line nesting depth cap for JSONL, checked line by line before parsing |
+| `ValidateFilePath` | `true` | Declared but currently **not a switch**: file-path security validation (traversal, symlinks, platform restrictions) runs unconditionally at read/write time |
+
+`Config.Validate`/`ValidateWithWarnings` silently clamp out-of-range values back into the legal ranges (e.g. `BufferSize` clamped to 4KB–1MB); use `ValidateWithWarnings` to see the adjustments.
 
 ```go
 cfg := json.DefaultConfig()
 
-// Large file processing configuration
+// Large-file configuration
 cfg.ChunkSize = 10 * 1024 * 1024   // 10MB chunks
-cfg.MaxMemory = 500 * 1024 * 1024  // 500MB memory limit
+cfg.MaxMemory = 500 * 1024 * 1024  // 500MB memory cap
 cfg.BufferSize = 128 * 1024        // 128KB buffer
 
 processor, err := json.New(cfg)
@@ -190,7 +227,7 @@ if err != nil {
 defer processor.Close()
 ```
 
-### Using StreamLinesInto Generic Function
+### Using the StreamLinesInto Generic Function
 
 ```go
 type User struct {
@@ -208,56 +245,228 @@ _, err := json.StreamLinesInto[User](file, func(lineNum int, user User) error {
 
 ### Parallel Processing
 
-For tasks that can be parallelized, you can use multiple goroutines:
+For parallelizable tasks, use multiple goroutines:
 
 ```go
 package main
 
 import (
-    "sync"
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
+	"sync"
 )
 
 func main() {
-    processor, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer processor.Close()
+	processor, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer processor.Close()
 
-    // Use worker pool
-    workers := 4
-    items := make(chan any, 100)
-    var wg sync.WaitGroup
+	// Use a worker pool
+	workers := 4
+	items := make(chan any, 100)
+	var wg sync.WaitGroup
 
-    // Start workers
-    for i := 0; i < workers; i++ {
-        wg.Add(1)
-        go func(id int) {
-            defer wg.Done()
-            for item := range items {
-                // Process item (replace with your business logic)
-                _ = item
-            }
-        }(i)
-    }
+	// Start the workers
+	for i := 0; i < workers; i++ {
+		wg.Add(1)
+		go func(id int) {
+			defer wg.Done()
+			for item := range items {
+				// Process item (replace with your business logic)
+				_ = item
+			}
+		}(i)
+	}
 
-    // Stream read and dispatch
-    processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
-        items <- item.Get("")
-        return nil
-    })
+	// Stream-read and dispatch
+	processor.ForeachFile("large-data.json", func(key any, item *json.IterableValue) error {
+		items <- item.GetData()
+		return nil
+	})
 
-    close(items)
-    wg.Wait()
+	close(items)
+	wg.Wait()
 }
 ```
 
-## Performance Optimization Tips
+If the data is already in memory (`[]any`), you can use the library's built-in [ParallelIterator](../api-reference/iterator#the-paralleliterator-type) directly, skipping the hand-written worker pool.
+
+## Streaming and Parallel Iterators
+
+`ForeachFile*` loads the whole file first; when a file is too big for a full in-memory load, switch to this section's iterators: `StreamIterator`/`StreamObjectIterator` decode directly from an `io.Reader` while reading, with memory independent of data size. For the complete type-level API see [Iterators](../api-reference/iterator).
+
+### StreamIterator: element-by-element streaming decode of large arrays
+
+```go
+package main
+
+import (
+	"fmt"
+	"io"
+	"strings"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// Small data for the demo; replace with os.Open("large-array.json") in practice
+	var src io.Reader = strings.NewReader(`[
+		{"id": 1, "name": "Alice"},
+		{"id": 2, "name": "Bob"},
+		{"id": 3, "name": "Carol"}
+	]`)
+
+	iter := json.NewStreamIterator(src)
+	count := 0
+	for iter.Next() {
+		if obj, ok := iter.Value().(map[string]any); ok {
+			fmt.Printf("index=%d id=%.0f name=%s\n", iter.Index(), obj["id"], obj["name"])
+		}
+		count++
+	}
+	if err := iter.Err(); err != nil {
+		fmt.Println("Iteration error:", err)
+		return
+	}
+	fmt.Println("Elements iterated:", count)
+	// Output:
+	// index=0 id=1 name=Alice
+	// index=1 id=2 name=Bob
+	// index=2 id=3 name=Carol
+	// Elements iterated: 3
+}
+```
+
+Key points:
+
+- The top level must be a JSON array; a top-level scalar is yielded once as a single element, and a top-level object is rejected (`iter.Err()` returns an error).
+- A passed `cfg.MaxJSONSize > 0` caps the **entire stream's** total bytes (default fallback 100MB); exceeding it errors during iteration.
+- Elements are decoded one at a time — only the current element is in memory at any moment.
+
+### StreamObjectIterator: key-by-key streaming decode of large objects
+
+```go
+package main
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	src := strings.NewReader(`{
+		"users":  {"count": 3},
+		"orders": {"count": 128},
+		"events": {"count": 9001}
+	}`)
+
+	iter := json.NewStreamObjectIterator(src)
+	for iter.Next() {
+		if obj, ok := iter.Value().(map[string]any); ok {
+			fmt.Printf("%s: count=%.0f\n", iter.Key(), obj["count"])
+		}
+	}
+	if err := iter.Err(); err != nil {
+		fmt.Println("Iteration error:", err)
+		return
+	}
+	// Output (in document order, not random map order):
+	// users: count=3
+	// orders: count=128
+	// events: count=9001
+}
+```
+
+Suited to scenarios where the top level is one enormous object (config tables, partition indexes), processed key-value by key-value.
+
+### BatchIterator: batched consumption of in-memory arrays
+
+`BatchIterator` operates on an already-loaded `[]any`, returning sliced batches — good for feeding medium-sized arrays downstream in fixed batches (bulk DB loads, paginated computation):
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	data := []any{
+		map[string]any{"id": 1},
+		map[string]any{"id": 2},
+		map[string]any{"id": 3},
+		map[string]any{"id": 4},
+		map[string]any{"id": 5},
+	}
+
+	// Batch size comes from Config.MaxBatchSize; 2000 under the default configuration
+	cfg := json.DefaultConfig()
+	cfg.MaxBatchSize = 2
+
+	iter := json.NewBatchIterator(data, cfg)
+	fmt.Println("Total batches:", iter.TotalBatches())
+	for iter.HasNext() {
+		batch := iter.NextBatch()
+		fmt.Printf("Batch [%d:%d), elements=%d\n", iter.CurrentIndex()-len(batch), iter.CurrentIndex(), len(batch))
+	}
+	// Output:
+	// Total batches: 3
+	// Batch [0:2), elements=2
+	// Batch [2:4), elements=2
+	// Batch [4:5), elements=1
+}
+```
+
+For very large bulk loads use [`ForeachFileChunked`](#batch-processing) (file source) or [`StreamJSONLChunked`](./jsonl#streamjsonlchunked) (JSONL source) instead; both also return `IterableValue` to the pool after the chunk callback returns, so finish persisting inside the callback.
+
+### ParallelIterator: CPU-bound parallel processing
+
+`ParallelIterator` processes an in-memory array with a worker pool; the worker count comes from `Config.MaxConcurrency` (50 by default) and narrows automatically to the data length. `Map` results are written by index, preserving input order:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	nums := []any{1, 2, 3, 4}
+
+	iter := json.NewParallelIterator(nums)
+	defer iter.Close()
+
+	squares, err := iter.Map(func(idx int, val any) (any, error) {
+		n, ok := val.(int)
+		if !ok {
+			return nil, fmt.Errorf("element %d is not an integer", idx)
+		}
+		return n * n, nil
+	})
+	if err != nil {
+		fmt.Println("Processing error:", err)
+		return
+	}
+	fmt.Println("Squares:", squares)
+	// Output: Squares: [1 4 9 16]
+}
+```
+
+In `ForEach`/`ForEachWithContext`, any callback error stops dispatching new tasks and returns that error; callback panics are recovered into errors instead of taking down the process; `Close` signals all workers to finish and is safe to call concurrently. For cancellation/timeout scenarios use the `ForEachWithContext`/`ForEachBatchWithContext` variants.
+
+## Performance Optimization Advice
 
 ### Memory Control
+
 ```go
-// Configure based on available memory
+// Configure per available memory
 cfg := json.DefaultConfig()
 cfg.MaxMemory = 500 * 1024 * 1024 // 500MB
 cfg.ChunkSize = 10 * 1024 * 1024  // 10MB
@@ -270,25 +479,26 @@ defer processor.Close()
 ```
 
 ### Best Practices
-1. **Estimate file size**: Check file size before processing to choose an appropriate strategy
-2. **Set memory limits**: Use `MaxMemory` to prevent OOM
-3. **Batch commits**: Accumulate a certain number of records before batch writing to database
-4. **Error handling**: Implement `JSONLContinueOnErr` or log failed entries
-5. **Progress monitoring**: Periodically output processing progress
+
+1. **Estimate file size**: check the file size before processing and choose the right strategy
+2. **Set memory limits**: use `MaxMemory` to prevent OOM
+3. **Batch commits**: accumulate a fixed count before bulk database writes
+4. **Error handling**: enable `JSONLContinueOnErr` or record failed entries
+5. **Progress monitoring**: log processing progress periodically
 
 ## Selection Guide
 
-| File Size | Recommended Approach | Example |
-|-----------|---------------------|---------|
+| File size | Recommended option | Example |
+|-----------|--------------------|---------|
 | < 10MB | Load directly | `json.ParseAny` + `Get` |
 | 10-100MB | Processor.ForeachFile | Item-by-item processing |
 | 100MB-1GB | Processor.ForeachFileChunked | Chunked iteration |
-| > 1GB | NDJSONProcessor / JSONL format | True streaming, memory-controllable |
+| > 1GB | NDJSONProcessor / JSONL format | True streaming with bounded memory |
 
 
 ## API Reference
 
-This section summarizes the function signatures and parameter tables for the large-file processing API for quick lookup.
+This section summarizes the signatures and parameter tables of large-file APIs for quick lookup.
 
 ### Processor Methods
 
@@ -296,48 +506,48 @@ This section summarizes the function signatures and parameter tables for the lar
 
 Signature: `func (p *Processor) ForeachFile(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-Processes JSON array elements in a large file one by one. See [Basic Usage](#basic-usage) and [Interrupt Control](#with-interrupt-control).
+Processes the elements of a large JSON file one by one. Full usage in [Basic Usage](#basic-usage) and [Interruptible Processing](#interruptible-processing).
 
 **Parameters**
 
 | Name | Type | Description |
 |------|------|-------------|
-| `filePath` | `string` | JSON file path |
+| `filePath` | `string` | Path to the JSON file |
 | `fn` | `func(key any, item *IterableValue) error` | Processing callback |
 
-**Callback Return Values**
+**Callback return values**
 
-| Return Value | Description |
+| Return value | Description |
 |--------------|-------------|
-| `nil` | Continue to next item |
-| `item.Break()` | Stop iteration without returning an error |
-| other `error` | Stop iteration and return the error |
+| `nil` | Continue with the next item |
+| `item.Break()` | Stop iterating without an error |
+| Other `error` | Stop iterating and return the error |
 
 **ForeachFileChunked**
 
 Signature: `func (p *Processor) ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error, cfg ...Config) (err error)`
 
-Processes a large file in batches, processing the specified number of elements each time. See [Batch Processing](#batch-processing).
+Processes a large file in batches of a given element count. Usage in [Batch Processing](#batch-processing).
 
 **Parameters**
 
 | Name | Type | Description |
 |------|------|-------------|
-| `filePath` | `string` | JSON file path |
-| `chunkSize` | `int` | Number of elements per batch |
-| `fn` | `func(chunk []*IterableValue) error` | Batch processing callback |
+| `filePath` | `string` | Path to the JSON file |
+| `chunkSize` | `int` | Elements per batch |
+| `fn` | `func(chunk []*IterableValue) error` | Batch callback |
 
 **ForeachFileWithPath**
 
 Signature: `func (p *Processor) ForeachFileWithPath(filePath, path string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-Processes JSON arrays or objects at a specified path within a file.
+Processes the JSON array or object at a given path inside a file.
 
 **Parameters**
 
 | Name | Type | Description |
 |------|------|-------------|
-| `filePath` | `string` | JSON file path |
+| `filePath` | `string` | Path to the JSON file |
 | `path` | `string` | JSON path expression |
 | `fn` | `func(key any, item *IterableValue) error` | Processing callback |
 
@@ -365,13 +575,13 @@ err := p.ForeachFileNested("data.json", func(key any, item *json.IterableValue) 
 
 ## Package-Level Functions
 
-In addition to Processor methods, the following functions can be called directly without creating a Processor instance. They use the global processor internally.
+Besides the Processor methods, the following functions can be called directly without creating a Processor instance. They use the global processor internally.
 
 ### ForeachFile (Package-Level Function)
 
 Signature: `func ForeachFile(filePath string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-Loads JSON from a file and iterates.
+Loads JSON from a file and iterates it.
 
 ```go
 err := json.ForeachFile("data.json", func(key any, item *json.IterableValue) error {
@@ -384,7 +594,7 @@ err := json.ForeachFile("data.json", func(key any, item *json.IterableValue) err
 
 Signature: `func ForeachFileWithPath(filePath, path string, fn func(key any, item *IterableValue) error, cfg ...Config) error`
 
-Loads JSON from a file and iterates by path.
+Loads JSON from a file and iterates at a given path.
 
 ```go
 err := json.ForeachFileWithPath("data.json", "users", func(key any, item *json.IterableValue) error {
@@ -398,7 +608,7 @@ err := json.ForeachFileWithPath("data.json", "users", func(key any, item *json.I
 
 Signature: `func ForeachFileChunked(filePath string, chunkSize int, fn func(chunk []*IterableValue) error, cfg ...Config) error`
 
-Chunk-iterates JSON arrays in a file.
+Iterates a JSON array from a file in chunks.
 
 ```go
 err := json.ForeachFileChunked("large_data.json", 100, func(chunk []*json.IterableValue) error {
@@ -424,8 +634,9 @@ err := json.ForeachFileNested("config.json", func(key any, item *json.IterableVa
 
 ## See Also
 
-- [NDJSON Processor](./jsonl) — JSONL/NDJSON streaming
-- [JSONLWriter](./jsonl#jsonlwriter) — JSONL writer
+- [NDJSON Processors](./jsonl) — JSONL/NDJSON streaming
+- [JSONLWriter](./jsonl#jsonlwriter) — The JSONL writer
 
 ## Next Steps
-- [API Reference](../api-reference/) — Complete API reference
+
+- [API Reference](../api-reference/) — The complete API reference

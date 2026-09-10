@@ -1,7 +1,7 @@
 ---
 sidebar_label: "JSONL"
 title: "Processor JSONL 方法 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor JSONL 方法：StreamJSONL 流式、ForeachJSONL 迭代、MapJSONL 映射、ReduceJSONL 归约与 FilterJSONL 过滤，适合流式数据处理。"
+description: "CyberGo JSON Processor JSONL 方法：StreamJSONL 流式逐行、StreamJSONLParallel 并行、ForeachJSONL 迭代、MapJSONL 映射、ReduceJSONL 归约与 FilterJSONL 过滤，适合流式数据处理。"
 sidebar_position: 8
 ---
 
@@ -19,14 +19,14 @@ Processor 提供完整的 JSONL（JSON Lines）流式处理能力，支持逐行
 
 签名：`func (p *Processor) StreamJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error) error`
 
-流式处理 JSONL 数据，逐行读取并调用回调函数。
+流式处理 JSONL 数据，逐行读取并调用回调函数。回调返回 `nil` 继续处理下一行，返回 `item.Break()` 干净地提前终止（整体返回 `nil`），返回其他错误立即停止并返回该错误。回调内的 panic 会被捕获并转为错误返回，不会击穿进程。
 
 **参数**
 
 | 名称 | 类型 | 说明 |
 |------|------|------|
 | `reader` | `io.Reader` | JSONL 数据源 |
-| `fn` | `func(lineNum int, item *IterableValue) error` | 处理函数，返回错误将停止处理 |
+| `fn` | `func(lineNum int, item *IterableValue) error` | 处理函数：`nil` 继续 / `item.Break()` 停止 / 其他错误中断 |
 
 ```go
 processor, _ := json.New()
@@ -314,6 +314,100 @@ if found {
 
 ---
 
+## NDJSONProcessor 独立处理器
+
+`NDJSONProcessor` 是独立于 `Processor` 的 NDJSON（换行分隔 JSON）逐行处理器：回调直接收到 `map[string]any`（而非 `IterableValue`），无需创建 `Processor` 实例，且**始终**跳过空行。适合简单消费对象行的场景；需要类型化取值、并行处理或 Map/Reduce/Filter 函数式组合时，用本页上方的 `StreamJSONL` 系列。
+
+### NewNDJSONProcessor
+
+签名：`func NewNDJSONProcessor(cfg ...Config) *NDJSONProcessor`
+
+`NewNDJSONProcessor` 接受可选 cfg，遵循统一 Config 模式。
+
+**参数**
+
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| `cfg` | `...Config` | 可选配置，不传时使用 `DefaultConfig()`；读取缓冲区取 `JSONLBufferSize`（≤0 回退 64KB） |
+
+其余 JSONL 字段（`JSONLMaxLineSize`、`JSONLMaxMemory`、`JSONLSkipComments`、`JSONLContinueOnErr`、`MaxNestingDepthSecurity`）在处理时生效，含义见[配置选项](#配置选项)。
+
+### ProcessFile
+
+签名：`func (np *NDJSONProcessor) ProcessFile(filename string, fn func(lineNum int, obj map[string]any) error) error`
+
+`ProcessFile` 逐行处理 NDJSON 文件。文件路径先做路径遍历等安全校验（非法路径返回 `ErrSecurityViolation`），随后等价于对打开的文件调用 `ProcessReader`；文件打开失败等错误包装为 `JsonsError` 返回。
+
+**参数**
+
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| `filename` | `string` | NDJSON 文件路径（先做安全校验） |
+| `fn` | `func(lineNum int, obj map[string]any) error` | 每行回调，返回错误立即终止并原样返回 |
+
+### ProcessReader
+
+签名：`func (np *NDJSONProcessor) ProcessReader(reader io.Reader, fn func(lineNum int, obj map[string]any) error) error`
+
+`ProcessReader` 从 `io.Reader` 逐行处理 NDJSON：每行解析为 `map[string]any` 后调用回调，回调 panic 会被捕获并转为错误返回。安全限制与 `StreamJSONL` 系列一致——单行大小受 `JSONLMaxLineSize` 约束（回退链 `MaxJSONSize` → 100MB）、总处理量受 `JSONLMaxMemory` 约束（回退 `MaxMemory`）、每行解析前按 `MaxNestingDepthSecurity` 检查嵌套深度；`JSONLContinueOnErr=true` 时跳过解析失败的行继续处理。
+
+**参数**
+
+| 名称 | 类型 | 说明 |
+|------|------|------|
+| `reader` | `io.Reader` | NDJSON 数据源 |
+| `fn` | `func(lineNum int, obj map[string]any) error` | 每行回调，返回错误立即终止并原样返回 |
+
+<!-- check-code: skip -->
+```go
+np := json.NewNDJSONProcessor()
+
+err := np.ProcessReader(strings.NewReader(`{"id":1}`), func(lineNum int, obj map[string]any) error {
+    fmt.Printf("行 %d: id=%v\n", lineNum, obj["id"])
+    return nil
+})
+```
+
+**完整示例**（空行始终被跳过，行号保持原始物理行号）：
+
+```go
+package main
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	np := json.NewNDJSONProcessor()
+
+	data := "{\"id\":1}\n\n{\"id\":2}\n"
+	var count int
+
+	err := np.ProcessReader(strings.NewReader(data), func(lineNum int, obj map[string]any) error {
+		count++
+		fmt.Printf("行 %d: id=%v\n", lineNum, obj["id"])
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("共处理 %d 行\n", count)
+	// 输出：
+	// 行 1: id=1
+	// 行 3: id=2
+	// 共处理 2 行
+}
+```
+
+::: tip 与 StreamJSONL 的选择
+回调直接拿 `map[string]any`、代码最简时用 `NDJSONProcessor`；需要 `IterableValue` 类型化取值（`GetInt`/`GetString`）、并行 worker、分块或函数式管道时用 `StreamJSONL` 系列。两者受同一组 JSONL 安全限制约束。
+:::
+
+---
+
 ## 配置选项
 
 JSONL 处理行为可通过 `Config` 的以下字段配置：
@@ -324,10 +418,14 @@ JSONL 处理行为可通过 `Config` 的以下字段配置：
 | `JSONLMaxLineSize` | `int` | 1048576 (1MB) | 单行最大字节数 |
 | `JSONLSkipEmpty` | `bool` | `true` | 跳过空行 |
 | `JSONLSkipComments` | `bool` | `false` | 跳过 `#` 或 `//` 注释 |
-| `JSONLContinueOnErr` | `bool` | `false` | 解析错误时继续 |
+| `JSONLContinueOnErr` | `bool` | `false` | 解析错误时继续（仅作用于 `StreamLinesInto` 与 `NDJSONProcessor`；本页 `StreamJSONL` 系列遇到解析错误始终中断） |
 | `JSONLWorkers` | `int` | 4 | 并行处理工作协程数 |
 | `JSONLChunkSize` | `int` | 1000 | 分块处理每批大小 |
 | `JSONLMaxMemory` | `int64` | 104857600 (100MB) | 最大内存使用 |
+
+::: tip Processor 方法不接受 per-call cfg
+本页 Processor 方法的 JSONL 行为**全部来自 `New(cfg)` 时固化的配置**（方法签名没有 `cfg ...Config`）；需要按调用切换配置时用[包级 JSONL 函数](../functions/jsonl)的尾随 `cfg`。另注意：`StreamJSONLParallel` 的显式 `workers` 参数、`StreamJSONLChunked` 的显式 `chunkSize` 参数**优先于** `JSONLWorkers` / `JSONLChunkSize` 字段。此外每行在解析前还按 `MaxNestingDepthSecurity` 做嵌套深度检查，防止深层嵌套载荷撑爆栈。
+:::
 
 ```go
 cfg := json.DefaultConfig()
@@ -349,37 +447,37 @@ defer processor.Close()
 package main
 
 import (
-    "fmt"
-    "os"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"os"
 )
 
 func main() {
-    processor, _ := json.New()
-    defer processor.Close()
+	processor, _ := json.New()
+	defer processor.Close()
 
-    file, _ := os.Open("app.log.jsonl")
-    defer file.Close()
+	file, _ := os.Open("app.log.jsonl")
+	defer file.Close()
 
-    var errorCount, warningCount int
+	var errorCount, warningCount int
 
-    err := processor.StreamJSONL(file, func(lineNum int, item *json.IterableValue) error {
-        level := item.GetString("level")
-        switch level {
-        case "error":
-            errorCount++
-            fmt.Printf("[ERROR] %s\n", item.GetString("message"))
-        case "warning":
-            warningCount++
-        }
-        return nil
-    })
+	err := processor.StreamJSONL(file, func(lineNum int, item *json.IterableValue) error {
+		level := item.GetString("level")
+		switch level {
+		case "error":
+			errorCount++
+			fmt.Printf("[ERROR] %s\n", item.GetString("message"))
+		case "warning":
+			warningCount++
+		}
+		return nil
+	})
 
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("统计：%d 错误，%d 警告\n", errorCount, warningCount)
+	fmt.Printf("统计：%d 错误，%d 警告\n", errorCount, warningCount)
 }
 ```
 
@@ -389,36 +487,36 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "os"
-    "sync/atomic"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"os"
+	"sync/atomic"
 )
 
 func main() {
-    cfg := json.DefaultConfig()
-    cfg.JSONLWorkers = 16 // 16 个并行 worker
+	cfg := json.DefaultConfig()
+	cfg.JSONLWorkers = 16 // 16 个并行 worker
 
-    processor, _ := json.New(cfg)
-    defer processor.Close()
+	processor, _ := json.New(cfg)
+	defer processor.Close()
 
-    file, _ := os.Open("large_data.jsonl")
-    defer file.Close()
+	file, _ := os.Open("large_data.jsonl")
+	defer file.Close()
 
-    var processed int64
+	var processed int64
 
-    err := processor.StreamJSONLParallel(file, 16, func(lineNum int, item *json.IterableValue) error {
-        // CPU 密集型处理（替换为你的业务逻辑）
-        _ = item
-        atomic.AddInt64(&processed, 1)
-        return nil
-    })
+	err := processor.StreamJSONLParallel(file, 16, func(lineNum int, item *json.IterableValue) error {
+		// CPU 密集型处理（替换为你的业务逻辑）
+		_ = item
+		atomic.AddInt64(&processed, 1)
+		return nil
+	})
 
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("并行处理了 %d 条记录\n", processed)
+	fmt.Printf("并行处理了 %d 条记录\n", processed)
 }
 ```
 

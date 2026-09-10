@@ -1,7 +1,7 @@
 ---
 sidebar_label: "자주 묻는 질문"
 title: "자주 묻는 질문 - CyberGo HTTPC | 질문과 답변"
-description: "HTTPC 자주 묻는 질문 답변: 패키지 수준 함수와 클라이언트 인스턴스의 선택 기준, 5가지 구성 프리셋 비교와 적용 시나리오, HTTP/SOCKS5 프록시와 DoH 설정, Cookie 세션 관리와 재시도 구성, errors.Is/As 오류 매칭 패턴과 4단계 타임아웃 체계 튜닝 전략의 상세한 답변과 제안."
+description: "HTTPC 자주 묻는 질문 답변: 패키지 수준 함수와 클라이언트 인스턴스 선택 기준, 5가지 설정 프리셋 비교, HTTP/SOCKS5 프록시와 DoH 설정, Cookie 세션 관리와 재시도 설정, errors.Is/As 오류 매칭과 5단계 타임아웃 튜닝 전략의 상세 답변."
 sidebar_position: 1
 ---
 
@@ -9,7 +9,7 @@ sidebar_position: 1
 
 ## 패키지 수준 함수 vs Client 인스턴스는 어떻게 선택하나요?
 
-**답:** 패키지 수준 함수(`httpc.Get`/`httpc.Post` 등)는 내부적으로 전역 공유 기본 클라이언트(`defaultClient`)를 사용하며, 첫 호출 시 지연 로드되고 닫힌 후 자동 자가 복구됩니다. 일회성 요청, 스크립트, CLI 도구 등 커스텀 구성이 필요 없는 시나리오에 적합합니다.
+**답:** 패키지 수준 함수(`httpc.Get`/`httpc.Post` 등)는 내부적으로 전역 공유 기본 클라이언트(`defaultClient`)를 사용하며, 첫 호출 시 지연 로드되고 닫힌 후 자동 자가 복구됩니다. 일회성 요청, 스크립트, CLI 도구 등 커스텀 설정이 필요 없는 시나리오에 적합합니다.
 
 ```go
 // 패키지 수준 함수: 간단하고 빠르며, 기본 클라이언트의 연결 풀 공유
@@ -18,13 +18,13 @@ result, err := httpc.Get("https://api.example.com/data")
 
 다음 중 하나의 시나리오가 필요할 때, 명시적 Client 인스턴스를 생성해야 합니다:
 
-- 커스텀 구성(타임아웃, 프록시, 재시도, TLS 등)
+- 커스텀 설정(타임아웃, 프록시, 재시도, TLS 등)
 - 독립적인 연결 풀 수명 주기 관리
 - 미들웨어 체인 사용(로깅/감사/메트릭/요청 ID)
-- 서로 다른 구성의 여러 클라이언트 공존
+- 서로 다른 설정의 여러 클라이언트 공존
 
 ```go
-// 명시적 Client: 구성과 수명 주기 완전 제어
+// 명시적 Client: 설정과 수명 주기 완전 제어
 client, err := httpc.New(httpc.PerformanceConfig())
 if err != nil {
     log.Fatal(err)
@@ -34,7 +34,7 @@ defer func() { _ = client.Close() }()
 result, err := client.Get("https://api.example.com/data")
 ```
 
-패키지 수준 함수가 커스텀 구성을 사용하게 하려면, `SetDefaultClient`로 전역 클라이언트를 교체하세요(이전 클라이언트는 자동으로 닫힘):
+패키지 수준 함수가 커스텀 설정을 사용하게 하려면, `SetDefaultClient`로 전역 클라이언트를 교체하세요(이전 클라이언트는 자동으로 닫힘):
 
 ```go
 customClient, _ := httpc.New(httpc.SecureConfig())
@@ -48,9 +48,9 @@ if err := httpc.SetDefaultClient(customClient); err != nil {
 장기 실행 서비스는 명시적 Client를 우선 사용하여 전역 상태로 인한 암시적 결합을 피하세요. 패키지 수준 함수는 단기 수명 프로그램이나 빠른 프로토타이핑에만 적합합니다.
 :::
 
-## 5가지 구성 프리셋은 어떻게 선택하나요?
+## 5가지 설정 프리셋은 어떻게 선택하나요?
 
-**답:** HTTPC는 5가지 프리셋 구성을 제공하며, 보안성과 성능의 균형으로 나열합니다:
+**답:** HTTPC는 5가지 프리셋 설정을 제공하며, 보안성과 성능의 균형으로 나열합니다:
 
 | 프리셋 | 타임아웃 | 재시도 | 리다이렉트 | SSRF | 응답 상한 | TLS 검증 | 적용 시나리오 |
 |--------|---------|--------|-----------|------|-----------|----------|---------------|
@@ -85,7 +85,7 @@ if err := httpc.SetDefaultClient(customClient); err != nil {
 |------|------|---------------|------|
 | 단일 프록시 | `ProxyURL` | 고정 프록시 서버 | 최고 우선순위, 직접 지정 |
 | 프록시 풀 | `ProxyPool` | 다중 프록시 순환, 고가용성 | 순환 전략과 수동적 서킷 브레이커 지원 |
-| 시스템 프록시 | `EnableSystemProxy` | 환경 변수 읽기 | 최하 우선순위, 시스템 구성 따름 |
+| 시스템 프록시 | `EnableSystemProxy` | 환경 변수 읽기 | 최하 우선순위, 시스템 설정 따름 |
 
 ```go
 // 방식 1: 단일 프록시(http/https/socks5 프로토콜 지원)
@@ -109,7 +109,7 @@ cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
 
 **답:** 프록시 풀은 세 가지 메커니즘으로 IP 순환을 구현합니다:
 
-**1. 전략 순환**(매 선택 시): `ProxyStrategyRoundRobin`은 순서대로 순환 선택하며, 매 선택마다 다음 프록시로 진행하므로 재시도 시 **자연스럽게 다른 IP**로 떨어지며 추가 구성이 불필요합니다. `ProxyStrategyRandom`은 건강한 프록시 중에서 무작위 선택합니다.
+**1. 전략 순환**(매 선택 시): `ProxyStrategyRoundRobin`은 순서대로 순환 선택하며, 매 선택마다 다음 프록시로 진행하므로 재시도 시 **자연스럽게 다른 IP**로 떨어지며 추가 설정이 불필요합니다. `ProxyStrategyRandom`은 건강한 프록시 중에서 무작위 선택합니다.
 
 **2. 요청별 순환**(요청 시작 시): `ProxyRotatePerRequest = true`를 설정하면, 매 독립적인 요청 시작 시 모든 유휴 연결을 닫아 Transport가 프록시 풀을 다시 평가하도록 강제합니다. 활성화하지 않으면 HTTP 연결 재사용으로 인해 동일한 호스트에 대한 연속 요청이 이전 요청의 프록시 터널을 재사용하여 전략 순환을 우회하게 됩니다. 대가로 연결 재사용이 없지만(매 요청마다 새 연결), 요청별 순환이 보장됩니다. 동일한 호스트에 대한 스크래핑/데이터 수집에 적합합니다 — 매 요청의 소스 IP가 다릅니다.
 
@@ -131,7 +131,7 @@ cfg.Connection.ProxyRotateOnStatus = []int{403} // 403 수신 시 IP 교체 재�
 cfg.Retry.MaxRetries = 3 // ProxyRotateOnStatus는 재시도와 함께 사용 필요
 ```
 
-## DoH는 어떻게 구성하나요?
+## DoH는 어떻게 설정하나요?
 
 **답:** DNS-over-HTTPS(DoH)는 DNS 해석 지연을 줄이고 DNS 하이재킹과 캐시 포이즈닝을 방지할 수 있습니다. 활성화 방법:
 
@@ -146,6 +146,8 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute // DNS 응답 캐시 기간(기본�
 :::tip DoH 사용 시기
 DoH는 DNS 해석 보안에 높은 요구사항이 있는 시나리오에 적합합니다(예: ISP DNS 하이재킹 방지). 일반적인 API 호출에서는 활성화할 필요가 없습니다 — 시스템 DNS로 보통 충분하며, DoH는 약간의 해석 지연을 추가합니다(첫 조회는 HTTPS 왕복 필요).
 :::
+
+자세한 내용은 [연결 풀과 DNS](../guides/connection-pool#dns-over-https)를 참조하세요.
 
 ## Cookie 세션은 어떻게 관리하나요?
 
@@ -171,16 +173,16 @@ result, _ := dc.Request(ctx, "GET", "/profile")
 
 자세한 내용은 [세션 관리](../api-reference/client-config/session)를 참조하세요.
 
-## 재시도는 어떻게 구성하나요?
+## 재시도는 어떻게 설정하나요?
 
 **답:** HTTPC는 기본적으로 3회 재시도하며, **재시도 가능한 일시적 오류**에 대해서만 재시도합니다:
 
-**기본 재시도 조건**(구성 없이 즉시 적용):
+**기본 재시도 조건**(설정 없이 즉시 적용):
 - 네트워크 계층 오류: 연결 거부, 연결 재설정, 네트워크 도달 불가 등
 - 전송 계층 타임아웃: `net.OpError` 타임아웃(**컨텍스트 마감이 아님**)
 - 특정 HTTP 상태 코드: 408(요청 타임아웃), 429(속도 제한), 500, 502, 503, 504
 
-**Retry-After 헤더 파싱**: 429/503을 받고 응답에 `Retry-After` 헤더가 포함된 경우, HTTPC는 자체 백오프 계산 대신 서버가 지시한 지연대로 대기하여 서버 부하 가중을 방지합니다.
+**Retry-After 헤더 파싱**: 429/503 등 재시도 가능한 응답을 받고 `Retry-After` 헤더가 포함된 경우, HTTPC는 자체 백오프 계산 대신 서버가 지시한 지연대로 대기하여 서버 부하 가중을 방지합니다. 이 대기는 **60s로 상한**입니다 — 악의적인 서버가 초대형 Retry-After 값으로 클라이언트를 붙잡아 둘 수 없습니다.
 
 **커스텀 재시도**: `RetryPolicy` 인터페이스(`ShouldRetry` + `GetDelay` 두 메서드)를 구현하여 내장 로직을 교체하고 `cfg.Retry.CustomPolicy`에 할당합니다. 자세한 내용은 [재시도와 내결함성 가이드](../guides/retry-fault-tolerance)를 참조하세요.
 
@@ -201,7 +203,7 @@ cfg.Retry.EnableJitter = true         // 지터(썬더링 허드 방지)
 
 ## 타임아웃은 어떻게 선택하나요?
 
-**답:** HTTPC는 4단계 타임아웃 체계를 제공하며, 적용 범위가 넓은 것부터 좁은 것순입니다:
+**답:** HTTPC는 5단계 타임아웃 체계를 제공하며, 적용 범위가 넓은 것부터 좁은 것순입니다:
 
 | 타임아웃 계층 | 필드 | 기본값 | 적용 범위 | 요청 수준 덮어쓰기 |
 |--------------|------|--------|-----------|:-------------------:|
@@ -320,12 +322,12 @@ openssl x509 -in cert.pem -pubkey -noout | openssl pkey -pubin -outform der \
   | openssl dgst -sha256 -binary | openssl enc -base64
 ```
 
-**다중 해시 순환**: 여러 해시를 전달하여 키 순환을 지원합니다 — 서버 키가 **어느 하나**의 사전 설정 해시와 일치하면 통과합니다. 서버가 키를 순환할 때 클라이언트가 연결이 끊기지 않도록 항상 백업 해시를 구성할 것을 권장합니다.
+**다중 해시 로테이션**: 여러 해시를 전달하여 키 로테이션을 지원합니다 — 서버 키가 **어느 하나**의 사전 설정 해시와 일치하면 통과합니다. 서버가 키를 로테이션할 때 클라이언트가 연결이 끊기지 않도록 항상 백업 해시를 구성할 것을 권장합니다.
 
 ```go
 pinner, err := httpc.NewSPKIHashPinner(
     "YLh1dUR9y6Kja30RrAn7JKnbQG/uEtLMkBgFF2fuihg=", // 현재 키
-    "C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=", // 백업 키(순환용)
+    "C5+lpZ7tcVwmwQIMcRtPbsQtWLABXhQzejna0wHFr8M=", // 백업 키(로테이션용)
 )
 if err != nil {
     log.Fatal(err)
@@ -366,7 +368,7 @@ if err != nil {
 **답:** `MaxRedirects = 0`은 "금지"가 아닌 "미설정" 센티널 값입니다. `DefaultConfig()`에서 `MaxRedirects`의 기본값은 10입니다. 리다이렉트를 실제로 금지하려면 `WithFollowRedirects(false)` 또는 `Config.Defaults.FollowRedirects = false`를 사용하세요:
 
 ```go
-// 방식 1: 구성 수준 금지
+// 방식 1: 설정 수준 금지
 cfg := httpc.DefaultConfig()
 cfg.Defaults.FollowRedirects = false
 client, _ := httpc.New(cfg)
@@ -376,6 +378,8 @@ result, _ := client.Get(url, httpc.WithFollowRedirects(false))
 ```
 
 `SecureConfig()` 프리셋은 기본적으로 리다이렉트를 금지(`FollowRedirects = false`)하여, 리다이렉트 기반 SSRF 공격을 방지합니다.
+
+리다이렉트의 전체 동작(따라가기 제어, 체인 추적, 도메인 허용 목록)은 [리다이렉트 가이드](../guides/redirects)를 참조하세요.
 
 ## io.Reader 요청 본문은 왜 크기를 검증하지 않나요?
 
@@ -389,7 +393,7 @@ limitedReader := io.LimitReader(unlimitedReader, 1024*1024)
 result, err := client.Post(url, httpc.WithBody(limitedReader))
 ```
 
-또는 `Security.MaxRequestBodySize`로 전역 업로드 상한을 설정합니다(기본값 0 = 제한 없음):
+또는 `SecurityConfig.MaxRequestBodySize`로 전역 업로드 상한을 설정합니다(기본값 0 = 제한 없음):
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -398,7 +402,7 @@ cfg.Security.MaxRequestBodySize = 10 * 1024 * 1024 // 전역 10MB 제한
 
 ## 보안 경고는 어떻게 억제하나요?
 
-**답:** `TestingConfig()` 등 안전하지 않은 구성을 비테스트 환경에서 사용하면 `log.Printf`로 경고가 출력됩니다. 억제가 필요한 경우(예: CI 환경의 특정 시나리오), 경고 출력을 `io.Discard`로 리다이렉트하세요:
+**답:** `TestingConfig()` 등 안전하지 않은 설정을 비테스트 환경에서 사용하면 `log.Printf`로 경고가 출력됩니다. 억제가 필요한 경우(예: CI 환경의 특정 시나리오), 경고 출력을 `io.Discard`로 리다이렉트하세요:
 
 ```go
 // 모든 보안 경고 출력 억제
@@ -447,12 +451,112 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
 client, _ := httpc.New(cfg)
 ```
 
-규정 준수 수준의 감사(요청/응답 헤더, 리다이렉트 체인, 소스 IP, 사용자 ID 기록)가 필요하면, 기능이 더 완전한 `AuditMiddleware`를 사용하세요. 자세한 내용은 [미들웨어 레퍼런스](../api-reference/client-config/middleware)를 참조하세요.
+규정 준수 수준의 감사(요청/응답 헤더, 리다이렉트 체인, 소스 IP, 사용자 ID 기록)가 필요하면, 기능이 더 완전한 `AuditMiddleware`를 사용하세요. 자세한 내용은 [내장 미들웨어 레퍼런스](../api-reference/client-config/middleware)를 참조하세요.
+
+## HTTPC와 net/http는 무슨 관계인가요?
+
+**답:** HTTPC는 `net/http`를 대체하는 것이 아니라 그 위에 구축되어 있습니다. 기저 엔진은 여전히 `http.Client`와 `http.Transport`입니다 — HTTPC가 자체 연결 풀 관리자로 `*http.Transport`를 생성하고 설정하며(연결 재사용, TLS, HTTP/2, 프록시 선택은 표준 라이브러리가 실행), 리다이렉트 정책은 `CheckRedirect` 콜백으로 주입되고 SSRF 검증은 다이얼 함수 `DialContext`에 래핑됩니다.
+
+그 위에 HTTPC는 표준 라이브러리에 없는 부분을 보완합니다: 요청 수준 옵션 체인, 결과 객체 풀링(저할당), 재시도 엔진, 미들웨어 체인, 다층 보안 검증, 감사와 로깅 미들웨어.
+
+:::tip 생태계 호환
+표준 라이브러리 생태계와 완전히 호환됩니다: `http.Cookie`, `tls.Config`, `context.Context`, `io.Reader` 등의 타입을 그대로 사용하며 어댑터 계층이 필요 없습니다. 기존 `tls.Config` 지식(mTLS, 커스텀 CA, 암호 스위트)은 `Security.TLSConfig`에 그대로 옮길 수 있습니다.
+:::
+
+## WithTimeout의 타임아웃은 재시도 시간을 포함하나요?
+
+**답:** 포함합니다. `WithTimeout`(그리고 `Timeouts.Request`)은 **모든 재시도 시도와 백오프 대기를 포괄하는 총 예산**입니다: 재시도 엔진은 전체 요청에 단일 마감 시간을 설정하며, 시도마다 다시 계산하지 않습니다.
+
+```go
+// 총 예산 30s: 첫 시도 + 최대 3회 재시도 + 백오프 대기, 합계 30s 초과 안 함
+result, err := client.Get(url, httpc.WithTimeout(30*time.Second))
+```
+
+두 가지 주의: 백오프 대기도 예산을 소모하므로 예산이 너무 빠듯하면 재시도를 마치지 못할 수 있습니다; `WithTimeout` 상한은 30분이며 초과 시 `ErrInvalidTimeout`을 반환합니다.
+
+## 재시도로 POST가 중복 제출되나요?
+
+**답:** 그럴 수 있습니다. HTTPC는 408/429/500/502/503/504와 네트워크 계층 일시적 오류를 자동으로 재시도하며 **요청 메서드를 구분하지 않습니다** — POST도 GET과 동일하게 재시도됩니다. 첫 요청이 서버에 도달해 정상 처리되었는데(응답이 유실되거나 타임아웃된 경우) 재시도하면 중복 생성, 이중 결제가 발생할 수 있습니다.
+
+완화 방법(우선순위순):
+
+```go
+// 1. 서버 측 멱등 키(권장): 비즈니스에서 Idempotency-Key로 중복 제거
+client.Post(url,
+    httpc.WithJSON(order),
+    httpc.WithHeader("Idempotency-Key", orderID),
+)
+
+// 2. 멱등하지 않은 인터페이스는 요청 수준에서 재시도 비활성화
+client.Post(url, httpc.WithJSON(payment), httpc.WithMaxRetries(0))
+```
+
+두 가지 추가: `io.Reader` 요청 본문은 재시도 재전송을 지원하기 위해 완전히 버퍼링됩니다(상한 100MB, 초과 시 오류) — 따라서 재시도가 보내는 body는 첫 번째와 동일합니다; `context.Canceled`/`DeadlineExceeded`는 절대 재시도되지 않으므로 능동 취소는 중복 제출을 유발하지 않습니다. 자세한 내용은 [재시도와 내결함성](../guides/retry-fault-tolerance)을 참조하세요.
+
+## 응답 Body는 수동으로 닫아야 하나요?
+
+**답:** 필요 없습니다(닫는 진입점도 없습니다). 일반 요청(`Get`/`Post`/`Request` 등)이 반환하는 `Result`가 보유한 것은 **이미 읽어 복사된 바이트**입니다 — HTTPC가 내부적으로 읽기, 배수(연결 재사용을 위해 최대 10MB), 닫기를 완료하며 기저 연결은 연결 풀이 관리합니다.
+
+```go
+result, err := client.Get(url)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(len(result.RawBody())) // 바이트가 이미 메모리에 있으며, 닫히지 않은 핸들이 없음
+```
+
+대용량 파일을 일반 요청으로 메모리에 읽지 마세요 — `Download`(스트리밍 디스크 기록, 진행률 콜백, 이어받기)를 사용하세요. `WithStreamBody`는 `Download` 경로에서만 적용됩니다: 일반 요청 메서드로 사용하면 응답은 여전히 `Result`로 완전히 읽히고 스트림이 닫힙니다. 자세한 내용은 [파일 업로드와 다운로드](../guides/file-transfer)를 참조하세요.
+
+## 프록시를 설정했는데 왜 적용되지 않나요?
+
+**답:** 다음 순서로 확인하세요(모두 소스 코드로 검증 가능한 동작입니다):
+
+**1. 우선순위 충돌.** `ProxyURL` > `ProxyPool` > `EnableSystemProxy`이며, 동시에 설정하면 최우선 항목만 적용됩니다 — `ProxyURL`을 설정했으면 프록시 풀은 더 이상 사용되지 않습니다.
+
+**2. 연결 재사용이 프록시 선택을 우회함.** 동일한 호스트에 대한 연속 요청은 이미 설정된 연결(HTTP 프록시의 CONNECT 터널 포함)을 재사용하여 프록시 선택 함수를 다시 트리거하지 않습니다. **요청마다 송출 IP를 교체**해야 할 때는 다음을 설정하세요:
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{"http://proxy1:8080", "http://proxy2:8080"}
+cfg.Connection.ProxyRotatePerRequest = true // 요청마다 유휴 연결을 닫아 프록시 재선택 강제
+```
+
+**3. 시스템 프록시의 탐지 시점.** `EnableSystemProxy`는 클라이언트 **생성 시** 프록시 주소를 한 번 탐지합니다(SSRF 면제용). 환경 변수가 그 후에야 localhost 프록시(예: `127.0.0.1:7890`)를 가리키게 되면 해당 프록시가 SSRF 방어에 차단될 수 있습니다 — 동적 로컬 프록시는 명시적 `ProxyURL`(http/https/socks5/socks5h 지원)을 사용하세요.
+
+**4. 프록시 풀 서킷 브레이커.** 연속 연결 실패가 `ProxyFailureThreshold`(기본값 3)에 도달한 프록시는 순환에서 제외되고 `ProxyCooldown`(기본값 30s) 후 하프 오픈 프로빙으로 복구됩니다; 전부 서킷 브레이킹되면 가장 먼저 회복되는 프록시를 선택하는 방식으로 낮아지며, 즉시 실패하지는 않습니다. 프록시가 계속 사용 불가라면 서킷 브레이커 임계값과 쿨다운 설정을 확인하세요.
+
+자세한 내용은 [프록시와 프록시 풀](../guides/proxy)을 참조하세요.
+
+## 127.0.0.0/8을 면제했는데도 왜 localhost에 접근할 수 없나요?
+
+**답:** 사전 검증 계층의 localhost 호스트명 검사가 CIDR 면제보다 **먼저** 실행됩니다: URL 호스트명이 `localhost`, `127.x.x.x`, `::1` 등의 형태이면 즉시 거부되어 면제 매칭에 들어가지 않습니다. `SSRFExemptCIDRs`는 루프백이 아닌 사설망 대역(예: `10.0.0.0/8`)만 통과시킬 수 있습니다.
+
+루프백 주소 접근이 정말 필요하면(예: 로컬 헬스 체크):
+
+```go
+// 요청 수준 허용(권장): 해당 요청만 SSRF 검증을 건너뛰며, 클라이언트 전체 정책은 불변
+result, err := httpc.Get("http://localhost:8080/health",
+    httpc.WithAllowPrivateIPs(true),
+)
+```
+
+자세한 내용은 [SSRF 방어의 알려진 경계](../security/ssrf)를 참조하세요.
+
+## 오류 메시지의 URL은 왜 마스킹되어 있나요?
+
+**답:** HTTPC는 오류 메시지, 로그, 감사 이벤트에 들어가는 URL에 자동으로 마스킹을 수행합니다: 자격 증명은 `***:***`로, `token`/`password`/`api_key` 등 민감한 쿼리 매개변수는 `[REDACTED]`로 교체되며 fragment는 전체 제거됩니다.
+
+```go
+// https://user:pass@example.com/api?token=secret 요청이 실패하면
+// 오류 메시지에 나타나는 것은 https://***:***@example.com/api?token=[REDACTED]
+```
+
+이는 「이차 유출」 방지입니다: 요청 실패 자체는 무해하더라도, 원본 URL이 로그 수집 시스템(ELK, Sentry)에 들어가면 자격 증명이 새로운 유출면이 됩니다. 이 동작은 내장되어 있고 끌 수 없으며, 끄지 말아야 합니다.
 
 ## 추가 리소스
 
 - [빠른 시작](../getting-started/) - 5분 빠른 시작
 - [실전 튜토리얼](../guides/tutorial) - 단계별 완전한 예제
-- [구성 API](../api-reference/client-config/config) - 완전한 구성 레퍼런스
+- [설정 API](../api-reference/client-config/config) - 완전한 설정 레퍼런스
 - [오류 타입](../api-reference/types/errors) - ClientError와 오류 분류 상세
 - [오류 처리](../guides/error-handling) - 오류 처리 가이드

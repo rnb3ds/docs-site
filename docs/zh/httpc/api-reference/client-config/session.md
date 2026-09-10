@@ -9,6 +9,10 @@ sidebar_position: 3
 
 SessionManager 提供线程安全的 Cookie 和请求头存储，由 DomainClient 内部嵌入使用。它封装了一套基于 `sync.RWMutex` 的并发安全存储，所有读取操作使用读锁、写入操作使用写锁，适合在高并发场景下跨请求共享会话状态。
 
+:::tip nil 接收者安全
+所有方法对 nil 接收者安全：返回 error 的方法（SetHeader/SetHeaders/SetCookie/SetCookies）返回 `"session manager is nil"`；其余方法静默返回零值（GetHeaders/GetCookies/GetCookie 返回 nil，SetCookieSecurity/Delete*/Clear*/UpdateFrom* 直接返回）。
+:::
+
 :::tip 何时需要直接使用 SessionManager
 通常你无需手动创建 SessionManager——`NewDomain` 创建的 DomainClient 会自动嵌入一个。直接使用 SessionManager 的场景包括：需要在多个 DomainClient 之间共享会话、需要运行时切换 Cookie 安全策略、或者需要从响应中批量提取 Cookie。
 :::
@@ -144,6 +148,8 @@ func (s *SessionManager) GetHeaders() map[string]string
 ## Cookie 管理
 
 SessionManager 通过以下方法维护跨请求的 Cookie。所有写入操作均通过 `validation.ValidateCookie` 校验合法性；若配置了 `CookieSecurity`，还会额外校验安全属性（Secure/HttpOnly/SameSite）。
+
+Cookie 字符串的底层解析遵循 RFC 6265：仅空格与水平制表符被视为合法的可选空白（OWS），解析按索引裁剪实现零额外字符串分配，且结果切片独立分配、不与内部对象池共享。[`WithCookieString`](../core/options#withcookiestring) 选项与请求 Cookie 头的提取共用这一解析器。
 
 ### SetCookie
 

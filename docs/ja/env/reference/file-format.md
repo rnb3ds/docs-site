@@ -1,7 +1,7 @@
 ---
 sidebar_label: "ファイル形式"
 title: "ファイル形式 - CyberGo env | .env/JSON/YAML 構文"
-description: "CyberGo env 設定ファイルフォーマットのリファレンス。.env、JSON、YAML の 3 種類のフォーマットの構文ルール、引用符と export プレフィックス、変数展開 ${VAR}、複数行文字列、ネストオブジェクトと配列のフラット化、UTF-8 エンコーディングと DetectFormat 自動検出機構を詳解。"
+description: "CyberGo env 設定ファイルフォーマットのリファレンス。.env、JSON、YAML の構文ルール、引用符と export プレフィックス、変数展開 ${VAR}、複数行文字列、フラット化、UTF-8 エンコーディングと DetectFormat 自動検出機構を詳解。"
 sidebar_position: 1
 ---
 

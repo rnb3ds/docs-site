@@ -1,8 +1,8 @@
 ---
 sidebar_label: "シリアライズ"
 title: "シリアライズ - CyberGo env | マルチフォーマット変換"
-description: "CyberGo env シリアライズガイド。.env、JSON、YAML 間の Map と構造体変換を詳解。Marshal/Unmarshal 関数ファミリー、Marshaler/Unmarshaler カスタムインターフェース、DetectFormat 自動検出を含み、設定エクスポートやフォーマット移行などの実用シーンをカバー。"
-sidebar_position: 2
+description: "CyberGo env シリアライズガイド。.env、JSON、YAML 間の Map と構造体変換を詳解。Marshal/Unmarshal 関数、Marshaler/Unmarshaler カスタムインターフェース、DetectFormat 自動検出を含み、設定エクスポートや移行シーンをカバー。"
+sidebar_position: 4
 sidebar_icon: "🔧"
 ---
 
@@ -630,6 +630,68 @@ func main() {
     os.WriteFile(".env", []byte(envContent), 0644)
 
     fmt.Println("Config migrated from JSON to .env")
+}
+```
+
+## ラウンドトリップの落とし穴と形式自動検出
+
+### `$` はエスケープされない：Marshal 出力を読み戻すと変形し得る
+
+`Marshal` は値の中の `$` をエスケープし**ません**。値に `$VAR` や `${VAR}` リテラルが含まれる場合、デフォルトで有効な `ExpandVariables` の下で Marshal 出力を再パースすると、これらのシーケンスは変数参照として展開されます：
+
+```go
+package main
+
+import (
+    "fmt"
+
+    "github.com/cybergodev/env"
+)
+
+func main() {
+    data := map[string]string{"PRICE": "100$USD"}
+
+    out, err := env.Marshal(data, env.FormatEnv)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(out)
+    // 出力: PRICE=100$USD
+    // 注意: `out` を .env に書き戻してデフォルト設定でロードすると $USD の展開を試みる
+}
+```
+
+緩和策：読み取り側で `cfg.ExpandVariables = false` を設定する、または `$` を含む値の `Marshal` ラウンドトリップ自体を避ける。
+
+### MarshalStruct のフィールド扱い
+
+構造体のマーシャリングでは、空文字列にマーシャリングされるフィールドは**省略**されます（空文字列、nil ポインタ、空スライス）；スカラーのゼロ値（`0`、`false`）は**保持**されます — 空文字列にマーシャリングされないためです。読み取り側は `envDefault` タグでデフォルトを揃えてください。
+
+### ソート済みキーの保証
+
+`Marshal` の出力キーは入力 map/構造体フィールドの順序と無関係に**常に辞書順にソート**されます — 同じ設定の出力が安定し、diff とキャッシングに適します。
+
+### FormatAuto のコンテンツ検出ルール
+
+`UnmarshalMap`/`UnmarshalStruct` に `FormatAuto` を渡すと、拡張子ではなく**コンテンツ**で形式を検出します：
+
+| シグナル | 判定 |
+|----------|------|
+| 空白のみの入力 | `.env` |
+| 先頭文字が `{` または `[` | JSON |
+| 最初の有効行が `- ` で始まる、または `: `（コロン+スペース）を含む | YAML |
+| `=` を含む | `.env` |
+
+`: ` が `=` より優先される点に注意：`connection: host=db port=5432` のような行は `.env` ではなく YAML と判定されます。
+
+### IsMarshalError 補助判定
+
+<!-- check-code: skip -->
+```go
+if _, err := env.Marshal(data); err != nil {
+    if env.IsMarshalError(err) {
+        // マーシャリングエラー: 未対応の入力タイプまたはフィールド変換の失敗
+    }
 }
 ```
 

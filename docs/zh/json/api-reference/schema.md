@@ -1,8 +1,8 @@
 ---
-sidebar_label: "Validator 验证器"
-title: "Validator - CyberGo JSON | Schema 验证器"
-description: "CyberGo JSON 验证器：Validator 接口、Schema 验证结构、ValidationError 错误与 SchemaConfig 配置，提供完整 JSON 数据验证能力。"
-sidebar_position: 2
+sidebar_label: "Schema 校验"
+title: "Schema 校验 - CyberGo JSON | JSON Schema 验证指南"
+description: "CyberGo JSON Schema 校验：ValidateSchema 用法、Schema 约束字段、Format 格式校验、ValidationError 错误处理与 NewSchemaWithConfig 创建方式，覆盖对象、字符串、数值与数组约束。"
+sidebar_position: 4.5
 ---
 
 # Schema 验证
@@ -73,28 +73,31 @@ func main() {
 
 `Schema` 支持的约束字段（按类别分组）：
 
-| 类别 | 字段 | 适用类型 | 说明 |
-|------|------|----------|------|
-| 结构 | `Type` | 所有 | 取值见下表 |
-| 结构 | `Required` | object | 必须出现的属性名列表 |
-| 结构 | `Properties` | object | 各属性对应的子 Schema |
-| 结构 | `Items` | array | 元素对应的子 Schema |
-| 结构 | `AdditionalProperties` | object | `true` 允许额外属性，`false` 拒绝 |
-| 字符串 | `MinLength` / `MaxLength` | string | 长度区间（按 rune 计数） |
-| 字符串 | `Pattern` | string | 正则表达式 |
-| 字符串 | `Format` | string | 语义格式（见[Format 值表](#支持的-format-值)） |
-| 数值 | `Minimum` / `Maximum` | number | 取值区间 |
-| 数值 | `ExclusiveMinimum` / `ExclusiveMaximum` | number | 排除边界值 |
-| 数值 | `MultipleOf` | number | 必须为该值的倍数 |
-| 数组 | `MinItems` / `MaxItems` | array | 元素数量区间 |
-| 数组 | `UniqueItems` | array | `true` 要求元素唯一 |
-| 取值 | `Enum` | 所有 | 允许的枚举值列表 |
-| 取值 | `Const` | 所有 | 必须等于该固定值 |
+| 类别 | 字段 | 类型 | 适用类型 | 说明 |
+|------|------|------|----------|------|
+| 结构 | `Type` | `string` | 所有 | 取值见下表 |
+| 结构 | `Required` | `[]string` | object | 必须出现的属性名列表 |
+| 结构 | `Properties` | `map[string]*Schema` | object | 各属性对应的子 Schema |
+| 结构 | `Items` | `*Schema` | array | 元素对应的子 Schema |
+| 结构 | `AdditionalProperties` | `bool` | object | `true` 允许额外属性，`false` 拒绝 |
+| 字符串 | `MinLength` / `MaxLength` | `int` | string | 长度区间（按 rune 计数） |
+| 字符串 | `Pattern` | `string` | string | 正则表达式 |
+| 字符串 | `Format` | `string` | string | 语义格式（见[Format 值表](#支持的-format-值)） |
+| 数值 | `Minimum` / `Maximum` | `float64` | number | 取值区间 |
+| 数值 | `ExclusiveMinimum` / `ExclusiveMaximum` | `bool` | number | 排除边界值 |
+| 数值 | `MultipleOf` | `float64` | number | 必须为该值的倍数 |
+| 数组 | `MinItems` / `MaxItems` | `int` | array | 元素数量区间 |
+| 数组 | `UniqueItems` | `bool` | array | `true` 要求元素唯一 |
+| 取值 | `Enum` | `[]any` | 所有 | 允许的枚举值列表 |
+| 取值 | `Const` | `any` | 所有 | 必须等于该固定值 |
+| 元信息 | `Title` / `Description` | `string` | — | 文档性元数据，不参与校验 |
+| 元信息 | `Default` | `any` | — | 文档性元数据，不参与校验 |
+| 元信息 | `Examples` | `[]any` | — | 文档性元数据，不参与校验 |
 
 `Type` 支持的取值：`object`、`array`、`string`、`number`、`boolean`、`null`。
 
 ::: warning 数值类型用 "number"
-JSON 解析后所有数字（含整数）都是 `float64`，因此数值字段应使用 `Type: "number"`。`MultipleOf` 等数值约束也只在 `Type` 为 `number` 时生效。
+JSON 解析后所有数字（含整数）都是 `float64`，因此数值字段应使用 `Type: "number"`。JSON Schema Draft 7 的 `integer` 取值**不受支持**——写成 `"integer"` 会导致所有值都报 `expected type integer` 错误。`Minimum`/`Maximum`/`MultipleOf` 等数值约束也只在 `Type` 为 `number` 时生效。
 :::
 
 ## 对象约束：Required / Properties / AdditionalProperties
@@ -231,7 +234,7 @@ func main() {
 }
 ```
 
-`ExclusiveMinimum` / `ExclusiveMaximum` 需配合 `Minimum` / `Maximum` 一并通过 `SchemaConfig`（同为指针字段）设置，用于把边界值本身排除在外。
+`ExclusiveMinimum` / `ExclusiveMaximum` 需配合 `Minimum` / `Maximum` 一并通过 `SchemaConfig`（同为指针字段）设置，用于把边界值本身排除在外。`MultipleOf` 采用浮点容差比较（epsilon 1e-9），`0.1 + 0.2` 这类 IEEE 754 精度场景不会误报。
 
 ## 数组约束：Items / MinItems / MaxItems / UniqueItems
 
@@ -277,7 +280,11 @@ func main() {
 }
 ```
 
-`Items` 指定每个元素需满足的子 Schema（上例限定为字符串）；`UniqueItems` 按元素的字符串表示判重。
+`Items` 指定每个元素需满足的子 Schema（上例限定为字符串）；`UniqueItems` 按「**动态类型 + 值**」联合判重——`[1, "1"]` 会被视为两个不同元素，仅真正重复的值报错。
+
+::: tip 递归深度保护
+`Schema` 是递归类型，校验时对递归深度做了上限保护（`DefaultMaxNestingDepth` = 200）。自引用 Schema（如 `s.Items = s`）不会导致栈溢出，超过上限会产出一条 `schema nesting exceeds maximum depth` 错误。
+:::
 
 ## 枚举与常量：Enum / Const
 
@@ -317,7 +324,7 @@ func main() {
 
 ## 支持的 Format 值
 
-`Format` 字段支持的语义格式（未知格式会被静默跳过，不报错也不通过）：
+`Format` 字段支持的语义格式（未知格式会被静默跳过：不报错，也不做该项校验）：
 
 | Format | 校验规则 |
 |--------|----------|
@@ -370,6 +377,52 @@ schema := json.DefaultSchema()
 `MinLength`、`MaxLength`、`Minimum`、`Maximum`、`MinItems`、`MaxItems`、`ExclusiveMinimum`、`ExclusiveMaximum` 这一组约束依赖 `Schema` 内部不可外部设置的跟踪标志。直接在 `&json.Schema{...}` 字面量中给这些字段赋值**不会生效**；必须通过 `NewSchemaWithConfig` 并传入对应的**指针字段**（如 `cfg.MinLength = &v`）才会被启用。`Type`、`Required`、`Properties`、`Items`、`Pattern`、`Format`、`Enum`、`Const`、`UniqueItems`、`MultipleOf` 则不受此限制，字面量与 `NewSchemaWithConfig` 均生效。
 :::
 
+### DefaultSchema
+
+签名：`func DefaultSchema() *Schema`
+
+`DefaultSchema` 返回带默认值的 Schema：`Properties` 初始化为空 map、`Required` 初始化为空切片、`AdditionalProperties` 为 `true`（放行额外属性），适合作为逐步填充的起点。
+
+### DefaultSchemaConfig
+
+签名：`func DefaultSchemaConfig() SchemaConfig`
+
+`DefaultSchemaConfig` 返回 `NewSchemaWithConfig` 的默认入参：仅 `AdditionalProperties` 预置为指向 `true` 的指针，其余字段为零值；在其上设置 `Type` 与各指针字段后即可创建 Schema。
+
+两者产出一致：`DefaultSchema()` 等价于 `NewSchemaWithConfig(DefaultSchemaConfig())`——默认都放行额外属性。
+
+### SchemaConfig 字段
+
+`SchemaConfig` 的字段集与 `Schema` 一一对应；其中数值/布尔类约束为**指针类型**——`nil` 表示未设置该约束，只有传入非 `nil` 指针，`NewSchemaWithConfig` 才会启用对应约束（这正是长度/区间类约束必须走 `NewSchemaWithConfig` 的原因，见[上方警告](#schema-的创建方式)）。
+
+| 字段                    | 类型                  | 说明                                                       |
+| ----------------------- | --------------------- | ---------------------------------------------------------- |
+| `Type`                  | `string`              | JSON 类型（同 `Schema.Type`）                              |
+| `Properties`            | `map[string]*Schema`  | 各属性对应的子 Schema（nil 时初始化为空 map）              |
+| `Items`                 | `*Schema`             | 数组元素对应的子 Schema                                    |
+| `Required`              | `[]string`            | 必须出现的属性名列表（nil 时初始化为空切片）               |
+| `MinLength`             | `*int`                | 最小长度（nil = 未设置）                                   |
+| `MaxLength`             | `*int`                | 最大长度（nil = 未设置）                                   |
+| `Minimum`               | `*float64`            | 最小值（nil = 未设置）                                     |
+| `Maximum`               | `*float64`            | 最大值（nil = 未设置）                                     |
+| `Pattern`               | `string`              | 正则表达式                                                 |
+| `Format`                | `string`              | 语义格式                                                   |
+| `AdditionalProperties`  | `*bool`               | 是否允许额外属性（nil 按 `true` 处理；`DefaultSchemaConfig` 预置为指向 `true` 的指针） |
+| `MinItems`              | `*int`                | 最少元素数（nil = 未设置）                                 |
+| `MaxItems`              | `*int`                | 最多元素数（nil = 未设置）                                 |
+| `UniqueItems`           | `bool`                | 要求元素唯一                                               |
+| `Enum`                  | `[]any`               | 允许的枚举值列表                                           |
+| `Const`                 | `any`                 | 必须等于的固定值                                           |
+| `MultipleOf`            | `*float64`            | 倍数约束（nil = 未设置）                                   |
+| `ExclusiveMinimum`      | `*bool`               | 排除下边界（nil = 未设置）                                 |
+| `ExclusiveMaximum`      | `*bool`               | 排除上边界（nil = 未设置）                                 |
+| `Title`                 | `string`              | 标题（元信息）                                             |
+| `Description`           | `string`              | 描述（元信息）                                             |
+| `Default`               | `any`                 | 默认值（元信息）                                           |
+| `Examples`              | `[]any`               | 示例值（元信息）                                           |
+
+推荐始终通过 `NewSchemaWithConfig`（`func NewSchemaWithConfig(cfg SchemaConfig) *Schema`）创建已配置的 Schema——它是指针约束唯一可靠的启用途径，且会自动初始化 `Properties` / `Required` 并处理 `AdditionalProperties` 的默认值。
+
 ## Config 中的验证相关字段
 
 | 字段 | 类型 | 说明 |
@@ -388,11 +441,13 @@ type Validator interface {
 }
 ```
 
-如需在操作前后做自定义校验，请使用已生效的 [Hooks 钩子](./hooks)（例如 `ValidationHook`）。
+如需在操作前后做自定义校验，请使用已生效的 [Hooks 钩子](../extensions/hooks)（例如 `ValidationHook`）。
 :::
 
 ## 相关
 
-- [接口定义](../api-reference/interfaces) - `Validator` 接口（预留）与 `Schema` 相关类型
-- [配置选项](../api-reference/config) - 验证相关配置字段
-- [Hooks 钩子](./hooks) - 已生效的操作前后拦截机制（含 `ValidationHook`）
+- [接口定义](./interfaces) - `Validator` 接口（预留）与 `Schema` 相关类型
+- [类型定义](./types) - 核心类型（Config / Schema / Stats / AccessResult）
+- [解析验证](./functions/parse) - Parse / Valid / ValidateSchema 函数
+- [配置选项](./config) - 验证相关配置字段
+- [Hooks 钩子](../extensions/hooks) - 已生效的操作前后拦截机制（含 `ValidationHook`）

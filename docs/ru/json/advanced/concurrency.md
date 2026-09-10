@@ -1,23 +1,23 @@
 ---
 sidebar_label: "Конкурентность и параллелизм"
-title: "Конкурентность - CyberGo JSON | Практическое руководство"
-description: "Конкурентность CyberGo JSON: потокобезопасность Processor, ParallelIterator, StreamJSONLParallel параллельный JSONL, SetGlobalProcessor и MaxConcurrency лимиты."
+title: "Конкурентность и параллелизм - CyberGo JSON | Руководство"
+description: "Конкурентность CyberGo JSON: потокобезопасный Processor, ParallelIterator, ForEachBatch, StreamJSONLParallel, SetGlobalProcessor и лимиты MaxConcurrency."
 sidebar_position: 4
 ---
 
 # Конкурентность и параллельная обработка
 
-Все операции CyberGo JSON **потокобезопасны** и предоставляют готовые параллельные API (`ParallelIterator`, параллельная потоковая обработка JSONL). На этой странице — семантика потокобезопасности, встроенные параллельные API и паттерны конкурентного использования.
+Все операции CyberGo JSON **потокобезопасны**, а параллельные API (`ParallelIterator`, параллельные JSONL-потоки) доступны из коробки. На этой странице — семантика потокобезопасности, встроенные параллельные API и паттерны конкурентного использования.
 
-:::tip Подсказка Разделение с страницей производительности
-Раздел «Конкурентная обработка» в [Производительности](./performance) показывает **универсальные паттерны Go** (`sync.WaitGroup` + семафор + Worker Pool) для ручного распараллеливания массивов; эта страница документирует **встроенные в библиотеку** параллельные API. Они дополняют друг друга.
+:::tip Подсказка Разделение со страницей производительности
+Раздел «Конкурентная обработка» на странице [Производительность](./performance) показывает **универсальные паттерны Go** (`sync.WaitGroup` + семафор + Worker Pool) для ручного распараллеливания массивов; эта страница документирует **встроенные в библиотеку** параллельные API. Они дополняют друг друга.
 :::
 
 ## Гарантии потокобезопасности
 
 `Processor` — потокобезопасный движок обработки (комментарий в исходниках: `Processor is the main JSON processing engine with thread safety`):
 
-- **Один экземпляр Processor можно разделять между горутинами** — все публичные методы (`Get`/`Set`/`Delete`/`Marshal` и т.д.) внутренне защищены атомарными операциями и управлением конкурентностью (`beginGovernedOp`/`endGovernedOp`).
+- **Один экземпляр Processor можно разделять между горутинами** — все публичные методы (`Get`/`Set`/`Delete`/`Marshal` и т.д.) внутренне защищены атомарными операциями и управлением конкурентности (`beginGovernedOp`/`endGovernedOp`).
 - **Пакетные функции** (`json.Get`, `json.GetString` и т.д.) разделяют один глобальный Processor и потокобезопасны по умолчанию.
 - **`*ParsedJSON` из `PreParse` можно читать конкурентно** — несколько горутин могут одновременно вызывать `GetFromParsed` для одного `ParsedJSON`.
 
@@ -27,7 +27,7 @@ sidebar_position: 4
 
 ## ParallelIterator — параллельный итератор
 
-`ParallelIterator` распараллеливает обработку массива по ядрам CPU со встроенным пулом воркеров, агрегацией ошибок и восстановлением после panic — безопаснее самописного пула горутин.
+`ParallelIterator` использует многоядерность CPU для параллельной обработки массивов: встроенный пул воркеров, агрегация ошибок и восстановление после panic — безопаснее самописного пула горутин.
 
 ### Базовый параллельный обход
 
@@ -97,17 +97,78 @@ func main() {
 }
 ```
 
+### Обработка пакетами ForEachBatch / ForEachBatchWithContext
+
+Когда накладные расходы колбэка на один элемент высоки (например, системный вызов или сетевой запрос на элемент), `ForEachBatch` нарезает элементы на пакеты фиксированного размера — **каждый пакет обрабатывает одна горутина**: внутри пакета последовательно, между пакетами параллельно, что распределяет стоимость планирования и синхронизации.
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	data := `{"records":[10,20,30,40,50,60,70,80,90,100]}`
+	records := json.GetArray(data, "records")
+
+	iter := json.NewParallelIterator(records)
+	defer iter.Close()
+
+	// 10 записей по 3 на пакет -> 4 пакета (в последнем 1 запись); пишем по batchIdx в независимые индексы, блокировка не нужна
+	subtotals := make([]int, 4)
+	err := iter.ForEachBatch(3, func(batchIdx int, batch []any) error {
+		sum := 0
+		for _, v := range batch {
+			sum += int(v.(float64))
+		}
+		subtotals[batchIdx] = sum
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// Последовательное потребление после завершения всех пакетов (порядок выполнения не гарантируется, результаты расставлены по индексам)
+	for i, s := range subtotals {
+		fmt.Printf("Пакет %d: промежуточная сумма = %d\n", i, s)
+	}
+
+	// Версия с таймаутом: нераспределённые пакеты не запускаются после истечения ctx, запущенные выходят по отмене
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	err = iter.ForEachBatchWithContext(ctx, 100, func(batchIdx int, batch []any) error {
+		return nil // имитация обработки одного пакета
+	})
+	fmt.Println("Пакетная обработка с таймаутом завершена, ошибка:", err)
+}
+
+// Вывод:
+// Пакет 0: промежуточная сумма = 60
+// Пакет 1: промежуточная сумма = 150
+// Пакет 2: промежуточная сумма = 240
+// Пакет 3: промежуточная сумма = 100
+// Пакетная обработка с таймаутом завершена, ошибка: <nil>
+```
+
+При `batchSize <= 0` используется 100. Семантика ошибок колбэка как у `ForEach`: побеждает первая ошибка, диспетчеризация новых пакетов прекращается; порядок **диспетчеризации** пакетов совпадает со вводом (`batchIdx` растёт), но порядок **выполнения** не гарантируется — упорядоченный вывод достигается как в примере выше: расстановка по индексам с последовательным потреблением по завершении.
+
 ### Обзор API ParallelIterator
 
 | API | Сигнатура | Описание |
 |-----|------|------|
-| `NewParallelIterator` | `func NewParallelIterator(data []any, cfg ...Config) *ParallelIterator` | Создаёт итератор; число воркеров из `cfg.MaxConcurrency` |
+| `NewParallelIterator` | `func NewParallelIterator(data []any, cfg ...Config) *ParallelIterator` | Создаёт итератор; число воркеров из `cfg.MaxConcurrency` (по умолчанию 50, ограничивается длиной массива; `<= 0` откатывается к 4) |
 | `ForEach` | `func (it *ParallelIterator) ForEach(fn func(int, any) error) error` | Параллельный обход; возвращает первую ошибку |
 | `ForEachWithContext` | `func (it *ParallelIterator) ForEachWithContext(ctx context.Context, fn func(int, any) error) error` | Поддержка отмены через context |
-| `ForEachBatch` | `func (it *ParallelIterator) ForEachBatch(batchSize int, fn func(int, []any) error) error` | Параллельная обработка пакетами |
-| `Map` | `func (it *ParallelIterator) Map(transform func(int, any) (any, error)) ([]any, error)` | Параллельное преобразование, с сохранением порядка |
-| `Filter` | `func (it *ParallelIterator) Filter(predicate func(int, any) bool) []any` | Параллельный фильтр |
-| `Close` | `func (it *ParallelIterator) Close()` | Освобождает ресурсы (вызывать по завершении) |
+| `ForEachBatch` | `func (it *ParallelIterator) ForEachBatch(batchSize int, fn func(int, []any) error) error` | Параллельная обработка пакетами: внутри пакета последовательно, между пакетами параллельно |
+| `ForEachBatchWithContext` | `func (it *ParallelIterator) ForEachBatchWithContext(ctx context.Context, batchSize int, fn func(int, []any) error) error` | Пакетная параллельная обработка + отмена через context |
+| `Map` | `func (it *ParallelIterator) Map(transform func(int, any) (any, error)) ([]any, error)` | Параллельное преобразование с сохранением порядка |
+| `Filter` | `func (it *ParallelIterator) Filter(predicate func(int, any) bool) []any` | Параллельная фильтрация с сохранением порядка (без возврата ошибки) |
+| `Close` | `func (it *ParallelIterator) Close()` | Освобождает ресурсы (сигнализирует работающим горутинам остановиться; безопасно вызывать многократно) |
 
 Полные сигнатуры и использование — в [Типы итераторов](../api-reference/iterator#тип-paralleliterator).
 
@@ -197,7 +258,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	json.SetGlobalProcessor(processor) // предыдущий глобальный Processor закрывается автоматически
+	json.SetGlobalProcessor(processor)   // предыдущий глобальный Processor закрывается автоматически
 	defer json.ShutdownGlobalProcessor() // корректное завершение при выходе
 
 	data := `{"user":{"name":"Alice","age":30}}`
@@ -229,7 +290,7 @@ func main() {
 После `SetGlobalProcessor` жизненным циклом этого Processor управляет глобаль — **не вызывайте** на нём `Close()` вручную, иначе возникнет конфликт с логикой глобального завершения. Для корректного закрытия и освобождения ресурсов вызывайте `ShutdownGlobalProcessor()` при выходе.
 :::
 
-## Ограничение MaxConcurrency
+## Ограничение конкурентности MaxConcurrency
 
 `Config.MaxConcurrency` (по умолчанию 50) — **мягкий предел конкурентности** на Processor: атомарный счётный семафор ограничивает число операций в полёте. При достижении предела новые операции возвращают `ErrConcurrencyLimit` (можно повторить).
 
@@ -239,8 +300,8 @@ cfg.MaxConcurrency = 100 // повысить предел конкурентно
 ```
 
 - `ErrConcurrencyLimit` — **повторяемая** временная ошибка (см. [Обработка ошибок](./error-handling#системные-ошибки)).
-- Число воркеров параллельного стриминга (`StreamJSONLParallel`) берётся из явного аргумента и не привязано напрямую к `MaxConcurrency`, но разделяет тот же слот управления.
-- Число воркеров `ParallelIterator` берётся из `cfg.MaxConcurrency` (по умолчанию 50) и ограничивается длиной массива.
+- Число воркеров параллельного стриминга (`StreamJSONLParallel`) задаётся явным аргументом и не привязано напрямую к `MaxConcurrency`, но разделяет те же слоты управления.
+- Число воркеров `ParallelIterator` берётся из `cfg.MaxConcurrency` (по умолчанию 50), но ограничивается длиной массива.
 
 ## Лучшие практики и подводные камни
 
@@ -250,7 +311,7 @@ cfg.MaxConcurrency = 100 // повысить предел конкурентно
 
 ### 2. Разделять экземпляр безопасно; разделять контейнеры результатов — осторожно
 
-`Processor` безопасно разделять между горутинами; но `map`/`slice`, возвращённые `Get`, при совместном изменении между горутинами требуют блокировки на стороне вызывающего (или рассматривайте как только для чтения при `CacheSharedResults`).
+`Processor` безопасно разделять между горутинами; но `map`/`slice`, возвращённые `Get`, при совместном изменении между горутинами требуют блокировки на стороне вызывающего (или рассматривайте как только для чтения при включённом `CacheSharedResults`).
 
 ### 3. Освобождайте ресурсы через Close
 
@@ -258,9 +319,9 @@ cfg.MaxConcurrency = 100 // повысить предел конкурентно
 
 ### 4. Параллелить стоит только CPU-интенсивную работу
 
-У параллелизма есть накладные расходы на планирование и синхронизацию. Малые массивы (< `ParallelThreshold`, по умолчанию 10) быстрее последовательно; JSONL с большим числом строк и тяжёлой обработкой строки явно выигрывает.
+У параллелизма есть накладные расходы на планирование и синхронизацию. Малые массивы (< `ParallelThreshold`, по умолчанию 10) быстрее обрабатываются последовательно; JSONL с большим числом строк и тяжёлой обработкой строки явно выигрывает от параллелизма.
 
-### 5. Следите за порядком в параллельном режиме
+### 5. Следите за порядком строк в параллельном режиме
 
 `StreamJSONLParallel` не гарантирует порядок обработки. Для упорядоченного результата пишите по `lineNum` в позицию, затем потребляйте по порядку.
 
@@ -269,5 +330,5 @@ cfg.MaxConcurrency = 100 // повысить предел конкурентно
 - [Производительность](./performance) — переиспользование Processor, универсальные паттерны конкурентности Go, бенчмарки
 - [Типы итераторов](../api-reference/iterator) — полный API `ParallelIterator`
 - [Обработка JSONL](../api-reference/processor/jsonl) — детали параллельного JSONL API
-- [Кэш и предпарсинг](./caching) — механизм кэша и PreParse
+- [Кэш и предпарсинг](./caching) — механизм кэша и предпарсинг PreParse
 - [Обработка ошибок](./error-handling) — `ErrConcurrencyLimit` и классификация ошибок

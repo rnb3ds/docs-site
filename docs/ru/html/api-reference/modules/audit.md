@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Система аудита"
 title: "Система аудита - CyberGo html | подключаемый аудит"
-description: "Подключаемый API аудита CyberGo html: AuditConfig, 8 типов событий, 3 уровня, структура AuditEntry и шесть встроенных Sink."
+description: "API аудита CyberGo html: AuditConfig, 8 типов событий, уровни Info/Warning/Critical, AuditEntry и Sink Logger/Writer/Channel/Filtered/LevelFiltered/Multi."
 sidebar_position: 4
 ---
 

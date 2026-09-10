@@ -1,7 +1,7 @@
 ---
 sidebar_label: "보안 모드"
 title: "보안 모드 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON 보안 API: 보안 설정, AddDangerousPattern 위험 패턴, 입력 검증으로 JSON 인젝션, 프로토타입 오염, XSS 위협을 방어합니다."
+description: "CyberGo JSON 보안 API: 보안 설정, AddDangerousPattern 커스텀 위험 패턴 등록, PatternLevel 3 단계 심각도와 내장 위험 패턴, 입력 검증으로 JSON 인젝션·프로토타입 오염·XSS 를 방어하며 적중 시 거부, 대소문자 무시 매칭."
 sidebar_position: 2
 ---
 
@@ -15,9 +15,9 @@ DangerousPattern 은 보안 위험 패턴을 나타냅니다. 구조체 타입�
 
 ```go
 type DangerousPattern struct {
-    Pattern string       // 입력에서 감지할 부분 문자열
-    Name    string       // 패턴의 설명 이름
-    Level   PatternLevel // 해당 패턴의 심각도 수준을 결정
+	Pattern string       // 입력에서 감지할 부분 문자열
+	Name    string       // 패턴의 설명 이름
+	Level   PatternLevel // 해당 패턴의 심각도 수준을 결정
 }
 ```
 
@@ -43,17 +43,17 @@ type PatternLevel int
 
 ```go
 const (
-    // PatternLevelCritical 은 항상 작업을 차단합니다
-    // 즉각적인 보안 위험을 구성하는 패턴에 사용 (예: 프로토타입 오염)
-    PatternLevelCritical PatternLevel = iota
+	// PatternLevelCritical 은 항상 작업을 차단합니다
+	// 즉각적인 보안 위험을 구성하는 패턴에 사용 (예: 프로토타입 오염)
+	PatternLevelCritical PatternLevel = iota
 
-    // PatternLevelWarning 은 엄격 모드에서 차단, 완화 모드에서 경고 기록
-    // 악의적인 의도를 나타낼 수 있지만 정당한 용도가 있는 패턴에 사용
-    PatternLevelWarning
+	// PatternLevelWarning 은 엄격 모드에서 차단, 완화 모드에서 경고 기록
+	// 악의적인 의도를 나타낼 수 있지만 정당한 용도가 있는 패턴에 사용
+	PatternLevelWarning
 
-    // PatternLevelInfo 는 기록만 하고 차단하지 않음
-    // 감사/추적 목적으로 사용하며 작업을 중단하지 않음
-    PatternLevelInfo
+	// PatternLevelInfo 는 기록만 하고 차단하지 않음
+	// 감사/추적 목적으로 사용하며 작업을 중단하지 않음
+	PatternLevelInfo
 )
 ```
 
@@ -63,7 +63,19 @@ const (
 func (pl PatternLevel) String() string
 ```
 
-PatternLevel 의 문자열 표현을 반환합니다.
+PatternLevel 의 문자열 표현을 반환합니다 (`"critical"`, `"warning"`, `"info"`, 알 수 없는 값은 `"unknown"` 반환).
+
+### PatternLevel 동작 매트릭스
+
+| 수준 | 의미적 의도 (인터페이스 문서) | 현재 구현의 실제 동작 |
+|------|----------------------|--------------------|
+| `PatternLevelCritical` | 항상 작업 차단 | 적중 시 거부 (`ErrSecurityViolation`) |
+| `PatternLevelWarning` | 엄격 모드에서 차단, 완화 모드에서 경고 기록 | **마찬가지로 적중 시 거부** — `StrictMode` 필드는 현재 패턴 차단 결정에 관여하지 않음 |
+| `PatternLevelInfo` | 기록만 하고 차단하지 않음 | **마찬가지로 적중 시 거부** |
+
+::: warning Warning/Info 패턴은 '차단된다'고 가정하고 계획하세요
+현재 버전의 패턴 스캔 (내장 패턴, `Config.AdditionalDangerousPatterns`, 전역 등록 패턴 세 가지가 같은 스캔 경로를 사용) 은 단어 경계 컨텍스트 검사를 통과한 모든 적중에 대해 작업을 거부하며, `Level` 은 차단 결과를 바꾸지 않고 감사/로그에서 심각도를 구분하는 의미 표기로만 사용됩니다. 따라서 '기록만 하고 차단하지 않으려는' `PatternLevelInfo` 수준의 패턴을 등록하고 해당 패턴을 포함한 입력을 통과시키지 **마세요** — 지금은 차단됩니다. 모든 매칭은 대소문자를 구분하지 않습니다.
+:::
 
 ---
 
@@ -133,14 +145,14 @@ GetCriticalPatterns 는 내부 함수로 전환되어 공개 API 로 내보내�
 ```go
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
-    Pattern: "malicious_keyword",
-    Name:    "커스텀 위험 패턴",
-    Level:   json.PatternLevelCritical,
+	Pattern: "malicious_keyword",
+	Name:    "커스텀 위험 패턴",
+	Level:   json.PatternLevelCritical,
 })
 
 processor, err := json.New(cfg)
 if err != nil {
-    panic(err)
+	panic(err)
 }
 defer processor.Close()
 ```
@@ -152,8 +164,8 @@ defer processor.Close()
 ```go
 cfg := json.DefaultConfig()
 cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
-    {Pattern: "eval(", Name: "eval-call", Level: json.PatternLevelCritical},
-    {Pattern: "exec(", Name: "exec-call", Level: json.PatternLevelWarning},
+	{Pattern: "eval(", Name: "eval-call", Level: json.PatternLevelCritical},
+	{Pattern: "exec(", Name: "exec-call", Level: json.PatternLevelWarning},
 }
 ```
 
@@ -172,9 +184,9 @@ func (c *Config) AddDangerousPattern(pattern DangerousPattern)
 ```go
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
-    Pattern: "custom_dangerous_string",
-    Name:    "커스텀 위험 문자열",
-    Level:   json.PatternLevelWarning,
+	Pattern: "custom_dangerous_string",
+	Name:    "커스텀 위험 문자열",
+	Level:   json.PatternLevelWarning,
 })
 ```
 
@@ -182,15 +194,15 @@ cfg.AddDangerousPattern(json.DangerousPattern{
 
 ```go
 type Config struct {
-    // ... 다른 필드 ...
+	// ... 다른 필드 ...
 
-    // AdditionalDangerousPatterns 는 기본 패턴 외에 추가할 보안 패턴
-    AdditionalDangerousPatterns []DangerousPattern
+	// AdditionalDangerousPatterns 는 기본 패턴 외에 추가할 보안 패턴
+	AdditionalDangerousPatterns []DangerousPattern
 
-    // DisableDefaultPatterns 는 내장 기본 보안 패턴을 비활성화 (핵심 패턴 제외)
-    // true 로 설정하면 AdditionalDangerousPatterns 만 사용
-    // 참고: 핵심 패턴 (__proto__, constructor[, prototype.) 은 항상 강제 실행되며 비활성화할 수 없음
-    DisableDefaultPatterns bool
+	// DisableDefaultPatterns 는 내장 기본 보안 패턴을 비활성화 (핵심 패턴 제외)
+	// true 로 설정하면 AdditionalDangerousPatterns 만 사용
+	// 참고: 핵심 패턴 (__proto__, constructor[, prototype.) 은 항상 강제 실행되며 비활성화할 수 없음
+	DisableDefaultPatterns bool
 }
 ```
 
@@ -208,9 +220,9 @@ type Config struct {
 
 ```go
 json.RegisterDangerousPattern(json.DangerousPattern{
-    Pattern: "malicious_keyword",
-    Name:    "커스텀 위험 패턴",
-    Level:   json.PatternLevelCritical,
+	Pattern: "malicious_keyword",
+	Name:    "커스텀 위험 패턴",
+	Level:   json.PatternLevelCritical,
 })
 ```
 
@@ -233,14 +245,73 @@ json.UnregisterDangerousPattern("malicious_keyword")
 ```go
 patterns := json.ListDangerousPatterns()
 for _, p := range patterns {
-    fmt.Printf("패턴: %s, 이름: %s, 수준: %s\n", p.Pattern, p.Name, p.Level)
+	fmt.Printf("패턴: %s, 이름: %s, 수준: %s\n", p.Pattern, p.Name, p.Level)
 }
 ```
 
-:::tip 전역 패턴 vs Config 패턴
-- **전역 패턴**(`RegisterDangerousPattern`): 모든 Processor 인스턴스가 공유, 애플리케이션 수준 보안 정책에 적합
-- **Config 패턴**(`Config.AddDangerousPattern`): 해당 Config 를 사용하는 Processor 에만 영향, 인스턴스 수준 커스텀에 적합
-:::
+### 전역 등록 vs Config 추가
+
+| 관점 | 전역 등록 (`RegisterDangerousPattern`) | Config 추가 (`AddDangerousPattern` / `AdditionalDangerousPatterns`) |
+|------|----------------------------------------|---------------------------------------------------------------------|
+| 적용 범위 | 프로세스 내 **모든** Processor, 이미 생성된 인스턴스 포함 (스캔 시 실시간으로 레지스트리 읽음) | 해당 Config 로 생성된 Processor 만 (생성 시 보안 검증기에 고정) |
+| 제거 방법 | `UnregisterDangerousPattern(pattern)` 즉시 적용 | 실행 중 제거 불가, 새 Config 로 Processor 재생성 필요 |
+| 조회 방법 | `ListDangerousPatterns()` | `cfg.AdditionalDangerousPatterns` 필드 읽기 |
+| `DisableDefaultPatterns` 와의 관계 | 영향 없음 (명시적으로 추가한 패턴은 항상 스캔) | 영향 없음 (왼쪽과 동일) |
+| 전형적인 용도 | 애플리케이션 수준 보안 정책, 컴플라이언스 블랙리스트, `main` 시작 시 등록 | 단일 인스턴스의 비즈니스 커스텀 (예: 특정 테넌트의 Processor 만 특정 키워드 차단) |
+
+전체 비교 예제:
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// 전역 등록: 모든 Processor 에 적용 (이미 생성된 인스턴스 포함)
+	json.RegisterDangerousPattern(json.DangerousPattern{
+		Pattern: "internal_only",
+		Name:    "내부 식별자",
+		Level:   json.PatternLevelCritical,
+	})
+	defer json.UnregisterDangerousPattern("internal_only")
+
+	// Config 추가: 해당 Config 를 사용하는 Processor 에만 영향
+	cfg := json.DefaultConfig()
+	cfg.AddDangerousPattern(json.DangerousPattern{
+		Pattern: "project_secret",
+		Name:    "프로젝트 기밀",
+		Level:   json.PatternLevelCritical,
+	})
+
+	withCfg, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer withCfg.Close()
+
+	withoutCfg, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer withoutCfg.Close()
+
+	_, err1 := withCfg.Get(`{"v": "project_secret"}`, "v")
+	_, err2 := withoutCfg.Get(`{"v": "project_secret"}`, "v")
+	_, err3 := withoutCfg.Get(`{"v": "internal_only"}`, "v")
+
+	fmt.Println("로컬 패턴이 설정 기반 프로세서 차단:", err1 != nil)
+	fmt.Println("로컬 패턴이 일반 프로세서 차단:", err2 != nil)
+	fmt.Println("전역 패턴이 일반 프로세서 차단:", err3 != nil)
+	// 출력:
+	// 로컬 패턴이 설정 기반 프로세서 차단: true
+	// 로컬 패턴이 일반 프로세서 차단: false
+	// 전역 패턴이 일반 프로세서 차단: true
+}
+```
 
 ---
 
@@ -252,40 +323,43 @@ for _, p := range patterns {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 방법 1: 설정 필드를 통해
-    cfg := json.DefaultConfig()
-    cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
-        {Pattern: "company_secret", Name: "회사 민감 정보", Level: json.PatternLevelCritical},
-    }
+	// 방법 1: 설정 필드를 통해
+	cfg := json.DefaultConfig()
+	cfg.AdditionalDangerousPatterns = []json.DangerousPattern{
+		{Pattern: "company_secret", Name: "회사 민감 정보", Level: json.PatternLevelCritical},
+	}
 
-    // 방법 2: 설정 메서드를 통해
-    cfg.AddDangerousPattern(json.DangerousPattern{
-        Pattern: "internal_api",
-        Name:    "내부 API 참조",
-        Level:   json.PatternLevelWarning,
-    })
+	// 방법 2: 설정 메서드를 통해
+	cfg.AddDangerousPattern(json.DangerousPattern{
+		Pattern: "internal_api",
+		Name:    "내부 API 참조",
+		Level:   json.PatternLevelWarning,
+	})
 
-    p, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    // 위험 패턴 감지 테스트
-    _, err = p.Get(`{"data": "company_secret_info"}`, "data")
-    if err != nil {
-        fmt.Println("위험 패턴 감지:", err)
-    }
+	// 위험 패턴 감지 테스트 (패턴은 전체 단어로 매칭: 양쪽에 문자/숫자/밑줄이 바로 인접하면 안 됨)
+	_, err = p.Get(`{"data": "company_secret"}`, "data")
+	fmt.Println("위험 패턴 감지됨:", err != nil)
+	// 출력: 위험 패턴 감지됨: true
 
-    // 등록된 패턴 확인
-    fmt.Printf("커스텀 패턴 수: %d\n", len(cfg.AdditionalDangerousPatterns))
+	// 등록된 패턴 확인
+	fmt.Printf("커스텀 패턴 수: %d\n", len(cfg.AdditionalDangerousPatterns))
 }
 ```
+
+::: tip 매칭은 '전체 단어' 기준입니다
+패턴이 적중하면 단어 경계 컨텍스트 검사를 수행합니다: 패턴 양쪽에 문자, 숫자, 밑줄이 바로 인접하면 일반 식별자의 일부로 간주해 차단하지 않습니다. 예를 들어 패턴 `company_secret` 은 `"company_secret"` 에서는 트리거되지만 `"company_secret_info"` 에서는 트리거되지 않습니다 (뒤에 오는 `_` 는 단어 내 문자); `(`, `[`, `:`, `.` 등 구분자로 끝나는 패턴 (예: `eval(`) 은 접미사의 영향을 받지 않습니다. 이것이 라이브러리 내장 패턴 (`eval(`, `__proto__` 등) 의 매칭 방식입니다.
+:::
 
 ### 기본 패턴 비활성화
 
@@ -298,14 +372,14 @@ cfg.DisableDefaultPatterns = true
 
 // 커스텀 패턴 추가
 cfg.AddDangerousPattern(json.DangerousPattern{
-    Pattern: "xss_payload",
-    Name:    "XSS 공격 페이로드",
-    Level:   json.PatternLevelCritical,
+	Pattern: "xss_payload",
+	Name:    "XSS 공격 페이로드",
+	Level:   json.PatternLevelCritical,
 })
 
 p, err := json.New(cfg)
 if err != nil {
-    panic(err)
+	panic(err)
 }
 defer p.Close()
 ```
@@ -316,16 +390,37 @@ defer p.Close()
 // 다양한 수준의 패턴 등록
 cfg := json.DefaultConfig()
 cfg.AddDangerousPattern(json.DangerousPattern{
-    Pattern: "suspicious_but_allowed",
-    Name:    "의심스럽지만 허용됨",
-    Level:   json.PatternLevelInfo, // 기록만 하고 차단하지 않음
+	Pattern: "suspicious_but_allowed",
+	Name:    "의심스럽지만 허용됨",
+	Level:   json.PatternLevelInfo, // 의미 표기; 현재 구현에서는 적중 시 마찬가지로 차단됨 (PatternLevel 동작 매트릭스 참조)
 })
 
 // 등록된 커스텀 패턴 확인
 for _, p := range cfg.AdditionalDangerousPatterns {
-    fmt.Printf("패턴: %s, 이름: %s, 수준: %s\n", p.Pattern, p.Name, p.Level)
+	fmt.Printf("패턴: %s, 이름: %s, 수준: %s\n", p.Pattern, p.Name, p.Level)
 }
 ```
+
+---
+
+## 스캔 스위치
+
+세 개의 Config 필드가 '어떻게 스캔할지'를 제어합니다:
+
+| 필드 | 기본 | 역할 |
+|------|------|------|
+| `FullSecurityScan` | `false` | `true` 이면 모든 입력에 대해 크기 구분 없이 전체 스캔; `false` 이면 작은 입력 (< 4KB) 은 전체, 큰 입력은 계층적 최적화 스캔 사용 (아래 섹션 참조, 마찬가지로 100% 커버리지 보장). 전체 모드는 >100KB 입력에 약 10–30% 추가 오버헤드 |
+| `DisableDefaultPatterns` | `false` | `true` 이면 내장 비핵심 패턴 (HTML 태그, 이벤트 핸들러 등) 을 건너뛰고 3 개 핵심 패턴 + 커스텀 패턴만 유지 |
+| `AdditionalDangerousPatterns` | `nil` | 내장 패턴 외에 커스텀 패턴을 추가 (위 참조) |
+
+```go
+cfg := json.SecurityConfig() // FullSecurityScan 이 켜져 있고 각종 제한이 강화됨
+// 수동 설정과 동일:
+// cfg := json.DefaultConfig()
+// cfg.FullSecurityScan = true
+```
+
+활성화 권장: **신뢰할 수 없는 입력** (공개 API, 사용자 제출, 외부 webhook), 민감 데이터 관련 (인증, 금융, 개인정보) 또는 컴플라이언스 전체 감사 요구가 있을 때 `FullSecurityScan` 을 켜세요; 신뢰할 수 있는 내부 서비스의 큰 메시지는 기본 계층 스캔을 유지해 처리량을 확보할 수 있습니다.
 
 ---
 
@@ -349,5 +444,5 @@ for _, p := range cfg.AdditionalDangerousPatterns {
 ## 관련 문서
 
 - [Config](../api-reference/config) - 설정 옵션
-- [Validator](../extensions/validator) - 검증기
+- [Schema 검증](../api-reference/schema) - Schema 검증
 - [Hook 훅 시스템](../extensions/hooks) - 작업 인터셉트

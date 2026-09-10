@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Overview"
 title: "HTML Library - CyberGo html | Go HTML Extraction & Cleaning"
-description: "CyberGo html is a high-performance Go HTML extraction and cleaning library with article detection, encoding detection, sanitization, and multi-format output."
+description: "High-performance Go HTML extraction and cleaning: article detection, 15+ encodings, Markdown/JSON output, links & media, batch concurrency, audit, security."
 ---
 
 # HTML
@@ -107,7 +107,7 @@ The HTML library is built around three core types:
 | Links | [Link Extraction](./guides/core-features/link-extraction) | Link extraction, grouping, resource discovery |
 | Encoding | [Encoding Detection](./guides/core-features/encoding-detection) | Auto-detection, manual override, 15+ encodings |
 | Configuration | [Configuration Guide](./guides/core-features/configuration) | Four presets, six field categories, common combos |
-| Errors | [Error Handling](./guides/error-handling) | Five error types, errors.Is/As, context cancellation |
+| Errors | [Error Handling](./guides/performance/error-handling) | Five error types, errors.Is/As, context cancellation |
 | Performance | [Cache & Reuse](./guides/performance/processor-cache) | Processor lifecycle, cache tuning |
 | Batch | [Batch Processing](./guides/performance/batch-processing) | Concurrent batch extraction, WorkerPool tuning |
 | Security | [Security Overview](./guides/security/) | Security features, audit system, production checklist |

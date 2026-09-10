@@ -2,7 +2,7 @@
 sidebar_label: "Retry & Fault Tolerance"
 title: "Retry & Fault Tolerance - CyberGo HTTPC | Backoff Strategy"
 description: "HTTPC retry and fault tolerance guide: default exponential-backoff retry strategy and RetryConfig configuration, automatic retry conditions for 408/429/5xx, the custom RetryPolicy interface, automatic Retry-After response-header parsing, backoff-strategy selection, and per-request WithMaxRetries control best practices."
-sidebar_position: 6
+sidebar_position: 8
 ---
 
 # Retry and Fault Tolerance
@@ -583,5 +583,6 @@ By default, non-idempotent POST requests are also retried on retryable status co
 
 - [Error Handling](./error-handling) — Error classification and sentinel-error matching in depth
 - [Configuration API](../api-reference/client-config/config) — Retry configuration field reference
-- [Connection Pool & Proxy](./connection-pool) — Proxy pool configuration and rotation strategies
+- [Connection Pool & DNS](./connection-pool) — Connection reuse and DoH resolution
+- [Proxy & Proxy Pool](./proxy) — Proxy pool configuration and rotation strategies
 - [Interface Definitions](../api-reference/types/interfaces) — RetryPolicy interface reference

@@ -1,8 +1,8 @@
 ---
 sidebar_label: "커스텀 인코더"
 title: "CustomEncoder - CyberGo JSON | 커스텀 인코더"
-description: "CyberGo JSON 커스텀 인코더: CustomEncoder 인터페이스와 TypeEncoder 타입 인코더의 정의와 구현으로 Go 타입에 JSON 직렬화 로직을 등록합니다."
-sidebar_position: 3
+description: "CyberGo JSON 커스텀 인코더: CustomEncoder 와 TypeEncoder 타입 인코더의 정의와 구현, json.Marshaler, TextMarshaler 인터페이스와 CustomEscapes 이스케이프 매핑으로 Go 타입에 JSON 직렬화 로직을 등록합니다."
+sidebar_position: 2
 ---
 
 # 커스텀 인코딩
@@ -26,11 +26,11 @@ json 라이브러리는 표준 라이브러리 `encoding/json` 와 인코딩 호
 
 ```go
 type Marshaler interface {
-    MarshalJSON() ([]byte, error)
+	MarshalJSON() ([]byte, error)
 }
 ```
 
-아래는 `Hex` 타입을 정의하여 `uint64` 를 `0x` 접두어가 있는 16진수 문자열로 인코딩합니다:
+아래는 Hex 타입을 정의하여 `uint64` 를 `0x` 접두어가 있는 16진수 문자열로 인코딩합니다:
 
 ```go
 package main
@@ -62,12 +62,16 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(string(out))
-	// 출력：{"id":"0xff","label":"sensor-1"}
+	// 출력:{"id":"0xff","label":"sensor-1"}
 }
 ```
 
 ::: warning 무한 재귀 주의
 `MarshalJSON` 내부에서 "일반적인 인코딩" 보조가 필요하면 표준 라이브러리 `stdjson.Marshal` 을 사용하거나 **다른 구체적 타입**에 대해 본 라이브러리를 호출하세요. 본 타입에 다시 `Marshal` 을 호출하면 `MarshalJSON` 에 재진입하여 무한 재귀가 됩니다.
+:::
+
+::: tip 오류와 특수 타입
+`MarshalJSON`/`MarshalText` 가 반환한 오류는 `MarshalerError` 로 포장되어 (`errors.As`/`Unwrap` 능력 유지) 위로 전파됩니다; 반환값은 반드시 유효한 JSON 이어야 합니다. 표준 라이브러리와 일치하는 특수 처리가 두 가지 더 있습니다: `[]byte` 는 base64 문자열로 인코딩됩니다 (`[N]byte` 배열은 그렇지 않음); `MarshalText` 를 구현한 타입은 map 키의 인코딩 형식으로도 사용됩니다.
 :::
 
 ## encoding.TextMarshaler 인터페이스
@@ -78,11 +82,11 @@ func main() {
 
 ```go
 type TextMarshaler interface {
-    MarshalText() ([]byte, error)
+	MarshalText() ([]byte, error)
 }
 ```
 
-아래는 `Slug` 타입을 정의하여 인코딩 시 소문자 하이픈 형식으로 자동 정규화합니다:
+아래는 Slug 타입을 정의하여 인코딩 시 소문자 하이픈 형식으로 자동 정규화합니다:
 
 ```go
 package main
@@ -114,7 +118,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(string(out))
-	// 출력：{"title":"Hello World","slug":"hello-world"}
+	// 출력:{"title":"Hello World","slug":"hello-world"}
 }
 ```
 
@@ -124,7 +128,7 @@ func main() {
 
 ## time.Time 의 내장 처리
 
-라이브러리는 `time.Time` 에 대해 내장 처리를 수행하여 통일된 RFC3339Nano 형식으로 출력합니다 (초미초 정밀도 보존, 표준 라이브러리 `encoding/json` 과 일치). 어떤 설정도 필요 없습니다:
+`time.Time` 은 어떤 설정도 없이 올바르게 인코딩됩니다: 자체적으로 `MarshalJSON` 을 구현하고 있어 (값 리시버, RFC3339Nano 출력, 초미초 정밀도 보존), 라이브러리는 위의 [`json.Marshaler`](#json-marshaler-인터페이스) 메커니즘으로 그대로 채택하며, 동작은 표준 라이브러리 `encoding/json` 과 일치합니다.
 
 ```go
 package main
@@ -149,7 +153,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(string(out))
-	// 출력：{"name":"deploy","at":"2026-01-15T10:30:00Z"}
+	// 출력:{"name":"deploy","at":"2026-01-15T10:30:00Z"}
 }
 ```
 
@@ -182,7 +186,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(out)
-	// 출력：{"note":"Copyright (c) 2026"}
+	// 출력:{"note":"Copyright (c) 2026"}
 }
 ```
 
@@ -225,11 +229,11 @@ func main() {
 ```go
 // 현재 버전: 아래 두 필드는 선언되었으나 연결되지 않았으며, 설정해도 효과 없음 (예약 인터페이스)
 type CustomEncoder interface {
-    Encode(value any) (string, error)
+	Encode(value any) (string, error)
 }
 
 type TypeEncoder interface {
-    Encode(v reflect.Value) (string, error)
+	Encode(v reflect.Value) (string, error)
 }
 ```
 :::

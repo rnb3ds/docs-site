@@ -1,13 +1,13 @@
 ---
 sidebar_label: "Parse & Validate"
-title: "Parse and Validate Functions - CyberGo JSON | API Reference"
-description: "CyberGo JSON parse and validate: Parse/ParseAny into target pointers and Valid/ValidWithConfig/ValidateSchema with JSON Schema support."
+title: "Parse & Validate Functions - CyberGo JSON | API Reference"
+description: "CyberGo JSON parse and validate: Parse/ParseAny, Valid/ValidWithConfig, ValidateSchema JSON Schema, plus size/depth/dangerous-pattern security checks."
 sidebar_position: 6
 ---
 
 # Parse and Validate Functions
 
-The json package provides parse and validation functions, supporting JSON parsing into target objects, parsing through Processor instances, and JSON validity validation and JSON Schema validation.
+Parse and validate functions of the json package: parsing JSON into target objects, parsing through a Processor instance, JSON validity checking, and JSON Schema validation.
 
 ## Parse Functions
 
@@ -15,79 +15,79 @@ The json package provides parse and validation functions, supporting JSON parsin
 
 Signature: `func Parse(jsonStr string, target any, cfg ...Config) error`
 
-Parses a JSON string into the object pointed to by `target`. `target` must be a pointer.
+Parses a JSON string into the object pointed to by `target`. `target` must be a **non-nil pointer** (passing `nil` or a non-pointer returns an argument error). Consistent with `Get`, `Parse` runs security validation on the input before parsing (size, nesting depth, dangerous patterns, bounded by `cfg` and the processor configuration).
 
 **Parameters**
 
 | Name | Type | Required | Description |
 |------|------|----------|-------------|
 | `jsonStr` | `string` | Yes | JSON string |
-| `target` | `any` | Yes | Target object pointer |
+| `target` | `any` | Yes | Pointer to the target object |
 | `cfg` | `Config` | No | Optional configuration |
 
-**Basic Parsing**
+**Basic parsing**
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    var data map[string]any
-    err := json.Parse(`{"name": "test"}`, &data)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data) // map[name:test]
+	var data map[string]any
+	err := json.Parse(`{"name": "test"}`, &data)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data) // map[name:test]
 }
 ```
 
-**Parse into Struct**
+**Parsing into a struct**
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 type Person struct {
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
 func main() {
-    var person Person
-    err := json.Parse(`{"name": "CyberGo", "age": 30}`, &person)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Name: %s, Age: %d\n", person.Name, person.Age)
+	var person Person
+	err := json.Parse(`{"name": "CyberGo", "age": 30}`, &person)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Name: %s, Age: %d\n", person.Name, person.Age)
 }
 ```
 
-**Using Custom Configuration**
+**Using a custom configuration**
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    cfg := json.DefaultConfig()
-    var data map[string]any
-    err := json.Parse(`{"name": "test"}`, &data, cfg)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data)
+	cfg := json.DefaultConfig()
+	var data map[string]any
+	err := json.Parse(`{"name": "test"}`, &data, cfg)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data)
 }
 ```
 
@@ -95,33 +95,33 @@ func main() {
 
 Signature: `func ParseAny(jsonStr string, cfg ...Config) (any, error)`
 
-Parses a JSON string and returns the root value as `any`, without requiring a pre-declared target variable.
+Parses a JSON string and returns the root value as `any` — no target variable needs to be declared up front.
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    result, err := json.ParseAny(`{"name": "test"}`)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result) // map[name:test]
+	result, err := json.ParseAny(`{"name": "test"}`)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result) // map[name:test]
 }
 ```
 
-::: tip Parse vs ParseAny
-- `Parse(jsonStr, &target)` -- Parses into a target pointer, requires pre-declared variable
-- `ParseAny(jsonStr)` -- Directly returns `any` type, no pre-declaration needed
+:::tip Parse vs ParseAny
+- `Parse(jsonStr, &target)` — parses into a target pointer; requires a declared variable
+- `ParseAny(jsonStr)` — directly returns `any`; no declaration needed
 :::
 
 ### Processor.Parse
 
-**Signature**: `func (p *Processor) Parse(jsonStr string, target any, cfg ...Config) error`
+Signature: `func (p *Processor) Parse(jsonStr string, target any, cfg ...Config) error`
 
 Parses JSON into a target pointer through a Processor instance.
 
@@ -141,9 +141,9 @@ if err != nil {
 
 ### Processor.ParseAny
 
-**Signature**: `func (p *Processor) ParseAny(jsonStr string, cfg ...Config) (any, error)`
+Signature: `func (p *Processor) ParseAny(jsonStr string, cfg ...Config) (any, error)`
 
-Parses JSON and returns `any` type through a Processor instance, behaving identically to the package-level `ParseAny`.
+Parses JSON through a Processor instance and returns `any`; behaves the same as the package-level `ParseAny`.
 
 ```go
 p, err := json.New()
@@ -163,34 +163,34 @@ See [Processor Parse Methods](../processor/parse#parse-methods).
 
 Signature: `func Valid(data []byte, cfg ...Config) bool`
 
-Validates whether a JSON byte slice is valid. 100% compatible with `encoding/json.Valid`: called without `cfg`, `json.Valid(data)` behaves identically to the standard library and returns a plain `bool`.
+Checks whether a JSON byte slice is valid. 100% compatible with `encoding/json.Valid`: calling `json.Valid(data)` without cfg is fully identical to the standard library and returns a plain `bool`.
 
-The optional trailing `Config` applies security limits (size, nesting depth, full security scan, etc.). When `cfg` is passed, `Valid` delegates to `Processor.Valid` and collapses any error into `false`.
+The optional trailing `Config` applies security limits (size, nesting depth, full security scanning, etc.). When cfg is passed, `Valid` delegates to `Processor.Valid` and folds any error into `false`.
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := []byte(`{"name": "test"}`)
-    // Compatible with encoding/json (no cfg)
-    if json.Valid(data) {
-        fmt.Println("Valid JSON")
-    }
+	data := []byte(`{"name": "test"}`)
+	// encoding/json compatible (no cfg)
+	if json.Valid(data) {
+		fmt.Println("Valid JSON")
+	}
 
-    // With configuration (non-breaking optional parameter)
-    if json.Valid(data, json.SecurityConfig()) {
-        fmt.Println("Passed security validation")
-    }
+	// With configuration (non-breaking optional parameter)
+	if json.Valid(data, json.SecurityConfig()) {
+		fmt.Println("Passed security validation")
+	}
 }
 ```
 
-::: tip Valid vs ValidWithConfig
-- `Valid(data, cfg)` returns a single `bool` (compatible with `encoding/json`); any error is collapsed into `false`
+:::tip Valid vs ValidWithConfig
+- `Valid(data, cfg)` returns a single `bool` (compatible with `encoding/json`); any error folds into `false`
 - `ValidWithConfig(jsonStr, cfg)` returns `(bool, error)`, convenient for inspecting why validation failed
 
 Both accept `cfg`; the naming difference is historical.
@@ -200,25 +200,25 @@ Both accept `cfg`; the naming difference is historical.
 
 Signature: `func ValidWithConfig(jsonStr string, cfg ...Config) (bool, error)`
 
-Validates a JSON string using configuration and returns possible error information.
+Validates a JSON string with a configuration and returns any error information.
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    cfg := json.DefaultConfig()
-    valid, err := json.ValidWithConfig(`{"name": "test"}`, cfg)
-    if err != nil {
-        panic(err)
-    }
-    if valid {
-        fmt.Println("Valid JSON")
-    }
+	cfg := json.DefaultConfig()
+	valid, err := json.ValidWithConfig(`{"name": "test"}`, cfg)
+	if err != nil {
+		panic(err)
+	}
+	if valid {
+		fmt.Println("Valid JSON")
+	}
 }
 ```
 
@@ -226,42 +226,47 @@ func main() {
 
 Signature: `func ValidateSchema(jsonStr string, schema *Schema, cfg ...Config) ([]ValidationError, error)`
 
-Validates JSON data against a JSON Schema. Returns a list of all validation errors.
+Validates JSON data against a JSON Schema. Returns the list of all validation errors.
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    schema := &json.Schema{
-        Type:     "object",
-        Required: []string{"name", "email"},
-        Properties: map[string]*json.Schema{
-            "name":  {Type: "string", MinLength: 1},
-            "email": {Type: "string", Format: "email"},
-            "age":   {Type: "integer", Minimum: 0},
-        },
-    }
+	schema := &json.Schema{
+		Type:     "object",
+		Required: []string{"name", "email"},
+		Properties: map[string]*json.Schema{
+			"name":  {Type: "string"},
+			"email": {Type: "string", Format: "email"},
+			"age":   {Type: "number"}, // numbers are uniformly "number" (integers included)
+		},
+	}
 
-    errors, err := json.ValidateSchema(`{"name":"Alice","email":"alice@example.com","age":25}`, schema)
-    if err != nil {
-        panic(err)
-    }
-    for _, e := range errors {
-        fmt.Printf("Path %s: %s\n", e.Path, e.Message)
-    }
+	errors, err := json.ValidateSchema(`{"name":"Alice","email":"alice@example.com","age":25}`, schema)
+	if err != nil {
+		panic(err)
+	}
+	for _, e := range errors {
+		fmt.Printf("Path %s: %s\n", e.Path, e.Message)
+	}
 }
 ```
 
-::: tip See Also
-For the full Schema type definition and validator usage, see [Validator](../../extensions/validator).
+::: warning Two things to note
+- `Type` has no `"integer"` value — after JSON parsing all numbers are `float64`, so numeric fields always use `"number"`.
+- **Length/range constraints** such as `MinLength`/`Minimum` do not take effect when written directly in an `&json.Schema{...}` literal; the schema must be created with [`NewSchemaWithConfig`](../schema#creating-a-schema). See [Schema Validation](../schema) for details.
+:::
+
+:::tip Further reading
+For the complete Schema type definitions and validator usage, see [Schema Validation](../schema).
 :::
 
 ## See Also
 
-- [Query & Get Functions](./query) - Get, GetString and other query operations
+- [Query & Get](./query) - Get, GetString and other query operations
 - [Processor Parse Methods](../processor/parse) - Processor-level parse and validate methods in detail

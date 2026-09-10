@@ -24,6 +24,8 @@ sidebar_position: 3
 
 :::tip 零值语义
 `MaxCacheEntries`、`CacheCleanup`、`ProcessingTimeout` 设为 `0` 不是错误，而是有明确语义（分别表示禁用缓存、禁用后台清理、不限时）。`MaxInputSize`、`WorkerPoolSize`、`MaxDepth` 则必须为正数，否则触发 `ConfigError`。
+
+因此**零值 `Config{}` 无法通过 `Validate()`，不可直接使用**——请始终从 `DefaultConfig()`（或其它预设）出发，按需覆写字段。
 :::
 
 ### 安全

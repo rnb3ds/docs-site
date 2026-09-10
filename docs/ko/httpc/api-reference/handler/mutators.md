@@ -1,13 +1,13 @@
 ---
 sidebar_label: "요청과 응답 뮤테이터"
 title: "요청과 응답 뮤테이터 - CyberGo HTTPC | Mutator 인터페이스"
-description: "HTTPC 미들웨어 읽기/쓰기 계약 상세: RequestMutator와 ResponseMutator는 httpc가 미들웨어에 노출하는 두 개의 공개 합성 인터페이스로, 요청과 응답의 모든 읽기 메서드와 쓰기 메서드를 제공하며, 뮤테이터로 요청 헤더를 수정하고 응답 상태 코드를 읽는 컴파일 가능한 예제를 포함합니다."
+description: "HTTPC 미들웨어 읽기/쓰기 계약: RequestMutator와 ResponseMutator 두 공개 합성 인터페이스의 모든 읽기·쓰기 메서드, WithOnRequest/WithOnResponse 콜백 옵션 사용법과 컴파일 가능한 예제."
 sidebar_position: 2
 ---
 
 # 요청과 응답 뮤테이터
 
-미들웨어는 기저의 요청/응답 객체를 직접 다루지 않고 **뮤테이터(Mutator)** 인터페이스를 통해 읽고 씁니다. 미들웨어는 항상 완전한 읽기/쓰기 뮤테이터(`RequestMutator`/`ResponseMutator`)를 전달받으며, 아래의 읽기/쓰기 그룹화는 가독성을 위한 것일 뿐 별도로 내보낸 인터페이스는 아닙니다.
+미들웨어는 기저의 요청/응답 객체를 직접 다루지 않고 **뮤테이터(Mutator)** 인터페이스를 통해 읽고 씁니다. 미들웨어는 항상 완전한 읽기/쓰기 뮤테이터(`RequestMutator`/`ResponseMutator`)를 전달받으며, 아래의 「읽기 메서드」「쓰기 메서드」 그룹화는 가독성을 위한 것일 뿐 별도로 내보낸 인터페이스는 아닙니다.
 
 ```text
 RequestMutator  =  읽기 메서드  +  쓰기 메서드
@@ -61,7 +61,7 @@ ResponseMutator =  읽기 메서드  +  쓰기 메서드
 
 ### RequestMutator
 
-`RequestMutator`는 httpc가 노출하는 읽기/쓰기 겸용 요청 뮤테이터 인터페이스로, 위의 "읽기 메서드"와 "쓰기 메서드" 두 표의 모든 메서드를 포괄합니다. 내부의 읽기/쓰기 분할 인터페이스는 `internal/types` 패키지에 있으며 별도로 내보내지 않고, 외부에서는 `RequestMutator`로 통일되어 참조됩니다. 미들웨어가 요청 전송 전에 이를 통해 요청 속성을 검사하고 수정합니다.
+`RequestMutator`는 httpc가 노출하는 읽기/쓰기 겸용 요청 뮤테이터 인터페이스로, 위의 「읽기 메서드」와 「쓰기 메서드」 두 표의 모든 메서드를 포괄합니다. 내부의 읽기/쓰기 분할 인터페이스는 `internal/types` 패키지에 있으며 별도로 내보내지 않고, 외부에서는 `RequestMutator`로 통일되어 참조됩니다. 미들웨어가 요청 전송 전에 이를 통해 요청 속성을 검사하고 수정합니다.
 
 ## 미들웨어에서 RequestMutator의 전형적 조작
 
@@ -132,7 +132,7 @@ req.SetHeader("X-Trace-ID", generateTraceID())
 
 ### ResponseMutator
 
-`ResponseMutator`는 httpc가 노출하는 읽기/쓰기 겸용 응답 뮤테이터 인터페이스로, 위의 "읽기 메서드"와 "쓰기 메서드" 두 표의 모든 메서드를 포괄합니다. 내부의 읽기/쓰기 분할 인터페이스는 `internal/types` 패키지에 있으며 별도로 내보내지 않고, 외부에서는 `ResponseMutator`로 통일되어 참조됩니다. 미들웨어가 요청 완료 후 이를 통해 응답을 읽거나 수정하며, 응답 캐싱, 콘텐츠 변환(예: JSON pretty-print), 인코딩/디코딩, 응답 필터링에 자주 사용됩니다.
+`ResponseMutator`는 httpc가 노출하는 읽기/쓰기 겸용 응답 뮤테이터 인터페이스로, 위의 「읽기 메서드」와 「쓰기 메서드」 두 표의 모든 메서드를 포괄합니다. 내부의 읽기/쓰기 분할 인터페이스는 `internal/types` 패키지에 있으며 별도로 내보내지 않고, 외부에서는 `ResponseMutator`로 통일되어 참조됩니다. 미들웨어가 요청 완료 후 이를 통해 응답을 읽거나 수정하며, 응답 캐싱, 콘텐츠 변환(예: JSON pretty-print), 인코딩/디코딩, 응답 필터링에 자주 사용됩니다.
 
 ## 미들웨어에서 ResponseMutator의 전형적 조작
 
@@ -163,6 +163,70 @@ req.SetHeader("X-Trace-ID", generateTraceID())
 | `SetAllowPrivateIPs(*bool)` | SSRF 덮어쓰기 설정 |
 
 대부분의 미들웨어는 타입 단언이 **불필요**합니다 — `RequestMutator`/`ResponseMutator` 인터페이스가 모든 일반적인 읽기/쓰기 조작을 포괄합니다. 콜백이나 SSRF 덮어쓰기가 필요할 때만 구체적 타입으로 단언하면 됩니다.
+
+## 요청 옵션 콜백: WithOnRequest / WithOnResponse
+
+미들웨어 외에 뮤테이터와 직접 관련된 한 쌍의 요청 옵션이 있습니다: `WithOnRequest`는 요청 전송 전에 콜백되며 매개변수가 바로 `RequestMutator`입니다; `WithOnResponse`는 응답 수신 후에 콜백되며 매개변수가 바로 `ResponseMutator`입니다. 미들웨어를 작성하지 않고도 뮤테이터를 받아 검사하거나 가볍게 수정할 수 있습니다.
+
+<!-- check-code: skip -->
+```go
+func WithOnRequest(callback func(req RequestMutator) error) RequestOption
+func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
+```
+
+| 옵션 | 콜백 시점 | 콜백 매개변수 | 오류 동작 |
+|------|-----------|---------------|-----------|
+| `WithOnRequest` | 요청 전송 전 | `RequestMutator` | 어느 콜백이든 오류를 반환하면 요청 중단 |
+| `WithOnResponse` | 응답 수신 후 | `ResponseMutator` | 어느 콜백이든 오류를 반환하면 요청이 해당 오류로 실패 |
+
+여러 콜백을 체인으로 등록할 수 있으며 추가한 순서대로 실행됩니다; nil 콜백을 전달하면 옵션 적용 시 오류가 반환됩니다 (`"onRequest callback cannot be nil"` / `"onResponse callback cannot be nil"`).
+
+:::tip 콜백과 미들웨어의 선택 기준
+콜백에는 `next`가 없어 요청을 중간에 끊을 수 없고 응답 단계에서 감싸는 것도 불가능합니다 — 「검사 + 가벼운 수정」에만 적합합니다. 실행 순서 제어, 조기 반환 또는 응답 감싸기가 필요하면 미들웨어를 작성하세요 ([Handler와 미들웨어 체인](./handler-chain) 참조).
+:::
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	client, err := httpc.NewDefault()
+	if err != nil {
+		log.Fatalf("클라이언트 생성 실패: %v", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	result, err := client.Get("https://httpbin.org/get",
+		// 요청 전송 전: RequestMutator로 요청을 검사하고 헤더 주입
+		httpc.WithOnRequest(func(req httpc.RequestMutator) error {
+			fmt.Printf("전송 %s %s\n", req.Method(), req.URL())
+			req.SetHeader("X-Trace-ID", "trace-42")
+			return nil
+		}),
+		// 응답 수신 후: ResponseMutator로 상태 읽기
+		httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
+			fmt.Printf("상태 코드 %d 수신\n", resp.StatusCode())
+			return nil
+		}),
+	)
+	if err != nil {
+		log.Fatalf("요청 실패: %v", err)
+	}
+	fmt.Println("성공:", result.IsSuccess())
+	// 출력 예시:
+	// 전송 GET https://httpbin.org/get
+	// 상태 코드 200 수신
+	// 성공: true
+}
+```
+
+모든 요청 옵션의 항목별 레퍼런스는 [요청 옵션](../core/options)을 참조하세요.
 
 ## SanitizedURL 캐시
 
@@ -315,4 +379,5 @@ func main() {
 
 - [Handler와 미들웨어 체인](./handler-chain) — 이중 계층 아키텍처와 양파 모델 총람
 - [내장 미들웨어](../client-config/middleware) — HeaderMiddleware 등은 뮤테이터로 동작하는 완성된 예제입니다
+- [요청 옵션](../core/options) — WithOnRequest/WithOnResponse와 모든 WithXxx 옵션
 - [인터페이스 정의](../types/interfaces) — 뮤테이터의 타입 별칭 정의

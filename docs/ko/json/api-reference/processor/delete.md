@@ -1,7 +1,7 @@
 ---
 sidebar_label: "삭제 작업"
 title: "Processor 삭제 메서드 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor 삭제 메서드: Delete 는 경로별 삭제, DeleteClean 은 삭제 후 빈 값과 빈 배열을 자동 정리하며, 체인 호출 능력을 유지합니다."
+description: "CyberGo JSON Processor 삭제 메서드: Delete 경로 삭제와 DeleteClean 빈 값·빈 배열 연쇄 정리, 와일드카드·슬라이스·다중 필드 경로 지원, 대상 미스는 조용히 건너뛰고 새 문자열 반환, 오류 시 원본을 반환하는 불변 방식, 체인 호출 유지."
 sidebar_position: 4
 ---
 
@@ -19,7 +19,7 @@ Processor 는 데이터 삭제 메서드를 제공하여 지정된 경로의 값
 ```go
 p, err := json.New()
 if err != nil {
-    panic(err)
+	panic(err)
 }
 defer p.Close()
 
@@ -50,7 +50,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(r1)
-	// 출력：{"user":{"name":"Alice"}}
+	// 출력:{"user":{"name":"Alice"}}
 
 	// 배열 요소 삭제 (제거 후 재정렬, 빈 공간 없음)
 	r2, err := p.Delete(`{"items":["a","b","c"]}`, "items[1]")
@@ -58,7 +58,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(r2)
-	// 출력：{"items":["a","c"]}
+	// 출력:{"items":["a","c"]}
 
 	// 중첩 경로 삭제
 	r3, err := p.Delete(`{"a":{"b":{"c":1,"d":2}}}`, "a.b.c")
@@ -66,7 +66,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(r3)
-	// 출력：{"a":{"b":{"d":2}}}
+	// 출력:{"a":{"b":{"d":2}}}
 }
 ```
 
@@ -98,7 +98,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(r1)
-	// 출력：{"tags":[1,2,3,4],"users":[{"name":"Alice"},{"name":"Bob"}]}
+	// 출력:{"tags":[1,2,3,4],"users":[{"name":"Alice"},{"name":"Bob"}]}
 
 	// 슬라이스 범위: tags[0:2] 삭제 (왼쪽 닫힘, 오른쪽 열림)
 	r2, err := p.Delete(data, "tags[0:2]")
@@ -106,7 +106,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(r2)
-	// 출력：{"tags":[3,4],"users":[{"name":"Alice","pwd":"x"},{"name":"Bob","pwd":"y"}]}
+	// 출력:{"tags":[3,4],"users":[{"name":"Alice","pwd":"x"},{"name":"Bob","pwd":"y"}]}
 }
 ```
 
@@ -134,8 +134,8 @@ func main() {
 			fmt.Println("경로가 존재하지 않아 건너뛰었습니다")
 		}
 	}
-	fmt.Println(result) // 원본 데이터 불변：{"a":1}
-	// 출력：
+	fmt.Println(result) // 원본 데이터 불변:{"a":1}
+	// 출력:
 	// 경로가 존재하지 않아 건너뛰었습니다
 	// {"a":1}
 }
@@ -165,16 +165,16 @@ func main() {
 	// temp 가 user 의 유일한 속성
 	data := `{"user":{"temp":"value"}}`
 
-	// 일반 삭제：user 가 {} 가 되지만 유지됨
+	// 일반 삭제:user 가 {} 가 되지만 유지됨
 	r1, _ := p.Delete(data, "user.temp")
-	fmt.Println(r1) // 출력：{"user":{}}
+	fmt.Println(r1) // 출력:{"user":{}}
 
-	// DeleteClean：user 가 비면 user 키까지 함께 정리, 위로 올라가며 처리
+	// DeleteClean:user 가 비면 user 키까지 함께 정리, 위로 올라가며 처리
 	r2, err := p.DeleteClean(data, "user.temp")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(r2) // 출력：{}
+	fmt.Println(r2) // 출력:{}
 }
 ```
 
@@ -202,7 +202,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(cleaned)
-	// 출력：{"data":{"id":1,"name":"Product","price":29.99}}
+	// 출력:{"data":{"id":1,"name":"Product","price":29.99}}
 }
 ```
 
@@ -225,7 +225,7 @@ func main() {
 
 ## Config 가 삭제 동작에 미치는 영향
 
-삭제 메서드의 정리 동작은 "**호출 매개변수 `cfg` 와 프로세서 자체 설정의 합집합**"으로 결정됩니다. 즉, 프로세서 생성 시 `CleanupNulls` 를 켜두면 이후 일반 `p.Delete(...)` 도 자동으로 정리합니다:
+삭제 메서드의 정리 동작은 '**호출 매개변수 `cfg` 와 프로세서 자체 설정의 합집합**'으로 결정됩니다. 즉, 프로세서 생성 시 `CleanupNulls` 를 켜두면 이후 일반 `p.Delete(...)` 도 자동으로 정리합니다:
 
 ```go
 package main
@@ -254,7 +254,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(result) // 출력：{}
+	fmt.Println(result) // 출력:{}
 }
 ```
 
@@ -293,22 +293,22 @@ func main() {
 	final, _ := p.Delete(r2, "user.version")
 
 	fmt.Println(final)
-	// 출력：{"user":{"name":"CyberGo"}}
+	// 출력:{"user":{"name":"CyberGo"}}
 }
 ```
 
 ## 일반적인 함정
 
 ::: warning 배열 삭제는 빈 공간을 남기지 않음
-`Delete` 가 배열 요소를 삭제할 때 요소는 **전체적으로 제거**되고 이후 요소가 자동으로 앞으로 이동하며, `null` 자리 표시자나 빈 공간을 남기지 않습니다. "삭제 후 인덱스 유지, 빈 자리 남김" 의미가 필요하다면 `Set` 으로 해당 위치를 `null` 로 설정하세요.
+`Delete` 가 배열 요소를 삭제할 때 요소는 **전체적으로 제거**되고 이후 요소가 자동으로 앞으로 이동하며, `null` 자리 표시자나 빈 공간을 남기지 않습니다. '삭제 후 인덱스 유지, 빈 자리 남김' 의미가 필요하다면 `Set` 으로 해당 위치를 `null` 로 설정하세요.
 :::
 
-::: warning DeleteClean 이 "마침 비어 있는" 유효한 데이터를 잘못 삭제할 수 있음
-`DeleteClean` 의 연쇄 정리는 모든 빈 객체 `{}`, 빈 배열 `[]` 을 정리 대상으로 취급합니다. 비즈니스에서 "빈 배열"이 의미 있는 상태라면 (예: `"tags":[]` 가 "태그 없음"을 나타냄), `DeleteClean` 은 해당 키까지 함께 제거합니다. 이러한 필드를 유지해야 한다면 일반 `Delete` 를 사용하세요.
+::: warning DeleteClean 이 '마침 비어 있는' 유효한 데이터를 잘못 삭제할 수 있음
+`DeleteClean` 의 연쇄 정리는 모든 빈 객체 `{}`, 빈 배열 `[]` 을 정리 대상으로 취급합니다. 비즈니스에서 '빈 배열'이 의미 있는 상태라면 (예: `"tags":[]` 가 '태그 없음'을 나타냄), `DeleteClean` 은 해당 키까지 함께 제거합니다. 이러한 필드를 유지해야 한다면 일반 `Delete` 를 사용하세요.
 :::
 
 ::: warning 배치 삭제는 내결함성을 가짐
-와일드카드/슬라이스/다중 필드 경로는 누락된 대상을 **조용히 건너뛰며** 오류를 반환하지 않습니다. "대상이 반드시 존재해야 함"이라는 강한 검증 의미가 필요하다면 정확한 경로를 사용하세요 (예: `items[*]` 대신 `items[1]`).
+와일드카드/슬라이스/다중 필드 경로는 누락된 대상을 **조용히 건너뛰며** 오류를 반환하지 않습니다. '대상이 반드시 존재해야 함'이라는 강한 검증 의미가 필요하다면 정확한 경로를 사용하세요 (예: `items[*]` 대신 `items[1]`).
 :::
 
 ## 관련 문서

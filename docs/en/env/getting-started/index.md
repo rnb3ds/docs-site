@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Quick Start"
 title: "Quick Start - CyberGo env | 5-Minute Tutorial"
-description: "Get started with the CyberGo env library in 5 minutes. Covers go get installation, .env loading, type-safe reading, GetSecure for sensitive values, struct mapping, variable expansion, and errors.Is error handling, plus four configuration presets and multi-environment multi-file loading with complete runnable code examples."
+description: "Get started with CyberGo env in 5 minutes: installation, .env loading, type-safe reading, struct mapping, variable expansion, and errors.Is handling."
 sidebar_position: 1
 ---
 
@@ -38,6 +38,10 @@ LOG_LEVEL=info
 # Multiple values (comma-separated)
 ALLOWED_HOSTS=localhost,example.com,api.example.com
 ```
+
+::: tip Full syntax reference
+For the complete `.env` syntax rules (quoting, escapes, multi-line values), see [File Format](/en/env/reference/file-format).
+:::
 
 ## Minimal Usage
 

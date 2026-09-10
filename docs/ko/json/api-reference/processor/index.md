@@ -1,19 +1,19 @@
 ---
 sidebar_label: "개요"
 title: "Processor 프로세서 - CyberGo JSON | API 레퍼런스"
-description: "CyberGo JSON Processor 프로세서: New 생성, GetString/Set/Delete 작업, Foreach 반복, Encode 인코딩과 Close 수명 주기로 고빈도 재사용에 적합합니다."
+description: "CyberGo JSON Processor 프로세서: New 생성, GetString/Set/Delete 작업, Foreach 반복, Encode 인코딩과 Close 수명 주기에 내장 캐시로 반복 작업을 가속하고 체인 호출과 전역 프로세서 관리를 지원해 고빈도 재사용에 적합합니다."
 sidebar_position: 1
 ---
 
 # Processor
 
-Processor 는 고성능, 커스텀 가능성, 유연한 재사용 능력을 제공하여 동일한 데이터 소스에 대한 여러 작업에 적합합니다.
+Processor 는 고성능, 커스터마이즈 가능성, 더 유연한 재사용 능력을 제공하며 같은 데이터 소스를 여러 번 다루는 경우에 적합합니다.
 
 ## 특징
 
 - **고성능**: 내부 캐시 메커니즘으로 반복 작업이 더 효율적
 - **설정 가능**: 다양한 설정 옵션 지원
-- **체인 호출**: 메서드가 수정된 JSON 을 반환하여 연속 작업 지원
+- **체인 호출**: 메서드가 수정된 JSON 을 반환해 연속 작업 지원
 - **리소스 관리**: 명시적인 수명 주기 제어
 
 ## Processor 생성
@@ -28,7 +28,7 @@ Processor 인스턴스를 생성합니다. 선택적 Config 매개변수로 프�
 // 기본 설정 사용
 processor, err := json.New()
 if err != nil {
-    panic(err)
+	panic(err)
 }
 defer processor.Close()
 
@@ -43,7 +43,7 @@ processor, err = json.New(json.SecurityConfig())
 
 ## 체인 호출
 
-Processor 메서드는 수정된 JSON 문자열을 반환하여 연속 작업을 지원합니다:
+Processor 메서드는 수정된 JSON 문자열을 반환하므로 연속 작업이 가능합니다:
 
 ```go
 processor, _ := json.New()
@@ -56,18 +56,18 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 ## API 목록
 
-| 카테고리 | 설명 |
+| 분류 | 설명 |
 |------|------|
-| [조회 및 가져오기](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
-| [수정](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/MergeJSON/MergeMany/CompareJSON |
+| [조회 및 가져오기](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled/PreParse/GetFromParsed |
+| [수정 작업](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/MergeJSON/MergeMany/CompareJSON |
 | [삭제 작업](./delete) | Delete/DeleteClean |
-| [인코딩 및 출력](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
+| [인코딩 출력](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream/ValidateSchema |
 | [파싱 및 검증](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal |
 | [배치 작업](./batch) | ProcessBatch/WarmupCache |
 | [JSONL](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
-| [파일 I/O](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [파일 I/O](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile/ForeachFile 계열 |
 | [반복 메서드](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachReturn/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachWithPathAndControl/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
-| [수명 주기](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
+| [수명 주기](./lifecycle) | Close/IsClosed/GetConfig/AddHook/SetLogger/ClearCache/WarmupCache/GetStats/GetHealthStatus/SetGlobalProcessor/ShutdownGlobalProcessor |
 
 ---
 
@@ -79,7 +79,7 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 시그니처: `func SetGlobalProcessor(processor *Processor)`
 
-커스텀 전역 프로세서를 설정합니다. 모든 패키지 레벨 함수 (Get, Set, Marshal 등) 가 해당 프로세서를 사용합니다.
+커스텀 전역 프로세서를 설정합니다. 모든 패키지 레벨 함수 (Get, Set, Marshal 등) 가 이 프로세서를 사용합니다.
 
 **매개변수**
 
@@ -91,29 +91,29 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 package main
 
 import (
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 커스텀 설정의 프로세서 생성
-    cfg := json.SecurityConfig()
-    processor, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
+	// 커스텀 설정의 프로세서 생성
+	cfg := json.SecurityConfig()
+	processor, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
 
-    // 전역 프로세서로 설정
-    json.SetGlobalProcessor(processor)
+	// 전역 프로세서로 설정
+	json.SetGlobalProcessor(processor)
 
-    // 이제 모든 패키지 레벨 함수가 보안 설정을 사용
-    data, err := json.Get(`{"name":"Alice"}`, "name")
-    // SecurityConfig 의 제한이 적용됨
-    _ = data
+	// 이제 모든 패키지 레벨 함수가 보안 설정을 사용
+	data, err := json.Get(`{"name":"Alice"}`, "name")
+	// SecurityConfig 의 제한이 적용됨
+	_ = data
 }
 ```
 
-:::warning 주의
-- `nil`을 전달하면 아무 작업도 수행하지 않습니다
+::: warning 주의
+- `nil` 을 전달하면 아무것도 실행하지 않습니다
 - 이전 전역 프로세서는 자동으로 닫힙니다
 - 이 함수는 스레드 안전합니다
 :::
@@ -122,33 +122,33 @@ func main() {
 
 시그니처: `func ShutdownGlobalProcessor()`
 
-전역 프로세서를 닫고 제거합니다. 이후 패키지 레벨 작업은 새로운 기본 프로세서를 생성합니다.
+전역 프로세서를 닫고 제거합니다. 이후 패키지 레벨 작업은 새 기본 프로세서를 생성합니다.
 
 ```go
 package main
 
 import (
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 전역 프로세서 사용
-    data, _ := json.Get(`{"key":"value"}`, "key")
-    _ = data
+	// 전역 프로세서 사용
+	data, _ := json.Get(`{"key":"value"}`, "key")
+	_ = data
 
-    // 애플리케이션 종료 시 정리
-    json.ShutdownGlobalProcessor()
+	// 애플리케이션 종료 시 정리
+	json.ShutdownGlobalProcessor()
 
-    // 이후 작업은 새로운 기본 프로세서를 생성
-    data2, _ := json.Get(`{"key":"value2"}`, "key")
-    _ = data2
+	// 이후 작업은 새 기본 프로세서를 생성
+	data2, _ := json.Get(`{"key":"value2"}`, "key")
+	_ = data2
 }
 ```
 
-:::tip 사용 시나리오
-- 장시간 실행되는 서비스 종료 시 리소스 정리
-- 프로세서 설정을 재설정해야 할 때
-- 테스트 환경에서 다른 테스트 케이스 격리
+::: tip 사용 시나리오
+- 장시간 실행되는 서비스가 종료될 때 리소스 정리
+- 프로세서 설정을 재설정할 때
+- 테스트 환경에서 서로 다른 테스트 케이스 격리
 :::
 
 ---
@@ -158,4 +158,4 @@ func main() {
 - [패키지 함수](../functions/) - 최상위 함수 레퍼런스
 - [Config](../config) - 설정 옵션
 - [인터페이스 정의](../interfaces) - Hook 인터페이스
-- [Hook 훅 시스템](../../extensions/hooks) - 훅 자세한 사용 가이드
+- [Hook 시스템](../../extensions/hooks) - 훅 상세 사용 가이드

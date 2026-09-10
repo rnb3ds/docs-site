@@ -1,13 +1,13 @@
 ---
 sidebar_label: "JSONL Processor"
-title: "JSONL Processor - CyberGo JSON | API Reference"
-description: "CyberGo JSON JSONL processor: StreamJSONL, JSONLWriter, StreamLinesInto[T] generic streams, ParseJSONL, and ToJSONL for JSON Lines read and write."
+title: "JSONL Processors - CyberGo JSON | API Reference"
+description: "CyberGo JSON JSONL processors: StreamJSONL streaming, JSONLWriter writing, StreamLinesInto[T] generics, ParseJSONL parsing, and ToJSONL conversion."
 sidebar_position: 3
 ---
 
-# JSONL Processor
+# JSONL Processors
 
-JSONL (JSON Lines) or NDJSON (Newline Delimited JSON) is a format with one JSON object per line. This library provides complete JSONL processing capabilities through `Processor` methods and package-level functions.
+JSONL (JSON Lines) or NDJSON (Newline Delimited JSON) is a format with one JSON object per line. The library provides complete JSONL processing through both `Processor` methods and package-level functions.
 
 ## Format Specification
 
@@ -19,19 +19,33 @@ JSONL (JSON Lines) or NDJSON (Newline Delimited JSON) is a format with one JSON 
 
 - Each line is a valid JSON value
 - Lines are separated by `\n`
-- The last line may or may not have a trailing newline
+- The last line may or may not end with a newline
 
 ---
 
 ## Processor JSONL Methods
 
-JSONL processing functionality is provided through `Processor` methods.
+JSONL processing is exposed through `Processor` methods — 11 streaming/functional methods in total; how to choose:
+
+| Method | Shape | Fits |
+|---------|-------|------|
+| `StreamJSONL` | Per-line callback | Basic streaming, consuming `IterableValue` line by line |
+| `StreamJSONLParallel` | Parallel callbacks | CPU-bound transforms with multiple workers |
+| `StreamJSONLParallelWithContext` | Parallel + ctx | Parallel processing needing timeout/cancellation |
+| `StreamJSONLChunked` | Batch callbacks | Chunked consumption such as bulk database loads |
+| `StreamJSONLFile` | Per-line callback (file) | Reading `.jsonl` files directly (incl. path security validation) |
+| `ForeachJSONL` | Per-line callback | An alias of `StreamJSONL` |
+| `MapJSONL` | Transform + collect | Maps each line to a new value, returns `[]any` |
+| `FilterJSONL` | Predicate + collect | Keeps the lines satisfying a condition |
+| `ReduceJSONL` | Aggregate | Folding computations such as sums and statistics |
+| `CollectJSONL` | Collect all | Takes out every line at once |
+| `FirstJSONL` | Predicate + short-circuit | Stops at the first match (internally equivalent to `Break`) |
 
 ### StreamJSONL
 
 Signature: `func (p *Processor) StreamJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error) error`
 
-Stream-processes JSONL data, returning one `IterableValue` per line.
+Streams JSONL data, returning one `IterableValue` per line.
 
 **Parameters**
 
@@ -40,13 +54,13 @@ Stream-processes JSONL data, returning one `IterableValue` per line.
 | `reader` | `io.Reader` | Data source |
 | `fn` | `func(lineNum int, item *IterableValue) error` | Processing callback |
 
-**Callback Return Values**
+**Callback return values**
 
-| Return Value | Description |
+| Return value | Description |
 |--------------|-------------|
-| `nil` | Continue to next line |
-| `item.Break()` | Stop iteration without returning an error |
-| other `error` | Stop iteration and return the error |
+| `nil` | Continue with the next line |
+| `item.Break()` | Stop iterating without an error |
+| Other `error` | Stop iterating and return the error |
 
 ```go
 p, err := json.New()
@@ -62,8 +76,8 @@ err = p.StreamJSONL(file, func(lineNum int, item *json.IterableValue) error {
     name := item.GetString("name")
     age := item.GetInt("age")
     fmt.Printf("Line %d: name=%s, age=%d\n", lineNum, name, age)
-    return nil // Continue processing
-    // return item.Break() // Stop iteration
+    return nil // continue processing
+    // return item.Break() // stop iterating
 })
 ```
 
@@ -71,14 +85,14 @@ err = p.StreamJSONL(file, func(lineNum int, item *json.IterableValue) error {
 
 Signature: `func (p *Processor) StreamJSONLParallel(reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error) error`
 
-Parallel-processes JSONL data using a worker pool pattern.
+Processes JSONL data in parallel using a worker pool.
 
 **Parameters**
 
 | Name | Type | Description |
 |------|------|-------------|
 | `reader` | `io.Reader` | Data source |
-| `workers` | `int` | Number of worker goroutines (defaults to 4 when <=0) |
+| `workers` | `int` | Worker goroutine count (defaults to 4 when <=0) |
 | `fn` | `func(lineNum int, item *IterableValue) error` | Processing callback |
 
 ```go
@@ -94,24 +108,25 @@ err = p.StreamJSONLParallel(file, 8, func(lineNum int, item *json.IterableValue)
 })
 ```
 
-::: tip Performance Tip
-For CPU-intensive operations (such as data transformation and computation), parallel processing can significantly improve performance. For I/O-intensive operations, single-threaded processing is recommended.
+::: tip Performance hint
+For CPU-bound work (data transformation, computation), parallel processing improves performance significantly. For I/O-bound work, prefer single-threaded processing.
 :::
 
+A callback returning `item.Break()` is a clean stop: scanning and the workers wind down early and the method returns `nil`; returning any other error ends the method with that error. Callback panics are recovered into errors and never take down the process.
 
 ### StreamJSONLParallelWithContext
 
 Signature: `func (p *Processor) StreamJSONLParallelWithContext(ctx context.Context, reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error) error`
 
-Parallel processing of JSONL data with context. Supports timeout and cancellation.
+Context-aware parallel JSONL processing. Supports timeout and cancellation.
 
 **Parameters**
 
 | Name | Type | Description |
-|------|------|------|
+|------|------|-------------|
 | `ctx` | `context.Context` | Context for cancellation and timeout |
 | `reader` | `io.Reader` | Data source |
-| `workers` | `int` | Number of worker goroutines (defaults to 4 when <=0) |
+| `workers` | `int` | Worker goroutine count (defaults to 4 when <=0) |
 | `fn` | `func(lineNum int, item *IterableValue) error` | Processing callback |
 
 ```go
@@ -125,7 +140,7 @@ ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 defer cancel()
 
 err = p.StreamJSONLParallelWithContext(ctx, file, 8, func(lineNum int, item *json.IterableValue) error {
-    // Parallel processing with cancellation support
+    // Cancellable parallel processing
     return processItem(item)
 })
 ```
@@ -134,7 +149,7 @@ err = p.StreamJSONLParallelWithContext(ctx, file, 8, func(lineNum int, item *jso
 
 Signature: `func (p *Processor) StreamJSONLChunked(reader io.Reader, chunkSize int, fn func(chunk []*IterableValue) error) error`
 
-Batch-processes JSONL data, processing the specified number of elements each time.
+Processes JSONL data in batches of a given element count.
 
 ```go
 p, err := json.New()
@@ -143,9 +158,9 @@ if err != nil {
 }
 defer p.Close()
 
-// 1000 per batch
+// 1000 records per batch
 err = p.StreamJSONLChunked(file, 1000, func(chunk []*json.IterableValue) error {
-    // Batch insert into database
+    // Bulk write to the database
     for _, item := range chunk {
         processItem(item)
     }
@@ -153,11 +168,15 @@ err = p.StreamJSONLChunked(file, 1000, func(chunk []*json.IterableValue) error {
 })
 ```
 
+::: warning Returned to the object pool after the callback
+`StreamJSONLChunked` returns that batch's `IterableValue`s to the object pool **after each batch callback returns** (internal data nulled). Finish persisting or extracting the fields you need inside the callback; do not hold elements of `chunk` across callbacks. `StreamJSONL` (and the collect methods built on it — `CollectJSONL`/`FilterJSONL`/`FirstJSONL`) performs no such return; their elements can be kept safely.
+:::
+
 ### StreamJSONLFile
 
 Signature: `func (p *Processor) StreamJSONLFile(filename string, fn func(lineNum int, item *IterableValue) error) error`
 
-Directly processes a JSONL file.
+Processes a JSONL file directly.
 
 ```go
 p, err := json.New()
@@ -180,7 +199,7 @@ err = p.StreamJSONLFile("data.jsonl", func(lineNum int, item *json.IterableValue
 
 Signature: `func (p *Processor) MapJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) (any, error)) ([]any, error)`
 
-Maps JSONL data to a new format.
+Maps JSONL data into a new format.
 
 ```go
 p, err := json.New()
@@ -210,7 +229,7 @@ if err != nil {
 }
 defer p.Close()
 
-// Calculate total age
+// Compute the total age
 totalAge, err := p.ReduceJSONL(file, 0, func(acc any, item *json.IterableValue) any {
     return acc.(int) + item.GetInt("age")
 })
@@ -220,7 +239,7 @@ totalAge, err := p.ReduceJSONL(file, 0, func(acc any, item *json.IterableValue) 
 
 Signature: `func (p *Processor) FilterJSONL(reader io.Reader, predicate func(item *IterableValue) bool) ([]*IterableValue, error)`
 
-Filters JSONL data, returning elements that satisfy the condition.
+Filters JSONL data, returning the elements that satisfy the predicate.
 
 ```go
 p, err := json.New()
@@ -229,7 +248,7 @@ if err != nil {
 }
 defer p.Close()
 
-// Filter adults
+// Keep adults
 adults, err := p.FilterJSONL(file, func(item *json.IterableValue) bool {
     return item.GetInt("age") >= 18
 })
@@ -258,7 +277,7 @@ for _, item := range items {
 
 Signature: `func (p *Processor) FirstJSONL(reader io.Reader, predicate func(item *IterableValue) bool) (*IterableValue, bool, error)`
 
-Returns the first element that satisfies the condition.
+Returns the first element satisfying the predicate.
 
 ```go
 p, err := json.New()
@@ -279,7 +298,7 @@ if found {
 
 Signature: `func (p *Processor) ForeachJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error) error`
 
-Iterates JSONL data (alias for StreamJSONL).
+Iterates JSONL data (an alias of StreamJSONL).
 
 ---
 
@@ -293,7 +312,7 @@ cfg.JSONLBufferSize = 128 * 1024    // Buffer size (default 64KB)
 cfg.JSONLMaxLineSize = 2 * 1024 * 1024  // Maximum line size (default 1MB)
 cfg.JSONLSkipEmpty = true           // Skip empty lines (default true)
 cfg.JSONLSkipComments = true        // Skip comment lines (default false)
-cfg.JSONLContinueOnErr = true       // Continue on parse error (default false)
+cfg.JSONLContinueOnErr = true       // Continue on parse errors (default false)
 cfg.JSONLWorkers = 8                // Parallel workers (default 4)
 cfg.JSONLChunkSize = 500            // Chunk size (default 1000)
 cfg.JSONLMaxMemory = 200 * 1024 * 1024 // Maximum memory (default 100MB)
@@ -304,26 +323,35 @@ if err != nil {
 }
 ```
 
+Field scope and precedence:
+
+- **`JSONLMaxLineSize`**: per-line byte cap. The `StreamJSONL` family, `NDJSONProcessor`, and `StreamLinesInto` all use it to bound the scanner; exceeding it returns a `bufio.ErrTooLong`-style error. Fallback chain: `JSONLMaxLineSize` -> `MaxJSONSize` -> 100MB (`NDJSONProcessor`).
+- **`JSONLMaxMemory`**: total byte cap for streaming (exceeding it errors and stops); fallback chain: `JSONLMaxMemory` -> `MaxMemory`.
+- **`MaxNestingDepthSecurity`**: every JSONL streaming entry checks nesting depth line by line **before** parsing, preventing stack overflow from deep nesting.
+- **`JSONLContinueOnErr`**: effective only in `NDJSONProcessor` (`ProcessFile`/`ProcessReader`) and `StreamLinesInto` — bad lines are skipped and processing continues; the `StreamJSONL` family aborts immediately on a parse error.
+- **`JSONLWorkers`/`JSONLChunkSize`**: take part in config validation (clamped to 1–64 / 100–10000), but the explicit `workers` parameter of `StreamJSONLParallel` and `chunkSize` parameter of `StreamJSONLChunked` take precedence.
+- `Config.Validate` clamps out-of-range values back into the legal ranges; use `ValidateWithWarnings` to see the adjustments.
+
 ---
 
 ## JSONLWriter
 
-The JSONL writer is used to write data in JSON Lines format.
+The JSONL writer writes data in JSON Lines format.
 
 ### NewJSONLWriter
 
 Signature: `func NewJSONLWriter(writer io.Writer, cfg ...Config) *JSONLWriter`
 
-Creates a JSONL writer. Supports optional configuration parameters.
+Creates a JSONL writer. Supports an optional configuration parameter.
 
 ```go
 file, _ := os.Create("output.jsonl")
 defer file.Close()
 
-// Use default configuration
+// With the default configuration
 writer := json.NewJSONLWriter(file)
 
-// Use custom configuration
+// With a custom configuration
 cfg := json.DefaultConfig()
 cfg.EscapeHTML = true
 writer = json.NewJSONLWriter(file, cfg)
@@ -333,14 +361,19 @@ writer = json.NewJSONLWriter(file, cfg)
 
 Signature: `func (w *JSONLWriter) Write(data any) error`
 
-Writes a single JSON value as one line.
+Writes a single JSON value as one line (encoded result + `\n`). HTML escaping follows the `Config.EscapeHTML` from construction (default `true`).
 
 ```go
 err := writer.Write(map[string]any{
     "id":   1,
     "name": "Alice",
 })
+// Written: {"id":1,"name":"Alice"}\n
 ```
+
+::: tip Errors are cached
+Once a `Write`/`WriteRaw` fails, the error is cached on the writer and **all subsequent write calls return that same error directly**. After a bulk write, check once via [`Err`](#err) instead of judging every call.
+:::
 
 ### WriteAll
 
@@ -362,10 +395,11 @@ err := writer.WriteAll(items)
 
 Signature: `func (w *JSONLWriter) WriteRaw(line []byte) error`
 
-Writes a raw JSON line (without JSON encoding).
+Writes an already-encoded raw JSON line, skipping re-encoding. A trailing newline is appended when **absent**; an existing one is written as-is.
 
 ```go
 err := writer.WriteRaw([]byte(`{"id":1,"name":"raw"}`))
+// Written: {"id":1,"name":"raw"}\n
 ```
 
 ### Err
@@ -391,32 +425,48 @@ stats := writer.Stats()
 fmt.Printf("Wrote %d lines, %d bytes\n", stats.LinesProcessed, stats.BytesWritten)
 ```
 
-**JSONLStats Structure**:
+**JSONLStats struct**:
 
 ```go
 type JSONLStats struct {
-    LinesProcessed int64 // Number of lines processed
-    BytesWritten   int64 // Number of bytes written
+    LinesProcessed int64 // Lines processed
+    BytesWritten   int64 // Bytes written
 }
 ```
+
+| Field | Meaning |
+|-------|---------|
+| `LinesProcessed` | Lines successfully written via `Write`/`WriteAll`/`WriteRaw` |
+| `BytesWritten` | Cumulative bytes written, **including each line's trailing newline** |
+
+For example, after `Write` of the line `{"id":1}` (9 bytes), `Stats()` gives `LinesProcessed=1`, `BytesWritten=10`.
 
 ---
 
 ## NDJSONProcessor
 
-A specialized processor for `map[string]any` type NDJSON files.
+A dedicated NDJSON file processor for `map[string]any` data. Unlike `StreamJSONL`: the callback receives a `map[string]any` directly (no `IterableValue` indirection), empty lines are **always** skipped, and it is independent of `Processor` — no instance needed. Suited to simply consuming object lines; for typed access, parallelism, or functional composition use the `StreamJSONL` family.
+
+Both entry points have built-in protections:
+
+- **Per-line nesting depth check**: before parsing, checked against `MaxNestingDepthSecurity` (default 200) to prevent stack overflow from deep nesting;
+- **Per-line size cap**: `JSONLMaxLineSize` (fallback `MaxJSONSize` -> 100MB);
+- **Total cap**: `JSONLMaxMemory` (fallback `MaxMemory`); exceeding it stops processing;
+- **Fault tolerance**: with `JSONLContinueOnErr=true`, lines failing to parse are skipped and processing continues;
+- **Path validation**: `ProcessFile` runs path traversal and other security checks on the file path;
+- **Callback panic recovery**: callback panics become returned errors and never take down the process.
 
 ### NewNDJSONProcessor
 
 Signature: `func NewNDJSONProcessor(cfg ...Config) *NDJSONProcessor`
 
-Creates an NDJSON processor. Supports optional configuration parameters.
+Creates an NDJSON processor. Supports an optional configuration parameter.
 
 ```go
-// Use default configuration
+// With the default configuration
 np := json.NewNDJSONProcessor()
 
-// Use custom configuration
+// With a custom configuration
 cfg := json.DefaultConfig()
 cfg.JSONLBufferSize = 128 * 1024
 np = json.NewNDJSONProcessor(cfg)
@@ -451,65 +501,65 @@ err := np.ProcessReader(file, func(lineNum int, obj map[string]any) error {
 
 ## Package-Level Functions
 
-All JSONL processing functions provide package-level convenience versions with signatures identical to the corresponding [Processor methods](../api-reference/processor/jsonl). They use the default global Processor internally, so no manual instance creation is required.
+Every JSONL processing function has a package-level convenience version with the same signature as the corresponding [Processor method](../api-reference/processor/jsonl); internally they use the default global Processor — no manual instance needed.
 
-::: tip Tip
-Package-level functions are suitable for one-off processing. If you need to call them repeatedly in a loop or share configuration, create a dedicated `Processor` ([`json.New()`](../api-reference/processor/)) to reuse the cache.
+::: tip Note
+Package-level functions suit one-shot processing. For repeated calls in a loop or shared configuration, create a dedicated `Processor` ([`json.New()`](../api-reference/processor/)) to reuse the cache.
 :::
 
 ### StreamJSONL
 
 Signature: `func StreamJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-Stream-processes JSONL line by line, parsing each line into an `IterableValue` before invoking the callback.
+Streams JSONL line by line, invoking the callback after parsing each line into an `IterableValue`.
 
 ### StreamJSONLParallel
 
 Signature: `func StreamJSONLParallel(reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-Processes JSONL using `workers` parallel goroutines.
+Processes JSONL with `workers` parallel goroutines.
 
 ### StreamJSONLParallelWithContext
 
 Signature: `func StreamJSONLParallelWithContext(ctx context.Context, reader io.Reader, workers int, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-Parallel JSONL processing with context cancellation support.
+Parallel JSONL processing with context cancellation.
 
 ### StreamJSONLChunked
 
 Signature: `func StreamJSONLChunked(reader io.Reader, chunkSize int, fn func(chunk []*IterableValue) error, cfg ...Config) error`
 
-Processes JSONL in batches of `chunkSize`, passing each batch as `[]*IterableValue` to the callback.
+Processes JSONL in batches of `chunkSize`, with each batch passed to the callback as `[]*IterableValue`.
 
 ### ForeachJSONL
 
 Signature: `func ForeachJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-Iterates over JSONL, invoking the callback for each line.
+Iterates JSONL, invoking the callback per line.
 
 ### MapJSONL
 
 Signature: `func MapJSONL(reader io.Reader, fn func(lineNum int, item *IterableValue) (any, error), cfg ...Config) ([]any, error)`
 
-Maps each line to a new value and returns a slice of results.
+Maps each line to a new value and returns the result slice.
 
 ### ReduceJSONL
 
 Signature: `func ReduceJSONL(reader io.Reader, initial any, fn func(acc any, item *IterableValue) any, cfg ...Config) (any, error)`
 
-Reduces JSONL; `initial` is the accumulator's initial value.
+Reduces JSONL; `initial` is the accumulator's starting value.
 
 ### FilterJSONL
 
 Signature: `func FilterJSONL(reader io.Reader, predicate func(item *IterableValue) bool, cfg ...Config) ([]*IterableValue, error)`
 
-Filters JSONL by predicate, returning the matching items.
+Filters JSONL by predicate and returns the matches.
 
 ### StreamJSONLFile
 
 Signature: `func StreamJSONLFile(filename string, fn func(lineNum int, item *IterableValue) error, cfg ...Config) error`
 
-Package-level function that stream-processes JSONL data directly from a file without creating a Processor.
+Streams an entire JSONL file.
 
 ```go
 err := json.StreamJSONLFile("data.jsonl", func(lineNum int, item *json.IterableValue) error {
@@ -528,13 +578,13 @@ Reads all JSONL lines and collects them into a slice.
 
 Signature: `func FirstJSONL(reader io.Reader, predicate func(item *IterableValue) bool, cfg ...Config) (*IterableValue, bool, error)`
 
-Returns the first element satisfying the predicate; the second return value indicates whether a match was found.
+Returns the first element satisfying the predicate; the second return value reports whether one was found.
 
 ### StreamLinesInto[T]
 
 Signature: `func StreamLinesInto[T any](reader io.Reader, fn func(lineNum int, data T) error, cfg ...Config) ([]T, error)`
 
-Stream-reads JSONL and processes line by line.
+Streams JSONL and processes it line by line.
 
 ```go
 type User struct {
@@ -542,19 +592,27 @@ type User struct {
     Name string `json:"name"`
 }
 
-// Use default configuration
+// With the default configuration
 entries, err := json.StreamLinesInto[User](file, func(lineNum int, user User) error {
     fmt.Printf("Processing: %s\n", user.Name)
     return nil
 })
 
-// Use custom configuration
+// With a custom configuration
 cfg := json.DefaultConfig()
 cfg.JSONLSkipComments = true
 entries, err = json.StreamLinesInto[User](file, func(lineNum int, user User) error {
     return nil
 }, cfg)
 ```
+
+Return value semantics:
+
+- The returned `[]T` **accumulates only successfully parsed lines** — lines processed by `fn` are appended to the result slice;
+- When a line fails to parse and `JSONLContinueOnErr` is off, processing stops immediately, returning a nil result and a line-numbered error (`line N: ...`);
+- With `JSONLContinueOnErr=true`, bad lines are skipped (not in the result, `fn` not called) and later lines keep processing;
+- When `fn` returns an error, processing stops immediately and the error is returned verbatim;
+- A line exceeding `JSONLMaxLineSize` ends with `bufio.ErrTooLong`.
 
 ### ParseJSONL
 
@@ -602,41 +660,44 @@ jsonlStr, err := json.ToJSONLString(items)
 package main
 
 import (
-    "fmt"
-    "os"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"os"
 )
 
 type LogEntry struct {
-    Time    string `json:"time"`
-    Level   string `json:"level"`
-    Message string `json:"message"`
+	Time    string `json:"time"`
+	Level   string `json:"level"`
+	Message string `json:"message"`
 }
 
 func main() {
-    file, _ := os.Open("logs.jsonl")
-    defer file.Close()
+	file, err := os.Open("logs.jsonl")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    count := 0
-    err = p.StreamJSONL(file, func(lineNum int, item *json.IterableValue) error {
-        count++
-        if item.GetString("level") == "error" {
-            fmt.Printf("Error: %s\n", item.GetString("message"))
-        }
-        return nil
-    })
+	count := 0
+	err = p.StreamJSONL(file, func(lineNum int, item *json.IterableValue) error {
+		count++
+		if item.GetString("level") == "error" {
+			fmt.Printf("Error: %s\n", item.GetString("message"))
+		}
+		return nil
+	})
 
-    if err != nil {
-        fmt.Printf("Error: %v\n", err)
-    }
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
 
-    fmt.Printf("Total processed %d lines\n", count)
+	fmt.Printf("Processed %d lines in total\n", count)
 }
 ```
 
@@ -646,62 +707,70 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "os"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"os"
 )
 
 func main() {
-    file, _ := os.Create("output.jsonl")
-    defer file.Close()
+	file, err := os.Create("output.jsonl")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
-    writer := json.NewJSONLWriter(file)
+	writer := json.NewJSONLWriter(file)
 
-    for i := 0; i < 10; i++ {
-        writer.Write(map[string]any{
-            "id":    i,
-            "value": fmt.Sprintf("item-%d", i),
-        })
-    }
+	for i := 0; i < 10; i++ {
+		if err := writer.Write(map[string]any{
+			"id":    i,
+			"value": fmt.Sprintf("item-%d", i),
+		}); err != nil {
+			panic(err)
+		}
+	}
 
-    stats := writer.Stats()
-    fmt.Printf("Wrote %d bytes\n", stats.BytesWritten)
+	stats := writer.Stats()
+	fmt.Printf("Wrote %d bytes\n", stats.BytesWritten)
 }
 ```
 
-### Parallel Processing of Large Files
+### Processing a Large File in Parallel
 
 ```go
 package main
 
 import (
-    "fmt"
-    "os"
-    "sync/atomic"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"os"
+	"sync/atomic"
 )
 
 func main() {
-    file, _ := os.Open("large.jsonl")
-    defer file.Close()
+	file, err := os.Open("large.jsonl")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
 
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    var count int64
-    err = p.StreamJSONLParallel(file, 8, func(lineNum int, item *json.IterableValue) error {
-        atomic.AddInt64(&count, 1)
-        return nil
-    })
+	var count int64
+	err = p.StreamJSONLParallel(file, 8, func(lineNum int, item *json.IterableValue) error {
+		atomic.AddInt64(&count, 1)
+		return nil
+	})
 
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Printf("Parallel processed %d lines\n", count)
+	fmt.Printf("Processed %d lines in parallel\n", count)
 }
 ```
 
@@ -709,5 +778,5 @@ func main() {
 
 ## See Also
 
-- [Large File Processing](./large-files) - Large file guide and API reference
-- [Iterator](../api-reference/iterator) - Iteration API
+- [Large File Handling](./large-files) - Large-file guide and API reference
+- [Iterators](../api-reference/iterator) - Iteration APIs

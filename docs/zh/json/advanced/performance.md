@@ -1,7 +1,7 @@
 ---
 sidebar_label: "性能优化"
 title: "性能优化 - CyberGo JSON | 高性能指南"
-description: "CyberGo JSON 性能优化：EnableCache/CacheTTL 缓存、ParallelThreshold 并行、PreParse 预解析与 WarmupCache 预热，提升高频 JSON 处理性能。"
+description: "CyberGo JSON 性能优化：EnableCache/CacheTTL 缓存、ParallelThreshold 并行、PreParse 预解析与 WarmupCache 预热，配合 CompilePath 预编译路径、对象池复用与基准测试，提升高频 JSON 处理性能。"
 sidebar_position: 1
 ---
 
@@ -29,6 +29,38 @@ for _, item := range dataList {
     val := processor.GetString(item, "name")
 }
 ```
+
+## 库内建性能机制
+
+了解库自身做了哪些优化，避免重复造轮子：
+
+| 机制 | 作用 | 你需要做的 |
+|------|------|------------|
+| 快速路径检测 | 单键属性访问（如 `name`，路径仅含字母/数字/下划线）经查找表识别，缓存关闭时直达根对象取值、绕过递归处理器 | 无——自动生效；缓存开启（默认）时同类访问由解析/结果缓存加速 |
+| FastEncoder | 简单类型（map/slice/基础值）编码免反射 | 无——自动生效 |
+| 结果缓存 | 相同 (JSON, 路径) 的重复查询命中缓存 | 默认开启；调 `CacheTTL`/`MaxCacheSize` 控制规模 |
+| 对象池 | `IterableValue`、编码缓冲、Config 等复用，减少 GC 压力 | `parsed.Release()` / `cp.Release()` 归还 |
+| 编译路径缓存 | 常用路径的解析结果全局缓存 | 高频路径用 [`CompilePath`](../api-reference/processor/query#compilepath) |
+
+::: tip CacheSharedResults：读多写少场景的零拷贝开关
+`Config.CacheSharedResults = true` 时，缓存命中的 `Get` 直接返回共享值，**跳过防御性深拷贝**——重复读取大型子树的分配与 CPU 开销显著下降。契约是**调用方不得修改**返回的 `map[string]any`/`[]any`（原始值始终安全）。默认关闭（读时拷贝），按负载特征显式开启。
+:::
+
+## 优化决策路径
+
+遇到性能问题时按固定顺序推进，每一步都**以测量结果**决定是否进入下一步：
+
+| 步骤 | 手段 | 适用信号 |
+|------|------|----------|
+| ① 先测量 | 基准测试 + 内存分析（见下文），`GetStats()` 看缓存命中率 | 任何优化之前——没有数据就没有优化方向 |
+| ② 复用 | 包级函数或共享 `Processor` 实例（复用缓存与对象池） | 每请求 `json.New()`、频繁重建处理器 |
+| ③ 预编译路径 | [`CompilePath`](../api-reference/processor/query#compilepath) + `GetCompiled` | **同一路径**查询大量不同 JSON（路径解析成为重复开销） |
+| ④ 预解析 | [`PreParse`](../api-reference/processor/query#preparse) + `GetFromParsed` | **同一份 JSON** 连续查询多个路径（重复解析成为热点） |
+| ⑤ 并行 | `NewParallelIterator` / `StreamJSONLParallel`（见[并发处理](./concurrency)） | CPU 密集批处理；行数多且单行处理重 |
+
+::: tip 先测量再优化
+默认配置（缓存开启 + 对象池 + 快速路径）已覆盖多数场景。先用基准测试定位热点、确认瓶颈归属，再动用 ③④⑤ 的显式优化——它们都以牺牲一定灵活性换取速度。小数组（低于 `ParallelThreshold` 默认 10）并行反而更慢。
+:::
 
 ## 内存优化
 
@@ -84,28 +116,27 @@ entries, err := json.StreamLinesInto[LogEntry](file, func(lineNum int, entry Log
 
 ## 并发处理
 
-### 并行处理数组
+### 优先使用内建 ParallelIterator
+
+库自带并行迭代器，免去手写信号量与 goroutine 池，自动分批并支持取消：
 
 ```go
-items := json.GetArray(data, "items")
+items, _ := json.GetArray(data, "items")
+it := json.NewParallelIterator(items)
+defer it.Close()
 
-var wg sync.WaitGroup
-sem := make(chan struct{}, runtime.NumCPU())
+// 并行映射
+doubled, err := it.Map(func(i int, v any) (any, error) {
+    return processItem(v), nil
+})
 
-for _, item := range items {
-    wg.Add(1)
-    go func(item any) {
-        defer wg.Done()
-        sem <- struct{}{}
-        defer func() { <-sem }()
-
-        processItem(item)
-    }(item)
-}
-wg.Wait()
+// 或并行遍历 / 过滤（WithContext 版本可响应取消）
+_ = it.ForEach(func(i int, v any) error { return nil })
+_ = it.ForEachWithContext(ctx, func(i int, v any) error { return nil })
+filtered := it.Filter(func(i int, v any) bool { return v != nil })
 ```
 
-### 使用 Worker Pool
+### 需要完全控制时：手写 Worker Pool
 
 ```go
 items := json.GetArray(data, "items")
@@ -131,6 +162,10 @@ for _, item := range items {
 close(jobs)
 wg.Wait()
 ```
+
+::: tip 并行阈值
+`Config.ParallelThreshold`（默认 10）控制库内部并行路径的触发下限；JSONL 并行处理的 worker 数由 `Config.JSONLWorkers`（默认 4）或 `StreamJSONLParallel(reader, workers, ...)` 的参数控制。详见[并发处理](./concurrency)。
+:::
 
 ## 配置优化
 
@@ -212,6 +247,49 @@ func BenchmarkGetString(b *testing.B) {
     }
 }
 ```
+
+### 优化手段 A/B 对比
+
+验证优化是否有效，最可靠的方式是把「优化前 / 优化后」写成一对基准测试对比运行。`b.ReportAllocs()` 让 `B/op` 与 `allocs/op` 一并输出，用 `go test -bench=. -benchmem` 运行：
+
+```go
+// 基线：重复 Get（每次独立走缓存键查找 + 导航）
+func BenchmarkRepeatGet(b *testing.B) {
+    data := `{"user": {"name": "CyberGo"}, "items": [1, 2, 3]}`
+    b.ReportAllocs()
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        _, _ = json.Get(data, "user.name")
+        _, _ = json.Get(data, "items")
+    }
+}
+
+// 候选优化：PreParse 一次解析，GetFromParsed 多次查询
+func BenchmarkPreParse(b *testing.B) {
+    data := `{"user": {"name": "CyberGo"}, "items": [1, 2, 3]}`
+    p, err := json.New()
+    if err != nil {
+        b.Fatal(err)
+    }
+    defer p.Close()
+
+    b.ReportAllocs()
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        parsed, err := p.PreParse(data)
+        if err != nil {
+            b.Fatal(err)
+        }
+        _, _ = p.GetFromParsed(parsed, "user.name")
+        _, _ = p.GetFromParsed(parsed, "items")
+        parsed.Release()
+    }
+}
+```
+
+::: tip 解读结果
+对比两条基准的 `ns/op` 与 `allocs/op`：若预解析基准明显更低，说明该热点的开销主要在重复解析/缓存键查找上，预解析值得引入；若差距可忽略，则按[优化决策路径](#优化决策路径)继续排查下一层（如编码、锁竞争）。
+:::
 
 ### 内存分析
 

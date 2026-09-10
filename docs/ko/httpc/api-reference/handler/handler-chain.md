@@ -1,6 +1,6 @@
 ---
-sidebar_label: "Handler와 미들웨어 체인"
-title: "Handler와 미들웨어 체인 - CyberGo HTTPC | 요청 처리 파이프라인"
+sidebar_label: "Handler 파이프라인과 사용자 정의 미들웨어"
+title: "Handler 파이프라인과 사용자 정의 미들웨어 - CyberGo HTTPC | 요청 처리 파이프라인"
 description: "HTTPC Handler 파이프라인 아키텍처 해설: 이중 계층 설계에서 Layer 1 메서드 API가 MiddlewareFunc 양파 체인을 조립하고 Handler를 실행하는 방식, Chain 결합기 원리, clientImpl.middlewareChain 구현 메커니즘과 커스텀 미들웨어 작성 예제."
 sidebar_position: 1
 ---

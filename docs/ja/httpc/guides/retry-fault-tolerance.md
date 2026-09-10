@@ -2,7 +2,7 @@
 sidebar_label: "リトライとフォールトトレランス"
 title: "リトライとフォールトトレランス - CyberGo HTTPC | バックオフと再試行"
 description: "HTTPC リトライとフォールトトレランスガイド：デフォルト指数バックオフリトライ戦略と RetryConfig 設定、408/429/5xx 自動リトライ条件、RetryPolicy カスタムインターフェース、Retry-After レスポンスヘッダー自動解析、バックオフ戦略選択とリクエストごとの WithMaxRetries 制御のベストプラクティス。"
-sidebar_position: 6
+sidebar_position: 8
 ---
 
 # リトライとフォールトトレランス
@@ -583,5 +583,6 @@ func main() {
 
 - [エラー処理](./error-handling) — エラー分類の詳細とセンチネルエラーマッチング
 - [設定 API](../api-reference/client-config/config) — リトライ設定フィールドのリファレンス
-- [コネクションプールとプロキシ](./connection-pool) — プロキシプール設定とローテーション戦略
+- [コネクションプールと DNS](./connection-pool) — 接続再利用と DoH 解決
+- [プロキシとプロキシプール](./proxy) — プロキシプール設定とローテーション戦略
 - [インターフェース定義](../api-reference/types/interfaces) — RetryPolicy インターフェースのリファレンス

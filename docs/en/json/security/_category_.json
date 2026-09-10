@@ -1,5 +1,6 @@
 {
   "label": "Security",
   "position": 5,
-  "collapsed": true
+  "collapsed": true,
+  "icon": "🔒"
 }

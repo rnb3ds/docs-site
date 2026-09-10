@@ -317,6 +317,28 @@ func TestGlobalMode(t *testing.T) {
 详见 [测试场景](/zh/env/guides/testing) 指南。
 :::
 
+## 安全与生命周期
+
+### Close 后进程环境里的变量还在吗？
+
+**在。** `Close()` 只清零内存副本，不 unset 此前应用到 `os.Environ` 的变量（这是刻意设计：进程环境可能已被子进程继承，回滚语义不可靠）。需要移除时在关闭前逐键 `Delete`——只有本 loader 写入的键才会被 unset。
+
+### 如何防止配置文件读取进程中的机密？
+
+配置文件来自不可信来源（用户上传、外部下发）时，默认的展开作用域允许 `${VAR}` 回退读取进程环境，存在机密被捕获进变量值的风险。启用文件内作用域即可阻断：
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.ExpansionScope = env.ExpansionFileOnly // ${VAR} 仅解析文件内变量
+```
+
+详见[变量展开 · 展开作用域](/zh/env/guides/variable-expansion)。
+
+### 值里的 `$` 读回来为什么变了？
+
+默认开启变量展开时，`$VAR`/`${VAR}` 序列在加载期会被展开。若值本身含有美元符字面量（价格、模板字符串），请用 `cfg.ExpandVariables = false` 加载，或参见[序列化 · 往返陷阱](/zh/env/guides/serialization)了解 `Marshal` 输出再读回的同类问题。
+
 ## 相关文档
 
 - [快速开始](/zh/env/getting-started/) — 5 分钟入门

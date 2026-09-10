@@ -103,38 +103,38 @@ err = p.SaveToFile("data.json", data, json.PrettyConfig())
 package main
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    tmp, err := os.CreateTemp("", "cybergo-*.json")
-    if err != nil {
-        panic(err)
-    }
-    path := tmp.Name()
-    tmp.Close()
-    defer os.Remove(path)
+	tmp, err := os.CreateTemp("", "cybergo-*.json")
+	if err != nil {
+		panic(err)
+	}
+	path := tmp.Name()
+	tmp.Close()
+	defer os.Remove(path)
 
-    err = p.SaveToFile(path, map[string]any{"name": "Alice", "age": 30})
-    if err != nil {
-        panic(err)
-    }
+	err = p.SaveToFile(path, map[string]any{"name": "Alice", "age": 30})
+	if err != nil {
+		panic(err)
+	}
 
-    data, err := p.LoadFromFile(path)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data)
-    // 输出：{"age":30,"name":"Alice"}
+	data, err := p.LoadFromFile(path)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data)
+	// 输出：{"age":30,"name":"Alice"}
 }
 ```
 
@@ -142,7 +142,7 @@ func main() {
 
 签名：`func (p *Processor) MarshalToFile(path string, data any, cfg ...Config) error`
 
-将数据编码为 JSON 并写入文件。自动创建父目录，原子写入。与 `SaveToFile` 的区别：`MarshalToFile` 直接调用 `Marshal` / `MarshalIndent`（不做字符串预解析），适合结构体、map 等 Go 值。
+将数据编码为 JSON 并写入文件。自动创建父目录，原子写入。与 `SaveToFile` **共用同一条「编码 + 原子写」管线**：同样对字符串 / `[]byte` 输入做预解析避免二次转义，同样完整尊重传入 `cfg`（`Pretty` / `Indent` / `EscapeHTML` 等全部生效）——两者如今仅在错误信息的操作名上有差别，历史行为差异已消除。
 
 ```go
 err := p.MarshalToFile("output.json", data)
@@ -157,44 +157,44 @@ err = p.MarshalToFile("output.json", data, json.PrettyConfig())
 package main
 
 import (
-    "fmt"
-    "os"
+	"fmt"
+	"os"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 type User struct {
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    tmp, err := os.CreateTemp("", "cybergo-*.json")
-    if err != nil {
-        panic(err)
-    }
-    path := tmp.Name()
-    tmp.Close()
-    defer os.Remove(path)
+	tmp, err := os.CreateTemp("", "cybergo-*.json")
+	if err != nil {
+		panic(err)
+	}
+	path := tmp.Name()
+	tmp.Close()
+	defer os.Remove(path)
 
-    err = p.MarshalToFile(path, User{Name: "Alice", Age: 30})
-    if err != nil {
-        panic(err)
-    }
+	err = p.MarshalToFile(path, User{Name: "Alice", Age: 30})
+	if err != nil {
+		panic(err)
+	}
 
-    var user User
-    err = p.UnmarshalFromFile(path, &user)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("%s, %d\n", user.Name, user.Age)
-    // 输出：Alice, 30
+	var user User
+	err = p.UnmarshalFromFile(path, &user)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("%s, %d\n", user.Name, user.Age)
+	// 输出：Alice, 30
 }
 ```
 
@@ -205,7 +205,12 @@ func main() {
 从文件读取 JSON 并解码到目标变量。读取受 `MaxJSONSize` 限制。
 
 ```go
-var config Config
+type AppConfig struct {
+    Host string `json:"host"`
+    Port int    `json:"port"`
+}
+
+var config AppConfig
 err := p.UnmarshalFromFile("config.json", &config)
 if err != nil {
     panic(err)
@@ -216,7 +221,7 @@ if err != nil {
 
 签名：`func (p *Processor) SaveToWriter(writer io.Writer, data any, cfg ...Config) error`
 
-将数据编码为 JSON 并写入 `io.Writer`。不涉及文件路径，故不做路径校验。
+将数据编码为 JSON 并写入 `io.Writer`。字符串 / `[]byte` 输入同样会被预解析避免二次转义；不涉及文件路径，故不做路径校验。
 
 ```go
 var buf bytes.Buffer
@@ -229,30 +234,30 @@ err := p.SaveToWriter(&buf, data, json.PrettyConfig())
 package main
 
 import (
-    "bytes"
-    "fmt"
+	"bytes"
+	"fmt"
 
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New()
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New()
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    var buf bytes.Buffer
-    err = p.SaveToWriter(&buf, map[string]any{"name": "Alice", "age": 30}, json.PrettyConfig())
-    if err != nil {
-        panic(err)
-    }
-    fmt.Print(buf.String())
-    // 输出：
-    // {
-    //   "age": 30,
-    //   "name": "Alice"
-    // }
+	var buf bytes.Buffer
+	err = p.SaveToWriter(&buf, map[string]any{"name": "Alice", "age": 30}, json.PrettyConfig())
+	if err != nil {
+		panic(err)
+	}
+	fmt.Print(buf.String())
+	// 输出：
+	// {
+	//   "age": 30,
+	//   "name": "Alice"
+	// }
 }
 ```
 

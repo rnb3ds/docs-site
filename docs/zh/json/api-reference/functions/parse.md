@@ -1,7 +1,7 @@
 ---
 sidebar_label: "解析验证"
 title: "解析与验证函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 解析与验证函数：Parse/ParseAny 解析、Valid/ValidWithConfig 校验与 ValidateSchema 的 JSON Schema 验证，覆盖完整处理链路。"
+description: "CyberGo JSON 解析与验证函数：Parse/ParseAny 解析、Valid/ValidWithConfig 校验与 ValidateSchema 的 JSON Schema 验证，解析前执行大小、嵌套深度与危险模式安全校验，覆盖完整处理链路。"
 sidebar_position: 6
 ---
 
@@ -15,7 +15,7 @@ json 包提供的解析和验证函数，支持将 JSON 解析到目标对象、
 
 签名：`func Parse(jsonStr string, target any, cfg ...Config) error`
 
-将 JSON 字符串解析到 `target` 指针所指向的对象中。`target` 必须是一个指针。
+将 JSON 字符串解析到 `target` 指针所指向的对象中。`target` 必须是一个**非 nil 指针**（传 `nil` 或非指针会返回参数错误）。与 `Get` 一致，`Parse` 在解析前对输入执行安全校验（大小、嵌套深度、危险模式，受 `cfg` 与处理器配置约束）。
 
 **参数**
 
@@ -31,17 +31,17 @@ json 包提供的解析和验证函数，支持将 JSON 解析到目标对象、
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    var data map[string]any
-    err := json.Parse(`{"name": "test"}`, &data)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data) // map[name:test]
+	var data map[string]any
+	err := json.Parse(`{"name": "test"}`, &data)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data) // map[name:test]
 }
 ```
 
@@ -51,22 +51,22 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 type Person struct {
-    Name string `json:"name"`
-    Age  int    `json:"age"`
+	Name string `json:"name"`
+	Age  int    `json:"age"`
 }
 
 func main() {
-    var person Person
-    err := json.Parse(`{"name": "CyberGo", "age": 30}`, &person)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("Name: %s, Age: %d\n", person.Name, person.Age)
+	var person Person
+	err := json.Parse(`{"name": "CyberGo", "age": 30}`, &person)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Name: %s, Age: %d\n", person.Name, person.Age)
 }
 ```
 
@@ -76,18 +76,18 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    cfg := json.DefaultConfig()
-    var data map[string]any
-    err := json.Parse(`{"name": "test"}`, &data, cfg)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(data)
+	cfg := json.DefaultConfig()
+	var data map[string]any
+	err := json.Parse(`{"name": "test"}`, &data, cfg)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(data)
 }
 ```
 
@@ -101,16 +101,16 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    result, err := json.ParseAny(`{"name": "test"}`)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(result) // map[name:test]
+	result, err := json.ParseAny(`{"name": "test"}`)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(result) // map[name:test]
 }
 ```
 
@@ -121,7 +121,7 @@ func main() {
 
 ### Processor.Parse
 
-**签名**：`func (p *Processor) Parse(jsonStr string, target any, cfg ...Config) error`
+签名：`func (p *Processor) Parse(jsonStr string, target any, cfg ...Config) error`
 
 通过 Processor 实例解析 JSON 到目标指针。
 
@@ -141,7 +141,7 @@ if err != nil {
 
 ### Processor.ParseAny
 
-**签名**：`func (p *Processor) ParseAny(jsonStr string, cfg ...Config) (any, error)`
+签名：`func (p *Processor) ParseAny(jsonStr string, cfg ...Config) (any, error)`
 
 通过 Processor 实例解析 JSON 并返回 `any` 类型，行为与包级 `ParseAny` 相同。
 
@@ -171,21 +171,21 @@ data, err := p.ParseAny(`{"name": "test"}`)
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    data := []byte(`{"name": "test"}`)
-    // 兼容 encoding/json（无 cfg）
-    if json.Valid(data) {
-        fmt.Println("有效 JSON")
-    }
+	data := []byte(`{"name": "test"}`)
+	// 兼容 encoding/json（无 cfg）
+	if json.Valid(data) {
+		fmt.Println("有效 JSON")
+	}
 
-    // 带配置（非破坏性可选参数）
-    if json.Valid(data, json.SecurityConfig()) {
-        fmt.Println("通过安全验证")
-    }
+	// 带配置（非破坏性可选参数）
+	if json.Valid(data, json.SecurityConfig()) {
+		fmt.Println("通过安全验证")
+	}
 }
 ```
 
@@ -206,19 +206,19 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    cfg := json.DefaultConfig()
-    valid, err := json.ValidWithConfig(`{"name": "test"}`, cfg)
-    if err != nil {
-        panic(err)
-    }
-    if valid {
-        fmt.Println("有效 JSON")
-    }
+	cfg := json.DefaultConfig()
+	valid, err := json.ValidWithConfig(`{"name": "test"}`, cfg)
+	if err != nil {
+		panic(err)
+	}
+	if valid {
+		fmt.Println("有效 JSON")
+	}
 }
 ```
 
@@ -232,33 +232,38 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    schema := &json.Schema{
-        Type:     "object",
-        Required: []string{"name", "email"},
-        Properties: map[string]*json.Schema{
-            "name":  {Type: "string", MinLength: 1},
-            "email": {Type: "string", Format: "email"},
-            "age":   {Type: "integer", Minimum: 0},
-        },
-    }
+	schema := &json.Schema{
+		Type:     "object",
+		Required: []string{"name", "email"},
+		Properties: map[string]*json.Schema{
+			"name":  {Type: "string"},
+			"email": {Type: "string", Format: "email"},
+			"age":   {Type: "number"}, // 数值统一用 "number"（含整数）
+		},
+	}
 
-    errors, err := json.ValidateSchema(`{"name":"Alice","email":"alice@example.com","age":25}`, schema)
-    if err != nil {
-        panic(err)
-    }
-    for _, e := range errors {
-        fmt.Printf("路径 %s: %s\n", e.Path, e.Message)
-    }
+	errors, err := json.ValidateSchema(`{"name":"Alice","email":"alice@example.com","age":25}`, schema)
+	if err != nil {
+		panic(err)
+	}
+	for _, e := range errors {
+		fmt.Printf("路径 %s: %s\n", e.Path, e.Message)
+	}
 }
 ```
 
+::: warning 两点注意
+- `Type` 取值没有 `"integer"`——JSON 解析后所有数字都是 `float64`，数值一律用 `"number"`。
+- `MinLength`/`Minimum` 等**长度/区间类约束**直接写在 `&json.Schema{...}` 字面量中不生效，必须经 [`NewSchemaWithConfig`](../schema#schema-的创建方式) 创建。详见 [Schema 校验](../schema)。
+:::
+
 ::: tip 详见
-完整的 Schema 类型定义和验证器用法请参考 [验证器](../../extensions/validator)。
+完整的 Schema 类型定义和验证器用法请参考 [Schema 校验](../schema)。
 :::
 
 ## 相关

@@ -91,15 +91,20 @@ JSONL（JSON Lines）解析、流式读取、转换和写入函数。
 | 序列化 | `Marshal`, `Encode` | [编码输出](./output#序列化函数) |
 | 反序列化 | `Unmarshal`, `Parse` | [编码输出](./output#序列化函数) · [解析验证](./parse#解析函数) |
 | 格式化 | `Prettify`, `CompactString`, `Processor.Compact` | [编码输出](./output#序列化函数) |
-| 打印输出 | `Encode` + `fmt.Println`, `EncodePretty` | [打印函数](../print) |
+| 打印输出 | `Encode` + `fmt.Println`, `EncodePretty` | [格式化输出](../../getting-started/print) |
 | 批量编码 | `EncodeBatch`, `EncodeFields`, `EncodeStream` | [批量编码](./output#批量编码函数) · [处理器输出](../processor/output) |
 | 批量操作 | `ProcessBatch` | [批量操作](./batch) |
+| 缓存预热 | `WarmupCache` | [批量操作](./batch#缓存预热-warmupcache) |
 | 验证 | `Valid` | [解析验证](./parse#验证函数) |
 | JSON Schema 验证 | `ValidateSchema` | [解析验证](./parse#validateschema) |
-| 文件读写 | `LoadFromFile`, `SaveToFile` | [文件操作](./file-io#文件读取函数) |
+| Schema 默认配置 | `DefaultSchema`, `DefaultSchemaConfig` | [Schema 校验](../schema#defaultschema) |
+| 文件读写 | `LoadFromFile`, `SaveToFile` | [文件操作](./file-io#文件读写) |
+| 文件读写（结构体） | `MarshalToFile`, `UnmarshalFromFile` | [文件操作](./file-io#序列化便捷方法) |
+| 流式 I/O | `LoadFromReader`, `SaveToWriter` | [文件操作](./file-io#流式-i-o) |
 | 迭代遍历 | `Foreach`, `ForeachWithPath`, `ForeachNested` | [迭代方法](./iterate#方法对比) |
 | 文件迭代 | `ForeachFile`, `ForeachFileChunked` | [迭代方法](./iterate#文件迭代方法对比) |
 | JSONL 处理 | `ParseJSONL`, `ToJSONL` | [JSONL](./jsonl#jsonl-处理函数) |
+| JSONL 流式处理 | `StreamJSONL`, `StreamLinesInto[T]`, `FirstJSONL` | [JSONL](./jsonl#jsonl-流式处理函数-包级) |
 | 比较 | `CompareJSON` | [辅助工具](../helpers#json-比较函数) |
 | 合并 | `MergeJSON`, `MergeMany` | [修改操作](./modify#合并函数) |
 | 类型转换 | `AccessResult` 类型转换方法 | [辅助工具](../helpers#accessresult-类型转换方法) |

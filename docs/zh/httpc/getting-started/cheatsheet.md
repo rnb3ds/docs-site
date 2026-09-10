@@ -21,6 +21,26 @@ cfg.Retry.MaxRetries = 5
 client, _ = httpc.New(cfg)
 ```
 
+```go
+// 预设一步到位
+client, _ := httpc.New(httpc.SecureConfig())     // 安全优先：严格超时、禁重定向、5MB 上限
+client, _ = httpc.New(httpc.PerformanceConfig()) // 高吞吐：大连接池、启用 Cookie
+client, _ = httpc.New(httpc.TestingConfig())     // 仅测试：跳过证书校验与 SSRF（勿上生产）
+client, _ = httpc.New(httpc.MinimalConfig())     // 轻量：无重试、无重定向
+
+// 请求级默认值（User-Agent / 默认头 / 重定向策略）
+cfg := httpc.DefaultConfig()
+cfg.Defaults.UserAgent = "myapp/2.0"
+cfg.Defaults.Headers["Authorization"] = "Bearer " + token
+cfg.Defaults.FollowRedirects = false
+cfg.Defaults.MaxRedirects = 5
+client, _ = httpc.New(cfg)
+
+// 管理包级默认客户端
+_ = httpc.SetDefaultClient(client) // 替换默认客户端（旧的自动关闭）
+_ = httpc.CloseDefaultClient()     // 关闭并重置（下次包级调用自动重建）
+```
+
 ## HTTP 方法
 
 ```go
@@ -65,11 +85,14 @@ httpc.WithBody(data)                    // 自动检测类型
 httpc.WithBody(data, httpc.BodyJSON)    // 显式指定：BodyJSON/BodyXML/BodyForm/BodyBinary/BodyMultipart
 ```
 
+`WithBody` 自动检测规则（`BodyAuto`，默认）：`string` → text/plain；`[]byte` → octet-stream；`map[string]string` → form；`*FormData` → multipart；`io.Reader` → 原样透传（不设 Content-Type）；其他类型 → JSON。
+
 ### 查询参数
 
 ```go
 httpc.WithQuery("page", 1)
 httpc.WithQueryMap(map[string]any{"page": 1, "limit": 10})
+// 注意：value 为 nil 时该参数不会出现在 URL 中
 ```
 
 ### 认证
@@ -86,7 +109,7 @@ httpc.WithCookie(http.Cookie{Name: "session", Value: "abc"})
 httpc.WithCookies([]http.Cookie{{Name: "a", Value: "1"}, {Name: "b", Value: "2"}})
 httpc.WithCookieMap(map[string]string{"session": "abc"})
 httpc.WithCookieString("session=abc; token=xyz")
-httpc.WithSecureCookie(httpc.StrictCookieSecurityConfig())
+httpc.WithSecureCookie(httpc.StrictCookieSecurityConfig()) // 须放在所有 WithCookie* 之后
 ```
 
 ### 控制
@@ -94,10 +117,11 @@ httpc.WithSecureCookie(httpc.StrictCookieSecurityConfig())
 ```go
 httpc.WithContext(ctx)
 httpc.WithTimeout(30 * time.Second)
-httpc.WithMaxRetries(3)
-httpc.WithFollowRedirects(false)
-httpc.WithMaxRedirects(5)
-httpc.WithStreamBody(true)
+httpc.WithMaxRetries(3)          // 0 禁用重试；上限 10
+httpc.WithFollowRedirects(false) // 禁止跟随重定向
+httpc.WithMaxRedirects(5)        // 注意：0 等同未设置（回退默认 10），禁用跟随请用上一行
+httpc.WithStreamBody(true)       // 仅对 Download 生效（普通请求的响应体仍会完整读入 Result）
+httpc.WithAllowPrivateIPs(true)  // 按请求豁免 SSRF（访问内网/localhost）
 ```
 
 ### 回调
@@ -135,36 +159,75 @@ result.SaveToFile("/path/to/file")     // 保存到文件
 result.String()                        // 人类可读表示（敏感头部脱敏）
 ```
 
+```go
+// 元信息（result.Meta）
+result.Meta.Duration       // 总耗时（含重试等待）
+result.Meta.Attempts       // 尝试次数（含首次）
+result.Meta.RedirectChain  // 经过的重定向 URL 链
+result.Meta.RedirectCount  // 重定向次数
+result.Meta.ProxyURL       // 最终请求使用的代理（直连或系统代理为空）
+
+// 结构体字段（优先用上面的 nil 安全方法）
+result.Request.URL            // 请求 URL
+result.Request.Method         // 请求方法
+result.Request.Headers        // 请求头
+result.Response.Status        // "200 OK"
+result.Response.Headers       // 响应头（http.Header）
+result.Response.ContentLength // Content-Length
+```
+
 ## 配置
 
 ```go
 cfg := httpc.DefaultConfig()
 
 // 超时
-cfg.Timeouts.Request = 30 * time.Second
-cfg.Timeouts.Dial = 10 * time.Second
-cfg.Timeouts.TLSHandshake = 10 * time.Second
-cfg.Timeouts.ResponseHeader = 30 * time.Second
-cfg.Timeouts.IdleConn = 90 * time.Second
+cfg.Timeouts.Request = 30 * time.Second        // 整体预算（含重试），默认 180s
+cfg.Timeouts.Dial = 10 * time.Second           // TCP 连接，默认 10s
+cfg.Timeouts.TLSHandshake = 10 * time.Second   // TLS 握手，默认 10s
+cfg.Timeouts.ResponseHeader = 30 * time.Second // 默认 0（关）；设置后为传输层硬上限，无法被 WithTimeout 覆盖
+cfg.Timeouts.IdleConn = 90 * time.Second       // 空闲连接，默认 90s
 
 // 连接
-cfg.Connection.MaxIdleConns = 50
-cfg.Connection.MaxConnsPerHost = 10
+cfg.Connection.MaxIdleConns = 50        // 全局空闲连接上限（默认 50，上限 1000）
+cfg.Connection.MaxConnsPerHost = 10     // 每主机连接上限（默认 10，上限 1000）
 cfg.Connection.ProxyURL = "http://proxy:8080"
 cfg.Connection.EnableHTTP2 = true
 cfg.Connection.EnableCookies = true
 
+// 代理池（轮换 + 被动熔断）
+cfg.Connection.ProxyPool = []string{"http://p1:8080", "http://p2:8080"}
+cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin // 或 ProxyStrategyRandom
+cfg.Connection.ProxyFailureThreshold = 3   // 连续失败 N 次临时摘除（默认 3）
+cfg.Connection.ProxyCooldown = 30 * time.Second // 摘除后的半开探活冷却（默认 30s）
+cfg.Connection.ProxyRotatePerRequest = true     // 每个请求换 IP（牺牲连接复用）
+cfg.Connection.ProxyRotateOnStatus = []int{403} // 命中状态码换代理重试（需 MaxRetries > 0）
+
+// DNS-over-HTTPS
+cfg.Connection.EnableDoH = true
+cfg.Connection.DoHCacheTTL = 5 * time.Minute // 默认 5 分钟
+
 // 安全
 cfg.Security.MinTLSVersion = tls.VersionTLS12
-cfg.Security.MaxResponseBodySize = 10 * 1024 * 1024
+cfg.Security.MaxTLSVersion = tls.VersionTLS13
+cfg.Security.MaxResponseBodySize = 10 * 1024 * 1024   // 默认 10MB
+cfg.Security.MaxDecompressedBodySize = 100 * 1024 * 1024 // 默认 100MB（防解压炸弹）
+cfg.Security.MaxRequestBodySize = 50 * 1024 * 1024    // 默认 0（不限制上传）
 cfg.Security.AllowPrivateIPs = false
 cfg.Security.SSRFExemptCIDRs = []string{"10.0.0.0/8"}
+cfg.Security.RedirectWhitelist = []string{"api.example.com"} // 重定向目标白名单
+
+// 证书锁定（防 MITM，即使受信 CA 被攻破）
+pinner, _ := httpc.NewSPKIHashPinner("base64-spki-sha256-hash", "backup-hash") // 多哈希支持轮换
+cfg.Security.CertificatePinner = pinner
 
 // 重试
-cfg.Retry.MaxRetries = 3
-cfg.Retry.Delay = 1 * time.Second
-cfg.Retry.BackoffFactor = 2.0
-cfg.Retry.EnableJitter = true
+cfg.Retry.MaxRetries = 3              // 默认 3；0 禁用；上限 10
+cfg.Retry.Delay = 1 * time.Second     // 初始延迟，默认 1s
+cfg.Retry.BackoffFactor = 2.0         // 退避倍数，默认 2.0（范围 1.0–10.0）
+cfg.Retry.MaxRetryDelay = 30 * time.Second // 单次等待上限，默认 30s
+cfg.Retry.EnableJitter = true         // 抖动，默认开
+cfg.Retry.CustomPolicy = myPolicy     // 自定义策略（实现 ShouldRetry/GetDelay/MaxRetries）
 ```
 
 ## 中间件
@@ -186,8 +249,31 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
             log.Printf("[AUDIT] %s %s -> %d", event.Method, event.URL, event.StatusCode)
         },
     }),
+    httpc.HeaderMiddleware(&httpc.HeaderConfig{ // 静态头（创建期校验 CRLF）
+        Headers: map[string]string{"X-Service": "api"},
+    }),
 }
 ```
+
+```go
+// 自定义中间件：请求阶段在 next 之前（按注册顺序），响应阶段在 next 之后（逆序）
+func traceMiddleware(next httpc.Handler) httpc.Handler {
+    return func(ctx context.Context, req httpc.RequestMutator) (httpc.ResponseMutator, error) {
+        req.SetHeader("X-Trace", "on") // 请求阶段
+        resp, err := next(ctx, req)    // 交给内层
+        if resp != nil {
+            log.Printf("-> %d", resp.StatusCode()) // 响应阶段
+        }
+        return resp, err
+    }
+}
+// 注册：cfg.Middleware.Middlewares = append(cfg.Middleware.Middlewares, traceMiddleware)
+// 组合：httpc.Chain(mw1, mw2)(finalHandler)
+```
+
+:::warning 注意
+`TimeoutMiddleware` 不要用于 `Download` 或 `WithStreamBody(true)` 请求（收到响应头即取消上下文，响应体读取会报 "context canceled"），此类场景改用 `WithTimeout`。
+:::
 
 ## 错误处理
 
@@ -223,6 +309,34 @@ if err != nil {
 }
 ```
 
+```go
+// 错误短码（ClientError.Code()）
+switch clientErr.Code() {
+case "TIMEOUT":           // 超时
+case "NETWORK_ERROR":     // 网络错误
+case "TLS_ERROR":         // TLS 握手/协议错误
+case "CERTIFICATE_ERROR": // 证书校验错误
+case "DNS_ERROR":         // DNS 解析错误
+case "CONTEXT_CANCELED":  // 上下文取消
+case "RETRY_EXHAUSTED":   // 重试耗尽
+case "VALIDATION_ERROR":  // 请求校验错误（CRLF/非法头等）
+case "HTTP_ERROR":        // HTTP 层错误
+case "TRANSPORT_ERROR", "RESPONSE_READ_ERROR", "UNKNOWN_ERROR":
+}
+
+// 哨兵错误（errors.Is）
+errors.Is(err, httpc.ErrClientClosed)         // 使用已关闭的客户端
+errors.Is(err, httpc.ErrResponseBodyEmpty)    // Unmarshal 空响应体
+errors.Is(err, httpc.ErrResponseBodyTooLarge) // 解析体超 50MB
+errors.Is(err, httpc.ErrFileExists)           // 下载目标已存在且未开 Overwrite/Resume
+errors.Is(err, httpc.ErrEmptyFilePath)        // DownloadConfig.FilePath 未设置
+
+// 重试性速判
+// 恒可重试：超时、传输错误
+// 视原因：网络错误、DNS（临时/超时）、HTTP 408/429/500/502/503/504
+// 恒不可重试：上下文取消、校验错误、TLS、证书错误
+```
+
 ## 文件下载
 
 ```go
@@ -241,6 +355,13 @@ dlCfg.ProgressCallback = func(downloaded, total int64, speed float64) {
 }
 dlResult, err := client.Download(ctx, url, dlCfg)
 
+// 校验和验证（下载完成后校验，不匹配则失败并删除文件）
+dlCfg.Checksum = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+dlCfg.ChecksumAlgorithm = httpc.ChecksumSHA256 // 目前仅支持 sha256
+
+// 包级下载（使用默认客户端）
+dlResult, err := httpc.Download(ctx, url, dlCfg)
+
 // dlResult 类型为 *DownloadResult（非 *Result）
 // 字段：FilePath, BytesWritten, Duration, AverageSpeed, StatusCode, ContentLength, Resumed, ResponseCookies, ActualChecksum
 ```
@@ -253,4 +374,68 @@ defer dc.Close()
 
 dc.SetHeader("Authorization", "Bearer "+token)
 result, _ := dc.Get("/users")
+```
+
+```go
+// 会话头 / Cookie 管理
+dc.SetHeaders(map[string]string{"Authorization": "Bearer " + token, "Accept": "application/json"})
+dc.DeleteHeader("Authorization")
+dc.ClearHeaders()
+dc.SetCookie(&http.Cookie{Name: "session", Value: "abc"}) // 响应 Set-Cookie 也会自动写入会话
+dc.GetCookie("session")
+dc.ClearCookies()
+dc.URL()     // "https://api.example.com"
+dc.Domain()  // "api.example.com"
+dc.Session() // *SessionManager（线程安全）
+
+// URL 拼接：相对路径基于 base；完整 URL 直接使用；逃出 base 路径会报错
+result, _ = dc.Get("/repos/golang/go")       // https://api.example.com/repos/golang/go
+result, _ = dc.Get("https://other.host/api") // 直通
+
+// 会话管理器也可单独使用
+sm, _ := httpc.NewSessionManagerDefault()
+sm.SetHeader("X-App", "demo")
+sm.UpdateFromResult(result) // 从响应提取 Set-Cookie
+```
+
+:::warning 选项执行两次
+`DomainClient` 的请求选项内部会应用两次（会话捕获 + 真实请求），避免放带副作用的选项（计数器、一次性 nonce）。
+:::
+
+## 场景速配
+
+```go
+// 请求级超时（覆盖实例配置）
+result, err := client.Get(url, httpc.WithTimeout(30*time.Second))
+
+// 长响应接口（AI/大模型 API）：整体超时默认 180s，可放宽
+result, err := httpc.Post(url,
+    httpc.WithJSON(payload),
+    httpc.WithTimeout(900*time.Second),
+)
+
+// 禁用本次重试 / 提高重试上限
+httpc.WithMaxRetries(0)
+httpc.WithMaxRetries(5)
+
+// 禁止重定向 / 限制次数
+httpc.WithFollowRedirects(false)
+httpc.WithMaxRedirects(3)
+
+// 访问内网服务（按请求豁免 SSRF）
+result, err := httpc.Get("http://10.0.0.5:8080/health",
+    httpc.WithAllowPrivateIPs(true),
+)
+
+// 取消与截止控制
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+defer cancel()
+result, err := httpc.Request(ctx, "GET", url)
+
+// 上传 JSON + 认证 + 超时一步到位
+result, err := httpc.Post("https://api.example.com/orders",
+    httpc.WithJSON(order),
+    httpc.WithBearerToken(token),
+    httpc.WithTimeout(15*time.Second),
+)
 ```

@@ -140,7 +140,7 @@ cfg.Scorer = &MyScorer{}
 
 ## 自定义 Scorer 是否需要并发安全？
 
-需要。当单个 Processor 被多个并发 `Extract` 调用共享时，`Score`/`ShouldRemove` 会从多个 goroutine 同时触发。自定义 Scorer 若持有可变状态（缓存、计数器），必须自行加锁同步。库内置的 `DefaultScorer` 只读、天然并发安全。
+需要。当单个 Processor 被多个并发 `Extract` 调用共享时，`Score`/`ShouldRemove` 会从多个 goroutine 同时触发。自定义 Scorer 若持有可变状态（缓存、计数器），必须自行加锁同步。库内置的默认评分器（内部实现，不导出）只读、天然并发安全。
 
 :::warning 无状态优先
 推荐将自定义 Scorer 设计为无状态（仅依据传入的 `ContentNode` 计算），既避免锁开销，也从根本上消除并发问题。需要聚合统计时，把结果写回 `Processor` 的统计通道而非 Scorer 自身。
@@ -218,7 +218,7 @@ cfg.MaxCacheEntries = 0 // 禁用缓存，跳过 Key 生成（零开销）
 
 ## ExtractToMarkdown 是否使用缓存？
 
-不使用。`ExtractToMarkdown` 内部通过 `buildFormatProcessor` 创建临时 Processor，该 Processor 显式禁用缓存（`MaxCacheEntries = 0` + `NewCache(0, 0)`），既不读取也不写入主 Processor 的缓存。
+不使用。`ExtractToMarkdown` 内部通过 `buildFormatProcessor` 创建临时 Processor，该 Processor 显式禁用缓存（`MaxCacheEntries = 0`，内部以零容量缓存构造，不导出），既不读取也不写入主 Processor 的缓存。
 
 :::tip 为何如此设计
 Markdown 格式转换只是输出形式不同，提取本身的结果不应污染主缓存（否则同一内容会因格式不同缓存多份）。临时 Processor 复用主 Processor 的 `Scorer`，仅覆盖 `InlineImageFormat`/`InlineLinkFormat`，配置通过值拷贝隔离，避免并发修改共享状态。
@@ -235,10 +235,10 @@ Markdown 格式转换只是输出形式不同，提取本身的结果不应污�
 - 仅允许白名单 MIME 类型：图片（gif/jpeg/png/webp/bmp/avif 等）、字体（woff/woff2/ttf/otf）、PDF
 - **阻止 `image/svg+xml`**（SVG 可内嵌 JavaScript）
 - 阻止空媒体类型（如 `data:;base64,...`）
-- 有大小上限 `MaxDataURILength`（100KB）
+- 有大小上限：受内部上限约束（100KB），不可通过配置调整
 - base64 编码部分验证字符合法性
 
-被拦截的 URL 会通过 `AuditRecorder` 记录原因（如 `malformed data URL`、`unsafe media type`）。
+被拦截的 URL 会记录审计事件——配置的 `AuditSink` 会收到 `AuditEventBlockedURL` 类型的 `AuditEntry`，其 `Message` 携带拦截原因（如 `malformed data URL`、`unsafe media type in data URL`）。
 
 ## 批量处理超过 10000 项会怎样？
 
@@ -263,7 +263,7 @@ fmt.Println(br.Failed)             // == len(hugeSlice)
 
 ## 文章智能识别（ExtractArticle）的评分算法是怎样的？
 
-默认评分器（`DefaultScorer`）基于多维信号计算每个元素节点的内容相关性分数，选取得分最高的节点作为文章容器。评分维度包括：
+内置默认评分器（内部实现，不导出）基于多维信号计算每个元素节点的内容相关性分数，选取得分最高的节点作为文章容器。评分维度包括：
 
 | 维度 | 正面信号 | 负面信号 |
 |------|----------|----------|
@@ -333,3 +333,9 @@ cfg.TableFormat = "html" // 保留 HTML 表格
 - `ExtractAllLinks` 返回 `[]LinkResource`，枚举**未清洗** HTML 中的所有资源链接（包括 `<script src>`、`<iframe>`、`<link>` 等），带 `Type` 分类
 
 两者可先后调用，互不影响。典型场景：先用 `Extract` 提取正文内容，再用 `ExtractAllLinks` 收集页面引用的全部资源。
+
+## 相关文档
+
+- [概述](../) - 特性总览与架构概览
+- [快速开始](../getting-started/) - 5 分钟入门教程
+- [API 参考概览](../api-reference/) - 完整 API 文档入口

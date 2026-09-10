@@ -1,7 +1,7 @@
 ---
 sidebar_label: "고급 예제"
 title: "고급 예제 - CyberGo html | 심화 시나리오 예제"
-description: "CyberGo html 고급 예제: 커스텀 Scorer 구현, 다중 Sink 감사 파이프라인 구축, 배치 동시성 제어, Processor 풀링 재사용, HighSecurityConfig 보안 설정 등 심화 실행 가능 코드를 제공합니다."
+description: "CyberGo html 고급 예제 모음: 커스텀 Scorer 알고리즘, 다중 Sink 감사 파이프라인, 배치 동시 처리, Processor 풀링, 캐시 최적화, HighSecurityConfig 보안 설정, 웹 서비스 싱글톤 모드 등 프로덕션 콘텐츠 수집 시나리오를 다룹니다."
 sidebar_position: 2
 ---
 
@@ -494,3 +494,9 @@ func main() {
     fmt.Printf("제목: %s\n텍스트 길이: %d\n", result.Title, len(result.Text))
 }
 ```
+
+## 다음 단계
+
+- [자주 묻는 질문](../faq/) - 빈번한 질문과 문제 해결 흐름
+- [프로덕션 체크리스트](../guides/security/production-checklist) - 배포 전 보안 점검
+- [API 레퍼런스: 인터페이스 정의](../api-reference/types/interfaces) - Scorer, AuditSink 등 확장 인터페이스

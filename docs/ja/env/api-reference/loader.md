@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Loader"
 title: "Loader API - CyberGo env | ローダーの詳細"
-description: "CyberGo env の Loader ローダー API リファレンス。コア型がマルチフォーマット LoadFiles 読み込み、GetString/GetInt/GetSlice 型安全読み取り、Set/Delete 追加・削除・変更、Validate 検証、シリアライズエクスポート、Close ライフサイクル管理を提供。すべてのメソッドはスレッドセーフ。"
+description: "CyberGo env の Loader API リファレンス。マルチフォーマット LoadFiles 読み込み、GetString/GetInt/GetSlice 型安全読み取り、Set/Delete 変更、Validate 検証、Close ライフサイクル管理を提供。すべてのメソッドはスレッドセーフ。"
 sidebar_position: 3
 ---
 
@@ -810,6 +810,50 @@ func main() {
     fmt.Printf("Load time: %v\n", loader.LoadTime())
 }
 ```
+
+## ライフサイクルとプロセス環境の意味論
+
+### Close は os.Environ をロールバックしない
+
+`Close()` はメモリ上の変数のコピーのみゼロ化し、`Apply`、`AutoApply`、（`AutoApply` 有効時の）`Set` でプロセス環境に書き込んだ変数を unset し**ません**。閉じる前に除去するには、キーごとに `Delete` を呼びます：
+
+<!-- check-code: skip -->
+```go
+loader.Delete("API_KEY") // この Loader が設定したキーの場合のみプロセス環境から unset
+loader.Close()
+```
+
+### Delete のキー単位の所有追跡
+
+Loader は**自ら**プロセス環境に書き込んだキー（`appliedKeys`）を追跡します。`Delete` はそれらのキーのみを unset し、この Loader が設定していないプロセス変数（`HOME`、`TERM` など）には**決して触れません**。そのため複数の Loader が互いに干渉しません。
+
+### Apply は「未設定」と「明示的な空値」を区別する
+
+`Apply` は `LookupEnv` で既存値を検出します：空文字列として明示的に設定された変数も「存在する」とみなされ、`OverwriteExisting=false` のとき同様にスキップされます — 未設定と誤認して上書きすることはありません。
+
+### 状態・メタデータのメソッド
+
+| メソッド | 説明 |
+|----------|------|
+| `Config()` | Loader 設定の読み取り専用スナップショット；返り値を変更しても実行中の Loader には影響しない |
+| `IsClosed()` | Loader が閉じているか（nil レシーバーは true） |
+| `IsApplied()` | 変数が os.Environ に適用済みか |
+| `LoadTime()` | 直近のロード完了時刻（未ロードならゼロ値） |
+
+### 読み取り経路のキー名解決の詳細
+
+- **完全一致優先**：まずキーそのままで検索し、ミス時は大文字形式へフォールバック
+- **ドット記法**：`database.host` は `DATABASE_HOST` へ展開（JSON/YAML のフラット化キー）；インデックスパス `service.cors.origins.0` はミス時カンマ区切り値へフォールバック
+- **トリムしない**：`Lookup` は保存された値をそのまま返す — `.env` 値はパース時にトリム済み、JSON/YAML 値は前後の空白を保持し得る
+- **ロックフリーの高速経路**：単一キー読み取り（`Lookup`/`GetSecure`）は原子閉鎖フラグで Loader レベルの読み取りロックを回避 — 高並行では RWMutex 自体の読み取りカウントがボトルネックになるため；`Close` との競合は「値を読むか、クリア後の状態を読む」への優雅な劣化
+
+### Set の黙示的スキップの意味論
+
+`OverwriteExisting=false` のとき、既存キーへの `Set` は**黙ってスキップされ nil を返します**（エラーなし）。スキップを検知するには監査ログ（`skipped (no overwrite)` イベント）を観察してください。
+
+### ファイルロードの多層防御（TOCTOU）
+
+`Stat()` のサイズ検査と実際の読み取りの間には理論上の置換ウィンドウがあり、ライブラリは 2 層で緩和します：パーサーは内部的にサイズ上限を強制する強化された読み取り経路でファイルストリームをラップし、検査後に肥大化してもハード上限（100 MB）で打ち切り、メモリ枯渇を防ぎます。
 
 ## 関連ドキュメント
 

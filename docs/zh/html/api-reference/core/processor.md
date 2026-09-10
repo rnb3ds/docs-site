@@ -34,7 +34,7 @@ defer p.Close()
 `New` 并非简单赋值，它执行以下步骤保证返回的 Processor 立即可用：
 
 1. **校验配置**：调用 `Config.Validate()`，无效配置返回 `*ConfigError`（`errors.Is(err, ErrInvalidConfig)` 为真）。校验范围包括数值边界（`MaxInputSize`、`MaxCacheEntries`、`WorkerPoolSize`、`MaxDepth` 不能为负/超限）与格式字符串（`InlineImageFormat`/`InlineLinkFormat`/`TableFormat` 取值合法）。
-2. **设置 Scorer**：配置了自定义 `Scorer` 时用 `scorerAdapter` 适配到内部接口；否则用 `SharedDefaultScorer`（只读、并发安全）。
+2. **设置 Scorer**：配置了自定义 `Scorer` 时适配到内部接口（适配过程由库自动完成）；否则使用内置默认评分器（内部实现，不导出；只读、并发安全）。
 3. **预计算格式串**：把 `InlineImageFormat`/`InlineLinkFormat` 归一化（小写+去空格，空串映射为 `"none"`）并缓存到 `imageFormat`/`linkFormat` 字段，避免热路径中反复 `strings.ToLower`。
 4. **启动缓存清理**：仅当 `CacheTTL>0` **且** `CacheCleanup>0` 时才启动后台清理 goroutine；两者任一为 0 都不会启动。
 
@@ -45,8 +45,8 @@ defer p.Close()
 
 - **配置不可变**：`config` 在 `New()` 后不可变（`*Config` 指针永不被重新赋值或修改），因此 `ExtractToMarkdown` 等格式方法可以安全地做值拷贝生成临时 Processor，无需任何锁——格式覆盖不会回写到共享配置。
 - **统计计数器**：`TotalProcessed`/`CacheHits`/`CacheMisses`/`ErrorCount`/`totalProcessTime` 全部使用 `atomic` 操作。
-- **缓存**：内部 `Cache` 自带锁，读写安全。
-- **Scorer**：内置 `DefaultScorer` 只读。**自定义 `Scorer` 必须自行保证并发安全**（如内部持锁），因为单个 Processor 在并发 `Extract` 时会从多个 goroutine 调用其 `Score`/`ShouldRemove`。
+- **缓存**：内部缓存自带锁，读写安全。缓存行为完全由公开 API 观测与控制：`Config.MaxCacheEntries = 0` 禁用缓存、`ClearCache()` 清空、`Statistics.CacheHits`/`CacheMisses` 观测命中情况。
+- **Scorer**：内置默认评分器（内部实现，不导出）只读。**自定义 `Scorer` 必须自行保证并发安全**（如内部持锁），因为单个 Processor 在并发 `Extract` 时会从多个 goroutine 调用其 `Score`/`ShouldRemove`。
 :::
 
 ## 内容提取
@@ -163,7 +163,7 @@ func (p *Processor) ExtractBatchFilesWithContext(ctx context.Context, filePaths 
 
 - **命中路径**：检测到缓存项后，`CacheHits` 与 `TotalProcessed` 各加 1，返回的是 `cloneResult`——对 `Images`/`Links`/`Videos`/`Audios` 等 slice 做 `copy` 的深拷贝。调用方修改返回值**不会**影响缓存中的条目，也避免并发命中读取时的数据竞争。
 - **未命中路径**：处理完成后将结果写入缓存，再返回一份 `cloneResult`（同样深拷贝）。因此缓存条目与返回值互不别名。
-- **禁用缓存**：`MaxCacheEntries = 0` 时，`Extract` 跳过缓存键生成与 `Get/Set`（短路），无任何缓存开销。
+- **禁用缓存**：`MaxCacheEntries = 0` 时，`Extract` 跳过缓存键生成与缓存读写（短路），无任何缓存开销。
 
 ### GetStatistics
 
@@ -242,5 +242,5 @@ defer p.Close()
 :::tip 生命周期最佳实践
 - **单例复用**：在长驻服务（HTTP handler、worker）中创建一个 Processor 并在并发请求间共享，配合缓存最大化收益。Processor 本身并发安全，无需每请求新建。
 - **`defer Close()`**：在创建后立即 `defer p.Close()`，确保异常路径也释放后台清理 goroutine 与审计资源。`Close` 会停止缓存清理 goroutine、清空缓存、关闭审计 sink。
-- **不要 Close 后使用**：`Close` 之后调用任何方法都会返回 `ErrProcessorClosed`。`Close` 用 `CompareAndSwap` 保证幂等，重复调用安全但无意义。
+- **不要 Close 后使用**：`Close` 之后调用任何方法都会返回 `ErrProcessorClosed`。`Close` 通过原子 CAS 操作保证幂等（内部实现细节），重复调用安全但无意义。
 :::

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "データ型"
 title: "型定義 - CyberGo html | データ型リファレンス"
-description: "CyberGo html データ型リファレンス：Result、ImageInfo、LinkInfo、LinkResource、Statistics、BatchResult などコア型のフィールド定義と JSON タグ、VideoInfo や AudioInfo などのメディア型について詳しく説明します。"
+description: "CyberGo html データ型リファレンス：Result、ImageInfo、LinkInfo、VideoInfo、AudioInfo、Statistics、BatchResult の構造体フィールドと JSON タグ、カスタム MarshalJSON シリアライズ動作を解説します。"
 sidebar_position: 2
 ---
 
@@ -59,7 +59,7 @@ type ImageInfo struct {
 
 | フィールド | 説明 |
 |------|------|
-| `URL` | 画像の `src` 属性値；有効な URL のみ（`IsValidURL` で検証）、無効な URL の `<img>` は結果に含まれません |
+| `URL` | 画像の `src` 属性値；有効な URL のみを含みます（内部検証、非エクスポート）。無効な URL の `<img>` は結果に含まれません |
 | `Alt` | `alt` 属性の原文；空の場合 `IsDecorative` が `true` になります |
 | `Title` | `title` 属性の原文（ページタイトルではありません） |
 | `Width`/`Height` | HTML 属性の**元の文字列**（`"640"`、`"50%"` など）、数値には解析されていません——ページによって表記が異なる場合があります |
@@ -89,8 +89,8 @@ type LinkInfo struct {
 
 | フィールド | 説明 |
 |------|------|
-| `URL` | `href` 属性値；有効な URL のみ（`IsValidURL` で検証）、無効な URL の `<a>` は Position を消費しますがスライスには追加されません |
-| `Text` | `<a>` タグ内の全テキストノードの結合（再帰的 `GetTextContent`） |
+| `URL` | `href` 属性値；有効な URL のみを含みます（内部検証、非エクスポート）。無効な URL の `<a>` は Position を消費しますがスライスには追加されません |
+| `Text` | `<a>` タグ内のすべてのテキストノードの再帰的な連結（ネストしたタグ内のテキストを含む） |
 | `Title` | `title` 属性の原文（リンクテキストではありません） |
 | `IsExternal` | URL 自体が絶対外部アドレスかで判定し、**`BaseURL` とのドメイン比較は行いません**——これは `ExtractAllLinks` の内部/外部判定とは異なります |
 | `IsNoFollow` | `rel` 属性に `nofollow` が含まれる（大文字小文字を区別しない、ASCII フォールディングマッチ）場合 `true` |
@@ -152,11 +152,13 @@ OGG コンテナは動画または音声を格納できるため、`.ogg` URL �
 
 ```go
 type LinkResource struct {
-    URL   string // リンクアドレス
+    URL   string // リンクアドレス（ResolveRelativeURLs 有効時は BaseURL に基づき絶対アドレスに解決済み）
     Title string // リンクタイトル
-    Type  string // リンクタイプ
+    Type  string // リンクタイプ："link"、"image"、"video"、"audio"、"css"、"js"、"icon"、"media"
 }
 ```
+
+各 `Type` 値に対応する HTML タグの由来と制御スイッチの詳細は [リンク抽出](../modules/links#リンクタイプの詳細) を参照してください。
 
 ## Statistics
 

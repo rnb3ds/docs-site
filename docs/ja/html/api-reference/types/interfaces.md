@@ -1,7 +1,7 @@
 ---
 sidebar_label: "インターフェース定義"
 title: "インターフェース定義 - CyberGo html | コアインターフェース参照"
-description: "CyberGo html コアインターフェース定義：Extractor、StatsProvider、ContentNode、Scorer、AuditSink の 5 つのインターフェースで、カスタムスコアリング、監査 Sink 実装、機能拡張や統合テストに活用します。"
+description: "CyberGo html コアインターフェース定義：抽出の Extractor、統計の StatsProvider、ノードの ContentNode、スコアリングの Scorer、監査出力の AuditSink を収録し、機能拡張、カスタム実装、単体テスト、サードパーティ統合に活用します。"
 sidebar_position: 1
 ---
 

@@ -3,6 +3,7 @@ sidebar_label: "敏感数据脱敏"
 title: "敏感数据脱敏 - CyberGo env | 日志安全工具"
 description: "CyberGo env 敏感数据脱敏工具完整指南，详解 IsSensitiveKey 自动检测密码密钥等敏感键、MaskValue 按敏感性脱敏值、MaskKey 脱敏键名、SanitizeForLog 清理日志字符串与 ClearBytes 安全清零，附 HTTP 中间件与结构化日志实战示例。"
 sidebar_position: 2
+sidebar_icon: "🛡️"
 ---
 
 # 敏感数据脱敏
@@ -124,7 +125,7 @@ func main() {
 func MaskKey(key string) string
 ```
 
-脱敏键名本身，用于需要展示键存在但不暴露键含义的场景（内部调用 `DefaultMaskKey`）：
+脱敏键名本身，用于需要展示键存在但不暴露键含义的场景（公开 API `MaskKey` 即内部脱敏例程的包装，与错误报告、审计日志共用同一实现）：
 
 | 条件 | 返回值 |
 |------|--------|

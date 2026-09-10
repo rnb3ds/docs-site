@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Config"
 title: "Config API - CyberGo env | Configuration Reference"
-description: "Config struct API reference for CyberGo env, covering file search paths, size and count limits, key-value validation, JSON/YAML parse options, variable expansion, audit configuration, and Development/Production preset templates with nested struct and field promotion access methods."
+description: "Config struct API reference for CyberGo env: search paths, size and count limits, key validation, JSON/YAML options, and Development/Production presets."
 sidebar_position: 4
 ---
 
@@ -86,9 +86,10 @@ type YAMLConfig struct {
 
 // ParsingConfig controls general parsing behavior
 type ParsingConfig struct {
-    AllowExportPrefix bool // Allow export KEY=value syntax
-    AllowYamlSyntax   bool // Allow YAML-style values
-    ExpandVariables   bool // Whether to expand ${VAR} references
+    AllowExportPrefix bool            // Allow export KEY=value syntax
+    AllowYamlSyntax   bool            // Allow YAML-style values
+    ExpandVariables   bool            // Whether to expand ${VAR} references
+    ExpansionScope    ExpansionScope  // Scope from which ${VAR} references can be resolved
 }
 
 // ComponentConfig custom components and advanced options
@@ -769,6 +770,59 @@ loader, _ := env.New(cfg)
 ```
 
 ---
+
+## Preset Comparison and Configuration Pitfalls
+
+### Full differences among the four presets
+
+| Option | Default | Development | Testing | Production |
+|--------|---------|-------------|---------|------------|
+| `FailOnMissingFile` | false | false | false | **true** |
+| `OverwriteExisting` | false | **true** | **true** | false |
+| `ValidateValues` | true | true | true | true |
+| `AllowExportPrefix` | true | true | true | true |
+| `AllowYamlSyntax` | false | **true** | false | false |
+| `ExpandVariables` | true | true | true | true |
+| `MaxFileSize` | 2 MB | 10 MB | 64 KB | 64 KB |
+| `MaxVariables` | 500 | 500 | 50 | 50 |
+| `JSONMaxDepth`/`YAMLMaxDepth` | 10 | 10 | 10 | 10 |
+| `AuditEnabled` | false | false | false | **true** |
+
+Key point: `DevelopmentConfig` relaxes **convenience** (overwriting, YAML syntax, file size) — value validation stays on in every preset; no preset ever sacrifices injection protection.
+
+### Key DefaultConfig values
+
+| Item | Default |
+|------|---------|
+| Key pattern | Built-in byte-level validation (equivalent to `^[A-Za-z][A-Za-z0-9_]*$`) |
+| `ValidateValues` | true |
+| `JSONNullAsEmpty`/`JSONNumberAsString`/`JSONBoolAsString` | true |
+| `ExpandVariables` | true (scope `ExpansionFileThenProcess`) |
+| `Prefix` | empty (no filtering) |
+
+### The IsZero pitfall: always start from DefaultConfig()
+
+`New()` automatically applies `DefaultConfig()` to a **zero-valued** Config. `IsZero()` decides based on "are the common default fields all zero" — a Config with only a few fields set is not misjudged as zero, but the rule depends on the field inventory, and **assigning fields one by one from a zero struct** easily hits edge cases. The recommended pattern is always:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig() // modify on top of complete defaults
+cfg.Filenames = []string{".env.production"}
+cfg.OverwriteExisting = true
+```
+
+### KeyPattern security probes (SEC-06)
+
+A custom `KeyPattern` is probed four ways by `Config.Validate()`; failing any probe rejects the configuration:
+
+1. It must match a valid key (e.g. `TEST_KEY`)
+2. It must reject the empty string
+3. It must reject keys starting with a digit (e.g. `123_INVALID`)
+4. It must reject keys containing `=`, `:`, newlines, or control characters — preventing keys that carry separators from re-parsing into **different lines** after a serialization round-trip (round-trip injection)
+
+### ExpansionScope
+
+See the "Expansion Scope" section of the [variable expansion guide](/en/env/guides/variable-expansion). `ExpansionFileOnly` is for untrusted config files (SEC-03) and stops `${VAR}` references from reading the process environment.
 
 ## Related Documentation
 

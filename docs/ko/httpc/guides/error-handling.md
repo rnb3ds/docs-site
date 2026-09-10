@@ -2,7 +2,7 @@
 sidebar_label: "오류 처리"
 title: "오류 처리 - CyberGo HTTPC | 분류와 센티널 매칭"
 description: "HTTPC 오류 처리 가이드: ErrorType 12가지 오류 분류, ClientError 필드와 IsRetryable 판단, errors.Is/As 센티널 오류 매칭, 재시도 소진 처리, context 타임아웃과 취소, 미들웨어 통합 오류 처리와 타임아웃 계층화 모범 사례."
-sidebar_position: 5
+sidebar_position: 7
 ---
 
 # 오류 처리

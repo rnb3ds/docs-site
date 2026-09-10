@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Конфигурация на практике"
 title: "Конфигурация на практике - CyberGo html | выбор полей Config"
-description: "Конфигурация CyberGo html на практике: четыре предустановки, шесть групп полей, типовые комбинации и проверка через Validate для новичков."
+description: "Конфигурация CyberGo html: пресеты DefaultConfig, HighSecurityConfig, TextOnlyConfig, MarkdownConfig, шесть групп полей, комбинации и Validate."
 sidebar_position: 6
 ---
 
@@ -25,7 +25,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -156,7 +155,7 @@ cfg.PreserveAudios = false
 
 | Поле | Описание |
 |------|------|
-| `Scorer` | Пользовательский оценщик контента; nil — используется DefaultScorer |
+| `Scorer` | Пользовательский скорер контента; при nil используется встроенный скорер по умолчанию (внутренняя реализация) |
 
 Пользовательский Scorer позволяет оптимизировать распознавание статей для конкретных сайтов. Подробнее см. в [Тестировании и пользовательских расширениях](../integration/testing-custom).
 

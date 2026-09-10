@@ -1,7 +1,7 @@
 ---
 sidebar_label: "定数とエラー"
 title: "定数とエラー - CyberGo env | センチネルエラーとセキュリティ定数"
-description: "CyberGo env の定数とエラーリファレンス。DefaultMaxFileSize と MaxVariables の制限、ErrFileNotFound センチネルエラー、ParseError 型、DefaultForbiddenKeys 禁止キー、IsSensitiveKey、MaskValue ユーティリティ関数を含みます。"
+description: "CyberGo env の定数とエラーリファレンス。DefaultMaxFileSize と MaxVariables の制限、ErrFileNotFound などのセンチネルエラー、ParseError 型、DefaultForbiddenKeys 禁止キーと IsSensitiveKey を含みます。"
 sidebar_position: 7
 ---
 
@@ -750,6 +750,30 @@ func main() {
     }
 }
 ```
+
+## デフォルトの禁止キーとキーパターン
+
+### DefaultForbiddenKeys の完全なリスト
+
+ライブラリはデフォルトで以下のシステムクリティカルな変数の書き込みを拒否します。攻撃面ごとの分類：
+
+| カテゴリ | キー | 防御対象 |
+|----------|------|----------|
+| パスインジェクション | `PATH` | 実行ファイル探索パスのハイジャック |
+| 動的リンカー（Linux/macOS） | `LD_PRELOAD`、`LD_LIBRARY_PATH`、`LD_DEBUG`、`LD_AUDIT`、`LD_PRELOAD_32`、`LD_PRELOAD_64`、`LD_LIBRARY_PATH_32`、`LD_LIBRARY_PATH_64`、`DYLD_INSERT_LIBRARIES`、`DYLD_LIBRARY_PATH` | ライブラリプリロード攻撃 |
+| シェルエスケープ | `SHELL`、`ENV`、`BASH_ENV`、`IFS` | シェルインジェクション |
+| インタープリターインジェクション | `PYTHONPATH`、`PERL5OPT`、`RUBYLIB`、`NODE_PATH` | 言語ランタイムのコード注入 |
+| Windows 固有 | `COMSPEC`、`PATHEXT`、`SYSTEMROOT`、`WINDIR` | Windows システム変数のハイジャック |
+
+独自の追加は `ValidationConfig.ForbiddenKeys` で行います；組み込み制限を解除するには置換バリデーターを自前で提供する必要があります。
+
+### DefaultKeyPattern
+
+`DefaultKeyPattern` は `nil` としてエクスポートされます — デフォルトのキー検証は**バイトレベルの高速経路**を使用し（正規表現 `^[A-Za-z][A-Za-z0-9_]*$` と同等）、正規表現よりほぼ一桁高速です。カスタム `KeyPattern` を設定すると正規表現検証に切り替わり、[KeyPattern セキュリティプローブ](/ja/env/api-reference/config)の 4 種類の検査を受けます。
+
+### ExpansionErrorKind
+
+`ExpansionError.Kind` の 2 つの値：`ExpansionDepthKind`（深さ超過/循環検出）と `ExpansionRequiredKind`（`${VAR:?}` の必須変数が未設定）。[エラー処理ガイド](/ja/env/guides/error-handling)を参照。
 
 ## 関連ドキュメント
 

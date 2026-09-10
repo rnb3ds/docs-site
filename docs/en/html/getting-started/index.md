@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Quick Start"
-title: "Quick Start - CyberGo html | 5-Minute Guide"
-description: "Quick start with CyberGo html: install, basic content extraction, four Config presets, text/Markdown/JSON output, and start HTML extraction in 5 minutes."
-sidebar_position: 2
+title: "Quick Start - CyberGo html | Get Started in 5 Minutes"
+description: "CyberGo html quick start in 5 minutes: install on Go 1.25+, extraction, four Config presets, text/Markdown/JSON output, and concurrency-safe Processor use."
+sidebar_position: 1
 ---
 
 # Quick Start
@@ -117,7 +117,7 @@ jsonBytes, err := html.ExtractToJSON(data)
 
 ## Context Support
 
-All functions have `ExtractWithContext` variants that support cancellation and timeout:
+All extraction functions have variants with the `*WithContext` suffix (e.g., `ExtractWithContext`, `ExtractTextWithContext`) that support cancellation and timeout:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

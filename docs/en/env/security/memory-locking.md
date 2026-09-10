@@ -1,8 +1,9 @@
 ---
 sidebar_label: "Memory Locking"
 title: "Memory Locking - CyberGo env | mlock Memory Protection"
-description: "Memory locking guide for CyberGo env, covering SetMemoryLockEnabled to enable, IsMemoryLockSupported detection, SetMemoryLockStrict mode and NewSecureValueStrict error handling, including Linux CAP_IPC_LOCK, Windows VirtualLock permissions, and SecureValue lifecycle management."
+description: "Memory locking guide for CyberGo env: SetMemoryLockEnabled, IsMemoryLockSupported detection, strict mode, and Linux CAP_IPC_LOCK permission notes."
 sidebar_position: 3
+sidebar_icon: "🛡️"
 ---
 
 # Memory Locking

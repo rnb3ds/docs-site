@@ -1,6 +1,6 @@
 ---
 title: "删除函数 - CyberGo JSON | API 参考"
-description: "CyberGo JSON 删除函数：Delete 删除节点、DeleteClean 删除并清理空父节点，支持路径表达式与自动清理。"
+description: "CyberGo JSON 删除函数：Delete 按路径删除、DeleteClean 删除后自动清理空值与空数组并级联移除空父节点，支持通配符、切片、多字段与 JSON Pointer 路径表达式，批量路径缺失静默跳过，不可变返回新字符串，保留链式调用能力。"
 sidebar_label: "删除操作"
 sidebar_position: 4
 ---
@@ -246,6 +246,42 @@ func main() {
 }
 ```
 
+### JSON Pointer 路径删除
+
+路径以 `/` 开头时，`Delete` 按 **RFC 6901 JSON Pointer** 语义解析（不再走点号语法）：段与段用 `/` 分隔，`~0`/`~1` 分别转义 `~` 与 `/`。这为删除**键名本身含点号等特殊字符**的键提供了出口（点号语法无法表达这类键名）：
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	// 键名 "a.b" 本身含点号，点号路径 "a.b" 会被解析成两级而无法命中
+	data := `{"a.b": 1, "user": {"name": "Alice"}}`
+
+	r1, err := json.Delete(data, "/a.b")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r1) // 输出：{"user":{"name":"Alice"}}
+
+	// /user/name 等价于点号路径 user.name
+	r2, err := json.Delete(data, "/user/name")
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(r2) // 输出：{"a.b":1}
+}
+```
+
+::: warning 根节点不可删除
+JSON Pointer `/` 指向文档根，删除根没有意义——返回错误（`cannot delete root`）。指针路径中的缺失段与点号精确路径一样返回 `ErrPathNotFound`。
+:::
+
 ::: tip 精确路径 vs 批量路径
 - **精确路径**（仅含属性名/索引，如 `user.temp`、`items[1]`）：目标不存在时返回 `ErrPathNotFound` 错误。
 - **批量路径**（含 `*`、`{}`、`:`，如 `items[*]`、`[*].{a,b}`、`items[0:2]`）：目标缺失时静默跳过，不报错。需要严格校验时用精确路径；需要"尽力删除"时用批量路径。
@@ -355,7 +391,7 @@ func main() {
 ```
 
 ::: warning DeleteClean 会清扫整棵树的 null
-`DeleteClean` 的清理是**全局**的：它对整个 JSON 树递归执行 `CleanupNullValues`，因此会移除文档中**所有**预先存在的 `null` 值与空容器，而不仅仅是删除点产生的那个。如果你只想移除指定字段、保留其余 `null`，请用普通 `Delete`。
+`DeleteClean` 的清理是**全局**的：它对整个 JSON 树递归清理 null 值与空容器，因此会移除文档中**所有**预先存在的 `null` 值与空容器，而不仅仅是删除点产生的那个。如果你只想移除指定字段、保留其余 `null`，请用普通 `Delete`。
 :::
 
 ## DeleteClean 与 Config 的关系

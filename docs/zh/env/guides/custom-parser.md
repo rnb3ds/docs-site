@@ -641,6 +641,26 @@ func main() {
 
 ---
 
+## 覆盖内置解析器（ForceRegisterParser）
+
+`RegisterParser` 出于安全考虑**拒绝**覆盖三个内置格式（`FormatEnv`、`FormatJSON`、`FormatYAML`）；对同一自定义格式重复注册也会返回错误。如确需替换内置解析器——例如为 `.env` 增加多行值语法扩展、附加自定义安全检查、或在测试中注入 mock 解析器——使用 `ForceRegisterParser`：
+
+<!-- check-code: skip -->
+```go
+err := env.ForceRegisterParser(env.FormatEnv, func(cfg env.Config, factory *env.ComponentFactory) (env.EnvParser, error) {
+    return &MyCustomEnvParser{
+        validator: factory.Validator(),
+        auditor:   factory.Auditor(),
+    }, nil
+})
+```
+
+::: warning 安全警告
+覆盖内置解析器可能引入安全漏洞：若替换实现缺少键名校验、值校验、大小限制等安全检查，将失去库的默认防护。仅在你的解析器完整实现了等价安全检查时使用。
+:::
+
+**注册时机**：解析器工厂在创建 Loader 时被快照调用（`New()` 内部的 `createParsers`），因此 `RegisterParser`/`ForceRegisterParser` 应在 `env.New()` 之前完成；已创建的 Loader 不受后续注册影响。
+
 ## 相关文档
 
 - [ComponentFactory API](/zh/env/api-reference/factory) - ComponentFactory 和 RegisterParser

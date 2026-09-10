@@ -1,8 +1,8 @@
 ---
 sidebar_label: "测试指南"
 title: "测试指南 - CyberGo HTTPC | httptest 与断言"
-description: "HTTPC 测试指南：覆盖 TestingConfig 测试专用配置、net/http/httptest 模拟服务器集成、模拟错误响应/延迟/重定向/文件上传场景、表格驱动测试、Cookie 会话断言模式与 context 超时测试最佳实践。"
-sidebar_position: 10
+description: "HTTPC 测试指南：TestingConfig 测试专用配置、net/http/httptest 模拟服务器集成、Doer 接口 Mock 注入、模拟错误响应/延迟/重定向场景、确定性重试与文件下载测试、表格驱动测试与 Cookie 会话断言最佳实践。"
+sidebar_position: 13
 ---
 
 # 测试指南
@@ -26,6 +26,12 @@ func TestAPI(t *testing.T) {
 
 :::danger
 `TestingConfig` 禁用了 TLS 验证、SSRF 防护等安全特性，**仅用于测试环境**。在非测试环境使用时会打印安全警告。
+:::
+
+`TestingConfig` 的关键取值（在 `DefaultConfig` 基础上覆盖）：`InsecureSkipVerify=true`、`AllowPrivateIPs=true`、`ValidateURL=false`、`ValidateHeaders=false`（允许 127.0.0.1/内网 httptest 服务器）；`EnableHTTP2=false`（协议行为更简单、易断言）；`MaxRetries=1`、`EnableJitter=false`（重试节奏确定）；连接/握手超时缩到 5s，`Request` 仍为默认 180s。
+
+:::tip 关于安全警告
+告警通过检测 `.test` 可执行文件与 `GO_TEST` 环境变量识别测试环境——`go test` 运行的测试**不会**触发。若在本地开发脚本等非测试进程里临时使用，可用 `httpc.SetSecurityWarnOutput(io.Discard)` 静默输出（`io` 即标准库 `io` 包）。
 :::
 
 ## httptest.Server 集成
@@ -95,6 +101,82 @@ func TestGetUser(t *testing.T) {
     }
 }
 ```
+
+## Mock 与 Transport 注入
+
+自定义 Transport 注入（替换底层 `http.RoundTripper`）目前是 HTTPC 的**内部机制**——引擎的传输层接口与 mock 仅供库自身测试使用，根包 `httpc` 未导出注入入口。使用者有两条推荐路径：
+
+| 方式 | 适用层次 | 特点 |
+|------|----------|------|
+| `httptest.Server` | 集成测试 | 走**完整**请求管道（安全校验、重试、中间件、连接池），最接近真实行为 |
+| 实现 `httpc.Doer` 最小接口 | 单元测试 | 不起服务器、不发网络请求，直接返回构造的 `*Result`，纳秒级、完全确定 |
+
+`Doer` 是只有 `Request` 一个方法的接口；`Result` 的 `Request`/`Response`/`Meta` 三个字段本身就是为调用方在测试中直接构造而导出的：
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/httpc"
+)
+
+// fakeDoer 实现 httpc.Doer：不起网络，直接返回预置结果
+type fakeDoer struct {
+	result *httpc.Result
+	err    error
+}
+
+func (f *fakeDoer) Request(ctx context.Context, method, url string, options ...httpc.RequestOption) (*httpc.Result, error) {
+	return f.result, f.err
+}
+
+// getUser 演示被测的业务函数：依赖 httpc.Doer 而非具体 Client
+func getUser(d httpc.Doer, id int) (string, error) {
+	result, err := d.Request(context.Background(), "GET", fmt.Sprintf("https://api.example.com/users/%d", id))
+	if err != nil {
+		return "", err
+	}
+	if !result.IsSuccess() {
+		return "", fmt.Errorf("API error: %d", result.StatusCode())
+	}
+	var name struct {
+		Name string `json:"name"`
+	}
+	if err := result.Unmarshal(&name); err != nil {
+		return "", err
+	}
+	return name.Name, nil
+}
+
+func main() {
+	fake := &fakeDoer{
+		result: &httpc.Result{
+			Response: &httpc.ResponseInfo{
+				StatusCode: 200,
+				Status:     "200 OK",
+				Body:       `{"name":"Test User"}`,
+				RawBody:    []byte(`{"name":"Test User"}`),
+				Headers:    map[string][]string{"Content-Type": {"application/json"}},
+			},
+			Meta: &httpc.RequestMeta{Attempts: 1},
+		},
+	}
+
+	name, err := getUser(fake, 1)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(name) // 输出：Test User
+}
+```
+
+:::tip 构造 Result 时记得同时给 Body 与 RawBody
+`Body()` 返回预存字符串、`RawBody()` 返回字节切片，`Unmarshal` 走的是原始字节——mock 中两者都填上，各访问器才能如预期工作。
+:::
 
 ## 模拟不同场景
 
@@ -174,6 +256,140 @@ server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *htt
 defer server.Close()
 ```
 
+### 模拟 TLS 服务器
+
+`httptest.NewTLSServer` 使用自签名证书。`TestingConfig` 已设置 `InsecureSkipVerify=true`，因此可以直接请求，无需额外 TLS 配置：
+
+```go
+server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+    w.WriteHeader(http.StatusOK)
+    w.Write([]byte("secure"))
+}))
+defer server.Close()
+
+client, _ := httpc.New(httpc.TestingConfig())
+defer client.Close()
+
+result, err := client.Get(server.URL) // 直接请求自签名 TLS 服务器
+```
+
+### 确定性重试测试
+
+让服务器**前 N 次返回可重试状态码（408/429/500/502/503/504）、之后成功**，即可在不依赖定时器与真实网络抖动的前提下验证重试行为，并以 `result.Meta.Attempts` 断言实际尝试次数：
+
+```go
+func TestRetry(t *testing.T) {
+    var calls int32
+
+    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        if atomic.AddInt32(&calls, 1) <= 2 {
+            w.WriteHeader(http.StatusServiceUnavailable) // 前两次 503（可重试）
+            return
+        }
+        w.WriteHeader(http.StatusOK) // 第三次成功
+    }))
+    defer server.Close()
+
+    client, err := httpc.New(httpc.TestingConfig())
+    if err != nil {
+        t.Fatal(err)
+    }
+    defer client.Close()
+
+    result, err := client.Get(server.URL, httpc.WithMaxRetries(2))
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    if result.Meta.Attempts != 3 { // 1 次原始 + 2 次重试
+        t.Errorf("expected 3 attempts, got %d", result.Meta.Attempts)
+    }
+}
+```
+
+:::tip 测试中显式固定重试参数
+`TestingConfig` 默认 `MaxRetries=1` 且无抖动；测试里用 `WithMaxRetries(N)` 显式给出期望值，断言才稳定。
+:::
+
+## 测试文件下载
+
+`Download` 同样可以用 httptest 覆盖：服务器端写入已知内容，`DownloadConfig.FilePath` 指向 `t.TempDir()`（测试结束自动清理），再断言字节数与校验和：
+
+```go
+func TestDownload(t *testing.T) {
+    payload := []byte("file content for download test")
+
+    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        w.Header().Set("Content-Length", strconv.Itoa(len(payload)))
+        _, _ = w.Write(payload)
+    }))
+    defer server.Close()
+
+    client, err := httpc.New(httpc.TestingConfig())
+    if err != nil {
+        t.Fatal(err)
+    }
+    defer client.Close()
+
+    sum := sha256.Sum256(payload)
+
+    cfg := httpc.DefaultDownloadConfig()
+    cfg.FilePath = filepath.Join(t.TempDir(), "out.bin")
+    cfg.Checksum = hex.EncodeToString(sum[:]) // 顺带验证校验和路径
+
+    result, err := client.Download(context.Background(), server.URL, cfg)
+    if err != nil {
+        t.Fatal(err)
+    }
+
+    if result.BytesWritten != int64(len(payload)) {
+        t.Errorf("expected %d bytes, got %d", len(payload), result.BytesWritten)
+    }
+    if result.ActualChecksum != cfg.Checksum {
+        t.Errorf("checksum mismatch: %s != %s", result.ActualChecksum, cfg.Checksum)
+    }
+}
+```
+
+## Cookie 与会话断言
+
+Cookie 行为可以从两端断言：**服务器端**读取请求里实际收到的 Cookie（验证客户端确实发送了）；**客户端**用 `result.GetCookie`/`HasCookie` 验证响应 Cookie，或在 `DomainClient` 上验证会话自动捕获：
+
+```go
+func TestCookieSession(t *testing.T) {
+    server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        switch r.URL.Path {
+        case "/login":
+            http.SetCookie(w, &http.Cookie{Name: "session", Value: "abc123", Path: "/"})
+            w.WriteHeader(http.StatusOK)
+        case "/me":
+            // 服务器端断言：第二个请求应自动带上会话 Cookie
+            if c, err := r.Cookie("session"); err != nil || c.Value != "abc123" {
+                t.Errorf("expected session cookie abc123, got %v (err=%v)", c, err)
+            }
+            w.WriteHeader(http.StatusOK)
+        }
+    }))
+    defer server.Close()
+
+    dc, err := httpc.NewDomain(server.URL, httpc.TestingConfig()) // 绕过 SSRF 私网拦截
+    if err != nil {
+        t.Fatal(err)
+    }
+    defer dc.Close()
+
+    if _, err := dc.Get("/login"); err != nil { // 响应 Cookie 自动进入会话
+        t.Fatal(err)
+    }
+    if c := dc.GetCookie("session"); c == nil || c.Value != "abc123" {
+        t.Errorf("session cookie not captured: %+v", c)
+    }
+    if _, err := dc.Get("/me"); err != nil { // 会话 Cookie 随请求发送
+        t.Fatal(err)
+    }
+}
+```
+
 ## 表格驱动测试
 
 ```go
@@ -220,13 +436,19 @@ func TestHTTPMethods(t *testing.T) {
 
 | 实践 | 说明 |
 |------|------|
-| 使用 `httptest.Server` | 模拟真实 HTTP 行为，无需网络依赖 |
-| 使用 `TestingConfig()` | 禁用安全检查，避免本地连接被阻止 |
+| 使用 `httptest.Server` | 模拟真实 HTTP 行为，无需网络依赖，覆盖完整请求管道 |
+| 使用 `TestingConfig()` | 禁用安全检查，避免本地连接被 SSRF 防护阻止 |
+| 业务层依赖 `Doer` 接口 | 最小接口依赖让单元测试可以用 fake 替身，无需服务器 |
+| 确定性重试 | 服务器前 N 次返回 503 再成功，用 `Meta.Attempts` 断言 |
+| 下载测试用 `t.TempDir()` | 测试结束自动清理文件，且路径天然通过安全校验 |
 | 使用 `defer` | 确保资源释放，即使测试失败 |
 | 表格驱动 | 覆盖多种输入，代码简洁 |
+| 显式固定重试/超时参数 | `WithMaxRetries(N)` 等显式声明，断言才稳定 |
 
 ## 下一步
 
 - [配置 API](../api-reference/client-config/config) - TestingConfig 详细参数
 - [错误类型](../api-reference/types/errors) - 错误断言参考
 - [中间件链](./middleware-chain) - 中间件测试模式
+- [文件上传与下载](./file-transfer) - 下载语义详解（本页「测试文件下载」的展开）
+- [高级示例](../examples/advanced-usage) - 生产级代码模式

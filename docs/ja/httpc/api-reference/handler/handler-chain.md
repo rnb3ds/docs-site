@@ -1,6 +1,6 @@
 ---
-sidebar_label: "Handler とミドルウェアチェーン"
-title: "Handler とミドルウェアチェーン - CyberGo HTTPC | リクエスト処理パイプライン"
+sidebar_label: "Handler パイプラインとカスタムミドルウェア"
+title: "Handler パイプラインとカスタムミドルウェア - CyberGo HTTPC | リクエスト処理パイプライン"
 description: "HTTPC Handler パイプラインアーキテクチャ解説：二重階層設計で Layer 1 メソッド API が MiddlewareFunc オニオンチェーンを組み立てて Handler を実行する仕組み、Chain 結合器の原理、clientImpl.middlewareChain 実装メカニズムとカスタムミドルウェア作成例。"
 sidebar_position: 1
 ---

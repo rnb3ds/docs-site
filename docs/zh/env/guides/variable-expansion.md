@@ -2,7 +2,7 @@
 sidebar_label: "变量展开"
 title: "变量展开 - CyberGo env | ${VAR} 引用与默认值语法"
 description: "CyberGo env 变量展开语法指南，详解 ${VAR} 与 ${VAR:-default} 引用、${VAR:=default} 默认值、${VAR:?error} 必填校验、$VAR 简写、循环引用检测与 MaxExpansionDepth 深度限制，实现配置复用与动态值替换。"
-sidebar_position: 4
+sidebar_position: 3
 sidebar_icon: "🔧"
 ---
 
@@ -266,6 +266,31 @@ func main() {
 ```
 
 ---
+
+## 展开作用域（安全隔离）
+
+默认情况下，变量展开按「先文件、后进程环境」的顺序解析引用——`${VAR}` 在文件内找不到时，会回退到进程环境（`os.LookupEnv`）继续查找。这对传统 dotenv 语义是正确的，但当配置文件来自**不完全可信的来源**（用户上传、外部系统下发）时会带来风险：文件中写入 `${AWS_SECRET_ACCESS_KEY}`，加载后即可把进程中无关的机密「捕获」进变量值，随后可能被日志、序列化或导出操作带出。
+
+`ParsingConfig.ExpansionScope` 用于控制这一行为：
+
+| 取值 | 行为 | 适用场景 |
+|------|------|----------|
+| `ExpansionFileThenProcess`（默认） | 先查文件内变量，缺失时回退进程环境 | 可信配置文件，传统 dotenv 语义 |
+| `ExpansionFileOnly` | 仅文件内变量可见；进程环境引用展开为空字符串 | 不可信配置来源，防止机密探测（SEC-03） |
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+// 仅允许引用文件内变量，阻断对进程环境的读取
+cfg.ExpansionScope = env.ExpansionFileOnly
+loader, _ := env.New(cfg)
+```
+
+::: warning SEC-03
+`ExpansionFileOnly` 是防止配置文件「窃取」进程机密的安全开关。若你的应用会加载外部提供的配置文件，建议始终启用该作用域。
+:::
+
+注意：`ExpansionScope` 是枚举而非布尔字段，即使 `Config` 只设置了这一个字段，`IsZero()` 也会正确识别其为已初始化的配置，不会被默认值静默覆盖。
 
 ## 相关文档
 

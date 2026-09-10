@@ -1,7 +1,7 @@
 ---
 sidebar_label: "批量操作"
 title: "Processor 批量操作 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 批量操作：ProcessBatch 多操作、BatchOperation 与 BatchResult 类型，适合批量处理。"
+description: "CyberGo JSON Processor 批量操作：ProcessBatch 一次调用处理 get/set/delete/validate 多类操作、BatchOperation 与 BatchResult 类型，按 Config 定制批次并适合复用实例的批量处理。"
 sidebar_position: 7
 ---
 
@@ -19,29 +19,30 @@ Processor 提供批量操作能力，一次调用处理多个 JSON 操作（get/
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"CyberGo","age":25}}`
-    results, err := p.ProcessBatch([]json.BatchOperation{
-        {Type: "get", JSONStr: data, Path: "user.name", ID: "name"},
-        {Type: "set", JSONStr: data, Path: "user.age", Value: 30, ID: "age"},
-    })
-    if err != nil {
-        panic(err)
-    }
-    for _, r := range results {
-        fmt.Printf("%s: %v\n", r.ID, r.Result)
-    }
+	data := `{"user":{"name":"CyberGo","age":25}}`
+	results, err := p.ProcessBatch([]json.BatchOperation{
+		{Type: "get", JSONStr: data, Path: "user.name", ID: "name"},
+		{Type: "set", JSONStr: data, Path: "user.age", Value: 30, ID: "age"},
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range results {
+		fmt.Printf("%s: %v\n", r.ID, r.Result)
+	}
 }
+
 // 输出：
 // name: CyberGo
 // age: {"user":{"age":30,"name":"CyberGo"}}
@@ -74,29 +75,30 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"CyberGo","age":25}}`
-    results, err := p.ProcessBatch([]json.BatchOperation{
-        {Type: "get", JSONStr: data, Path: "user.name", ID: "name"},
-        {Type: "get", JSONStr: data, Path: "user.age", ID: "age"},
-    })
-    if err != nil {
-        panic(err)
-    }
-    for _, r := range results {
-        fmt.Printf("%s: %v\n", r.ID, r.Result)
-    }
+	data := `{"user":{"name":"CyberGo","age":25}}`
+	results, err := p.ProcessBatch([]json.BatchOperation{
+		{Type: "get", JSONStr: data, Path: "user.name", ID: "name"},
+		{Type: "get", JSONStr: data, Path: "user.age", ID: "age"},
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range results {
+		fmt.Printf("%s: %v\n", r.ID, r.Result)
+	}
 }
+
 // 输出：
 // name: CyberGo
 // age: 25
@@ -110,29 +112,30 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"CyberGo","age":25}}`
-    results, err := p.ProcessBatch([]json.BatchOperation{
-        {Type: "set", JSONStr: data, Path: "user.age", Value: 30, ID: "age"},
-        {Type: "set", JSONStr: data, Path: "user.role", Value: "admin", ID: "role"},
-    })
-    if err != nil {
-        panic(err)
-    }
-    for _, r := range results {
-        fmt.Printf("%s -> %s\n", r.ID, r.Result)
-    }
+	data := `{"user":{"name":"CyberGo","age":25}}`
+	results, err := p.ProcessBatch([]json.BatchOperation{
+		{Type: "set", JSONStr: data, Path: "user.age", Value: 30, ID: "age"},
+		{Type: "set", JSONStr: data, Path: "user.role", Value: "admin", ID: "role"},
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range results {
+		fmt.Printf("%s -> %s\n", r.ID, r.Result)
+	}
 }
+
 // 输出：
 // age -> {"user":{"age":30,"name":"CyberGo"}}
 // role -> {"user":{"age":25,"name":"CyberGo","role":"admin"}}
@@ -150,29 +153,30 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"CyberGo","age":25,"temp":"x"},"debug":true}`
-    results, err := p.ProcessBatch([]json.BatchOperation{
-        {Type: "delete", JSONStr: data, Path: "user.temp", ID: "drop-temp"},
-        {Type: "delete", JSONStr: data, Path: "debug", ID: "drop-debug"},
-    })
-    if err != nil {
-        panic(err)
-    }
-    for _, r := range results {
-        fmt.Printf("%s -> %s\n", r.ID, r.Result)
-    }
+	data := `{"user":{"name":"CyberGo","age":25,"temp":"x"},"debug":true}`
+	results, err := p.ProcessBatch([]json.BatchOperation{
+		{Type: "delete", JSONStr: data, Path: "user.temp", ID: "drop-temp"},
+		{Type: "delete", JSONStr: data, Path: "debug", ID: "drop-debug"},
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range results {
+		fmt.Printf("%s -> %s\n", r.ID, r.Result)
+	}
 }
+
 // 输出：
 // drop-temp -> {"debug":true,"user":{"age":25,"name":"CyberGo"}}
 // drop-debug -> {"user":{"age":25,"name":"CyberGo","temp":"x"}}
@@ -186,33 +190,34 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    results, err := p.ProcessBatch([]json.BatchOperation{
-        {Type: "validate", JSONStr: `{"name":"CyberGo"}`, ID: "ok"},
-        {Type: "validate", JSONStr: `{"name":}`, ID: "broken"},
-    })
-    if err != nil {
-        panic(err)
-    }
-    for _, r := range results {
-        if m, ok := r.Result.(map[string]any); ok {
-            fmt.Printf("%s: valid=%v\n", r.ID, m["valid"])
-        }
-        if r.Error != nil {
-            fmt.Printf("%s 错误: %v\n", r.ID, r.Error)
-        }
-    }
+	results, err := p.ProcessBatch([]json.BatchOperation{
+		{Type: "validate", JSONStr: `{"name":"CyberGo"}`, ID: "ok"},
+		{Type: "validate", JSONStr: `{"name":}`, ID: "broken"},
+	})
+	if err != nil {
+		panic(err)
+	}
+	for _, r := range results {
+		if m, ok := r.Result.(map[string]any); ok {
+			fmt.Printf("%s: valid=%v\n", r.ID, m["valid"])
+		}
+		if r.Error != nil {
+			fmt.Printf("%s 错误: %v\n", r.ID, r.Error)
+		}
+	}
 }
+
 // 输出：
 // ok: valid=true
 // broken: valid=false
@@ -227,37 +232,38 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"CyberGo"},"processed":false}`
-    results, err := p.ProcessBatch([]json.BatchOperation{
-        {Type: "validate", JSONStr: data, ID: "check"},
-        {Type: "get", JSONStr: data, Path: "user.name", ID: "name"},
-        {Type: "set", JSONStr: data, Path: "processed", Value: true, ID: "mark"},
-    })
-    if err != nil {
-        panic(err)
-    }
+	data := `{"user":{"name":"CyberGo"},"processed":false}`
+	results, err := p.ProcessBatch([]json.BatchOperation{
+		{Type: "validate", JSONStr: data, ID: "check"},
+		{Type: "get", JSONStr: data, Path: "user.name", ID: "name"},
+		{Type: "set", JSONStr: data, Path: "processed", Value: true, ID: "mark"},
+	})
+	if err != nil {
+		panic(err)
+	}
 
-    for _, r := range results {
-        if r.ID == "check" {
-            if m, ok := r.Result.(map[string]any); ok {
-                fmt.Printf("验证结果: %v\n", m["valid"])
-            }
-        } else {
-            fmt.Printf("%s: %v\n", r.ID, r.Result)
-        }
-    }
+	for _, r := range results {
+		if r.ID == "check" {
+			if m, ok := r.Result.(map[string]any); ok {
+				fmt.Printf("验证结果: %v\n", m["valid"])
+			}
+		} else {
+			fmt.Printf("%s: %v\n", r.ID, r.Result)
+		}
+	}
 }
+
 // 输出：
 // 验证结果: true
 // name: CyberGo
@@ -297,47 +303,48 @@ for _, r := range results {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    records := []string{
-        `{"id":1,"name":"Alice","age":30}`,
-        `{"id":2,"name":"Bob","age":25}`,
-        `{"id":3,"name":"CyberGo","age":28}`,
-    }
+	records := []string{
+		`{"id":1,"name":"Alice","age":30}`,
+		`{"id":2,"name":"Bob","age":25}`,
+		`{"id":3,"name":"CyberGo","age":28}`,
+	}
 
-    ops := make([]json.BatchOperation, len(records))
-    for i, r := range records {
-        ops[i] = json.BatchOperation{
-            Type:    "set",
-            JSONStr: r,
-            Path:    "migrated",
-            Value:   true,
-            ID:      fmt.Sprintf("record-%d", i),
-        }
-    }
+	ops := make([]json.BatchOperation, len(records))
+	for i, r := range records {
+		ops[i] = json.BatchOperation{
+			Type:    "set",
+			JSONStr: r,
+			Path:    "migrated",
+			Value:   true,
+			ID:      fmt.Sprintf("record-%d", i),
+		}
+	}
 
-    results, err := p.ProcessBatch(ops)
-    if err != nil {
-        panic(err)
-    }
+	results, err := p.ProcessBatch(ops)
+	if err != nil {
+		panic(err)
+	}
 
-    for _, r := range results {
-        if r.Error != nil {
-            fmt.Printf("%s 失败: %v\n", r.ID, r.Error)
-            continue
-        }
-        fmt.Printf("%s -> %s\n", r.ID, r.Result)
-    }
+	for _, r := range results {
+		if r.Error != nil {
+			fmt.Printf("%s 失败: %v\n", r.ID, r.Error)
+			continue
+		}
+		fmt.Printf("%s -> %s\n", r.ID, r.Result)
+	}
 }
+
 // 输出：
 // record-0 -> {"age":30,"id":1,"migrated":true,"name":"Alice"}
 // record-1 -> {"age":25,"id":2,"migrated":true,"name":"Bob"}
@@ -348,30 +355,31 @@ func main() {
 
 签名：`func (p *Processor) WarmupCache(jsonStr string, paths []string, cfg ...Config) (*WarmupResult, error)`
 
-对同一份 JSON 的热点路径预先求值并填入缓存，使后续首次 [`Get`](./query) 直接命中缓存。要求 Processor 开启缓存（默认开启），否则返回 `ErrCacheDisabled`。
+对同一份 JSON 的热点路径预先求值并填入缓存，使后续首次 [`Get`](./query) 直接命中缓存。要求 Processor 开启缓存（默认开启），否则返回 `JsonsError`（`Op` 为 `warmup_cache`，错误消息为 "cache is disabled, cannot warmup cache"）。
 
 ```go
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    p, err := json.New(json.DefaultConfig())
-    if err != nil {
-        panic(err)
-    }
-    defer p.Close()
+	p, err := json.New(json.DefaultConfig())
+	if err != nil {
+		panic(err)
+	}
+	defer p.Close()
 
-    data := `{"user":{"name":"CyberGo","age":25},"meta":{"version":2}}`
-    result, err := p.WarmupCache(data, []string{"user.name", "user.age", "meta.version"})
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("预热：%d/%d 成功（%.0f%%）\n", result.Successful, result.TotalPaths, result.SuccessRate)
+	data := `{"user":{"name":"CyberGo","age":25},"meta":{"version":2}}`
+	result, err := p.WarmupCache(data, []string{"user.name", "user.age", "meta.version"})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("预热：%d/%d 成功（%.0f%%）\n", result.Successful, result.TotalPaths, result.SuccessRate)
 }
+
 // 输出：
 // 预热：3/3 成功（100%）
 ```

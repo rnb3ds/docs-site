@@ -25,7 +25,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -156,7 +155,7 @@ cfg.PreserveAudios = false
 
 | 字段 | 说明 |
 |------|------|
-| `Scorer` | 自定义内容评分器；nil 时用 DefaultScorer |
+| `Scorer` | 自定义内容评分器；nil 时使用内置默认评分器（内部实现） |
 
 自定义 Scorer 可针对特定网站优化文章识别。详见 [测试与自定义扩展](../integration/testing-custom)。
 

@@ -1,26 +1,26 @@
 ---
 sidebar_label: "Custom Encoder"
-title: "CustomEncoder - CyberGo JSON | Custom Encoder"
-description: "CyberGo JSON custom encoders: MarshalJSON, TextMarshaler, time.Time handling, and CustomEscapes for registering JSON serialization logic for custom Go types."
-sidebar_position: 3
+title: "Custom Encoder - CyberGo JSON | Custom Encoding"
+description: "CyberGo JSON custom encoders: CustomEncoder and TypeEncoder, json.Marshaler and TextMarshaler, CustomEscapes escape maps, registering JSON serialization."
+sidebar_position: 2
 ---
 
 # Custom Encoding
 
-The json library is encoding-compatible with the standard library `encoding/json`, so the JSON form of a custom type is primarily achieved by implementing standard library interfaces. This page covers the encoding extension points that are **effective in the current version**:
+The json library stays encoding-compatible with the standard `encoding/json`, so a custom type's JSON shape is primarily customized by implementing the standard-library interfaces. This page covers the extension points that **actually take effect in the current version**:
 
-- [`json.Marshaler`](#json-marshaler-interface) — a type customizes its own JSON encoding
-- [`encoding.TextMarshaler`](#encoding-textmarshaler-interface) — a type customizes its text encoding (output as a JSON string)
-- [`time.Time`](#built-in-handling-of-time-time) — the library's built-in RFC3339Nano time format
+- [`json.Marshaler`](#the-json-marshaler-interface) — a type customizes its own JSON encoding
+- [`encoding.TextMarshaler`](#the-encoding-textmarshaler-interface) — a type customizes its text encoding (output as a JSON string)
+- [`time.Time`](#built-in-time-time-support) — the library's built-in RFC3339Nano time format
 - [`Config.CustomEscapes`](#custom-character-escaping-customescapes) — custom character escape mapping
 
-::: tip Interfaces first
-For "how a certain type should be encoded" needs, prefer implementing `MarshalJSON` or `MarshalText`; such implementations can be shared by this library, the standard library `encoding/json`, and any compatible library, offering the best portability.
+:::tip Interfaces first
+For "how should this type encode", prefer implementing `MarshalJSON` or `MarshalText`; such implementations work with this library, the standard `encoding/json`, and any compatible library — maximum portability.
 :::
 
-## json.Marshaler Interface
+## The json.Marshaler Interface
 
-Types that implement `MarshalJSON() ([]byte, error)` can fully control their own JSON representation. The library calls this method first when encoding (both value receivers and pointer receivers are supported), consistent with the standard library `encoding/json` behavior.
+A type implementing `MarshalJSON() ([]byte, error)` fully controls its own JSON representation. During encoding the library calls this method first (both value and pointer receivers supported), consistent with the standard `encoding/json`.
 
 Interface signature (compatible with `encoding/json.Marshaler`):
 
@@ -30,7 +30,7 @@ type Marshaler interface {
 }
 ```
 
-Below we define a `Hex` type that encodes a `uint64` as a hexadecimal string with a `0x` prefix:
+Below, a Hex type encodes a `uint64` as a `0x`-prefixed hexadecimal string:
 
 ```go
 package main
@@ -42,10 +42,10 @@ import (
 	"github.com/cybergodev/json"
 )
 
-// Hex wraps a uint64 as a hexadecimal-represented type.
+// Hex wraps a uint64 as a hexadecimal representation.
 type Hex uint64
 
-// MarshalJSON implements json.Marshaler, encoding the value as a "0x.." string.
+// MarshalJSON implements json.Marshaler, encoding the number as an "0x.." string.
 func (h Hex) MarshalJSON() ([]byte, error) {
 	return []byte(`"0x` + strconv.FormatUint(uint64(h), 16) + `"`), nil
 }
@@ -67,12 +67,16 @@ func main() {
 ```
 
 ::: warning Avoid infinite recursion
-When you need "regular encoding" assistance inside `MarshalJSON`, use the standard library `stdjson.Marshal` or call this library on a **different concrete type**. Calling `Marshal` again on the same type will re-enter `MarshalJSON`, forming infinite recursion.
+If you need "regular encoding" as a helper inside `MarshalJSON`, use the standard library's `stdjson.Marshal`, or call this library on a **different concrete type**. Calling `Marshal` again on the same type re-enters `MarshalJSON`, producing infinite recursion.
 :::
 
-## encoding.TextMarshaler Interface
+:::tip Errors and special cases
+Errors returned by `MarshalJSON`/`MarshalText` are wrapped into `MarshalerError` (preserving `errors.As`/`Unwrap` capability) and propagated; the return value must be valid JSON. Two standard-library behaviors also apply: `[]byte` encodes as a base64 string (a `[N]byte` array does not); types implementing `MarshalText` also determine the encoded form of map keys.
+:::
 
-Types that do not implement `MarshalJSON` but implement `MarshalText() ([]byte, error)` are encoded as a JSON string whose value is the text content (quotes and escaping are added automatically). Suitable for types whose form can be fully expressed as text.
+## The encoding.TextMarshaler Interface
+
+A type that does not implement `MarshalJSON` but implements `MarshalText() ([]byte, error)` is encoded as a JSON string whose value is the text content (quoting and escaping applied automatically). Suited to types whose shape a piece of text fully expresses.
 
 Interface signature (compatible with `encoding.TextMarshaler`):
 
@@ -82,7 +86,7 @@ type TextMarshaler interface {
 }
 ```
 
-Below we define a `Slug` type that is automatically normalized to lowercase-hyphen form when encoded:
+Below, a Slug type normalizes itself to lowercase hyphenated form when encoded:
 
 ```go
 package main
@@ -97,7 +101,7 @@ import (
 // Slug represents a URL-friendly short text.
 type Slug string
 
-// MarshalText implements encoding.TextMarshaler, outputting normalized text.
+// MarshalText implements encoding.TextMarshaler, outputting the normalized text.
 func (s Slug) MarshalText() ([]byte, error) {
 	return []byte(strings.ToLower(strings.ReplaceAll(string(s), " ", "-"))), nil
 }
@@ -118,13 +122,13 @@ func main() {
 }
 ```
 
-::: tip Priority of the two interfaces
-If the same type implements both interfaces, `MarshalJSON` takes precedence over `MarshalText`. If you want to encode a type as a JSON string, implementing `MarshalText` is usually simpler (no need to handle quotes and escaping yourself).
+:::tip Precedence of the two interfaces
+If a type implements both, `MarshalJSON` wins over `MarshalText`. When the type should encode as a JSON string, implementing `MarshalText` is usually simpler (no manual quoting or escaping).
 :::
 
-## Built-in Handling of time.Time
+## Built-in time.Time Support
 
-The library has built-in handling for `time.Time`, uniformly outputting the RFC3339Nano format (preserving sub-second precision, consistent with the standard library `encoding/json`). No configuration is needed:
+`time.Time` encodes correctly with zero configuration: it implements `MarshalJSON` itself (value receiver, RFC3339Nano output preserving sub-second precision), and the library adopts it directly through the [`json.Marshaler`](#the-json-marshaler-interface) mechanism above — behavior identical to the standard `encoding/json`.
 
 ```go
 package main
@@ -153,13 +157,13 @@ func main() {
 }
 ```
 
-If you need a different time format, implement `MarshalJSON` for that type (see [above](#json-marshaler-interface)) to override the built-in behavior — a custom type's `MarshalJSON` always takes precedence over the default handling of `time.Time`.
+For a different time format, implement `MarshalJSON` for that type (see [above](#the-json-marshaler-interface)) to override the built-in behavior — a custom type's `MarshalJSON` always takes precedence over the default `time.Time` handling.
 
-## Custom Character Escaping: CustomEscapes
+## Custom Character Escaping (CustomEscapes)
 
-`Config.CustomEscapes` is a `map[rune]string` used to **globally override** how certain characters are escaped. When encoding a string, the library first consults this mapping: on a match it writes the corresponding string verbatim (you must ensure it is JSON-valid); on no match it falls back to the default escaping.
+`Config.CustomEscapes` is a `map[rune]string` used to **globally override** how certain characters escape. When encoding a string, the library consults this map first: a hit writes the corresponding string into the output verbatim (you must ensure it is JSON-valid); a miss falls through to the default escaping.
 
-Below we rewrite the copyright symbol `©` to ASCII text (matched entries are written verbatim; all other characters use the default handling):
+Below, the copyright sign `©` is rewritten as ASCII text (hits are written verbatim; other characters use the default handling):
 
 ```go
 package main
@@ -172,7 +176,7 @@ import (
 
 func main() {
 	cfg := json.DefaultConfig()
-	// © is output verbatim by default; here we rewrite it to ASCII text
+	// © is output verbatim by default; rewrite it as ASCII text here
 	cfg.CustomEscapes = map[rune]string{
 		'©': "(c)",
 	}
@@ -187,43 +191,44 @@ func main() {
 ```
 
 ::: warning Custom escape strings must be JSON-valid
-`CustomEscapes` values are **written verbatim** to the output without a second pass, so be careful about string escaping in your Go source code: if you want a literal backslash escape sequence in the output, write a double backslash `\\` in Go source (a single backslash is treated as an escape by Go, yielding the character itself rather than the escape sequence).
+`CustomEscapes` values are **written verbatim** into the output with no second processing, so mind Go source-level string escaping: to emit a literal backslash escape sequence in the output, write a double backslash `\\` in Go source (a single backslash is consumed by Go's own escaping, producing the character itself rather than an escape sequence).
 :::
 
-::: tip When the custom escape path is triggered
-Setting `CustomEscapes` (non-nil) activates the custom encoding path. This path also reads the `EscapeHTML`, `EscapeUnicode`, `EscapeSlash`, `EscapeNewlines`, `EscapeTabs`, `SortKeys`, `FloatPrecision`, `IncludeNulls` fields (see [Configuration Options](../api-reference/config)).
+:::tip When the custom escape path activates
+Setting `CustomEscapes` (non-nil) activates the custom encoding path. That path also reads fields such as `EscapeHTML`, `EscapeUnicode`, `EscapeSlash`, `EscapeNewlines`, `EscapeTabs`, `SortKeys`, `FloatPrecision`, and `IncludeNulls` (see [Config](../api-reference/config)).
 :::
 
-## How to Choose an Extension Point
+## Choosing an Extension Point
 
-| Need | Approach |
-|------|----------|
-| A type customizes its JSON form | Implement `MarshalJSON()` |
-| A type is encoded as a JSON string (text representation) | Implement `MarshalText()` |
-| Globally change how certain characters are escaped | `Config.CustomEscapes` |
-| Control indentation, HTML escaping, Unicode escaping, key sorting, float precision, etc. | The `Pretty`/`EscapeHTML`/`EscapeUnicode`/`SortKeys`/`FloatPrecision` fields of `Config` (see [Configuration Options](../api-reference/config)) |
-| Override the default time format of `time.Time` | Implement `MarshalJSON()` for a custom time type |
+| Need | How |
+|------|-----|
+| A type customizes its own JSON shape | Implement `MarshalJSON()` |
+| A type encodes as a JSON string (text representation) | Implement `MarshalText()` |
+| Globally change the escaping of certain characters | `Config.CustomEscapes` |
+| Control indentation, HTML escaping, Unicode escaping, key ordering, float precision, etc. | `Config` fields `Pretty`/`EscapeHTML`/`EscapeUnicode`/`SortKeys`/`FloatPrecision` (see [Config](../api-reference/config)) |
+| Override the default `time.Time` format | Implement `MarshalJSON()` on a custom time type |
 
-## Encoding-Related Fields Effective in Config
+## Encoding-Related Config Fields That Take Effect
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `CustomEscapes` | `map[rune]string` | Custom character escape mapping (matched entries are written verbatim) |
+| `CustomEscapes` | `map[rune]string` | Custom character escape mapping (hits are output verbatim) |
 | `EscapeHTML` | `bool` | Whether to escape `<` `>` `&` (default `true`) |
-| `EscapeUnicode` | `bool` | Whether to escape characters `>0x7F` as `\uXXXX` |
+| `EscapeUnicode` | `bool` | Whether to escape characters `>0x7F` as Unicode escapes |
 | `EscapeSlash` | `bool` | Whether to escape `/` |
 | `EscapeNewlines` / `EscapeTabs` | `bool` | Whether to escape newlines/tabs |
 | `SortKeys` | `bool` | Whether to sort object keys (object keys are sorted by default) |
 | `FloatPrecision` | `int` | Float precision (`-1` for default) |
 | `IncludeNulls` | `bool` | Whether to include null-valued fields |
 
-## Unconnected Extension Fields (Reserved)
+## Extension Fields Not Yet Wired (Reserved)
 
-::: warning Unconnected Extension Fields
-`Config.CustomEncoder` (the `CustomEncoder` interface) and `Config.CustomTypeEncoders` (the `TypeEncoder` interface) are **declared in the current version and participate in configuration cloning and cache key computation, but are not yet wired into the encoding pipeline**. Setting these two fields **will not change the encoding output**. They are extension points reserved for future versions; in the meantime, use the already-effective mechanisms above (`MarshalJSON` / `MarshalText` / `CustomEscapes`).
+::: warning Extension fields not yet wired
+`Config.CustomEncoder` (the `CustomEncoder` interface) and `Config.CustomTypeEncoders` (the `TypeEncoder` interface) are **declared and take part in config cloning and cache-key computation, but are not yet wired into the encoding pipeline** in the current version. Setting these fields **does not change encoding output**. They are reserved for future releases; until then, use the effective mechanisms above (`MarshalJSON`/`MarshalText`/`CustomEscapes`).
 
 ```go
-// Current version: the following two fields are declared but not wired; setting them has no effect (reserved interfaces)
+// Current version: the two fields below are declared but not wired; setting
+// them has no effect (reserved interfaces)
 type CustomEncoder interface {
     Encode(value any) (string, error)
 }
@@ -237,5 +242,5 @@ type TypeEncoder interface {
 ## See Also
 
 - [Interface Definitions](../api-reference/interfaces) - `Marshaler` / `TextMarshaler` / `CustomEncoder` / `TypeEncoder` interfaces
-- [Configuration Options](../api-reference/config) - Encoding-related configuration fields
-- [Hooks](./hooks) - Pre/post-operation interception (including available validation hooks)
+- [Config](../api-reference/config) - Encoding-related configuration fields
+- [Hooks](./hooks) - Pre/post operation interception (incl. the available validation hook)

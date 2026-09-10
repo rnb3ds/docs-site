@@ -1,58 +1,58 @@
 ---
 sidebar_label: "Config"
-title: "Config - CyberGo JSON | API Reference"
-description: "CyberGo JSON Config reference: DefaultConfig, SecurityConfig, PrettyConfig, caching, size limits, and encoding options to customize JSON behavior in Go."
+title: "Config Configuration - CyberGo JSON | API Reference"
+description: "CyberGo JSON Config: DefaultConfig defaults, SecurityConfig hardening, PrettyConfig formatting and caching, JSONL options, Validate, and MergeMode strategies."
 sidebar_position: 4
 ---
 
 # Config
 
-Config is used to customize the behavior of the Processor and all JSON operations.
+Config customizes the behavior of the Processor and of all JSON operations.
 
-## Config Struct
+## The Config Struct
 
 ```go
 type Config struct {
-    // ===== Cache Settings =====
+    // ===== Cache settings =====
     MaxCacheSize int           `json:"max_cache_size"` // Maximum cache entries
     CacheTTL     time.Duration `json:"cache_ttl"`      // Cache expiration time
-    EnableCache  bool          `json:"enable_cache"`   // Whether to enable cache
+    EnableCache  bool          `json:"enable_cache"`   // Whether to enable the cache
     CacheResults bool          `json:"cache_results"`  // Whether to cache operation results
-    CacheSharedResults bool    `json:"cache_shared_results"` // Share cached results (skip defensive deep copy; caller must not mutate returned containers)
+    CacheSharedResults bool `json:"cache_shared_results"` // Share cached results (skips defensive deep copies; callers must not mutate the returned containers)
 
-    // ===== Size Limits =====
+    // ===== Size limits =====
     MaxJSONSize  int64 `json:"max_json_size"`  // Maximum JSON size (bytes)
     MaxPathDepth int   `json:"max_path_depth"` // Maximum path depth
     MaxBatchSize int   `json:"max_batch_size"` // Maximum batch operation count
 
-    // ===== Security Limits =====
+    // ===== Security limits =====
     MaxNestingDepthSecurity   int   `json:"max_nesting_depth"`           // Maximum nesting depth
-    MaxSecurityValidationSize int64 `json:"max_security_validation_size"` // Maximum security validation size
+    MaxSecurityValidationSize int64 `json:"max_security_validation_size"` // Maximum size for security validation
     MaxObjectKeys             int   `json:"max_object_keys"`             // Maximum object key count
     MaxArrayElements          int   `json:"max_array_elements"`          // Maximum array element count
-    FullSecurityScan          bool  `json:"full_security_scan"`          // Enable full security scan
+    FullSecurityScan          bool  `json:"full_security_scan"`          // Enable full security scanning
 
     // ===== Concurrency =====
     MaxConcurrency    int `json:"max_concurrency"`    // Maximum concurrency
     ParallelThreshold int `json:"parallel_threshold"` // Parallel processing threshold
 
-    // ===== Processing Options =====
+    // ===== Processing options =====
     EnableValidation bool `json:"enable_validation"` // Enable validation
     StrictMode       bool `json:"strict_mode"`       // Strict mode
-    CreatePaths      bool `json:"create_paths"`      // Auto-create paths
-    CleanupNulls     bool `json:"cleanup_nulls"`     // Cleanup null values
+    CreatePaths      bool `json:"create_paths"`      // Create paths automatically
+    CleanupNulls     bool `json:"cleanup_nulls"`     // Clean up null values
     CompactArrays    bool `json:"compact_arrays"`    // Compact arrays
-    ContinueOnError  bool `json:"continue_on_error"` // Continue on batch operation error
+    ContinueOnError  bool `json:"continue_on_error"` // Continue on batch errors
 
-    // ===== Input/Output Options =====
+    // ===== Input/output options =====
     AllowComments    bool `json:"allow_comments"`     // Allow comments
     PreserveNumbers  bool `json:"preserve_numbers"`   // Preserve number precision
     ValidateInput    bool `json:"validate_input"`     // Validate input
     ValidateFilePath bool `json:"validate_file_path"` // Validate file paths
     SkipValidation   bool `json:"skip_validation"`    // Skip validation (trusted input)
 
-    // ===== Encoding Options =====
-    Pretty          bool            `json:"pretty"`           // Pretty-print output
+    // ===== Encoding options =====
+    Pretty          bool            `json:"pretty"`           // Pretty output
     Indent          string          `json:"indent"`           // Indentation string
     Prefix          string          `json:"prefix"`           // Prefix
     EscapeHTML      bool            `json:"escape_html"`      // HTML escaping
@@ -60,7 +60,7 @@ type Config struct {
     ValidateUTF8    bool            `json:"validate_utf8"`    // UTF-8 validation
     MaxDepth        int             `json:"max_depth"`        // Maximum encoding depth
     DisallowUnknown bool            `json:"disallow_unknown"` // Disallow unknown fields
-    FloatPrecision  int             `json:"float_precision"`  // Float precision (-1 for auto)
+    FloatPrecision  int             `json:"float_precision"`  // Float precision (-1 = automatic)
     FloatTruncate   bool            `json:"float_truncate"`   // Truncate floats
     DisableEscaping bool            `json:"disable_escaping"` // Disable escaping
     EscapeUnicode   bool            `json:"escape_unicode"`   // Unicode escaping
@@ -72,29 +72,29 @@ type Config struct {
 
     // ===== Observability =====
     EnableMetrics     bool `json:"enable_metrics"`      // Enable metrics collection
-    EnableHealthCheck bool `json:"enable_health_check"` // Enable health check
+    EnableHealthCheck bool `json:"enable_health_check"` // Enable health checks
 
-    // ===== Large File Processing =====
+    // ===== Large file handling =====
     ChunkSize       int64 `json:"chunk_size"`       // Chunk size
     MaxMemory       int64 `json:"max_memory"`       // Maximum memory usage
     BufferSize      int   `json:"buffer_size"`      // Buffer size
     SamplingEnabled bool  `json:"sampling_enabled"` // Enable sampling
     SampleSize      int   `json:"sample_size"`      // Sample count
 
-    // ===== JSONL Configuration =====
+    // ===== JSONL configuration =====
     JSONLBufferSize    int   `json:"jsonl_buffer_size"`     // JSONL buffer size
     JSONLMaxLineSize   int   `json:"jsonl_max_line_size"`   // JSONL maximum line size
     JSONLSkipEmpty     bool  `json:"jsonl_skip_empty"`      // Skip empty lines
     JSONLSkipComments  bool  `json:"jsonl_skip_comments"`   // Skip comment lines
-    JSONLContinueOnErr bool  `json:"jsonl_continue_on_err"` // Continue on error
+    JSONLContinueOnErr bool  `json:"jsonl_continue_on_err"` // Continue on errors
     JSONLWorkers       int   `json:"jsonl_workers"`         // JSONL parallel worker count
     JSONLChunkSize     int   `json:"jsonl_chunk_size"`      // JSONL chunk size
     JSONLMaxMemory     int64 `json:"jsonl_max_memory"`      // JSONL maximum memory
 
-    // ===== Merge Options =====
+    // ===== Merge options =====
     MergeMode MergeMode `json:"merge_mode"` // Merge strategy
 
-    // ===== Extension Points (no JSON tag, not serialized) =====
+    // ===== Extension points (no JSON tags, not serialized) =====
     CustomEncoder               CustomEncoder                // Custom encoder
     CustomTypeEncoders          map[reflect.Type]TypeEncoder // Custom type encoders
     CustomValidators            []Validator                  // Custom validators
@@ -105,12 +105,217 @@ type Config struct {
 }
 ```
 
-::: warning CacheSharedResults contract
-When `CacheSharedResults` is `true`, a cache-hit `Get`/`GetFromParsed` returns the cached value **directly**, skipping the defensive deep copy (faster, fewer allocations). The caller **must not mutate** the returned `map[string]any`/`[]any`, since doing so corrupts the shared cache and affects subsequent reads. Primitives (`bool`, `float64`, `string`, `json.Number`, `nil`) are immutable and always safe. The default `false` preserves the safe copy-on-read behavior; enable it only when callers treat results as read-only (for example, read-heavy workloads that `Get` the same large subtrees repeatedly).
+::: warning The CacheSharedResults contract
+When `CacheSharedResults` is `true`, cache hits in `Get`/`GetFromParsed` **return the cached value directly**, skipping the defensive deep copy (faster, fewer allocations). In that case **callers must not mutate** the returned `map[string]any`/`[]any`; otherwise the shared cache is corrupted and subsequent reads are affected. Primitive values (`bool`, `float64`, `string`, `json.Number`, `nil`) are immutable and always safe. The default `false` keeps the safe "copy on read" behavior; enable it only when callers treat results as read-only (e.g. read-heavy workloads repeatedly reading the same large subtree).
 :::
 
-::: warning Extension field reservation status
-The `CustomEncoder`, `CustomTypeEncoders`, and `CustomValidators` fields are declared in the current version but **not yet wired into the encoding/operation pipeline**. Setting them has no effect; they are reserved for future versions. The currently available way to customize encoding is to implement the `json.Marshaler` or `encoding.TextMarshaler` interface (see [Custom Encoder](../extensions/custom-encoder)); the available validation method is `ValidateSchema` (see [Validator](../extensions/validator)).
+::: warning Extension field wiring status
+The four interface fields `CustomEncoder`, `CustomTypeEncoders`, `CustomValidators`, and `CustomPathParser` are declared in the current version but **not yet wired into the encode/operation pipelines** — setting them has no effect; they are reserved for future releases (`CustomPathParser` already participates in the "is it set" check of the processor cache key, but path parsing itself still uses the built-in parser). Currently available alternatives:
+
+- Fine-tuning encoding behavior → `CustomEscapes` (**effective**, see the encoding options below) or implementing `json.Marshaler`/`encoding.TextMarshaler` (see [Custom Encoders](../extensions/custom-encoder))
+- Operation interception → `Hooks` + `AddHook` (**effective**, see the [Hook System](../extensions/hooks))
+- Input validation → `ValidateSchema` (see [Schema Validation](./schema))
+:::
+
+## Config Field Reference
+
+`Config` has 66 exported fields, grouped by purpose below. Defaults are taken from [`DefaultConfig()`](#defaultconfig); valid ranges and auto-correction rules per field are in [Clamping ranges at a glance](#validatewithwarnings).
+
+### Cache
+
+| Field                 | Type            | Default | Description                                                                        |
+| --------------------- | --------------- | ------- | ---------------------------------------------------------------------------------- |
+| `MaxCacheSize`        | `int`           | 128     | Maximum cache entries (0 disables the cache)                                       |
+| `CacheTTL`            | `time.Duration` | 5 minutes | Cache entry lifetime                                                             |
+| `EnableCache`         | `bool`          | true    | Whether to enable the cache                                                        |
+| `CacheResults`        | `bool`          | true    | Whether to cache operation results (cached per operation)                          |
+| `CacheSharedResults`  | `bool`          | false   | Cache hits return the shared value directly, skipping the defensive deep copy; callers must not mutate the returned containers (contract in the warning above) |
+
+### Size Limits
+
+| Field          | Type    | Default | Description                                                    |
+| -------------- | ------- | ------- | -------------------------------------------------------------- |
+| `MaxJSONSize`  | `int64` | 100MB   | Maximum JSON input size (bytes)                                |
+| `MaxPathDepth` | `int`   | 50      | Maximum path depth                                             |
+| `MaxBatchSize` | `int`   | 2000    | Cap on operations per batch (exceeding it is rejected, preventing memory exhaustion) |
+
+### Security Limits
+
+| Field                       | Type    | Default | Description                                                                                                                             |
+| --------------------------- | ------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `MaxNestingDepthSecurity`   | `int`   | 200     | Maximum nesting depth                                                                                                                   |
+| `MaxSecurityValidationSize` | `int64` | 10MB    | Maximum size for security validation (above it, scanning follows the sampling strategy unless `FullSecurityScan` is true)                |
+| `MaxObjectKeys`             | `int`   | 100000  | Maximum key count per object                                                                                                            |
+| `MaxArrayElements`          | `int`   | 100000  | Maximum element count per array                                                                                                         |
+| `FullSecurityScan`          | `bool`  | false   | When true, full (non-sampled) security scanning for all input; when false, large input (>4KB) uses rolling-window + sampled scanning, while critical patterns (`__proto__`, etc.) are still fully scanned |
+
+### Concurrency
+
+| Field               | Type  | Default | Description                                                                              |
+| ------------------- | ----- | ------- | ---------------------------------------------------------------------------------------- |
+| `MaxConcurrency`    | `int` | 50      | Maximum concurrency                                                                      |
+| `ParallelThreshold` | `int` | 10      | Parallel processing threshold (falls back to sequential below this element count)         |
+
+### Processing Options
+
+| Field              | Type   | Default | Description                                                 |
+| ------------------ | ------ | ------- | ------------------------------------------------------------ |
+| `EnableValidation` | `bool` | true    | Enable input validation                                     |
+| `StrictMode`       | `bool` | false   | Strict mode (more conservative parsing and interception)    |
+| `CreatePaths`      | `bool` | true    | Create missing intermediate paths automatically on Set      |
+| `CleanupNulls`     | `bool` | false   | Clean up null values                                        |
+| `CompactArrays`    | `bool` | false   | Compact arrays                                              |
+| `ContinueOnError`  | `bool` | false   | Continue when a single batch item fails                     |
+
+### Input/Output Options
+
+| Field               | Type   | Default | Description                                                                     |
+| ------------------- | ------ | ------- | -------------------------------------------------------------------------------- |
+| `AllowComments`     | `bool` | false   | Allow comments (reserved field, does not change behavior currently)              |
+| `PreserveNumbers`   | `bool` | false   | Decoding preserves number literals (`1.10` does not become `1.1`); encoding writes them back verbatim |
+| `ValidateInput`     | `bool` | true    | Validate input JSON                                                              |
+| `ValidateFilePath`  | `bool` | true    | Validate file paths                                                              |
+| `SkipValidation`    | `bool` | false   | Skip non-essential validation (trusted input only)                               |
+
+### Encoding Options
+
+| Field              | Type              | Default            | Description                                                                          |
+| ------------------ | ----------------- | ------------------ | ------------------------------------------------------------------------------------- |
+| `Pretty`           | `bool`            | false              | Pretty output                                                                        |
+| `Indent`           | `string`          | "  " (two spaces)  | Indentation string                                                                   |
+| `Prefix`           | `string`          | "" (empty)         | Prefix for every line                                                                |
+| `EscapeHTML`       | `bool`            | true               | HTML character escaping (`<` `>` `&`)                                                 |
+| `SortKeys`         | `bool`            | false              | Sort object keys in output                                                           |
+| `ValidateUTF8`     | `bool`            | true               | UTF-8 validation (reserved field, does not change behavior currently)                |
+| `MaxDepth`         | `int`             | 100                | Maximum encoding depth (0 means unlimited)                                           |
+| `DisallowUnknown`  | `bool`            | false              | Disallow unknown fields when decoding (equivalent to `Decoder.DisallowUnknownFields()`) |
+| `FloatPrecision`   | `int`             | -1                 | Float precision (-1 automatic; 0–15 explicit)                                        |
+| `FloatTruncate`    | `bool`            | false              | Truncate directly instead of rounding when precision is active                       |
+| `DisableEscaping`  | `bool`            | false              | Disable escaping logic (use only for fully controlled output)                        |
+| `EscapeUnicode`    | `bool`            | false              | Non-ASCII characters become `\uXXXX`                                                 |
+| `EscapeSlash`      | `bool`            | false              | `/` is escaped as `\/`                                                               |
+| `EscapeNewlines`   | `bool`            | true               | Newline escaping                                                                     |
+| `EscapeTabs`       | `bool`            | true               | Tab escaping                                                                         |
+| `IncludeNulls`     | `bool`            | true               | Include fields with null values when encoding                                        |
+| `CustomEscapes`    | `map[rune]string` | nil                | Custom character escape mapping                                                      |
+
+### Observability
+
+| Field                | Type   | Default | Description                                                                       |
+| -------------------- | ------ | ------- | ---------------------------------------------------------------------------------- |
+| `EnableMetrics`      | `bool` | false   | Enable metrics collection (`GetStats` / `GetHealthStatus` need it to have data)    |
+| `EnableHealthCheck`  | `bool` | false   | Enable health checks (reserved field, does not change behavior currently)          |
+
+### Large File Handling (Sampling and Streaming)
+
+| Field             | Type    | Default | Description                                                       |
+| ----------------- | ------- | ------- | ------------------------------------------------------------------ |
+| `ChunkSize`       | `int64` | 1MB     | Large-file chunk size                                             |
+| `MaxMemory`       | `int64` | 100MB   | Maximum memory for large-file processing                          |
+| `BufferSize`      | `int`   | 64KB    | Large-file read buffer size                                       |
+| `SamplingEnabled` | `bool`  | true    | Enable sampling (reserved field, does not change behavior currently) |
+| `SampleSize`      | `int`   | 1000    | Sample count                                                      |
+
+### JSONL Configuration
+
+| Field                 | Type    | Default | Description                                      |
+| --------------------- | ------- | ------- | ------------------------------------------------- |
+| `JSONLBufferSize`     | `int`   | 64KB    | JSONL read buffer size                           |
+| `JSONLMaxLineSize`    | `int`   | 1MB     | Maximum size of a single JSONL line              |
+| `JSONLSkipEmpty`      | `bool`  | true    | Skip empty lines                                 |
+| `JSONLSkipComments`   | `bool`  | false   | Skip `#` / `//` comment lines                    |
+| `JSONLContinueOnErr`  | `bool`  | false   | Continue with subsequent lines on parse errors   |
+| `JSONLWorkers`        | `int`   | 4       | JSONL parallel worker count                      |
+| `JSONLChunkSize`      | `int`   | 1000    | Batch chunk size (lines)                         |
+| `JSONLMaxMemory`      | `int64` | 100MB   | Maximum memory for JSONL processing              |
+
+### Merge Options
+
+| Field       | Type        | Default   | Description                                                                              |
+| ----------- | ----------- | --------- | ----------------------------------------------------------------------------------------- |
+| `MergeMode` | `MergeMode` | MergeUnion | Merge strategy of `MergeJSON` / `MergeMany` (see [Merge Modes](#merge-modes))              |
+
+### Extension Points
+
+The following fields have no JSON tags and are not serialized; wiring status in the warning above.
+
+| Field                       | Type                               | Default | Description                                                                        |
+| ---------------------------- | ---------------------------------- | ------- | ------------------------------------------------------------------------------------ |
+| `CustomEncoder`              | `CustomEncoder`                    | nil     | Custom encoder replacing the default encoder (reserved)                             |
+| `CustomTypeEncoders`         | `map[reflect.Type]TypeEncoder`     | nil     | Encoders registered per Go type (reserved)                                          |
+| `CustomValidators`           | `[]Validator`                      | nil     | Custom validators run before operations (reserved)                                  |
+| `AdditionalDangerousPatterns` | `[]DangerousPattern`              | nil     | Dangerous patterns appended on top of the built-in ones                             |
+| `DisableDefaultPatterns`     | `bool`                             | false   | Disable built-in warning-level patterns (critical patterns are always enforced and cannot be disabled) |
+| `Hooks`                      | `[]Hook`                           | nil     | Before/after operation hooks (effective)                                            |
+| `CustomPathParser`           | `PathParser`                       | nil     | Custom path parser (reserved)                                                       |
+
+## Encoding Options in Detail
+
+Encoding options (`Pretty`/`Indent`/`EscapeHTML`/`SortKeys`/`FloatPrecision`, etc.) control the output shape of the `Marshal`/`Encode` families. Defaults align with the standard library (e.g. `EscapeHTML: true`, `IncludeNulls: true`); whenever any "non-default" encoding option is set, the library automatically switches to its custom encoder path internally — no manual intervention needed.
+
+### Key Sorting (SortKeys)
+
+```go
+cfg := json.DefaultConfig()
+cfg.SortKeys = true
+s, _ := json.EncodeWithConfig(map[string]any{"b": 2, "a": 1}, cfg)
+// Output: {"a":1,"b":2} — stable key order, convenient for comparison and testing
+```
+
+### Float Precision (FloatPrecision / FloatTruncate)
+
+```go
+cfg := json.DefaultConfig()
+cfg.FloatPrecision = 2 // -1 (default) = automatic precision
+s, _ := json.EncodeWithConfig(3.14159265, cfg)
+// Output: 3.14
+```
+
+`FloatTruncate` controls how rounding happens when `FloatPrecision` is active: the default (`false`) applies standard round-half; setting it to `true` switches to **direct truncation** — with precision 2, `3.999` outputs `3.99` (rounding would give `4.00`). It only takes part in encoding when `FloatPrecision >= 0`.
+
+### Custom Character Escaping (CustomEscapes)
+
+```go
+cfg := json.DefaultConfig()
+cfg.CustomEscapes = map[rune]string{
+    '<': "&lt;",
+}
+s, _ := json.EncodeWithConfig("<a>", cfg)
+// Output: "&lt;a>"
+```
+
+### Common Toggles at a Glance
+
+| Option | Default | Effect when toggled/set true |
+|--------|---------|------------------------------|
+| `EscapeHTML` | `true` | `false`: `<` `>` `&` are not escaped |
+| `EscapeUnicode` | `false` | `true`: non-ASCII characters become `\uXXXX` |
+| `EscapeSlash` | `false` | `true`: `/` is escaped as `\/` |
+| `EscapeNewlines` / `EscapeTabs` | `true` | `false`: control characters pass through raw (use with care when producing JSONL-friendly text) |
+| `DisableEscaping` | `false` | `true`: skips escaping logic entirely (use only for fully controlled output) |
+| `IncludeNulls` | `true` | `false`: fields with `null` values are omitted when encoding |
+| `PreserveNumbers` | `false` | `true`: decoding preserves number literals (`1.10` does not become `1.1`), written back verbatim when encoding |
+
+## Input and Observability Toggles
+
+The following fields control decoding strictness and runtime observability (defaults in [`DefaultConfig`](#defaultconfig)):
+
+| Field | Default | Scope | Description |
+|-------|---------|-------|-------------|
+| `DisallowUnknown` | `false` | `NewDecoder(r, cfg)` | When `true`, equivalent to calling `DisallowUnknownFields()` on the returned Decoder — decoding errors on unknown fields |
+| `ValidateUTF8` | `true` | Reserved | Does not change behavior currently (see note below) |
+| `AllowComments` | `false` | Reserved | Does not change behavior currently (see note below) |
+| `EnableMetrics` | `false` | At `New(cfg)` construction | When `true`, creates a metrics collector so `GetStats` operation/error counters and the per-check results of `GetHealthStatus` have data |
+| `EnableHealthCheck` | `false` | Reserved | Does not change behavior currently (see note below) |
+| `SamplingEnabled` | `true` | Reserved | Does not change behavior currently (see note below) |
+
+::: warning Reserved field notes
+`AllowComments`, `ValidateUTF8`, `EnableHealthCheck`, and `SamplingEnabled` are declared and take part in config comparison and hashing (so they do distinguish processor caches for different cfgs), but the current version **does not read them** in the corresponding pipelines — setting them changes nothing:
+
+- `AllowComments`: does not make parsing accept `//` or `#` comments; comment lines in JSONL files are controlled separately by `JSONLSkipComments`.
+- `ValidateUTF8`: on the input side, rejecting invalid UTF-8 is unconditional security behavior; on the output side, standard-library semantics apply — neither is affected by this toggle.
+- `EnableHealthCheck`: health checks are on-demand via `GetHealthStatus`; whether there is data depends on `EnableMetrics` (see [Lifecycle and Statistics](./processor/lifecycle#health-check)).
+- `SamplingEnabled`: whether security scanning of large inputs is sampled is decided by `FullSecurityScan` and `MaxSecurityValidationSize`.
 :::
 
 ## Configuration Presets
@@ -130,36 +335,37 @@ if err != nil {
 defer processor.Close()
 ```
 
-**Default Values**
+**Defaults**
 
 | Field | Value | Description |
-|------|-----|------|
+|-------|-------|-------------|
 | MaxJSONSize | 100MB | JSON size limit |
 | MaxNestingDepthSecurity | 200 | Nesting depth |
 | MaxPathDepth | 50 | Path depth |
-| MaxSecurityValidationSize | 10MB | Security validation size limit |
-| MaxObjectKeys | 100000 | Maximum object keys |
-| MaxArrayElements | 100000 | Maximum array elements |
-| MaxConcurrency | 50 | Concurrency limit |
+| MaxSecurityValidationSize | 10MB | Security validation size cap |
+| MaxObjectKeys | 100000 | Maximum object key count |
+| MaxArrayElements | 100000 | Maximum array element count |
+| MaxConcurrency | 50 | Concurrency |
+| ParallelThreshold | 10 | Falls back to sequential processing below this element count |
 | MaxBatchSize | 2000 | Batch operation count |
 | CacheTTL | 5 minutes | Cache expiration |
 | MaxCacheSize | 128 | Maximum cache entries |
 | EnableCache | true | Enable cache |
 | CacheResults | true | Cache operation results |
-| CacheSharedResults | false | Share cached results (read-only high-throughput) |
+| CacheSharedResults | false | Share cached results (high-performance read-only scenarios) |
 | EnableValidation | true | Enable validation |
 | StrictMode | false | Non-strict mode |
-| FullSecurityScan | false | Sampled security scan (not full) |
+| FullSecurityScan | false | Sampled security scanning (not full) |
 | ValidateInput | true | Validate input |
 | ValidateFilePath | true | Validate file paths |
-| CreatePaths | true | Auto-create paths |
-| Pretty | false | No pretty-print output |
+| CreatePaths | true | Create paths automatically |
+| Pretty | false | No pretty output |
 | EscapeHTML | true | HTML escaping |
 | ValidateUTF8 | true | UTF-8 validation |
-| IncludeNulls | true | Include null |
+| IncludeNulls | true | Include nulls |
 | EscapeNewlines | true | Newline escaping |
 | EscapeTabs | true | Tab escaping |
-| FloatPrecision | -1 | Auto precision |
+| FloatPrecision | -1 | Automatic precision |
 | MaxDepth | 100 | Encoding depth |
 | Indent | "  " | Default indentation |
 | ChunkSize | 1MB | Chunk size |
@@ -171,7 +377,7 @@ defer processor.Close()
 | JSONLMaxLineSize | 1MB | JSONL maximum line size |
 | JSONLSkipEmpty | true | Skip empty lines |
 | JSONLSkipComments | false | Do not skip comments |
-| JSONLContinueOnErr | false | Stop on error |
+| JSONLContinueOnErr | false | Stop on errors |
 | JSONLWorkers | 4 | Parallel worker count |
 | JSONLChunkSize | 1000 | JSONL chunk size |
 | JSONLMaxMemory | 100MB | JSONL maximum memory |
@@ -181,7 +387,7 @@ defer processor.Close()
 
 Signature: `func SecurityConfig() Config`
 
-Returns a security configuration, suitable for processing untrusted input.
+Returns the security configuration, suitable for handling untrusted input.
 
 ```go
 // Recommended for:
@@ -198,17 +404,17 @@ if err != nil {
 defer processor.Close()
 ```
 
-**Security Configuration Features**
+**Security configuration characteristics**
 
 | Field | Value | Description |
-|------|-----|------|
+|-------|-------|-------------|
 | MaxNestingDepthSecurity | 30 | Conservative nesting depth |
 | MaxSecurityValidationSize | 10MB | Security validation size |
 | MaxObjectKeys | 5000 | Conservative key limit |
 | MaxArrayElements | 5000 | Conservative element limit |
 | MaxJSONSize | 10MB | Conservative size limit |
 | MaxPathDepth | 30 | Conservative path depth |
-| FullSecurityScan | true | Full security scan |
+| FullSecurityScan | true | Full security scanning |
 | StrictMode | true | Strict mode |
 | EnableValidation | true | Enable validation |
 | EnableCache | true | Enable cache |
@@ -219,46 +425,46 @@ defer processor.Close()
 
 Signature: `func PrettyConfig() Config`
 
-Returns a pretty-print output configuration.
+Returns the pretty-print configuration.
 
 ```go
 result, err := json.EncodeWithConfig(data, json.PrettyConfig())
 ```
 
-## Configuration Methods
+## Config Methods
 
 ### Clone
 
 Signature: `func (c *Config) Clone() *Config`
 
-Deep copies the configuration.
+Deep-copies the configuration (`Config.Clone` returns a new `*Config`; modifying the copy does not affect the original). Value fields are copied one by one; among reference fields, the two maps `CustomEscapes` and `CustomTypeEncoders` and the three slices `CustomValidators`, `AdditionalDangerousPatterns`, and `Hooks` are deep-copied and independently modifiable; interface fields (`CustomEncoder`, `CustomPathParser`) are shallow-copied (typically stateless or singleton implementations). Calling on a nil Config returns nil.
 
 ```go
 cfg := json.DefaultConfig()
 cfgCopy := cfg.Clone()
-cfgCopy.EnableValidation = true // Does not affect original config
+cfgCopy.EnableValidation = true // Does not affect the original config
 ```
 
 ### Validate
 
 Signature: `func (c *Config) Validate() error`
 
-Validates the configuration and automatically corrects invalid values. This method **modifies the Config in place**, correcting invalid fields to within their valid ranges: values that are too small (≤0) are raised to the minimum, and values that exceed the upper bound are capped at the maximum.
+Validates the configuration and auto-corrects invalid values. This method **modifies the Config in place**, clamping illegal fields into the valid range: too small (≤0) is raised to the minimum, too large (above the cap) is lowered to the maximum. Calling on a nil Config returns an error. After correction it always returns nil — use `ValidateWithWarnings` to see what was corrected.
 
 ```go
 cfg := json.DefaultConfig()
-cfg.MaxJSONSize = -1 // Invalid value
+cfg.MaxJSONSize = -1 // invalid value
 if err := cfg.Validate(); err != nil {
     panic(err)
 }
-// MaxJSONSize will be corrected in place to minimum value
+// MaxJSONSize is corrected in place to the minimum
 ```
 
 ### ValidateWithWarnings
 
 Signature: `func (c *Config) ValidateWithWarnings() []ConfigWarning`
 
-Validates the configuration and returns a list of correction warnings.
+Validates the configuration and returns the list of correction warnings.
 
 ```go
 cfg := json.DefaultConfig()
@@ -269,23 +475,56 @@ for _, w := range warnings {
 }
 ```
 
-### ConfigWarning Type
+**Clamping ranges at a glance** (auto-correction rules of `Validate`/`ValidateWithWarnings`; ≤0 counts as invalid and gets the lower bound, above the cap gets the upper bound):
 
-`ConfigWarning` represents auto-correction information during configuration validation.
+| Field | Valid range (lower–upper) | Notes |
+|-------|---------------------------|-------|
+| `MaxJSONSize` | 1MB – 100MB | int64 |
+| `MaxPathDepth` | 10 – 200 | |
+| `MaxNestingDepthSecurity` | 10 – 200 | |
+| `MaxConcurrency` | 1 – 200 | |
+| `ParallelThreshold` | 1 – 50 | |
+| `MaxObjectKeys` | 100 – 100000 | |
+| `MaxArrayElements` | 100 – 100000 | |
+| `MaxSecurityValidationSize` | 1MB – 100MB | int64 |
+| `MaxBatchSize` | 10 – 10000 | |
+| `MaxCacheSize` | 0 – 2000 (only negatives are invalid) | When negative, set to 0 and **EnableCache is also turned off** (0 disables the cache, which is legal) |
+| `CacheTTL` | ≤0 invalid, reset to `DefaultCacheTTL` (5 minutes) | |
+| `MaxDepth` | [0, 1000], out-of-range reset to 100 | 0 means unlimited depth; negative is invalid |
+| `FloatPrecision` | [-1, 15], out-of-range reset to -1 | -1 is the automatic-precision sentinel |
+| `ChunkSize` | 64KB – 100MB | |
+| `MaxMemory` | 10MB – 1GB | |
+| `BufferSize` | 4KB – 1MB | |
+| `SampleSize` | 100 – 10000 | |
+| `JSONLBufferSize` | 4KB – 1MB | |
+| `JSONLMaxLineSize` | 1KB – 100MB | |
+| `JSONLWorkers` | 1 – 64 | |
+| `JSONLChunkSize` | 100 – 10000 | |
+| `JSONLMaxMemory` | 10MB – 1GB | int64 |
+
+### The ConfigWarning Type
+
+`ConfigWarning` describes an auto-correction made during configuration validation.
 
 ```go
 type ConfigWarning struct {
-    Field    string // Corrected field name
+    Field    string // Name of the corrected field
     OldValue any    // Original value (may be nil for invalid values)
     NewValue any    // Corrected value
-    Reason   string // Correction reason
+    Reason   string // Why it was corrected
 }
 ```
 
+| Field | Type | Description |
+|-------|------|-------------|
+| `Field` | `string` | Name of the corrected field (e.g. `MaxJSONSize`) |
+| `OldValue` | `any` | Value before correction (may be nil for invalid values) |
+| `NewValue` | `any` | Value after correction |
+| `Reason` | `string` | Reason for the correction (e.g. below the lower bound, above the upper bound) |
 
-### SecurityLimits Type
+### The SecurityLimits Type
 
-`SecurityLimits` summarizes the security-related limit fields in Config.
+`SecurityLimits` gathers the security-related limit fields of Config.
 
 ```go
 type SecurityLimits struct {
@@ -297,6 +536,15 @@ type SecurityLimits struct {
     MaxPathDepth              int   `json:"max_path_depth"`
 }
 ```
+
+| Field                       | Type    | Description                                                                  |
+| --------------------------- | ------- | ---------------------------------------------------------------------------- |
+| `MaxNestingDepth`           | `int`   | Maximum nesting depth (maps to `Config.MaxNestingDepthSecurity`)             |
+| `MaxSecurityValidationSize` | `int64` | Maximum size for security validation (maps to `Config.MaxSecurityValidationSize`) |
+| `MaxObjectKeys`             | `int`   | Maximum object key count (maps to `Config.MaxObjectKeys`)                    |
+| `MaxArrayElements`          | `int`   | Maximum array element count (maps to `Config.MaxArrayElements`)              |
+| `MaxJSONSize`               | `int64` | Maximum JSON size (maps to `Config.MaxJSONSize`)                             |
+| `MaxPathDepth`              | `int`   | Maximum path depth (maps to `Config.MaxPathDepth`)                           |
 
 ### AddHook
 
@@ -324,7 +572,7 @@ cfg.AddValidator(&MyValidator{})
 
 Signature: `func (c *Config) AddDangerousPattern(pattern DangerousPattern)`
 
-Adds an additional security pattern.
+Adds an extra security pattern.
 
 ```go
 cfg := json.DefaultConfig()
@@ -351,7 +599,7 @@ defer processor.Close()
 ### Security Configuration
 
 ```go
-// Process untrusted input
+// Handling untrusted input
 cfg := json.SecurityConfig()
 processor, err := json.New(cfg)
 if err != nil {
@@ -393,14 +641,14 @@ defer processor.Close()
 ### Clone and Modify
 
 ```go
-// Create variants based on default config
+// Create variants from the default configuration
 base := json.DefaultConfig()
 
-// Variant 1: Development config
+// Variant 1: development configuration
 devCfg := base.Clone()
 devCfg.EnableMetrics = true
 
-// Variant 2: Production config
+// Variant 2: production configuration
 prodCfg := base.Clone()
 prodCfg.EnableValidation = true
 ```
@@ -413,7 +661,7 @@ const (
     DefaultMaxJSONSize       = 100 * 1024 * 1024  // 100MB
     DefaultMaxNestingDepth   = 200
     DefaultMaxPathDepth      = 50
-    DefaultMaxDepth          = 100                 // Default nesting depth for encoding/decoding (Config.MaxDepth)
+    DefaultMaxDepth          = 100                 // Default encode/decode nesting depth (Config.MaxDepth)
     DefaultMaxConcurrency    = 50
     DefaultMaxBatchSize      = 2000
     DefaultMaxSecuritySize   = 10 * 1024 * 1024   // 10MB
@@ -426,19 +674,27 @@ const (
 )
 ```
 
-::: info Internal Constants
-Path validation length limits (`maxPathLength`) and other constants have been converted to internal implementations and are no longer exported as public APIs. Related default values are reflected in the `Config` struct field defaults.
+::: info Internal constants
+Path validation length limits (`maxPathLength`) and similar constants have moved to internal implementation and are no longer exported as public API. Their defaults are reflected in the field defaults of the `Config` struct.
 :::
 
 ---
 
 ## Merge Modes
 
-`MergeMode` controls the merge strategy for `MergeJSON` and `MergeMany` functions.
+`MergeMode` controls the merge strategy of the `MergeJSON` and `MergeMany` functions.
 
-### MergeUnion (Default)
+`MergeMode` implements `fmt.Stringer`: `func (m MergeMode) String() string` returns `"union"` / `"intersection"` / `"difference"` (unknown values return `"unknown(N)"`), convenient for logging and debug output.
 
-Merges all keys/elements, using the override value for conflicts.
+| Constant           | Value | `String()` returns |
+| ------------------ | ----- | ------------------ |
+| `MergeUnion`       | 0     | `"union"`          |
+| `MergeIntersection` | 1    | `"intersection"`   |
+| `MergeDifference`  | 2     | `"difference"`     |
+
+### MergeUnion (default)
+
+Merges all keys/elements; on conflict the overriding value wins.
 
 ```go
 cfg := json.DefaultConfig()
@@ -453,7 +709,7 @@ result, err := json.MergeJSON(
 
 ### MergeIntersection
 
-Only keeps keys that exist in both objects.
+Keeps only keys present in both objects.
 
 ```go
 cfg := json.DefaultConfig()
@@ -468,7 +724,7 @@ result, err := json.MergeJSON(
 
 ### MergeDifference
 
-Only keeps keys that exist in the base object but not in the override object.
+Keeps only keys present in the base object but absent from the overriding object.
 
 ```go
 cfg := json.DefaultConfig()
@@ -485,17 +741,17 @@ result, err := json.MergeJSON(
 
 ## Security Recommendations
 
-| Configuration | Recommended Value | Description |
-|--------|--------|------|
-| MaxJSONSize | 10-100MB | Adjust based on server memory |
-| MaxNestingDepthSecurity | 30-50 | Prevent deep nesting attacks |
-| MaxPathDepth | 30-50 | Limit path complexity |
+| Setting | Recommended value | Notes |
+|---------|-------------------|-------|
+| MaxJSONSize | 10-100MB | Tune to your server memory |
+| MaxNestingDepthSecurity | 30-50 | Prevents deep-nesting attacks |
+| MaxPathDepth | 30-50 | Limits path complexity |
 | EnableValidation | true | Always enable |
-| FullSecurityScan | true (untrusted input) | Full security scan |
+| FullSecurityScan | true (untrusted input) | Full security scanning |
 
-## Related
+## See Also
 
 - [Processor](./processor/) - Processor methods
-- [Constants & Errors](./constants) - Configuration constants
+- [Constants and Errors](./constants) - Configuration constants
 - [Security Overview](../security/) - Security best practices
 - [Interface Definitions](./interfaces) - Extension interfaces

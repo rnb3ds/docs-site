@@ -1,7 +1,7 @@
 ---
 sidebar_label: "상수와 오류"
 title: "상수와 오류 - CyberGo env | 센티널 오류와 보안 상수"
-description: "CyberGo env 상수와 오류 레퍼런스로, DefaultMaxFileSize와 MaxVariables 제한, ErrFileNotFound 센티널 오류, ParseError 타입, DefaultForbiddenKeys 금지 키, IsSensitiveKey, MaskValue 유틸리티 함수를 다룹니다."
+description: "CyberGo env 상수와 오류 레퍼런스로, 크기와 수량 제한 상수, ErrFileNotFound 센티널 오류, ParseError 타입, DefaultForbiddenKeys 금지 키와 IsSensitiveKey, MaskValue 함수를 다룹니다."
 sidebar_position: 7
 ---
 
@@ -750,6 +750,30 @@ func main() {
     }
 }
 ```
+
+## 기본 금지 키와 키 패턴
+
+### DefaultForbiddenKeys 전체 목록
+
+라이브러리는 기본적으로 다음 시스템 핵심 변수의 쓰기를 거부하며, 공격 표면별로 분류됩니다:
+
+| 범주 | 키 | 방어 대상 |
+|------|-----|-----------|
+| 경로 인젝션 | `PATH` | 실행 파일 탐색 경로 하이재킹 |
+| 동적 링커 (Linux/macOS) | `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_DEBUG`, `LD_AUDIT`, `LD_PRELOAD_32`, `LD_PRELOAD_64`, `LD_LIBRARY_PATH_32`, `LD_LIBRARY_PATH_64`, `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH` | 라이브러리 프리로드 공격 |
+| 셸 이스케이프 | `SHELL`, `ENV`, `BASH_ENV`, `IFS` | 셸 인젝션 |
+| 인터프리터 인젝션 | `PYTHONPATH`, `PERL5OPT`, `RUBYLIB`, `NODE_PATH` | 언어 런타임 코드 인젝션 |
+| Windows 고유 | `COMSPEC`, `PATHEXT`, `SYSTEMROOT`, `WINDIR` | Windows 시스템 변수 하이재킹 |
+
+직접 추가하려면 `ValidationConfig.ForbiddenKeys` 사용; 내장 제한을 풀려면 대체 검증기를 직접 제공해야 합니다.
+
+### DefaultKeyPattern
+
+`DefaultKeyPattern`은 `nil`로 내보내집니다 — 기본 키 검증은 **바이트 수준 빠른 경로**를 사용하며(정규식 `^[A-Za-z][A-Za-z0-9_]*$`와 동등) 정규식보다 약 한 자릿수 빠릅니다. 커스텀 `KeyPattern`을 설정하면 정규식 검증으로 전환되며 [KeyPattern 보안 프로브](/ko/env/api-reference/config)의 4가지 검사를 받습니다.
+
+### ExpansionErrorKind
+
+`ExpansionError.Kind`의 두 값: `ExpansionDepthKind`(깊이 초과/순환 감지)와 `ExpansionRequiredKind`(`${VAR:?}` 필수 변수 미설정). [오류 처리 가이드](/ko/env/guides/error-handling) 참조.
 
 ## 관련 문서
 

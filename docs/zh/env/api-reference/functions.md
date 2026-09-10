@@ -954,6 +954,49 @@ func main() {
 }
 ```
 
+## 类型化读取补充
+
+### GetUint64 / GetFloat64
+
+除常用类型外，包级与 Loader 方法均提供无符号整数与浮点读取：
+
+<!-- check-code: skip -->
+```go
+limit := env.GetUint64("RATE_LIMIT", 1000)     // uint64
+rate := env.GetFloat64("SAMPLE_RATE", 0.5)      // float64
+u := loader.GetUint64("RATE_LIMIT", 1000)       // Loader 方法同签名
+f := loader.GetFloat64("SAMPLE_RATE", 0.5)
+```
+
+### 布尔值的宽松解析
+
+`GetBool` 大小写不敏感地接受以下写法：
+
+| 真值 | 假值 |
+|------|------|
+| `true`、`yes`、`on`、`1`、`enabled` | `false`、`no`、`off`、`0`、`disabled` |
+
+空字符串解析为 `false`；其余值触发 `ValidationError` 并**返回默认值**（同时记录审计事件）。
+
+### 解析失败与默认值的关系
+
+所有 `Get*` 函数在**键不存在**或**值解析失败**时都返回默认值（未提供则零值），不会 panic 或返回 error。解析失败会以 `parse failed` 记入审计日志，便于排查脏配置。
+
+### GetSliceFrom 的两套失败语义
+
+实例模式下 `GetSliceFrom[T](loader, key)` 按索引键（`KEY_0`、`KEY_1`…）收集元素，未命中时回退逗号分隔值。两种来源的解析失败语义不同：
+
+| 来源 | 元素解析失败时 |
+|------|----------------|
+| 索引键（`KEY_0`…） | 记审计后**跳过该元素**，保留其余元素 |
+| 逗号分隔回退 | **整表失败**，返回默认值（或 nil） |
+
+泛型元素类型约束为：`string`、`int`、`int64`、`uint`、`uint64`、`bool`、`float64`、`time.Duration`。切片长度上限 10000（防御性限制，超限记录审计）。
+
+### LoadWithConfig 强制 AutoApply
+
+`Load()` 与 `LoadWithConfig()` 都会**强制** `AutoApply=true`（无论传入配置如何）——包级便捷函数依赖变量已进入进程环境。需要手动控制应用时机时，使用 `New()` 实例模式。
+
 ## 相关文档
 
 - [Loader API](/zh/env/api-reference/loader) - Loader 实例方法

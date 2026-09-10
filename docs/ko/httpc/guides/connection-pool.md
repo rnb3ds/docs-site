@@ -1,15 +1,15 @@
 ---
-sidebar_label: "연결 풀과 프록시"
-title: "연결 풀과 프록시 - CyberGo HTTPC | 풀 튜닝과 프록시 설정"
-description: "HTTPC 연결 풀과 프록시 설정 가이드: MaxIdleConns 풀 튜닝과 시나리오 추천, ProxyURL 수동 프록시와 SOCKS5, EnableSystemProxy 자동 감지, ProxyPool 프록시 풀 회전과 수동 서킷 브레이킹, ProxyRotatePerRequest 요청별 회전, ProxyRotateOnStatus 상태 코드 회전, DoH와 HTTP/2 설정 실무."
-sidebar_position: 8
+sidebar_label: "연결 풀과 DNS"
+title: "연결 풀과 DNS - CyberGo HTTPC | 연결 풀 튜닝과 DNS 해석"
+description: "HTTPC 연결 풀과 DNS 가이드: MaxIdleConns와 MaxConnsPerHost 튜닝, 유휴·총 연결 상한과 TIME_WAIT 대응, 객체 풀 재사용과 동시성 요청 패턴, DoH 암호화 해석 폴백 체인과 HTTP/2 멀티플렉싱 실무, 고동시성 시나리오 추천 매개변수 안내."
+sidebar_position: 10
 ---
 
-# 연결 풀과 프록시
+# 연결 풀과 DNS
 
 ## 연결 풀 설정
 
-연결 풀은 HTTP 클라이언트 성능의 핵심 요소입니다. HTTPC 은 `ConnectionConfig`로 연결 풀을 관리합니다.
+연결 풀은 HTTP 클라이언트 성능의 핵심 요소입니다. HTTPC 는 `ConnectionConfig`로 연결 풀을 관리합니다.
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -23,13 +23,14 @@ cfg.Timeouts.IdleConn = 120 * time.Second // 유휴 연결 유지 시간
 ### 매개변수 설명
 
 | 매개변수 | 기본값 | 설명 |
-|-----------|--------|------|
+|------|------|------|
 | `MaxIdleConns` | 50 | 전역 최대 유휴 연결 수 |
-| `MaxConnsPerHost` | 10 | 호스트당 최대 연결 수 (활성 + 유휴 포함) |
-| `IdleConn` | 90s | 유휴 연결 타임아웃, 초과 시 연결 닫기 |
+| `MaxConnsPerHost` | 10 | 호스트당 최대 연결 수(활성 + 유휴 포함) |
+| `IdleConn` | 90s | 유휴 연결 타임아웃, 초과 시 연결 닫힘 |
 | `Dial` | 10s | 연결 수립 타임아웃 |
 | `TLSHandshake` | 10s | TLS 핸드셰이크 타임아웃 |
-| `ResponseHeader` | 0 | 비활성화 (Request 타임아웃 사용) |
+| `ResponseHeader` | 0 | 비활성화(Request 타임아웃 사용) |
+| `MaxResponseHeaderBytes` | 0 | 응답 헤더 크기 상한; 0 = Go 표준 라이브러리 기본값 10MB |
 
 ### 시나리오별 추천
 
@@ -41,201 +42,46 @@ cfg.Timeouts.IdleConn = 120 * time.Second // 유휴 연결 유지 시간
 | 마이크로서비스 내부 | 50 | 10 | 60s |
 
 :::tip
-`MaxConnsPerHost`는 활성 연결과 유휴 연결을 모두 포함합니다. 이 제한을 초과하는 새 요청은 연결 해제를 대기합니다.
+`MaxConnsPerHost`는 활성 연결과 유휴 연결을 모두 포함합니다. 이 제한을 초과하는 새 요청은 연결이 해제되기를 대기열에서 기다립니다.
 :::
 
-## 프록시
+### 파생 매개변수와 내부 상한
 
-HTTPC 는 네 가지 프록시 모드를 지원하며, 우선순위에 따라 자동으로 선택됩니다. 모든 프록시 설정은 `ConnectionConfig`에서 구성합니다.
+일부 연결 매개변수에는 독립된 설정 항목이 없으며, 엔진이 기존 매개변수에서 **파생**하거나 고정값을 사용합니다:
 
-### 수동 프록시
+| 매개변수 | 값 | 출처 |
+|------|-----|------|
+| `MaxIdleConnsPerHost` | `clamp(MaxConnsPerHost/2, 2, 10)`; `MaxConnsPerHost=0`이면 10 | `MaxConnsPerHost`에서 파생, 독립 필드 없음 |
+| 단일 클라이언트 총 연결 상한 | 1000(활성 + 유휴) | 고정값, 초과 시 연결 풀 소진 오류 반환 |
+| TCP KeepAlive 탐침 간격 | 30s | 고정값 |
+| `ExpectContinueTimeout` | 1s | 고정값(`Expect: 100-continue` 대기 시간) |
 
-`ProxyURL`로 고정 프록시를 지정합니다 (최우선):
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyURL = "http://proxy.example.com:8080"
-
-client, _ := httpc.New(cfg)
-```
-
-인증이 포함된 프록시:
-
-```go
-cfg.Connection.ProxyURL = "http://user:password@proxy.example.com:8080"
-```
-
-:::tip
-`Config.String()` 메서드는 프록시 URL 의 사용자 이름과 비밀번호를 자동으로 마스킹합니다.
+:::warning 총 연결 상한 도달 시의 증상
+총 연결 1000 상한에 도달하면 새 연결은 오류로 종료되며, `ClientError`(`ErrorTypeNetwork`, Message 는 `connection pool exhausted`)로 분류됩니다. 기본 `MaxIdleConns=50` / `MaxConnsPerHost=10`에서는 거의 트리거되지 않으므로, 극단적 동시성에서의 마지막 방어선 정도로 여기면 됩니다.
 :::
 
-### SOCKS5 프록시
+### 유휴 연결 관리
 
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyURL = "socks5://proxy.example.com:1080"
-```
+- **`IdleConn`(기본 90s)**: 유휴 연결은 전송 계층 타임아웃 후 자동으로 닫힙니다. 값을 늘리면 연결 재사용률이 올라가고, 줄이면 상대 측 리소스를 더 빨리 해제합니다(고빈도 짧은 연결 시나리오는 TIME_WAIT 누적 주의).
+- **프록시 회전 시 능동 정리**: `ProxyRotatePerRequest` 또는 상태 코드 회전의 재시도 경로를 활성화하면 **모든 유휴 연결을 자동으로 닫아** 다음 요청이 프록시를 다시 선택하도록 강제합니다 — 그렇지 않으면 HTTP/2 의 CONNECT 터널 연결 재사용이 프록시 선택을 우회해 회전을 무효화하기 때문입니다. 프록시 구성과 회전 전략은 [프록시와 프록시 풀](./proxy)을 참조하세요.
+- **`client.Close()`**: 모든 유휴 연결, DoH 리졸버와 내부 리소스를 닫습니다; 이후 요청은 `ErrClientClosed`를 반환합니다.
+- **호스트별 통계의 자동 정리**: 내부적으로 호스트별 연결 수를 유지하며, 30분간 활동이 없고 활성 연결이 없는 항목은 주기적으로 정리됩니다(최대 분당 1회, 호스트 항목 상한 10000). 장기 실행해도 메모리가 무한히 늘어나지 않습니다.
 
-### 시스템 프록시 자동 감지
+### 응답 압축 해제의 특별 처리
 
-운영체제의 프록시 설정을 자동으로 감지합니다:
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.EnableSystemProxy = true
-```
-
-| 플랫폼 | 감지 소스 |
-|--------|----------|
-| Windows | 레지스트리 Internet Settings |
-| macOS | 시스템 환경설정 네트워크 프록시 |
-| Linux | 환경 변수 `HTTP_PROXY` / `HTTPS_PROXY` |
-
-### 프록시 풀
-
-여러 프록시 IP 에 요청을 분산해야 할 때 (스크래핑, 부하 분산, IP 회전), 프록시 풀은 자동 회전, 수동 서킷 브레이킹, 상태 코드 기반 회전을 제공합니다 — 외부 컴포넌트 불필요.
-
-#### 기본 사용법
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyPool = []string{
-    "http://proxy1:8080",
-    "http://proxy2:8080",
-    "http://proxy3:8080",
-}
-cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin // 기본값
-
-client, err := httpc.New(cfg)
-```
-
-각 요청마다 풀에서 프록시를 자동으로 선택합니다. `http`, `https`, `socks5`, `socks5h` 프로토콜을 지원합니다.
-
-| 필드 | 타입 | 기본값 | 설명 |
-|------|------|--------|------|
-| `ProxyPool` | `[]string` | `nil` | 프록시 URL 목록 |
-| `ProxyPoolStrategy` | `ProxyStrategy` | `RoundRobin` | 선택 전략 |
-| `ProxyFailureThreshold` | `int` | `3` (0 이면 기본값) | 연속 실패 서킷 브레이크 임계값 |
-| `ProxyCooldown` | `time.Duration` | `30s` (0 이면 기본값) | 서킷 브레이크 프록시 대기 시간 |
-| `ProxyRotatePerRequest` | `bool` | `false` | 각 독립적인 요청마다 프록시 강제 교체 (유휴 연결 재사용 비활성화) |
-| `ProxyRotateOnStatus` | `[]int` | `nil` | 프록시 회전을 트리거하는 상태 코드 |
-
-#### 선택 전략
-
-| 전략 | 상수 | 설명 |
-|------|------|------|
-| 라운드 로빈 | `ProxyStrategyRoundRobin` | 순서대로 순환 선택, 재시도 시 자동으로 다음 프록시로 이동 |
-| 무작위 | `ProxyStrategyRandom` | 정상 프록시 중 균일하게 무작위 선택 |
-
-라운드 로빈(기본값)은 재시도 시 자동으로 다른 프록시 IP 를 선택합니다 — 매 재시도마다 커서가 진행되어 자연스럽게 다음 프록시로 이동합니다.
-
-#### 수동 서킷 브레이킹
-
-프록시 풀은 수동 헬스 체크를 내장합니다. **연결 수준 실패**(dial/TLS)만 서킷 브레이크를 트리거하며, HTTP 상태 코드는 트리거하지 않습니다:
-
-```text
-프록시 연결 실패
-    ↓
-실패 카운트 +1
-    ↓
-연속 실패 ≥ ProxyFailureThreshold → 서킷 오픈 (회전에서 제거)
-    ↓
-ProxyCooldown 대기 → 하프 오픈 프로브 (회전 복원)
-    ↓
-성공 → 카운트 리셋, 서킷 클로즈
-첫 실패 → 서킷 재오픈
-```
-
-```go
-cfg.Connection.ProxyFailureThreshold = 5           // 더 관대하게, 일시적 문제 허용
-cfg.Connection.ProxyCooldown = 60 * time.Second    // 더 긴 대기 시간
-```
-
-모든 프록시가 서킷 브레이크된 경우, 대기 시간이 가장 짧은 (복원에 가장 가까운) 프록시를 폴백으로 반환하며, 즉시 실패하지 않습니다.
-
-#### 상태 코드 회전
-
-Cloudflare/WAF 등 IP 차단 시나리오에서 — 특정 상태 코드 반환 시 자동으로 다른 프록시로 재시도합니다:
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyPool = []string{
-    "http://proxy1:8080",
-    "http://proxy2:8080",
-    "http://proxy3:8080",
-}
-cfg.Connection.ProxyRotateOnStatus = []int{403}  // 403 수신 시 프록시 회전
-cfg.Retry.MaxRetries = 3                          // 재시도 활성화 필수
-
-client, err := httpc.New(cfg)
-```
-
-:::warning 상태 코드 회전 ≠ 서킷 브레이킹
-`ProxyRotateOnStatus`로 트리거된 회전은 프록시를 서킷 브레이크하지 **않습니다** — IP 차단은 대상별인 경우가 많습니다 (A 사이트에서 차단된 프록시가 B 사이트에서는 정상일 수 있음). 서킷 브레이킹은 연결 수준 실패로만 트리거됩니다. `Retry.MaxRetries > 0`이 필요합니다.
-
-`ProxyRotateOnStatus`가 설정되고 풀에 여러 프록시가 있는 경우, 재시도 예산이 자동으로 `len(ProxyPool) - 1`로 상향됩니다 (`MaxRetries` 상한 10으로 제한), 모든 프록시가 시도될 기회를 보장합니다.
-:::
-
-#### 요청별 로테이션
-
-`ProxyRotatePerRequest`는 **연결 재사용**으로 인해 프록시 터널이 고정되는 문제를 해결합니다: HTTP 연결 풀은 이미 설정된 TCP 연결을 재사용하며, 여기에는 프록시 터널도 포함됩니다. 이는 동일한 호스트에 대한 연속 요청이 `ProxyPoolStrategy`가 선택기 커서를 이미 회전했더라도 이전 요청의 프록시를 재사용함을 의미합니다.
-
-활성화하면, 매 요청 시작 시 모든 유휴 연결을 닫아 Transport가 프록시 풀을 다시 평가하도록 강제합니다 — 대가로 연결 재사용이 없지만(매 요청마다 새 연결 + 프록시 터널), 요청별 회전이 보장됩니다:
-
-```go
-cfg := httpc.DefaultConfig()
-cfg.Connection.ProxyPool = []string{
-    "http://proxy1:8080",
-    "http://proxy2:8080",
-    "http://proxy3:8080",
-}
-cfg.Connection.ProxyRotatePerRequest = true  // 매 요청마다 프록시 교체
-
-client, err := httpc.New(cfg)
-```
-
-:::tip 적용 시나리오
-동일한 호스트에 대한 스크래핑/데이터 수집에 적용 — 매 요청의 소스 IP가 달라 대상 사이트의 IP 차단 위험을 낮춥니다. 서로 다른 호스트에 대한 요청은 연결 재사용이 동일한 프록시에 바인딩되지 않으므로 보통 활성화할 필요가 없습니다.
-:::
-
-`ProxyRotateOnStatus`와 마찬가지로, `ProxyRotatePerRequest`도 프록시 풀에 여러 프록시가 있는 경우 재시도 예산을 자동으로 `len(ProxyPool) - 1`로 상향하여, 각 프록시가 최소 한 번 시도되도록 보장합니다.
-
-### 프록시 우선순위
-
-여러 프록시 모드를 동시에 구성한 경우, 우선순위에 따라 적용됩니다:
-
-| 우선순위 | 설정 | 동작 |
-|---------|------|------|
-| 1 (최고) | `ProxyURL` | 항상 지정된 프록시 사용 (단일 프록시 모드) |
-| 2 | `ProxyPool` | 프록시 풀에서 회전 |
-| 3 | `EnableSystemProxy` | 시스템 프록시 자동 감지 |
-| 4 (최저) | 없음 | 직접 연결 |
-
-:::tip
-`ProxyURL`과 `ProxyPool`을 모두 설정한 경우 `ProxyURL`이 적용됩니다. 프록시 풀을 사용하려면 `ProxyURL`을 비우세요.
-:::
-
-### 내장 보안
-
-프록시 관련 기능은 다음 보안 세부 사항을 자동으로 처리합니다 — 수동 구성 불필요:
-
-- **SSRF 면제**: 프록시 호스트 주소가 자동으로 SSRF 면제 목록에 추가되어, 사설 IP 검사에 의해 차단되지 않습니다
-- **중복 제거**: 동일한 `host:port`를 가진 항목이 자동으로 병합되어, 회전 편향과 중복 카운트를 방지합니다
-- **URL 검증**: 모든 프록시 URL이 보안 검증됩니다 (CRLF 주입 방지, 프로토콜 화이트리스트)
-
-전체 필드 설명은 [설정 API — 프록시 풀](../api-reference/client-config/config#프록시-풀)을 참조하세요.
+전송 계층에서는 **표준 라이브러리 자동 압축 해제를 비활성화**하고, HTTPC 가 응답 처리 계층에서 `gzip` / `deflate`를 수동으로 처리합니다: 압축 해제는 `Security.MaxDecompressedBodySize`(기본 100MB)의 제약을 받아 압축 폭탄 공격을 방어합니다. 일상적으로 이 계층을 신경 쓸 필요는 없습니다 — `Result.RawBody()`로 받는 것이 이미 압축 해제된 바이트라는 점만 알면 됩니다.
 
 ## DNS-over-HTTPS
 
-DoH 를 활성화하여 DNS 해석 지연을 줄이고 DNS 하이재킹을 방지합니다:
+DoH 를 활성화하면 DNS 해석이 암호화된 HTTPS 채널을 통해 이루어져, 통신사 하이재킹과 DNS 포이즈닝을 방지하며 다중 제공자 재해 내성이 내장되어 있습니다:
 
 ```go
 cfg := httpc.DefaultConfig()
 cfg.Connection.EnableDoH = true
-cfg.Connection.DoHCacheTTL = 5 * time.Minute
+cfg.Connection.DoHCacheTTL = 5 * time.Minute // 0을 전달해도 5분으로 폴백
 ```
 
-기본 DoH 제공자 (우선순위 순):
+기본 DoH 제공자(우선순위 순):
 
 | 제공자 | 주소 | 설명 |
 |--------|------|------|
@@ -243,13 +89,36 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute
 | Google | `dns.google/resolve` | 글로벌 커버리지 |
 | AliDNS | `dns.alidns.com/resolve` | 중국 지역 최적화 |
 
-:::tip
-DoH 활성화 시 DNS 해석 결과가 `DoHCacheTTL` 시간 동안 캐시됩니다. 모든 DoH 제공자를 사용할 수 없는 경우 시스템 DNS 로 폴백합니다.
-:::
+### 동작 메커니즘
+
+- **A + AAAA 동시 조회**: 매 해석마다 IPv4 와 IPv6 레코드를 동시에 조회해 결과를 병합합니다.
+- **듀얼 형식 해석**: 응답 `Content-Type`에 따라 JSON(Google/AliDNS 스타일) 또는 RFC 1035 wire 형식(Cloudflare 스타일)을 자동으로 선택합니다; 누락되거나 인식할 수 없는 경우 JSON 을 먼저 시도한 뒤 wire 를 시도하여, 구성이 잘못된 서버와도 호환됩니다.
+- **동시 병합**: 같은 호스트의 동시 캐시 미스는 하나의 네트워크 왕복으로 병합되어(singleflight), 캐시 스탬피드로 제공자가 과부하되는 것을 막습니다.
+- **독립 내부 클라이언트**: DoH 요청은 독립된 HTTP 클라이언트(5s 타임아웃, HTTP/2 활성화)를 사용하며, 업무 연결 풀과 요청 타임아웃 예산을 소모하지 않습니다.
+
+### 폴백 체인
+
+```text
+Cloudflare (1.1.1.1) → Google (dns.google) → AliDNS → 시스템 DNS 리졸버
+```
+
+어느 한 제공자라도 성공하면 그대로 반환합니다; 전부 실패하면 시스템 DNS 리졸버로 자동 폴백하며, 두 계층의 오류를 오류 메시지에 병합합니다. 개별 제공자의 장애가 요청 실패로 이어지지 않습니다.
+
+### 캐시
+
+| 항목 | 값 |
+|----|-----|
+| TTL | `DoHCacheTTL`(기본 5분) |
+| 용량 상한 | 1000건; 가득 차면 만료된 항목부터, 그다음 만료가 가장 임박한 항목부터 제거 |
+| 응답 크기 상한 | 64KB(악성 DNS 응답이 메모리를 가득 채우는 것을 방지) |
+
+### SSRF 방어와의 연동
+
+DoH 로 해석된 IP 는 먼저 SSRF 필터를 거쳐(사설/예약 주소 제거, `SSRFExemptCIDRs` 존중) **검증된 IP 로 직접 다이얼**됩니다 — 검증과 다이얼 사이에 두 번째 DNS 해석이 존재하지 않아 DNS 리바인딩 공격을 원천 차단합니다. 프록시 주소는 DoH 해석을 거치지 않습니다(프록시는 개발자가 명시적으로 구성하므로 프록시 호스트에 직접 다이얼, [프록시와 프록시 풀](./proxy) 참조). 자세한 내용은 [SSRF 방어](../security/ssrf)를 참조하세요.
 
 ## HTTP/2
 
-기본적으로 HTTP/2가 활성화되어 있습니다 (TLS 필요):
+기본적으로 HTTP/2가 활성화되어 있습니다(TLS 필요):
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -260,6 +129,8 @@ HTTP/2 특징:
 - 멀티플렉싱: 단일 연결로 여러 동시 요청 처리
 - 헤더 압축: 반복 헤더 전송 감소
 - 서버 푸시
+
+비활성화하면 전송 계층은 HTTP/2 협상을 전혀 시도하지 않습니다(커스텀 TLS 구성 시나리오의 강제 시도 포함). 평문 HTTP/2(h2c)는 지원되지 않습니다. HTTP/2 멀티플렉싱은 「같은 호스트의 동시 요청이 하나의 연결을 공유」하게 만듭니다 — 이것이 프록시 회전 시나리오에서 유휴 연결을 닫아야 하는 이유입니다([프록시와 프록시 풀](./proxy)의 요청별 회전 참조).
 
 ## 객체 풀 재사용
 
@@ -306,17 +177,19 @@ func fetchAll(ctx context.Context, urls []string) ([]*httpc.Result, error) {
 ## 자주 묻는 질문
 
 | 문제 | 원인 | 해결 방법 |
-|------|------|-----------|
+|------|------|----------|
 | 대량의 TIME_WAIT | 유휴 연결 타임아웃이 너무 짧음 | `IdleConn` 타임아웃 증가 |
 | 연결 거부 | 호스트당 연결 수 부족 | `MaxConnsPerHost` 증가 |
-| 요청 대기 | 연결 풀이 너무 작음 | `MaxIdleConns` 증가 |
-| 프록시 미작동 | `ProxyURL`과 `ProxyPool`을 동시 설정 | `ProxyURL` 비우기, `ProxyPool`만 사용 |
-| 프록시 잦은 서킷 브레이크 | `ProxyFailureThreshold`가 너무 낮음 | 임계값 또는 `ProxyCooldown` 증가 |
+| 요청이 대기열에서 대기 | 연결 풀이 너무 작음 | `MaxIdleConns` 증가 |
+| 호스트당 유휴 연결 수를 제어하고 싶음 | 독립 설정 필드 없음 | `MaxConnsPerHost`에서 파생(÷2, 2–10 사이로 클램프) |
+| DoH 활성화 후 해석 실패 | 모든 DoH 제공자에 접근 불가/타임아웃 | 시스템 DNS 폴백이 내장됨; 아웃바운드 네트워크 점검 또는 기본값 유지 |
+| 프록시 미작동 또는 잦은 서킷 브레이킹 | 프록시 구성과 연결 재사용의 상호작용 | [프록시와 프록시 풀](./proxy)의 자주 묻는 질문 참조 |
 
 성능 안티패턴과 최적화 제안의 전체 내용은 [성능 최적화](./performance)를 참조하세요.
 
 ## 다음 단계
 
 - [성능 최적화](./performance) - 성능 튜닝 가이드
-- [설정 API](../api-reference/client-config/config) - 연결 및 프록시 필드 참조
+- [프록시와 프록시 풀](./proxy) - 단일 프록시, 시스템 프록시와 프록시 풀 회전·서킷 브레이킹
+- [설정 API](../api-reference/client-config/config) - 연결 설정 필드 레퍼런스
 - [보안 개요](../security/) - SSRF 와 TLS 보안

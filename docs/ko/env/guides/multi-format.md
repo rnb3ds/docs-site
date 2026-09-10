@@ -1,8 +1,8 @@
 ---
 sidebar_label: "다중 포맷 설정"
 title: "다중 포맷 설정 - CyberGo env | .env/JSON/YAML"
-description: "CyberGo env 다중 형식 구성 로드 가이드로, .env, JSON, YAML 자동 감지와 혼합 로드를 지원합니다. 중첩 객체와 배열의 평탄화 키 이름, 키-값 병합 우선순위, Marshal/UnmarshalMap 형식 상호 변환, RegisterParser 커스텀 형식을 상세히 설명하여 마이크로서비스와 컨테이너화 시나리오에 적합합니다."
-sidebar_position: 3
+description: "CyberGo env 다중 형식 구성 로드 가이드로, .env, JSON, YAML 자동 감지와 혼합 로드, 중첩 객체의 평탄화 키 이름, 키-값 병합 우선순위, RegisterParser 커스텀 형식을 설명하여 마이크로서비스와 컨테이너화 시나리오에 적합합니다."
+sidebar_position: 1
 sidebar_icon: "🔧"
 ---
 
@@ -651,6 +651,39 @@ func main() {
     fmt.Println(exported)
 }
 ```
+
+## 구조화 파싱 세부 사항과 접두사 필터링
+
+### JSON/YAML 평탄화 규칙
+
+중첩 구조는 로드 시 환경 변수 키로 평탄화되며 기본 규칙:
+
+| 규칙 | 예시 |
+|------|------|
+| 중첩 키를 밑줄로 연결 | `{"database": {"host": "..."}}` → `DATABASE_HOST` |
+| 배열 요소는 `키_인덱스` | `{"hosts": ["a", "b"]}` → `HOSTS_0`, `HOSTS_1` |
+| `null`은 빈 문자열로 | `{"name": null}` → `NAME=""` |
+| 숫자와 불리언은 문자열로 | `{"port": 5432}` → `PORT="5432"` |
+| 중첩 깊이 상한 기본 10 | `JSONMaxDepth`/`YAMLMaxDepth`로 제어 (1–100) |
+
+파일 로드 시 변환 동작은 `Config`의 `JSONConfig`/`YAMLConfig`로 제어되며(예: `JSONNullAsEmpty`, `JSONNumberAsString`); `UnmarshalMap`/`UnmarshalStruct`의 문자열 파싱 경로는 내장 기본 규칙을 사용하며 이 설정을 읽지 않습니다.
+
+### 접두사 필터링 (Prefix)
+
+`ComponentConfig.Prefix`는 지정 접두사로 시작하는 변수만 로드하도록 제한합니다(대소문자 무시). 공유 구성 파일에서 내 애플리케이션 부분만 가져올 때 자주 사용합니다:
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+cfg.Prefix = "MYAPP_" // MYAPP_로 시작하는 키만 로드
+loader, _ := env.New(cfg)
+```
+
+접두사 필터링은 `OverwriteExisting` 정책과 결합되어 적용됩니다: 필터링된 키는 덮어쓰지도 저장되지도 않습니다.
+
+### 알 수 없는 확장자의 폴백 동작
+
+`DetectFormat`은 알 수 없는 확장자에 `FormatAuto`를 반환하며, 이때 로더는 **`.env` 파서로 폴백**하여 행 단위로 파싱합니다. 따라서 `config.conf`, `config.txt` 같은 파일도 내용이 `KEY=value` 형태면 정상적으로 로드됩니다.
 
 ## 관련 문서
 

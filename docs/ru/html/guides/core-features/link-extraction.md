@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Извлечение ссылок на практике"
 title: "Извлечение ссылок на практике - CyberGo html | скрейпинг"
-description: "Извлечение ссылок на практике CyberGo html: ExtractAllLinks для ресурсов, фильтры Include, относительные URL и практики для скрейпинга."
+description: "Извлечение ссылок CyberGo html: ExtractAllLinks — скрипты, стили, картинки; GroupLinksByType, фильтры Include, BaseURL и относительные URL для скрейпинга."
 sidebar_position: 4
 ---
 

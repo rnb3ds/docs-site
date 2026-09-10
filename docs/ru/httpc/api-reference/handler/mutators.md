@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Мутаторы запросов и ответов"
 title: "Мутаторы запросов и ответов - CyberGo HTTPC | Mutator API"
-description: "Подробное описание контрактов чтения/записи middleware HTTPC: RequestMutator и ResponseMutator — два публичных составных интерфейса, предоставляющие все методы чтения и записи для запроса и ответа, с компилируемым примером изменения заголовков и чтения кода состояния."
+description: "Контракты чтения/записи middleware HTTPC: методы RequestMutator и ResponseMutator, опции колбэков WithOnRequest/WithOnResponse и компилируемые примеры."
 sidebar_position: 2
 ---
 
@@ -165,6 +165,70 @@ req.SetHeader("X-Trace-ID", generateTraceID())
 
 Подавляющему большинству middleware **не требуется** утверждение типа — интерфейсы `RequestMutator`/`ResponseMutator` уже охватывают все часто используемые операции чтения/записи. Утверждение к конкретному типу требуется только при необходимости колбэков или перезаписи SSRF.
 
+## Опции-колбэки запроса: WithOnRequest / WithOnResponse
+
+Помимо middleware, есть пара опций запроса, напрямую связанных с мутаторами: `WithOnRequest` вызывает колбэк перед отправкой запроса, и его аргумент — сам `RequestMutator`; `WithOnResponse` вызывает колбэк после получения ответа, и его аргумент — сам `ResponseMutator`. Можно получить мутатор для инспекции или лёгкой модификации, не написав middleware.
+
+<!-- check-code: skip -->
+```go
+func WithOnRequest(callback func(req RequestMutator) error) RequestOption
+func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
+```
+
+| Опция | Момент колбэка | Аргумент колбэка | Поведение при ошибке |
+|-------|----------------|------------------|----------------------|
+| `WithOnRequest` | перед отправкой запроса | `RequestMutator` | ошибка любого колбэка прерывает запрос |
+| `WithOnResponse` | после получения ответа | `ResponseMutator` | ошибка любого колбэка завершает запрос с этой ошибкой |
+
+Можно регистрировать несколько колбэков цепочкой — они выполняются по порядку добавления; передача nil-колбэка возвращает ошибку при применении опции (`"onRequest callback cannot be nil"` / `"onResponse callback cannot be nil"`).
+
+:::tip Колбэк или middleware
+У колбэка нет `next` — он не может прервать цепочку запроса и не может обернуть ответ; он подходит только для «инспекции + лёгкой модификации». Когда нужно управлять порядком выполнения, делать досрочный возврат или оборачивать ответ, пишите middleware (см. [Handler и цепочка middleware](./handler-chain)).
+:::
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    client, err := httpc.NewDefault()
+    if err != nil {
+        log.Fatalf("Не удалось создать клиент: %v", err)
+    }
+    defer func() { _ = client.Close() }()
+
+    result, err := client.Get("https://httpbin.org/get",
+        // Перед отправкой запроса: инспекция запроса через RequestMutator и внедрение заголовка
+        httpc.WithOnRequest(func(req httpc.RequestMutator) error {
+            fmt.Printf("Отправка %s %s\n", req.Method(), req.URL())
+            req.SetHeader("X-Trace-ID", "trace-42")
+            return nil
+        }),
+        // После получения ответа: чтение состояния через ResponseMutator
+        httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
+            fmt.Printf("Получен код состояния %d\n", resp.StatusCode())
+            return nil
+        }),
+    )
+    if err != nil {
+        log.Fatalf("Сбой запроса: %v", err)
+    }
+    fmt.Println("Успех:", result.IsSuccess())
+    // Пример вывода:
+    // Отправка GET https://httpbin.org/get
+    // Получен код состояния 200
+    // Успех: true
+}
+```
+
+Поэлементный справочник всех параметров запроса — в [Параметрах запроса](../core/options).
+
 ## Кэширование SanitizedURL
 
 Несколько middleware могут нуждаться в логировании маскированного URL (URL с удалёнными учётными данными). Во избежание повторных вычислений HTTPC кэширует маскированный результат на объекте запроса для совместного использования несколькими middleware одного запроса.
@@ -191,125 +255,125 @@ Middleware аутентификации: внедряет заголовок а�
 package main
 
 import (
-	"context"
-	"fmt"
+    "context"
+    "fmt"
 
-	"github.com/cybergodev/httpc"
+    "github.com/cybergodev/httpc"
 )
 
 // authMiddleware внедряет заголовок авторизации через RequestMutator
 // и читает код состояния через ResponseMutator
 func authMiddleware(token string) httpc.MiddlewareFunc {
-	return func(next httpc.Handler) httpc.Handler {
-		return func(ctx context.Context, req httpc.RequestMutator) (httpc.ResponseMutator, error) {
-			// Запись: установка заголовка запроса через RequestMutator
-			req.SetHeader("Authorization", "Bearer "+token)
-			// Чтение: инспектирование метода запроса через RequestMutator
-			fmt.Printf("Отправка %s-запроса\n", req.Method())
+    return func(next httpc.Handler) httpc.Handler {
+        return func(ctx context.Context, req httpc.RequestMutator) (httpc.ResponseMutator, error) {
+            // Запись: установка заголовка запроса через RequestMutator
+            req.SetHeader("Authorization", "Bearer "+token)
+            // Чтение: инспектирование метода запроса через RequestMutator
+            fmt.Printf("Отправка %s-запроса\n", req.Method())
 
-			resp, err := next(ctx, req)
-			if err != nil {
-				return nil, err
-			}
-			// Чтение: получение кода состояния через ResponseMutator
-			fmt.Printf("Получен код состояния %d\n", resp.StatusCode())
-			return resp, nil
-		}
-	}
+            resp, err := next(ctx, req)
+            if err != nil {
+                return nil, err
+            }
+            // Чтение: получение кода состояния через ResponseMutator
+            fmt.Printf("Получен код состояния %d\n", resp.StatusCode())
+            return resp, nil
+        }
+    }
 }
 
 func main() {
-	cfg := httpc.DefaultConfig()
-	cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-		authMiddleware("my-secret-token"),
-	}
-	client, err := httpc.New(cfg)
-	if err != nil {
-		panic(err)
-	}
-	defer client.Close()
+    cfg := httpc.DefaultConfig()
+    cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+        authMiddleware("my-secret-token"),
+    }
+    client, err := httpc.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer client.Close()
 
-	result, err := client.Get("https://httpbin.org/get")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(result.IsSuccess())
-	// Пример вывода:
-	// Отправка GET-запроса
-	// Получен код состояния 200
-	// true
+    result, err := client.Get("https://httpbin.org/get")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println(result.IsSuccess())
+    // Пример вывода:
+    // Отправка GET-запроса
+    // Получен код состояния 200
+    // true
 }
 ```
 
 ## Практический пример: middleware логирования запроса/ответа
 
-Полное middleware логирования, одновременно демонстрирующее возможности чтения/записи `RequestMutator` и `ResponseMutator` — через мутаторы читает метод/URL запроса и код состояния/длительность/информацию о повтораx ответа, форматируя единый вывод.
+Полное middleware логирования, одновременно демонстрирующее возможности чтения/записи `RequestMutator` и `ResponseMutator` — через мутаторы читает метод/URL запроса и код состояния/длительность/информацию о повторах ответа, форматируя единый вывод.
 
 ```go
 package main
 
 import (
-	"context"
-	"fmt"
-	"log"
-	"time"
+    "context"
+    "fmt"
+    "log"
+    "time"
 
-	"github.com/cybergodev/httpc"
+    "github.com/cybergodev/httpc"
 )
 
 // loggingMiddleware читает полную информацию о запросе и ответе через мутаторы и форматирует вывод
 func loggingMiddleware() httpc.MiddlewareFunc {
-	return func(next httpc.Handler) httpc.Handler {
-		return func(ctx context.Context, req httpc.RequestMutator) (httpc.ResponseMutator, error) {
-			start := time.Now()
+    return func(next httpc.Handler) httpc.Handler {
+        return func(ctx context.Context, req httpc.RequestMutator) (httpc.ResponseMutator, error) {
+            start := time.Now()
 
-			// Фаза запроса: чтение информации о запросе
-			log.Printf("[REQ] %s %s", req.Method(), req.URL())
+            // Фаза запроса: чтение информации о запросе
+            log.Printf("[REQ] %s %s", req.Method(), req.URL())
 
-			resp, err := next(ctx, req)
-			duration := time.Since(start)
+            resp, err := next(ctx, req)
+            duration := time.Since(start)
 
-			if err != nil {
-				// Ошибка ответа: код состояния недоступен
-				log.Printf("[ERR] %s %s -> %v (%v)",
-					req.Method(), req.URL(), err, duration)
-				return nil, err
-			}
+            if err != nil {
+                // Ошибка ответа: код состояния недоступен
+                log.Printf("[ERR] %s %s -> %v (%v)",
+                    req.Method(), req.URL(), err, duration)
+                return nil, err
+            }
 
-			// Фаза ответа: чтение кода состояния, длительности, числа повторов, цепочки перенаправлений
-			log.Printf("[RESP] %s %s -> %d (%v, attempts=%d, redirects=%d)",
-				req.Method(),
-				req.URL(),
-				resp.StatusCode(),
-				duration,
-				resp.Attempts(),
-				resp.RedirectCount(),
-			)
-			return resp, nil
-		}
-	}
+            // Фаза ответа: чтение кода состояния, длительности, числа повторов, цепочки перенаправлений
+            log.Printf("[RESP] %s %s -> %d (%v, attempts=%d, redirects=%d)",
+                req.Method(),
+                req.URL(),
+                resp.StatusCode(),
+                duration,
+                resp.Attempts(),
+                resp.RedirectCount(),
+            )
+            return resp, nil
+        }
+    }
 }
 
 func main() {
-	cfg := httpc.DefaultConfig()
-	cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
-		loggingMiddleware(),
-	}
-	client, err := httpc.New(cfg)
-	if err != nil {
-		panic(err)
-	}
-	defer client.Close()
+    cfg := httpc.DefaultConfig()
+    cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
+        loggingMiddleware(),
+    }
+    client, err := httpc.New(cfg)
+    if err != nil {
+        panic(err)
+    }
+    defer client.Close()
 
-	result, err := client.Get("https://httpbin.org/get")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println("Код состояния:", result.StatusCode())
-	// Пример вывода:
-	// [REQ] GET https://httpbin.org/get
-	// [RESP] GET https://httpbin.org/get -> 200 (123.456ms, attempts=1, redirects=0)
-	// Код состояния: 200
+    result, err := client.Get("https://httpbin.org/get")
+    if err != nil {
+        panic(err)
+    }
+    fmt.Println("Код состояния:", result.StatusCode())
+    // Пример вывода:
+    // [REQ] GET https://httpbin.org/get
+    // [RESP] GET https://httpbin.org/get -> 200 (123.456ms, attempts=1, redirects=0)
+    // Код состояния: 200
 }
 ```
 
@@ -317,4 +381,5 @@ func main() {
 
 - [Handler и цепочка middleware](./handler-chain) — обзор двухслойной архитектуры и луковой модели
 - [Встроенное middleware](../client-config/middleware) — HeaderMiddleware и др. как готовые примеры работы через мутаторы
+- [Параметры запроса](../core/options) — WithOnRequest/WithOnResponse и все опции WithXxx
 - [Определения интерфейсов](../types/interfaces) — определения псевдонимов типов мутаторов

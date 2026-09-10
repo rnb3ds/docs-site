@@ -86,9 +86,10 @@ type YAMLConfig struct {
 
 // ParsingConfig は汎用解析動作を制御
 type ParsingConfig struct {
-    AllowExportPrefix bool // export KEY=value 構文を許可
-    AllowYamlSyntax   bool // YAML スタイルの値を許可
-    ExpandVariables   bool // ${VAR} 参照を展開するか
+    AllowExportPrefix bool            // export KEY=value 構文を許可
+    AllowYamlSyntax   bool            // YAML スタイルの値を許可
+    ExpandVariables   bool            // ${VAR} 参照を展開するか
+    ExpansionScope    ExpansionScope  // ${VAR} 参照を解決できるスコープ
 }
 
 // ComponentConfig はカスタムコンポーネントと高度なオプション
@@ -769,6 +770,59 @@ loader, _ := env.New(cfg)
 ```
 
 ---
+
+## プリセット対照表と設定の落とし穴
+
+### 4 つのプリセットの完全な違い
+
+| 設定項目 | Default | Development | Testing | Production |
+|----------|---------|-------------|---------|------------|
+| `FailOnMissingFile` | false | false | false | **true** |
+| `OverwriteExisting` | false | **true** | **true** | false |
+| `ValidateValues` | true | true | true | true |
+| `AllowExportPrefix` | true | true | true | true |
+| `AllowYamlSyntax` | false | **true** | false | false |
+| `ExpandVariables` | true | true | true | true |
+| `MaxFileSize` | 2 MB | 10 MB | 64 KB | 64 KB |
+| `MaxVariables` | 500 | 500 | 50 | 50 |
+| `JSONMaxDepth`/`YAMLMaxDepth` | 10 | 10 | 10 | 10 |
+| `AuditEnabled` | false | false | false | **true** |
+
+要点：`DevelopmentConfig` が緩めるのは**利便性**（上書き、YAML 構文、ファイルサイズ）で、値検証はすべてのプリセットで有効です — どのプリセットもインジェクション防御を犠牲にしません。
+
+### DefaultConfig の主なデフォルト値
+
+| 項目 | デフォルト |
+|------|------------|
+| キーパターン | 組み込みのバイトレベル検証（`^[A-Za-z][A-Za-z0-9_]*$` と同等） |
+| `ValidateValues` | true |
+| `JSONNullAsEmpty`/`JSONNumberAsString`/`JSONBoolAsString` | true |
+| `ExpandVariables` | true（スコープ `ExpansionFileThenProcess`） |
+| `Prefix` | 空（フィルタリングなし） |
+
+### IsZero の落とし穴：常に DefaultConfig() から始める
+
+`New()` は**ゼロ値** Config に自動的に `DefaultConfig()` を適用します。`IsZero()` の判定は「一般的なデフォルトフィールドがすべてゼロか」に基づきます — 少数のフィールドのみ設定した Config がゼロ値と誤判定されることはありませんが、判定規則はフィールド一覧に依存するため、**ゼロ値構造体から 1 つずつ代入する**書き方は境界を踏みやすい。推奨パターンは常に：
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig() // 完全なデフォルト値の上で修正
+cfg.Filenames = []string{".env.production"}
+cfg.OverwriteExisting = true
+```
+
+### KeyPattern のセキュリティプローブ（SEC-06）
+
+カスタム `KeyPattern` は `Config.Validate()` で 4 種類のプローブを受け、1 つでも失敗すると設定が拒否されます：
+
+1. 有効なキー（例：`TEST_KEY`）にマッチできること
+2. 空文字列を拒否すること
+3. 数字で始まるキー（例：`123_INVALID`）を拒否すること
+4. `=`、`:`、改行、制御文字を含むキーを拒否すること — 区切り文字を含むキーが直列化ラウンドトリップ後に**異なる行**として再パースされるのを防ぐ（ラウンドトリップインジェクション）
+
+### ExpansionScope
+
+[変数展開ガイドの「展開スコープ」節](/ja/env/guides/variable-expansion)を参照してください。`ExpansionFileOnly` は信頼できない設定ファイル用（SEC-03）で、`${VAR}` 参照がプロセス環境を読むのを阻止します。
 
 ## 関連ドキュメント
 

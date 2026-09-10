@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Performance"
 title: "Performance - CyberGo html | Throughput Guide"
-description: "CyberGo html performance optimization: Processor reuse, cache hit-rate monitoring, batch concurrency, WorkerPool tuning and timeouts to boost throughput."
+description: "CyberGo html performance: sync.Pool Processor reuse, cache hit-rate monitoring, batch concurrency, WorkerPoolSize/ProcessingTimeout tuning, and anti-patterns."
 sidebar_position: 3
 ---
 
@@ -51,7 +51,7 @@ For content of different sizes, the Key generation uses two strategies:
 | Content size | Strategy | Description |
 |-------------|----------|-------------|
 | ≤ 64 KB | Full content hash | xxHash-style computation over all bytes, no collision risk |
-| > 64 KB | 5-point sampling | Head + tail + 3 evenly distributed sampling points, 4096 bytes per segment |
+| > 64 KB | 5-point sampling | Head + tail + 3 evenly distributed sampling points, with a total sampling budget of 4096 bytes (about 819 bytes per point) |
 
 Large document sampling is used to limit hashing cost — full hashing of a 10 MB document would negate the cache benefit. 5-point sampling balances **hash flood resistance** (modifications anywhere in the document are very likely to change the Key) with **throughput**.
 
@@ -61,7 +61,7 @@ The most frequently allocated objects during extraction have all been pooled or 
 
 | Object | Mechanism | Purpose |
 |--------|-----------|---------|
-| Text builder (`TrackedBuilder`) | `sync.Pool` | Reuses underlying `[]byte` capacity across calls, avoiding growing from zero to document length on every extraction |
+| Pooled text builder (internal implementation) | `sync.Pool` | Reuses underlying `[]byte` capacity across calls, avoiding growing from zero to document length on every extraction |
 | Link result slice | Pre-allocated capacity 128 | Covers the link count of typical pages, avoiding `append` triggering underlying array copies |
 | Depth validation stack (`depthStackEntry`) | `sync.Pool` | Stack reuse for iterative depth validation, avoiding per-extraction stack allocation |
 | `[]byte` temporary buffers | `sync.Pool` | Reuse of high-frequency small buffers for encoding conversion, text concatenation, etc. |
@@ -80,7 +80,7 @@ This optimization has a minor impact on a single extraction, but accumulates sig
 
 Video/audio extraction uses a two-level gating mechanism that makes the common case of "no media content" nearly zero-overhead:
 
-1. **Front regex gate**: first uses `HasMediaReference` for a quick scan. When it confirms the content **does not contain** any media references, all regex scanning and iframe/embed/object attribute extraction is skipped entirely.
+1. **Front regex gate**: first a quick scan with the internal media reference detection (regex gate). When it confirms the content **does not contain** any media references, all regex scanning and iframe/embed/object attribute extraction is skipped entirely.
 2. **Size gate**: when content exceeds 1 MB (`maxHTMLForRegex`), regex scanning is skipped — running regexes on very large documents is both slow and carries ReDoS risk.
 3. **Lazy initialization**: `ensureDedup` only allocates result slices and the dedup map when the first media match appears. Documents with no media have zero allocation throughout.
 
@@ -260,7 +260,8 @@ import (
 func main() {
     cfg := html.DefaultConfig()
     // WorkerPoolSize is capped at 256; cap it on high-core machines
-    if n := runtime.NumCPU(); n > 256 {
+    n := runtime.NumCPU()
+    if n > 256 {
         n = 256
     }
     cfg.WorkerPoolSize = n

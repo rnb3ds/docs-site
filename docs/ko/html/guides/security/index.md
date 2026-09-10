@@ -1,7 +1,7 @@
 ---
 sidebar_label: "보안 개요"
 title: "보안 개요 - CyberGo html | 보안 보호 총람"
-description: "CyberGo html 보안 개요: 심층 방어 아키텍처로 입력 크기 제한, DOM 깊이 제한, 경로 순회 방지, 패닉 복구, 처리 타임아웃, 콘텐츠 정제, 플러그형 감사 파이프라인과 HighSecurityConfig 보안 프리셋을 다룹니다."
+description: "CyberGo html 보안 개요: 입력·처리·감사 3계층 심층 방어 아키텍처, MaxInputSize·MaxDepth 제한, 경로 순회 방지, panic 복구 메커니즘, HTML 콘텐츠 정제와 HighSecurityConfig 고보안 프리셋 적용을 다룹니다."
 sidebar_position: 1
 ---
 
@@ -50,7 +50,7 @@ cfg := html.DefaultConfig()
 cfg.MaxInputSize = 10 * 1024 * 1024 // 10MB 로 강화
 ```
 
-파일 경로에는 **사전 검사**가 있습니다: `Stat`으로 크기를 가져온 후, `ReadAll`이 콘텐츠를 메모리에 로드하기 전에 초과 파일을 거부하여, '다 읽은 후 초과 발견'의 메모리 피크 윈도우를 차단합니다.
+파일 경로에는 **사전 검사**가 있습니다: `os.Stat`으로 크기를 가져온 후, `io.ReadAll`이 콘텐츠를 메모리에 로드하기 전에 초과 파일을 거부하여, '다 읽은 후 초과 발견'의 메모리 피크 윈도우를 차단합니다.
 
 ### DOM 깊이 제한
 
@@ -163,7 +163,7 @@ URI 속성의 값은 `isSafeURIWithAudit`의 다층 파이프라인을 통해 �
 브라우저는 URL 을 파싱할 때 특정 제어 문자를 제거하며(WHATWG URL 표준 준수), 라이브러리는 프로토콜 감지 **이전**에 동일한 제거를 시뮬레이션해야 합니다. 그렇지 않으면 공격자가 이 문자들로 위험 프로토콜명을 분해하여 감지를 우회할 수 있습니다:
 
 - **tab / LF / CR**: `java\tscript:`는 브라우저에 의해 `javascript:`로 재조립되어 실행됩니다. 라이브러리는 `stripURLWhitespace`로 프로토콜 감지 전에 이 세 바이트를 제거합니다.
-- **C0 제어 문자(U+0000–U+001F) + ASCII 공백**: 브라우저는 scheme 파싱 전에 선행/후행의 이 바이트들을 제거합니다. `strings.TrimSpace`는 Unicode 공백만 커버하며 대부분의 C0 제어 문자는 커버하지 않으므로, 라이브러리는 전용 `c0ControlOrSpace` 집합으로 명시적으로 제거합니다. 그렇지 않으면 `\x01javascript:…`가 모든 `HasPrefix` 검사를 속일 수 있습니다.
+- **C0 제어 문자(U+0000–U+001F) + ASCII 공백**: 브라우저는 scheme 파싱 전에 선행/후행의 이 바이트들을 제거합니다. `strings.TrimSpace`는 Unicode 공백만 커버하며 대부분의 C0 제어 문자는 커버하지 않으므로, 라이브러리는 전용 `c0ControlOrSpace` 집합으로 명시적으로 제거합니다. 그렇지 않으면 `\x01javascript:…`가 모든 `strings.HasPrefix` 검사를 속일 수 있습니다.
 
 ### 위험 프로토콜 감지
 
@@ -190,7 +190,7 @@ data URL 은 다음 명시적으로 선언된 MIME 타입만 통과를 허용합
 
 - **`image/svg+xml`**: SVG 는 JavaScript 를 내장할 수 있으며, 태그 제거 후의 심층 방어 패치입니다.
 - **빈 미디어 타입**: 예: `data:;base64,<payload>` 또는 `data:;,...`. 이 형식은 과거에 화이트리스트를 우회할 수 있었으나, 이제 직접 거부됩니다.
-- **초장 data URL**: `MaxDataURILength`(100KB) 제약을 받으며, base64 대용량 콘텐츠로 인한 메모리 고갈을 방지합니다.
+- **초장 data URL**: 내부 상한(100KB)의 제약을 받으며, base64 대용량 콘텐츠로 인한 메모리 고갈을 방지합니다(이 상한은 설정할 수 없음).
 - **잘못된 base64 문자**: base64 부분은 바이트 단위로 문자셋 유효성을 검증합니다.
 
 :::tip 감사 로그는 data URL 을 잘라냄
@@ -227,7 +227,7 @@ data URL 은 대량의 base64 를 포함할 수 있으며, 감사 로그에 전�
 | 기타 Unix | `filepath.EvalSymlinks` 폴백 | 심볼릭 링크(경미한 TOCTOU 잔존) |
 | Windows | `GetFinalPathNameByHandleW` | 심볼릭 링크 + junction + 모든 reparse points |
 
-Windows 경로는 반환 후 `\\?\` 확장 길이 접두사를 제거하고 `Clean`을 수행하여, `filepath.Abs`의 출력 형식과 일치시키고 후속 포함 비교의 정확성을 보장합니다.
+Windows 경로는 반환 후 `\\?\` 확장 길이 접두사를 제거하고 `filepath.Clean`을 수행하여, `filepath.Abs`의 출력 형식과 일치시키고 후속 포함 비교의 정확성을 보장합니다.
 
 ### 방어 계층
 
@@ -235,7 +235,7 @@ Windows 경로는 반환 후 `\\?\` 확장 길이 접두사를 제거하고 `Cle
 
 1. **경로 순회 감지**: `filepath.Clean` 후 `..` 컴포넌트 포함 여부 검사
 2. **OS 핸들 샌드박스**: `realPath`로 실제 경로 해석, `pathWithin`으로 포함 관계 판정
-3. **크기 사전 검사**: 검증된 핸들에서 `Stat`으로 크기 검사, `MaxInputSize` 초과 시 `ReadAll` 전에 거부
+3. **크기 사전 검사**: 검증된 핸들에서 `os.Stat`으로 크기 검사, `MaxInputSize` 초과 시 `io.ReadAll` 전에 거부
 4. **바이트 수준 상한**: 읽기 후에도 `validateInput`이 바이트 수를 재검사
 
 파일이 허용된 디렉토리 내에 있더라도, `AllowedBaseDir`가 제약하는 것은 '어떤 파일을 읽을 수 있는가'이며, `MaxInputSize`가 제약하는 것은 '파일이 얼마나 클 수 있는가'입니다. 두 개는 직교하며 상호 대체 불가능합니다.

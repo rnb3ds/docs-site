@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Сценарии тестирования"
-title: "Сценарии тестирования - CyberGo env | лучшие практики модульного тестирования"
-description: "Руководство по лучшим практикам тестирования CyberGo env: конфигурация TestingConfig с OverwriteExisting для изоляции тестов, интерфейс FileSystem для имитации файловой системы в памяти, независимые загрузчики для каждого теста, табличные и бенчмарк-тесты, стратегия очистки состояния через ResetDefaultLoader для стабильных и воспроизводимых тестов."
+title: "Сценарии тестирования - CyberGo env | изоляция тестов"
+description: "Лучшие практики тестирования CyberGo env: TestingConfig с OverwriteExisting, имитация файловой системы и очистка ResetDefaultLoader для изоляции тестов."
 sidebar_position: 7
 sidebar_icon: "🧪"
 ---

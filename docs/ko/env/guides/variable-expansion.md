@@ -1,8 +1,8 @@
 ---
 sidebar_label: "변수 확장"
 title: "변수 확장 - CyberGo env | ${VAR} 참조와 기본값 구문"
-description: "CyberGo env 변수 확장 구문 가이드로, ${VAR}과 ${VAR:-default} 참조, ${VAR:=default} 기본값, ${VAR:?error} 필수 검증, $VAR 단축, 순환 참조 감지와 MaxExpansionDepth 깊이 제한을 상세히 설명하여 구성 재사용과 동적 값 교체를 구현합니다."
-sidebar_position: 4
+description: "CyberGo env 변수 확장 구문 가이드로, ${VAR}과 ${VAR:-default} 기본값, ${VAR:?error} 필수 검증, $VAR 단축, 순환 참조 감지와 깊이 제한을 설명하여 구성 재사용과 동적 값 교체를 구현합니다."
+sidebar_position: 3
 sidebar_icon: "🔧"
 ---
 
@@ -266,6 +266,31 @@ func main() {
 ```
 
 ---
+
+## 전개 범위 (보안 격리)
+
+기본적으로 변수 전개는 '파일 우선, 이후 프로세스 환경' 순서로 참조를 해석합니다 — `${VAR}`를 파일에서 찾지 못하면 프로세스 환경(`os.LookupEnv`)으로 폴백합니다. 이는 전통적인 dotenv 의미론과 일치하지만, 구성 파일이 **완전히 신뢰할 수 없는 출처**(사용자 업로드, 외부 시스템 전달)에서 오는 경우 위험이 됩니다: 파일에 `${AWS_SECRET_ACCESS_KEY}`를 적어두면 로드 후 프로세스의 무관한 기밀 정보를 변수 값으로 '포획'할 수 있고, 이후 로깅·직렬화·내보내기를 통해 유출될 수 있습니다.
+
+`ParsingConfig.ExpansionScope`로 이 동작을 제어합니다:
+
+| 값 | 동작 | 적용 시나리오 |
+|-----|------|---------------|
+| `ExpansionFileThenProcess` (기본값) | 파일 내 변수를 먼저 조회, 없으면 프로세스 환경으로 폴백 | 신뢰할 수 있는 구성 파일, 전통적 dotenv 의미론 |
+| `ExpansionFileOnly` | 파일 내 변수만 보임; 프로세스 환경 참조는 빈 문자열로 전개 | 신뢰할 수 없는 구성 출처, 기밀 탐색 방지 (SEC-03) |
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig()
+// 파일 내 변수에 대한 참조만 허용, 프로세스 환경 읽기 차단
+cfg.ExpansionScope = env.ExpansionFileOnly
+loader, _ := env.New(cfg)
+```
+
+::: warning SEC-03
+`ExpansionFileOnly`는 구성 파일이 프로세스 기밀 정보를 '수확'하는 것을 막는 보안 스위치입니다. 애플리케이션이 외부에서 제공된 구성 파일을 로드한다면 이 범위를 항상 활성화하세요.
+:::
+
+참고: `ExpansionScope`는 불리언이 아닌 열거형 필드입니다. `Config`에 이 필드만 설정되어 있어도 `IsZero()`가 초기화된 구성으로 올바르게 인식하며 기본값으로 자동 대체되지 않습니다.
 
 ## 관련 문서
 

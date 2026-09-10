@@ -1,8 +1,9 @@
 ---
 sidebar_label: "セキュリティ概要"
 title: "セキュリティ概要 - CyberGo env | セキュリティアーキテクチャ"
-description: "CyberGo env セキュリティアーキテクチャの概要。SecureValue メモリロックと自動ゼロクリア、キー値検証で制御文字とヌルバイトをフィルタ、DefaultForbiddenKeys で PATH と LD_PRELOAD を禁止、IsSensitiveKey で自動検出、セキュリティプリセットと監査追跡を詳解。"
+description: "CyberGo env セキュリティアーキテクチャの概要。SecureValue メモリロックと自動ゼロクリア、キー値検証、DefaultForbiddenKeys で PATH と LD_PRELOAD を禁止、IsSensitiveKey で自動検出、セキュリティプリセットと監査追跡を詳解。"
 sidebar_position: 1
+sidebar_icon: "🛡️"
 ---
 
 # セキュリティ概要
@@ -152,6 +153,10 @@ cfg := env.ProductionConfig()
 cfg.RequiredKeys = []string{"DB_HOST", "API_KEY"}
 cfg.AllowedKeys = []string{"APP_NAME", "PORT", "DB_HOST", "API_KEY"}
 ```
+
+## 展開スコープの分離
+
+変数展開はデフォルトで「ファイル優先、プロセス環境が次」の順で解決されます。信頼できない設定ソースに対しては `ExpansionScope: ExpansionFileOnly` が参照をファイル内部に制限し、設定ファイルがプロセスの機密（クラウド資格情報、トークンなど）を探索・捕獲するのを阻止します（SEC-03）。設定方法と攻撃シナリオは[変数展開・展開スコープ](/ja/env/guides/variable-expansion)を参照してください。
 
 ## 関連ドキュメント
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "FAQ"
-title: "FAQ - CyberGo html | Common Answers"
-description: "CyberGo html FAQ: choosing package functions vs Processor, encoding detection, input limits, batch caps, empty-text debugging, and statistics monitoring."
+title: "FAQ - CyberGo html | Top Questions & Answers"
+description: "CyberGo html FAQ: package functions vs Processor, 15+ encoding detection, input/depth limits, empty-text fixes, GetStatistics, audit setup, cache hit-rate."
 sidebar_position: 1
 ---
 
@@ -140,7 +140,7 @@ See [Interfaces](../api-reference/types/interfaces) for details.
 
 ## Does a custom Scorer need to be concurrent-safe?
 
-Yes. When a single Processor is shared by multiple concurrent `Extract` calls, `Score`/`ShouldRemove` are invoked from multiple goroutines simultaneously. A custom Scorer that holds mutable state (caches, counters) must handle its own locking and synchronization. The library's built-in `DefaultScorer` is read-only and inherently concurrent-safe.
+Yes. When a single Processor is shared by multiple concurrent `Extract` calls, `Score`/`ShouldRemove` are invoked from multiple goroutines simultaneously. A custom Scorer that holds mutable state (caches, counters) must handle its own locking and synchronization. The library's built-in default scorer (internal implementation, not exported) is read-only and inherently concurrent-safe.
 
 :::warning Stateless preferred
 We recommend designing custom Scorers to be stateless (computing only from the incoming `ContentNode`). This avoids lock overhead and eliminates concurrency issues at the root. When you need aggregated statistics, write the results back to the `Processor`'s statistics channel rather than to the Scorer itself.
@@ -218,7 +218,7 @@ Mechanism: when `ProcessingTimeout > 0`, the library derives a new deadline usin
 
 ## Does ExtractToMarkdown use the cache?
 
-No. `ExtractToMarkdown` internally creates a temporary Processor via `buildFormatProcessor`, which explicitly disables caching (`MaxCacheEntries = 0` + `NewCache(0, 0)`). It neither reads from nor writes to the main Processor's cache.
+No. `ExtractToMarkdown` internally creates a temporary Processor via `buildFormatProcessor`, which explicitly disables caching (`MaxCacheEntries = 0`, internally built with a zero-capacity cache, not exported). It neither reads from nor writes to the main Processor's cache.
 
 :::tip Why this design
 Markdown format conversion is just a different output form — the extraction result itself should not pollute the main cache (otherwise the same content would be cached multiple times for different formats). The temporary Processor reuses the main Processor's `Scorer` and only overrides `InlineImageFormat`/`InlineLinkFormat`. Configuration is isolated through value copying to avoid concurrent modification of shared state.
@@ -235,10 +235,10 @@ The sanitizer applies multiple validations to `data:` URLs:
 - Only whitelisted MIME types are allowed: images (gif/jpeg/png/webp/bmp/avif, etc.), fonts (woff/woff2/ttf/otf), PDF
 - **Blocks `image/svg+xml`** (SVG can embed JavaScript)
 - Blocks empty media types (e.g., `data:;base64,...`)
-- Has a size limit `MaxDataURILength` (100KB)
+- Has a size limit: subject to an internal limit (100KB) that cannot be adjusted via configuration
 - Validates character legality of the base64-encoded portion
 
-Blocked URLs are recorded with a reason (such as `malformed data URL`, `unsafe media type`) through the `AuditRecorder`.
+Blocked URLs are recorded as audit events — the configured `AuditSink` receives an `AuditEntry` of type `AuditEventBlockedURL`, whose `Message` carries the reason for the block (e.g., `malformed data URL`, `unsafe media type in data URL`).
 
 ## What happens if a batch exceeds 10000 items?
 
@@ -263,7 +263,7 @@ It returns `ErrProcessorClosed`. The Processor uses an `atomic.Bool` internally 
 
 ## What is the article recognition (ExtractArticle) scoring algorithm?
 
-The default scorer (`DefaultScorer`) calculates a content relevance score for each element node based on multi-dimensional signals, selecting the highest-scoring node as the article container. Scoring dimensions include:
+The built-in default scorer (internal implementation, not exported) calculates a content relevance score for each element node based on multi-dimensional signals, selecting the highest-scoring node as the article container. Scoring dimensions include:
 
 | Dimension | Positive signals | Negative signals |
 |-----------|-----------------|------------------|
@@ -333,3 +333,9 @@ Yes, they work independently:
 - `ExtractAllLinks` returns `[]LinkResource`, enumerating all resource links in **unsanitized** HTML (including `<script src>`, `<iframe>`, `<link>`, etc.), with `Type` classification
 
 You can call both sequentially without interference. A typical scenario: first use `Extract` to get the body content, then use `ExtractAllLinks` to collect all resources referenced by the page.
+
+## Related Documentation
+
+- [Overview](../) — Feature highlights and architecture overview
+- [Quick Start](../getting-started/) — 5-minute tutorial
+- [API Reference](../api-reference/) — Entry point to the complete API documentation

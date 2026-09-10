@@ -406,5 +406,5 @@ result, err := client.Get(url, httpc.WithSecureCookie(strict))
 
 - [Error Types](./errors) - Complete reference for ClientError, ErrorType, and error variables
 - [Request Options](../core/options) - BodyKind usage in WithBody
-- [Middleware](../client-config/middleware) - AuditMiddleware and audit configuration
+- [Built-in Middleware](../client-config/middleware) - AuditMiddleware and audit configuration
 - [Session Management](../client-config/session) - SessionManager and session-level use of CookieSecurityConfig

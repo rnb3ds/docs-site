@@ -127,7 +127,7 @@ type DownloadResult struct {
 |------|------|------|
 | `FilePath` | `string` | 文件实际保存的**绝对路径**（经 `prepareFilePath` 验证后的路径） |
 | `BytesWritten` | `int64` | 本次写入的字节数（续传时为追加量，非文件总大小） |
-| `Duration` | `time.Duration` | 下载耗时（从开始写入到文件关闭） |
+| `Duration` | `time.Duration` | 下载耗时（从打开目标文件到写入、Sync 并关闭完成） |
 | `AverageSpeed` | `float64` | 平均速度（字节/秒，= BytesWritten / Duration） |
 | `StatusCode` | `int` | HTTP 状态码（200 或 206） |
 | `ContentLength` | `int64` | 服务器报告的 Content-Length（续传时为剩余部分长度） |
@@ -189,7 +189,7 @@ type ChecksumAlgorithm string
 |------|------|
 | MultiWriter | `io.MultiWriter(file, hasher)` 让数据同时写入文件和哈希器，零额外内存 |
 | 算法预检 | 在触碰目标文件**之前**校验算法名——配置错误不会截断已有文件 |
-| 失败清理 | 校验失败时**自动删除**已下载文件（非续传模式），避免残留损坏文件 |
+| 失败清理 | 写入、Sync、关闭或校验任一环节失败时**自动删除**已下载文件（非续传模式），避免残留损坏文件；续传模式保留已有字节供下次续传 |
 | 大小写无关 | 期望值自动 ToLower，实际值为小写 hex，大小写不影响比较 |
 
 ```go
@@ -235,6 +235,8 @@ prepareResumeState(filePath, opts, options):
 :::warning 为什么 200 时报错
 当 `ResumeDownload=true` 但服务器返回 200（而非 206），说明服务器不支持 Range 请求。此时若继续下载，会从头覆盖已有部分文件——**静默丢失用户意图续传的数据**。HTTPC 选择返回错误而非截断，保护本地部分文件不被破坏。如需强制覆盖，设置 `Overwrite=true` + `ResumeDownload=false`。
 :::
+
+错误路径上的响应体排空有 **1 MiB 上限**（`maxDrainBodySize`）：排空是为了让连接可复用，超出上限的剩余响应体不再读取、该连接也随之放弃复用，避免在超大错误体上耗费时间与内存。
 
 ```go
 cfg := httpc.DefaultDownloadConfig()
@@ -349,6 +351,10 @@ cfg.FilePath = "/etc/passwd"                        // 系统路径保护
 cfg.FilePath = "../../../etc/shadow"                // 路径穿越检测
 cfg.FilePath = "/tmp/safe/../../../etc/passwd"      // Clean + 穿越 + 系统路径
 ```
+
+:::tip 目录与权限
+通过安全检查后，`prepareFilePath` 会自动创建缺失的父目录（权限 0755）；新文件以 0644 权限创建，续传模式以追加方式打开已有文件、保留其原有权限。
+:::
 
 ## 完整示例：生产级下载
 

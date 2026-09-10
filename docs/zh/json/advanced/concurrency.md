@@ -97,17 +97,78 @@ func main() {
 }
 ```
 
+### 按批并行 ForEachBatch / ForEachBatchWithContext
+
+单元素回调开销高（如每元素一次系统调用或网络请求）时，`ForEachBatch` 把元素切成固定大小的批次，**每批由一个 goroutine 处理**——批内串行、批间并行，摊薄调度与同步成本。
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	data := `{"records":[10,20,30,40,50,60,70,80,90,100]}`
+	records := json.GetArray(data, "records")
+
+	iter := json.NewParallelIterator(records)
+	defer iter.Close()
+
+	// 10 条记录按每批 3 条切分 → 4 批（末批 1 条）；按 batchIdx 写入独立下标，无需加锁
+	subtotals := make([]int, 4)
+	err := iter.ForEachBatch(3, func(batchIdx int, batch []any) error {
+		sum := 0
+		for _, v := range batch {
+			sum += int(v.(float64))
+		}
+		subtotals[batchIdx] = sum
+		return nil
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	// 全部批次完成后顺序消费（执行顺序不保证，结果按下标落位）
+	for i, s := range subtotals {
+		fmt.Printf("批次 %d 小计 = %d\n", i, s)
+	}
+
+	// 带超时控制的版本：ctx 到期后未派发的批次不再执行，运行中的批次检查到取消后退出
+	ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
+	defer cancel()
+	err = iter.ForEachBatchWithContext(ctx, 100, func(batchIdx int, batch []any) error {
+		return nil // 模拟单批处理
+	})
+	fmt.Println("带超时批处理完成，错误:", err)
+}
+
+// 输出：
+// 批次 0 小计 = 60
+// 批次 1 小计 = 150
+// 批次 2 小计 = 240
+// 批次 3 小计 = 100
+// 带超时批处理完成，错误: <nil>
+```
+
+`batchSize <= 0` 时按 100 处理。回调返回错误与 `ForEach` 相同：首个错误胜出并停止派发新批次；批次的**派发**顺序与输入一致（`batchIdx` 递增），但**执行**顺序不保证——保序输出的做法即上例：按下标落位、完成后顺序消费。
+
 ### ParallelIterator API 一览
 
 | API | 签名 | 说明 |
 |-----|------|------|
-| `NewParallelIterator` | `func NewParallelIterator(data []any, cfg ...Config) *ParallelIterator` | 创建迭代器；worker 数取 `cfg.MaxConcurrency` |
+| `NewParallelIterator` | `func NewParallelIterator(data []any, cfg ...Config) *ParallelIterator` | 创建迭代器；worker 数取 `cfg.MaxConcurrency`（默认 50，超出数组长度时裁剪；`<= 0` 回退 4） |
 | `ForEach` | `func (it *ParallelIterator) ForEach(fn func(int, any) error) error` | 并行遍历，返回首个错误 |
 | `ForEachWithContext` | `func (it *ParallelIterator) ForEachWithContext(ctx context.Context, fn func(int, any) error) error` | 支持 context 取消 |
-| `ForEachBatch` | `func (it *ParallelIterator) ForEachBatch(batchSize int, fn func(int, []any) error) error` | 按批并行处理 |
+| `ForEachBatch` | `func (it *ParallelIterator) ForEachBatch(batchSize int, fn func(int, []any) error) error` | 按批并行处理，批内串行、批间并行 |
+| `ForEachBatchWithContext` | `func (it *ParallelIterator) ForEachBatchWithContext(ctx context.Context, batchSize int, fn func(int, []any) error) error` | 按批并行 + context 取消 |
 | `Map` | `func (it *ParallelIterator) Map(transform func(int, any) (any, error)) ([]any, error)` | 并行变换，保序返回 |
-| `Filter` | `func (it *ParallelIterator) Filter(predicate func(int, any) bool) []any` | 并行过滤 |
-| `Close` | `func (it *ParallelIterator) Close()` | 释放资源（用完即调） |
+| `Filter` | `func (it *ParallelIterator) Filter(predicate func(int, any) bool) []any` | 并行过滤，保序返回（无错误返回值） |
+| `Close` | `func (it *ParallelIterator) Close()` | 释放资源（信号运行中 goroutine 停止，可安全多次调用） |
 
 完整签名与用法见 [迭代器类型](../api-reference/iterator#paralleliterator-类型)。
 
@@ -197,7 +258,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	json.SetGlobalProcessor(processor) // 旧的全局 Processor 会被自动关闭
+	json.SetGlobalProcessor(processor)   // 旧的全局 Processor 会被自动关闭
 	defer json.ShutdownGlobalProcessor() // 应用退出时干净关闭
 
 	data := `{"user":{"name":"Alice","age":30}}`

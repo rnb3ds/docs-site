@@ -1,7 +1,7 @@
 ---
 sidebar_label: "クイックスタート"
 title: "クイックスタート - CyberGo env | 5 分スタートガイド"
-description: "5 分で CyberGo env 環境変数管理ライブラリを始めましょう。go get でのインストール、.env の読み込み、型安全な読み取り、GetSecure セキュア値、構造体マッピング、変数展開、errors.Is によるエラー処理をカバーし、4 種類の設定プリセットとマルチ環境・マルチファイル読み込みも解説。完全な実行可能コード例付きですぐに始められます。"
+description: "5 分で CyberGo env 環境変数管理ライブラリを始めましょう。go get でのインストール、.env の読み込み、型安全な読み取り、GetSecure、構造体マッピング、変数展開をカバーし、4 種類の設定プリセットも解説。実行可能コード例付きですぐに始められます。"
 sidebar_position: 1
 ---
 
@@ -38,6 +38,10 @@ LOG_LEVEL=info
 # 複数値（カンマ区切り）
 ALLOWED_HOSTS=localhost,example.com,api.example.com
 ```
+
+::: tip 完全な文法リファレンス
+`.env` ファイルの引用符・エスケープ・複数行値などの完全な構文規則については、[ファイル形式](/ja/env/reference/file-format)を参照してください。
+:::
 
 ## 最小限の使い方
 

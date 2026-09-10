@@ -1,7 +1,7 @@
 ---
 sidebar_label: "배치 처리 실전"
 title: "배치 처리 실전 - CyberGo html | 동시성 추출 가이드"
-description: "CyberGo html 배치 처리 실전 가이드: 네 가지 배치 API와 BatchResult 구조, WorkerPoolSize 동시성 제어, 컨텍스트 취소, 부분 실패 처리, 그리고 단계별 성능 권장 사항을 다룹니다."
+description: "CyberGo html 배치 처리 실전 가이드: ExtractBatch 등 네 가지 배치 API와 BatchResult 구조, WorkerPoolSize 동시성 제어, 컨텍스트 취소, 부분 실패 처리, 그리고 데이터 규모별 단계별 성능 튜닝 권장을 다룹니다."
 sidebar_position: 2
 ---
 
@@ -57,7 +57,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -137,7 +136,8 @@ for batch := range batchQueue {
 cfg := html.DefaultConfig()
 
 // CPU 코어 수에 따라 동시성 설정 (상한 256)
-if n := runtime.NumCPU(); n > 256 {
+n := runtime.NumCPU()
+if n > 256 {
     n = 256
 }
 cfg.WorkerPoolSize = n
@@ -257,5 +257,5 @@ for i := 0; i < len(allPages); i += batchSize {
 
 - [Processor 재사용과 캐시](./processor-cache) - 패키지 함수와 인스턴스의 캐시 차이
 - [성능 최적화](./performance) - 처리량 향상과 타임아웃 설정
-- [오류 처리](../error-handling) - 센티널 오류와 배치 오류 처리
+- [오류 처리](./error-handling) - 센티널 오류와 배치 오류 처리
 - [API 레퍼런스: 배치 처리](../../api-reference/modules/batch) - 전체 API 시그니처

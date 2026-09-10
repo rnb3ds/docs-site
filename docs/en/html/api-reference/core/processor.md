@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Processor"
 title: "Processor - CyberGo html | Usage, Parameters & Examples"
-description: "CyberGo html Processor API: New constructor, the Extract method family, and lifecycle management (GetStatistics, ClearCache, Close) for high-frequency reuse."
+description: "CyberGo html Processor API: New, Extract method family, ClearCache, GetStatistics, Close lifecycle, cache and encoding-detector reuse for high-frequency calls."
 sidebar_position: 2
 ---
 
@@ -34,7 +34,7 @@ defer p.Close()
 `New` is not a simple assignment; it performs the following steps to ensure the returned Processor is immediately usable:
 
 1. **Validates the config**: calls `Config.Validate()`; an invalid config returns `*ConfigError` (`errors.Is(err, ErrInvalidConfig)` is true). Validation covers numeric bounds (`MaxInputSize`, `MaxCacheEntries`, `WorkerPoolSize`, `MaxDepth` must not be negative/out of range) and format strings (the values of `InlineImageFormat`/`InlineLinkFormat`/`TableFormat` must be legal).
-2. **Sets the Scorer**: when a custom `Scorer` is configured it is adapted to the internal interface via `scorerAdapter`; otherwise `SharedDefaultScorer` (read-only, concurrency-safe) is used.
+2. **Sets the Scorer**: when a custom `Scorer` is configured it is adapted to the internal interface (the adaptation is performed automatically by the library); otherwise the built-in default scorer is used (internal implementation, not exported; read-only, concurrency-safe).
 3. **Pre-computes the format strings**: `InlineImageFormat`/`InlineLinkFormat` are normalized (lowercased and whitespace-stripped; an empty string maps to `"none"`) and cached in the `imageFormat`/`linkFormat` fields to avoid repeated `strings.ToLower` in the hot path.
 4. **Starts cache cleanup**: a background cleanup goroutine is started only when `CacheTTL>0` **and** `CacheCleanup>0`; if either is 0, nothing is started.
 
@@ -45,8 +45,8 @@ A `Processor` can be safely shared across multiple goroutines without additional
 
 - **Immutable config**: `config` is immutable after `New()` (the `*Config` pointer is never reassigned or mutated), so format methods such as `ExtractToMarkdown` can safely make value copies to spawn a temporary Processor without any lock — format overrides never write back to the shared config.
 - **Statistics counters**: `TotalProcessed`/`CacheHits`/`CacheMisses`/`ErrorCount`/`totalProcessTime` all use `atomic` operations.
-- **Cache**: the internal `Cache` carries its own lock and is safe to read and write.
-- **Scorer**: the built-in `DefaultScorer` is read-only. **A custom `Scorer` must ensure its own concurrency safety** (e.g. by holding an internal lock), because a single Processor will invoke its `Score`/`ShouldRemove` from multiple goroutines during concurrent `Extract`.
+- **Cache**: the internal cache carries its own lock and is safe to read and write. Cache behavior is observed and controlled entirely through the public API: `Config.MaxCacheEntries = 0` disables the cache, `ClearCache()` empties it, and `Statistics.CacheHits`/`CacheMisses` observe hit counts.
+- **Scorer**: the built-in default scorer (internal implementation, not exported) is read-only. **A custom `Scorer` must ensure its own concurrency safety** (e.g. by holding an internal lock), because a single Processor will invoke its `Score`/`ShouldRemove` from multiple goroutines during concurrent `Extract`.
 :::
 
 ## Content Extraction
@@ -163,7 +163,7 @@ When `MaxCacheEntries > 0`, `Extract` enables the cache:
 
 - **Hit path**: after detecting a cache entry, `CacheHits` and `TotalProcessed` are each incremented by 1, and what is returned is `cloneResult` — a deep copy that `copy`s slices such as `Images`/`Links`/`Videos`/`Audios`. Mutations by the caller **do not** affect the cached entry and also avoid data races during concurrent hit reads.
 - **Miss path**: once processing completes, the result is written to the cache and a `cloneResult` (again a deep copy) is returned. So the cache entry and the return value never alias each other.
-- **Disabling the cache**: with `MaxCacheEntries = 0`, `Extract` short-circuits past cache-key generation and `Get/Set`, with no cache overhead at all.
+- **Disabling the cache**: with `MaxCacheEntries = 0`, `Extract` skips cache-key generation and cache reads/writes (short-circuit), with no cache overhead at all.
 
 ### GetStatistics
 
@@ -242,5 +242,5 @@ defer p.Close()
 :::tip
 - **Singleton reuse**: in a long-running service (HTTP handler, worker), create one Processor and share it across concurrent requests, pairing it with the cache to maximize gains. The Processor itself is concurrency-safe; there is no need to create one per request.
 - **`defer Close()`**: place `defer p.Close()` right after creation so that even an exceptional path releases the background cleanup goroutine and audit resources. `Close` stops the cache cleanup goroutine, clears the cache, and closes the audit sink.
-- **Do not use after Close**: calling any method after `Close` returns `ErrProcessorClosed`. `Close` uses `CompareAndSwap` to be idempotent; repeated calls are safe but pointless.
+- **Do not use after Close**: calling any method after `Close` returns `ErrProcessorClosed`. `Close` guarantees idempotency via an atomic CAS operation (an internal implementation detail); repeated calls are safe but pointless.
 :::

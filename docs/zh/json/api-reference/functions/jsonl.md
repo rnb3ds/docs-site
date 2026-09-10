@@ -34,21 +34,21 @@ JSONL（JSON Lines）是换行分隔的 JSON 格式，每行一个独立的 JSON
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    jsonl := `{"name":"Alice"}
+	jsonl := `{"name":"Alice"}
 {"name":"Bob"}
 {"name":"Charlie"}`
-    results, err := json.ParseJSONL([]byte(jsonl))
-    if err != nil {
-        panic(err)
-    }
-    for i, r := range results {
-        fmt.Printf("[%d] %v\n", i, r)
-    }
+	results, err := json.ParseJSONL([]byte(jsonl))
+	if err != nil {
+		panic(err)
+	}
+	for i, r := range results {
+		fmt.Printf("[%d] %v\n", i, r)
+	}
 }
 ```
 
@@ -77,28 +77,28 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "strings"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
+	"strings"
 )
 
 type User struct {
-    Name string `json:"name"`
+	Name string `json:"name"`
 }
 
 func main() {
-    src := `{"name":"Alice"}
+	src := `{"name":"Alice"}
 {"name":"Bob"}`
 
-    // 基本用法
-    results, err := json.StreamLinesInto[User](strings.NewReader(src), func(lineNum int, user User) error {
-        fmt.Printf("行 %d: 用户 %s\n", lineNum, user.Name)
-        return nil // 返回 error 可中断处理
-    })
-    if err != nil {
-        panic(err)
-    }
-    fmt.Printf("共处理 %d 条记录\n", len(results))
+	// 基本用法
+	results, err := json.StreamLinesInto[User](strings.NewReader(src), func(lineNum int, user User) error {
+		fmt.Printf("行 %d: 用户 %s\n", lineNum, user.Name)
+		return nil // 返回 error 可中断处理
+	})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("共处理 %d 条记录\n", len(results))
 }
 ```
 
@@ -119,22 +119,22 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    items := []any{
-        map[string]any{"name": "Alice"},
-        map[string]any{"name": "Bob"},
-    }
-    jsonl, err := json.ToJSONL(items)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(string(jsonl))
-    // {"name":"Alice"}
-    // {"name":"Bob"}
+	items := []any{
+		map[string]any{"name": "Alice"},
+		map[string]any{"name": "Bob"},
+	}
+	jsonl, err := json.ToJSONL(items)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(string(jsonl))
+	// {"name":"Alice"}
+	// {"name":"Bob"}
 }
 ```
 
@@ -155,20 +155,20 @@ func main() {
 package main
 
 import (
-    "fmt"
-    "github.com/cybergodev/json"
+	"fmt"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    items := []any{
-        map[string]any{"name": "Alice"},
-        map[string]any{"name": "Bob"},
-    }
-    jsonlStr, err := json.ToJSONLString(items)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println(jsonlStr)
+	items := []any{
+		map[string]any{"name": "Alice"},
+		map[string]any{"name": "Bob"},
+	}
+	jsonlStr, err := json.ToJSONLString(items)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(jsonlStr)
 }
 ```
 
@@ -177,6 +177,25 @@ func main() {
 json 包提供的 JSONL 流式处理包级便捷函数，签名与对应 Processor 方法一致，并在末尾额外接受可选的 `cfg ...Config` 尾参；内部使用按 `cfg` 缓存的全局 Processor，因此无需手动创建实例，适合一次性处理场景。需要多次处理或共享同一份配置时，建议改用 [`json.New(cfg)`](../processor/#new) 创建独立 Processor。
 
 完整用法与示例见 [JSONL 流式处理指南](../../streaming/jsonl#包级函数) 与 [Processor JSONL 方法](../processor/jsonl)。
+
+**选型**
+
+| 场景 | 推荐 |
+|------|------|
+| 逐行处理（顺序敏感） | `StreamJSONL` / `ForeachJSONL` |
+| CPU 密集的行处理（顺序不敏感） | `StreamJSONLParallel` |
+| 需要中途取消/超时 | `StreamJSONLParallelWithContext` |
+| 批量落库等分块消费 | `StreamJSONLChunked` |
+| 解码到具体结构体 `T` | `StreamLinesInto[T]` |
+| 转换 / 聚合 / 筛选 / 查找首个 | `MapJSONL` / `ReduceJSONL` / `FilterJSONL` / `FirstJSONL` |
+| 全量收集 | `CollectJSONL`（全量驻留内存，大文件慎用） |
+
+**行为要点**
+
+- **坏行处理**：`StreamJSONL` 家族遇到无法解析的行**立即中止**，返回 `line N: ...` 形式的错误；只有 `StreamLinesInto` 遵循 `Config.JSONLContinueOnErr`（为 `true` 时跳过坏行继续）。
+- **深度护栏**：每行解析前执行嵌套深度检查（`MaxNestingDepthSecurity`，默认 200），防止深嵌套行导致栈溢出。
+- **并行语义**：`StreamJSONLParallel` 的 `workers <= 0` 时按 4 处理；回调在多个 goroutine 中并发执行，需自行保证并发安全。回调返回 `item.Break()` 是**正常**提前结束（返回 `nil`）；返回其他错误会取消其余任务并成为函数返回值。
+- **内存护栏**：`JSONLMaxMemory`（未设时回退 `MaxMemory`）限制已处理的总字节数，超限即中止。
 
 ### StreamJSONL
 
@@ -282,31 +301,67 @@ processor, err := json.New(cfg)
 package main
 
 import (
-    "os"
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
+	"os"
 )
 
 func main() {
-    file, err := os.Create("output.jsonl")
-    if err != nil {
-        panic(err)
-    }
-    defer file.Close()
-    jw := json.NewJSONLWriter(file)
-    jw.Write(map[string]any{"id": 1, "name": "Alice"})
-    jw.Write(map[string]any{"id": 2, "name": "Bob"})
+	file, err := os.Create("output.jsonl")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	jw := json.NewJSONLWriter(file)
+	jw.Write(map[string]any{"id": 1, "name": "Alice"})
+	jw.Write(map[string]any{"id": 2, "name": "Bob"})
 }
 ```
 
-**JSONLWriter 方法**
+### JSONLWriter 方法
 
 | 方法 | 签名 | 说明 |
 |------|------|------|
-| `Write` | `(data any) error` | 写入单行 |
-| `WriteAll` | `(data []any) error` | 写入多行 |
-| `WriteRaw` | `(line []byte) error` | 写入原始字节行 |
-| `Err` | `() error` | 返回累积错误 |
-| `Stats` | `() JSONLStats` | 返回写入统计 |
+| `Write` | `func (w *JSONLWriter) Write(data any) error` | 将单个值编码为一行 JSON 写入 |
+| `WriteAll` | `func (w *JSONLWriter) WriteAll(data []any) error` | 依次写入多个值，遇首个错误即停止 |
+| `WriteRaw` | `func (w *JSONLWriter) WriteRaw(line []byte) error` | 写入已编码的原始 JSON 行 |
+| `Err` | `func (w *JSONLWriter) Err() error` | 返回首个被缓存的写入错误 |
+| `Stats` | `func (w *JSONLWriter) Stats() JSONLStats` | 返回写入统计 |
+
+#### Write
+
+签名：`func (w *JSONLWriter) Write(data any) error`
+
+将单个 JSON 值编码为一行写入底层 writer，行尾自动追加 `\n`。
+
+**参数**
+
+| 名称 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `data` | `any` | 是 | 要编码写入的值 |
+
+**返回值**
+
+| 类型 | 说明 |
+|------|------|
+| `error` | 编码或写入错误；出错后被缓存到写入器（见下方「行为细节」） |
+
+#### WriteAll
+
+签名：`func (w *JSONLWriter) WriteAll(data []any) error`
+
+将多个值依次编码为多行写入，遇到首个错误立即停止并返回。
+
+**参数**
+
+| 名称 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `data` | `[]any` | 是 | 要写入的值切片 |
+
+**返回值**
+
+| 类型 | 说明 |
+|------|------|
+| `error` | 首个由 `Write` 返回的错误（全部成功为 `nil`） |
 
 ```go
 jw := json.NewJSONLWriter(file)
@@ -324,8 +379,108 @@ if err := jw.Err(); err != nil {
 }
 ```
 
+#### WriteRaw
+
+签名：`func (w *JSONLWriter) WriteRaw(line []byte) error`
+
+写入**已编码**的原始 JSON 行，避免二次编码开销；行尾没有 `\n` 时自动补一个。
+
+**参数**
+
+| 名称 | 类型 | 必需 | 说明 |
+|------|------|------|------|
+| `line` | `[]byte` | 是 | 已编码的 JSON 行（无需包含换行符） |
+
+**返回值**
+
+| 类型 | 说明 |
+|------|------|
+| `error` | 写入错误；出错后被缓存到写入器 |
+
+#### Err
+
+签名：`func (w *JSONLWriter) Err() error`
+
+返回首个被缓存的写入/编码错误（无错为 `nil`），适合批量写入后统一检查。
+
+**返回值**
+
+| 类型 | 说明 |
+|------|------|
+| `error` | 首个缓存错误；从未出错时为 `nil` |
+
+#### Stats
+
+签名：`func (w *JSONLWriter) Stats() JSONLStats`
+
+返回写入统计（成功写入的行数与字节数）。
+
+**返回值**
+
+| 类型 | 说明 |
+|------|------|
+| `JSONLStats` | 写入统计，字段见下文 [JSONLStats](#jsonlstats) |
+
+### JSONLStats
+
+`Stats()` 返回的写入统计类型。
+
+```go
+type JSONLStats struct {
+    LinesProcessed int64 // 已成功写入的行数
+    BytesWritten   int64 // 已写入的总字节数（含行尾换行符）
+}
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `LinesProcessed` | `int64` | 已成功写入的行数（失败的行不计入） |
+| `BytesWritten` | `int64` | 已写入底层 writer 的总字节数（含自动补齐的换行符） |
+
+**行为细节**
+
+- `Write`：将值编码为单行 JSON 后追加 `\n`；是否转义 `<`/`>`/`&` 由 `Config.EscapeHTML`（默认 `true`）决定
+- `WriteRaw`：写入**已编码**的原始行以避免二次编码开销；行尾没有 `\n` 时自动补一个
+- **错误粘性**：任一次写入或编码出错后，错误被缓存在写入器上，后续 `Write`/`WriteRaw` 不再写底层 writer、直接返回该错误——避免在半写状态上继续追加
+- `Err()` 读取缓存错误（无错为 `nil`）；`Stats()` 返回 `JSONLStats`，字段见上表
+
+### 使用示例
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/cybergodev/json"
+)
+
+func main() {
+	jw := json.NewJSONLWriter(os.Stdout)
+
+	// 写入 3 条记录，每条一行
+	for i := 1; i <= 3; i++ {
+		if err := jw.Write(map[string]int{"id": i}); err != nil {
+			panic(err)
+		}
+	}
+
+	stats := jw.Stats()
+	if err := jw.Err(); err != nil {
+		panic(err)
+	}
+	fmt.Printf("已写入 %d 行，共 %d 字节\n", stats.LinesProcessed, stats.BytesWritten)
+	// {"id":1}
+	// {"id":2}
+	// {"id":3}
+	// 已写入 3 行，共 27 字节
+}
+```
+
 ## 相关
 
 - [文件操作函数](./file-io) - LoadFromFile, SaveToFile 等文件操作
 - [Processor JSONL 方法](../processor/jsonl) - Processor 级 JSONL 方法详解
+- [JSONL 处理器](../../streaming/jsonl#jsonlwriter) - JSONL/NDJSON 概念与流式实战教程
 - [流式处理](../../streaming/large-files) - 流式处理器详解

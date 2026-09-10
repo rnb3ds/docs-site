@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Configuration"
 title: "Configuration Guide - CyberGo html | Config Field Selection"
-description: "CyberGo html configuration in practice: choosing among four presets, a tour of six field categories, common combinations, and Validate verification."
+description: "CyberGo html configuration: DefaultConfig, HighSecurityConfig, TextOnlyConfig, MarkdownConfig presets, six field categories, combinations, and Validate checks."
 sidebar_position: 6
 ---
 
@@ -25,7 +25,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -156,7 +155,7 @@ The `Include*` fields affect only `ExtractAllLinks`. Link retention in content e
 
 | Field | Description |
 |-------|-------------|
-| `Scorer` | Custom content scorer; uses DefaultScorer when nil |
+| `Scorer` | Custom content scorer; when nil, the built-in default scorer (internal implementation) is used |
 
 A custom Scorer can optimize article detection for specific websites. See [Testing & Custom Extensions](../integration/testing-custom).
 

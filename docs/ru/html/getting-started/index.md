@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Быстрый старт"
 title: "Быстрый старт - CyberGo html | за 5 минут"
-description: "Быстрый старт CyberGo html: установка, базовое извлечение контента, пресеты Config, вывод в текст, Markdown и JSON — HTML-извлечение за 5 минут."
-sidebar_position: 2
+description: "Быстрый старт CyberGo html за 5 минут: Go 1.25+, установка, извлечение контента, четыре пресета Config, текст/Markdown/JSON, потокобезопасный Processor."
+sidebar_position: 1
 ---
 
 # Быстрый старт
@@ -117,7 +117,7 @@ jsonBytes, err := html.ExtractToJSON(data)
 
 ## Поддержка контекста
 
-Все функции имеют версии с `ExtractWithContext` для поддержки отмены и тайм-аута:
+Все функции извлечения имеют варианты с суффиксом `*WithContext` (например `ExtractWithContext`, `ExtractTextWithContext`), поддерживающие отмену и тайм-аут:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

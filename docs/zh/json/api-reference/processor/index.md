@@ -1,7 +1,7 @@
 ---
 sidebar_label: "概述"
 title: "Processor 处理器 - CyberGo JSON | API 参考"
-description: "CyberGo JSON Processor 处理器：New 创建、GetString/Set/Delete 操作、Foreach 迭代、Encode 编码与 Close 生命周期，适合高频复用。"
+description: "CyberGo JSON Processor 处理器：New 创建、GetString/Set/Delete 操作、Foreach 迭代、Encode 编码与 Close 生命周期，内置缓存加速重复操作，支持链式调用与全局处理器管理，适合高频复用场景。"
 sidebar_position: 1
 ---
 
@@ -58,16 +58,16 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 
 | 类别 | 说明 |
 |------|------|
-| [查询获取](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled |
+| [查询获取](./query) | GetString/Int/Float/Bool/Get/GetWithContext/SafeGet/GetArray/GetObject/GetMultiple/CompilePath/GetCompiled/PreParse/GetFromParsed |
 | [修改操作](./modify) | Set/SetMultiple/SetCreate/SetMultipleCreate/MergeJSON/MergeMany/CompareJSON |
 | [删除操作](./delete) | Delete/DeleteClean |
-| [编码输出](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream |
+| [编码输出](./output) | Encode/EncodePretty/EncodeWithConfig/MarshalIndent/Prettify/Compact/CompactBuffer/Indent/HTMLEscape/EncodeBatch/EncodeFields/EncodeStream/ValidateSchema |
 | [解析验证](./parse) | Parse/ParseAny/Valid/ValidBytes/Marshal/Unmarshal |
 | [批量操作](./batch) | ProcessBatch/WarmupCache |
 | [JSONL](./jsonl) | StreamJSONL/StreamJSONLParallel/StreamJSONLParallelWithContext/StreamJSONLChunked/StreamJSONLFile/ForeachJSONL/MapJSONL/ReduceJSONL/FilterJSONL/CollectJSONL/FirstJSONL |
-| [文件操作](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile |
+| [文件操作](./file-io) | LoadFromFile/LoadFromReader/SaveToFile/MarshalToFile/SaveToWriter/UnmarshalFromFile/ForeachFile 系列 |
 | [迭代方法](./iterate) | Foreach/ForeachWithPath/ForeachNested/ForeachReturn/ForeachWithError/ForeachNestedWithError/ForeachWithPathAndIterator/ForeachWithPathAndControl/ForeachFile/ForeachFileWithPath/ForeachFileChunked/ForeachFileNested |
-| [生命周期](./lifecycle) | Close/IsClosed/GetConfig/AddHook/ClearCache/GetStats/GetHealthStatus |
+| [生命周期](./lifecycle) | Close/IsClosed/GetConfig/AddHook/SetLogger/ClearCache/WarmupCache/GetStats/GetHealthStatus/SetGlobalProcessor/ShutdownGlobalProcessor |
 
 ---
 
@@ -91,24 +91,24 @@ finalResult, _ := processor.Delete(result2, "user.temporary")
 package main
 
 import (
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 创建自定义配置的处理器
-    cfg := json.SecurityConfig()
-    processor, err := json.New(cfg)
-    if err != nil {
-        panic(err)
-    }
+	// 创建自定义配置的处理器
+	cfg := json.SecurityConfig()
+	processor, err := json.New(cfg)
+	if err != nil {
+		panic(err)
+	}
 
-    // 设置为全局处理器
-    json.SetGlobalProcessor(processor)
+	// 设置为全局处理器
+	json.SetGlobalProcessor(processor)
 
-    // 现在所有包级函数使用安全配置
-    data, err := json.Get(`{"name":"Alice"}`, "name")
-    // 使用了 SecurityConfig 的限制
-    _ = data
+	// 现在所有包级函数使用安全配置
+	data, err := json.Get(`{"name":"Alice"}`, "name")
+	// 使用了 SecurityConfig 的限制
+	_ = data
 }
 ```
 
@@ -128,20 +128,20 @@ func main() {
 package main
 
 import (
-    "github.com/cybergodev/json"
+	"github.com/cybergodev/json"
 )
 
 func main() {
-    // 使用全局处理器
-    data, _ := json.Get(`{"key":"value"}`, "key")
-    _ = data
+	// 使用全局处理器
+	data, _ := json.Get(`{"key":"value"}`, "key")
+	_ = data
 
-    // 应用关闭时清理
-    json.ShutdownGlobalProcessor()
+	// 应用关闭时清理
+	json.ShutdownGlobalProcessor()
 
-    // 后续操作会创建新的默认处理器
-    data2, _ := json.Get(`{"key":"value2"}`, "key")
-    _ = data2
+	// 后续操作会创建新的默认处理器
+	data2, _ := json.Get(`{"key":"value2"}`, "key")
+	_ = data2
 }
 ```
 

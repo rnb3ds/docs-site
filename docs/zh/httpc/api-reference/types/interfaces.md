@@ -7,6 +7,21 @@ sidebar_position: 1
 
 # 接口定义
 
+## 接口总览
+
+| 接口/类型 | 类别 | 实现方 | 扩展点用途 |
+|-----------|------|--------|-----------|
+| `Client` | 主客户端接口 | `clientImpl`（`New`/`NewDefault` 返回） | 作为消费方的参数类型约束 |
+| `Doer` | 最小执行接口 | `clientImpl`；也可由用户自行实现 | mock 测试、装饰器包装 |
+| `DomainClienter` | 域名客户端接口 | `DomainClient`（`NewDomain`/`NewDomainDefault` 返回） | 域名作用域的会话管理 |
+| `RequestMutator` | 请求变更器接口 | `*engine.Request`（内部） | 中间件读写请求 |
+| `ResponseMutator` | 响应变更器接口 | `*engine.Response`（内部） | 中间件读写响应 |
+| `Handler` | 请求处理函数类型 | `finalHandler`、中间件包装产物 | 自定义中间件的核心签名 |
+| `MiddlewareFunc` | 中间件函数类型 | 内置 7 个中间件工厂、用户自定义 | 拦截/改写请求与响应 |
+| `RetryPolicy` | 重试策略接口 | 用户实现（仅限 httpc 模块内，见下方警告） | 自定义重试决策 |
+| `CertificatePinner` | 证书锁定接口 | `NewSPKIHashPinner` 等构造器、用户自定义 | 自定义锁定策略 |
+| `RequestOption` | 请求选项函数类型 | `WithXxx` 工厂函数 | 逐请求配置 |
+
 ## Client
 
 ```go
@@ -231,7 +246,15 @@ type Handler func(ctx context.Context, req RequestMutator) (ResponseMutator, err
 type MiddlewareFunc func(Handler) Handler
 ```
 
-中间件函数签名，接收下一个 Handler 并返回包装后的 Handler。
+中间件函数签名，接收下一个 Handler 并返回包装后的 Handler。`Handler`/`MiddlewareFunc` 均为内部 `types` 包同名类型的别名（`types.go`），管线组装与自定义规范见 [Handler 管线](../handler/handler-chain)。
+
+### RequestOption
+
+```go
+type RequestOption = engine.RequestOption
+```
+
+请求选项函数类型，是内部 `engine.RequestOption`（底层为 `func(*engine.Request) error`）的类型别名（`types.go`）。用户不直接构造该函数，而是使用 `WithHeader`、`WithJSON`、`WithOnRequest` 等 `WithXxx` 工厂。全部选项的逐项参考见 [请求选项](../core/options)。
 
 ## 证书锁定
 
@@ -243,7 +266,24 @@ type MiddlewareFunc func(Handler) Handler
 type CertificatePinner = security.CertificatePinner
 ```
 
-证书锁定器接口。通过下方构造函数创建后赋值给 `SecurityConfig.CertificatePinner` 字段（经 `Config.Security` 访问）：
+证书锁定器接口，是内部 `security.CertificatePinner` 的类型别名。方法集：
+
+<!-- check-code: skip -->
+```go
+type CertificatePinner interface {
+    // Pin 返回锁定值的字符串表示，用于日志与调试
+    Pin() string
+
+    // VerifyPeerCertificate 校验对端证书链是否匹配锁定值。
+    // rawCerts 为 ASN.1 DER 编码的证书；verifiedChains 为已验证的证书链
+    // （若常规验证被跳过则可能为 nil）
+    VerifyPeerCertificate(rawCerts [][]byte, verifiedChains [][]*x509.Certificate) error
+}
+```
+
+`VerifyPeerCertificate` 的签名与 `crypto/tls.Config.VerifyPeerCertificate` 回调一致，自定义实现可直接接入 TLS 握手流程。
+
+通过下方构造函数创建后赋值给 `SecurityConfig.CertificatePinner` 字段（经 `Config.Security` 访问）：
 
 ```go
 pinner, err := httpc.NewSPKIHashPinner(

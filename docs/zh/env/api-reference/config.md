@@ -86,9 +86,10 @@ type YAMLConfig struct {
 
 // ParsingConfig 控制通用解析行为
 type ParsingConfig struct {
-    AllowExportPrefix bool // 允许 export KEY=value 语法
-    AllowYamlSyntax   bool // 允许 YAML 风格值
-    ExpandVariables   bool // 是否展开 ${VAR} 引用
+    AllowExportPrefix bool            // 允许 export KEY=value 语法
+    AllowYamlSyntax   bool            // 允许 YAML 风格值
+    ExpandVariables   bool            // 是否展开 ${VAR} 引用
+    ExpansionScope    ExpansionScope  // ${VAR} 引用可解析的作用域
 }
 
 // ComponentConfig 自定义组件和高级选项
@@ -769,6 +770,59 @@ loader, _ := env.New(cfg)
 ```
 
 ---
+
+## 预设对照表与配置陷阱
+
+### 四个预设的完整差异
+
+| 配置项 | Default | Development | Testing | Production |
+|--------|---------|-------------|---------|------------|
+| `FailOnMissingFile` | false | false | false | **true** |
+| `OverwriteExisting` | false | **true** | **true** | false |
+| `ValidateValues` | true | true | true | true |
+| `AllowExportPrefix` | true | true | true | true |
+| `AllowYamlSyntax` | false | **true** | false | false |
+| `ExpandVariables` | true | true | true | true |
+| `MaxFileSize` | 2 MB | 10 MB | 64 KB | 64 KB |
+| `MaxVariables` | 500 | 500 | 50 | 50 |
+| `JSONMaxDepth`/`YAMLMaxDepth` | 10 | 10 | 10 | 10 |
+| `AuditEnabled` | false | false | false | **true** |
+
+要点：`DevelopmentConfig` 放宽的是**便利性**（覆盖、YAML 语法、文件大小），值校验始终开启——任何预设都不会牺牲注入防护。
+
+### DefaultConfig 关键默认值
+
+| 项 | 默认 |
+|----|------|
+| 键名模式 | 内置字节级校验（等价 `^[A-Za-z][A-Za-z0-9_]*$`） |
+| `ValidateValues` | true |
+| `JSONNullAsEmpty`/`JSONNumberAsString`/`JSONBoolAsString` | true |
+| `ExpandVariables` | true（作用域 `ExpansionFileThenProcess`） |
+| `Prefix` | 空（不过滤） |
+
+### IsZero 陷阱：始终从 DefaultConfig() 开始改
+
+`New()` 对**零值** Config 自动套用 `DefaultConfig()`。`IsZero()` 的判定基于「常见默认字段是否全为零」——一个**只设置了少数字段**的 Config 不会被误判为零值，但判定规则依赖字段清单，**从零值结构体逐个赋值**的写法容易踩到边界。推荐写法始终是：
+
+<!-- check-code: skip -->
+```go
+cfg := env.DefaultConfig() // 在完整默认值之上修改
+cfg.Filenames = []string{".env.production"}
+cfg.OverwriteExisting = true
+```
+
+### KeyPattern 的安全校验（SEC-06）
+
+自定义 `KeyPattern` 在 `Config.Validate()` 时会接受四类探针测试，任一不过即拒绝配置：
+
+1. 必须能匹配合法键（如 `TEST_KEY`）
+2. 必须拒绝空字符串
+3. 必须拒绝数字开头的键（如 `123_INVALID`）
+4. 必须拒绝含 `=`、`:`、换行或控制字符的键——防止键名携带分隔符导致序列化往返后重新解析出**不同的行**（往返注入）
+
+### ExpansionScope
+
+参见[变量展开指南的「展开作用域」章节](/zh/env/guides/variable-expansion)。`ExpansionFileOnly` 用于不可信配置文件场景（SEC-03），阻止 `${VAR}` 引用读取进程环境。
 
 ## 相关文档
 

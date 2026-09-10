@@ -751,6 +751,30 @@ func main() {
 }
 ```
 
+## 默认禁止键与键名模式
+
+### DefaultForbiddenKeys 完整清单
+
+库默认拒绝写入以下系统关键变量，按攻击面分类：
+
+| 类别 | 键 | 防御目标 |
+|------|-----|----------|
+| 路径注入 | `PATH` | 劫持可执行文件查找路径 |
+| 动态链接器（Linux/macOS） | `LD_PRELOAD`、`LD_LIBRARY_PATH`、`LD_DEBUG`、`LD_AUDIT`、`LD_PRELOAD_32`、`LD_PRELOAD_64`、`LD_LIBRARY_PATH_32`、`LD_LIBRARY_PATH_64`、`DYLD_INSERT_LIBRARIES`、`DYLD_LIBRARY_PATH` | 库预加载攻击 |
+| Shell 逃逸 | `SHELL`、`ENV`、`BASH_ENV`、`IFS` | Shell 注入 |
+| 解释器注入 | `PYTHONPATH`、`PERL5OPT`、`RUBYLIB`、`NODE_PATH` | 语言运行时代码注入 |
+| Windows 特有 | `COMSPEC`、`PATHEXT`、`SYSTEMROOT`、`WINDIR` | Windows 系统变量劫持 |
+
+自定义追加用 `ValidationConfig.ForbiddenKeys`；放开内置限制需自行提供替换验证器。
+
+### DefaultKeyPattern
+
+`DefaultKeyPattern` 导出为 `nil`——默认键校验走**字节级快速路径**（等价正则 `^[A-Za-z][A-Za-z0-9_]*$`），较正则实现约快一个数量级。设置自定义 `KeyPattern` 后切换为正则校验，并接受 [KeyPattern 安全校验](/zh/env/api-reference/config)的四类探针检查。
+
+### ExpansionErrorKind
+
+`ExpansionError.Kind` 的两个取值：`ExpansionDepthKind`（深度超限/循环引用）与 `ExpansionRequiredKind`（`${VAR:?}` 必填变量未设置），详见[错误处理指南](/zh/env/guides/error-handling)。
+
 ## 相关文档
 
 - [SecureValue API](/zh/env/api-reference/secure-value) - 安全工具函数完整 API

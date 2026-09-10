@@ -2,7 +2,7 @@
 sidebar_label: "快速开始"
 title: "快速开始 - CyberGo html | 5 分钟入门指南"
 description: "CyberGo html 快速入门指南：5 分钟掌握 Go 1.25+ 环境下的安装、基本内容提取、DefaultConfig 等四种 Config 预设选择，以及纯文本、Markdown、JSON 三种输出格式与 Processor 并发安全调用实践。"
-sidebar_position: 2
+sidebar_position: 1
 ---
 
 # 快速开始
@@ -117,7 +117,7 @@ jsonBytes, err := html.ExtractToJSON(data)
 
 ## 上下文支持
 
-所有函数都有带 `ExtractWithContext` 的版本，支持取消和超时：
+所有提取函数都有带 `*WithContext` 后缀的变体（如 `ExtractWithContext`、`ExtractTextWithContext`），支持取消和超时：
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
