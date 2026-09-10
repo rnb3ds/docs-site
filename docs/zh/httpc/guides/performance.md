@@ -1,8 +1,8 @@
 ---
 sidebar_label: "性能优化"
 title: "性能优化 - CyberGo HTTPC | 预设与并发"
-description: "HTTPC 性能优化指南：Default/Secure/Performance/Minimal 四种预设对比与场景选型、基于预设微调连接池与超时参数、Result 生命周期自动管理减少 GC 压力、高并发请求模式与性能反模式分析与优化建议。"
-sidebar_position: 9
+description: "HTTPC 性能优化指南：Default/Secure/Performance/Testing/Minimal 五种预设对比与场景选型、连接池空闲连接自动推导规则、并发模型与信号量限流完整示例、超时预算分层建议、零分配热路径、对象池与 resultBundle 机制及性能反模式分析。"
+sidebar_position: 12
 ---
 
 # 性能优化
@@ -91,6 +91,99 @@ cfg.Connection.MaxIdleConns = 200
 client, _ := httpc.New(cfg)
 ```
 
+## 并发模型：一个 Client 服务所有 goroutine
+
+HTTPC 的 `Client` 与 `DomainClient` 都是**并发安全**的——任意方法可以被多个 goroutine 同时调用，库内设有专门的并发安全集成测试（`internal/concurrency`）在高并发场景下覆盖公共 API。因此正确的并发模式非常简单：
+
+```
+全局/服务级创建 1 个 Client
+        │
+        ├── goroutine 1 ──┐
+        ├── goroutine 2 ──┼── 共享同一个连接池与对象池
+        └── goroutine N ──┘
+```
+
+并发容量与连接池的关系：
+
+| 场景 | 行为 |
+|------|------|
+| 并发数 ≤ `MaxConnsPerHost`（HTTP/1.1） | 每个请求独占一条连接，互不排队 |
+| 并发数 > `MaxConnsPerHost`（HTTP/1.1） | 多余请求在传输层**排队等待**空闲连接（不报错，但延迟上升） |
+| HTTP/2 开启（默认） | 同一主机的请求共享单连接多路复用，`MaxConnsPerHost` 很少成为瓶颈 |
+
+:::tip 并发上限的两种调法
+- **控制客户端侧**：把 `Connection.MaxConnsPerHost` 调到 ≥ 峰值并发数（HTTP/1.1 场景）；
+- **控制调用侧**：用带缓冲 channel 作信号量限制并发（下面的完整示例），主动保护下游服务。
+两者常配合使用：信号量按下游承受力限流，连接池按信号量上限配连接。
+:::
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+	"net/http"
+	"net/http/httptest"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	// 本地模拟服务器：每个请求固定耗时 50ms
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		time.Sleep(50 * time.Millisecond)
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	cfg := httpc.DefaultConfig()
+	cfg.Security.AllowPrivateIPs = true // 允许连接 127.0.0.1 本地测试服务器
+	client, err := httpc.New(cfg)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer client.Close()
+
+	const (
+		total       = 20
+		maxInFlight = 5 // 信号量：同时在途的请求最多 5 个
+	)
+
+	sem := make(chan struct{}, maxInFlight)
+	var wg sync.WaitGroup
+	var okCount int64
+	start := time.Now()
+
+	for i := 0; i < total; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			sem <- struct{}{}                // 获取信号量
+			defer func() { <-sem }()         // 释放信号量
+
+			result, err := client.Get(server.URL)
+			if err != nil {
+				return
+			}
+			if result.IsSuccess() {
+				atomic.AddInt64(&okCount, 1)
+			}
+		}()
+	}
+	wg.Wait()
+
+	fmt.Printf("%d/%d 成功，耗时 %v（串行约需 %v）\n",
+		okCount, total, time.Since(start), total*50*time.Millisecond)
+	// 输出示例：20/20 成功，耗时约 250ms（串行约需 1s）——5 路并发带来约 5 倍吞吐
+}
+```
+
+批量拉取大量独立 URL 时，另一个常用模式是 **worker pool**：固定数量的 worker goroutine 从 jobs channel 消费任务，天然把并发压在 worker 数上，无需信号量。完整实现见[高级示例](../examples/advanced-usage)。
+
 ## 连接池调优原理
 
 连接池是 HTTP 客户端性能的核心。HTTPC 的连接池基于 Go 标准库的 `http.Transport`，但在其上增加了自动计算逻辑和安全默认值。
@@ -108,7 +201,7 @@ client, _ := httpc.New(cfg)
 | MaxConnsPerHost | 自动空闲连接数 | 说明 |
 |-----------------|---------------|------|
 | 0（无限制） | 10 | 使用上限默认值 |
-| 1 | 2 | 不低于下限 |
+| 1 | 1 | 先取下限 2，再被「不超过最大连接数」拉回 1 |
 | 2 | 2 | 恰好等于下限 |
 | 5 | 2 | 一半取下限 |
 | 10 | 5 | Default 预设 |
@@ -244,6 +337,24 @@ HTTPC 引擎层广泛使用 `sync.Pool` 复用短生命周期对象，减少 GC 
 引擎内部对象（Response/Request/Builder）生命周期短、在请求内部完成 borrow-return 循环，适合池化。返回给调用方的 `*Result` 生命周期不确定，适合单次分配 + GC 回收。两者互补，各取所长。
 :::
 
+### 低分配热路径
+
+除对象池外，请求热路径上还有一批**针对性去分配**优化：
+
+| 优化点 | 机制 |
+|--------|------|
+| 头部深拷贝批量分配 | `CloneHeader` 先统计全部值数量，一次分配共享底层数组——把「每个头部一次分配（N 次）」降为 1 次 |
+| 查询参数转义零分配 | 无需转义的字符串**原样返回**（零分配）；需要转义时用池化缓冲区逐字节写出 |
+| 数值查询参数直写 | `int`/`float64`/`bool` 等数值经 `strconv.Append*` 直接写入构建器，不产生中间字符串 |
+| 请求头所有权转移 | 普通请求与下载路径把引擎 Response 上的 header map **所有权转移**给 `Result`，而非克隆一份 |
+| 重定向链内联数组 | 前 8 次重定向记录在池化对象的内联定长数组中，超过 8 次才分配溢出切片——绝大多数请求不为重定向链额外分配 |
+| 重试休眠定时器复用 | 重试退避用的 `time.Timer` 池化复用，高频重试场景避免反复建 Timer |
+| 池容量防护 | 超过阈值的对象**不归还**池（如 header map > 64 条、query builder 容量 > 4096），防止大对象长期滞留池中撑大内存 |
+
+### 内部指标与健康度
+
+引擎内部以**纯原子操作**（无锁）收集每请求指标：总请求数、成功/失败数，以及用滑动平均公式 `新平均 = (旧平均×9 + 本次延迟) / 10` 维护的平滑延迟；错误率低于 10% 视为健康。这些指标用于引擎自身的健康判断，**不作为公开 API 暴露**——应用层的请求指标请用 `MetricsMiddleware`（见[中间件](../api-reference/client-config/middleware)），它按方法/URL/状态码/耗时回调，可直接对接 Prometheus 等监控系统。
+
 ### 你无需关心这些
 
 以上优化对调用方完全透明。你只需要正常使用 API，连接复用、对象池化、单次分配都在内部自动完成：
@@ -280,6 +391,29 @@ func main() {
 ```
 
 ## 工作负载调优示例
+
+### 超时预算
+
+四个传输层超时（`Dial`、`TLSHandshake`、`ResponseHeader`、隐含的 body 传输）共同受 `Timeouts.Request` 这个**总预算**约束。调整预设时保持「分项之和 ≤ 总预算」的层级关系，避免出现「拨号超时比总超时还长」这类无效配置：
+
+```
+Timeouts.Request（总预算，默认 180s）
+ ├── Timeouts.Dial          拨号（默认 10s）
+ ├── Timeouts.TLSHandshake  TLS 握手（默认 10s）
+ ├── Timeouts.ResponseHeader 响应头等待（Default/Performance 为 0=不设传输层限制）
+ └── 响应体传输             剩余时间全部可用
+```
+
+| 工作负载 | Request | Dial/TLS | 说明 |
+|----------|---------|----------|------|
+| 内网微服务 | 5–10s | 1–2s | 快速失败，把错误交给上游重试/熔断 |
+| 公网 API | 30s | 5s | 兼顾跨网延迟与偶发慢响应 |
+| AI/长任务 | 300s+ | 10s | 长响应体占满剩余预算 |
+| 下载大文件 | 0（用 context 控制） | 15s | 用 `Download` 的 ctx 管总时长，`WithTimeout` 管单请求 |
+
+:::warning ResponseHeader 与 WithTimeout 的相互作用
+`Default`/`Performance` 预设把 `ResponseHeader` 设为 0（不在传输层强制），使 `WithTimeout()` 对长响应拥有完全控制权；`Secure` 预设设为 10s 用于对抗 slowloris 类攻击。若你手动调窄 `ResponseHeader`，注意它可能先于 `WithTimeout` 截断慢响应。
+:::
 
 ### AI API 长轮询
 
@@ -346,7 +480,7 @@ func main() {
 
 ### 大文件下载（流式）
 
-下载大文件时使用 `WithStreamBody(true)` 避免将整个响应载入内存，配合 `Download()` 方法支持断点续传：
+大文件下载请使用 `Download()`：它在内部自动启用流式模式，响应体从网络直达磁盘，内存占用与文件大小无关，并支持断点续传与校验和：
 
 ```go
 package main
@@ -384,6 +518,10 @@ func main() {
 }
 ```
 
+:::warning 不要对普通请求方法使用 WithStreamBody
+`WithStreamBody(true)` 只对 `Download` 这类直接消费引擎响应的路径有效。对 `Get`/`Post`/`Request` 等普通方法设置它，响应体仍会被完整读入 `Result` 后关闭底层流——返回的 `Result` 请求体为空，且调用方拿不到流。消费大响应体的正确入口就是 `Download`（详见[文件上传与下载](./file-transfer)）。
+:::
+
 ### 爬虫与代理池
 
 爬虫场景使用代理池轮换 IP，HTTPC 会自动提高重试次数确保每个代理至少尝试一次（详见 [重试与容错](./retry-fault-tolerance#代理池与重试交互)）：
@@ -411,9 +549,11 @@ cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
 | 过大 `MaxResponseBodySize` | 无谓地放开内存上限 | 按实际响应大小设定 |
 | 热路径用 `result.String()` | 额外字符串构建开销 | 用 `result.Body()` 或 `result.RawBody()` |
 | 连接池过小 | 高并发时连接不够用，排队等待 | `MaxConnsPerHost` 按并发数调 |
+| 对普通请求用 `WithStreamBody` | 返回的 Result 请求体为空且拿不到流 | 大响应体走 `Download` |
 | 关闭 HTTP/2 | 退化为 HTTP/1.1 串行请求 | 默认保持开启 |
 | 忽略 `Close()` | 连接泄漏 | `defer client.Close()` |
 | 全局共享后忘记复用 | 反复创建/销毁 Client | 一次创建、长期持有 |
+| 用 goroutine 数硬扛限流 | 打挂下游、触发 429/熔断 | 信号量或 worker pool 控制在途请求数 |
 
 :::warning Client 必须复用
 HTTP 性能的根基是连接复用。每请求新建 Client 意味着每次都走 TCP 三次握手 + TLS 握手，延迟从亚毫秒暴增到数十毫秒。在微服务场景下，将 Client 作为单例注入到服务结构体中，随服务生命周期存活。
@@ -473,7 +613,8 @@ func main() {
 
 ## 下一步
 
-- [连接池与代理](./connection-pool) — 连接池参数详解、代理池配置与轮换策略
+- [连接池与 DNS](./connection-pool) — 连接池参数详解与 DoH 解析
+- [代理与代理池](./proxy) — 代理池配置与轮换策略
 - [错误处理](./error-handling) — 超时分层策略与错误分类
 - [重试与容错](./retry-fault-tolerance) — 退避算法详解与重试预算
 - [安全概述](../security/) — 安全与性能的平衡

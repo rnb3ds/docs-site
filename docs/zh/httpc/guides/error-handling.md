@@ -1,8 +1,8 @@
 ---
 sidebar_label: "错误处理"
 title: "错误处理 - CyberGo HTTPC | 分类与哨兵匹配"
-description: "HTTPC 错误处理指南：ErrorType 十二种错误分类、ClientError 字段及 IsRetryable 判断、errors.Is/As 哨兵错误匹配、重试耗尽处理、context 超时与取消、中间件统一错误处理与超时分层最佳实践。"
-sidebar_position: 5
+description: "HTTPC 错误处理指南：ErrorType 十二种错误分类与错误分类决策树、ClientError 字段与 IsRetryable 细粒度判定、平台 syscall 可重试映射、哨兵错误匹配、panic 恢复与中间件统一错误处理、超时分层最佳实践。"
+sidebar_position: 7
 ---
 
 # 错误处理
@@ -32,6 +32,40 @@ HTTPC 定义了 12 种错误类型，涵盖从网络层到应用层的所有失�
 `IsRetryable()` 的判定逻辑比表中更细粒度：`ErrorTypeDNS` 仅在 `net.DNSError` 标记为临时或超时时可重试；`ErrorTypeNetwork` 通过检查 `syscall.Errno`（`ECONNREFUSED`/`ECONNRESET`/`EPIPE`/`ETIMEDOUT`/`ENETUNREACH`/`EHOSTUNREACH`）和错误消息模式来判断；`ErrorTypeResponseRead` 仅在读取操作（`read`/`readfrom`）的网络错误时重试。详见下方「可重试判断」。
 :::
 
+## 错误分类决策树
+
+任何非 nil 错误进入引擎后都经过同一套分类流程，按优先级自上而下匹配，命中即止：
+
+```text
+错误 err
+├─ errors.Is(err, context.Canceled)          → ContextCanceled「请求被取消」
+├─ errors.Is(err, context.DeadlineExceeded)  → Timeout「请求超时」
+├─ 连接池耗尽（内部哨兵 ErrPoolExhausted）   → Network「connection pool exhausted」
+├─ *url.Error（先解包，按内层错误继续分类）
+│   ├─ 消息含 "http2" + "invalid"           → Validation「非法 HTTP/2 请求头」
+│   ├─ 消息含 "parse" / "invalid url" / "missing protocol" → Validation「URL 校验失败」
+│   └─ 其余用内层错误走下列分支
+├─ *net.DNSError                             → DNS「DNS resolution timed out / failed」
+├─ *net.OpError                              → Network「网络操作超时 / 失败」
+├─ net.Error                                 → Timeout（超时）/ Network（其他）
+└─ 错误消息模式匹配（大小写不敏感，节选）
+    ├─ "stopped after … redirect"            → Validation「redirect limit exceeded」
+    ├─ "circular redirect"                   → Validation「circular redirect detected」
+    ├─ "redirect blocked"                    → Validation「redirect blocked by policy」
+    ├─ "connection refused / reset / closed"、"broken pipe" → Network
+    ├─ "no such host"                        → DNS
+    ├─ "tls" / "ssl" + "handshake"           → TLS
+    ├─ "certificate"、"x509"                 → Certificate
+    ├─ "transport"、"protocol error"         → Transport
+    ├─ "failed to read response body"、"unexpected eof"    → ResponseRead
+    ├─ "http 4xx" / "http 5xx"               → HTTP（同时提取状态码）
+    └─ "timeout" / "timed out"（不含 "context"）           → Timeout
+```
+
+:::tip 已分类的错误不会二次包装
+若错误链中已经存在 `ClientError`（如中间件返回的引擎错误），分类器直接复用其字段、只补全 URL/方法/尝试次数，不会层层套娃。`errors.As` 命中最外层一层即可拿到完整上下文。
+:::
+
 ## ClientError 字段详解
 
 `ClientError` 结构体携带请求失败的完整上下文：
@@ -46,6 +80,22 @@ HTTPC 定义了 12 种错误类型，涵盖从网络层到应用层的所有失�
 | `Attempts` | `int` | 已尝试次数（含首次），重试耗尽时 > 1 |
 | `StatusCode` | `int` | HTTP 状态码（仅 `ErrorTypeHTTP` 有值） |
 | Host | `string` | 目标主机名（用于断路器等） |
+
+### Error() 输出格式
+
+`ClientError.Error()` 按固定格式输出（URL 已脱敏）：
+
+```text
+METHOD url: message: cause (attempt N)
+```
+
+实际示例：
+
+```text
+GET https://api.example.com/data: network error occurred: dial tcp 1.2.3.4:443: connect: connection refused (attempt 4)
+```
+
+`Unwrap()` 返回 `Cause`，因此穿透包装直达底层错误的写法都可用——`errors.Is(err, context.DeadlineExceeded)`、`errors.As(err, &opErr)`（提取 `*net.OpError`）等。日志里打 `err` 即含方法、脱敏 URL、原因链与尝试次数，无需再手工拼上下文。
 
 ### 错误类型判断
 
@@ -137,6 +187,38 @@ func main() {
 :::warning IsRetryable 与自动重试的区别
 `IsRetryable()` 判断的是「这个错误是否值得重试」，它同时被 HTTPC 内部的重试引擎使用。如果你已经通过 `RetryConfig.MaxRetries` 配置了自动重试，那么到你的错误处理代码时，如果收到的是网络/超时类错误，说明重试已经耗尽。`IsRetryable()` 主要用于上层（如断路器、任务队列）的决策。
 :::
+
+## 可重试判定的实现细节
+
+`IsRetryable()` 在类型分类之下还有一层「原因级」判定，这是各类型可重试行为差异的来源：
+
+### 网络错误：syscall 与消息模式
+
+`ErrorTypeNetwork` 逐层检查错误原因，任一层命中即可重试：
+
+| 检查层 | 可重试条件 |
+|--------|------------|
+| `net.OpError.Timeout()` | 超时 → 重试 |
+| `syscall.Errno`（POSIX） | `ECONNREFUSED` / `ECONNRESET` / `EPIPE` / `ETIMEDOUT` / `ENETUNREACH` / `EHOSTUNREACH` |
+| Windows WSA 错误码 | 10054（连接被重置）/ 10060（连接超时）/ 10061（连接被拒绝）/ 10051（网络不可达）/ 10065（主机不可达） |
+| 错误消息模式 | `connection reset` / `eof` / `connection closed` / `broken pipe` / `network error` / `transport failed` |
+| 其他 `net.Error` | 默认重试（服务端主动断开、EOF 等瞬时故障） |
+
+:::tip 为什么 Windows 需要单独的 WSA 映射表
+Go 1.25 起 Windows 上的 POSIX 风格 `syscall.E*` 常量带 `1<<29` 偏移（如 `ECONNREFUSED = 536870934`），而网络栈实际返回的是原始 WSA 码（如 `WSAECONNREFUSED = 10061`），两种编码永不相等。HTTPC 内置了 WSA 码映射表，保证 Windows 上的重试判定与 Unix 行为一致——跨平台部署时无需为重试行为差异操心。
+:::
+
+### DNS：仅临时/超时可重试
+
+`ErrorTypeDNS` 只有当 `net.DNSError` 标记 `IsTemporary` 或 `IsTimeout` 时才可重试。域名不存在（NXDOMAIN）这类**永久性**失败不会浪费重试次数。
+
+### 响应体读取：只重试读操作
+
+`ErrorTypeResponseRead` 仅对**读取类**网络错误重试：`net.OpError` 的操作名为 `read` / `readfrom`，或错误消息含 eof / connection / timeout。文件错误、写错误不在其列。
+
+### HTTP 状态码
+
+`ErrorTypeHTTP` 直接查可重试状态码表：408/429/500/502/503/504（加上 `ProxyRotateOnStatus` 注入的扩展码）。`StatusCode` 缺失（= 0）时退化为按错误消息中的 `HTTP 4xx` / `HTTP 5xx` 前缀判断。
 
 ## 哨兵错误完整参考
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Link Extraction"
-title: "Link Extraction - CyberGo html | Crawler Guide"
-description: "CyberGo html link extraction and grouping: ExtractAllLinks to extract resource links, group by type, Include filters, relative-URL resolution, crawler tips."
+title: "Link Extraction - CyberGo html | Resource Collection Guide"
+description: "CyberGo html link extraction: ExtractAllLinks for script/style/image links, GroupLinksByType grouping, Include filters, BaseURL detection."
 sidebar_position: 4
 ---
 

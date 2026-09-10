@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Cheat Sheet"
 title: "Cheat Sheet - CyberGo html | API at a Glance"
-description: "CyberGo html API cheat sheet on one page: package functions, Processor methods, config presets, key options, error matching, and audit setup with signatures."
-sidebar_position: 3
+description: "One-page CyberGo html API cheat sheet: Extract, ExtractText, ExtractToMarkdown, Processor methods, four Config presets, errors.Is, AuditConfig, and signatures."
+sidebar_position: 2
 ---
 
 # Cheat Sheet
@@ -47,7 +47,7 @@ batch := html.ExtractBatchFiles(paths)
 
 ### Context Variants
 
-All functions have `ExtractWithContext` variants:
+All functions have `*WithContext` variants:
 
 ```go
 result, err := html.ExtractWithContext(ctx, data)
@@ -243,3 +243,9 @@ p.ClearAuditLog()             // clear in-memory audit log
 p.ClearCache()                // clear cache (preserves statistics)
 p.ResetStatistics()           // reset stat counters (preserves cache)
 ```
+
+## Next Steps
+
+- [Content Extraction](../guides/core-features/content-extraction) - Extraction workflow and article recognition
+- [Processor & Cache](../guides/performance/processor-cache) - Lifecycle and cache tuning
+- [API Reference](../api-reference/) - Complete API documentation

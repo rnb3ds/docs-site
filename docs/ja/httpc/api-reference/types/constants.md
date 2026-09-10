@@ -406,5 +406,5 @@ result, err := client.Get(url, httpc.WithSecureCookie(strict))
 
 - [エラータイプ](./errors) - ClientError、ErrorType とエラー変数の完全なリファレンス
 - [リクエストオプション](../core/options) - WithBody での BodyKind の使用
-- [ミドルウェア](../client-config/middleware) - AuditMiddleware と監査設定
+- [内蔵ミドルウェア](../client-config/middleware) - AuditMiddleware と監査設定
 - [セッション管理](../client-config/session) - SessionManager と CookieSecurityConfig のセッションレベル使用

@@ -17,6 +17,8 @@ cfg.Security.MinTLSVersion = tls.VersionTLS12  // 默认
 cfg.Security.MaxTLSVersion = tls.VersionTLS13  // 默认
 ```
 
+版本值遵循两条规则：字段为 `0` 时自动回退 TLS 1.2/1.3（显式置 0 与不设置等效）；`MinTLSVersion > MaxTLSVersion` 无法通过 `httpc.New()` 的配置校验，启动期即报错。
+
 ### 版本说明
 
 | 版本 | 状态 | HTTPC 默认 |
@@ -48,6 +50,8 @@ cfg.Security.MaxTLSVersion = tls.VersionTLS13  // 默认
 | `TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305` | 推荐 |
 
 TLS 1.3 的密码套件由协议自动协商，不受 CipherSuites 字段控制。
+
+上述套件仅在未设置自定义 `TLSConfig` 时生效（由 HTTPC 构建 transport 时注入，见 `internal/connection/pool.go` 的 `createTLSConfig`）。同时注入的还有：椭圆曲线偏好（X25519 / P-256 / P-384）、`RenegotiateNever`（禁止重协商）、会话票证 LRU 缓存（256 条，加速重复握手）。设置 `TLSConfig` 后以你的配置为准。
 
 ## 自定义 TLS 配置
 
@@ -255,7 +259,57 @@ chainPinner := httpc.NewCertificatePinnerChain(spkiPinner, pubPinner)
 cfg.Security.CertificatePinner = chainPinner
 ```
 
-`NewCertificatePinnerChain` 无参数时返回「拒绝所有」的 Pinner（安全默认），确保配置遗漏不会被静默放过为「允许所有」。
+:::warning
+`NewCertificatePinnerChain` 无参数调用**不会报错**，返回的空链 Pinner 在 `VerifyPeerCertificate` 中直接返回 nil——即**不执行任何固定校验**（等效于未启用固定；标准证书链验证仍生效）。这是当前实现的实际行为，构造时务必传入至少一个 Pinner，不要依赖空链充当「拒绝所有」的安全默认。
+:::
+
+### Pinner 校验细节与失败行为
+
+以源码（`internal/security/certpin.go`）为准的固定校验语义：
+
+| 方面 | 行为 |
+|------|------|
+| 匹配范围 | 遍历服务端证书链**每一层**证书（`rawCerts`），任一层 SPKI 哈希命中任一固定值即通过 |
+| 失败行为 | 全链无匹配 → 握手被拒，错误形如 `certificate pinning failed: no matching SPKI hash found` |
+| 空证书链 | 服务端未提供证书 → `no peer certificates provided` |
+| 解析容错 | 链中无法解析或密钥类型不支持的证书被跳过（不导致失败），继续尝试下一层 |
+| 构造校验 | 哈希先 `TrimSpace`；非 base64 报 `invalid base64 hash`；无有效哈希报 `at least one valid SPKI hash is required` |
+| 性能 | 证书指纹 → SPKI 哈希的 LRU 缓存（1024 条），重复连接不重复解析证书 |
+| 并发安全 | Pinner 内部有读写锁，可被多个 Client 共享；`Config` 深拷贝时 Pinner 按引用共享（不复制） |
+| 调试描述 | `Pin()` 返回如 `spki-pins:2`、`public-key-pins:2`、`chain:[spki-pins:1,spki-pins:1]`，可写入日志 |
+
+`NewPublicKeyPinner` 内部对每个 DER PKIX 公钥计算 SHA-256 后委托给 SPKI 哈希固定器，两者匹配语义完全一致；无有效公钥时报 `no valid public keys provided`。
+
+```go
+package main
+
+import (
+	"fmt"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	// 非 base64 哈希在构造期即失败，不会等到线上握手才暴露
+	_, err := httpc.NewSPKIHashPinner("!!not-base64!!")
+	fmt.Println("非法哈希被拒绝:", err != nil)
+
+	// 空白字符串 TrimSpace 后视为未提供，同样拒绝
+	_, err = httpc.NewSPKIHashPinner("   ")
+	fmt.Println("空哈希被拒绝:", err != nil)
+	// 输出：
+	// 非法哈希被拒绝: true
+	// 空哈希被拒绝: true
+}
+```
+
+### 与自定义 TLSConfig 的协作
+
+设置 `Security.TLSConfig` 后，HTTPC 会 `Clone()` 你的配置并**叠加注入** `VerifyPeerCertificate` 固定回调——你的 RootCAs、mTLS 证书、密码套件等设置全部保留，固定校验照常生效（见 `internal/connection/pool.go` 的 `createTLSConfig`）。
+
+:::warning
+`Security.InsecureSkipVerify` 只作用于 HTTPC **默认** TLS 配置路径。设置了自定义 `TLSConfig` 时该开关被忽略——需要跳过验证必须（不建议）在 `TLSConfig` 内部设置 `InsecureSkipVerify` 字段。
+:::
 
 ### 自定义 CertificatePinner
 
@@ -418,7 +472,7 @@ cfg := httpc.TestingConfig()
 HTTPC 在 `httpc.New()` 中检测到 `InsecureSkipVerify = true` 且非测试环境时，向 `stderr` 打印警告（每进程一次）。测试环境判定：可执行文件以 `.test` 结尾，或设置了 `GO_TEST` / `GOTEST=1`。
 
 :::danger
-`InsecureSkipVerify = true` 会使所有 TLS 安全措施失效（证书固定也无效），仅在测试环境使用。生产环境永远不要设为 `true`。若需自定义验证逻辑（如固定完整证书），应实现 `CertificatePinner` 接口，而非跳过验证。
+`InsecureSkipVerify = true` 会跳过证书链与主机名校验，仅在测试环境使用。一个容易被误解的细节：若同时配置了证书固定，SPKI 哈希校验**仍会执行**（Go 在跳过链校验时仍把对端证书传给固定回调，固定成为唯一验证关卡）——但证书链有效性（过期、吊销、CA 签发）与主机名校验全部丢失。生产环境永远不要设为 `true`。若需自定义验证逻辑（如固定完整证书），应实现 `CertificatePinner` 接口，而非跳过验证。
 :::
 
 ## HTTP/2

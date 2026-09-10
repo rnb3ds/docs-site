@@ -174,7 +174,7 @@ case errors.Is(err, html.ErrFileNotFound),
 **为什么**：
 
 - `AllowedBaseDir` 是文件读取的沙箱。它通过 **OS 文件句柄解析真实路径**，能拦截 `filepath.EvalSymlinks` 无法处理的 Windows junction/reparse points 与跨平台 symlink 逃逸。留空 = 仅保留 `..` 遍历检测、不启用沙箱——只要路径来自用户输入就必须显式设置。
-- 库内部已经在 `ReadAll` 载入内存前用 `Stat` 预检查文件大小并拒绝超限文件，关闭了「先读完再发现超限」的内存峰值窗口。外层业务再加一道大小预检属于纵深防御。
+- 库内部已经在 `io.ReadAll` 载入内存前用 `os.Stat` 预检查文件大小并拒绝超限文件，关闭了「先读完再发现超限」的内存峰值窗口。外层业务再加一道大小预检属于纵深防御。
 
 ## 部署前自检脚本
 

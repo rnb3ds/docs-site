@@ -1,26 +1,29 @@
 ---
 sidebar_label: "Tutorial"
-title: "Tutorial - CyberGo HTTPC | GitHub API Tour"
-description: "A thirty-minute hands-on tutorial: demonstrating HTTPC's core features through GitHub API examples, covering JSON response parsing, the NewDomain domain client, sending data with WithJSON, middleware-chain composition, ClientError error handling, and file download functionality."
+title: "Hands-On Tutorial - CyberGo HTTPC | GitHub API"
+description: "Hands-on tutorial building a GitHub API client: package-level functions, config presets, request options, NewDomain client, middleware, and error handling."
 sidebar_position: 1
 ---
 
-# Tutorial: Build a GitHub API Client
+# Hands-On Tutorial: Build a GitHub API Client
 
-The following examples use the GitHub API to demonstrate HTTPC's core features. Each example is self-contained and can be read independently.
+The examples below use the GitHub API to demonstrate HTTPC's core features. Each example is self-contained and can be read on its own.
 
 **You will learn:**
 
 - Creating clients and using configuration presets
+- How package-level functions relate to the default client
+- Client instance lifecycle and default configuration
 - Sending GET/POST requests and handling JSON responses
-- Using the domain client to manage API base URLs
+- Query parameters and common request options
+- Using the domain client to manage an API base URL
 - Adding middleware for logging and metrics
 - Handling errors and retries
-- Result response objects and automatic management
+- The Result response object and automatic management
 
 ## Basic Request
 
-Install dependencies and create `main.go`:
+Install the dependency and create `main.go`:
 
 ```bash
 go get github.com/cybergodev/httpc
@@ -48,8 +51,58 @@ func main() {
 ```
 
 Key points:
-- Package-level function `httpc.Get` requires no client creation, suitable for quick validation
-- Result is created fresh per request, reclaimed by GC, no manual release needed
+- The package-level function `httpc.Get` requires no client creation — well suited for quick validation
+- A Result is created fresh for each request and reclaimed by GC; no manual release needed
+
+### Package-Level Functions and the Default Client
+
+Package-level functions (`Get`/`Post`/`Request`, etc.) do not each send requests in isolation — they share a **lazily initialized default client**: a singleton is created on the first call, and every later package-level call reuses it. After being closed, the default client "self-heals" — the next package-level call rebuilds it automatically.
+
+You can take over this default client:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    // Customize the configuration and set it as the default client
+    // (the old default client is closed automatically)
+    cfg := httpc.DefaultConfig()
+    cfg.Timeouts.Request = 30 * time.Second
+    cfg.Retry.MaxRetries = 2
+
+    client, err := httpc.New(cfg)
+    if err != nil {
+        log.Fatal(err)
+    }
+    if err := httpc.SetDefaultClient(client); err != nil {
+        log.Fatal(err)
+    }
+
+    // From now on, every package-level function uses this client
+    result, err := httpc.Get("https://api.github.com/repos/golang/go")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(result.StatusCode()) // 200
+
+    // Release the default client before the program exits
+    if err := httpc.CloseDefaultClient(); err != nil {
+        log.Fatal(err)
+    }
+}
+```
+
+:::tip
+For long-running services, manage the lifecycle with an explicit client as shown in "Creating and Configuring a Client Instance" below; the default client is a better fit for scripts and one-off requests.
+:::
 
 ## Parsing JSON Responses
 
@@ -71,18 +124,127 @@ if err := result.Unmarshal(&repo); err != nil {
     log.Fatal(err)
 }
 
-fmt.Printf("%s (Stars %d)\n", repo.FullName, repo.Stars)
+fmt.Printf("%s (⭐ %d)\n", repo.FullName, repo.Stars)
 fmt.Printf("Language: %s\n", repo.Language)
 fmt.Printf("Description: %s\n", repo.Description)
 ```
 
 Key points:
-- `result.Unmarshal(&v)` directly parses JSON responses into structs
-- Define Go structs that correspond to API responses
+- `result.Unmarshal(&v)` parses the JSON response directly into a struct
+- Define Go structs that correspond to the API response
+- When the response body is empty, `Unmarshal` returns `ErrResponseBodyEmpty`; above 50MB it returns `ErrResponseBodyTooLarge`
+
+## Creating and Configuring a Client Instance
+
+Behind the package-level functions there is always a default client; to control configuration and lifecycle, create an instance explicitly with `New`:
+
+```go
+package main
+
+import (
+    "errors"
+    "fmt"
+    "log"
+    "time"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    cfg := httpc.DefaultConfig()
+    cfg.Timeouts.Request = 30 * time.Second
+    cfg.Timeouts.Dial = 5 * time.Second
+    cfg.Retry.MaxRetries = 2
+
+    client, err := httpc.New(cfg)
+    if err != nil {
+        log.Fatal(err) // config validation failures (e.g. an invalid timeout) surface here
+    }
+    defer client.Close()
+
+    result, err := client.Get("https://api.github.com/repos/golang/go",
+        httpc.WithUserAgent("my-github-app/1.0"),
+    )
+    if err != nil {
+        if errors.Is(err, httpc.ErrClientClosed) {
+            log.Fatal("Client closed: ", err)
+        }
+        log.Fatal(err)
+    }
+    fmt.Println(result.StatusCode()) // 200
+}
+```
+
+Key points:
+- `New(cfg)` validates the configuration first, then takes a **deep copy** — modifying the original `cfg` variable after creation does not affect the client's behavior
+- `Close()` releases the connection pool and transport resources; requests after the close return `ErrClientClosed`
+- A client is safe for concurrent use (see "Concurrent Requests" below) and should be **kept long-lived and reused** — do not create one per request
+- `NewDefault()` is equivalent to `New(DefaultConfig())`
+
+### Configuration Presets
+
+Instead of writing configuration from scratch every time, HTTPC offers five presets as starting points:
+
+| Preset | Positioning | Key differences from DefaultConfig |
+|--------|-------------|------------------------------------|
+| `DefaultConfig()` | General default | 180s request timeout, 3 retries, 10MB response cap, follows redirects |
+| `SecureConfig()` | Security first | Tighter timeouts (15s request, 5s dial/TLS), 5MB response cap, redirect following disabled, 1 retry |
+| `PerformanceConfig()` | High throughput | Larger connection pool (100 idle / 20 per host), 50MB response cap, 500ms retry delay, cookies enabled |
+| `TestingConfig()` | Tests only | Skips TLS verification, allows private IPs, disables URL/header validation (never use in production; calling it outside a test environment prints a warning) |
+| `MinimalConfig()` | One-off requests | No retries, no redirect following, 1MB response cap, small connection pool |
+
+Choose `SecureConfig()` for user-supplied URLs or security-sensitive scenarios; choose `PerformanceConfig()` for high-concurrency crawling or proxy scenarios.
+
+### Default Configuration at a Glance
+
+Key defaults of `DefaultConfig()` (see the [Configuration API](../api-reference/client-config/config) for the full set of fields):
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `Timeouts.Request` | 180s | Overall request timeout (covers all retry attempts) |
+| `Timeouts.Dial` / `Timeouts.TLSHandshake` | 10s / 10s | TCP connection / TLS handshake timeout |
+| `Timeouts.IdleConn` | 90s | How long idle connections are kept alive |
+| `Connection.MaxIdleConns` / `MaxConnsPerHost` | 50 / 10 | Idle connection pool / per-host connection cap |
+| `Retry.MaxRetries` / `Delay` / `BackoffFactor` | 3 / 1s / 2.0 | Retry count, initial delay, backoff factor (jitter on by default; single delay capped at 30s) |
+| `Security.MaxResponseBodySize` | 10MB | Response body size cap |
+| `Security.MaxDecompressedBodySize` | 100MB | Decompressed response body cap |
+| `Defaults.UserAgent` | `httpc/1.0` | Default User-Agent |
+| `Defaults.FollowRedirects` / `MaxRedirects` | true / 10 | Redirect following policy |
+
+## Query Parameters and Request Options
+
+Request options are `With*` functions: they can be combined freely and are appended after the URL in order:
+
+```go
+client, _ := httpc.NewDefault()
+defer client.Close()
+
+// Query parameters: set them one by one, or in bulk with a Map
+result, err := client.Get("https://api.github.com/search/repositories",
+    httpc.WithQuery("q", "language:go"),
+    httpc.WithQuery("sort", "stars"),
+    httpc.WithQueryMap(map[string]any{
+        "order": "desc",
+        "page":  1,
+    }),
+)
+
+// Per-request overrides of client defaults: timeout and retries
+result, err = client.Get("https://api.github.com/repos/golang/go",
+    httpc.WithTimeout(10*time.Second),
+    httpc.WithMaxRetries(1),
+)
+```
+
+Key points:
+- `WithQuery` values support `string`, numbers, booleans, and other common types; when a value is `nil` the parameter does **not** appear in the URL
+- `WithTimeout` accepts 0–30 minutes; negative values return `ErrInvalidTimeout`; this timeout overrides `Timeouts.Request`
+- `WithMaxRetries` accepts 0–10 and overrides `Retry.MaxRetries`
+- See the [Request Options API](../api-reference/core/options) for the full list of options, and [Request and Response](./request-response) for request/response details
 
 ## Creating a Domain Client
 
-All GitHub API endpoints are under `https://api.github.com`. Use a domain client to avoid repeating the URL:
+All GitHub API endpoints live under `https://api.github.com`; a domain client saves you from repeating the URL:
 
 ```go
 client, err := httpc.NewDomainDefault("https://api.github.com")
@@ -105,10 +267,10 @@ if err != nil {
 ```
 
 Key points:
-- `NewDomain` creates a scoped client; paths are relative to baseURL
+- `NewDomain` creates a scoped client whose paths are relative to baseURL
 - `SetHeader` sets persistent headers included with every request
 - `WithHeader` passed as a request option applies only to that request
-- Domain client automatically manages cookies
+- The domain client manages cookies automatically
 
 ## Sending Data (Create Issue)
 
@@ -143,8 +305,8 @@ fmt.Printf("Issue #%d created: %s\n", created.Number, created.URL)
 ```
 
 Key points:
-- `WithJSON(data)` automatically serializes and sets Content-Type
-- `result.IsSuccess()` checks for 2xx status codes
+- `WithJSON(data)` serializes automatically and sets the Content-Type
+- `result.IsSuccess()` checks for a 2xx status code
 
 ## Adding Middleware
 
@@ -161,7 +323,7 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
     httpc.RequestIDMiddleware(httpc.DefaultRequestIDConfig()),
 }
 
-// Pass configuration to NewDomain to create a domain client with middleware
+// Pass the config to NewDomain to create a domain client with middleware
 client, err := httpc.NewDomain("https://api.github.com", cfg)
 if err != nil {
     log.Fatal(err)
@@ -181,14 +343,14 @@ if err != nil {
 
 var repo Repo
 result.Unmarshal(&repo)
-fmt.Printf("%s: Stars %d\n", repo.FullName, repo.Stars)
+fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
 ```
 
 Key points:
 - Middleware is configured in `MiddlewareConfig.Middlewares`
 - `LoggingMiddleware` records request logs
-- `RecoveryMiddleware` prevents panic crashes
-- `RequestIDMiddleware` generates a unique ID for each request
+- `RecoveryMiddleware` guards against panic crashes
+- `RequestIDMiddleware` generates a unique ID for every request
 
 ## Error Handling and Retry
 
@@ -199,7 +361,7 @@ if err != nil {
     if errors.As(err, &clientErr) {
         switch clientErr.Type {
         case httpc.ErrorTypeTimeout:
-            log.Println("Request timeout, retry later")
+            log.Println("Request timed out, retry later")
         case httpc.ErrorTypeNetwork:
             log.Println("Network error")
         case httpc.ErrorTypeTLS:
@@ -209,7 +371,7 @@ if err != nil {
         }
 
         if clientErr.IsRetryable() {
-            log.Println("This error can be automatically retried")
+            log.Println("This error is retryable")
         }
     }
     return
@@ -224,12 +386,12 @@ case result.StatusCode() == 401:
 case result.IsClientError():
     log.Printf("Client error: %d", result.StatusCode())
 case result.IsServerError():
-    log.Printf("Server error: %d (attempted %d times, including first request)",
+    log.Printf("Server error: %d (attempted %d times, including the first request)",
         result.StatusCode(), result.Meta.Attempts)
 }
 ```
 
-Configure retry strategy:
+Configure the retry strategy:
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -241,10 +403,11 @@ cfg.Retry.EnableJitter = true
 
 Key points:
 - HTTPC separates network errors from HTTP status codes
-- `ClientError` provides error classification and retryability checks
-- 408, 429, 500, 502, 503, 504 are automatically retried by default
+- `ClientError` provides error classification and a retryability check
+- 408, 429, 500, 502, 503, 504 are retried automatically by default
+- `Timeouts.Request` is the **total budget across all retries**, not the timeout of a single attempt
 
-## File Download (Download Release Package)
+## File Download (Download a Release Package)
 
 ```go
 dlCfg := httpc.DefaultDownloadConfig()
@@ -272,7 +435,7 @@ fmt.Printf("\nDownload complete: %s (%d bytes)\n",
 
 ## Concurrent Requests
 
-Fetch multiple repository details simultaneously:
+Fetch several repositories at once:
 
 ```go
 func fetchRepos(ctx context.Context, repos []string) error {
@@ -304,19 +467,19 @@ func fetchRepos(ctx context.Context, repos []string) error {
 
         var repo Repo
         results[i].Unmarshal(&repo)
-        fmt.Printf("%s: Stars %d\n", repo.FullName, repo.Stars)
+        fmt.Printf("%s: ⭐ %d\n", repo.FullName, repo.Stars)
     }
     return nil
 }
 ```
 
 :::tip
-`PerformanceConfig()` provides a large connection pool configuration suitable for high-concurrency scenarios. Result is created fresh per request and reclaimed by GC.
+`PerformanceConfig()` provides a large connection pool suited to high-concurrency scenarios. A Result is created fresh per request and reclaimed by GC.
 :::
 
 ## Complete Example
 
-Full code integrating the above examples:
+The complete code integrating the examples above:
 
 ```go
 package main
@@ -372,10 +535,10 @@ func main() {
     if result.IsSuccess() {
         var repo Repo
         result.Unmarshal(&repo)
-        fmt.Printf("%s\n", repo.FullName)
-        fmt.Printf("   Stars %d | Language: %s\n", repo.Stars, repo.Language)
+        fmt.Printf("✅ %s\n", repo.FullName)
+        fmt.Printf("   ⭐ %d | Language: %s\n", repo.Stars, repo.Language)
         fmt.Printf("   %s\n", repo.Description)
-        fmt.Printf("   Duration: %s (attempted %d times, including first request)\n",
+        fmt.Printf("   Duration: %s (attempted %d times, including the first request)\n",
             result.Meta.Duration, result.Meta.Attempts)
     }
 }
@@ -383,8 +546,10 @@ func main() {
 
 ## Next Steps
 
-- [Request and Response](./request-response) - Complete request options reference
+- [Request and Response](./request-response) - The complete request options reference
 - [Middleware Chain](./middleware-chain) - Custom middleware development
 - [Retry and Fault Tolerance](./retry-fault-tolerance) - Advanced retry strategies
+- [Domain Client and Sessions](./domain-session) - Session state management
 - [Performance Optimization](./performance) - Production tuning
+- [Configuration API](../api-reference/client-config/config) - All configuration fields and presets
 - [Production Checklist](../security/production-checklist) - Security best practices

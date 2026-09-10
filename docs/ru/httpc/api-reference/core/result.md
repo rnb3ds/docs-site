@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Result"
 title: "Result - CyberGo HTTPC | Тип Result"
-description: "Справочник API типа ответа Result HTTPC: базовые методы StatusCode/Body, проверка состояния, операции Cookie, парсинг JSON Unmarshal, сохранение в файл SaveToFile и подтипы RequestInfo/ResponseInfo."
+description: "Справочник API типа Result HTTPC: nil-безопасные методы Unmarshal, SaveToFile и подтипы RequestInfo/ResponseInfo/RequestMeta с полем ProxyURL."
 sidebar_position: 3
 ---
 
@@ -267,12 +267,20 @@ type ResponseInfo struct {
 type RequestMeta struct {
     Duration      time.Duration
     Attempts      int
+    ProxyURL      string
     RedirectChain []string
     RedirectCount int
 }
 ```
 
 Метаданные выполнения запроса. Доступ через `result.Meta`.
+| Поле | Описание |
+|------|-----------|
+| `Duration` | Общее время от начала запроса до завершения ответа |
+| `Attempts` | Общее число попыток, включая повторы |
+| `ProxyURL` | Прокси-URL, фактически использованный последней попыткой (`Connection.ProxyURL` или выбранный элемент пула прокси); при прямом соединении — пустая строка, системный прокси (`EnableSystemProxy`) также не записывается (остаётся пустым); чтобы наблюдать исходящий адрес для каждого запроса, задайте `Connection.ProxyURL` или `ProxyPool` явно. При ротации каждая попытка может использовать разный прокси; поле сообщает о попытке, породившей возвращённый ответ |
+| `RedirectChain` | Цепочка URL пройденных перенаправлений |
+| `RedirectCount` | Число выполненных перенаправлений |
 
 ```go
 result, _ := client.Get(url)
@@ -280,6 +288,7 @@ result, _ := client.Get(url)
 fmt.Println(result.Meta.Duration)      // 125ms
 fmt.Println(result.Meta.Attempts)       // 2 (1 повторная попытка)
 fmt.Println(result.Meta.RedirectCount)  // 1 (1 перенаправление)
+fmt.Println(result.Meta.ProxyURL)        // "" (прямое соединение) или "http://proxy:8080"
 ```
 
 ## См. также

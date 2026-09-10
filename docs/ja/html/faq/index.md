@@ -1,7 +1,7 @@
 ---
 sidebar_label: "よくある質問"
 title: "よくある質問 - CyberGo html | 高頻度質問回答"
-description: "CyberGo html よくある質問と回答：パッケージ関数と Processor の選択基準、エンコーディング検出の仕組み、入力サイズ制限、バッチ上限、空テキストの診断方法、統計監視と監査ログの活用など、高頻度の質問に答え、解決策を提示します。"
+description: "CyberGo html よくある質問と回答：パッケージ関数と Processor の選択基準、15+ 種エンコーディング自動検出、入力サイズ制限と DOM 深度保護、空テキスト結果の切り分け、GetStatistics の統計監視、監査ログ設定とキャッシュ命中率最適化など典型的な疑問の解決策を紹介します。"
 sidebar_position: 1
 ---
 
@@ -140,7 +140,7 @@ cfg.Scorer = &MyScorer{}
 
 ## カスタム Scorer は並列安全にする必要がありますか？
 
-必要です。単一の Processor が複数の並行 `Extract` 呼び出しで共有される場合、`Score`/`ShouldRemove` が複数の goroutine から同時にトリガーされます。カスタム Scorer が可変状態（キャッシュ、カウンター）を保持する場合、独自にロックして同期する必要があります。ライブラリ組み込みの `DefaultScorer` は読み取り専用で、自然的に並列安全です。
+必要です。単一の Processor が複数の並行 `Extract` 呼び出しで共有される場合、`Score`/`ShouldRemove` が複数の goroutine から同時にトリガーされます。カスタム Scorer が可変状態（キャッシュ、カウンター）を保持する場合、独自にロックして同期する必要があります。ライブラリ組み込みのデフォルトスコアラー（内部実装、非エクスポート）は読み取り専用で、本質的に並列安全です。
 
 :::warning ステートレス優先
 カスタム Scorer はステートレス（渡された `ContentNode` のみに基づいて計算）に設計することを推奨します。これによりロックのオーバーヘッドを回避し、並行性の問題を根本から排除できます。集計統計が必要な場合は、Scorer 自体ではなく `Processor` の統計チャネルに結果を書き戻してください。
@@ -218,7 +218,7 @@ cfg.MaxCacheEntries = 0 // キャッシュを無効化、Key 生成をスキッ�
 
 ## ExtractToMarkdown はキャッシュを使用しますか？
 
-使用しません。`ExtractToMarkdown` は内部で `buildFormatProcessor` を使って一時 Processor を作成し、その Processor は明示的にキャッシュを無効化しています（`MaxCacheEntries = 0` + `NewCache(0, 0)`）。メイン Processor のキャッシュへの読み書きを行いません。
+使用しません。`ExtractToMarkdown` は内部で `buildFormatProcessor` により一時 Processor を作成し、この Processor はキャッシュを明示的に無効化しています（`MaxCacheEntries = 0`、内部ではゼロ容量キャッシュとして構築、非エクスポート）。メイン Processor のキャッシュの読み取りも書き込みも行いません。
 
 :::tip なぜこの設計なのか
 Markdown フォーマット変換は出力形式が異なるだけで、抽出自体の結果がメインキャッシュを汚染すべきではありません（そうしないと、同じコンテンツがフォーマットの違いによって複数キャッシュされてしまいます）。一時 Processor はメイン Processor の `Scorer` を再利用し、`InlineImageFormat`/`InlineLinkFormat` のみを上書きします。設定は値コピーで分離され、共有状態の並行変更を回避します。
@@ -235,10 +235,10 @@ Markdown フォーマット変換は出力形式が異なるだけで、抽出�
 - ホワイトリストの MIME タイプのみ許可：画像（gif/jpeg/png/webp/bmp/avif など）、フォント（woff/woff2/ttf/otf）、PDF
 - **`image/svg+xml` をブロック**（SVG は JavaScript を埋め込める）
 - 空のメディアタイプをブロック（例：`data:;base64,...`）
-- サイズ上限 `MaxDataURILength`（100KB）
+- サイズの上限あり：内部上限（100KB）により制約され、設定では調整できません
 - base64 エンコード部分の文字の正当性を検証
 
-ブロックされた URL は `AuditRecorder` で原因（例：`malformed data URL`、`unsafe media type`）とともに記録されます。
+ブロックされた URL は監査イベントとして記録されます——設定された `AuditSink` が `AuditEventBlockedURL` タイプの `AuditEntry` を受け取り、その `Message` にブロック原因（例：`malformed data URL`、`unsafe media type in data URL`）が含まれます。
 
 ## バッチ処理で 10000 項目を超えるとどうなりますか？
 
@@ -263,7 +263,7 @@ fmt.Println(br.Failed)             // == len(hugeSlice)
 
 ## 記事スマート認識（ExtractArticle）のスコアリングアルゴリズムはどうなっていますか？
 
-デフォルトスコアラー（`DefaultScorer`）は多次元シグナルに基づいて各要素ノードのコンテンツ関連性スコアを計算し、最もスコアの高いノードを記事コンテナとして選択します。スコアリングの次元：
+組み込みのデフォルトスコアラー（内部実装、非エクスポート）は多次元シグナルに基づいて各要素ノードのコンテンツ関連性スコアを計算し、最もスコアの高いノードを記事コンテナとして選択します。スコアリングの次元：
 
 | 次元 | 正のシグナル | 負のシグナル |
 |------|----------|----------|
@@ -333,3 +333,9 @@ cfg.TableFormat = "html" // HTML テーブルを保持
 - `ExtractAllLinks` は `[]LinkResource` を返し、**サニタイズ前** HTML 内のすべてのリソースリンク（`<script src>`、`<iframe>`、`<link>` などを含む）を列挙し、`Type` 分類を含みます
 
 両者は前後して呼び出しても互いに影響しません。典型的なシナリオ：まず `Extract` で本文コンテンツを抽出し、その後 `ExtractAllLinks` でページが参照するすべてのリソースを収集します。
+
+## 関連ドキュメント
+
+- [概要](../) - 機能概要とアーキテクチャの全体像
+- [クイックスタート](../getting-started/) - 5 分で始めるチュートリアル
+- [API リファレンス概要](../api-reference/) - 完全な API ドキュメントの入口

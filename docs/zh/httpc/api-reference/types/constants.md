@@ -402,9 +402,17 @@ result, err := client.Get(url, httpc.WithSecureCookie(strict))
 `WithSecureCookie` 只验证**应用时已存在**的 Cookie。必须放在所有 `WithCookie`/`WithCookieMap` 之后。如需会话级的无序验证，使用 `SessionManager.SetCookieSecurity`。
 :::
 
+## 错误分类常量（ErrorType）
+
+根包还导出 12 个 `ErrorType` 错误分类常量：`ErrorTypeUnknown`、`ErrorTypeNetwork`、`ErrorTypeTimeout`、`ErrorTypeContextCanceled`、`ErrorTypeResponseRead`、`ErrorTypeTransport`、`ErrorTypeRetryExhausted`、`ErrorTypeTLS`、`ErrorTypeCertificate`、`ErrorTypeDNS`、`ErrorTypeValidation`、`ErrorTypeHTTP`。
+
+这些常量连同 `ClientError` 结构体、`Code()`/`IsRetryable()` 方法与 `ErrClientClosed` 等哨兵错误变量的完整参考见[错误类型](./errors)。
+
+至此本站已覆盖根包全部导出常量：BodyKind 6 个（本文）、代理策略 2 个（本文）、校验算法 1 个（本文）、上下文键 2 个（本文）、错误分类 12 个（[错误类型](./errors)）。
+
 ## 另见
 
 - [错误类型](./errors) - ClientError、ErrorType 和错误变量的完整参考
 - [请求选项](../core/options) - BodyKind 在 WithBody 中的使用
-- [中间件](../client-config/middleware) - AuditMiddleware 和审计配置
+- [内置中间件](../client-config/middleware) - AuditMiddleware 和审计配置
 - [会话管理](../client-config/session) - SessionManager 与 CookieSecurityConfig 的会话级使用

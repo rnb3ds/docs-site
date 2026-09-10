@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Advanced Usage"
-title: "Advanced Examples - CyberGo html | Advanced Scenarios"
-description: "CyberGo html advanced examples: custom Scorer, multi-Sink audit pipeline, batch concurrency control, Processor pooling, and more runnable advanced code."
+title: "Advanced Usage - CyberGo html | Advanced Scenarios"
+description: "CyberGo html advanced examples: custom Scorer, multi-Sink audit pipeline, batch concurrency, Processor pooling, cache hit-rate, and web-service singletons."
 sidebar_position: 2
 ---
 
@@ -494,3 +494,9 @@ func main() {
     fmt.Printf("Title: %s\nText length: %d\n", result.Title, len(result.Text))
 }
 ```
+
+## Next Steps
+
+- [FAQ](../faq/) - Common questions and troubleshooting
+- [Production Checklist](../guides/security/production-checklist) - Pre-deployment security checks
+- [API Reference: Interfaces](../api-reference/types/interfaces) - Extension interfaces such as Scorer and AuditSink

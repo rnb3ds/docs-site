@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Шпаргалка"
 title: "Шпаргалка - CyberGo html | сводка API"
-description: "Шпаргалка по API CyberGo html: функции пакета, методы Processor, пресеты конфигурации, ключевые параметры, обработка ошибок и настройка аудита."
-sidebar_position: 3
+description: "Шпаргалка по API CyberGo html: Extract, ExtractText, ExtractToMarkdown, методы Processor, четыре пресета Config, errors.Is и AuditConfig."
+sidebar_position: 2
 ---
 
 # Шпаргалка
@@ -47,7 +47,7 @@ batch := html.ExtractBatchFiles(paths)
 
 ### Версии с контекстом
 
-Все функции имеют варианты с `ExtractWithContext`:
+Все функции имеют варианты `*WithContext`:
 
 ```go
 result, err := html.ExtractWithContext(ctx, data)
@@ -243,3 +243,9 @@ p.ClearAuditLog()             // Очистка журнала аудита в �
 p.ClearCache()                // Очистка кэша (статистика сохраняется)
 p.ResetStatistics()           // Сброс счётчиков статистики (кэш сохраняется)
 ```
+
+## Следующие шаги
+
+- [Извлечение контента на практике](../guides/core-features/content-extraction) - процесс извлечения и распознавание статей
+- [Повторное использование Processor и кэш](../guides/performance/processor-cache) - жизненный цикл и настройка кэша
+- [Справочник API](../api-reference/) - полная документация по API

@@ -59,7 +59,7 @@ type ImageInfo struct {
 
 | 字段 | 说明 |
 |------|------|
-| `URL` | 图片的 `src` 属性值；仅包含合法 URL（通过 `IsValidURL` 校验），无效 URL 的 `<img>` 不会出现在结果中 |
+| `URL` | 图片的 `src` 属性值；仅包含合法 URL（内部校验，不导出），无效 URL 的 `<img>` 不会出现在结果中 |
 | `Alt` | `alt` 属性原文；为空时 `IsDecorative` 为 `true` |
 | `Title` | `title` 属性原文（非页面标题） |
 | `Width`/`Height` | HTML 属性中的**原始字符串**（如 `"640"`、`"50%"`），未解析为数字——不同页面的写法可能不一致 |
@@ -89,8 +89,8 @@ type LinkInfo struct {
 
 | 字段 | 说明 |
 |------|------|
-| `URL` | `href` 属性值；仅包含合法 URL（通过 `IsValidURL` 校验），无效 URL 的 `<a>` 消耗 Position 但不加入切片 |
-| `Text` | `<a>` 标签内所有文本节点的拼接（递归 `GetTextContent`） |
+| `URL` | `href` 属性值；仅包含合法 URL（内部校验，不导出），无效 URL 的 `<a>` 消耗 Position 但不加入切片 |
+| `Text` | `<a>` 标签内所有文本节点的递归拼接（含嵌套标签中的文本） |
 | `Title` | `title` 属性原文（非链接文本） |
 | `IsExternal` | 基于 URL 本身是否为绝对外部地址判定，**不与 `BaseURL` 做域名比较**——这与 `ExtractAllLinks` 中的内外链判定不同 |
 | `IsNoFollow` | `rel` 属性中包含 `nofollow`（大小写不敏感，ASCII 折叠匹配）时为 `true` |
@@ -152,11 +152,13 @@ OGG 容器可承载视频或音频，`.ogg` URL 会同时出现在 `Videos` 和 
 
 ```go
 type LinkResource struct {
-    URL   string // 链接地址
+    URL   string // 链接地址（启用 ResolveRelativeURLs 时已基于 BaseURL 解析为绝对地址）
     Title string // 链接标题
-    Type  string // 链接类型
+    Type  string // 链接类型："link"、"image"、"video"、"audio"、"css"、"js"、"icon"、"media"
 }
 ```
+
+各 `Type` 取值对应的 HTML 标签来源与控制开关详见 [链接提取](../modules/links#链接类型详解)。
 
 ## Statistics
 

@@ -1,5 +1,5 @@
 ---
-sidebar_label: "中间件"
+sidebar_label: "内置中间件"
 title: "中间件 - CyberGo HTTPC | 七大内置中间件"
 description: "HTTPC 中间件系统 API 参考：Chain 洋葱模型组合、七个内置中间件（Recovery/Logging/Timeout/Metrics/Audit 等）、各中间件配置结构体与 Default 构造函数、AuditEvent 审计事件结构。"
 sidebar_position: 5
@@ -57,7 +57,7 @@ combined := httpc.Chain(
 func RecoveryMiddleware() MiddlewareFunc
 ```
 
-panic 恢复中间件。捕获处理链中的 panic，转换为包含堆栈信息的 error 返回。
+panic 恢复中间件。捕获处理链中的 panic，转换为包含堆栈信息的 error 返回。与客户端内置的 panic 安全网（`Request` / 下载路径）共用同一套转换逻辑，保证公共 API 不会把 panic 抛给调用方。
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -74,6 +74,8 @@ func LoggingMiddleware(config *LoggingConfig) MiddlewareFunc
 ```
 
 请求日志中间件。记录方法、URL、状态码和耗时。URL 自动脱敏（移除凭据信息）。传 `nil` 时使用 [`DefaultLoggingConfig()`](#defaultloggingconfig)（日志禁用）。
+
+输出格式：成功时 `METHOD URL -> STATUS (DURATION)`；出错时 `METHOD URL -> error: ERR (DURATION)`。
 
 #### LoggingConfig
 
@@ -117,7 +119,7 @@ func RequestIDMiddleware(config *RequestIDConfig) MiddlewareFunc
 为每个请求添加唯一 ID。传 `nil` 时使用 [`DefaultRequestIDConfig()`](#defaultrequestidconfig)（`"X-Request-ID"` 头 + `crypto/rand` 生成器）。若请求已存在同名头则保留原值不覆盖。
 
 :::tip
-默认生成器使用 `crypto/rand`，生成的 ID 不可预测，适合安全敏感场景。
+默认生成器使用 `crypto/rand` 读取 16 字节并做十六进制编码（32 字符），ID 不可预测，适合安全敏感场景。
 :::
 
 #### RequestIDConfig
@@ -170,7 +172,7 @@ middleware := httpc.RequestIDMiddleware(&httpc.RequestIDConfig{
 func TimeoutMiddleware(config *TimeoutMiddlewareConfig) MiddlewareFunc
 ```
 
-中间件级别的超时控制。传 `nil` 时使用 [`DefaultTimeoutMiddlewareConfig()`](#defaulttimeoutmiddlewareconfig)（超时禁用，中间件为透传）。若设置为正值，在客户端内置超时之前生效，超时后取消上下文并返回错误。
+中间件级别的超时控制。传 `nil` 时使用 [`DefaultTimeoutMiddlewareConfig()`](#defaulttimeoutmiddlewareconfig)（超时禁用，中间件为透传）。若设置为正值，在客户端内置超时之前生效，超时后取消上下文并返回错误。超时上下文从**请求自身**的 `Context()` 派生（`WithContext` 预设的取消/截止会被尊重而非覆盖），派生出的 deadline 会写回请求对象传给引擎。
 
 :::warning 不要用于 Download 或流式请求
 `TimeoutMiddleware` 的 `defer cancel()` 在处理器返回（收到响应头）后立即触发，对 `Download` 或 `WithStreamBody` 请求会在读取响应体之前提前取消上下文，产生「context canceled」错误。流式/下载场景请改用 [`WithTimeout`](../core/options#withtimeout)。
@@ -216,7 +218,7 @@ client, _ := httpc.New(cfg)
 func HeaderMiddleware(config *HeaderConfig) MiddlewareFunc
 ```
 
-为每个请求添加静态请求头。传 `nil` 时使用 [`DefaultHeaderConfig()`](#defaultheaderconfig)（无头，中间件为透传）。在创建时即验证头部安全性（CRLF 注入防护）；与请求中已有的同名头冲突时会覆盖。
+为每个请求添加静态请求头。传 `nil` 时使用 [`DefaultHeaderConfig()`](#defaultheaderconfig)（无头，中间件为透传）。在创建时即验证头部安全性（CRLF 注入防护）；与请求中已有的同名头冲突时会覆盖。配置 map 在创建时被**深拷贝**，之后调用方修改原 map 不影响中间件；若某个头部未通过校验，创建不会 panic，而是得到一个对每个请求都返回该校验错误的中间件。
 
 #### HeaderConfig
 
@@ -260,7 +262,7 @@ client, _ := httpc.New(cfg)
 func MetricsMiddleware(config *MetricsConfig) MiddlewareFunc
 ```
 
-指标收集中间件。每次请求完成后调用回调，传递方法、URL、状态码、耗时和错误信息。传 `nil` 时使用 [`DefaultMetricsConfig()`](#defaultmetricsconfig)（指标禁用）。
+指标收集中间件。每次请求完成后调用回调，传递方法、URL、状态码、耗时和错误信息。传 `nil` 时使用 [`DefaultMetricsConfig()`](#defaultmetricsconfig)（指标禁用）。回调收到的是**脱敏后**的 URL；错误消息中若嵌有原始 URL（含凭据），同样会被替换为脱敏版本，防止指标管道泄漏凭据。
 
 #### MetricsConfig
 
@@ -304,7 +306,7 @@ func AuditMiddleware(config *AuditConfig) MiddlewareFunc
 
 安全审计中间件，适用于金融、医疗、政务等合规场景。记录请求/响应元信息（方法、URL、状态码、耗时、重试等），URL 自动脱敏。回调通过 `config.OnAudit` 提供；为 nil 时中间件为空操作。传 `nil` 时使用 [`DefaultAuditConfig()`](#defaultauditconfig)。
 
-`SourceIP` 和 `UserID` 从请求上下文中通过 [`SourceIPKey`](#审计上下文键) 和 [`UserIDKey`](#审计上下文键) 提取。
+`SourceIP` 和 `UserID` 从请求上下文中通过 [`SourceIPKey`](#审计上下文键) 和 [`UserIDKey`](#审计上下文键) 提取。`Attempts`（实际尝试次数）与 `RedirectChain`（重定向链）从响应中自动提取。注意：中间件本身**不按 `Format` 分支格式化**——事件以 `AuditEvent` 结构体原样传给 `OnAudit`，`Format` 供回调方决定输出样式时读取。
 
 #### AuditConfig
 
@@ -331,9 +333,9 @@ type AuditConfig struct {
 | 字段 | 默认值 | 说明 |
 |------|--------|------|
 | `OnAudit` | `nil` | 审计回调，为 nil 时中间件为空操作 |
-| `Format` | `"text"` | 输出格式 |
+| `Format` | `"text"` | 输出格式提示（`"text"` / `"json"`），由回调方消费，中间件不据此分支 |
 | `IncludeHeaders` | `false` | 是否记录头部 |
-| `MaskHeaders` | `["Authorization", "Cookie", ...]` | 标准敏感头部列表 |
+| `MaskHeaders` | 六个标准敏感头 | `Authorization`、`Cookie`、`Set-Cookie`、`X-Api-Key`、`X-Auth-Token`、`Proxy-Authorization`，命中即替换为 `[REDACTED]` |
 | `SanitizeError` | `true` | 错误信息替换为 `[sanitized]` |
 
 #### DefaultAuditConfig
@@ -384,6 +386,21 @@ type AuditEvent struct {
 
 安全审计事件。
 
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `Timestamp` | `time.Time` | 请求开始时间 |
+| `Method` | `string` | HTTP 方法 |
+| `URL` | `string` | 已脱敏的请求 URL（凭据已移除） |
+| `StatusCode` | `int` | 响应状态码（无响应时为 0） |
+| `Duration` | `time.Duration` | 请求耗时 |
+| `Attempts` | `int` | 实际尝试次数（含重试） |
+| `Error` | `error` | 请求错误；开启 `SanitizeError` 时为 `[sanitized]` |
+| `SourceIP` | `string` | 来源 IP（经 `SourceIPKey` 注入） |
+| `UserID` | `string` | 用户标识（经 `UserIDKey` 注入） |
+| `RedirectChain` | `[]string` | 经历的重定向链 |
+| `ReqHeaders` | `map[string][]string` | 请求头（`IncludeHeaders` 开启时填充，敏感头脱敏） |
+| `RespHeaders` | `map[string][]string` | 响应头（同上） |
+
 #### MarshalJSON
 
 ```go
@@ -422,10 +439,10 @@ ctx = context.WithValue(ctx, httpc.UserIDKey, "user-123")
 result, err := client.Request(ctx, "GET", url)
 ```
 
-| 常量 | 类型 | 说明 |
-|------|------|------|
-| `SourceIPKey` | `auditContextKey` | 来源 IP 上下文键 |
-| `UserIDKey` | `auditContextKey` | 用户标识上下文键 |
+| 常量 | 类型 | 底层值 | 说明 |
+|------|------|--------|------|
+| `SourceIPKey` | `auditContextKey` | `"source_ip"` | 来源 IP 上下文键 |
+| `UserIDKey` | `auditContextKey` | `"user_id"` | 用户标识上下文键 |
 
 ## 另见
 

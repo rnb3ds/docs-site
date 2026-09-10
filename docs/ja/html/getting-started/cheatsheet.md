@@ -1,8 +1,8 @@
 ---
 sidebar_label: "チートシート"
 title: "チートシート - CyberGo html | API 一覧"
-description: "CyberGo html 主要 API チートシート：パッケージ関数、Processor メソッド、4 種の設定プリセット、主要設定項目、エラー判定パターン、監査設定、リンク抽出など、日常的に必要な API を 1 ページで素早く参照できるクイックリファレンスです。"
-sidebar_position: 3
+description: "CyberGo html API チートシート：Extract、ExtractToMarkdown などのパッケージ関数と Processor メソッド、4 種の Config プリセット、errors.Is エラー判定、AuditConfig 監査設定のシグネチャと使い方を 1 ページで参照できます。"
+sidebar_position: 2
 ---
 
 # チートシート
@@ -47,7 +47,7 @@ batch := html.ExtractBatchFiles(paths)
 
 ### コンテキスト付きバージョン
 
-すべての関数に `ExtractWithContext` バリアントがあります：
+すべての関数に `*WithContext` バリアントがあります：
 
 ```go
 result, err := html.ExtractWithContext(ctx, data)
@@ -243,3 +243,9 @@ p.ClearAuditLog()             // メモリ内監査ログをクリア
 p.ClearCache()                // キャッシュをクリア（統計は保持）
 p.ResetStatistics()           // 統計カウンタをリセット（キャッシュは保持）
 ```
+
+## 次のステップ
+
+- [コンテンツ抽出実践](../guides/core-features/content-extraction) - 抽出フローと記事認識
+- [Processor の再利用とキャッシュ](../guides/performance/processor-cache) - ライフサイクルとキャッシュチューニング
+- [API リファレンス](../api-reference/) - 完全な API ドキュメント

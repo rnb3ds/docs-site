@@ -1,7 +1,7 @@
 ---
 sidebar_label: "安全概述"
 title: "安全概述 - CyberGo html | 安全防护总览"
-description: "CyberGo html 安全防护总览：深度防御三层架构（输入层、处理层、输出层）、MaxInputSize 与 MaxDepth 限制、路径遍历防护、panic 恢复机制、HTML 内容清洗与 HighSecurityConfig 高安全预设应用。"
+description: "CyberGo html 安全防护总览：深度防御三层架构（输入层、处理层、审计层）、MaxInputSize 与 MaxDepth 限制、路径遍历防护、panic 恢复机制、HTML 内容清洗与 HighSecurityConfig 高安全预设应用。"
 sidebar_position: 1
 ---
 
@@ -50,7 +50,7 @@ cfg := html.DefaultConfig()
 cfg.MaxInputSize = 10 * 1024 * 1024 // 收紧到 10MB
 ```
 
-文件路径还有一道**预检查**：`Stat` 取得大小后，在 `ReadAll` 将内容载入内存前就拒绝超限文件，关闭「先读完再发现超限」的内存峰值窗口。
+文件路径还有一道**预检查**：`os.Stat` 取得大小后，在 `io.ReadAll` 将内容载入内存前就拒绝超限文件，关闭「先读完再发现超限」的内存峰值窗口。
 
 ### DOM 深度限制
 
@@ -163,7 +163,7 @@ URI 属性的值经由 `isSafeURIWithAudit` 的多层管道校验。每一层都
 浏览器在解析 URL 时会剥离特定的控制字符（遵循 WHATWG URL 标准），库必须在协议检测**之前**模拟同样的剥离，否则攻击者能用这些字符拆散危险协议名绕过检测：
 
 - **tab / LF / CR**：`java\tscript:` 会被浏览器重新拼成 `javascript:` 执行。库用 `stripURLWhitespace` 在协议检测前移除这三个字节。
-- **C0 控制符（U+0000–U+001F）+ ASCII 空格**：浏览器在 scheme 解析前剥离首尾的这些字节。`strings.TrimSpace` 只覆盖 Unicode 空白，不覆盖多数 C0 控制符，所以库用专门的 `c0ControlOrSpace` 集合显式剥离。否则 `\x01javascript:…` 能骗过所有 `HasPrefix` 检测。
+- **C0 控制符（U+0000–U+001F）+ ASCII 空格**：浏览器在 scheme 解析前剥离首尾的这些字节。`strings.TrimSpace` 只覆盖 Unicode 空白，不覆盖多数 C0 控制符，所以库用专门的 `c0ControlOrSpace` 集合显式剥离。否则 `\x01javascript:…` 能骗过所有 `strings.HasPrefix` 检测。
 
 ### 危险协议检测
 
@@ -190,7 +190,7 @@ data URL 仅允许下列显式声明的 MIME 类型通过：
 
 - **`image/svg+xml`**：SVG 可内嵌 JavaScript，作为标签移除后的纵深防御补丁。
 - **空媒体类型**：如 `data:;base64,<payload>` 或 `data:;,...`。这类形式曾经能绕过白名单，现在直接拒绝。
-- **超长 data URL**：受 `MaxDataURILength`（100KB）约束，防止 base64 大块内容耗尽内存。
+- **超长 data URL**：受内部上限（100KB）约束，防止 base64 大块内容耗尽内存（该上限不可配置）。
 - **非法 base64 字符**：base64 部分会逐字节校验字符集合法性。
 
 :::tip 审计日志会截断 data URL
@@ -227,7 +227,7 @@ data URL 可能含大段 base64，完整写入审计日志既浪费空间又可�
 | 其他 Unix | 回退 `filepath.EvalSymlinks` | 符号链接（残留轻微 TOCTOU） |
 | Windows | `GetFinalPathNameByHandleW` | 符号链接 + junction + 所有 reparse points |
 
-Windows 路径返回后会剥除 `\\?\` 扩展长度前缀并 `Clean`，使其与 `filepath.Abs` 的输出形式一致，确保后续包含性比较精确。
+Windows 路径返回后会剥除 `\\?\` 扩展长度前缀并 `filepath.Clean`，使其与 `filepath.Abs` 的输出形式一致，确保后续包含性比较精确。
 
 ### 防护层次
 
@@ -235,7 +235,7 @@ Windows 路径返回后会剥除 `\\?\` 扩展长度前缀并 `Clean`，使其�
 
 1. **路径遍历检测**：`filepath.Clean` 后检查是否含 `..` 组件
 2. **OS 句柄沙箱**：`realPath` 解析真实路径，`pathWithin` 判定包含关系
-3. **大小预检查**：在已验证句柄上 `Stat` 检查大小，超 `MaxInputSize` 在 `ReadAll` 前拒绝
+3. **大小预检查**：在已验证句柄上 `os.Stat` 检查大小，超 `MaxInputSize` 在 `io.ReadAll` 前拒绝
 4. **字节级上限**：读取后仍由 `validateInput` 复检字节数
 
 即便文件位于允许目录内，`AllowedBaseDir` 约束的是「能读哪个文件」，`MaxInputSize` 约束的是「文件能多大」，两者正交、互不替代。

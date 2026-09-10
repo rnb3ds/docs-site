@@ -494,3 +494,9 @@ func main() {
     fmt.Printf("标题：%s\n文本长度：%d\n", result.Title, len(result.Text))
 }
 ```
+
+## 下一步
+
+- [常见问题](../faq/) - 高频疑问与排查思路
+- [生产检查清单](../guides/security/production-checklist) - 部署前安全核对
+- [API 参考：接口定义](../api-reference/types/interfaces) - Scorer、AuditSink 等扩展接口

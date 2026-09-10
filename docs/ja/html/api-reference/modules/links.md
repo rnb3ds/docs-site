@@ -1,7 +1,7 @@
 ---
 sidebar_label: "リンク抽出"
 title: "リンク抽出 - CyberGo html | リソースリンク抽出 API"
-description: "CyberGo html リンク抽出 API リファレンス：ExtractAllLinks 系関数と GroupLinksByType で各種リソースリンクを抽出しタイプ別にグループ化、IncludeExclude フィルタ設定やファイル入力版の使い方も解説します。"
+description: "CyberGo html リンク抽出 API リファレンス：ExtractAllLinks 系列と GroupLinksByType を詳解。スクリプト、スタイル、画像などのリソースリンクをタイプ別にグループ化し、フィルタリングに対応、結果は URL でソート・重複排除、クローラーに適します。"
 sidebar_position: 2
 ---
 
@@ -101,7 +101,7 @@ cfg.BaseURL = "https://example.com"
 
 `ResolveRelativeURLs=true`（デフォルト）の場合、すべてのタイプの相対 URL は `BaseURL` を基準に統一的に絶対 URL に解決されます：
 
-- 解析ロジックは `resolveURLIfEnabled` で一元処理され、コンテンツリンク、画像、メディア、source、script、embed、link タグを**平等に扱います**
+- 解析ロジックはライブラリ内部で一元処理され（非エクスポート）、コンテンツリンク、画像、メディア、source、script、embed、link タグを**平等に扱います**
 - `BaseURL` を明示的に設定すると**自動検出をスキップ**し、呼び出し元が提供した値を直接使用します
 - `BaseURL` が空かつ `ResolveRelativeURLs=true` の場合、文書から BaseURL を自動推論します（下記のヒントを参照）
 
@@ -111,8 +111,8 @@ cfg.BaseURL = "https://example.com"
 
 | スイッチ | 制御範囲 | 判定方法 |
 |------|----------|----------|
-| `IncludeContentLinks` | 内部リンク | URL 自体が相対パス、または `BaseURL` と同一ドメイン |
-| `IncludeExternalLinks` | 外部リンク | URL が絶対パスかつ `BaseURL` と異なるドメイン（`IsDifferentDomain`） |
+| `IncludeContentLinks` | 内部リンク | URL 自体が相対パス、または（`BaseURL` 設定時）解決後に `BaseURL` と同一ドメイン |
+| `IncludeExternalLinks` | 外部リンク | URL 自体が絶対外部アドレス（`http(s)://` またはプロトコル相対 `//`）、または（`BaseURL` 設定時）解決後に `BaseURL` と異なるドメイン |
 
 デフォルトはともに `true`（すべてのコンテンツリンクを抽出）。その他のリソースタイプ（画像、CSS、JS など）は内部/外部の区別を受けず、それぞれの `Include*` スイッチでのみ制御されます。
 

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "인코딩 감지 실전"
 title: "인코딩 감지 실전 - CyberGo html | 문자 인코딩 자동 인식 가이드"
-description: "CyberGo html 인코딩 감지 실전 가이드: 4단계 감지 우선순위와 15+ 인코딩 지원, Config.Encoding 수동 지정, 통계 알고리즘 지능형 인식 및 GBK와 Shift_JIS 자동 감지 예제를 다룹니다."
+description: "CyberGo html 인코딩 감지 실전 가이드: 4단계 감지 우선순위(수동 지정, meta 태그 선언, 통계 알고리즘, UTF-8 폴백)와 15+ 인코딩 지원, Config.Encoding 수동 지정 및 GBK·Shift_JIS·Windows-1252 자동 감지 예제를 다룹니다."
 sidebar_position: 5
 ---
 
@@ -289,5 +289,5 @@ func main() {
 ## 다음 단계
 
 - [콘텐츠 추출 실전](./content-extraction) - 추출 흐름과 문서 인식
-- [오류 처리](../error-handling) - 센티널 오류와 구조화된 오류 처리
+- [오류 처리](../performance/error-handling) - 센티널 오류와 구조화된 오류 처리
 - [API 레퍼런스: 설정](../../api-reference/core/config) - Encoding 필드와 모든 설정 옵션

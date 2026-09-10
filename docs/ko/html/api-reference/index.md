@@ -1,7 +1,7 @@
 ---
 sidebar_label: "개요"
 title: "API 레퍼런스 - CyberGo html | 전체 함수·타입 목록"
-description: "CyberGo html 전체 API 인덱스: 패키지 함수와 Processor 두 호출 방식으로 콘텐츠 추출, 출력 형식, 링크 추출, 배치 처리, 설정, 감사 시스템, 타입 정의 모듈을 함수 시그니처와 예제와 함께 안내합니다."
+description: "CyberGo html 전체 API 인덱스: 패키지 함수와 Processor 호출 방식 비교, 콘텐츠 추출, 출력 형식, 링크 추출, 배치 처리, Config 설정, 보안 방어, 감사 시스템, 인터페이스, 타입 정의, 오류 상수 문서로 빠르게 안내합니다."
 sidebar_position: 1
 ---
 

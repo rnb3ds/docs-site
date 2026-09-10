@@ -1,7 +1,7 @@
 ---
 sidebar_label: "設定"
 title: "設定 - CyberGo HTTPC | Config とプリセット"
-description: "HTTPC 設定システム API リファレンス：Config 構造体と Timeouts、Connection、Security、Retry、Middleware サブ設定、DefaultConfig など 5 種のプリセット、ValidateConfig 検証の完全なフィールド説明。"
+description: "HTTPC 設定システム API リファレンス：Config と Timeouts、Connection、Security、Retry、Middleware の全フィールド解説、5 種の設定プリセット、ValidateConfig 検証範囲、プロキシローテーションによるリトライ自動引き上げなどの派生ルール。"
 sidebar_position: 1
 ---
 
@@ -29,6 +29,12 @@ cfg.Retry.MaxRetries = 5
 client, err := httpc.New(cfg)
 ```
 
+`New()` は内部で Config をディープコピーします（`Defaults.Headers` マップと `Middleware.Middlewares` スライスを含む）。クライアント作成後に元の `cfg` を変更しても、動作には影響しません。2 つの例外は**参照共有**です：`Retry.CustomPolicy` と `Security.CertificatePinner` はディープコピーされません——pinner の実装は並行セーフであることが約束されていますが、可変状態を持つカスタムリトライポリシーを使用する場合、同一の Config インスタンスを複数の `New()` に並行して渡さないでください。
+
+:::tip 関連タイプ
+リクエストレベルの細かい制御には `RequestOption` 関数オプションを使用します（[リクエストオプション](../core/options) を参照）。カスタムリトライポリシーは [`RetryPolicy`](../types/interfaces#retrypolicy) インターフェースを実装します。
+:::
+
 ## TimeoutConfig
 
 ```go
@@ -52,7 +58,7 @@ type TimeoutConfig struct {
 0 に設定するとタイムアウトなしになります（本番環境では推奨されません）。
 
 :::tip ResponseHeader の設計
-`ResponseHeader` のデフォルトは 0（無効）です。この場合、`TimeoutConfig.Request` または `WithTimeout()` が唯一のタイムアウト機構として使用され、`WithTimeout()` がリクエストの所要時間を完全に制御できます。この設計は AI API やロングポーリングなど、レスポンス時間を延長する必要があるシナリオに適しています。トランスポート層のハードリミットが必要な場合（Slowloris 攻撃の防御など）のみ正の値を設定してください。ただし、これは `WithTimeout` をオーバーライドすることに注意してください。
+`ResponseHeader` のデフォルトは 0（無効）です。この場合、`TimeoutConfig.Request` または `WithTimeout()` が唯一のタイムアウト機構として使用され、`WithTimeout()` がリクエストの所要時間を完全に制御できます。この設計は AI API やロングポーリングなど、レスポンス時間を延長する必要があるシナリオに適しています。トランスポート層のハード上限が必要な場合（Slowloris 攻撃の防御など）にのみ正の値を設定しますが、注意点があります：このタイムアウトは Transport 層で有効になり、**同じクライアントを共有するすべてのリクエスト**に作用し、その値が `WithTimeout` で設定したデッドラインより短い場合は先に発効します。
 :::
 
 ## ProxyStrategy
@@ -70,8 +76,8 @@ const (
 
 | 定数 | 説明 |
 |------|------|
-| `ProxyStrategyRoundRobin` | ラウンドロビン（デフォルト）、毎回次のプロキシに進み、リトライ時に自然と別の IP に振られる |
-| `ProxyStrategyRandom` | ランダム、健全なプロキシから一様にランダム選択 |
+| `ProxyStrategyRoundRobin` | ラウンドロビン（デフォルト）。毎回の選択で次のプロキシに進むため、リトライ時に自然と異なる IP に振られる |
+| `ProxyStrategyRandom` | ランダム。健全なプロキシから一様にランダム選択 |
 
 ## ConnectionConfig
 
@@ -85,7 +91,7 @@ type ConnectionConfig struct {
     ProxyPoolStrategy      ProxyStrategy // プロキシ選択戦略、デフォルト RoundRobin
     ProxyFailureThreshold  int           // 連続失敗回数のしきい値、0 の場合はデフォルト 3
     ProxyCooldown          time.Duration // サーキットブレーカの冷却時間、0 の場合はデフォルト 30s
-    ProxyRotatePerRequest  bool          // 各リクエストで独立してプロキシを強制切り替え、デフォルト false
+    ProxyRotatePerRequest  bool          // 各独立リクエストでプロキシの強制切り替え、デフォルト false
     ProxyRotateOnStatus    []int         // プロキシローテーションをトリガーする HTTP ステータスコード
     EnableHTTP2            bool          // HTTP/2 を有効化、デフォルト true
     EnableCookies          bool          // Cookie 管理を有効化、デフォルト false
@@ -156,6 +162,14 @@ type SecurityConfig struct {
 }
 ```
 
+#### 3 つのサイズ制限の関係
+
+| フィールド | デフォルト | 説明 |
+|------|--------|------|
+| `MaxResponseBodySize` | 10MB | （圧縮転送時の）生のレスポンスボディバイト数を制限 |
+| `MaxDecompressedBodySize` | 100MB | **解凍後**のレスポンスボディバイト数を制限（解凍爆弾を防御）。未設定（≤0）の場合は `MaxResponseBodySize` にフォールバック |
+| `MaxRequestBodySize` | 0（無制限） | アップロードリクエストボディの上限。レスポンス側と異なり**自動フォールバックなし**で、明示的に設定してはじめて有効 |
+
 ### 証明書固定（CertificatePinner）
 
 `CertificatePinner` は証明書固定を有効にします。サーバーが固定された鍵/証明書を提示しない場合、TLS ハンドシェイクが拒否され、信頼された CA が侵害されていても中間者攻撃を防げます。デフォルトは `nil`（無効）。以下のコンストラクタで作成します。
@@ -185,7 +199,7 @@ client, err := httpc.New(cfg)
 :::
 
 :::warning SSRF 防護
-`AllowPrivateIPs` のデフォルトは `false` で、プライベート/予約済み IP（127.0.0.1、10.x、192.168.x など）への接続をブロックします。内部サービスに接続する場合のみ `true` に設定してください。
+`AllowPrivateIPs` のデフォルトは `false` で、プライベート/予約済み IP（127.0.0.1、10.x、192.168.x、169.254.x など。localhost、ループバック、リンクローカル、プライベート/予約セグメントをカバー）への接続をブロックします。`true` に設定すると**接続レベルの SSRF ダイヤル検証を完全にバイパス**します（プライベート IP セグメントを許可するだけではありません）。内部サービスへの接続時（VPN、プロキシ、企業内網）のみ使用してください。選択的に許可するには `SSRFExemptCIDRs` を使用します。詳しくは [SSRF 防護](../../security/ssrf) をご覧ください。
 :::
 
 ### SSRF 免除の例
@@ -197,6 +211,22 @@ cfg.Security.SSRFExemptCIDRs = []string{
     "100.64.0.0/10",    // Tailscale
 }
 ```
+
+不正な CIDR があると `New()` が直接エラーを返します（`invalid configuration: ...`）。黙って無視されることはありません。
+
+### リダイレクトホワイトリスト
+
+`RedirectWhitelist` はリダイレクト先をリストされたドメインのみに制限します。デフォルトは `nil`（すべてのリダイレクト先を許可）。これは「リダイレクト型 SSRF」を防ぐゲートです——より保守的な代替は `Defaults.FollowRedirects = false` です（`SecureConfig()` が採用）。
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Security.RedirectWhitelist = []string{
+    "api.example.com",
+    "cdn.example.com",
+}
+```
+
+リダイレクト動作の完全な説明は [リダイレクト](../../guides/redirects) をご覧ください。
 
 ## RetryConfig
 
@@ -219,6 +249,8 @@ type RetryConfig struct {
 | MaxRetryDelay | 30s | 0-30min |
 
 リトライ遅延の公式：`min(Delay * BackoffFactor^attempt + jitter, MaxRetryDelay)`
+
+`CustomPolicy` は [`RetryPolicy`](../types/interfaces#retrypolicy) インターフェースを実装し、内蔵リトライ判定全体を置き換えられます。デフォルトは `nil`（内蔵ポリシーを使用）。プロキシのステータスコードローテーションを設定した場合、有効リトライ回数が自動的に引き上げられます。[設定の派生と内部換算](#設定の派生と内部換算) を参照してください。
 
 ## MiddlewareConfig
 
@@ -367,6 +399,23 @@ func MinimalConfig() Config
 | EnableJitter | false |
 | FollowRedirects | false |
 
+## 設定の派生と内部換算
+
+`New()` が公開 Config をエンジン設定に変換する際、一部のゼロ値フィールドは内蔵デフォルトにフォールバックし、さらにいくつかの派生ルールが実際の動作を変えます：
+
+| 派生項 | ルール |
+|--------|------|
+| MaxIdleConnsPerHost | `MaxConnsPerHost / 2` で計算され、[2, 10] 区間にクランプされ MaxConnsPerHost を超えない。`MaxConnsPerHost = 0`（接続無制限）の場合は 10 |
+| TLS バージョンフォールバック | `MinTLSVersion` / `MaxTLSVersion` が 0 の場合、それぞれ TLS 1.2 / TLS 1.3 にフォールバック |
+| MaxRetryDelay フォールバック | `Retry.MaxRetryDelay` が 0 の場合は 30s として扱う |
+| TCP KeepAlive | 固定 30s。コネクションプール設定とともに自動適用され、設定不要 |
+| プロキシローテーションによるリトライ自動引き上げ | `ProxyRotateOnStatus` または `ProxyRotatePerRequest` を設定しプロキシプールが 2 個を超える場合、有効 MaxRetries は `len(ProxyPool)-1` に自動引き上げ（上限 10、引き下げられることはない） |
+| ProxyRotateOnStatus | 「追加のリトライ可能ステータスコード」としてエンジンに渡され、ヒットするとリトライ予算を 1 回消費してプロキシを切り替える |
+
+:::tip なぜリトライの自動引き上げが必要か
+デフォルトの `MaxRetries = 3` では、5 個のプロキシプールは 403 に遭遇すると 4 番目のプロキシまで試して諦めてしまいます。ステータスコードローテーションを設定した以上、その意図はプロキシプール全体を巡回することです。そのためリトライ予算は「プールサイズ − 1」に引き上げられます。より大きい MaxRetries を明示的に設定した場合は、その値が維持されます。
+:::
+
 ## セキュリティ警告の出力
 
 ### SetSecurityWarnOutput
@@ -406,6 +455,32 @@ if err := httpc.ValidateConfig(&cfg); err != nil {
 }
 ```
 
+検証ルール一覧（`nil` を渡すと `ErrNilConfig` を返します）：
+
+| フィールド | 制約 |
+|------|------|
+| `Timeouts.*`（全 5 項目） | 0 – 30min |
+| `Connection.MaxIdleConns` | 0 – 1000 |
+| `Connection.MaxConnsPerHost` | 0 – 1000 |
+| `Connection.ProxyURL` および `ProxyPool` の各項目 | 有効なプロキシ URL であること |
+| `Connection.ProxyFailureThreshold` | ≥ 0 |
+| `Connection.ProxyCooldown` | 0 – 30min |
+| `Connection.ProxyRotateOnStatus` | 各ステータスコードは 100 – 599 |
+| `Connection.DoHCacheTTL` | ≥ 0 |
+| `Connection.MaxResponseHeaderBytes` | ≥ 0 |
+| `Security.MaxResponseBodySize` | 0 – 1GB |
+| `Security.MaxDecompressedBodySize` | 0 – 100MB |
+| `Security.MaxRequestBodySize` | 0 – 1GB |
+| `Security.MinTLSVersion` / `MaxTLSVersion` | 両方とも非 0 の場合 Min ≤ Max |
+| `Security.SSRFExemptCIDRs` | 各項目が有効な CIDR であること |
+| `Retry.MaxRetries` | 0 – 10 |
+| `Retry.Delay` | 0 – 30min |
+| `Retry.BackoffFactor` | 1.0 – 10.0 |
+| `Retry.MaxRetryDelay` | 0 – 30min |
+| `Defaults.MaxRedirects` | 0 – 50 |
+| `Defaults.UserAgent` | 512 文字以下かつ制御文字を含まない |
+| `Defaults.Headers` | 各キーと値がヘッダー合法性検証を通過 |
+
 ### Config.String
 
 ```go
@@ -437,12 +512,12 @@ type CookieSecurityConfig struct {
 Cookie セキュリティ属性の検証設定。
 
 | フィールド | タイプ | 説明 |
-|-----------|--------|------|
+|------|------|------|
 | RequireSecure | `bool` | Cookie に Secure 属性の設定を要求 |
 | RequireHttpOnly | `bool` | Cookie に HttpOnly 属性の設定を要求 |
 | RequireSameSite | `string` | 要求する SameSite 値（例：`"Strict"`、`"Lax"`）。空文字列はチェックなし |
-| AllowSameSiteNone | `bool` | SameSite=None を許可するかどうか |
-| RequireSecureForSameSiteNone | `bool` | SameSite=None の場合に Secure 属性を要求（デフォルト `true`） |
+| AllowSameSiteNone | `bool` | SameSite=None を許可するかどうか。`false` かつ `RequireSameSite` が空の場合、SameSite=None の Cookie は拒否される |
+| RequireSecureForSameSiteNone | `bool` | SameSite=None の場合に Secure 属性を強制要求（`DefaultCookieSecurityConfig()` では `true`。ゼロ値構造体を直接構築した場合は `false` となるため、常にファクトリ経由の構築を推奨） |
 
 ### DefaultCookieSecurityConfig
 
@@ -464,3 +539,13 @@ func StrictCookieSecurityConfig() *CookieSecurityConfig
 cfg := httpc.DefaultConfig()
 cfg.Security.CookieSecurity = httpc.StrictCookieSecurityConfig()
 ```
+
+2 つのファクトリのフィールド値の比較：
+
+| フィールド | DefaultCookieSecurityConfig | StrictCookieSecurityConfig |
+|------|------------------------------|----------------------------|
+| RequireSecure | `false` | `true` |
+| RequireHttpOnly | `false` | `true` |
+| RequireSameSite | `""`（要求しない） | `"Strict"` |
+| AllowSameSiteNone | `true` | `false` |
+| RequireSecureForSameSiteNone | `true` | `true` |

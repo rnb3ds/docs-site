@@ -2,7 +2,7 @@
 sidebar_label: "速查表"
 title: "速查表 - CyberGo html | API 一页速查"
 description: "CyberGo html 常用 API 一页速查表：汇总 Extract、ExtractText、ExtractToMarkdown 等包级函数与 Processor 方法、四种 Config 预设、errors.Is 错误判断及 AuditConfig 审计配置，覆盖核心函数签名与典型用法。"
-sidebar_position: 3
+sidebar_position: 2
 ---
 
 # 速查表
@@ -47,7 +47,7 @@ batch := html.ExtractBatchFiles(paths)
 
 ### 带上下文版本
 
-所有函数都有 `ExtractWithContext` 变体：
+所有函数都有 `*WithContext` 变体：
 
 ```go
 result, err := html.ExtractWithContext(ctx, data)
@@ -243,3 +243,9 @@ p.ClearAuditLog()             // 清空内存审计日志
 p.ClearCache()                // 清空缓存（保留统计）
 p.ResetStatistics()           // 重置统计计数器（保留缓存）
 ```
+
+## 下一步
+
+- [内容提取实战](../guides/core-features/content-extraction) - 提取流程与文章识别
+- [Processor 复用与缓存](../guides/performance/processor-cache) - 生命周期与缓存调优
+- [API 参考](../api-reference/) - 完整 API 文档

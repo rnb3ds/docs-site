@@ -1,7 +1,7 @@
 ---
 sidebar_label: "请求选项"
 title: "请求选项 - CyberGo HTTPC | WithXxx 选项"
-description: "HTTPC 请求选项 API 参考：WithHeader 请求头、WithBearerToken 认证、WithJSON/WithForm 请求体、WithQuery 查询参数、Cookie 选项与 WithOnRequest/WithOnResponse 回调函数。"
+description: "HTTPC 请求选项 API 参考：完整覆盖 28 个 WithXxx 函数——WithHeader 请求头、WithBearerToken 认证、WithJSON/WithForm/WithFile 请求体、Cookie 校验与回调，并注明各选项覆盖的 Config 默认值与校验规则。"
 sidebar_position: 2
 ---
 
@@ -19,6 +19,34 @@ result, err := client.Post(url,
 
 所有选项可自由组合，按传入顺序依次应用。
 
+## 选项总览
+
+| 分组 | 选项 |
+|------|------|
+| [请求头](#请求头) | `WithHeader`、`WithHeaderMap`、`WithUserAgent` |
+| [认证](#认证) | `WithBasicAuth`、`WithBearerToken` |
+| [请求体](#请求体) | `WithJSON`、`WithXML`、`WithForm`、`WithFormData`、`WithFile`、`WithBinary`、`WithBody` |
+| [查询参数](#查询参数) | `WithQuery`、`WithQueryMap` |
+| [Cookie](#cookie) | `WithCookie`、`WithCookies`、`WithCookieMap`、`WithCookieString`、`WithSecureCookie` |
+| [请求控制](#请求控制) | `WithContext`、`WithTimeout`、`WithMaxRetries`、`WithFollowRedirects`、`WithMaxRedirects`、`WithAllowPrivateIPs`、`WithStreamBody` |
+| [回调](#回调) | `WithOnRequest`、`WithOnResponse` |
+
+部分选项可覆盖客户端配置（`Config`）中的同名默认值：
+
+| 选项 | 覆盖的 Config 字段（默认值） |
+|------|------------------------------|
+| `WithUserAgent` | `Defaults.UserAgent`（`"httpc/1.0"`） |
+| `WithHeader` / `WithHeaderMap` | `Defaults.Headers` 中的同名默认头 |
+| `WithTimeout` | `Timeouts.Request`（180s） |
+| `WithMaxRetries` | `Retry.MaxRetries`（3） |
+| `WithFollowRedirects` | `Defaults.FollowRedirects`（true） |
+| `WithMaxRedirects` | `Defaults.MaxRedirects`（10） |
+| `WithAllowPrivateIPs` | `Security.AllowPrivateIPs`（false） |
+
+:::tip
+`nil` 选项被静默跳过，不会报错——便于条件拼装选项切片。任一选项返回错误都会中止请求（统一包装为 `failed to apply request option`）。
+:::
+
 ## 请求头
 
 ### WithHeader
@@ -27,7 +55,7 @@ result, err := client.Post(url,
 func WithHeader(key, value string) RequestOption
 ```
 
-设置单个请求头。键和值经过安全验证（CRLF 注入防护）。
+设置单个请求头。键和值经过安全验证（CRLF 注入防护）：键 ≤256 字符、值 ≤8192 字符，控制字符被拒绝（返回 `ErrInvalidHeader` 包装错误）。同名默认头（`Config.Defaults.Headers`）会被覆盖。
 
 ```go
 result, err := client.Get(url,
@@ -41,7 +69,7 @@ result, err := client.Get(url,
 func WithHeaderMap(headers map[string]string) RequestOption
 ```
 
-批量设置请求头。
+批量设置请求头。逐项执行与 `WithHeader` 相同的校验，任一键值非法即报错（错误信息含出错的键名）。
 
 ```go
 result, err := client.Get(url,
@@ -58,7 +86,7 @@ result, err := client.Get(url,
 func WithUserAgent(userAgent string) RequestOption
 ```
 
-设置 User-Agent 头。是 `WithHeader("User-Agent", ...)` 的便捷包装。
+设置 User-Agent 头。是 `WithHeader("User-Agent", ...)` 的便捷包装，覆盖 `Config.Defaults.UserAgent` 默认值（`"httpc/1.0"`）。
 
 ## 认证
 
@@ -68,7 +96,7 @@ func WithUserAgent(userAgent string) RequestOption
 func WithBasicAuth(username, password string) RequestOption
 ```
 
-设置 HTTP Basic 认证。用户名不能为空，凭据长度有限制。
+设置 HTTP Basic 认证，生成 `Authorization: Basic <base64>` 头。用户名与密码均不能为空、≤255 字符且不含控制字符；用户名还不得包含冒号 `:`。
 
 ```go
 result, err := client.Get(url,
@@ -82,7 +110,7 @@ result, err := client.Get(url,
 func WithBearerToken(token string) RequestOption
 ```
 
-设置 `Authorization: Bearer <token>` 头。Token 不能为空。
+设置 `Authorization: Bearer <token>` 头。Token 不能为空、≤2048 字符、不含空格与控制字符（遵循 RFC 6750 格式约束）。
 
 ```go
 result, err := client.Get(url,
@@ -98,7 +126,7 @@ result, err := client.Get(url,
 func WithJSON(data any) RequestOption
 ```
 
-设置 JSON 请求体，自动添加 `Content-Type: application/json`。
+设置 JSON 请求体，自动添加 `Content-Type: application/json`。`data` 为 nil 时报错；等价于 `WithBody(data, BodyJSON)`。
 
 ```go
 result, err := client.Post(url,
@@ -115,7 +143,7 @@ result, err := client.Post(url,
 func WithXML(data any) RequestOption
 ```
 
-设置 XML 请求体，自动添加 `Content-Type: application/xml`。
+设置 XML 请求体，自动添加 `Content-Type: application/xml`。`data` 为 nil 时报错；等价于 `WithBody(data, BodyXML)`。
 
 ### WithForm
 
@@ -123,7 +151,9 @@ func WithXML(data any) RequestOption
 func WithForm(data map[string]string) RequestOption
 ```
 
-设置 URL 编码表单请求体，自动添加 `Content-Type: application/x-www-form-urlencoded`。
+设置 URL 编码表单请求体，自动添加 `Content-Type: application/x-www-form-urlencoded`。每个字段的键（≤256 字符）与值（≤8192 字符）都经过控制字符与长度校验；编码时键按字母序输出，同一输入产生确定性的请求体（利于测试与请求签名）。
+
+仅接受 `map[string]string`；需要提交 `url.Values` 时改用 `WithBody(data, BodyForm)`（两者的校验与编码路径完全一致）。
 
 ```go
 result, err := client.Post(url,
@@ -140,7 +170,7 @@ result, err := client.Post(url,
 func WithFormData(data *FormData) RequestOption
 ```
 
-设置 `multipart/form-data` 请求体，支持文件和字段混合上传。
+设置 `multipart/form-data` 请求体，支持文件和字段混合上传。`data` 为 nil 时报错；等价于 `WithBody(data, BodyMultipart)`。
 
 ```go
 result, err := client.Post(url,
@@ -159,7 +189,11 @@ result, err := client.Post(url,
 func WithFile(fieldName, filename string, content []byte) RequestOption
 ```
 
-便捷文件上传。自动构建 multipart 请求体，文件名经过路径遍历防护处理。
+便捷的单文件 multipart 上传。`fieldName` 与 `filename` 不能为空、≤256 字符，且不得包含路径分隔符（`/`、`\`）、`..`、引号、尖括号等危险字符；实际使用的文件名取 `filepath.Base(filename)`（剥离路径部分，防路径遍历），结果为 `"."`/`".."`/空时报错。
+
+:::warning 与其他请求体选项互斥
+`WithFile` 会替换整个请求体：多次调用 `WithFile`、或再搭配 `WithFormData`/`WithJSON` 等请求体选项时，后应用的选项覆盖前者。需要多文件或「文件 + 字段」混合上传时，请构建单个 `*FormData` 并使用 `WithFormData`。
+:::
 
 ```go
 result, err := client.Post(url,
@@ -173,7 +207,7 @@ result, err := client.Post(url,
 func WithBinary(data []byte, contentType ...string) RequestOption
 ```
 
-设置二进制请求体。默认 Content-Type 为 `application/octet-stream`，可自定义。
+设置二进制请求体。`data` 为 nil 时报错（非 nil 的空切片允许通过，但会发送空请求体）。默认 Content-Type 为 `application/octet-stream`，可通过第二个参数自定义（传空字符串回退默认值）。与 `WithBody(data, BodyBinary)` 的区别：后者还接受 `string` 输入，且会拒绝空数据。
 
 ```go
 result, err := client.Post(url,
@@ -222,6 +256,25 @@ result, _ := client.Post(url, httpc.WithBody(data, httpc.BodyXML))
 | `BodyBinary` | 强制二进制 |
 | `BodyMultipart` | 强制 multipart（需要 `*FormData`） |
 
+**显式类型的输入约束**：
+
+| 类型 | 输入要求 |
+|------|----------|
+| `BodyJSON` / `BodyXML` | 任意非 nil 数据 |
+| `BodyForm` | `map[string]string` 或 `url.Values`（逐字段校验） |
+| `BodyBinary` | `[]byte` 或 `string`，且非空 |
+| `BodyMultipart` | `*FormData` |
+
+类型不匹配（如 `BodyMultipart` 传入非 `*FormData`）或 `data` 为 nil 时报错。
+
+:::warning io.Reader 不参与大小校验
+`io.Reader` 请求体绕过请求体大小校验。读取不可信来源时，请用 `io.LimitReader` 包裹以防资源耗尽：
+
+```go
+limited := io.LimitReader(untrustedReader, 10<<20) // 上限 10 MB
+```
+:::
+
 ## 查询参数
 
 ### WithQuery
@@ -230,7 +283,7 @@ result, _ := client.Post(url, httpc.WithBody(data, httpc.BodyXML))
 func WithQuery(key string, value any) RequestOption
 ```
 
-设置单个查询参数。
+设置单个查询参数。key 不能为空、≤256 字符，且不含控制字符与保留字符（`&`、`=`、`#`、`?`）；格式化后的值 ≤8192 字符。**value 为 nil 时该参数被整体跳过**（不会渲染成字面量 `<nil>`）。支持 `string`/`bool`/整数/浮点等常用类型，其余类型走通用格式化路径（如实现了 `fmt.Stringer`）。
 
 ```go
 result, err := client.Get(url,
@@ -245,7 +298,7 @@ result, err := client.Get(url,
 func WithQueryMap(params map[string]any) RequestOption
 ```
 
-批量设置查询参数。
+批量设置查询参数。校验规则与 `WithQuery` 一致；nil 值条目被跳过；nil map 不产生任何参数。
 
 ```go
 result, err := client.Get(url,
@@ -265,7 +318,7 @@ result, err := client.Get(url,
 func WithCookie(cookie http.Cookie) RequestOption
 ```
 
-添加单个 Cookie，经过安全验证。
+添加单个 Cookie，经过安全验证：名称 ≤256 字符、值 ≤4096 字符，控制字符与 Cookie 非法字符被拒绝；设置 Domain（≤255）或 Path（≤1024）时也会校验。
 
 ```go
 result, err := client.Get(url,
@@ -315,7 +368,7 @@ result, err := client.Get(url,
 func WithCookieString(cookieString string) RequestOption
 ```
 
-从原始 Cookie 头字符串添加 Cookie。
+从原始 Cookie 头字符串添加 Cookie。空字符串为空操作；缺少 `=` 分隔符或 `=` 前名称为空时报错；解析出的每个 Cookie 再经过与 `WithCookie` 相同的校验。
 
 ```go
 result, err := client.Get(url,
@@ -352,7 +405,7 @@ result, err := client.Get(url,
 func WithContext(ctx context.Context) RequestOption
 ```
 
-设置请求上下文，支持超时和取消。上下文不能为 nil。
+设置请求上下文，支持超时和取消。上下文不能为 nil；上下文的截止时间会覆盖该请求的客户端默认超时（`Timeouts.Request`）。
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
@@ -367,7 +420,7 @@ result, err := client.Get(url, httpc.WithContext(ctx))
 func WithTimeout(timeout time.Duration) RequestOption
 ```
 
-设置单次请求超时，覆盖客户端默认超时。范围：0 到 30 分钟。
+设置单次请求超时，覆盖 `Config.Timeouts.Request`（默认 180s，覆盖含重试在内的整段请求时长）。范围：0 到 30 分钟，越界返回 `ErrInvalidTimeout`。
 
 ```go
 result, err := client.Get(url, httpc.WithTimeout(5*time.Second))
@@ -379,7 +432,7 @@ result, err := client.Get(url, httpc.WithTimeout(5*time.Second))
 func WithMaxRetries(maxRetries int) RequestOption
 ```
 
-设置单次请求最大重试次数，覆盖客户端配置。范围：0-10。
+设置单次请求最大重试次数，覆盖 `Config.Retry.MaxRetries`（默认 3）。范围：0-10，越界返回 `ErrInvalidRetry`。
 
 ```go
 result, err := client.Get(url, httpc.WithMaxRetries(3))
@@ -391,7 +444,7 @@ result, err := client.Get(url, httpc.WithMaxRetries(3))
 func WithFollowRedirects(follow bool) RequestOption
 ```
 
-控制是否跟随重定向。
+控制是否跟随重定向，覆盖 `Config.Defaults.FollowRedirects`（默认 true）。
 
 ```go
 // 禁止跟随重定向
@@ -404,7 +457,7 @@ result, err := client.Get(url, httpc.WithFollowRedirects(false))
 func WithMaxRedirects(maxRedirects int) RequestOption
 ```
 
-设置单次请求最大重定向次数。范围：0-50。
+设置单次请求最大重定向次数，覆盖 `Config.Defaults.MaxRedirects`（默认 10）。范围：0-50，负数或超过 50 报错。
 
 :::warning 0 值语义
 `0` **不会**禁用重定向。引擎将 `0` 视为「未显式设置」的哨兵值，回退到默认上限（10），因此 `WithMaxRedirects(0)` 等价于省略该选项。要完全禁用重定向跟随，请改用 `WithFollowRedirects(false)`。
@@ -416,7 +469,7 @@ func WithMaxRedirects(maxRedirects int) RequestOption
 func WithAllowPrivateIPs(allow bool) RequestOption
 ```
 
-为单次请求覆盖客户端的 SSRF 策略。当 `allow` 为 `true` 时，该请求可访问 localhost 和私有/保留 IP 段（127.0.0.0/8、10.0.0.0/8、192.168.0.0/16、169.254.0.0/16 等），并可跟随到此类地址的重定向；为 `false` 时，即使客户端配置了 `Security.AllowPrivateIPs=true`，本次请求仍强制启用 SSRF 防护。
+为单次请求覆盖客户端的 SSRF 策略（对应 `Config.Security.AllowPrivateIPs`，默认 false）。当 `allow` 为 `true` 时，该请求可访问 localhost 和私有/保留 IP 段（127.0.0.0/8、10.0.0.0/8、192.168.0.0/16、169.254.0.0/16 等），并可跟随到此类地址的重定向；为 `false` 时，即使客户端配置了 `Security.AllowPrivateIPs=true`，本次请求仍强制启用 SSRF 防护。
 
 :::warning 安全提示
 这是 SSRF 防护的**单次请求逃生舱**，适用于默认安全的客户端（`AllowPrivateIPs=false`）偶尔需要访问内部服务、回环地址或本地开发服务器的场景。
@@ -453,7 +506,7 @@ func WithStreamBody(stream bool) RequestOption
 func WithOnRequest(callback func(req RequestMutator) error) RequestOption
 ```
 
-注册请求发送前的回调。可链式注册多个，按添加顺序执行。回调返回错误会中止请求。
+注册请求发送前的回调。可链式注册多个，按添加顺序执行。回调返回错误会中止请求；`callback` 为 nil 时报错。
 
 ```go
 result, err := client.Get(url,
@@ -470,7 +523,7 @@ result, err := client.Get(url,
 func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
 ```
 
-注册响应接收后的回调。可链式注册多个，按添加顺序执行。
+注册响应接收后的回调。可链式注册多个，按添加顺序执行；任一回调返回错误会使请求以该错误失败；`callback` 为 nil 时报错。
 
 ```go
 result, err := client.Get(url,
@@ -485,4 +538,5 @@ result, err := client.Get(url,
 
 - [常量与类型](../types/constants) - BodyKind 常量和类型别名
 - [接口定义](../types/interfaces) - RequestMutator、ResponseMutator 接口
+- [请求与响应变更器](../handler/mutators) - 回调中 RequestMutator/ResponseMutator 的完整读写契约
 - [请求与响应](../../guides/request-response) - 请求选项使用指南

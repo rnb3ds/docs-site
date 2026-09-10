@@ -57,7 +57,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -137,7 +136,8 @@ for batch := range batchQueue {
 cfg := html.DefaultConfig()
 
 // 按 CPU 核心数设置并发（封顶 256）
-if n := runtime.NumCPU(); n > 256 {
+n := runtime.NumCPU()
+if n > 256 {
     n = 256
 }
 cfg.WorkerPoolSize = n
@@ -257,5 +257,5 @@ for i := 0; i < len(allPages); i += batchSize {
 
 - [Processor 复用与缓存](./processor-cache) - 包函数与实例的缓存区别
 - [性能优化](./performance) - 吞吐量提升与超时设置
-- [错误处理](../error-handling) - 哨兵错误与批量错误处理
+- [错误处理](./error-handling) - 哨兵错误与批量错误处理
 - [API 参考：批量处理](../../api-reference/modules/batch) - 完整 API 签名

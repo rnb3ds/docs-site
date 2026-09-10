@@ -2,7 +2,7 @@
 sidebar_label: "Error Handling"
 title: "Error Handling - CyberGo HTTPC | Types & Sentinel Matching"
 description: "HTTPC error handling guide: the twelve ErrorType classifications, ClientError fields and IsRetryable checks, errors.Is/As sentinel-error matching, retry-exhaustion handling, context timeout and cancellation, unified error handling via middleware, and timeout-layering best practices."
-sidebar_position: 5
+sidebar_position: 7
 ---
 
 # Error Handling

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "配置"
 title: "配置 - CyberGo HTTPC | Config 与预设"
-description: "HTTPC 配置系统 API 参考：Config 结构体及 Timeouts、Connection、Security、Retry、Middleware 子配置、DefaultConfig 等五种预设与 ValidateConfig 验证的完整字段说明。"
+description: "HTTPC 配置系统 API 参考：Config 及 Timeouts、Connection、Security、Retry、Middleware 子配置全字段说明，DefaultConfig 等五种预设、ValidateConfig 校验范围与代理轮换自动提升重试等派生规则。"
 sidebar_position: 1
 ---
 
@@ -29,6 +29,12 @@ cfg.Retry.MaxRetries = 5
 client, err := httpc.New(cfg)
 ```
 
+`New()` 内部对 Config 做深拷贝（含 `Defaults.Headers` map 与 `Middleware.Middlewares` 切片），客户端创建后再修改原 `cfg` 不影响其行为。两个例外按**引用共享**：`Retry.CustomPolicy` 与 `Security.CertificatePinner` 不做深拷贝——pinner 实现约定为并发安全，但若自定义重试策略带有可变状态，不要将同一 Config 实例并发传给多个 `New()`。
+
+:::tip 相关类型
+请求级细粒度控制使用 `RequestOption` 函数选项（见 [Options 详解](../core/options)）；自定义重试策略实现 [`RetryPolicy`](../types/interfaces#retrypolicy) 接口。
+:::
+
 ## TimeoutConfig
 
 ```go
@@ -52,7 +58,7 @@ type TimeoutConfig struct {
 设为 0 表示无超时（生产环境不推荐）。
 
 :::tip ResponseHeader 设计
-`ResponseHeader` 默认为 0（禁用），此时使用 `TimeoutConfig.Request` 或 `WithTimeout()` 作为唯一的超时机制，确保 `WithTimeout()` 对请求持续时间有完全控制。此设计适合 AI API 和长轮询等需要扩展响应时间的场景。仅在需要传输层硬性上限（如防御 Slowloris 攻击）时设为正值，但需注意这会覆盖 `WithTimeout`。
+`ResponseHeader` 默认为 0（禁用），此时使用 `TimeoutConfig.Request` 或 `WithTimeout()` 作为唯一的超时机制，确保 `WithTimeout()` 对请求持续时间有完全控制。此设计适合 AI API 和长轮询等需要扩展响应时间的场景。仅在需要传输层硬性上限（如防御 Slowloris 攻击）时设为正值，但需注意：该超时在 Transport 层生效，作用于**共享同一客户端的所有请求**，且当其值短于 `WithTimeout` 设定的截止时间时会提前生效。
 :::
 
 ## ProxyStrategy
@@ -156,6 +162,14 @@ type SecurityConfig struct {
 }
 ```
 
+#### 三个体积限制的关系
+
+| 字段 | 默认值 | 说明 |
+|------|--------|------|
+| `MaxResponseBodySize` | 10MB | 限制（压缩传输时的）原始响应体字节数 |
+| `MaxDecompressedBodySize` | 100MB | 限制**解压后**的响应体字节数（防解压炸弹）；未设置（≤0）时回退 `MaxResponseBodySize` |
+| `MaxRequestBodySize` | 0（不限制） | 上传请求体上限；与响应侧不同**无自动回退**，需显式设置才生效 |
+
 ### 证书固定（CertificatePinner）
 
 `CertificatePinner` 启用证书固定：TLS 握手在服务端未提供已固定密钥/证书时将被拒绝，即便受信任 CA 被攻破也可防御中间人攻击。默认 `nil`（禁用）。通过以下构造函数创建：
@@ -185,7 +199,7 @@ client, err := httpc.New(cfg)
 :::
 
 :::warning SSRF 防护
-`AllowPrivateIPs` 默认为 `false`，阻止连接到私有/保留 IP（127.0.0.1、10.x、192.168.x 等）。仅在连接内部服务时设为 `true`。
+`AllowPrivateIPs` 默认为 `false`，阻止连接到私有/保留 IP（127.0.0.1、10.x、192.168.x、169.254.x 等，覆盖 localhost、回环、链路本地与私有/保留段）。设为 `true` 将**完全绕过连接级 SSRF 拨号校验**（不只是放行私有 IP 段），仅在连接内部服务（VPN、代理、企业内网）时使用；选择性放行请改用 `SSRFExemptCIDRs`。详见 [SSRF 防护](../../security/ssrf)。
 :::
 
 ### SSRF 豁免示例
@@ -197,6 +211,22 @@ cfg.Security.SSRFExemptCIDRs = []string{
     "100.64.0.0/10",    // Tailscale
 }
 ```
+
+非法 CIDR 会使 `New()` 直接返回错误（`invalid configuration: ...`），不会静默忽略。
+
+### 重定向白名单
+
+`RedirectWhitelist` 限制重定向只允许跳往列出的域名，默认 `nil`（允许所有重定向目标）。这是防「重定向型 SSRF」的闸门——更保守的替代方案是 `Defaults.FollowRedirects = false`（`SecureConfig()` 即采用）。
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Security.RedirectWhitelist = []string{
+    "api.example.com",
+    "cdn.example.com",
+}
+```
+
+重定向行为的完整说明见[重定向控制](../../guides/redirects)。
 
 ## RetryConfig
 
@@ -219,6 +249,8 @@ type RetryConfig struct {
 | MaxRetryDelay | 30s | 0-30min |
 
 重试延迟公式：`min(Delay * BackoffFactor^attempt + jitter, MaxRetryDelay)`
+
+`CustomPolicy` 实现 [`RetryPolicy`](../types/interfaces#retrypolicy) 接口，可整体替换内置重试判定；默认 `nil`（使用内置策略）。配置代理状态码轮换时，有效重试次数会被自动提升，见[配置派生与内部换算](#配置派生与内部换算)。
 
 ## MiddlewareConfig
 
@@ -367,6 +399,23 @@ func MinimalConfig() Config
 | EnableJitter | false |
 | FollowRedirects | false |
 
+## 配置派生与内部换算
+
+`New()` 把公开 Config 换算为引擎配置时，部分零值字段会回退到内置默认，另有几条派生规则会改变实际行为：
+
+| 派生项 | 规则 |
+|--------|------|
+| MaxIdleConnsPerHost | 按 `MaxConnsPerHost / 2` 计算，夹在 [2, 10] 区间且不超过 MaxConnsPerHost；`MaxConnsPerHost = 0`（不限连接）时取 10 |
+| TLS 版本回退 | `MinTLSVersion` / `MaxTLSVersion` 为 0 时分别回退 TLS 1.2 / TLS 1.3 |
+| MaxRetryDelay 回退 | `Retry.MaxRetryDelay` 为 0 时按 30s 处理 |
+| TCP KeepAlive | 固定 30s，随连接池配置自动应用，无需设置 |
+| 代理轮换自动提升重试 | 设置 `ProxyRotateOnStatus` 或 `ProxyRotatePerRequest` 且代理池多于 1 个时，有效 MaxRetries 自动提升到 `len(ProxyPool)-1`（上限 10，不会被调低） |
+| ProxyRotateOnStatus | 作为「额外可重试状态码」传入引擎，命中即消耗一次重试预算换代理 |
+
+:::tip 为什么需要自动提升重试
+默认 `MaxRetries = 3` 时，5 个代理的池子在遇到 403 后只能试到第 4 个代理就放弃。既然配置了状态码轮换，意图就是遍历整个代理池，因此重试预算被提升到「池大小 − 1」；若你显式设置了更大的 MaxRetries，则保持你的值不变。
+:::
+
 ## 安全警告输出
 
 ### SetSecurityWarnOutput
@@ -406,6 +455,32 @@ if err := httpc.ValidateConfig(&cfg); err != nil {
 }
 ```
 
+校验规则一览（传入 `nil` 返回 `ErrNilConfig`）：
+
+| 字段 | 约束 |
+|------|------|
+| `Timeouts.*`（全部 5 项） | 0 – 30min |
+| `Connection.MaxIdleConns` | 0 – 1000 |
+| `Connection.MaxConnsPerHost` | 0 – 1000 |
+| `Connection.ProxyURL` 及 `ProxyPool` 每项 | 必须是合法代理 URL |
+| `Connection.ProxyFailureThreshold` | ≥ 0 |
+| `Connection.ProxyCooldown` | 0 – 30min |
+| `Connection.ProxyRotateOnStatus` | 每个状态码在 100 – 599 |
+| `Connection.DoHCacheTTL` | ≥ 0 |
+| `Connection.MaxResponseHeaderBytes` | ≥ 0 |
+| `Security.MaxResponseBodySize` | 0 – 1GB |
+| `Security.MaxDecompressedBodySize` | 0 – 100MB |
+| `Security.MaxRequestBodySize` | 0 – 1GB |
+| `Security.MinTLSVersion` / `MaxTLSVersion` | 两者均非 0 时 Min ≤ Max |
+| `Security.SSRFExemptCIDRs` | 每项必须是合法 CIDR |
+| `Retry.MaxRetries` | 0 – 10 |
+| `Retry.Delay` | 0 – 30min |
+| `Retry.BackoffFactor` | 1.0 – 10.0 |
+| `Retry.MaxRetryDelay` | 0 – 30min |
+| `Defaults.MaxRedirects` | 0 – 50 |
+| `Defaults.UserAgent` | ≤ 512 字符且不含控制字符 |
+| `Defaults.Headers` | 每组键值均通过头部合法性校验 |
+
 ### Config.String
 
 ```go
@@ -441,8 +516,8 @@ Cookie 安全属性验证配置。
 | RequireSecure | `bool` | 要求 Cookie 设置 Secure 属性 |
 | RequireHttpOnly | `bool` | 要求 Cookie 设置 HttpOnly 属性 |
 | RequireSameSite | `string` | 要求的 SameSite 值，如 `"Strict"`、`"Lax"`；空字符串表示不检查 |
-| AllowSameSiteNone | `bool` | 是否允许 SameSite=None |
-| RequireSecureForSameSiteNone | `bool` | SameSite=None 时要求 Secure 属性（默认 `true`） |
+| AllowSameSiteNone | `bool` | 是否允许 SameSite=None；为 `false` 且 `RequireSameSite` 为空时，SameSite=None 的 Cookie 会被拒绝 |
+| RequireSecureForSameSiteNone | `bool` | SameSite=None 时强制要求 Secure 属性（`DefaultCookieSecurityConfig()` 中为 `true`；直接构造零值结构体时是 `false`，建议始终经工厂构造） |
 
 ### DefaultCookieSecurityConfig
 
@@ -464,3 +539,13 @@ func StrictCookieSecurityConfig() *CookieSecurityConfig
 cfg := httpc.DefaultConfig()
 cfg.Security.CookieSecurity = httpc.StrictCookieSecurityConfig()
 ```
+
+两个工厂的字段取值对比：
+
+| 字段 | DefaultCookieSecurityConfig | StrictCookieSecurityConfig |
+|------|------------------------------|----------------------------|
+| RequireSecure | `false` | `true` |
+| RequireHttpOnly | `false` | `true` |
+| RequireSameSite | `""`（不要求） | `"Strict"` |
+| AllowSameSiteNone | `true` | `false` |
+| RequireSecureForSameSiteNone | `true` | `true` |

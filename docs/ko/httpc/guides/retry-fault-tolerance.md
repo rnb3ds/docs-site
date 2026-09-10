@@ -2,7 +2,7 @@
 sidebar_label: "재시도와 내결함성"
 title: "재시도와 내결함성 - CyberGo HTTPC | 백오프와 자동 재시도"
 description: "HTTPC 재시도와 내결함성 가이드: 기본 지수 백오프 재시도 전략과 RetryConfig 구성, 408/429/5xx 자동 재시도 조건, RetryPolicy 커스텀 인터페이스, Retry-After 응답 헤더 자동 파싱, 백오프 전략 선택과 요청별 WithMaxRetries 제어 모범 사례."
-sidebar_position: 6
+sidebar_position: 8
 ---
 
 # 재시도와 내결함성
@@ -583,5 +583,6 @@ func main() {
 
 - [오류 처리](./error-handling) — 오류 분류 상세와 센티널 오류 매칭
 - [구성 API](../api-reference/client-config/config) — 재시도 구성 필드 참조
-- [연결 풀과 프록시](./connection-pool) — 프록시 풀 구성과 순환 전략
+- [연결 풀과 DNS](./connection-pool) — 연결 재사용과 DoH 해석
+- [프록시와 프록시 풀](./proxy) — 프록시 풀 구성과 회전 전략
 - [인터페이스 정의](../api-reference/types/interfaces) — RetryPolicy 인터페이스 참조

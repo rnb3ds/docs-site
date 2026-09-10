@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Повторное использование Processor и кэш"
 title: "Processor и кэш - CyberGo html | производительность"
-description: "Переиспользование Processor и кэш CyberGo html: отличие от функций пакета, sync.Pool, стратегия кэша и мониторинг hit-rate для производительности."
+description: "Processor и кэш CyberGo html: отличие от функций пакета, sync.Pool, настройка кэша, hit-rate через GetStatistics и синглтон для веб-сервисов."
 sidebar_position: 1
 ---
 

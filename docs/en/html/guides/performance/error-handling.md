@@ -1,8 +1,8 @@
 ---
 sidebar_label: "Error Handling"
 title: "Error Handling - CyberGo html | Robust Error Guide"
-description: "CyberGo html error handling guide: five error categories, errors.Is/As matching, context cancellation, and batch partial-failure handling for robust logic."
-sidebar_position: 5
+description: "CyberGo html error handling: five categories (input, config, file, processing, system), errors.Is/As, context timeouts, batch partial failures, panic recovery."
+sidebar_position: 4
 ---
 
 # Error Handling
@@ -398,7 +398,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/cybergodev/html"
@@ -725,3 +724,10 @@ func main() {
 :::tip
 The key to structured logging is extracting **fields** rather than concatenating strings. For example, after logging `inputErr.Size` and `inputErr.MaxSize`, you can query your logging system for `size > max_size * 0.9` to find requests approaching the limit and spot capacity issues early. For `FileError`, always use `SafePath()` instead of the `Path` field for logging — to prevent log files themselves from becoming an information leakage source.
 :::
+
+## Next Steps
+
+- [Production Checklist](../security/production-checklist) - Pre-deployment security checks
+- [Performance](./performance) - Throughput improvements and timeout settings
+- [API Reference: Constants & Errors](../../api-reference/types/constants) - Complete list of sentinel errors
+- [API Reference: Processor](../../api-reference/core/processor) - Processor lifecycle and stats

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "설정 실전"
 title: "설정 실전 - CyberGo html | Config 필드 선택 가이드"
-description: "CyberGo html 설정 실전: DefaultConfig 등 4종 프리셋 선택, 6개 주요 필드 그룹 안내, 일반적인 설정 조합 예제와 Validate 검증으로 30개 이상의 필드 중 올바른 설정을 빠르게 선택할 수 있도록 돕습니다."
+description: "CyberGo html 설정 실전: DefaultConfig·HighSecurityConfig 등 4종 Config 프리셋 선택 조언, 6개 주요 필드 그룹, 일반 설정 조합 예제와 Validate 검증으로 30개 이상 필드를 빠르게 선택하도록 돕습니다."
 sidebar_position: 6
 ---
 
@@ -25,7 +25,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -156,7 +155,7 @@ cfg.PreserveAudios = false
 
 | 필드 | 설명 |
 |------|------|
-| `Scorer` | 커스텀 콘텐츠 평가기; nil일 때 DefaultScorer 사용 |
+| `Scorer` | 커스텀 콘텐츠 평가기; nil일 때 내장 기본 평가기(내부 구현) 사용 |
 
 커스텀 Scorer로 특정 웹사이트에 맞춰 문서 인식을 최적화할 수 있습니다. 자세한 내용은 [테스트와 사용자 정의 확장](../integration/testing-custom)을 참조하세요.
 

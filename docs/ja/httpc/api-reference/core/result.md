@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Result"
 title: "Result - CyberGo HTTPC | Result 応答タイプ"
-description: "HTTPC Result レスポンスタイプ API リファレンス：StatusCode/Body 基本メソッド、ステータス判定、Cookie 操作、Unmarshal JSON 解析、SaveToFile ファイル保存、RequestInfo/ResponseInfo サブタイプの使い方。"
+description: "HTTPC Result レスポンスタイプ API リファレンス：StatusCode/Body など nil 安全なメソッド全 17 種、Cookie 操作、Unmarshal、SaveToFile、RequestInfo/ResponseInfo/RequestMeta サブタイプ（ProxyURL 含む）。"
 sidebar_position: 3
 ---
 
@@ -267,12 +267,20 @@ type ResponseInfo struct {
 type RequestMeta struct {
     Duration      time.Duration
     Attempts      int
+    ProxyURL      string
     RedirectChain []string
     RedirectCount int
 }
 ```
 
 リクエスト実行メタデータ。`result.Meta` でアクセスします。
+| フィールド | 説明 |
+|--------------|------|
+| `Duration` | リクエスト開始からレスポンス完了までの合計時間 |
+| `Attempts` | リトライを含む合計試行回数 |
+| `ProxyURL` | 最終試行で実際に使用されたプロキシ URL（`Connection.ProxyURL` またはプールから選択されたエントリー）；直接接続では空文字列で、システムプロキシ（`EnableSystemProxy`）も同様に記録されません（空のまま）。リクエストごとに出口を確認する必要がある場合は `Connection.ProxyURL` か `ProxyPool` を明示的に設定してください。ローテーションではリトライごとに異なるプロキシが使われる可能性があり、このフィールドは返されたレスポンスを生成した試行のものを報告します |
+| `RedirectChain` | リダイレクトで経由した URL チェーン |
+| `RedirectCount` | 従ったリダイレクトの回数 |
 
 ```go
 result, _ := client.Get(url)
@@ -280,6 +288,7 @@ result, _ := client.Get(url)
 fmt.Println(result.Meta.Duration)      // 125ms
 fmt.Println(result.Meta.Attempts)       // 2（1 回リトライ）
 fmt.Println(result.Meta.RedirectCount)  // 1（1 回リダイレクトに追従）
+fmt.Println(result.Meta.ProxyURL)        // ""（直接接続）または "http://proxy:8080"
 ```
 
 ## 関連項目

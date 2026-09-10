@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Batch Processing"
 title: "Batch Processing - CyberGo html | Concurrency Guide"
-description: "CyberGo html batch processing: four batch APIs, BatchResult structure, WorkerPoolSize concurrency, context cancellation, and partial-failure handling."
+description: "CyberGo html batch processing: four APIs incl. ExtractBatch, BatchResult, WorkerPoolSize concurrency, context cancellation, partial failures, and scale tuning."
 sidebar_position: 2
 ---
 
@@ -57,7 +57,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -137,7 +136,8 @@ for batch := range batchQueue {
 cfg := html.DefaultConfig()
 
 // Set concurrency to the number of CPU cores (capped at 256)
-if n := runtime.NumCPU(); n > 256 {
+n := runtime.NumCPU()
+if n > 256 {
     n = 256
 }
 cfg.WorkerPoolSize = n
@@ -257,5 +257,5 @@ for i := 0; i < len(allPages); i += batchSize {
 
 - [Processor Cache & Reuse](./processor-cache) - Cache differences between package functions and instances
 - [Performance](./performance) - Throughput improvements and timeout settings
-- [Error Handling](../error-handling) - Sentinel errors and batch error handling
+- [Error Handling](./error-handling) - Sentinel errors and batch error handling
 - [API Reference: Batch Processing](../../api-reference/modules/batch) - Complete API signatures

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "エンコーディング検出実践"
 title: "エンコーディング検出実践 - CyberGo html | 文字エンコーディング自動認識ガイド"
-description: "CyberGo html エンコーディング検出実践：4 段階の検出優先度、15+ 種のエンコーディング対応、Config.Encoding の手動指定、統計アルゴリズムによるスマート認識と GBK/Shift_JIS の自動検出サンプルを詳しく解説します。"
+description: "CyberGo html エンコーディング自動検出ガイド：4 段階の優先度（手動指定、meta タグ宣言、統計アルゴリズム、UTF-8 フォールバック）を詳解し、15+ 種対応、Config.Encoding 指定と GBK、Shift_JIS、Windows-1252 の検出サンプルを提供します。"
 sidebar_position: 5
 ---
 
@@ -289,5 +289,5 @@ func main() {
 ## 次のステップ
 
 - [コンテンツ抽出実践](./content-extraction) - 抽出フローと記事認識
-- [エラー処理](../error-handling) - センチネルエラーと構造化エラー処理
+- [エラー処理](../performance/error-handling) - センチネルエラーと構造化エラー処理
 - [API リファレンス：設定](../../api-reference/core/config) - Encoding フィールドとすべての設定オプション

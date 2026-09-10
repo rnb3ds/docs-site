@@ -1,8 +1,8 @@
 ---
 sidebar_label: "クイックスタート"
 title: "クイックスタート - CyberGo html | 5 分スタートガイド"
-description: "CyberGo html クイックスタートガイド：インストール手順、基本コンテンツ抽出、4 種の Config プリセット、テキスト・Markdown・JSON 出力形式、Processor の再利用まで、5 分で HTML コンテンツ抽出を始められます。"
-sidebar_position: 2
+description: "CyberGo html クイックスタートガイド：Go 1.25+ のインストール、基本コンテンツ抽出、DefaultConfig など 4 種の Config プリセット、テキスト・Markdown・JSON 出力、Processor を並行環境で安全に呼び出すまで、5 分で HTML 抽出を始められます。"
+sidebar_position: 1
 ---
 
 # クイックスタート
@@ -117,7 +117,7 @@ jsonBytes, err := html.ExtractToJSON(data)
 
 ## コンテキストサポート
 
-すべての関数に `ExtractWithContext` バージョンがあり、キャンセルとタイムアウトをサポートします：
+すべての抽出関数に `*WithContext` サフィックス付きのバリアント（`ExtractWithContext`、`ExtractTextWithContext` など）があり、キャンセルとタイムアウトをサポートします：
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

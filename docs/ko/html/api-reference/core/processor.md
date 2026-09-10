@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Processor"
 title: "Processor - CyberGo html | 용법·매개변수·예제"
-description: "CyberGo html Processor API: New 생성, Extract·ExtractText·ExtractToMarkdown 메서드 계열과 GetStatistics, ClearCache, Close 등 수명 주기 관리로 캐시·통계 재사용과 고빈도 처리에 적합합니다."
+description: "CyberGo html Processor API: New 생성, Extract·ExtractText·ExtractToMarkdown 메서드 계열과 GetStatistics, ClearCache, Close 등 수명 주기 관리로 캐시와 인코딩 감지기를 재사용하며 고빈도 처리에 적합합니다."
 sidebar_position: 2
 ---
 
@@ -34,7 +34,7 @@ defer p.Close()
 `New`는 단순한 대입이 아니라, 다음 단계를 수행하여 반환된 Processor 가 즉시 사용 가능하도록 보장합니다:
 
 1. **설정 검증**: `Config.Validate()`를 호출하며, 유효하지 않은 설정은 `*ConfigError`를 반환합니다 (`errors.Is(err, ErrInvalidConfig)`가 참). 검증 범위에는 수치 경계(`MaxInputSize`, `MaxCacheEntries`, `WorkerPoolSize`, `MaxDepth`가 음수이거나 한도 초과일 수 없음)와 포맷 문자열(`InlineImageFormat`/`InlineLinkFormat`/`TableFormat` 값이 합법적)이 포함됩니다.
-2. **Scorer 설정**: 커스텀 `Scorer`가 설정된 경우 `scorerAdapter`로 내부 인터페이스에 적용하고; 그렇지 않으면 `SharedDefaultScorer`(읽기 전용, 동시성 안전)를 사용합니다.
+2. **Scorer 설정**: 커스텀 `Scorer`가 설정된 경우 내부 인터페이스에 적용됩니다(적용 과정은 라이브러리가 자동으로 수행); 그렇지 않으면 내장 기본 스코어러(내부 구현, 익스포트되지 않음; 읽기 전용, 동시성 안전)를 사용합니다.
 3. **포맷 문자열 사전 계산**: `InlineImageFormat`/`InlineLinkFormat`을 정규화하여(소문자+공백 제거, 빈 문자열은 `"none"`으로 매핑) `imageFormat`/`linkFormat` 필드에 캐시하여, 핫 경로에서 반복적인 `strings.ToLower`를 피합니다.
 4. **캐시 정리 시작**: `CacheTTL>0` **이고** `CacheCleanup>0`일 때만 백그라운드 정리 goroutine 을 시작합니다; 둘 중 하나라도 0이면 시작하지 않습니다.
 
@@ -45,8 +45,8 @@ defer p.Close()
 
 - **불변 설정**: `config`는 `New()` 이후 불변입니다(`*Config` 포인터는 재할당되거나 수정되지 않음). 따라서 `ExtractToMarkdown` 등의 포맷 메서드는 락 없이도 안전하게 값 복사를 수행하여 임시 Processor 를 생성할 수 있습니다 — 포맷 덮어쓰기가 공유 설정에 다시 기록되지 않습니다.
 - **통계 카운터**: `TotalProcessed`/`CacheHits`/`CacheMisses`/`ErrorCount`/`totalProcessTime`은 모두 `atomic` 연산을 사용합니다.
-- **캐시**: 내부 `Cache`는 자체 락을 가지며 읽기/쓰기가 안전합니다.
-- **Scorer**: 내장 `DefaultScorer`는 읽기 전용입니다. **커스텀 `Scorer`는 스스로 동시성 안전을 보장해야 합니다** (예: 내부적으로 락 유지), 단일 Processor 가 동시성 `Extract` 시 여러 goroutine 에서 해당 `Score`/`ShouldRemove`를 호출하기 때문입니다.
+- **캐시**: 내부 캐시는 자체 락을 가지며 읽기/쓰기가 안전합니다. 캐시 동작은 완전히 공개 API 로 관측·제어됩니다: `Config.MaxCacheEntries = 0`으로 비활성화, `ClearCache()`로 비움, `Statistics.CacheHits`/`CacheMisses`로 적중 현황 관측.
+- **Scorer**: 내장 기본 스코어러(내부 구현, 익스포트되지 않음)는 읽기 전용입니다. **커스텀 `Scorer`는 스스로 동시성 안전을 보장해야 합니다** (예: 내부적으로 락 유지), 단일 Processor 가 동시성 `Extract` 시 여러 goroutine 에서 해당 `Score`/`ShouldRemove`를 호출하기 때문입니다.
 :::
 
 ## 콘텐츠 추출
@@ -163,7 +163,7 @@ func (p *Processor) ExtractBatchFilesWithContext(ctx context.Context, filePaths 
 
 - **적중 경로**: 캐시 항목 감지 후, `CacheHits`와 `TotalProcessed`를 각각 1 씩 증가시키며, 반환되는 것은 `cloneResult`입니다 — `Images`/`Links`/`Videos`/`Audios` 등 슬라이스에 대해 `copy`를 수행한 딥카피입니다. 호출자가 반환값을 수정해도 **캐시의 항목에 영향을 주지 않으며**, 동시성 적중 읽기 시의 데이터 경쟁도 방지합니다.
 - **미적중 경로**: 처리 완료 후 결과를 캐시에 기록하고, `cloneResult`를 반환합니다 (마찬가지로 딥카피). 따라서 캐시 항목과 반환값은 서로 별칭하지 않습니다.
-- **캐시 비활성화**: `MaxCacheEntries = 0`일 때, `Extract`는 캐시 키 생성과 `Get/Set`을 건너뛰며 (단락), 캐시 오버헤드가 전혀 없습니다.
+- **캐시 비활성화**: `MaxCacheEntries = 0`일 때, `Extract`는 캐시 키 생성과 캐시 읽기/쓰기를 건너뛰며(단락), 캐시 오버헤드가 전혀 없습니다.
 
 ### GetStatistics
 
@@ -242,5 +242,5 @@ defer p.Close()
 :::tip 라이프사이클 모범 사례
 - **싱글톤 재사용**: 장기 실행 서비스(HTTP handler, worker)에서 Processor 를 하나 생성하고 동시성 요청 간에 공유하며, 캐시와 함께 수익을 극대화합니다. Processor 자체는 동시성 안전하므로 요청마다 새로 만들 필요가 없습니다.
 - **`defer Close()`**: 생성 직후 `defer p.Close()`를 호출하여, 예외 경로에서도 백그라운드 정리 goroutine 과 감사 리소스가 해제되도록 합니다. `Close`는 캐시 정리 goroutine 을 중지하고, 캐시를 비우며, 감사 sink 를 닫습니다.
-- **Close 후 사용 금지**: `Close` 이후 어떤 메서드를 호출해도 `ErrProcessorClosed`를 반환합니다. `Close`는 `CompareAndSwap`으로 멱등성을 보장하며, 중복 호출은 안전하지만 의미는 없습니다.
+- **Close 후 사용 금지**: `Close` 이후 어떤 메서드를 호출해도 `ErrProcessorClosed`를 반환합니다. `Close`는 원자적 CAS 연산으로 멱등성을 보장하며(내부 구현 세부 사항), 중복 호출은 안전하지만 의미는 없습니다.
 :::

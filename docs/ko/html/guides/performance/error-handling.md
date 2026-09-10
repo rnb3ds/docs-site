@@ -1,8 +1,8 @@
 ---
 sidebar_label: "오류 처리"
 title: "오류 처리 - CyberGo html | 견고한 오류 처리 가이드"
-description: "CyberGo html 오류 처리 가이드: 입력·설정·파일·처리·시스템 5가지 오류 분류, errors.Is/As 판별 패턴, context 취소와 배치 부분 실패 처리, 패닉 복구 방법으로 견고한 에러 핸들링 로직을 구축합니다."
-sidebar_position: 5
+description: "CyberGo html 오류 처리 가이드: 입력·설정·파일·처리·시스템 5가지 오류 분류, errors.Is 센티널 오류 판별과 errors.As 구조화 오류 필드 추출, context 타임아웃 취소, 배치 부분 실패와 패닉 복구 대응 전략으로 견고한 에러 핸들링 로직을 구축합니다."
+sidebar_position: 4
 ---
 
 # 오류 처리
@@ -398,7 +398,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/cybergodev/html"
@@ -725,3 +724,10 @@ func main() {
 :::tip 팁
 구조화된 로깅의 핵심은 문자열을 조립하는 것이 아니라 **필드**를 추출하는 것입니다. 예를 들어 `inputErr.Size`와 `inputErr.MaxSize`를 기록하면, 로그 시스템에서 `size > max_size * 0.9`로 쿼리하여 상한에 근접한 요청을 찾아 용량 문제를 조기에 발견할 수 있습니다. `FileError`의 경우 항상 `Path` 필드가 아닌 `SafePath()`로 로그를 기록하여, 로그 파일 자체가 정보 유출원이 되지 않도록 하세요.
 :::
+
+## 다음 단계
+
+- [프로덕션 체크리스트](../security/production-checklist) - 배포 전 보안 점검
+- [성능 최적화](./performance) - 처리량 향상과 타임아웃 설정
+- [API 레퍼런스: 상수와 오류](../../api-reference/types/constants) - 센티널 오류 전체 목록
+- [API 레퍼런스: Processor](../../api-reference/core/processor) - Processor 라이프사이클과 통계

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "バッチ処理実践"
 title: "バッチ処理実践 - CyberGo html | 並行抽出ガイド"
-description: "CyberGo html バッチ処理実践：4 つのバッチ API、BatchResult 構造体、WorkerPoolSize による並行制御、コンテキストキャンセル、部分失敗処理、そして段階別のパフォーマンス推奨事項について詳しく解説します。"
+description: "CyberGo html バッチ処理実践ガイド：ExtractBatch など 4 つのバッチ API 詳解、BatchResult 結果構造、WorkerPoolSize による並行制御、context キャンセル、部分失敗処理とデータ量規模別のパフォーマンスチューニング推奨事項を解説します。"
 sidebar_position: 2
 ---
 
@@ -57,7 +57,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -137,7 +136,8 @@ for batch := range batchQueue {
 cfg := html.DefaultConfig()
 
 // CPU コア数に基づいて並行度を設定（上限 256）
-if n := runtime.NumCPU(); n > 256 {
+n := runtime.NumCPU()
+if n > 256 {
     n = 256
 }
 cfg.WorkerPoolSize = n
@@ -257,5 +257,5 @@ for i := 0; i < len(allPages); i += batchSize {
 
 - [Processor の再利用とキャッシュ](./processor-cache) - パッケージ関数とインスタンスのキャッシュの違い
 - [パフォーマンス最適化](./performance) - スループットの向上とタイムアウト設定
-- [エラー処理](../error-handling) - センチネルエラーとバッチエラー処理
+- [エラー処理](./error-handling) - センチネルエラーとバッチエラー処理
 - [API リファレンス：バッチ処理](../../api-reference/modules/batch) - 完全な API シグネチャ

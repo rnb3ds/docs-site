@@ -1,7 +1,7 @@
 ---
 sidebar_label: "패키지 함수"
 title: "패키지 함수 - CyberGo html | 용법·매개변수·예제"
-description: "CyberGo html 패키지 함수: Extract, ExtractText, ExtractToMarkdown, ExtractAllLinks 등. 내부 sync.Pool 로 Processor 를 재사용해 일회성 호출과 스크립트에 적합합니다."
+description: "CyberGo html 패키지 함수: Extract·ExtractText·ExtractToMarkdown·ExtractToJSON·ExtractBatch 시그니처. sync.Pool 로 Processor 를 재사용해 캐시를 비활성화하며 일회성·저빈도 호출에 적합합니다."
 sidebar_position: 1
 ---
 
@@ -33,6 +33,18 @@ sidebar_position: 1
 :::warning 핵심 차이
 커스텀 `Config`를 전달하면 **`sync.Pool`을 거치지 않습니다** — 풀은 `DefaultConfig()` 기반의 Processor 만 저장하며, 설정이 다른 인스턴스를 안전하게 재사용할 수 없습니다. 이 경우 매 호출마다 임시 Processor 를 `New`로 생성하고, 사용 후 즉시 `Close`합니다. 고빈도 호출에서 커스텀 설정을 재사용하려면 [Processor](./processor)를 직접 생성하세요.
 :::
+
+## 생성자
+
+### New
+
+독립적인 `Processor` 인스턴스를 생성하며, 캐시·통계·감사 기능의 유일한 진입점입니다.
+
+```go
+func New(cfg ...Config) (*Processor, error)
+```
+
+`cfg ...Config`는 위 표의 해석 규칙을 동일하게 따릅니다(미전달 시 `DefaultConfig()` 사용, ≥2 개 전달 시 `ErrMultipleConfigs` 반환). 이어서 `Config.Validate()`를 실행합니다. 패키지 함수의 풀링/임시 인스턴스와 달리, `New`가 반환한 인스턴스는 **캐시와 누적 통계를 장기 보유합니다**. 전체 메서드 목록과 라이프사이클은 [Processor](./processor)를 참조하세요.
 
 ## 콘텐츠 추출
 
@@ -169,6 +181,14 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractAllLinksFromFile` | `(filePath string, cfg ...Config) ([]LinkResource, error)` | 파일에서 링크 추출 |
 | `ExtractAllLinksWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | 컨텍스트 포함 |
 | `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | 파일 + 컨텍스트 |
+
+함께 제공되는 그룹화 유틸리티 함수:
+
+```go
+func GroupLinksByType(links []LinkResource) map[string][]LinkResource
+```
+
+`LinkResource.Type` 필드(`link`/`image`/`css` 등)를 기준으로 링크 리소스를 `map[유형][]LinkResource`로 그룹화합니다.
 
 자세한 사용법과 예시는 [링크 추출](../modules/links)을 참조하세요.
 

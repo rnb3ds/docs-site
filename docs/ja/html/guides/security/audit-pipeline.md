@@ -1,7 +1,7 @@
 ---
 sidebar_label: "監査システム実践"
 title: "監査システム実践 - CyberGo html | パイプライン構築ガイド"
-description: "CyberGo html 監査システム実践ガイド：基本有効化から多層パイプライン構築まで、8 種のイベント型、6 種の内蔵 Sink 比較、3 段階のレベルフィルタ、カスタム Sink 実装、本番監視のベストプラクティスを詳しく解説します。"
+description: "CyberGo html 監査システム実践ガイド：基本有効化から多層パイプライン構築まで、8 種の監査イベントタイプ詳解、内蔵 Sink の比較（Stderr、File、Channel）、Info/Warn/Error レベルフィルタとカスタム AuditSink による監視実践を網羅します。"
 sidebar_position: 2
 ---
 
@@ -240,4 +240,4 @@ func (s *slackSink) Close() error {
 
 - [本番チェックリスト](./production-checklist) - デプロイ前のセキュリティチェック
 - [API リファレンス：監査システム](../../api-reference/modules/audit) - 完全な API シグネチャ
-- [エラー処理](../error-handling) - セキュリティエラーの分類と処理
+- [エラー処理](../performance/error-handling) - セキュリティエラーの分類と処理

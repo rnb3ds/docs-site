@@ -1,7 +1,7 @@
 ---
 sidebar_label: "概览"
 title: "API 参考 - CyberGo HTTPC | API 总索引"
-description: "HTTPC API 参考索引：按核心、请求响应、高级功能三组分类导航，涵盖包级 HTTP 函数、28 个 WithXxx 请求选项、Config 配置系统与五种预设、七个内置中间件、域名客户端、文件下载与错误类型的完整查阅入口，帮助快速定位所需 API。"
+description: "HTTPC API 参考总索引：按核心函数、请求选项、Result、Config 配置、Handler 中间件、Mutator 变更器、类型、错误与常量九组给出完整 API 地图，覆盖 28 个 WithXxx 选项、5 个配置预设、7 个内置中间件与 12 个错误变量，并附快速上手示例。"
 sidebar_position: 1
 ---
 
@@ -35,13 +35,14 @@ HTTPC 双层架构
 | [接口](./types/interfaces) | Client、Doer、DomainClienter、RetryPolicy 等核心接口 |
 | [Result](./core/result) | Result、RequestInfo、ResponseInfo、RequestMeta 类型和所有方法 |
 | [处理器](./handler/handler-chain) | Handler 管线、MiddlewareFunc 洋葱链、Chain 组合器与 Mutator 契约 |
+| [变更器](./handler/mutators) | RequestMutator/ResponseMutator 的读写方法与类型断言 |
 
 ### 请求与响应
 
 | 模块 | 说明 |
 |------|------|
 | [请求选项](./core/options) | 28 个 WithXxx 请求选项函数（请求头、请求体、认证、Cookie、回调等） |
-| [中间件](./client-config/middleware) | Chain 组合、7 个内置中间件工厂和审计事件类型 |
+| [内置中间件](./client-config/middleware) | Chain 组合、7 个内置中间件工厂和审计事件类型 |
 | [错误类型](./types/errors) | ClientError、12 种 ErrorType 枚举和 12 个错误变量 |
 
 ### 高级功能
@@ -52,6 +53,97 @@ HTTPC 双层架构
 | [会话管理](./client-config/session) | SessionManager 的 Cookie/请求头管理和安全验证 |
 | [文件下载](./client-config/download) | 下载函数、DownloadConfig、断点续传和安全保护 |
 | [常量与类型](./types/constants) | BodyKind 枚举、FormData/FileData 和审计上下文键 |
+
+## API 地图
+
+按符号类型分组的完整索引，与 `github.com/cybergodev/httpc` 包的导出面一一对应，点击跳转到对应详情页。
+
+### 客户端与包级函数
+
+| 符号 | 说明 |
+|------|------|
+| [`New`](./core/functions#new) / [`NewDefault`](./core/functions#newdefault) | 创建客户端（自定义 / 默认配置） |
+| [`Get`](./core/functions#get) / `Post` / `Put` / `Patch` / `Delete` / `Head` / `Options` / [`Request`](./core/functions#request) | 包级 HTTP 方法（共享内部默认客户端） |
+| [`Download`](./core/functions#download) | 统一文件下载入口（包级函数 / Client / DomainClient 三处同名同签名） |
+| [`SetDefaultClient`](./core/functions#setdefaultclient) / [`CloseDefaultClient`](./core/functions#closedefaultclient) | 默认客户端替换与关闭 |
+| [`NewDomain`](./core/functions#newdomain) / [`NewDomainDefault`](./core/functions#newdomaindefault) | 域名作用域客户端 |
+| [`SetSecurityWarnOutput`](./core/functions#setsecuritywarnoutput) | 安全警告输出重定向 |
+| [`FormatBytes`](./core/functions#formatbytes) / [`FormatSpeed`](./core/functions#formatspeed) | 字节数 / 速率格式化 |
+
+### 请求选项（28 个）
+
+| 分组 | 选项 |
+|------|------|
+| 请求头（3） | `WithHeader`、`WithHeaderMap`、`WithUserAgent` |
+| 认证（2） | `WithBasicAuth`、`WithBearerToken` |
+| 请求体（7） | `WithJSON`、`WithXML`、`WithForm`、`WithFormData`、`WithFile`、`WithBinary`、`WithBody` |
+| 查询参数（2） | `WithQuery`、`WithQueryMap` |
+| Cookie（5） | `WithCookie`、`WithCookies`、`WithCookieMap`、`WithCookieString`、`WithSecureCookie` |
+| 请求控制（7） | `WithContext`、`WithTimeout`、`WithMaxRetries`、`WithFollowRedirects`、`WithMaxRedirects`、`WithAllowPrivateIPs`、`WithStreamBody` |
+| 回调（2） | `WithOnRequest`、`WithOnResponse` |
+
+全部选项的签名、校验规则与覆盖的 Config 默认值见[请求选项](./core/options)。
+
+### Result 家族
+
+| 分类 | 符号 |
+|------|------|
+| 类型 | `Result`（17 个 nil 安全方法） |
+| 状态与协议 | `StatusCode`、`Proto`、`IsSuccess`、`IsRedirect`、`IsClientError`、`IsServerError` |
+| 请求体访问 | `Body`、`RawBody` |
+| 解析与保存 | `Unmarshal`、`SaveToFile`、`String` |
+| Cookie | `ResponseCookies`、`GetCookie`、`HasCookie`、`RequestCookies`、`GetRequestCookie`、`HasRequestCookie` |
+| 子类型 | `RequestInfo`、`ResponseInfo`、`RequestMeta`（含 `ProxyURL` 代理字段） |
+
+详见 [Result](./core/result)。
+
+### 配置
+
+| 分类 | 符号 |
+|------|------|
+| 主类型 | `Config`（`Timeouts` / `Connection` / `Security` / `Retry` / `Middleware` / `Defaults` 六组） |
+| 子配置类型 | `TimeoutConfig`、`ConnectionConfig`、`SecurityConfig`、`RetryConfig`、`MiddlewareConfig`、`RequestDefaults` |
+| 预设（5 个） | `DefaultConfig`、`SecureConfig`、`PerformanceConfig`、`TestingConfig`、`MinimalConfig` |
+| 校验与输出 | `ValidateConfig`、`Config.String` |
+| Cookie 安全 | `CookieSecurityConfig`、`DefaultCookieSecurityConfig`、`StrictCookieSecurityConfig` |
+| 下载配置 | `DownloadConfig`、`DefaultDownloadConfig`、`DownloadResult`、`DownloadProgressCallback`、`ChecksumAlgorithm` |
+| 会话配置 | `SessionConfig`、`DefaultSessionConfig`、`NewSessionManager`、`NewSessionManagerDefault` |
+
+详见 [配置](./client-config/config)、[文件下载](./client-config/download)、[会话管理](./client-config/session)。
+
+### Handler、中间件与变更器
+
+| 分类 | 符号 |
+|------|------|
+| 管线类型 | `Handler`、`MiddlewareFunc`、`Chain` |
+| 中间件工厂（7 个） | `LoggingMiddleware`、`RecoveryMiddleware`、`RequestIDMiddleware`、`TimeoutMiddleware`、`HeaderMiddleware`、`MetricsMiddleware`、`AuditMiddleware` |
+| 中间件配置 | `LoggingConfig`、`RequestIDConfig`、`TimeoutMiddlewareConfig`、`HeaderConfig`、`MetricsConfig`、`AuditConfig`（各配 `Default*Config()` 构造函数） |
+| 变更器 | `RequestMutator`、`ResponseMutator`（中间件读写请求/响应的契约） |
+
+详见 [处理器](./handler/handler-chain)、[内置中间件](./client-config/middleware)、[变更器](./handler/mutators)。
+
+### 接口与类型
+
+| 分类 | 符号 |
+|------|------|
+| 核心接口 | `Client`、`Doer`、`DomainClienter`、`RetryPolicy` |
+| 类型别名 | `RequestOption`、`ClientError`、`ErrorType`、`CertificatePinner`、`ProxyStrategy` |
+| 证书固定 | `NewSPKIHashPinner`、`NewPublicKeyPinner`、`NewCertificatePinnerChain` |
+| 会话与域名 | `SessionManager`、`DomainClient`（建议以 `DomainClienter` 接口使用） |
+| 数据类型 | `FormData`、`FileData`、`AuditEvent` |
+
+详见 [接口](./types/interfaces)、[域名客户端](./client-config/domain-client)、[会话管理](./client-config/session)、[常量与类型](./types/constants)。
+
+### 错误与常量
+
+| 分类 | 符号 |
+|------|------|
+| 错误类型 | `ClientError`、`ErrorType`（12 种错误类别枚举） |
+| 哨兵错误（12 个） | `ErrClientClosed`、`ErrNilConfig`、`ErrInvalidHeader`、`ErrInvalidTimeout`、`ErrInvalidRetry`、`ErrInvalidConnection`、`ErrInvalidSecurity`、`ErrInvalidMiddleware`、`ErrEmptyFilePath`、`ErrFileExists`、`ErrResponseBodyEmpty`、`ErrResponseBodyTooLarge` |
+| BodyKind（6 常量） | `BodyAuto`、`BodyJSON`、`BodyXML`、`BodyForm`、`BodyBinary`、`BodyMultipart` |
+| 其他常量 | `ProxyStrategyRoundRobin` / `ProxyStrategyRandom`、`ChecksumSHA256`、审计上下文键 |
+
+详见 [错误类型](./types/errors)、[常量与类型](./types/constants)。
 
 ## 快速参考
 
@@ -87,3 +179,10 @@ result.IsSuccess()            // 是否 2xx
 result.Meta.Duration          // 请求耗时
 result.Meta.Attempts          // 重试次数
 ```
+
+## 版本兼容性
+
+- **Go 版本**：要求 Go 1.25 及以上（`go.mod` 声明 `go 1.25.0`）。
+- **导入路径**：`github.com/cybergodev/httpc`（包名 `httpc`，无需别名）。
+- **直接依赖**：仅 `golang.org/x/sys`（用于各平台系统代理检测，覆盖 Linux/macOS/Windows），无其他第三方依赖。
+- **API 状态**：当前全部导出符号均无 `Deprecated` 标记，处于活跃维护状态。

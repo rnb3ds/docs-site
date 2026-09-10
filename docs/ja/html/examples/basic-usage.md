@@ -1,348 +1,220 @@
 ---
 sidebar_label: "基本サンプル"
-title: "基本サンプル - CyberGo html | 実行可能サンプル集"
-description: "CyberGo html 基本サンプル集：バイトからのコンテンツ抽出、ファイル抽出、テキストのみ抽出、Markdown 出力、リンクグループ化、Processor 再利用、並行バッチ処理など、すぐ実行できる Go コード例を提供しています。"
+title: "基本サンプル - CyberGo html | 典型シナリオ別コード逆引き"
+description: "CyberGo html 基本サンプル：本文とプレーンテキスト抽出、ファイル読み込み、Markdown・JSON 変換、リンクグループ化、メディア情報、バッチ並行処理とタイムアウト制御の 6 シナリオごとに完全コンパイル可能な最小サンプルと詳解ページへのリンクを提供し、初心者がコピーしてすぐ始められます。"
 sidebar_position: 1
 ---
 
 # 基本サンプル
 
-## 基本的な抽出
+本ページは**シナリオ別にコードを引き出せる**逆引きインデックスです。各シナリオでは最小限の実行可能なスケルトンのみを示しますので、そのままコピーして使い始められます。原理の解説や詳細な設定は、各セクション末尾の「詳しくは」リンクから対応するガイドを参照してください。
 
-HTML バイトからタイトル、本文、メディア情報を抽出します：
+| シナリオ | 主要な呼び出し | 詳解ページ |
+|------|----------|--------|
+| 本文とプレーンテキスト | `html.Extract` / `html.ExtractText` | [コンテンツ抽出実践](../guides/core-features/content-extraction) |
+| ファイルから抽出 | `html.ExtractFromFile` | [コンテンツ抽出実践](../guides/core-features/content-extraction) |
+| Markdown / JSON 出力 | `html.ExtractToMarkdown` / `html.ExtractToJSON` | [出力フォーマット実践](../guides/core-features/output-formats) |
+| リンク抽出 | `html.ExtractAllLinks` + `html.GroupLinksByType` | [リンク抽出実践](../guides/core-features/link-extraction) |
+| メディア情報 | `html.Extract`（`Videos` / `Audios`） | [メディア抽出実践](../guides/core-features/media-extraction) |
+| バッチとタイムアウト・再利用 | `html.New` + `ExtractBatchWithContext` | [バッチ処理実践](../guides/performance/batch-processing) |
+
+## 本文とプレーンテキスト
+
+`Extract` は完全な `Result` を一度に返します。プレーンテキストだけでよい場合は近縁関数の `ExtractText` を使うと、`string` が直接返ります：
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 
-    "github.com/cybergodev/html"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    data := []byte(`<html>
-        <head><title>Go 言語チュートリアル</title></head>
-        <body>
-            <article>
-                <h1>Go 入門ガイド</h1>
-                <p>Go は Google が開発したオープンソースプログラミング言語です。</p>
-                <img src="gopher.png" alt="Gopher マスコット" />
-                <a href="https://go.dev">Go 公式サイト</a>
-            </article>
-        </body>
-    </html>`)
+	data := []byte(`<html><head><title>Go 言語チュートリアル</title></head><body><article><h1>Go 入門ガイド</h1><p>Go は静的型付けのコンパイル言語です。</p><a href="https://go.dev">Go 公式サイト</a></article></body></html>`)
 
-    result, err := html.Extract(data)
-    if err != nil {
-        log.Fatal(err)
-    }
+	result, err := html.Extract(data) // バイトを渡すと完全な Result が返る
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result.Title) // 出力：Go 言語チュートリアル
+	fmt.Println(result.Text)
+	// 出力：Go 入門ガイド\n\nGo は静的型付けのコンパイル言語です。\n\nGo 公式サイト
 
-    fmt.Println("タイトル：", result.Title)
-    fmt.Println("本文：", result.Text)
-    fmt.Println("単語数：", result.WordCount)
-    fmt.Println("読了時間：", result.ReadingTime)
-    // 出力：
-    // タイトル：Go 言語チュートリアル
-    // 本文：Go 入門ガイド
-    //
-    //       Go は Google が開発したオープンソースプログラミング言語です。
-    //
-    //       Go 公式サイト
-    // 単語数：8
-    // 読了時間：2.4s
+	text, err := html.ExtractText(data) // プレーンテキストのみ：string を直接返す
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(len(text) > 0) // 出力：true（空でない）
 }
 ```
+
+詳しくは：[コンテンツ抽出実践](../guides/core-features/content-extraction)
 
 ## ファイルから抽出
 
-```go
-result, err := html.ExtractFromFile("article.html")
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(result.Title)
-```
-
-## テキストのみ抽出
-
-```go
-text, err := html.ExtractText(data)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(text)
-```
-
-## Markdown 出力
-
-```go
-md, err := html.ExtractToMarkdown(data)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(md)
-```
-
-## リンクの抽出
-
-```go
-links, err := html.ExtractAllLinks(data)
-if err != nil {
-    log.Fatal(err)
-}
-
-for _, link := range links {
-    fmt.Printf("[%s] %s - %s\n", link.Type, link.Title, link.URL)
-}
-
-// タイプ別にグループ化
-groups := html.GroupLinksByType(links)
-for typ, items := range groups {
-    fmt.Printf("%s: %d 件\n", typ, len(items))
-}
-```
-
-## Processor の使用
-
-```go
-p, err := html.New(html.DefaultConfig())
-if err != nil {
-    log.Fatal(err)
-}
-defer p.Close()
-
-// Processor を再利用して複数ページを処理
-for _, page := range pages {
-    result, err := p.Extract(page)
-    if err != nil {
-        log.Printf("処理に失敗: %v", err)
-        continue
-    }
-    fmt.Println(result.Title)
-}
-
-// 統計を確認
-stats := p.GetStatistics()
-fmt.Printf("処理済み：%d, キャッシュヒット：%d\n",
-    stats.TotalProcessed, stats.CacheHits)
-```
-
-## タイムアウト制御付き
-
-```go
-ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-defer cancel()
-
-result, err := html.ExtractWithContext(ctx, data)
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-## バッチ処理
-
-```go
-pages := [][]byte{page1, page2, page3}
-
-p, _ := html.New(html.DefaultConfig())
-defer p.Close()
-
-batch := p.ExtractBatch(pages)
-fmt.Printf("成功：%d, 失敗：%d\n", batch.Success, batch.Failed)
-
-for i, result := range batch.Results {
-    if result != nil {
-        fmt.Printf("ページ %d: %s\n", i, result.Title)
-    }
-}
-```
-
-## JSON 出力
-
-```go
-jsonBytes, err := html.ExtractToJSON(data)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(string(jsonBytes))
-```
-
-## エンコーディング自動検出
-
-ライブラリは 15+ 種のエンコーディング（GBK、Shift_JIS、Windows-1252 など）を自動認識するため、手動処理は不要です：
+ディスク上のファイルの処理には `ExtractFromFile` を使います。パストラバーサル対策とファイルサイズ制限が組み込まれています：
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 
-    "github.com/cybergodev/html"
-    "golang.org/x/text/encoding/simplifiedchinese"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    // GBK エンコーディングの中国語 HTML を構築
-    utf8HTML := `<html><head><meta charset="gbk"><title>中文网页</title></head>
-<body><article><h1>你好世界</h1><p>这是一段中文内容。</p></article></body></html>`
-    gbkBytes, err := simplifiedchinese.GBK.NewEncoder().Bytes([]byte(utf8HTML))
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // エンコーディングを自動検出して抽出
-    result, err := html.Extract(gbkBytes)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println("タイトル：", result.Title)
-    // タイトル：中文网页
-    fmt.Println("本文：", result.Text)
-    // 本文：你好世界
-    //       这是一段中文内容。
+	result, err := html.ExtractFromFile("article.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result.Title) // 出力：article.html の <title> の内容
 }
 ```
 
-## メディア抽出
+詳しくは：[コンテンツ抽出実践](../guides/core-features/content-extraction)
 
-動画と音声のリソース情報を抽出します：
+## Markdown / JSON 出力
+
+コンテンツの移行には Markdown を、プログラム間の受け渡しには JSON を使います：
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 
-    "github.com/cybergodev/html"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    data := []byte(`<html><body><article>
-        <h1>マルチメディアページ</h1>
-        <p>動画と音声の抽出例。</p>
-        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" width="560" height="315"></iframe>
-        <video poster="cover.jpg" width="640">
-            <source src="https://example.com/video.mp4" type="video/mp4">
-        </video>
-        <audio>
-            <source src="https://example.com/audio.mp3" type="audio/mpeg">
-        </audio>
-    </article></body></html>`)
-
-    result, err := html.Extract(data)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // 動画情報
-    fmt.Printf("動画数：%d\n", len(result.Videos))
-    for i, v := range result.Videos {
-        fmt.Printf("  [%d] %s (Type: %s", i+1, v.URL, v.Type)
-        if v.Poster != "" {
-            fmt.Printf(", Poster: %s", v.Poster)
-        }
-        if v.Width != "" {
-            fmt.Printf(", W: %s", v.Width)
-        }
-        fmt.Println(")")
-    }
-
-    // 音声情報
-    fmt.Printf("音声数：%d\n", len(result.Audios))
-    for i, a := range result.Audios {
-        fmt.Printf("  [%d] %s (Type: %s)\n", i+1, a.URL, a.Type)
-    }
+	data := []byte(`<article><h1>Go 入門ガイド</h1><p>Go はコンパイル言語です。</p><img src="gopher.png" alt="Gopher" /><a href="https://go.dev">Go 公式サイト</a></article>`)
+	// Markdown へ変換：画像とリンクは自動的に ![]() と []() 構文になる
+	md, err := html.ExtractToMarkdown(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(md)
+	// 出力：Go 入門ガイド\n\nGo はコンパイル言語です。\n\n![Gopher](gopher.png)\n[Go 公式サイト](https://go.dev)
+	jsonBytes, err := html.ExtractToJSON(data) // JSON へ変換：すべてのメタデータフィールドを保持
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("JSON バイト数：", len(jsonBytes))
+	// JSON のバイト数は内容により変動（text/title/images/links などのフィールドを含む）
 }
 ```
 
-## 画像とリンクフィールドへのアクセス
+詳しくは：[出力フォーマット実践](../guides/core-features/output-formats)
 
-`Result` の構造化フィールドに完全にアクセスします：
+## リンク抽出
+
+本文とは独立したリンク抽出 API で、タイプ別にグループ化もできます：
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 
-    "github.com/cybergodev/html"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    data := []byte(`<html><body><article>
-        <h1>フィールドアクセス例</h1>
-        <p>本文段落。<a href="https://go.dev" title="Go 公式サイト">Go</a></p>
-        <img src="logo.png" alt="Logo" width="200" height="100">
-        <a href="/about" rel="nofollow">概要</a>
-    </article></body></html>`)
+	data := []byte(`<html><body><article><h1>リンクのサンプル</h1><p><a href="https://go.dev">Go 公式サイト</a></p></article></body></html>`)
 
-    result, err := html.Extract(data)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // 画像フィールド
-    for _, img := range result.Images {
-        fmt.Printf("画像: url=%s, alt=%s, %sx%s, decorative=%v, pos=%d\n",
-            img.URL, img.Alt, img.Width, img.Height, img.IsDecorative, img.Position)
-    }
-
-    // リンクフィールド
-    for _, link := range result.Links {
-        fmt.Printf("リンク: url=%s, text=%s, external=%v, nofollow=%v, pos=%d\n",
-            link.URL, link.Text, link.IsExternal, link.IsNoFollow, link.Position)
-    }
-
-    // 統計情報
-    fmt.Printf("単語数：%d、読了時間：%v、処理時間：%v\n",
-        result.WordCount, result.ReadingTime, result.ProcessingTime)
+	links, err := html.ExtractAllLinks(data) // a/img/video/css/js などのリソースを網羅
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, link := range links {
+		fmt.Printf("[%s] %s - %s\n", link.Type, link.Title, link.URL)
+	}
+	// 出力：[link] Go 公式サイト - https://go.dev
+	groups := html.GroupLinksByType(links) // タイプ別にグループ化
+	fmt.Println("link グループ：", len(groups["link"]))
+	// 出力：link グループ： 1
 }
 ```
 
-## 統計監視
+詳しくは：[リンク抽出実践](../guides/core-features/link-extraction)
 
-Processor インスタンスで処理統計を監視します：
+## メディア情報
+
+動画と音声の情報は `Extract` の結果に同時に返されるため、個別に呼び出す必要はありません：
 
 ```go
 package main
 
 import (
-    "fmt"
+	"fmt"
+	"log"
 
-    "github.com/cybergodev/html"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    p, _ := html.New(html.DefaultConfig())
-    defer p.Close()
-
-    pages := [][]byte{
-        []byte(`<html><body><article><h1>ページ 1</h1><p>内容 A。</p></article></body></html>`),
-        []byte(`<html><body><article><h1>ページ 2</h1><p>内容 B。</p></article></body></html>`),
-        []byte(`<html><body><article><h1>ページ 1</h1><p>内容 A。</p></article></body></html>`), // 重複、キャッシュヒット
-    }
-
-    for _, page := range pages {
-        p.Extract(page)
-    }
-
-    stats := p.GetStatistics()
-    fmt.Printf("総処理：%d\n", stats.TotalProcessed)
-    fmt.Printf("キャッシュヒット：%d\n", stats.CacheHits)
-    fmt.Printf("キャッシュミス：%d\n", stats.CacheMisses)
-    fmt.Printf("エラー数：%d\n", stats.ErrorCount)
-    fmt.Printf("平均処理時間：%v\n", stats.AverageProcessTime)
-
-    hitRate := float64(0)
-    if stats.TotalProcessed > 0 {
-        hitRate = float64(stats.CacheHits) / float64(stats.TotalProcessed) * 100
-    }
-    fmt.Printf("ヒット率：%.1f%%\n", hitRate)
+	data := []byte(`<html><body><article><h1>マルチメディアページ</h1>
+<video poster="cover.jpg"><source src="https://example.com/video.mp4" type="video/mp4"></video>
+<audio><source src="https://example.com/audio.mp3" type="audio/mpeg"></audio>
+</article></body></html>`)
+	result, err := html.Extract(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, v := range result.Videos {
+		fmt.Printf("動画：%s（%s）\n", v.URL, v.Type)
+	}
+	for _, a := range result.Audios {
+		fmt.Printf("音声：%s（%s）\n", a.URL, a.Type)
+	}
+	// 出力：
+	// 動画：https://example.com/video.mp4（video/mp4）
+	// 音声：https://example.com/audio.mp3（audio/mpeg）
 }
 ```
+
+詳しくは：[メディア抽出実践](../guides/core-features/media-extraction)
+
+## バッチ、タイムアウトと Processor の再利用
+
+サーバー側の典型的なパターンです：グローバルに再利用できる `Processor` を作成し、並行バッチ抽出を行い、context で 1 バッチ分の時間を制御します：
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"time"
+
+	"github.com/cybergodev/html"
+)
+
+func main() {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	p, err := html.New(html.DefaultConfig()) // 並行安全で、グローバルに再利用可能
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer p.Close()
+	pages := [][]byte{
+		[]byte(`<html><body><article><h1>ページ 1</h1></article></body></html>`),
+		[]byte(`<html><body><article><h1>ページ 2</h1></article></body></html>`),
+	}
+	batch := p.ExtractBatchWithContext(ctx, pages) // context の期限までに完了しなかった項目は Cancelled に計上
+	fmt.Printf("成功：%d、失敗：%d\n", batch.Success, batch.Failed)
+	// 出力：成功：2、失敗：0
+}
+```
+
+詳しくは：[バッチ処理実践](../guides/performance/batch-processing) と [Processor の再利用とキャッシュ](../guides/performance/processor-cache)

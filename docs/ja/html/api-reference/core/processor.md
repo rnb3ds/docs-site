@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Processor"
 title: "Processor - CyberGo html | 使い方・パラメータ・サンプル"
-description: "CyberGo html Processor API リファレンス：New による生成、Extract メソッド群と GetStatistics、ClearCache、Close などのライフサイクル管理で、キャッシュと内部リソースを再利用し高頻度呼び出しに適しています。"
+description: "CyberGo html Processor API リファレンス：New、Extract メソッド群、ExtractText などテキスト抽出、ClearCache、GetStatistics 統計、Close を詳解し、キャッシュとエンコーディング検出器を再利用するため高頻度呼び出しに適します。"
 sidebar_position: 2
 ---
 
@@ -34,7 +34,7 @@ defer p.Close()
 `New` は単なる代入ではなく、以下のステップを実行して返された Processor が即座に使えるようにします：
 
 1. **設定の検証**：`Config.Validate()` を呼び出し、無効な設定なら `*ConfigError` を返します（`errors.Is(err, ErrInvalidConfig)` が真）。検証範囲には数値の境界（`MaxInputSize`、`MaxCacheEntries`、`WorkerPoolSize`、`MaxDepth` が負や上限超過でないか）とフォーマット文字列（`InlineImageFormat`/`InlineLinkFormat`/`TableFormat` の値が合法か）を含みます。
-2. **Scorer の設定**：カスタム `Scorer` が設定されていれば `scorerAdapter` で内部インターフェースに適合させ、そうでなければ `SharedDefaultScorer`（読み取り専用、並行安全）を使います。
+2. **Scorer の設定**：カスタム `Scorer` が設定されていれば内部インターフェースに適合させ（適合処理はライブラリが自動的に行います）、そうでなければ組み込みのデフォルトスコアラー（内部実装、非エクスポート。読み取り専用、並行安全）を使用します。
 3. **フォーマット文字列の事前計算**：`InlineImageFormat`/`InlineLinkFormat` を正規化（小文字化+空白削除、空文字列は `"none"` にマッピング）して `imageFormat`/`linkFormat` フィールドにキャッシュし、ホットパスでの `strings.ToLower` の繰り返しを避けます。
 4. **キャッシュクリーンアップの起動**：`CacheTTL>0` **かつ** `CacheCleanup>0` の場合にのみバックグラウンドクリーンアップ goroutine を起動し、どちらかが 0 なら起動しません。
 
@@ -45,8 +45,8 @@ defer p.Close()
 
 - **設定の不変性**：`config` は `New()` 後に不変です（`*Config` ポインタは再代入も変更もされません）。そのため `ExtractToMarkdown` などのフォーマットメソッドは、ロックなしで安全に値コピーを行い一時 Processor を生成できます——フォーマットの上書きが共有設定に書き戻されることはありません。
 - **統計カウンタ**：`TotalProcessed`/`CacheHits`/`CacheMisses`/`ErrorCount`/`totalProcessTime` はすべて `atomic` 操作を使います。
-- **キャッシュ**：内部 `Cache` が独自のロックを持ち、読み書きともに安全です。
-- **Scorer**：組み込みの `DefaultScorer` は読み取り専用です。**カスタム `Scorer` は自前で並行安全を保証する必要があります**（内部でロックを持つなど）。1 つの Processor が並行 `Extract` を行うと、複数の goroutine からその `Score`/`ShouldRemove` が呼ばれるためです。
+- **キャッシュ**：内部キャッシュは独自のロックを持ち、読み書きともに安全です。キャッシュの動作は公開 API だけで観測・制御できます：`Config.MaxCacheEntries = 0` でキャッシュを無効化、`ClearCache()` でクリア、`Statistics.CacheHits`/`CacheMisses` でヒット状況を観測。
+- **Scorer**：組み込みのデフォルトスコアラー（内部実装、非エクスポート）は読み取り専用です。**カスタム `Scorer` は自前で並行安全を保証する必要があります**（内部でロックを持つなど）。1 つの Processor が並行 `Extract` を行うと、複数の goroutine からその `Score`/`ShouldRemove` が呼ばれるためです。
 :::
 
 ## コンテンツ抽出
@@ -163,7 +163,7 @@ func (p *Processor) ExtractBatchFilesWithContext(ctx context.Context, filePaths 
 
 - **ヒット経路**：キャッシュ項目を検出した後、`CacheHits` と `TotalProcessed` をそれぞれ +1 し、返すのは `cloneResult`——`Images`/`Links`/`Videos`/`Audios` などのスライスに `copy` を行うディープコピーです。呼び出し側が戻り値を変更してもキャッシュ内のエントリには**影響せず**、並行ヒット時の読み取りでのデータ競合も回避できます。
 - **ミス経路**：処理完了後に結果をキャッシュへ書き込み、それから `cloneResult`（同じくディープコピー）を返します。そのためキャッシュエントリと戻り値はエイリアスしません。
-- **キャッシュ無効化**：`MaxCacheEntries = 0` の場合、`Extract` はキャッシュキーの生成と `Get/Set` をスキップ（ショートサーキット）し、キャッシュのオーバーヘッドは一切ありません。
+- **キャッシュ無効化**：`MaxCacheEntries = 0` の場合、`Extract` はキャッシュキーの生成とキャッシュの読み書きをスキップ（ショートサーキット）し、キャッシュのオーバーヘッドは一切ありません。
 
 ### GetStatistics
 
@@ -242,5 +242,5 @@ defer p.Close()
 :::tip ライフサイクルのベストプラクティス
 - **シングルトン再利用**：長稼働サービス（HTTP handler、worker）では Processor を 1 つ作成して並行リクエスト間で共有し、キャッシュと組み合わせて恩恵を最大化します。Processor 自体が並行安全なので、リクエストごとに新設する必要はありません。
 - **`defer Close()`**：作成直後に `defer p.Close()` を置き、異常パスでもバックグラウンドのクリーンアップ goroutine と監査リソースを解放できるようにします。`Close` はキャッシュクリーンアップ goroutine を停止し、キャッシュをクリアし、監査 sink を閉じます。
-- **クローズ後に使わない**：`Close` 後にどのメソッドを呼び出しても `ErrProcessorClosed` を返します。`Close` は `CompareAndSwap` で冪等性を保証し、重複呼び出しは安全ですが無意味です。
+- **クローズ後に使わない**：`Close` 後にどのメソッドを呼び出しても `ErrProcessorClosed` を返します。`Close` はアトミックな CAS 操作によって冪等性を保証します（内部実装の詳細）。重複呼び出しは安全ですが無意味です。
 :::

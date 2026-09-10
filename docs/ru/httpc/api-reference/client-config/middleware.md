@@ -1,5 +1,5 @@
 ---
-sidebar_label: "Промежуточное ПО"
+sidebar_label: "Встроенное middleware"
 title: "Промежуточное ПО - CyberGo HTTPC | Семь встроенных middleware"
 description: "Справочник API middleware HTTPC: Chain по луковой модели и семь встроенных middleware (Recovery, Logging, RequestID, Timeout, Header, Metrics, Audit)."
 sidebar_position: 5

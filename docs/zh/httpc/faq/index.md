@@ -1,7 +1,7 @@
 ---
 sidebar_label: "常见问题"
 title: "常见问题 - CyberGo HTTPC | 疑问与解答"
-description: "HTTPC 常见问题解答：包级函数与客户端实例的选择依据、五种配置预设对比与适用场景、HTTP/SOCKS5 代理与 DoH 设置、Cookie 会话管理与重试配置、errors.Is/As 错误匹配模式与四级超时体系调优策略的详细解答与建议。"
+description: "HTTPC 常见问题解答：包级函数与客户端实例的选择依据、五种配置预设对比与适用场景、HTTP/SOCKS5 代理与 DoH 设置、Cookie 会话管理与重试配置、errors.Is/As 错误匹配模式与五级超时体系调优策略的详细解答与建议。"
 sidebar_position: 1
 ---
 
@@ -147,6 +147,8 @@ cfg.Connection.DoHCacheTTL = 5 * time.Minute // DNS 响应缓存时长（默认 
 DoH 适用于对 DNS 解析安全性有较高要求的场景（如防止 ISP DNS 劫持）。常规 API 调用无需开启——系统 DNS 通常已满足需求，且 DoH 会增加少量解析延迟（首次查询需 HTTPS 往返）。
 :::
 
+详见 [连接池与 DNS](../guides/connection-pool#dns-over-https)。
+
 ## Cookie 会话怎么管理？
 
 **答：** HTTPC 提供两层 Cookie 管理：
@@ -180,7 +182,7 @@ result, _ := dc.Request(ctx, "GET", "/profile")
 - 传输层超时：`net.OpError` 超时（**非**上下文截止）
 - 特定 HTTP 状态码：408（请求超时）、429（限流）、500、502、503、504
 
-**Retry-After 头解析**：收到 429/503 且响应包含 `Retry-After` 头时，HTTPC 自动按服务端指示的延迟等待（而非自行计算退避），避免加剧服务端压力。
+**Retry-After 头解析**：收到 429/503 等可重试响应且带 `Retry-After` 头时，HTTPC 自动按服务端指示的延迟等待（而非自行计算退避），避免加剧服务端压力。该等待**封顶 60s**——恶意服务器无法用超大 Retry-After 值拖死客户端。
 
 **自定义重试**：实现 `RetryPolicy` 接口（`ShouldRetry` + `GetDelay` 两个方法）替换内置逻辑，赋值到 `cfg.Retry.CustomPolicy`。详见 [重试与容错指南](../guides/retry-fault-tolerance)。
 
@@ -201,7 +203,7 @@ cfg.Retry.EnableJitter = true         // 抖动（防惊群）
 
 ## 超时怎么选？
 
-**答：** HTTPC 提供四级超时体系，按作用范围从宽到窄：
+**答：** HTTPC 提供五级超时体系，按作用范围从宽到窄：
 
 | 超时层 | 字段 | 默认值 | 作用域 | 可请求级覆盖 |
 |--------|------|--------|--------|:----------:|
@@ -377,6 +379,8 @@ result, _ := client.Get(url, httpc.WithFollowRedirects(false))
 
 `SecureConfig()` 预设已默认禁止重定向（`FollowRedirects = false`），防止基于重定向的 SSRF 攻击。
 
+重定向的完整行为（跟随控制、链追踪、域名白名单）见 [重定向指南](../guides/redirects)。
+
 ## io.Reader 请求体为什么不验证大小？
 
 **答：** `io.Reader` 是流式接口，无法预知数据长度——`Len()` 方法不存在，读取即消费。因此 HTTPC 对 `io.Reader` 类型的请求体**不做大小验证**，由调用方负责控制数据量。
@@ -447,7 +451,107 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
 client, _ := httpc.New(cfg)
 ```
 
-如需合规级审计（记录请求/响应头、重定向链、源 IP、用户 ID），使用功能更完整的 `AuditMiddleware`。详见 [中间件参考](../api-reference/client-config/middleware)。
+如需合规级审计（记录请求/响应头、重定向链、源 IP、用户 ID），使用功能更完整的 `AuditMiddleware`。详见 [内置中间件参考](../api-reference/client-config/middleware)。
+
+## HTTPC 和 net/http 是什么关系？
+
+**答：** HTTPC 构建在 `net/http` 之上，而非替代它。底层引擎仍是 `http.Client` 与 `http.Transport`——HTTPC 用自己的连接池管理器创建并配置 `*http.Transport`（连接复用、TLS、HTTP/2、代理选择由标准库执行），重定向策略通过 `CheckRedirect` 回调注入，SSRF 校验包装在拨号函数 `DialContext` 中。
+
+在此之上 HTTPC 补充了标准库没有的部分：请求级选项链、结果对象池化（低分配）、重试引擎、中间件链、多层安全校验、审计与日志中间件。
+
+:::tip 生态兼容
+与标准库生态完全兼容：`http.Cookie`、`tls.Config`、`context.Context`、`io.Reader` 等类型直接使用，无需适配层。已有的 `tls.Config` 知识（mTLS、自定义 CA、密码套件）可原样迁移到 `Security.TLSConfig`。
+:::
+
+## WithTimeout 的超时包含重试时间吗？
+
+**答：** 包含。`WithTimeout`（以及 `Timeouts.Request`）是**覆盖所有重试尝试与退避等待的总预算**：重试引擎为整个请求建立单一截止时间，而不是每次尝试重新计时。
+
+```go
+// 总预算 30s：首次尝试 + 最多 3 次重试 + 退避等待，合计不超过 30s
+result, err := client.Get(url, httpc.WithTimeout(30*time.Second))
+```
+
+两点注意：退避等待同样消耗预算，预算太紧时可能来不及完成重试；`WithTimeout` 上限为 30 分钟，超出返回 `ErrInvalidTimeout`。
+
+## 重试会导致 POST 重复提交吗？
+
+**答：** 可能。HTTPC 对 408/429/500/502/503/504 与网络层瞬时错误自动重试，**不区分请求方法**——POST 与 GET 同样重试。若首次请求已到达服务端并成功处理（但响应丢失或超时），重试会造成重复创建、重复扣款。
+
+缓解方式（按优先级）：
+
+```go
+// 1. 服务端幂等键（推荐）：业务侧用 Idempotency-Key 去重
+client.Post(url,
+    httpc.WithJSON(order),
+    httpc.WithHeader("Idempotency-Key", orderID),
+)
+
+// 2. 请求级关闭非幂等接口的重试
+client.Post(url, httpc.WithJSON(payment), httpc.WithMaxRetries(0))
+```
+
+补充两点：`io.Reader` 请求体为支持重试重放会被完整缓冲（上限 100MB，超出报错），因此重试发送的 body 与首次一致；`context.Canceled`/`DeadlineExceeded` 永不重试，主动取消不会触发重复提交。详见 [重试与容错](../guides/retry-fault-tolerance)。
+
+## 响应 Body 需要手动关闭吗？
+
+**答：** 不需要（也没有关闭入口）。普通请求（`Get`/`Post`/`Request` 等）返回的 `Result` 持有的是**已读取并复制的字节**——HTTPC 在内部完成读取、排空（最多 10MB，便于连接复用）与关闭，底层连接由连接池管理。
+
+```go
+result, err := client.Get(url)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(len(result.RawBody())) // 字节已在内存中，没有未关闭的句柄
+```
+
+大文件不要用普通请求读进内存——用 `Download`（流式写盘、进度回调、断点续传）。`WithStreamBody` 只在 `Download` 路径生效：经普通请求方法使用时，响应仍会被完整读入 `Result` 并关闭流。详见 [文件传输指南](../guides/file-transfer)。
+
+## 设置了代理为什么不生效？
+
+**答：** 按以下顺序排查（均为源码可验证的行为）：
+
+**1. 优先级冲突。** `ProxyURL` > `ProxyPool` > `EnableSystemProxy`，同时设置时只有最高优先级者生效——配了 `ProxyURL` 就不会再走代理池。
+
+**2. 连接复用绕过了代理选择。** 对同一主机的连续请求会复用已建立的连接（包括 HTTP 代理的 CONNECT 隧道），不再触发代理选择函数。需要**每个请求换出口 IP** 时设置：
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{"http://proxy1:8080", "http://proxy2:8080"}
+cfg.Connection.ProxyRotatePerRequest = true // 每请求关闭空闲连接，强制重新选代理
+```
+
+**3. 系统代理的探测时机。** `EnableSystemProxy` 在客户端**构建时**探测一次代理地址（用于 SSRF 豁免）。若环境变量此后才指向 localhost 代理（如 `127.0.0.1:7890`），该代理可能被 SSRF 防护拦截——动态本地代理请改用显式 `ProxyURL`（支持 http/https/socks5/socks5h）。
+
+**4. 代理池熔断。** 连续连接失败达 `ProxyFailureThreshold`（默认 3）的代理被移出轮换，`ProxyCooldown`（默认 30s）后半开探测恢复；全部熔断时退化为选择最早恢复的代理，不会直接失败。若代理持续不可用，检查熔断阈值与冷却时间设置。
+
+详见 [代理与代理池](../guides/proxy)。
+
+## 为什么豁免了 127.0.0.0/8 还是访问不了 localhost？
+
+**答：** 预检校验层的 localhost 主机名检查**先于** CIDR 豁免执行：URL 主机名是 `localhost`、`127.x.x.x`、`::1` 等形式时直接拒绝，不会进入豁免匹配。`SSRFExemptCIDRs` 只能放行非回环的私网段（如 `10.0.0.0/8`）。
+
+确需访问回环地址（如本机健康检查）：
+
+```go
+// 请求级放行（推荐）：仅该请求跳过 SSRF 校验，客户端整体策略不变
+result, err := httpc.Get("http://localhost:8080/health",
+    httpc.WithAllowPrivateIPs(true),
+)
+```
+
+详见 [SSRF 防护的已知边界](../security/ssrf)。
+
+## 错误信息里的 URL 为什么被打了码？
+
+**答：** HTTPC 对进入错误信息、日志与审计事件的 URL 自动执行脱敏：凭据替换为 `***:***`，`token`/`password`/`api_key` 等敏感查询参数替换为 `[REDACTED]`，fragment 整体移除。
+
+```go
+// 请求 https://user:pass@example.com/api?token=secret 失败时
+// 错误信息中出现的是 https://***:***@example.com/api?token=[REDACTED]
+```
+
+这是防「二次泄漏」：即使请求失败本身无害，原始 URL 进入日志聚合系统（ELK、Sentry）后凭据就成了新的泄漏面。该行为内置且不可关闭，也不应关闭。
 
 ## 更多资源
 

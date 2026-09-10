@@ -1,6 +1,6 @@
 ---
-sidebar_label: "Handler & Middleware Chain"
-title: "Handler & Middleware Chain - CyberGo HTTPC | Pipeline"
+sidebar_label: "Handler Pipeline & Custom Middleware"
+title: "Handler Pipeline & Custom Middleware - CyberGo HTTPC | Pipeline"
 description: "HTTPC Handler pipeline architecture in detail: how Layer 1 of the two-layer design assembles and executes a MiddlewareFunc onion chain, the Chain combinator principle, the clientImpl.middlewareChain implementation mechanism, and custom middleware examples."
 sidebar_position: 1
 ---

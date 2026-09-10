@@ -101,7 +101,7 @@ cfg.BaseURL = "https://example.com"
 
 当 `ResolveRelativeURLs=true`（默认）时，所有类型的相对 URL 会基于 `BaseURL` 统一解析为绝对 URL：
 
-- 解析逻辑由 `resolveURLIfEnabled` 集中处理，对内容链接、图片、媒体、source、script、embed、link 标签**一视同仁**
+- 解析逻辑由库内部统一集中处理（不导出），对内容链接、图片、媒体、source、script、embed、link 标签**一视同仁**
 - 显式设置 `BaseURL` 会**跳过自动检测**，直接使用调用方提供的值
 - `BaseURL` 为空且 `ResolveRelativeURLs=true` 时，从文档自动推导 BaseURL（见下方提示）
 
@@ -111,8 +111,8 @@ cfg.BaseURL = "https://example.com"
 
 | 开关 | 控制范围 | 判定方式 |
 |------|----------|----------|
-| `IncludeContentLinks` | 内部链接 | URL 本身为相对路径，或与 `BaseURL` 同域 |
-| `IncludeExternalLinks` | 外部链接 | URL 为绝对路径且与 `BaseURL` 不同域（`IsDifferentDomain`） |
+| `IncludeContentLinks` | 内部链接 | URL 本身为相对路径，或（设置了 `BaseURL` 时）解析后与 `BaseURL` 同域 |
+| `IncludeExternalLinks` | 外部链接 | URL 本身为绝对外部地址（`http(s)://` 或协议相对 `//`），或（设置了 `BaseURL` 时）解析后与 `BaseURL` 不同域 |
 
 默认两者均为 `true`（提取全部内容链接）。其余资源类型（图片、CSS、JS 等）不受内/外区分，仅由各自的 `Include*` 开关控制。
 

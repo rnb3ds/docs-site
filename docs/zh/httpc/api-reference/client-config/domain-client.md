@@ -16,8 +16,8 @@ DomainClient 架构
 ├── parsedURL      缓存解析结果（避免每次请求重复 url.Parse）
 ├── domain         主机名（不含端口）
 └── SessionManager 会话状态
-      ├── headers  map[string]string  会话级请求头
-      └── cookies  map[string]*Cookie 会话级 Cookie
+      ├── headers  map[string]string      会话级请求头
+      └── cookies  map[string]*http.Cookie 会话级 Cookie
 ```
 
 ## DomainClienter 接口
@@ -72,6 +72,8 @@ type DomainClienter interface {
 | `URL()` | `string` | 基础 URL（构造时传入的 `baseURL`） |
 | `Domain()` | `string` | 域名（主机名，不含端口） |
 | `Session()` | `*SessionManager` | 底层会话管理器 |
+
+`URL()` / `Domain()` / `Session()` / `Close()` 均为 nil 接收者安全：接收者为 nil 时分别返回 `""`、`""`、`nil`、`nil`。
 
 #### 会话头管理
 
@@ -133,11 +135,17 @@ defer dc.Close()
 
 | 条件 | 错误信息 |
 |------|----------|
+| `baseURL` 无法解析 | `invalid base URL: ...` |
 | `baseURL` 缺少 scheme 或 host | `base URL must include scheme and host` |
-| 配置校验失败 | `invalid configuration: ...` |
+| 配置校验失败（含 `SSRFExemptCIDRs` 非法 CIDR） | `invalid configuration: ...` |
+| 底层客户端 / 会话创建失败 | `failed to create domain client: ...` / `failed to create session: ...` |
 
 :::tip Cookie 自动启用
 `NewDomain` 内部强制设置 `cfg.Connection.EnableCookies = true`，无论你传入的 `cfg` 是否启用 Cookie。这是因为域名客户端的核心价值就是跨请求维护 Cookie 会话。
+:::
+
+:::tip 配置在构造时固化
+与 `New()` 一致，`NewDomain` 对传入的 Config 做深拷贝，构造完成后再修改原 `cfg` 不影响该客户端。`DomainClient` 不提供运行时改配置的方法——超时等按请求控制请使用 [`WithTimeout`](../core/options#withtimeout) 等请求选项。
 :::
 
 ## NewDomainDefault
@@ -158,7 +166,7 @@ defer dc.Close()
 
 ## HTTP 方法
 
-所有方法接受相对路径或绝对 URL：
+所有方法接受相对路径或绝对 URL。便捷方法内部使用 `context.Background()`；需要超时或取消控制时改用 [`Request`](#request) 并显式传入 ctx：
 
 ```go
 // 相对路径：自动拼接 baseURL
@@ -210,8 +218,11 @@ buildURL(pathStr):
 | `users` | `https://api.example.com/v1/users` |
 | `/users/` | `https://api.example.com/v1/users/`（尾斜杠保留） |
 | `/users?page=1` | `https://api.example.com/v1/users?page=1` |
+| `?page=2` | `https://api.example.com/v1?page=2`（仅查询参数，路径为空） |
 | `search?q=go` | `https://api.example.com/v1/search?q=go` |
 | `https://other.com/api` | `https://other.com/api`（绝对 URL 直接使用） |
+
+若 baseURL 本身以 `/` 结尾（如 `https://api.example.com/v1/`）：相对路径经 `path.Join` 规范化拼接（`users` → `.../v1/users`）；请求路径为空或仅含查询参数时保留 base 的尾斜杠（`""` → `.../v1/`，`?page=2` → `.../v1/?page=2`）。
 
 ### 查询参数合并
 

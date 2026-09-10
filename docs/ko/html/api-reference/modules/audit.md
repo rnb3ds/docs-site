@@ -1,7 +1,7 @@
 ---
 sidebar_label: "감사 시스템"
 title: "감사 시스템 - CyberGo html | 플러그형 감사 API"
-description: "CyberGo html 플러그형 감사 API: AuditConfig 설정, 8가지 감사 이벤트, Info·Warn·Error 3개 수준, AuditEntry 구조와 Console·JSON·Channel 등 6종 내장 Sink 를 제공합니다."
+description: "CyberGo html 플러그형 감사 API: AuditConfig 설정, 8가지 감사 이벤트, Info·Warning·Critical 3개 수준, AuditEntry 구조와 Logger·Writer·Channel 등 6종 내장 Sink 및 수준 필터링 파이프라인을 제공합니다."
 sidebar_position: 4
 ---
 

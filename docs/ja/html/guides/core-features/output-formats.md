@@ -1,7 +1,7 @@
 ---
 sidebar_label: "出力フォーマット実践"
 title: "出力フォーマット実践 - CyberGo html | フォーマット比較ガイド"
-description: "CyberGo html 出力フォーマット実践ガイド：プレーンテキスト、Markdown、JSON の 3 種類の出力形式の特徴と適用シーンを比較し、InlineImageFormat や InlineLinkFormat などのフォーマットオプション設定も詳しく解説します。"
+description: "CyberGo html 出力フォーマット実践ガイド：プレーンテキスト、Markdown、JSON の 3 種の特徴と適用シーン（検索インデックス、ブログ・ドキュメント、API 通信）を比較し、InlineImageFormat と InlineLinkFormat のインラインオプションも解説します。"
 sidebar_position: 3
 ---
 
@@ -174,7 +174,7 @@ jsonBytes, err := html.ExtractToJSONFromFile("page.html")
 
 ## コンテキスト付きバージョン
 
-すべてのフォーマット関数には `ExtractWithContext` バリアントがあり、タイムアウトとキャンセルに対応します：
+すべてのフォーマット関数には `*WithContext` バリアントがあり、タイムアウトとキャンセルに対応します：
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

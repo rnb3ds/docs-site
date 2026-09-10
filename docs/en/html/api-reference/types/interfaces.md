@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Interfaces"
 title: "Interfaces - CyberGo html | Core Interface Reference"
-description: "CyberGo html core interfaces: Extractor, StatsProvider, ContentNode, Scorer, and AuditSink for feature extension, integration, and testing."
+description: "CyberGo html core interfaces: Extractor, StatsProvider, ContentNode, Scorer, and AuditSink for extension, custom implementations, integration, and testing."
 sidebar_position: 1
 ---
 

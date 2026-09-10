@@ -240,4 +240,4 @@ func (s *slackSink) Close() error {
 
 - [生产检查清单](./production-checklist) - 部署前安全核对
 - [API 参考：审计系统](../../api-reference/modules/audit) - 完整 API 签名
-- [错误处理](../error-handling) - 安全错误的分类与处理
+- [错误处理](../performance/error-handling) - 安全错误的分类与处理

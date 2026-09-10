@@ -107,7 +107,7 @@ HTML 库围绕三个核心类型构建：
 | 链接 | [链接提取](./guides/core-features/link-extraction) | 链接提取、分组、资源发现 |
 | 编码 | [编码检测](./guides/core-features/encoding-detection) | 自动检测、手动指定、15+ 编码支持 |
 | 配置 | [配置指南](./guides/core-features/configuration) | 四种预设、六大类字段、常见组合 |
-| 错误 | [错误处理](./guides/error-handling) | 五类错误、errors.Is/As、context 取消 |
+| 错误 | [错误处理](./guides/performance/error-handling) | 五类错误、errors.Is/As、context 取消 |
 | 性能 | [缓存与复用](./guides/performance/processor-cache) | Processor 生命周期、缓存调优 |
 | 批量 | [批量处理](./guides/performance/batch-processing) | 并发批量提取、WorkerPool 调优 |
 | 安全 | [安全防护](./guides/security/) | 安全特性、审计系统、生产检查 |

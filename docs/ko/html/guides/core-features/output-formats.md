@@ -1,7 +1,7 @@
 ---
 sidebar_label: "출력 형식 실전"
 title: "출력 형식 실전 - CyberGo html | 형식 비교 가이드"
-description: "CyberGo html 출력 형식 실전: 순수 텍스트, Markdown, JSON 세 출력의 특징과 적용 시나리오를 비교하고 InlineImageFormat·InlineLinkFormat 형식 옵션 설정과 캐시 동작 차이를 다룹니다."
+description: "CyberGo html 출력 형식 실전: 순수 텍스트, Markdown, JSON 세 출력의 특징과 적용 시나리오(검색 인덱스, 블로그 문서, API 전송)를 비교하고 InlineImageFormat·InlineLinkFormat 형식 옵션 설정과 캐시 동작 차이를 다룹니다."
 sidebar_position: 3
 ---
 
@@ -174,7 +174,7 @@ jsonBytes, err := html.ExtractToJSONFromFile("page.html")
 
 ## 컨텍스트 버전
 
-모든 형식 함수에는 `ExtractWithContext` 변형이 있어 타임아웃과 취소를 지원합니다:
+모든 형식 함수에는 `*WithContext` 변형이 있어 타임아웃과 취소를 지원합니다:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

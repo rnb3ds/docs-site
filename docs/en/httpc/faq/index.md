@@ -1,7 +1,7 @@
 ---
 sidebar_label: "FAQ"
 title: "FAQ - CyberGo HTTPC | Q&A"
-description: "HTTPC FAQ: choosing between package-level functions and Client instances, comparing five configuration presets and applicable scenarios, HTTP/SOCKS5 proxy and DoH setup, cookie session management and retry configuration, errors.Is/As error-matching patterns, and four-level timeout system tuning strategies with detailed answers and recommendations."
+description: "HTTPC FAQ: package functions vs Client, five config presets, HTTP/SOCKS5 proxy and DoH, cookie sessions, retries, errors.Is/As, and five-level timeout tuning."
 sidebar_position: 1
 ---
 
@@ -64,13 +64,13 @@ Decision tree:
 
 ```
 Are you handling user-provided URLs?
-|-- Yes -> SecureConfig()
-`-- No  -> Do you need high throughput?
-           |-- Yes -> PerformanceConfig()
-           `-- No  -> Is it a one-off request?
-                      |-- Yes -> MinimalConfig()
-                      `-- No  -> DefaultConfig()
-Test environment -> TestingConfig()
+├── Yes → SecureConfig()
+└── No → Do you need high throughput?
+         ├── Yes → PerformanceConfig()
+         └── No → Is it a one-off request?
+                  ├── Yes → MinimalConfig()
+                  └── No → DefaultConfig()
+Test environment → TestingConfig()
 ```
 
 :::warning TestingConfig security risk
@@ -113,7 +113,7 @@ cfg.Connection.ProxyPoolStrategy = httpc.ProxyStrategyRoundRobin
 
 **2. Per-request rotation** (on request start): set `ProxyRotatePerRequest = true`; at the start of each independent request, all idle connections are closed, forcing the Transport to re-evaluate the proxy pool. When disabled, HTTP connection reuse causes consecutive requests to the same host to reuse the previous request's proxy tunnel, bypassing strategy rotation. The trade-off is no connection reuse (each request establishes a new connection), but it guarantees per-request rotation. Useful for scraping/data collection targeting the same host — each request has a different source IP.
 
-**3. Status-code-triggered rotation** (on response): set `ProxyRotateOnStatus` (e.g. `[]int{403}`); when the response returns one of these status codes and `Retry.MaxRetries > 0`, a retry is triggered and strategy rotation ensures an IP switch. Useful for bypassing CF/WAF-style IP-level blocking.
+**3. Status-code-triggered rotation** (on response): set `ProxyRotateOnStatus` (e.g. `[]int{403}`); when the response returns one of these status codes and `Retry.MaxRetries > 0`, a retry is triggered, and strategy rotation ensures an IP switch. Useful for bypassing CF/WAF-style IP-level blocking.
 
 In addition, the proxy pool has built-in **passive circuit-breaking and auto-recovery**: after consecutive connection failures (dial/TLS) reach `ProxyFailureThreshold` (default 3), the proxy is temporarily removed from the rotation pool and restored via half-open probing after `ProxyCooldown` (default 30s). Note that HTTP status codes do **not** trigger circuit-breaking — because blocking is often target-site-specific (a proxy blocked on one site may work fine on another).
 
@@ -146,6 +146,8 @@ By default it uses three providers — Cloudflare, Google, and AliDNS (with prio
 :::tip When to use DoH
 DoH is suited for scenarios with high DNS-resolution-security requirements (e.g. preventing ISP DNS hijacking). Regular API calls do not need it — system DNS is usually sufficient, and DoH adds a small amount of resolution latency (the first query requires an HTTPS round trip).
 :::
+
+See [Connection Pool & DNS](../guides/connection-pool#dns-over-https).
 
 ## How do I manage cookie sessions?
 
@@ -180,7 +182,7 @@ See [Session Management](../api-reference/client-config/session).
 - Transport-layer timeouts: `net.OpError` timeout (**not** context deadline)
 - Specific HTTP status codes: 408 (request timeout), 429 (rate limit), 500, 502, 503, 504
 
-**Retry-After header parsing**: when a 429/503 is received and the response carries a `Retry-After` header, HTTPC automatically waits the delay indicated by the server (rather than computing its own backoff), avoiding added pressure on the server.
+**Retry-After header parsing**: when a retryable response such as 429/503 is received and carries a `Retry-After` header, HTTPC automatically waits the delay indicated by the server (rather than computing its own backoff), avoiding added pressure on the server. The wait is **capped at 60s** — a malicious server cannot drag the client down with an oversized Retry-After value.
 
 **Custom retry**: implement the `RetryPolicy` interface (the `ShouldRetry` + `GetDelay` methods) to replace the built-in logic and assign it to `cfg.Retry.CustomPolicy`. See the [Retry and Fault Tolerance guide](../guides/retry-fault-tolerance).
 
@@ -201,17 +203,17 @@ See [Retry and Fault Tolerance](../guides/retry-fault-tolerance).
 
 ## How do I choose timeouts?
 
-**Answer:** HTTPC provides a four-level timeout system, from broadest to narrowest scope:
+**Answer:** HTTPC provides a five-level timeout system, from broadest to narrowest scope:
 
 | Timeout layer | Field | Default | Scope | Per-request override |
 |--------|------|--------|--------|:----------:|
-| Total request timeout | `Timeouts.Request` | 180s | The entire process including retries | `WithTimeout()` |
-| Dial timeout | `Timeouts.Dial` | 10s | TCP connection establishment | No |
-| TLS handshake timeout | `Timeouts.TLSHandshake` | 10s | TLS handshake (HTTPS only) | No |
-| Idle connection timeout | `Timeouts.IdleConn` | 90s | How long a connection stays idle | No |
-| Response header timeout | `Timeouts.ResponseHeader` | 0 (disabled) | Waiting for response headers to arrive | **Cannot** override |
+| Total request timeout | `TimeoutConfig.Request` | 180s | The entire process including retries | `WithTimeout()` |
+| Dial timeout | `TimeoutConfig.Dial` | 10s | TCP connection establishment | No |
+| TLS handshake timeout | `TimeoutConfig.TLSHandshake` | 10s | TLS handshake (HTTPS only) | No |
+| Idle connection timeout | `TimeoutConfig.IdleConn` | 90s | How long a connection stays idle | No |
+| Response header timeout | `TimeoutConfig.ResponseHeader` | 0 (disabled) | Waiting for response headers to arrive | **Cannot** be overridden |
 
-**ResponseHeader special behavior**: defaults to 0 (disabled), in which case the context timeout from `Timeouts.Request` or `WithTimeout()` controls everything. When set to a positive value it enables a transport-level hard cap (defense against slowloris), but this value **overrides** `WithTimeout` (if ResponseHeader is shorter) and applies to **all requests sharing the same client**, with no per-request override.
+**ResponseHeader special behavior**: defaults to 0 (disabled), in which case the context timeout from `TimeoutConfig.Request` or `WithTimeout()` is fully in charge. Setting a positive value enables a transport-level hard cap (defense against slowloris), but that value **overrides** `WithTimeout` (if ResponseHeader is shorter), applies to **all requests sharing the same client**, and cannot be overridden per request.
 
 ```go
 // Recommended: context timeout (fine-grained control, per-request)
@@ -377,6 +379,8 @@ result, _ := client.Get(url, httpc.WithFollowRedirects(false))
 
 The `SecureConfig()` preset disables redirects by default (`FollowRedirects = false`) to prevent redirect-based SSRF attacks.
 
+Full redirect behavior (following control, chain tracking, domain whitelist) is covered in the [Redirects guide](../guides/redirects).
+
 ## Why isn't an io.Reader request body size-validated?
 
 **Answer:** `io.Reader` is a streaming interface with no way to know the data length in advance — there is no `Len()` method, and reading consumes the data. Therefore HTTPC **does not size-validate** request bodies of type `io.Reader`; the caller is responsible for controlling the data volume.
@@ -389,7 +393,7 @@ limitedReader := io.LimitReader(unlimitedReader, 1024*1024)
 result, err := client.Post(url, httpc.WithBody(limitedReader))
 ```
 
-Or configure `Security.MaxRequestBodySize` for a global upload cap (default 0 = unlimited):
+Or configure `SecurityConfig.MaxRequestBodySize` for a global upload cap (default 0 = unlimited):
 
 ```go
 cfg := httpc.DefaultConfig()
@@ -447,7 +451,109 @@ cfg.Middleware.Middlewares = []httpc.MiddlewareFunc{
 client, _ := httpc.New(cfg)
 ```
 
-For compliance-grade auditing (recording request/response headers, redirect chains, source IP, user ID), use the more full-featured `AuditMiddleware`. See the [Middleware reference](../api-reference/client-config/middleware).
+For compliance-grade auditing (recording request/response headers, redirect chains, source IP, user ID), use the more full-featured `AuditMiddleware`. See the [Built-in Middleware reference](../api-reference/client-config/middleware).
+
+## How does HTTPC relate to net/http?
+
+**Answer:** HTTPC is built on top of `net/http`, not a replacement for it. The underlying engine is still `http.Client` and `http.Transport` — HTTPC's own connection-pool manager creates and configures the `*http.Transport` (connection reuse, TLS, HTTP/2, and proxy selection are executed by the standard library), the redirect policy is injected via the `CheckRedirect` callback, and SSRF validation is wrapped into the dial function `DialContext`.
+
+On top of that, HTTPC adds the parts the standard library lacks: a request-level option chain, pooled result objects (low allocation), a retry engine, a middleware chain, multi-layer security validation, and audit/logging middleware.
+
+:::tip Ecosystem compatibility
+Fully compatible with the standard-library ecosystem: `http.Cookie`, `tls.Config`, `context.Context`, `io.Reader`, and other types are used directly, with no adapter layer. Existing `tls.Config` knowledge (mTLS, custom CAs, cipher suites) migrates as-is to `Security.TLSConfig`.
+:::
+
+## Does the WithTimeout budget include retry time?
+
+**Answer:** Yes. `WithTimeout` (and `Timeouts.Request`) is the **total budget covering all retry attempts and backoff waits**: the retry engine establishes a single deadline for the whole request instead of restarting the clock on each attempt.
+
+```go
+// Total budget of 30s: first attempt + up to 3 retries + backoff waits, 30s in total
+result, err := client.Get(url, httpc.WithTimeout(30*time.Second))
+```
+
+Two caveats: backoff waits also consume the budget, so a budget that is too tight may not leave enough time to finish retrying; and `WithTimeout` is capped at 30 minutes — exceeding it returns `ErrInvalidTimeout`.
+
+## Can retries cause duplicate POST submissions?
+
+**Answer:** It can. HTTPC automatically retries 408/429/500/502/503/504 and network-layer transient errors **regardless of the request method** — POST is retried just like GET. If the first request already reached the server and was processed successfully (but the response was lost or timed out), the retry can cause duplicate creation or duplicate charges.
+
+Mitigations (by priority):
+
+```go
+// 1. Server-side idempotency key (recommended): the business side
+//    deduplicates via Idempotency-Key
+client.Post(url,
+    httpc.WithJSON(order),
+    httpc.WithHeader("Idempotency-Key", orderID),
+)
+
+// 2. Disable retries per request on non-idempotent endpoints
+client.Post(url, httpc.WithJSON(payment), httpc.WithMaxRetries(0))
+```
+
+Two additional notes: `io.Reader` request bodies are fully buffered to support retry replay (capped at 100MB, exceeding it errors out), so the body sent on retry is identical to the first one; and `context.Canceled`/`DeadlineExceeded` are never retried, so an active cancellation cannot trigger a duplicate submission. See [Retry and Fault Tolerance](../guides/retry-fault-tolerance).
+
+## Do I need to close the response body manually?
+
+**Answer:** No (and there is no close entry point either). The `Result` returned by regular requests (`Get`/`Post`/`Request`, etc.) holds **already-read and copied bytes** — HTTPC performs the read, the drain (up to 10MB, to facilitate connection reuse), and the close internally, and the underlying connection is managed by the pool.
+
+```go
+result, err := client.Get(url)
+if err != nil {
+    log.Fatal(err)
+}
+fmt.Println(len(result.RawBody())) // Bytes already in memory, no unclosed handles
+```
+
+Do not read large files into memory with regular requests — use `Download` (streams to disk, progress callbacks, resumable). `WithStreamBody` only takes effect on the `Download` path: when used via regular request methods, the response is still fully read into `Result` and the stream closed. See the [File Transfer guide](../guides/file-transfer).
+
+## Why isn't my proxy working?
+
+**Answer:** Troubleshoot in the following order (every item is source-verifiable behavior):
+
+**1. Priority conflicts.** `ProxyURL` > `ProxyPool` > `EnableSystemProxy` — when several are set, only the highest priority takes effect; once `ProxyURL` is configured, the proxy pool is never consulted again.
+
+**2. Connection reuse bypassed proxy selection.** Consecutive requests to the same host reuse established connections (including an HTTP proxy's CONNECT tunnel), so the proxy-selection function is not triggered again. When you need a **different egress IP per request**, set:
+
+```go
+cfg := httpc.DefaultConfig()
+cfg.Connection.ProxyPool = []string{"http://proxy1:8080", "http://proxy2:8080"}
+cfg.Connection.ProxyRotatePerRequest = true // Close idle connections per request, forcing proxy re-selection
+```
+
+**3. When the system proxy is probed.** `EnableSystemProxy` probes the proxy address once, at client **construction time** (for the SSRF exemption). If the environment variables only later point to a localhost proxy (e.g. `127.0.0.1:7890`), that proxy may be blocked by SSRF protection — for dynamic local proxies, use an explicit `ProxyURL` instead (http/https/socks5/socks5h supported).
+
+**4. Proxy-pool circuit breaking.** A proxy whose consecutive connection failures reach `ProxyFailureThreshold` (default 3) is removed from rotation and restored by half-open probing after `ProxyCooldown` (default 30s); when all proxies are broken, it degrades to picking the earliest one to recover rather than failing outright. If proxies stay unavailable, check the circuit-breaking threshold and cooldown settings.
+
+See [Proxy & Proxy Pool](../guides/proxy).
+
+## Why can't I access localhost even after exempting 127.0.0.0/8?
+
+**Answer:** The pre-validation layer's localhost-hostname check runs **before** the CIDR exemption: when the URL host is `localhost`, `127.x.x.x`, `::1`, or similar, the request is rejected outright without ever reaching exemption matching. `SSRFExemptCIDRs` can only open up non-loopback private ranges (e.g. `10.0.0.0/8`).
+
+When you genuinely need loopback access (e.g. a local health check):
+
+```go
+// Per-request exemption (recommended): only this request skips SSRF
+// validation; the client's overall policy is unchanged
+result, err := httpc.Get("http://localhost:8080/health",
+    httpc.WithAllowPrivateIPs(true),
+)
+```
+
+See the [known boundaries of SSRF protection](../security/ssrf).
+
+## Why is the URL in error messages masked?
+
+**Answer:** HTTPC automatically sanitizes URLs that end up in error messages, logs, and audit events: credentials are replaced with `***:***`, sensitive query parameters such as `token`/`password`/`api_key` are replaced with `[REDACTED]`, and the fragment is removed entirely.
+
+```go
+// When the request https://user:pass@example.com/api?token=secret fails,
+// what appears in the error message is https://***:***@example.com/api?token=[REDACTED]
+```
+
+This prevents "second-hand leakage": even if the failed request itself is harmless, once the raw URL lands in a log-aggregation system (ELK, Sentry), the credentials become a fresh leak surface. The behavior is built in and cannot be disabled — nor should it be.
 
 ## More Resources
 

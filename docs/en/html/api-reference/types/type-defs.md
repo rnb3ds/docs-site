@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Data Types"
 title: "Types - CyberGo html | Data Type Reference"
-description: "CyberGo html data types: field reference for Result, ImageInfo, LinkInfo, LinkResource, Statistics, BatchResult, and other core types."
+description: "CyberGo html data types: field reference for Result, ImageInfo, LinkInfo, LinkResource, VideoInfo, AudioInfo, Statistics, BatchResult, plus custom MarshalJSON."
 sidebar_position: 2
 ---
 
@@ -59,7 +59,7 @@ type ImageInfo struct {
 
 | Field | Description |
 |-------|-------------|
-| `URL` | The `src` attribute value of the image; only valid URLs (passing `IsValidURL` validation) are included — `<img>` with an invalid URL does not appear in the result |
+| `URL` | The `src` attribute value of the image; only valid URLs (internal validation, not exported) are included — `<img>` with an invalid URL does not appear in the result |
 | `Alt` | The original `alt` attribute; when empty, `IsDecorative` is `true` |
 | `Title` | The original `title` attribute (not the page title) |
 | `Width`/`Height` | The **raw strings** from the HTML attributes (e.g. `"640"`, `"50%"`), not parsed into numbers — different pages may use inconsistent formats |
@@ -89,8 +89,8 @@ type LinkInfo struct {
 
 | Field | Description |
 |-------|-------------|
-| `URL` | The `href` attribute value; only valid URLs (passing `IsValidURL` validation) are included — an `<a>` with an invalid URL still consumes a Position but is not added to the slice |
-| `Text` | Concatenation of all text nodes inside the `<a>` tag (recursive `GetTextContent`) |
+| `URL` | The `href` attribute value; only valid URLs (internal validation, not exported) are included — an `<a>` with an invalid URL still consumes a Position but is not added to the slice |
+| `Text` | Recursive concatenation of all text nodes inside the `<a>` tag (including text inside nested tags) |
 | `Title` | The original `title` attribute (not the link text) |
 | `IsExternal` | Determined by whether the URL itself is an absolute external address, **not by domain comparison with `BaseURL`** — this differs from the internal/external link determination in `ExtractAllLinks` |
 | `IsNoFollow` | `true` when the `rel` attribute contains `nofollow` (case-insensitive, ASCII-fold matching) |
@@ -152,11 +152,13 @@ Link resource (used by link extraction API).
 
 ```go
 type LinkResource struct {
-    URL   string // Link URL
+    URL   string // Link URL (already resolved against BaseURL into an absolute address when ResolveRelativeURLs is enabled)
     Title string // Link title
-    Type  string // Link type
+    Type  string // Link type: "link", "image", "video", "audio", "css", "js", "icon", "media"
 }
 ```
+
+For the HTML tag sources and control switches corresponding to each `Type` value, see [Link Extraction](../modules/links#link-type-reference).
 
 ## Statistics
 

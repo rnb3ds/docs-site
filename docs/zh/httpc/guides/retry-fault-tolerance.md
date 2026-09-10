@@ -1,8 +1,8 @@
 ---
 sidebar_label: "重试与容错"
 title: "重试与容错 - CyberGo HTTPC | 退避与自动重试"
-description: "HTTPC 重试与容错指南：默认指数退避重试策略与 RetryConfig 配置、408/429/5xx 自动重试条件、RetryPolicy 自定义接口、Retry-After 响应头自动解析、退避策略选择与按请求 WithMaxRetries 控制最佳实践。"
-sidebar_position: 6
+description: "HTTPC 重试与容错指南：指数退避与 ±10% 抖动算法详解、408/429/5xx 与网络错误重试条件、Retry-After 自动解析与 60 秒安全上限、跨重试共享总超时预算、请求体重放缓冲、WithMaxRetries 按请求控制与代理池轮换联动。"
+sidebar_position: 8
 ---
 
 # 重试与容错
@@ -68,6 +68,20 @@ func main() {
 | `context.DeadlineExceeded` | 否 | 快速路径直接返回 |
 | TLS/证书错误 | 否 | 非瞬时故障，重试无用 |
 | 配置验证错误 | 否 | 本地 bug，需修正代码 |
+
+### 配置校验
+
+`ValidateConfig`（`New` 内部调用）校验重试参数，越界返回 `ErrInvalidRetry`：
+
+| 字段 | 合法范围 | 默认 |
+|------|----------|------|
+| `MaxRetries` | 0–10 | 3 |
+| `Delay` | 0–30min | 1s |
+| `BackoffFactor` | 1.0–10.0 | 2.0 |
+| `MaxRetryDelay` | 0–30min | 30s |
+| `EnableJitter` | 布尔 | true |
+
+`WithMaxRetries(n)` 在请求侧应用同样的 0–10 校验，越界直接报错而不是静默截断。另外，`Delay` / `BackoffFactor` 传 0 或负值时引擎会**回退默认值**（1s / 2.0）而不是报错——显式设置合法值才是可靠做法。
 
 ## 退避数学详解
 
@@ -348,6 +362,87 @@ func main() {
 }
 ```
 
+请求级 `WithMaxRetries` 未设置时，引擎使用客户端配置（或 `CustomPolicy` 的 `MaxRetries()`）——内部以 `-1` 作为「未设置」哨兵值区分「没配置」与「显式配置 0（禁用）」。
+
+## 重试的请求体处理
+
+重试要求请求体可以**重复发送**，引擎对不同类型的 body 处理不同：
+
+| 请求体类型 | 重试行为 |
+|------------|----------|
+| `[]byte` / `string` / 结构体 / `map` / `*FormData` | 每次尝试重新构建 reader，天然可重放 |
+| `io.Reader` | 首次进入重试路径前**整体读入内存**缓冲，之后按字节重放 |
+| 超过 100MB 的 `io.Reader` | 直接报错：`retry not supported for streaming bodies exceeding ...` |
+
+:::warning 大流式 body 与重试互斥
+`io.Reader` 请求体会在重试路径被缓冲到内存，上限 100MB（防御 OOM）。更大的流要么拆分上传、要么对该请求 `WithMaxRetries(0)` 关闭重试：
+
+<!-- check-code: skip -->
+```go
+// 大文件上传：关闭重试，避免 100MB 内存缓冲
+_, err := client.Post("https://api.example.com/upload",
+    httpc.WithBody(largeReader),
+    httpc.WithMaxRetries(0),
+)
+```
+:::
+
+每次尝试都是**完整重建的请求**：headers、查询参数、cookies 在尝试间深拷贝隔离，互不污染；`WithOnRequest` 回调在**每次尝试前**都会触发——适合在回调里刷新即将过期的令牌：
+
+```go
+package main
+
+import (
+    "log"
+
+    "github.com/cybergodev/httpc"
+)
+
+func main() {
+    client, err := httpc.NewDefault()
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close()
+
+    // 每次重试尝试前都会执行
+    _, err = client.Get("https://api.example.com/data",
+        httpc.WithOnRequest(func(req httpc.RequestMutator) error {
+            log.Printf("发起尝试: %s %s", req.Method(), req.URL())
+            return nil
+        }),
+    )
+    if err != nil {
+        log.Printf("请求失败: %v", err)
+    }
+}
+```
+
+## 重试执行流程
+
+引擎执行一次「请求 + 重试」的完整流程：
+
+```text
+1. 解析重试预算：请求级 WithMaxRetries 未设置（哨兵 -1）→ 回退 CustomPolicy 或客户端配置
+2. 建立总预算 context：取 WithTimeout / Timeouts.Request 与已有 context 截止时间中更早者
+   —— 覆盖所有尝试与退避等待，不是每次尝试各拿一份超时
+3. io.Reader 请求体 → 内存缓冲（≤100MB，超出直接报错）
+4. 循环 attempt = 0 .. MaxRetries：
+   a. 每次尝试重新 Build 请求（headers/query/cookies 深拷贝，触发 OnRequest）
+   b. 网络错误 → 分类为 ClientError → IsRetryable && ShouldRetry？
+      - 不可重试 / 次数用尽 → 返回错误（保留原始类型，Attempts = 已尝试次数）
+      - context 取消/超时 → 立即返回，不重试
+   c. 收到响应 → ShouldRetry(resp) 且次数未用尽？
+      - 是 → 计算延迟（有 Retry-After 用之并截断 60s，否则指数退避）
+            → 丢弃中间响应 → 等待 → 下一次尝试
+      - 否（含次数用尽）→ 返回响应（状态码原样，不报错）
+5. 退避等待期间 context 到期 → 立即终止，返回超时错误
+```
+
+:::tip 用 HTTPC_DEBUG 观察重试过程
+设置环境变量 `HTTPC_DEBUG=1` 后，引擎把每次尝试的状态码、可重试判定与退避延迟打印到 stderr。排查「为什么没重试 / 为什么重试了这么多次」时不必再加日志中间件。
+:::
+
 ## 代理池与重试交互
 
 当配置了 `ProxyRotateOnStatus` 或 `ProxyRotatePerRequest` 时，HTTPC 会自动提高 `MaxRetries`，确保代理池中的每个代理至少被尝试一次。这是通过 `calculateMaxRetries` 实现的：
@@ -415,42 +510,40 @@ func main() {
 }
 ```
 
+### 代理连接失败强制重试
+
+启用代理轮换（`ProxyRotateOnStatus` / `ProxyRotatePerRequest`）后，**代理本身的连接失败**（拨号失败、TLS 失败）不再走常规的可重试分类，而是**强制进入下一次重试**并自动换到下一个代理。永久失效的代理（端口错误、主机不可达）无需人工预先剔除——强制重试 + 连续失败熔断会自然淘汰它们。详见[代理与代理池](./proxy)。
+
 ## 重试预算考量
 
-重试会延长请求的总耗时。在设计超时时，必须预留重试的延迟预算。
+重试会延长请求的总耗时。HTTPC 的超时是**跨所有重试共享的总预算**：引擎在首次尝试前创建覆盖整个重试循环的超时 context，网络请求与退避等待都从同一份预算扣减——不会出现「3 次重试各拿一份完整超时」的放大效应。
 
 ### 总最坏时间公式
 
 ```
-总最坏时间 = (MaxRetries + 1) × 请求超时 + Σ(各次重试延迟上限)
+总最坏时间 ≈ min(Timeouts.Request, WithTimeout / context 截止时间)
 ```
 
-以默认配置为例（`MaxRetries=3`、`Request=180s`、`Delay=1s`、`Backoff=2.0`、`EnableJitter=true`）：
-
-```
-请求超时部分：4 × 180s = 720s（初始 + 3 次重试，每次最多等 180s）
-重试延迟部分：1.1 + 2.2 + 4.4 ≈ 7.7s（3 次延迟的抖动上限之和）
-总最坏时间：≈ 727.7s（约 12 分钟）
-```
+以默认配置为例（`MaxRetries=3`、`Request=180s`、`Delay=1s`、`Backoff=2.0`、`EnableJitter=true`）：无论重试几次、退避多久，整个「初始请求 + 3 次重试 + 全部退避」最多约 180s。预算耗尽后，剩余的尝试立即以 `ErrorTypeTimeout` 失败；退避等待中的请求也会被唤醒并终止，不会傻等。
 
 ### 缩短总耗时的方法
 
 | 调整 | 效果 |
 |------|------|
-| 减小 `MaxRetries` | 直接减少重试次数，总耗时线性下降 |
-| 减小 `TimeoutConfig.Request` | 每次尝试更快失败 |
-| 减小 `RetryConfig.Delay` | 缩短重试间隔 |
+| 减小 `MaxRetries` | 减少重试次数，预算留给有效尝试 |
+| 减小 `Timeouts.Request` | 直接压缩总预算上限 |
+| 减小 `Retry.Delay` | 缩短重试间隔，预算更多用于请求本身 |
 | 减小 `BackoffFactor` | 延迟增长更慢，早期重试更快 |
-| 用 `context.WithTimeout` 覆盖 | 精确控制单次请求的总上限 |
+| 用 `context.WithTimeout` 覆盖 | 精确控制该请求的总预算 |
 
-:::warning 重试与超时的冲突
-`context.WithTimeout` 设定的截止时间是硬性的——即使重试次数还没用完，context 到期后也会立即终止。这意味着实际重试次数可能少于 `MaxRetries`。如果你的应用需要「确保重试 N 次」，请确保 context 超时足够长：
+:::warning 总预算对重试次数的影响
+总预算是硬性的——预算耗尽时即使重试次数没用完也会立即终止，实际重试次数可能少于 `MaxRetries`。默认 180s 足够容纳 3 次重试加约 7.7s 退避；但若把超时压得很低（如 5s）又保留默认重试，第一次退避（约 1s）之后预算可能已所剩无几。需要「确保重试 N 次」时，按 N+1 次请求耗时加退避总和预留预算：
 
 <!-- check-code: skip -->
 ```go
 // 预留足够时间：3 次重试 + 延迟 + 每次请求时间
 ctx, cancel := context.WithTimeout(context.Background(),
-    3*requestTimeout + 10*time.Second)
+    4*requestTimeout + 10*time.Second)
 ```
 :::
 
@@ -528,7 +621,7 @@ func main() {
 
 ## 错误处理与重试
 
-重试耗尽后，错误通过 `ClientError` 返回，Type 为 `ErrorTypeRetryExhausted`（或最后一次尝试的原始错误类型），`Attempts` 字段记录总尝试次数：
+网络层错误重试耗尽后，错误通过 `ClientError` 返回——Type **保留最后一次失败的原始分类**（如 `ErrorTypeNetwork`、`ErrorTypeTimeout`），`Attempts` 字段记录总尝试次数：
 
 ```go
 package main
@@ -561,6 +654,13 @@ func main() {
 }
 ```
 
+:::tip 两种「重试耗尽」的表现不同
+- **网络错误耗尽**：以 `ClientError` 返回（上面的示例），`Attempts > 1`。
+- **可重试状态码耗尽**（408/429/5xx）：**不报错**，最后一次响应原样返回——`err == nil`、`StatusCode() == 503` 等，调用方按普通响应分支处理即可。
+
+另外，`ErrorTypeRetryExhausted` 只在引擎的防御性兜底路径设置，常规使用中几乎不会遇到——判断「重试后仍失败」用 `Attempts` 字段更可靠。
+:::
+
 ## 最佳实践
 
 | 场景 | 建议配置 |
@@ -583,5 +683,6 @@ func main() {
 
 - [错误处理](./error-handling) — 错误分类详解与哨兵错误匹配
 - [配置 API](../api-reference/client-config/config) — 重试配置字段参考
-- [连接池与代理](./connection-pool) — 代理池配置与轮换策略
+- [连接池与 DNS](./connection-pool) — 连接复用与 DoH 解析
+- [代理与代理池](./proxy) — 代理池配置与轮换策略
 - [接口定义](../api-reference/types/interfaces) — RetryPolicy 接口参考

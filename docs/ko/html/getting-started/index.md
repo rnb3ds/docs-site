@@ -1,8 +1,8 @@
 ---
 sidebar_label: "빠른 시작"
 title: "빠른 시작 - CyberGo html | 5 분 입문 가이드"
-description: "CyberGo html 빠른 시작 안내: 설치, 기본 콘텐츠 추출, DefaultConfig·HighSecurityConfig·TextOnlyConfig·MarkdownConfig 4종 프리셋과 텍스트·Markdown·JSON 출력으로 5분 만에 추출을 시작합니다."
-sidebar_position: 2
+description: "CyberGo html 빠른 시작 안내: Go 1.25+ 설치, 기본 콘텐츠 추출, DefaultConfig 등 4종 Config 프리셋 선택, 텍스트·Markdown·JSON 출력 형식과 Processor 동시성 안전 호출을 5분 만에 익힙니다."
+sidebar_position: 1
 ---
 
 # 빠른 시작
@@ -117,7 +117,7 @@ jsonBytes, err := html.ExtractToJSON(data)
 
 ## 컨텍스트 지원
 
-모든 함수에는 `ExtractWithContext` 버전이 있어 취소 및 타임아웃을 지원합니다:
+모든 추출 함수에는 `*WithContext` 접미사가 붙은 변형이 있어(예: `ExtractWithContext`, `ExtractTextWithContext`) 취소와 타임아웃을 지원합니다:
 
 ```go
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "请求与响应变更器"
 title: "请求与响应变更器 - CyberGo HTTPC | Mutator 接口"
-description: "HTTPC 中间件读写契约详解：RequestMutator 与 ResponseMutator 是 httpc 暴露给中间件的两个公开组合接口，分别提供请求与响应的全部读取方法与写入方法，附经变更器改写请求头与读取响应状态码的可编译示例。"
+description: "HTTPC 中间件读写契约详解：RequestMutator 与 ResponseMutator 两个公开组合接口的请求与响应全部读写方法，WithOnRequest/WithOnResponse 回调选项用法，附经变更器改写请求头与读取响应状态码的可编译示例。"
 sidebar_position: 2
 ---
 
@@ -164,6 +164,70 @@ OnRequest/OnResponse 回调和 `AllowPrivateIPs` 不在 `RequestMutator` 接口�
 
 绝大多数中间件**不需要**类型断言——`RequestMutator`/`ResponseMutator` 接口已涵盖所有常用读写操作。仅在需要回调或 SSRF 覆盖时才需断言到具体类型。
 
+## 请求选项回调：WithOnRequest / WithOnResponse
+
+除中间件外，还有一对与变更器直接相关的请求选项：`WithOnRequest` 在请求发出前回调，参数就是 `RequestMutator`；`WithOnResponse` 在响应收到后回调，参数就是 `ResponseMutator`。不编写中间件也能拿到变更器做检视或轻量改写。
+
+<!-- check-code: skip -->
+```go
+func WithOnRequest(callback func(req RequestMutator) error) RequestOption
+func WithOnResponse(callback func(resp ResponseMutator) error) RequestOption
+```
+
+| 选项 | 回调时机 | 回调参数 | 错误行为 |
+|------|---------|---------|---------|
+| `WithOnRequest` | 请求发出前 | `RequestMutator` | 任一回调返回错误则请求中止 |
+| `WithOnResponse` | 响应收到后 | `ResponseMutator` | 任一回调返回错误则请求以该错误失败 |
+
+多个回调可链式注册，按添加顺序依次执行；传入 nil 回调会在应用选项时返回错误（`"onRequest callback cannot be nil"` / `"onResponse callback cannot be nil"`）。
+
+:::tip 回调与中间件的取舍
+回调没有 `next`，不能短路请求、也不能在响应阶段做包装——它只适合「检视 + 轻量改写」。需要控制执行顺序、短路返回或包装响应时，请编写中间件（见 [Handler 与中间件链](./handler-chain)）。
+:::
+
+```go
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/httpc"
+)
+
+func main() {
+	client, err := httpc.NewDefault()
+	if err != nil {
+		log.Fatalf("创建客户端失败: %v", err)
+	}
+	defer func() { _ = client.Close() }()
+
+	result, err := client.Get("https://httpbin.org/get",
+		// 请求发出前：经 RequestMutator 检视请求并注入头
+		httpc.WithOnRequest(func(req httpc.RequestMutator) error {
+			fmt.Printf("发送 %s %s\n", req.Method(), req.URL())
+			req.SetHeader("X-Trace-ID", "trace-42")
+			return nil
+		}),
+		// 响应收到后：经 ResponseMutator 读取状态
+		httpc.WithOnResponse(func(resp httpc.ResponseMutator) error {
+			fmt.Printf("收到状态码 %d\n", resp.StatusCode())
+			return nil
+		}),
+	)
+	if err != nil {
+		log.Fatalf("请求失败: %v", err)
+	}
+	fmt.Println("成功:", result.IsSuccess())
+	// 输出示例：
+	// 发送 GET https://httpbin.org/get
+	// 收到状态码 200
+	// 成功: true
+}
+```
+
+全部请求选项的逐项参考见 [请求选项](../core/options)。
+
 ## SanitizedURL 缓存
 
 多个中间件可能都需要记录脱敏 URL（移除凭据信息的 URL）。为避免重复计算，HTTPC 在请求对象上缓存脱敏结果，供同一请求的多个中间件共享。
@@ -315,4 +379,5 @@ func main() {
 
 - [Handler 与中间件链](./handler-chain) — 双层架构与洋葱模型总览
 - [内置中间件](../client-config/middleware) — HeaderMiddleware 等就是经变更器工作的现成范例
+- [请求选项](../core/options) — WithOnRequest/WithOnResponse 与全部 WithXxx 选项
 - [接口定义](../types/interfaces) — 变更器的类型别名定义

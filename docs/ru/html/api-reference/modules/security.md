@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Защита безопасности"
 title: "Безопасность - CyberGo html | многоуровневый API"
-description: "API безопасности CyberGo html: санитизация контента, лимиты ввода, глубина DOM, защита от обхода пути, песочница AllowedBaseDir и пресет HighSecurityConfig."
+description: "API безопасности CyberGo html: санитизация, MaxInputSize, MaxDepth, защита от обхода пути, песочница AllowedBaseDir, HighSecurityConfig и InputError."
 sidebar_position: 5
 ---
 
@@ -145,8 +145,20 @@ defer p.Close()
 | `ErrInvalidFilePath` | Проверка пути файла не пройдена (включая обход пути) |
 | `ErrInternalPanic` | Внутренняя паника восстановлена |
 
+### Структурированные типы ошибок
+
+Перечисленные сигнальные ошибки фактически возвращаются обёрнутыми в три структурированных типа, несущих контекстные поля для локализации проблемы:
+
+| Тип | Поля | Методы | Цель `Unwrap()` |
+|------|------|------|-----------------|
+| `*InputError` | `Op` / `Size` / `MaxSize` / `InputErr` | `Error` | `InputErr` (если не nil), иначе `ErrInputTooLarge` |
+| `*ConfigError` | `Field` / `Value` / `Message` | `Error` | `ErrInvalidConfig` |
+| `*FileError` | `Op` / `Path` / `FileErr` | `Error` / `SafePath` / `MarshalJSON` | `ErrFileNotFound` / исходная ошибка / `ErrInvalidFilePath` |
+
+Используйте `errors.Is(err, html.ErrXxx)` для определения категории сигнальной ошибки, а `errors.As(err, &typedErr)` — для получения структурированного контекста (например, `InputError.Size`/`MaxSize`, `ConfigError.Field`).
+
 :::info
-Полные определения типов ошибок (`InputError`, `ConfigError`, `FileError`) и использование `errors.Is`/`errors.As` см. в [Константы и ошибки](../types/constants).
+Полные определения трёх типов ошибок и шаблоны обработки ошибок через `errors.Is`/`errors.As` см. в [Константы и ошибки](../types/constants).
 :::
 
 ## Восстановление после паники

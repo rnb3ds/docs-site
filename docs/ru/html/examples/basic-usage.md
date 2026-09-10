@@ -1,15 +1,26 @@
 ---
 sidebar_label: "Базовые примеры"
-title: "Базовые примеры - CyberGo html | исполняемый код"
-description: "Базовые примеры CyberGo html: извлечение контента и файлов, текст, Markdown, группировка ссылок, переиспользование Processor и пакетная обработка."
+title: "Базовые примеры - CyberGo html | типовые сценарии с кодом"
+description: "Шесть сценариев CyberGo html: извлечение контента и текста, файлы, Markdown и JSON, ссылки, медиа, пакеты с тайм-аутом — готовый код для копирования."
 sidebar_position: 1
 ---
 
 # Базовые примеры
 
-## Базовое извлечение
+Эта страница — шпаргалка **«код по сценариям»**: для каждого сценария приведён только минимальный рабочий каркас, который можно скопировать и сразу запустить; теорию и расширенную конфигурацию изучайте по ссылкам «Подробнее» в конце разделов.
 
-Извлечение заголовка, текста и медиа-информации из байтов HTML:
+| Сценарий | Ключевые вызовы | Подробнее |
+|------|----------|------|
+| Контент и чистый текст | `html.Extract` / `html.ExtractText` | [Извлечение контента на практике](../guides/core-features/content-extraction) |
+| Извлечение из файла | `html.ExtractFromFile` | [Извлечение контента на практике](../guides/core-features/content-extraction) |
+| Вывод в Markdown / JSON | `html.ExtractToMarkdown` / `html.ExtractToJSON` | [Форматы вывода на практике](../guides/core-features/output-formats) |
+| Извлечение ссылок | `html.ExtractAllLinks` + `html.GroupLinksByType` | [Извлечение ссылок на практике](../guides/core-features/link-extraction) |
+| Информация о медиа | `html.Extract` (`Videos` / `Audios`) | [Извлечение медиа на практике](../guides/core-features/media-extraction) |
+| Пакетная обработка и тайм-ауты | `html.New` + `ExtractBatchWithContext` | [Пакетная обработка на практике](../guides/performance/batch-processing) |
+
+## Контент и чистый текст
+
+`Extract` за один вызов возвращает полный `Result`; если нужен только чистый текст, используйте близкую функцию `ExtractText`, которая напрямую возвращает `string`:
 
 ```go
 package main
@@ -22,194 +33,88 @@ import (
 )
 
 func main() {
-    data := []byte(`<html>
-        <head><title>Руководство по Go</title></head>
-        <body>
-            <article>
-                <h1>Введение в Go</h1>
-                <p>Go — это язык программирования с открытым исходным кодом, разработанный Google.</p>
-                <img src="gopher.png" alt="Талисман Gopher" />
-                <a href="https://go.dev">Официальный сайт Go</a>
-            </article>
-        </body>
-    </html>`)
+    data := []byte(`<html><head><title>Руководство по Go</title></head><body><article><h1>Введение в Go</h1><p>Go — статически типизированный компилируемый язык.</p><a href="https://go.dev">Официальный сайт Go</a></article></body></html>`)
 
-    result, err := html.Extract(data)
+    result, err := html.Extract(data) // принимает байты, возвращает полный Result
     if err != nil {
         log.Fatal(err)
     }
+    fmt.Println(result.Title) // Вывод: Руководство по Go
+    fmt.Println(result.Text)
+    // Вывод: Введение в Go\n\nGo — статически типизированный компилируемый язык.\n\nОфициальный сайт Go
 
-    fmt.Println("Заголовок:", result.Title)
-    fmt.Println("Текст:", result.Text)
-    fmt.Println("Слов:", result.WordCount)
-    fmt.Println("Время чтения:", result.ReadingTime)
-    // Вывод:
-    // Заголовок: Руководство по Go
-    // Текст: Введение в Go
-    //
-    //       Go — это язык программирования с открытым исходным кодом, разработанный Google.
-    //
-    //       Официальный сайт Go
-    // Слов: 8
-    // Время чтения: 2.4с
+    text, err := html.ExtractText(data) // только чистый текст: напрямую возвращает string
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(len(text) > 0) // Вывод: true (непустой)
 }
 ```
+
+Подробнее: [Извлечение контента на практике](../guides/core-features/content-extraction)
 
 ## Извлечение из файла
 
-```go
-result, err := html.ExtractFromFile("article.html")
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(result.Title)
-```
-
-## Извлечение только текста
+Для файлов на диске используйте `ExtractFromFile` со встроенной защитой от обхода пути и лимитом размера файла:
 
 ```go
-text, err := html.ExtractText(data)
-if err != nil {
-    log.Fatal(err)
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    result, err := html.ExtractFromFile("article.html")
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(result.Title) // Вывод: содержимое <title> из article.html
 }
-fmt.Println(text)
 ```
 
-## Вывод в Markdown
+Подробнее: [Извлечение контента на практике](../guides/core-features/content-extraction)
+
+## Вывод в Markdown / JSON
+
+Для миграции контента — Markdown, для передачи между программами — JSON:
 
 ```go
-md, err := html.ExtractToMarkdown(data)
-if err != nil {
-    log.Fatal(err)
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<article><h1>Введение в Go</h1><p>Go — компилируемый язык.</p><img src="gopher.png" alt="Gopher" /><a href="https://go.dev">Официальный сайт Go</a></article>`)
+    // В Markdown: изображения и ссылки автоматически превращаются в синтаксис ![]() и []()
+    md, err := html.ExtractToMarkdown(data)
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println(md)
+    // Вывод: Введение в Go\n\nGo — компилируемый язык.\n\n![Gopher](gopher.png)\n[Официальный сайт Go](https://go.dev)
+    jsonBytes, err := html.ExtractToJSON(data) // в JSON: сохраняются все поля метаданных
+    if err != nil {
+        log.Fatal(err)
+    }
+    fmt.Println("Байт JSON:", len(jsonBytes))
+    // Число байт JSON зависит от содержимого (включает поля text/title/images/links и др.)
 }
-fmt.Println(md)
 ```
+
+Подробнее: [Форматы вывода на практике](../guides/core-features/output-formats)
 
 ## Извлечение ссылок
 
-```go
-links, err := html.ExtractAllLinks(data)
-if err != nil {
-    log.Fatal(err)
-}
-
-for _, link := range links {
-    fmt.Printf("[%s] %s - %s\n", link.Type, link.Title, link.URL)
-}
-
-// Группировка по типам
-groups := html.GroupLinksByType(links)
-for typ, items := range groups {
-    fmt.Printf("%s: %d шт.\n", typ, len(items))
-}
-```
-
-## Использование Processor
-
-```go
-p, err := html.New(html.DefaultConfig())
-if err != nil {
-    log.Fatal(err)
-}
-defer p.Close()
-
-// Повторное использование Processor для обработки нескольких страниц
-for _, page := range pages {
-    result, err := p.Extract(page)
-    if err != nil {
-        log.Printf("Ошибка обработки: %v", err)
-        continue
-    }
-    fmt.Println(result.Title)
-}
-
-// Просмотр статистики
-stats := p.GetStatistics()
-fmt.Printf("Обработано: %d, Попаданий в кэш: %d\n",
-    stats.TotalProcessed, stats.CacheHits)
-```
-
-## С тайм-аутом
-
-```go
-ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-defer cancel()
-
-result, err := html.ExtractWithContext(ctx, data)
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-## Пакетная обработка
-
-```go
-pages := [][]byte{page1, page2, page3}
-
-p, _ := html.New(html.DefaultConfig())
-defer p.Close()
-
-batch := p.ExtractBatch(pages)
-fmt.Printf("Успешно: %d, Неудачно: %d\n", batch.Success, batch.Failed)
-
-for i, result := range batch.Results {
-    if result != nil {
-        fmt.Printf("Страница %d: %s\n", i, result.Title)
-    }
-}
-```
-
-## Вывод в JSON
-
-```go
-jsonBytes, err := html.ExtractToJSON(data)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(string(jsonBytes))
-```
-
-## Автоопределение кодировки
-
-Библиотека автоматически распознаёт 15+ кодировок (GBK, Shift_JIS, Windows-1252 и др.), ручная обработка не требуется:
-
-```go
-package main
-
-import (
-    "fmt"
-    "log"
-
-    "github.com/cybergodev/html"
-    "golang.org/x/text/encoding/simplifiedchinese"
-)
-
-func main() {
-    // Создание HTML на китайском в кодировке GBK
-    utf8HTML := `<html><head><meta charset="gbk"><title>中文网页</title></head>
-<body><article><h1>你好世界</h1><p>这是一段中文内容。</p></article></body></html>`
-    gbkBytes, err := simplifiedchinese.GBK.NewEncoder().Bytes([]byte(utf8HTML))
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Автоопределение кодировки и извлечение
-    result, err := html.Extract(gbkBytes)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println("Заголовок:", result.Title)
-    // Заголовок: 中文网页
-    fmt.Println("Текст:", result.Text)
-    // Текст: 你好世界
-    //       这是一段中文内容。
-}
-```
-
-## Извлечение медиа
-
-Извлечение информации о видео- и аудиоресурсах:
+API извлечения ссылок, независимый от основного контента, с группировкой по типам:
 
 ```go
 package main
@@ -222,127 +127,94 @@ import (
 )
 
 func main() {
-    data := []byte(`<html><body><article>
-        <h1>Мультимедийная страница</h1>
-        <p>Пример извлечения видео и аудио.</p>
-        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" width="560" height="315"></iframe>
-        <video poster="cover.jpg" width="640">
-            <source src="https://example.com/video.mp4" type="video/mp4">
-        </video>
-        <audio>
-            <source src="https://example.com/audio.mp3" type="audio/mpeg">
-        </audio>
-    </article></body></html>`)
+    data := []byte(`<html><body><article><h1>Пример ссылок</h1><p><a href="https://go.dev">Официальный сайт Go</a></p></article></body></html>`)
 
+    links, err := html.ExtractAllLinks(data) // охватывает ресурсы a/img/video/css/js и др.
+    if err != nil {
+        log.Fatal(err)
+    }
+    for _, link := range links {
+        fmt.Printf("[%s] %s - %s\n", link.Type, link.Title, link.URL)
+    }
+    // Вывод: [link] Официальный сайт Go - https://go.dev
+    groups := html.GroupLinksByType(links) // группировка по типам
+    fmt.Println("Группа link:", len(groups["link"]))
+    // Вывод: Группа link: 1
+}
+```
+
+Подробнее: [Извлечение ссылок на практике](../guides/core-features/link-extraction)
+
+## Информация о медиа
+
+Информация о видео и аудио возвращается вместе с `Extract`, отдельный вызов не нужен:
+
+```go
+package main
+
+import (
+    "fmt"
+    "log"
+
+    "github.com/cybergodev/html"
+)
+
+func main() {
+    data := []byte(`<html><body><article><h1>Мультимедийная страница</h1>
+<video poster="cover.jpg"><source src="https://example.com/video.mp4" type="video/mp4"></video>
+<audio><source src="https://example.com/audio.mp3" type="audio/mpeg"></audio>
+</article></body></html>`)
     result, err := html.Extract(data)
     if err != nil {
         log.Fatal(err)
     }
-
-    // Информация о видео
-    fmt.Printf("Видео: %d\n", len(result.Videos))
-    for i, v := range result.Videos {
-        fmt.Printf("  [%d] %s (Type: %s", i+1, v.URL, v.Type)
-        if v.Poster != "" {
-            fmt.Printf(", Poster: %s", v.Poster)
-        }
-        if v.Width != "" {
-            fmt.Printf(", W: %s", v.Width)
-        }
-        fmt.Println(")")
+    for _, v := range result.Videos {
+        fmt.Printf("Видео: %s (%s)\n", v.URL, v.Type)
     }
-
-    // Информация об аудио
-    fmt.Printf("Аудио: %d\n", len(result.Audios))
-    for i, a := range result.Audios {
-        fmt.Printf("  [%d] %s (Type: %s)\n", i+1, a.URL, a.Type)
+    for _, a := range result.Audios {
+        fmt.Printf("Аудио: %s (%s)\n", a.URL, a.Type)
     }
+    // Вывод:
+    // Видео: https://example.com/video.mp4 (video/mp4)
+    // Аудио: https://example.com/audio.mp3 (audio/mpeg)
 }
 ```
 
-## Доступ к полям изображений и ссылок
+Подробнее: [Извлечение медиа на практике](../guides/core-features/media-extraction)
 
-Полный доступ к структурированным полям `Result`:
+## Пакетная обработка, тайм-ауты и переиспользование Processor
+
+Типичный серверный паттерн: создать глобально переиспользуемый `Processor`, выполнять параллельное пакетное извлечение и управлять временем обработки партии через context:
 
 ```go
 package main
 
 import (
+    "context"
     "fmt"
     "log"
+    "time"
 
     "github.com/cybergodev/html"
 )
 
 func main() {
-    data := []byte(`<html><body><article>
-        <h1>Пример доступа к полям</h1>
-        <p>Абзац текста. <a href="https://go.dev" title="Сайт Go">Go</a></p>
-        <img src="logo.png" alt="Logo" width="200" height="100">
-        <a href="/about" rel="nofollow">О нас</a>
-    </article></body></html>`)
+    ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+    defer cancel()
 
-    result, err := html.Extract(data)
+    p, err := html.New(html.DefaultConfig()) // безопасен для конкурентного доступа, можно переиспользовать глобально
     if err != nil {
         log.Fatal(err)
     }
-
-    // Поля изображений
-    for _, img := range result.Images {
-        fmt.Printf("Изображение: url=%s, alt=%s, %sx%s, decorative=%v, pos=%d\n",
-            img.URL, img.Alt, img.Width, img.Height, img.IsDecorative, img.Position)
-    }
-
-    // Поля ссылок
-    for _, link := range result.Links {
-        fmt.Printf("Ссылка: url=%s, text=%s, external=%v, nofollow=%v, pos=%d\n",
-            link.URL, link.Text, link.IsExternal, link.IsNoFollow, link.Position)
-    }
-
-    // Статистика
-    fmt.Printf("Слов: %d, время чтения: %v, время обработки: %v\n",
-        result.WordCount, result.ReadingTime, result.ProcessingTime)
-}
-```
-
-## Мониторинг статистики
-
-Мониторинг статистики обработки с использованием экземпляра Processor:
-
-```go
-package main
-
-import (
-    "fmt"
-
-    "github.com/cybergodev/html"
-)
-
-func main() {
-    p, _ := html.New(html.DefaultConfig())
     defer p.Close()
-
     pages := [][]byte{
-        []byte(`<html><body><article><h1>Страница 1</h1><p>Содержимое A.</p></article></body></html>`),
-        []byte(`<html><body><article><h1>Страница 2</h1><p>Содержимое B.</p></article></body></html>`),
-        []byte(`<html><body><article><h1>Страница 1</h1><p>Содержимое A.</p></article></body></html>`), // повтор — попадание в кэш
+        []byte(`<html><body><article><h1>Страница 1</h1></article></body></html>`),
+        []byte(`<html><body><article><h1>Страница 2</h1></article></body></html>`),
     }
-
-    for _, page := range pages {
-        p.Extract(page)
-    }
-
-    stats := p.GetStatistics()
-    fmt.Printf("Всего обработано: %d\n", stats.TotalProcessed)
-    fmt.Printf("Попаданий в кэш: %d\n", stats.CacheHits)
-    fmt.Printf("Промахов кэша: %d\n", stats.CacheMisses)
-    fmt.Printf("Ошибок: %d\n", stats.ErrorCount)
-    fmt.Printf("Среднее время: %v\n", stats.AverageProcessTime)
-
-    hitRate := float64(0)
-    if stats.TotalProcessed > 0 {
-        hitRate = float64(stats.CacheHits) / float64(stats.TotalProcessed) * 100
-    }
-    fmt.Printf("Доля попаданий: %.1f%%\n", hitRate)
+    batch := p.ExtractBatchWithContext(ctx, pages) // незавершённые элементы при истечении context попадают в Cancelled
+    fmt.Printf("Успешно: %d, Неудачно: %d\n", batch.Success, batch.Failed)
+    // Вывод: Успешно: 2, Неудачно: 0
 }
 ```
+
+Подробнее: [Пакетная обработка на практике](../guides/performance/batch-processing) и [Повторное использование Processor и кэш](../guides/performance/processor-cache)

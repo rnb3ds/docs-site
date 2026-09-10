@@ -244,6 +244,36 @@ if err != nil {
 |------|----------|----------|
 | `ErrClientClosed` | `"client is closed"` | 在 Close() 之后使用客户端 |
 
+## 安全警告 API
+
+### SetSecurityWarnOutput
+
+<!-- check-code: skip -->
+```go
+func SetSecurityWarnOutput(w io.Writer)
+```
+
+重定向安全警告的输出目标（默认 `os.Stderr`），定义于 `warnings.go`。传入 `io.Discard` 可完全抑制警告。测试环境的判定依据可执行文件名（`.test` 后缀）与 `GO_TEST`/`GOTEST` 环境变量。
+
+两类危险配置会在**非测试环境**触发警告，每类每进程至多打印一次（`sync.Once`）：
+
+| 触发条件 | 警告要点 |
+|---------|---------|
+| `TestingConfig()` 创建的客户端用于非测试环境 | 提示 TLS 证书验证、SSRF 防护、URL/Header 验证均被禁用，应改用 `SecureConfig()` 或 `DefaultConfig()` |
+| `Security.InsecureSkipVerify=true` 且非测试环境 | 提示 TLS 证书验证被禁用，仅应在测试中使用，生产应用 `SecureConfig()` |
+
+```go
+// 抑制安全警告（仅在已确认配置安全时使用）
+httpc.SetSecurityWarnOutput(io.Discard)
+
+// 重定向到自定义日志输出
+httpc.SetSecurityWarnOutput(log.Writer())
+```
+
+:::warning 勿滥用抑制
+`SetSecurityWarnOutput(io.Discard)` 会静默吞掉安全警告。仅在已充分审计配置（如确认 `TestingConfig` 只用于测试二进制）时使用，切勿在生产部署中用它掩盖警告。安全实践的完整清单见[安全指南](../../security)。
+:::
+
 ## 实用匹配模式
 
 ### errors.As 提取 ClientError
@@ -308,3 +338,4 @@ if errors.As(err, &clientErr) {
 - [错误处理](../../guides/error-handling) - 完整错误处理指南
 - [常量与类型](./constants) - BodyKind 等常量参考
 - [重试与容错](../../guides/retry-fault-tolerance) - 重试策略指南
+- [安全指南](../../security) - SetSecurityWarnOutput 与安全配置实践

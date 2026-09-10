@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Result"
 title: "Result - CyberGo HTTPC | Result Response Type"
-description: "HTTPC Result response type API reference: StatusCode/Body basic methods, status checks, cookie operations, Unmarshal JSON parsing, SaveToFile file saving, and RequestInfo/ResponseInfo sub-types."
+description: "HTTPC Result API reference: nil-safe methods (StatusCode, Body, Unmarshal, SaveToFile) plus RequestInfo/ResponseInfo/RequestMeta sub-types incl. ProxyURL."
 sidebar_position: 3
 ---
 
@@ -267,12 +267,20 @@ Response data. Accessed via `result.Response`.
 type RequestMeta struct {
     Duration      time.Duration
     Attempts      int
+    ProxyURL      string
     RedirectChain []string
     RedirectCount int
 }
 ```
 
 Request-execution metadata. Accessed via `result.Meta`.
+| Field | Description |
+|-------|-------------|
+| `Duration` | Total time from request start to response completion |
+| `Attempts` | Total attempts including retries |
+| `ProxyURL` | Proxy URL actually used by the final attempt (`Connection.ProxyURL` or the selected proxy-pool entry); empty for direct connections, and system proxies (`EnableSystemProxy`) are likewise not recorded (still empty) — configure `Connection.ProxyURL` or `ProxyPool` explicitly when you need to observe the egress per request. With proxy rotation each retry may use a different proxy; this field reports the one that produced the returned response |
+| `RedirectChain` | Chain of redirect URLs followed |
+| `RedirectCount` | Number of redirects followed |
 
 ```go
 result, _ := client.Get(url)
@@ -280,6 +288,7 @@ result, _ := client.Get(url)
 fmt.Println(result.Meta.Duration)      // 125ms
 fmt.Println(result.Meta.Attempts)       // 2 (retried once)
 fmt.Println(result.Meta.RedirectCount)  // 1 (followed one redirect)
+fmt.Println(result.Meta.ProxyURL)        // "" (direct) or "http://proxy:8080"
 ```
 
 ## See Also

@@ -1,7 +1,7 @@
 ---
 sidebar_label: "HTTP Integration"
 title: "HTTP Integration - CyberGo html | Web Service Guide"
-description: "CyberGo html HTTP integration: net/http single-page scraping, concurrent batch tuning, context timeouts, web-service integration, and production tips."
+description: "CyberGo html with net/http: single-page scraping, concurrent batch fetching, Processor-singleton web services, exponential backoff, and timeout control."
 sidebar_position: 1
 ---
 

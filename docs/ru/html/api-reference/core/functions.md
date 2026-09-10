@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Функции пакета"
 title: "Функции пакета - CyberGo html | синтаксис и примеры"
-description: "Функции уровня пакета CyberGo html: Extract, ExtractText, ExtractToMarkdown. Используют sync.Pool для переиспользования Processor — для разовых вызовов."
+description: "Extract, ExtractText, ExtractToMarkdown, ExtractToJSON, ExtractBatch — функции пакета CyberGo html: sync.Pool внутри, кэш отключён, для разовых вызовов."
 sidebar_position: 1
 ---
 
@@ -33,6 +33,18 @@ sidebar_position: 1
 :::warning Ключевое отличие
 При передаче пользовательского `Config` **путь через `sync.Pool` не используется** — пул хранит только Processor на основе `DefaultConfig()` и не может безопасно повторно использовать экземпляры с другой конфигурацией. В этом случае каждый вызов создаёт временный Processor через `New`, который закрывается (`Close`) после использования. Для повторного использования пользовательской конфигурации в высокочастотных вызовах создавайте [Processor](./processor) напрямую.
 :::
+
+## Конструктор
+
+### New
+
+Создаёт отдельный экземпляр `Processor` — единственную точку доступа к возможностям кэша, статистики и аудита.
+
+```go
+func New(cfg ...Config) (*Processor, error)
+```
+
+`cfg ...Config` подчиняется тем же правилам разбора из таблицы выше (без аргументов используется `DefaultConfig()`, при ≥2 возвращается `ErrMultipleConfigs`), после чего выполняется `Config.Validate()`. В отличие от пулируемых и временных экземпляров функций пакета, экземпляр, возвращаемый `New`, **долгосрочно хранит кэш и накопленную статистику**. Полный список методов и жизненный цикл см. в [Processor](./processor).
 
 ## Извлечение контента
 
@@ -169,6 +181,14 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractAllLinksFromFile` | `(filePath string, cfg ...Config) ([]LinkResource, error)` | Извлечение ссылок из файла |
 | `ExtractAllLinksWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | С контекстом |
 | `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | Файл + контекст |
+
+Сопутствующая функция группировки:
+
+```go
+func GroupLinksByType(links []LinkResource) map[string][]LinkResource
+```
+
+Группирует ресурсы ссылок в `map[тип][]LinkResource` по полю `LinkResource.Type` (`link`/`image`/`css` и т. д.).
 
 Подробное использование и примеры см. в [Извлечение ссылок](../modules/links).
 

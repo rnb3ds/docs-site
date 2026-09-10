@@ -1,7 +1,7 @@
 ---
 sidebar_label: "定数とエラー"
 title: "定数とエラー - CyberGo html | 既定値とエラー型"
-description: "CyberGo html 定数とエラー型リファレンス：既定値定数、センチネルエラー、InputError・ConfigError・FileError の構造化エラーで errors.Is/As 判定をサポートし、監査イベントタイプやデフォルト値の一覧も提供します。"
+description: "CyberGo html 定数とエラー型リファレンス：既定値定数（MaxInputSize、CacheTTL など）、監査イベント定数、センチネルエラー、InputError・ConfigError・FileError の構造化エラーを収録し、errors.Is/As による精密な判定をサポートします。"
 sidebar_position: 3
 ---
 

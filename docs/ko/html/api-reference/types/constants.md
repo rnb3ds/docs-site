@@ -1,7 +1,7 @@
 ---
 sidebar_label: "상수와 오류"
 title: "상수와 오류 - CyberGo html | 기본값과 오류 타입"
-description: "CyberGo html 상수와 오류 타입: MaxInputSize·MaxDepth 등 기본값 상수, 센티넬 오류와 InputError·ConfigError·FileError·ProcessingError 구조화 오류로 errors.Is/As 판별을 지원합니다."
+description: "CyberGo html 상수와 오류 타입: MaxInputSize·CacheTTL 등 기본값 상수, 감사 이벤트 상수, 센티넬 오류와 InputError·ConfigError·FileError·ProcessingError 구조화 오류로 errors.Is/As 정밀 판별을 지원합니다."
 sidebar_position: 3
 ---
 

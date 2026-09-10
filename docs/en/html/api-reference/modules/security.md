@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Security"
 title: "Security - CyberGo html | Multi-layer Security API Reference"
-description: "CyberGo html security API: sanitization, size and depth limits, path traversal protection, AllowedBaseDir sandbox, HighSecurityConfig preset and error types."
+description: "CyberGo html security API: sanitization, MaxInputSize, MaxDepth, path traversal protection, AllowedBaseDir sandbox, HighSecurityConfig, InputError types."
 sidebar_position: 5
 ---
 
@@ -144,6 +144,18 @@ defer p.Close()
 | `ErrProcessingTimeout` | Processing exceeds `ProcessingTimeout` |
 | `ErrInvalidFilePath` | File path validation failed (including path traversal) |
 | `ErrInternalPanic` | Internal panic recovered |
+
+### Structured Error Types
+
+The sentinel errors above are actually returned wrapped in three structured error types carrying context fields for diagnosis:
+
+| Type | Fields | Methods | `Unwrap()` target |
+|------|--------|---------|------------------|
+| `*InputError` | `Op` / `Size` / `MaxSize` / `InputErr` | `Error` | `InputErr` (when non-nil), otherwise `ErrInputTooLarge` |
+| `*ConfigError` | `Field` / `Value` / `Message` | `Error` | `ErrInvalidConfig` |
+| `*FileError` | `Op` / `Path` / `FileErr` | `Error` / `SafePath` / `MarshalJSON` | `ErrFileNotFound` / the original error / `ErrInvalidFilePath` |
+
+Use `errors.Is(err, html.ErrXxx)` to check the sentinel category and `errors.As(err, &typedErr)` to retrieve the structured context (e.g. `InputError.Size`/`MaxSize`, `ConfigError.Field`).
 
 :::info
 For complete error type definitions (`InputError`, `ConfigError`, `FileError`) and `errors.Is`/`errors.As` usage, see [Constants & Errors](../types/constants).

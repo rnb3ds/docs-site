@@ -2,7 +2,7 @@
 sidebar_label: "错误处理"
 title: "错误处理 - CyberGo html | 健壮错误处理指南"
 description: "CyberGo html 健壮错误处理指南：五类错误分类（输入、配置、文件、处理、系统）、errors.Is 哨兵错误判断、errors.As 结构化错误字段提取、context 超时取消、批量处理部分失败与 panic 恢复的应对策略与最佳实践。"
-sidebar_position: 5
+sidebar_position: 4
 ---
 
 # 错误处理
@@ -398,7 +398,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/cybergodev/html"
@@ -725,3 +724,10 @@ func main() {
 :::tip 提示
 结构化日志的关键是提取**字段**而非拼接字符串。例如记录 `inputErr.Size` 和 `inputErr.MaxSize` 后，可以在日志系统中按 `size > max_size * 0.9` 查询接近上限的请求，提前发现容量问题。对 `FileError`，始终用 `SafePath()` 而非 `Path` 字段记录日志，避免日志文件本身成为信息泄露源。
 :::
+
+## 下一步
+
+- [生产检查清单](../security/production-checklist) - 部署前安全核对
+- [性能优化](./performance) - 吞吐量提升与超时设置
+- [API 参考：常量与错误](../../api-reference/types/constants) - 哨兵错误完整清单
+- [API 参考：Processor](../../api-reference/core/processor) - Processor 生命周期与统计

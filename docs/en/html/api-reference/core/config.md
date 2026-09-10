@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Config"
 title: "Config - CyberGo html | Config Field Reference"
-description: "CyberGo html Config reference: resource management, security, content extraction, output formats, link filtering, and the Validate method for configuration."
+description: "CyberGo html Config reference: 30+ fields in six categories, DefaultConfig and other presets, value constraints, zero-value semantics, and the Validate method."
 sidebar_position: 3
 ---
 
@@ -24,6 +24,8 @@ sidebar_position: 3
 
 :::tip
 Setting `MaxCacheEntries`, `CacheCleanup`, or `ProcessingTimeout` to `0` is not an error — each has a well-defined meaning (disable cache, disable background cleanup, and no timeout respectively). `MaxInputSize`, `WorkerPoolSize`, and `MaxDepth` must be positive, otherwise a `ConfigError` is returned.
+
+Therefore **the zero value `Config{}` does not pass `Validate()` and must not be used directly** — always start from `DefaultConfig()` (or another preset) and override fields as needed.
 :::
 
 ### Security

@@ -1,348 +1,220 @@
 ---
 sidebar_label: "Basic Usage"
-title: "Basic Usage - CyberGo html | Runnable Examples"
-description: "CyberGo html basic usage examples: content and file extraction, plain text, Markdown output, link grouping, Processor reuse, and concurrent batch code."
+title: "Basic Usage - CyberGo html | Typical Scenario Examples"
+description: "CyberGo html basic usage in six scenarios: text and file extraction, Markdown/JSON output, link grouping, media info, and batch concurrency with timeouts."
 sidebar_position: 1
 ---
 
 # Basic Usage
 
-## Basic Extraction
+This page is a **copy-by-scenario** quick-reference index: each scenario shows only a minimal runnable skeleton you can copy and use right away; for principles and advanced configuration, follow the "Go deeper" link at the end of each section to the corresponding guide.
 
-Extract title, text, and media information from HTML bytes:
+| Scenario | Core Calls | In-Depth Guide |
+|----------|-----------|----------------|
+| Text & plain text | `html.Extract` / `html.ExtractText` | [Content Extraction](../guides/core-features/content-extraction) |
+| Extract from file | `html.ExtractFromFile` | [Content Extraction](../guides/core-features/content-extraction) |
+| Markdown / JSON output | `html.ExtractToMarkdown` / `html.ExtractToJSON` | [Output Formats](../guides/core-features/output-formats) |
+| Link extraction | `html.ExtractAllLinks` + `html.GroupLinksByType` | [Link Extraction](../guides/core-features/link-extraction) |
+| Media information | `html.Extract` (`Videos` / `Audios`) | [Media Extraction](../guides/core-features/media-extraction) |
+| Batch & timeout reuse | `html.New` + `ExtractBatchWithContext` | [Batch Processing](../guides/performance/batch-processing) |
+
+## Text & Plain Text
+
+`Extract` returns the complete `Result` in one call; when you only need plain text, use its close sibling `ExtractText`, which returns a `string` directly:
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 
-    "github.com/cybergodev/html"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    data := []byte(`<html>
-        <head><title>Go Tutorial</title></head>
-        <body>
-            <article>
-                <h1>Getting Started with Go</h1>
-                <p>Go is an open-source programming language developed by Google.</p>
-                <img src="gopher.png" alt="Gopher mascot" />
-                <a href="https://go.dev">Go Official Site</a>
-            </article>
-        </body>
-    </html>`)
+	data := []byte(`<html><head><title>Go Tutorial</title></head><body><article><h1>Getting Started with Go</h1><p>Go is a statically typed compiled language.</p><a href="https://go.dev">Go Official Site</a></article></body></html>`)
 
-    result, err := html.Extract(data)
-    if err != nil {
-        log.Fatal(err)
-    }
+	result, err := html.Extract(data) // pass in bytes, get the full Result back
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result.Title) // Output: Go Tutorial
+	fmt.Println(result.Text)
+	// Output: Getting Started with Go\n\nGo is a statically typed compiled language.\n\nGo Official Site
 
-    fmt.Println("Title:", result.Title)
-    fmt.Println("Text:", result.Text)
-    fmt.Println("Words:", result.WordCount)
-    fmt.Println("Reading Time:", result.ReadingTime)
-    // Output:
-    // Title: Go Tutorial
-    // Text: Getting Started with Go
-    //
-    //       Go is an open-source programming language developed by Google.
-    //
-    //       Go Official Site
-    // Words: 16
-    // Reading Time: 4.8s
+	text, err := html.ExtractText(data) // plain text only: returns a string directly
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(len(text) > 0) // Output: true (non-empty)
 }
 ```
+
+Go deeper: [Content Extraction](../guides/core-features/content-extraction)
 
 ## Extract from File
 
-```go
-result, err := html.ExtractFromFile("article.html")
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(result.Title)
-```
-
-## Text-Only Extraction
+Use `ExtractFromFile` for files on disk — it ships with path traversal protection and file size limits:
 
 ```go
-text, err := html.ExtractText(data)
-if err != nil {
-    log.Fatal(err)
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/html"
+)
+
+func main() {
+	result, err := html.ExtractFromFile("article.html")
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(result.Title) // Output: the <title> content of article.html
 }
-fmt.Println(text)
 ```
 
-## Markdown Output
+Go deeper: [Content Extraction](../guides/core-features/content-extraction)
+
+## Markdown / JSON Output
+
+Convert to Markdown when migrating content, and to JSON when transferring data between programs:
 
 ```go
-md, err := html.ExtractToMarkdown(data)
-if err != nil {
-    log.Fatal(err)
+package main
+
+import (
+	"fmt"
+	"log"
+
+	"github.com/cybergodev/html"
+)
+
+func main() {
+	data := []byte(`<article><h1>Getting Started with Go</h1><p>Go is a compiled language.</p><img src="gopher.png" alt="Gopher" /><a href="https://go.dev">Go Official Site</a></article>`)
+	// To Markdown: images and links become ![]() and []() syntax automatically
+	md, err := html.ExtractToMarkdown(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(md)
+	// Output: Getting Started with Go\n\nGo is a compiled language.\n\n![Gopher](gopher.png)\n[Go Official Site](https://go.dev)
+	jsonBytes, err := html.ExtractToJSON(data) // To JSON: keeps all metadata fields
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println("JSON bytes:", len(jsonBytes))
+	// JSON size depends on the content (includes text/title/images/links and more)
 }
-fmt.Println(md)
 ```
+
+Go deeper: [Output Formats](../guides/core-features/output-formats)
 
 ## Link Extraction
 
-```go
-links, err := html.ExtractAllLinks(data)
-if err != nil {
-    log.Fatal(err)
-}
-
-for _, link := range links {
-    fmt.Printf("[%s] %s - %s\n", link.Type, link.Title, link.URL)
-}
-
-// Group by type
-groups := html.GroupLinksByType(links)
-for typ, items := range groups {
-    fmt.Printf("%s: %d items\n", typ, len(items))
-}
-```
-
-## Using Processor
-
-```go
-p, err := html.New(html.DefaultConfig())
-if err != nil {
-    log.Fatal(err)
-}
-defer p.Close()
-
-// Reuse Processor for multiple pages
-for _, page := range pages {
-    result, err := p.Extract(page)
-    if err != nil {
-        log.Printf("Processing failed: %v", err)
-        continue
-    }
-    fmt.Println(result.Title)
-}
-
-// View statistics
-stats := p.GetStatistics()
-fmt.Printf("Processed: %d, Cache hits: %d\n",
-    stats.TotalProcessed, stats.CacheHits)
-```
-
-## With Timeout Control
-
-```go
-ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-defer cancel()
-
-result, err := html.ExtractWithContext(ctx, data)
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-## Batch Processing
-
-```go
-pages := [][]byte{page1, page2, page3}
-
-p, _ := html.New(html.DefaultConfig())
-defer p.Close()
-
-batch := p.ExtractBatch(pages)
-fmt.Printf("Success: %d, Failed: %d\n", batch.Success, batch.Failed)
-
-for i, result := range batch.Results {
-    if result != nil {
-        fmt.Printf("Page %d: %s\n", i, result.Title)
-    }
-}
-```
-
-## JSON Output
-
-```go
-jsonBytes, err := html.ExtractToJSON(data)
-if err != nil {
-    log.Fatal(err)
-}
-fmt.Println(string(jsonBytes))
-```
-
-## Encoding Auto-Detection
-
-The library automatically detects 15+ encodings (GBK, Shift_JIS, Windows-1252, etc.) with no manual handling needed:
+A link extraction API independent of body extraction, which can also group links by type:
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 
-    "github.com/cybergodev/html"
-    "golang.org/x/text/encoding/simplifiedchinese"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    // Build GBK-encoded Chinese HTML
-    utf8HTML := `<html><head><meta charset="gbk"><title>中文网页</title></head>
-<body><article><h1>你好世界</h1><p>这是一段中文内容。</p></article></body></html>`
-    gbkBytes, err := simplifiedchinese.GBK.NewEncoder().Bytes([]byte(utf8HTML))
-    if err != nil {
-        log.Fatal(err)
-    }
+	data := []byte(`<html><body><article><h1>Link Example</h1><p><a href="https://go.dev">Go Official Site</a></p></article></body></html>`)
 
-    // Auto-detect encoding and extract
-    result, err := html.Extract(gbkBytes)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Println("Title:", result.Title)
-    // Title: 中文网页
-    fmt.Println("Text:", result.Text)
-    // Text: 你好世界
-    //       这是一段中文内容。
+	links, err := html.ExtractAllLinks(data) // covers a/img/video/css/js and other resources
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, link := range links {
+		fmt.Printf("[%s] %s - %s\n", link.Type, link.Title, link.URL)
+	}
+	// Output: [link] Go Official Site - https://go.dev
+	groups := html.GroupLinksByType(links) // group by type
+	fmt.Println("link group:", len(groups["link"]))
+	// Output: link group: 1
 }
 ```
 
-## Media Extraction
+Go deeper: [Link Extraction](../guides/core-features/link-extraction)
 
-Extract video and audio resource information:
+## Media Information
+
+Video and audio information is returned alongside `Extract` — no separate call needed:
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
+	"fmt"
+	"log"
 
-    "github.com/cybergodev/html"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    data := []byte(`<html><body><article>
-        <h1>Multimedia Page</h1>
-        <p>Video and audio extraction example.</p>
-        <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ" width="560" height="315"></iframe>
-        <video poster="cover.jpg" width="640">
-            <source src="https://example.com/video.mp4" type="video/mp4">
-        </video>
-        <audio>
-            <source src="https://example.com/audio.mp3" type="audio/mpeg">
-        </audio>
-    </article></body></html>`)
-
-    result, err := html.Extract(data)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Videos
-    fmt.Printf("Videos: %d\n", len(result.Videos))
-    for i, v := range result.Videos {
-        fmt.Printf("  [%d] %s (Type: %s", i+1, v.URL, v.Type)
-        if v.Poster != "" {
-            fmt.Printf(", Poster: %s", v.Poster)
-        }
-        if v.Width != "" {
-            fmt.Printf(", W: %s", v.Width)
-        }
-        fmt.Println(")")
-    }
-
-    // Audios
-    fmt.Printf("Audios: %d\n", len(result.Audios))
-    for i, a := range result.Audios {
-        fmt.Printf("  [%d] %s (Type: %s)\n", i+1, a.URL, a.Type)
-    }
+	data := []byte(`<html><body><article><h1>Multimedia Page</h1>
+<video poster="cover.jpg"><source src="https://example.com/video.mp4" type="video/mp4"></video>
+<audio><source src="https://example.com/audio.mp3" type="audio/mpeg"></audio>
+</article></body></html>`)
+	result, err := html.Extract(data)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for _, v := range result.Videos {
+		fmt.Printf("Video: %s (%s)\n", v.URL, v.Type)
+	}
+	for _, a := range result.Audios {
+		fmt.Printf("Audio: %s (%s)\n", a.URL, a.Type)
+	}
+	// Output:
+	// Video: https://example.com/video.mp4 (video/mp4)
+	// Audio: https://example.com/audio.mp3 (audio/mpeg)
 }
 ```
 
-## Image & Link Field Access
+Go deeper: [Media Extraction](../guides/core-features/media-extraction)
 
-Fully access the structured fields in `Result`:
+## Batch, Timeout & Processor Reuse
+
+The typical server-side pattern: create a globally reusable `Processor`, extract batches concurrently, and use a context to cap the time of each batch:
 
 ```go
 package main
 
 import (
-    "fmt"
-    "log"
+	"context"
+	"fmt"
+	"log"
+	"time"
 
-    "github.com/cybergodev/html"
+	"github.com/cybergodev/html"
 )
 
 func main() {
-    data := []byte(`<html><body><article>
-        <h1>Field Access Example</h1>
-        <p>Body paragraph. <a href="https://go.dev" title="Go Official Site">Go</a></p>
-        <img src="logo.png" alt="Logo" width="200" height="100">
-        <a href="/about" rel="nofollow">About</a>
-    </article></body></html>`)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-    result, err := html.Extract(data)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    // Image fields
-    for _, img := range result.Images {
-        fmt.Printf("Image: url=%s, alt=%s, %sx%s, decorative=%v, pos=%d\n",
-            img.URL, img.Alt, img.Width, img.Height, img.IsDecorative, img.Position)
-    }
-
-    // Link fields
-    for _, link := range result.Links {
-        fmt.Printf("Link: url=%s, text=%s, external=%v, nofollow=%v, pos=%d\n",
-            link.URL, link.Text, link.IsExternal, link.IsNoFollow, link.Position)
-    }
-
-    // Statistics
-    fmt.Printf("Words: %d, Reading time: %v, Processing time: %v\n",
-        result.WordCount, result.ReadingTime, result.ProcessingTime)
+	p, err := html.New(html.DefaultConfig()) // concurrency-safe, globally reusable
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer p.Close()
+	pages := [][]byte{
+		[]byte(`<html><body><article><h1>Page One</h1></article></body></html>`),
+		[]byte(`<html><body><article><h1>Page Two</h1></article></body></html>`),
+	}
+	batch := p.ExtractBatchWithContext(ctx, pages) // items unfinished when the context expires count as Cancelled
+	fmt.Printf("Success: %d, Failed: %d\n", batch.Success, batch.Failed)
+	// Output: Success: 2, Failed: 0
 }
 ```
 
-## Statistics Monitoring
-
-Use a Processor instance to monitor processing statistics:
-
-```go
-package main
-
-import (
-    "fmt"
-
-    "github.com/cybergodev/html"
-)
-
-func main() {
-    p, _ := html.New(html.DefaultConfig())
-    defer p.Close()
-
-    pages := [][]byte{
-        []byte(`<html><body><article><h1>Page One</h1><p>Content A.</p></article></body></html>`),
-        []byte(`<html><body><article><h1>Page Two</h1><p>Content B.</p></article></body></html>`),
-        []byte(`<html><body><article><h1>Page One</h1><p>Content A.</p></article></body></html>`), // Duplicate, hits cache
-    }
-
-    for _, page := range pages {
-        p.Extract(page)
-    }
-
-    stats := p.GetStatistics()
-    fmt.Printf("Total processed: %d\n", stats.TotalProcessed)
-    fmt.Printf("Cache hits: %d\n", stats.CacheHits)
-    fmt.Printf("Cache misses: %d\n", stats.CacheMisses)
-    fmt.Printf("Errors: %d\n", stats.ErrorCount)
-    fmt.Printf("Average time: %v\n", stats.AverageProcessTime)
-
-    hitRate := float64(0)
-    if stats.TotalProcessed > 0 {
-        hitRate = float64(stats.CacheHits) / float64(stats.TotalProcessed) * 100
-    }
-    fmt.Printf("Hit rate: %.1f%%\n", hitRate)
-}
-```
+Go deeper: [Batch Processing](../guides/performance/batch-processing) and [Processor & Cache](../guides/performance/processor-cache)

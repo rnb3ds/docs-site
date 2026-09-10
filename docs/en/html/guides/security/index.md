@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Security Overview"
 title: "Security Overview - CyberGo html | Protection Overview"
-description: "CyberGo html security overview: size and depth limits, path traversal prevention, panic recovery, sanitization, auditing and the HighSecurityConfig preset."
+description: "CyberGo html security: defense in depth (input/processing/audit), MaxInputSize/MaxDepth, path traversal, panic recovery, sanitization, HighSecurityConfig."
 sidebar_position: 1
 ---
 
@@ -50,7 +50,7 @@ cfg := html.DefaultConfig()
 cfg.MaxInputSize = 10 * 1024 * 1024 // Tighten to 10MB
 ```
 
-File paths have an additional **pre-check**: after `Stat` retrieves the size, oversized files are rejected before `ReadAll` loads the content into memory, closing the memory peak window of "finish reading before discovering it's oversized."
+File paths have an additional **pre-check**: after `os.Stat` retrieves the size, oversized files are rejected before `io.ReadAll` loads the content into memory, closing the memory peak window of "finish reading before discovering it's oversized."
 
 ### DOM Depth Limit
 
@@ -163,7 +163,7 @@ On top of this, `isDangerousScheme` also performs a dedicated ASCII folding for 
 Browsers strip certain control characters when parsing URLs (following the WHATWG URL standard). The library must simulate the same stripping **before** protocol detection; otherwise attackers can use these characters to break up dangerous protocol names and bypass detection:
 
 - **tab / LF / CR**: `java\tscript:` would be reassembled by browsers into `javascript:` and executed. The library uses `stripURLWhitespace` to remove these three bytes before protocol detection.
-- **C0 control characters (U+0000–U+001F) + ASCII space**: browsers strip these from the beginning and end of the string before scheme parsing. `strings.TrimSpace` only covers Unicode whitespace, not most C0 control characters, so the library uses a dedicated `c0ControlOrSpace` set to explicitly strip them. Otherwise `\x01javascript:…` could fool all `HasPrefix` checks.
+- **C0 control characters (U+0000–U+001F) + ASCII space**: browsers strip these from the beginning and end of the string before scheme parsing. `strings.TrimSpace` only covers Unicode whitespace, not most C0 control characters, so the library uses a dedicated `c0ControlOrSpace` set to explicitly strip them. Otherwise `\x01javascript:…` could fool all `strings.HasPrefix` checks.
 
 ### Dangerous Protocol Detection
 
@@ -190,7 +190,7 @@ Explicitly blocked:
 
 - **`image/svg+xml`**: SVG can embed JavaScript, serving as a defense-in-depth patch after the tag itself is removed.
 - **Empty media types**: e.g., `data:;base64,<payload>` or `data:;,...`. These forms could previously bypass the whitelist; they are now rejected outright.
-- **Overly long data URLs**: constrained by `MaxDataURILength` (100KB), preventing base64 content from exhausting memory.
+- **Overly long data URLs**: constrained by an internal limit (100KB), preventing large base64 payloads from exhausting memory (this limit is not configurable).
 - **Illegal base64 characters**: the base64 portion is validated byte-by-byte for character set legality.
 
 :::tip Audit log truncates data URLs
@@ -227,7 +227,7 @@ Performing both validation and reading from the same handle closes the TOCTOU (c
 | Other Unix | Fallback to `filepath.EvalSymlinks` | Symlinks (slight residual TOCTOU) |
 | Windows | `GetFinalPathNameByHandleW` | Symlinks + junctions + all reparse points |
 
-After resolution on Windows, the `\\?\` extended-length prefix is stripped and the path is `Clean`ed to match the output format of `filepath.Abs`, ensuring accurate subsequent containment comparison.
+After resolution on Windows, the `\\?\` extended-length prefix is stripped and the path is passed through `filepath.Clean` to match the output format of `filepath.Abs`, ensuring accurate subsequent containment comparison.
 
 ### Protection Layers
 
@@ -235,7 +235,7 @@ File reading in `AllowedBaseDir` mode stacks four independent checks:
 
 1. **Path traversal detection**: checks for `..` components after `filepath.Clean`
 2. **OS handle sandbox**: `realPath` resolves the real path, `pathWithin` determines containment
-3. **Size pre-check**: `Stat` on the verified handle checks the size; rejects files exceeding `MaxInputSize` before `ReadAll`
+3. **Size pre-check**: `os.Stat` on the verified handle checks the size; rejects files exceeding `MaxInputSize` before `io.ReadAll`
 4. **Byte-level limit**: after reading, `validateInput` re-checks the byte count
 
 Even if a file is within the allowed directory, `AllowedBaseDir` constrains "which file can be read," and `MaxInputSize` constrains "how large the file can be." The two are orthogonal and do not substitute for each other.

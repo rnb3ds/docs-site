@@ -1,7 +1,7 @@
 ---
 sidebar_label: "出力形式"
 title: "出力フォーマット - CyberGo html | Markdown と JSON 出力"
-description: "CyberGo html 出力フォーマット API リファレンス：ExtractToMarkdown、ExtractToJSON のパッケージ関数と Processor メソッドで、HTML バイトやファイル入力を Markdown や JSON フォーマットに変換して出力します。"
+description: "CyberGo html 出力フォーマット API リファレンス：ExtractToMarkdown と ExtractToJSON のパッケージ関数と Processor メソッドを詳解。バイト・ファイルからの Markdown・JSON 変換に対応し、Processor のキャッシュ分離も解説します。"
 sidebar_position: 1
 ---
 

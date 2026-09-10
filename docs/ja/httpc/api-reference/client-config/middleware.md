@@ -1,5 +1,5 @@
 ---
-sidebar_label: "ミドルウェア"
+sidebar_label: "内蔵ミドルウェア"
 title: "ミドルウェア - CyberGo HTTPC | 7 つの内蔵ミドルウェア"
 description: "HTTPC ミドルウェアシステム API リファレンス：Chain オニオンモデル組み合わせ、7 つの内蔵ミドルウェア（Recovery/Logging/Timeout/Metrics/Audit など）、各ミドルウェアの設定構造体と Default コンストラクタ、AuditEvent 監査イベント構造の説明。"
 sidebar_position: 5

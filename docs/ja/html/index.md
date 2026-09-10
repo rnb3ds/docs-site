@@ -1,7 +1,7 @@
 ---
 sidebar_label: "概要"
 title: "HTML 抽出ライブラリ - CyberGo html | コンテンツ抽出・クリーニング"
-description: "CyberGo html は高性能な HTML 抽出・クリーニング Go ライブラリで、スマート記事認識、自動エンコーディング検出、コンテンツクリーニング、マルチフォーマット出力を提供し、Web スクレイピングやドキュメント分析に適しています。"
+description: "CyberGo html は、スマート記事認識、15+ 種のエンコーディング自動検出、Markdown/JSON マルチフォーマット出力、リンク・メディア抽出、バッチ並行処理、監査パイプライン、多層セキュリティを統合した高性能 Go 向け HTML 抽出・クリーニングライブラリで、クローラーに適します。"
 ---
 
 # HTML
@@ -107,7 +107,7 @@ HTML ライブラリは 3 つのコアタイプを中心に構築されていま
 | リンク | [リンク抽出](./guides/core-features/link-extraction) | リンク抽出、グループ化、リソース発見 |
 | エンコーディング | [エンコーディング検出](./guides/core-features/encoding-detection) | 自動検出、手動指定、15+ エンコーディング対応 |
 | 設定 | [設定ガイド](./guides/core-features/configuration) | 4 つのプリセット、6 分野のフィールド、よくある組み合わせ |
-| エラー | [エラー処理](./guides/error-handling) | 5 種のエラー、errors.Is/As、context キャンセル |
+| エラー | [エラー処理](./guides/performance/error-handling) | 5 種のエラー、errors.Is/As、context キャンセル |
 | パフォーマンス | [キャッシュと再利用](./guides/performance/processor-cache) | Processor ライフサイクル、キャッシュチューニング |
 | バッチ | [バッチ処理](./guides/performance/batch-processing) | 並行バッチ抽出、WorkerPool チューニング |
 | セキュリティ | [セキュリティ概要](./guides/security/) | セキュリティ機能、監査システム、本番チェックリスト |

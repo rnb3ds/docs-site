@@ -1,7 +1,7 @@
 ---
 sidebar_label: "자주 묻는 질문"
 title: "자주 묻는 질문 - CyberGo html | 주요 질문 답변"
-description: "CyberGo html 자주 묻는 질문: 패키지 함수와 Processor 선택 기준, 자동 인코딩 감지 원리, 입력 크기 제한, 배치 상한, 빈 텍스트 진단 방법, 통계 모니터링과 감사 로그 설정 등 실전 문제 해결을 다룹니다."
+description: "CyberGo html 자주 묻는 질문 답변: 패키지 함수와 Processor 선택 기준, 15+ 인코딩 감지 원리, 입력 크기·DOM 깊이 방어, 빈 텍스트 진단, GetStatistics 모니터링, 감사 로그 설정, 캐시 최적화 등 실전 문제 해결을 다룹니다."
 sidebar_position: 1
 ---
 
@@ -140,7 +140,7 @@ cfg.Scorer = &MyScorer{}
 
 ## 커스텀 Scorer 는 동시성 안전해야 하나요?
 
-필요합니다. 단일 Processor 가 여러 동시 `Extract` 호출에서 공유될 때, `Score`/`ShouldRemove` 가 여러 goroutine 에서 동시에 트리거됩니다. 커스텀 Scorer 가 가변 상태(캐시, 카운터)를 가지고 있다면 자체적으로 잠금 동기화해야 합니다. 라이브러리 내장 `DefaultScorer` 는 읽기 전용이며 자연스럽게 동시성 안전합니다.
+필요합니다. 단일 Processor 가 여러 동시 `Extract` 호출에서 공유될 때, `Score`/`ShouldRemove` 가 여러 goroutine 에서 동시에 트리거됩니다. 커스텀 Scorer 가 가변 상태(캐시, 카운터)를 가지고 있다면 자체적으로 잠금 동기화해야 합니다. 라이브러리 내장 기본 스코어러(내부 구현, 익스포트되지 않음)는 읽기 전용이며 자연스럽게 동시성 안전합니다.
 
 :::warning 무상태 우선
 커스텀 Scorer 를 무상태(전달된 `ContentNode`만으로 계산)로 설계하는 것을 권장합니다. 잠금 오버헤드를 피할 뿐만 아니라 근본적으로 동시성 문제를 제거합니다. 집계 통계가 필요할 때는 결과를 Scorer 자신이 아닌 `Processor`의 통계 채널에 기록하세요.
@@ -151,7 +151,7 @@ cfg.Scorer = &MyScorer{}
 캐시 Key 는 인코딩 변환 후의 UTF-8 콘텐츠를 기반으로, xxHash 스타일 알고리즘으로 128 비트(16 바이트) 해시를 생성합니다:
 
 - 64KB 이하(`maxCacheKeySize`): 전체 콘텐츠에 대해 계산
-- 64KB 초과: 5점 샘플링 사용(헤드, 테일, 3개 균등 분포 지점), 총 샘플링 예산 4096 바이트(`cacheKeySample`, 각 지점 약 818 바이트), 추가로 콘텐츠 총 길이를 혼합하여 유일성 강화
+- 64KB 초과: 5점 샘플링 사용(헤드, 테일, 3개 균등 분포 지점), 총 샘플링 예산 4096 바이트(`cacheKeySample`, 각 지점 약 819 바이트), 추가로 콘텐츠 총 길이를 혼합하여 유일성 강화
 - 동일한 UTF-8 콘텐츠(원래 인코딩이 GBK, Shift_JIS, Windows-1252 중 무엇이든)는 동일한 Key 생성
 
 :::tip 인코딩 정규화의 이점
@@ -218,7 +218,7 @@ cfg.MaxCacheEntries = 0 // 캐시 비활성화, Key 생성 스킵(제로 오버�
 
 ## ExtractToMarkdown 은 캐시를 사용하나요?
 
-사용하지 않습니다. `ExtractToMarkdown`은 내부적으로 `buildFormatProcessor`로 임시 Processor 를 생성하며, 이 Processor 는 명시적으로 캐시를 비활성화합니다(`MaxCacheEntries = 0` + `NewCache(0, 0)`). 주 Processor 의 캐시를 읽지도 쓰지도 않습니다.
+사용하지 않습니다. `ExtractToMarkdown`은 내부적으로 `buildFormatProcessor`로 임시 Processor 를 생성하며, 이 Processor 는 명시적으로 캐시를 비활성화합니다(`MaxCacheEntries = 0`, 내부적으로 용량 0 캐시로 구성, 익스포트되지 않음). 주 Processor 의 캐시를 읽지도 쓰지도 않습니다.
 
 :::tip 왜 이렇게 설계되었나요
 Markdown 형식 변환은 출력 형태가 다를 뿐, 추출 자체의 결과가 주 캐시를 오염시켜서는 안 됩니다(그렇지 않으면 같은 콘텐츠가 형식에 따라 여러 번 캐시됨). 임시 Processor 는 주 Processor 의 `Scorer`를 재사용하며, `InlineImageFormat`/`InlineLinkFormat`만 덮어씁니다. 설정은 값 복사로 격리되어 공유 상태의 동시 수정을 방지합니다.
@@ -235,10 +235,10 @@ ASP.NET WebForms, JSF, JSP 등 많은 서버사이드 프레임워크가 전체 
 - 화이트리스트 MIME 타입만 허용: 이미지(gif/jpeg/png/webp/bmp/avif 등), 폰트(woff/woff2/ttf/otf), PDF
 - **`image/svg+xml` 차단**(SVG 는 JavaScript 를 내장할 수 있음)
 - 빈 미디어 타입 차단(예: `data:;base64,...`)
-- 크기 상한 `MaxDataURILength`(100KB)
+- 크기 상한 있음: 내부 상한(100KB)에 의해 제한되며, 설정으로 조정할 수 없음
 - base64 인코딩 부분의 문자 유효성 검증
 
-차단된 URL 은 `AuditRecorder`를 통해 사유(예: `malformed data URL`, `unsafe media type`)가 기록됩니다.
+차단된 URL 은 감사 이벤트로 기록됩니다 — 설정된 `AuditSink`가 `AuditEventBlockedURL` 타입의 `AuditEntry`를 수신하며, 그 `Message`에 차단 사유(예: `malformed data URL`, `unsafe media type in data URL`)가 담깁니다.
 
 ## 배치 처리가 10000 건을 초과하면 어떻게 되나요?
 
@@ -263,7 +263,7 @@ fmt.Println(br.Failed)             // == len(hugeSlice)
 
 ## 문서 스마트 인식(ExtractArticle)의 평가 알고리즘은 어떻게 되나요?
 
-기본 스코어러(`DefaultScorer`)는 다차원 신호를 기반으로 각 요소 노드의 콘텐츠 관련성 점수를 계산하며, 가장 높은 점수의 노드를 문서 컨테이너로 선택합니다. 평가 차원은 다음과 같습니다:
+내장 기본 스코어러(내부 구현, 익스포트되지 않음)는 다차원 신호를 기반으로 각 요소 노드의 콘텐츠 관련성 점수를 계산하며, 가장 높은 점수의 노드를 문서 컨테이너로 선택합니다. 평가 차원은 다음과 같습니다:
 
 | 차원 | 긍정 신호 | 부정 신호 |
 |------|----------|----------|
@@ -333,3 +333,9 @@ cfg.TableFormat = "html" // HTML 테이블 유지
 - `ExtractAllLinks`는 `[]LinkResource`를 반환하며, **정제되지 않은** HTML 의 모든 리소스 링크를 열거합니다 (`<script src>`, `<iframe>`, `<link>` 등 포함), `Type` 분류 포함
 
 두 함수를 순차적으로 호출해도 서로 영향을 주지 않습니다. 전형적인 시나리오: 먼저 `Extract`로 본문 콘텐츠를 추출한 뒤, `ExtractAllLinks`로 페이지가 참조하는 모든 리소스를 수집합니다.
+
+## 관련 문서
+
+- [개요](../) - 기능 총정리와 아키텍처 개요
+- [빠른 시작](../getting-started/) - 5 분 입문 튜토리얼
+- [API 레퍼런스 개요](../api-reference/) - 전체 API 문서 입구

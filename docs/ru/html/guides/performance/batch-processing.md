@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Пакетная обработка на практике"
 title: "Пакетная обработка - CyberGo html | параллельное извлечение"
-description: "Пакетная обработка CyberGo html: четыре пакетных API, структура BatchResult, параллелизм WorkerPoolSize, отмена контекста и обработка частичных неудач."
+description: "Пакетная обработка CyberGo html: ExtractBatch и ещё три API, BatchResult, WorkerPoolSize, отмена контекста, частичные неудачи, настройка под объём данных."
 sidebar_position: 2
 ---
 
@@ -57,7 +57,6 @@ package main
 
 import (
     "fmt"
-    "log"
 
     "github.com/cybergodev/html"
 )
@@ -137,7 +136,8 @@ for batch := range batchQueue {
 cfg := html.DefaultConfig()
 
 // Устанавливаем параллелизм по числу ядер CPU (с потолком 256)
-if n := runtime.NumCPU(); n > 256 {
+n := runtime.NumCPU()
+if n > 256 {
     n = 256
 }
 cfg.WorkerPoolSize = n
@@ -257,5 +257,5 @@ for i := 0; i < len(allPages); i += batchSize {
 
 - [Повторное использование Processor и кэш](./processor-cache) - отличие кэша между функциями пакета и экземпляром
 - [Оптимизация производительности](./performance) - повышение пропускной способности и тайм-ауты
-- [Обработка ошибок](../error-handling) - сигнатурные ошибки и обработка пакетных ошибок
+- [Обработка ошибок](./error-handling) - сигнатурные ошибки и обработка пакетных ошибок
 - [Справочник API: пакетная обработка](../../api-reference/modules/batch) - полные сигнатуры API

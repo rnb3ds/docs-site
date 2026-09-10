@@ -1,7 +1,7 @@
 ---
 sidebar_label: "개요"
 title: "HTML 추출 라이브러리 - CyberGo html | HTML 콘텐츠 추출·정제"
-description: "CyberGo html 은 고성능 HTML 콘텐츠 추출·정제 Go 라이브러리로, 스마트 문서 인식, 15종 자동 인코딩 감지, XSS 정제, 배치 처리, 다중 포맷 출력을 제공해 웹 스크래핑과 문서 분석에 적합합니다."
+description: "CyberGo html 은 고성능 Go HTML 콘텐츠 추출·정제 라이브러리로, 스마트 문서 인식, 15+ 인코딩 감지, Markdown·JSON 출력, 링크·미디어 추출, 배치 처리, 감사 파이프라인과 다층 보안으로 웹 스크래핑·콘텐츠 수집에 적합합니다."
 ---
 
 # HTML
@@ -107,7 +107,7 @@ HTML 라이브러리는 세 가지 핵심 타입을 중심으로 구축됩니다
 | 링크 | [링크 추출](./guides/core-features/link-extraction) | 링크 추출, 그룹화, 리소스 발견 |
 | 인코딩 | [인코딩 감지](./guides/core-features/encoding-detection) | 자동 감지, 수동 지정, 15+ 인코딩 지원 |
 | 설정 | [설정 가이드](./guides/core-features/configuration) | 네 가지 프리셋, 6대 필드, 일반 조합 |
-| 오류 | [오류 처리](./guides/error-handling) | 5가지 오류, errors.Is/As, context 취소 |
+| 오류 | [오류 처리](./guides/performance/error-handling) | 5가지 오류, errors.Is/As, context 취소 |
 | 성능 | [캐시와 재사용](./guides/performance/processor-cache) | Processor 라이프사이클, 캐시 튜닝 |
 | 배치 | [배치 처리](./guides/performance/batch-processing) | 동시 배치 추출, WorkerPool 튜닝 |
 | 보안 | [보안 개요](./guides/security/) | 보안 기능, 감사 시스템, 프로덕션 체크리스트 |

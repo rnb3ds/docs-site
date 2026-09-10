@@ -34,6 +34,18 @@ sidebar_position: 1
 传入自定义 `Config` 时**不走 `sync.Pool`**——池只存储基于 `DefaultConfig()` 的 Processor，无法安全复用配置不同的实例。此时每次调用都会 `New` 一个临时 Processor，用完即 `Close`。若需在高频调用中复用自定义配置，请直接创建 [Processor](./processor)。
 :::
 
+## 构造函数
+
+### New
+
+创建独立的 `Processor` 实例，是缓存、统计与审计能力的唯一入口。
+
+```go
+func New(cfg ...Config) (*Processor, error)
+```
+
+`cfg ...Config` 同样遵循上表的解析规则（不传用 `DefaultConfig()`，传 ≥2 个返回 `ErrMultipleConfigs`），随后执行 `Config.Validate()`。与包函数的池化/临时实例不同，`New` 返回的实例**长期持有缓存与累计统计**。完整方法列表与生命周期见 [Processor](./processor)。
+
 ## 内容提取
 
 ### Extract
@@ -169,6 +181,14 @@ result, err := html.ExtractWithContext(ctx, data)
 | `ExtractAllLinksFromFile` | `(filePath string, cfg ...Config) ([]LinkResource, error)` | 从文件提取链接 |
 | `ExtractAllLinksWithContext` | `(ctx context.Context, htmlBytes []byte, cfg ...Config) ([]LinkResource, error)` | 带上下文 |
 | `ExtractAllLinksFromFileWithContext` | `(ctx context.Context, filePath string, cfg ...Config) ([]LinkResource, error)` | 文件 + 上下文 |
+
+配套的分组工具函数：
+
+```go
+func GroupLinksByType(links []LinkResource) map[string][]LinkResource
+```
+
+按 `LinkResource.Type` 字段（`link`/`image`/`css` 等）把链接资源分组为 `map[类型][]LinkResource`。
 
 详细用法和示例详见 [链接提取](../modules/links)。
 

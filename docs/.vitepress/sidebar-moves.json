@@ -149,11 +149,7 @@
   },
   {
     "from": "html/advanced/error-handling",
-    "to": "html/guides/error-handling"
-  },
-  {
-    "from": "html/guides/performance/error-handling",
-    "to": "html/guides/error-handling"
+    "to": "html/guides/performance/error-handling"
   },
   {
     "from": "html/security",
@@ -310,5 +306,9 @@
   {
     "from": "json/api-reference/print",
     "to": "json/getting-started/print"
+  },
+  {
+    "from": "html/guides/error-handling",
+    "to": "html/guides/performance/error-handling"
   }
 ]

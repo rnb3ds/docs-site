@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Encoding Detection"
 title: "Encoding Detection - CyberGo html | Charset Detection Guide"
-description: "CyberGo html encoding detection: four-level detection priority, 15+ encodings, Config.Encoding override, statistical detection, and GBK/Shift_JIS examples."
+description: "CyberGo html encoding detection: four-level priority (manual, meta, statistical, UTF-8 fallback), 15+ encodings, Config.Encoding, GBK/Shift_JIS/Windows-1252."
 sidebar_position: 5
 ---
 
@@ -289,5 +289,5 @@ func main() {
 ## Next Steps
 
 - [Content Extraction](./content-extraction) - Extraction workflow and article recognition
-- [Error Handling](../error-handling) - Sentinel errors and structured error handling
+- [Error Handling](../performance/error-handling) - Sentinel errors and structured error handling
 - [API Reference: Config](../../api-reference/core/config) - The Encoding field and all configuration options

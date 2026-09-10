@@ -1,7 +1,7 @@
 ---
 sidebar_label: "Извлечение медиа на практике"
 title: "Извлечение медиа - CyberGo html | видео и аудио на практике"
-description: "Извлечение медиа CyberGo html на практике: видео из трёх источников, аудио из двух, поля VideoInfo и AudioInfo, различие файлов и embed по Type."
+description: "Извлечение медиа CyberGo html: видео из трёх источников — HTML, DOM, regex; аудио из двух; поля VideoInfo и AudioInfo, Type для файлов и embed."
 sidebar_position: 2
 ---
 

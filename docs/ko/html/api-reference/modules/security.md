@@ -1,7 +1,7 @@
 ---
 sidebar_label: "보안 보호"
 title: "보안 보호 - CyberGo html | 다층 보안 API 레퍼런스"
-description: "CyberGo html 보안 API: 콘텐츠 정제, 입력 크기 제한, DOM 깊이 제한, 경로 순회 방지와 AllowedBaseDir 샌드박스, HighSecurityConfig 프리셋, 처리 타임아웃과 보안 오류 타입을 제공합니다."
+description: "CyberGo html 다층 보안 API: 콘텐츠 정제, MaxInputSize 입력 제한, MaxDepth DOM 깊이 제한, 경로 순회 방지와 AllowedBaseDir 파일 샌드박스, HighSecurityConfig 프리셋과 InputError 등 보안 오류 타입을 제공합니다."
 sidebar_position: 5
 ---
 
@@ -145,8 +145,20 @@ defer p.Close()
 | `ErrInvalidFilePath` | 파일 경로 검증 실패 (경로 순회 포함) |
 | `ErrInternalPanic` | 내부 패닉 복구됨 |
 
+### 구조화된 오류 타입
+
+위 센티널 오류는 실제로 세 가지 구조화된 오류 타입으로 래핑되어 반환되며, 원인 파악에 필요한 컨텍스트 필드를 담고 있습니다:
+
+| 타입 | 필드 | 메서드 | `Unwrap()` 대상 |
+|------|------|------|-----------------|
+| `*InputError` | `Op` / `Size` / `MaxSize` / `InputErr` | `Error` | `InputErr`(nil 이 아닐 때), 그렇지 않으면 `ErrInputTooLarge` |
+| `*ConfigError` | `Field` / `Value` / `Message` | `Error` | `ErrInvalidConfig` |
+| `*FileError` | `Op` / `Path` / `FileErr` | `Error` / `SafePath` / `MarshalJSON` | `ErrFileNotFound` / 원본 오류 / `ErrInvalidFilePath` |
+
+`errors.Is(err, html.ErrXxx)`로 센티널 범주를 판정하고, `errors.As(err, &typedErr)`로 구조화된 컨텍스트(예: `InputError.Size`/`MaxSize`, `ConfigError.Field`)를 꺼내 함께 사용하세요.
+
 :::info
-완전한 오류 타입 정의(`InputError`, `ConfigError`, `FileError`)와 `errors.Is`/`errors.As` 사용법은 [상수와 오류](../types/constants)를 참조하세요.
+세 오류 타입의 전체 정의와 `errors.Is`/`errors.As` 오류 처리 패턴은 [상수와 오류](../types/constants)를 참조하세요.
 :::
 
 ## 패닉 복구
