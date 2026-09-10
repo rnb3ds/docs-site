@@ -23,7 +23,6 @@ go get github.com/cybergodev/jwt
 package main
 
 import (
-    "fmt"
     "time"
 
     "github.com/cybergodev/jwt"

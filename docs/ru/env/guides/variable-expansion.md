@@ -1,6 +1,6 @@
 ---
 sidebar_label: "Подстановка переменных"
-title: "Подстановка переменных - CyberGo env | синтаксис ${VAR}"
+title: "Синтаксис ${VAR} - CyberGo env | подстановка переменных"
 description: "Руководство по подстановке переменных CyberGo env: ссылки ${VAR} и ${VAR:-default}, проверка обязательных ${VAR:?err} и обнаружение циклических ссылок."
 sidebar_position: 3
 sidebar_icon: "🔧"

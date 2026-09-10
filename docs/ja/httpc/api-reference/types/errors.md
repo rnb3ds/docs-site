@@ -193,7 +193,7 @@ if err != nil {
 
 ```go
 // 元の URL: https://admin:secret@api.example.com/data
-// Error() 出力: GET https://***:***@api.example.com/data: ...
+// Error() 出力：GET https://***:***@api.example.com/data: ...
 ```
 
 エンジン分類パス（`classifyErrorWithSanitizedURL`）は初回分類時にマスクを完了し `urlSanitized=true` を設定します。以降の `Error()` 呼び出しは冗長な url.Parse をスキップし、毎回のログ出力で割り当てが発生するのを回避します。
@@ -244,6 +244,36 @@ if err != nil {
 |------|----------|----------|
 | `ErrClientClosed` | `"client is closed"` | Close() 後にクライアントを使用した |
 
+## セキュリティ警告 API
+
+### SetSecurityWarnOutput
+
+<!-- check-code: skip -->
+```go
+func SetSecurityWarnOutput(w io.Writer)
+```
+
+セキュリティ警告の出力先を変更します（デフォルトは `os.Stderr`）。`warnings.go` で定義されています。`io.Discard` を渡すと警告を完全に抑制できます。テスト環境の判定は実行ファイル名（`.test` サフィックス）と `GO_TEST`/`GOTEST` 環境変数に基づきます。
+
+2 種類の危険な構成が**非テスト環境**で警告を発生させます。各警告はプロセスごとに最大 1 回だけ出力されます（`sync.Once`）。
+
+| トリガー条件 | 警告の要点 |
+|---------|---------|
+| `TestingConfig()` で作成したクライアントを非テスト環境で使用 | TLS 証明書検証、SSRF 防護、URL/Header 検証がすべて無効化されていることを示し、`SecureConfig()` または `DefaultConfig()` への切り替えを推奨 |
+| `Security.InsecureSkipVerify=true` かつ非テスト環境 | TLS 証明書検証が無効化されていること、テストでのみ使用すべきこと、本番では `SecureConfig()` を使うべきことを案内 |
+
+```go
+// セキュリティ警告を抑制（構成が安全であることを確認した場合のみ使用）
+httpc.SetSecurityWarnOutput(io.Discard)
+
+// カスタムログ出力へリダイレクト
+httpc.SetSecurityWarnOutput(log.Writer())
+```
+
+:::warning 抑制の乱用に注意
+`SetSecurityWarnOutput(io.Discard)` はセキュリティ警告を黙って握りつぶします。構成を十分に監査した後（例：`TestingConfig` がテストバイナリのみで使われていることを確認）にのみ使用し、本番デプロイで警告を隠す目的では使用しないでください。セキュリティ実践の完全なリストは [セキュリティ概要](../../security/) を参照してください。
+:::
+
 ## 実用的なマッチングパターン
 
 ### errors.As で ClientError を抽出
@@ -255,11 +285,11 @@ if err != nil {
     if errors.As(err, &clientErr) {
         // 構造化フィールドにアクセス
         fmt.Printf("エラーコード: %s\n", clientErr.Code())
-        fmt.Printf("エラータイプ: %d\n", clientErr.Type)
+        fmt.Printf("エラータイプ：%d\n", clientErr.Type)
         fmt.Printf("リクエスト: %s %s\n", clientErr.Method, clientErr.URL)
-        fmt.Printf("試行回数: %d\n", clientErr.Attempts)
+        fmt.Printf("試行回数：%d\n", clientErr.Attempts)
         if clientErr.StatusCode != 0 {
-            fmt.Printf("ステータスコード: %d\n", clientErr.StatusCode)
+            fmt.Printf("ステータスコード：%d\n", clientErr.StatusCode)
         }
     }
 }
@@ -289,9 +319,9 @@ if errors.As(err, &clientErr) {
     if cause != nil {
         var opErr *net.OpError
         if errors.As(cause, &opErr) {
-            fmt.Println("操作:", opErr.Op)
-            fmt.Println("ネットワーク:", opErr.Net)
-            fmt.Println("アドレス:", opErr.Addr)
+            fmt.Println("操作：", opErr.Op)
+            fmt.Println("ネットワーク：", opErr.Net)
+            fmt.Println("アドレス：", opErr.Addr)
         }
     }
 }
@@ -308,3 +338,4 @@ if errors.As(err, &clientErr) {
 - [エラー処理](../../guides/error-handling) - 完全なエラー処理ガイド
 - [定数とタイプ](./constants) - BodyKind などの定数リファレンス
 - [リトライとフォールトトレランス](../../guides/retry-fault-tolerance) - リトライポリシーガイド
+- [セキュリティ概要](../../security/) - SetSecurityWarnOutput とセキュリティ構成の実践

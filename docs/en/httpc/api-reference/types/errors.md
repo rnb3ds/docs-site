@@ -244,6 +244,36 @@ In callbacks for middleware such as `MetricsMiddleware` and `LoggingMiddleware`,
 |------|----------|----------|
 | `ErrClientClosed` | `"client is closed"` | Using the client after Close() |
 
+## Security Warning API
+
+### SetSecurityWarnOutput
+
+<!-- check-code: skip -->
+```go
+func SetSecurityWarnOutput(w io.Writer)
+```
+
+Redirects the output target of security warnings (default `os.Stderr`); defined in `warnings.go`. Passing `io.Discard` suppresses the warnings entirely. Test environments are detected by the executable file name (`.test` suffix) and the `GO_TEST`/`GOTEST` environment variables.
+
+Two categories of dangerous configuration trigger warnings in **non-test environments**, each printed at most once per process (`sync.Once`):
+
+| Trigger condition | Warning summary |
+|---------|---------|
+| A client created with `TestingConfig()` is used outside a test environment | Points out that TLS certificate verification, SSRF protection, and URL/Header validation are all disabled, and recommends `SecureConfig()` or `DefaultConfig()` instead |
+| `Security.InsecureSkipVerify=true` in a non-test environment | Points out that TLS certificate verification is disabled, that it should only be used in tests, and that production should use `SecureConfig()` |
+
+```go
+// Suppress security warnings (only use after confirming the configuration is safe)
+httpc.SetSecurityWarnOutput(io.Discard)
+
+// Redirect to a custom log output
+httpc.SetSecurityWarnOutput(log.Writer())
+```
+
+:::warning Don't overuse suppression
+`SetSecurityWarnOutput(io.Discard)` silently swallows security warnings. Use it only after fully auditing your configuration (e.g. confirming that `TestingConfig` is only used in test binaries), and never to mask warnings in a production deployment. For the complete list of security practices, see the [Security Overview](../../security/).
+:::
+
 ## Practical Matching Patterns
 
 ### errors.As to Extract ClientError
@@ -308,3 +338,4 @@ if errors.As(err, &clientErr) {
 - [Error Handling](../../guides/error-handling) - Complete error handling guide
 - [Constants and Types](./constants) - BodyKind and other constants reference
 - [Retry and Fault Tolerance](../../guides/retry-fault-tolerance) - Retry strategy guide
+- [Security Overview](../../security/) - SetSecurityWarnOutput and security configuration practices

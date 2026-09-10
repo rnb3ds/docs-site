@@ -36,6 +36,7 @@ func main() {
     // dd.Fatal("fatal error")  // ⚠️ os.Exit(1)을 호출합니다
 
     // 포맷팅
+    username := "alice"
     dd.Infof("user %s logged in", username)
 
     // 구조화된 로깅
