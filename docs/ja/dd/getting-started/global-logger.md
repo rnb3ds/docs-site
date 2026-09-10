@@ -36,6 +36,7 @@ func main() {
     // dd.Fatal("fatal error")  // ⚠️ os.Exit(1) を呼び出します
 
     // フォーマット指定
+    username := "alice"
     dd.Infof("user %s logged in", username)
 
     // 構造化ログ

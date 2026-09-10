@@ -23,7 +23,6 @@ Go 1.25+ が必要です。
 package main
 
 import (
-    "fmt"
     "time"
 
     "github.com/cybergodev/jwt"

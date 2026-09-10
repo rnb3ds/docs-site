@@ -36,6 +36,7 @@ func main() {
     // dd.Fatal("fatal error")  // ⚠️ вызывает os.Exit(1)
 
     // Форматированное логирование
+    username := "alice"
     dd.Infof("user %s logged in", username)
 
     // Структурированное логирование

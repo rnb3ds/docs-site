@@ -169,7 +169,7 @@ if err != nil {
         case httpc.ErrorTypeTimeout:
             log.Println("请求超时")
         case httpc.ErrorTypeNetwork:
-            log.Println("网络错误:", clientErr.Message)
+            log.Println("网络错误：", clientErr.Message)
         case httpc.ErrorTypeTLS:
             log.Println("TLS 错误")
         case httpc.ErrorTypeCertificate:
@@ -193,7 +193,7 @@ if err != nil {
 
 ```go
 // 原始 URL: https://admin:secret@api.example.com/data
-// Error() 输出: GET https://***:***@api.example.com/data: ...
+// Error() 输出：GET https://***:***@api.example.com/data: ...
 ```
 
 引擎分类路径（`classifyErrorWithSanitizedURL`）在首次分类时即完成脱敏并设置 `urlSanitized=true`，后续 `Error()` 调用跳过冗余的 url.Parse，避免每次日志输出都产生分配。
@@ -271,7 +271,7 @@ httpc.SetSecurityWarnOutput(log.Writer())
 ```
 
 :::warning 勿滥用抑制
-`SetSecurityWarnOutput(io.Discard)` 会静默吞掉安全警告。仅在已充分审计配置（如确认 `TestingConfig` 只用于测试二进制）时使用，切勿在生产部署中用它掩盖警告。安全实践的完整清单见[安全指南](../../security)。
+`SetSecurityWarnOutput(io.Discard)` 会静默吞掉安全警告。仅在已充分审计配置（如确认 `TestingConfig` 只用于测试二进制）时使用，切勿在生产部署中用它掩盖警告。安全实践的完整清单见[安全指南](../../security/)。
 :::
 
 ## 实用匹配模式
@@ -285,11 +285,11 @@ if err != nil {
     if errors.As(err, &clientErr) {
         // 访问结构化字段
         fmt.Printf("错误码: %s\n", clientErr.Code())
-        fmt.Printf("错误类型: %d\n", clientErr.Type)
+        fmt.Printf("错误类型：%d\n", clientErr.Type)
         fmt.Printf("请求: %s %s\n", clientErr.Method, clientErr.URL)
-        fmt.Printf("尝试次数: %d\n", clientErr.Attempts)
+        fmt.Printf("尝试次数：%d\n", clientErr.Attempts)
         if clientErr.StatusCode != 0 {
-            fmt.Printf("状态码: %d\n", clientErr.StatusCode)
+            fmt.Printf("状态码：%d\n", clientErr.StatusCode)
         }
     }
 }
@@ -319,9 +319,9 @@ if errors.As(err, &clientErr) {
     if cause != nil {
         var opErr *net.OpError
         if errors.As(cause, &opErr) {
-            fmt.Println("操作:", opErr.Op)
-            fmt.Println("网络:", opErr.Net)
-            fmt.Println("地址:", opErr.Addr)
+            fmt.Println("操作：", opErr.Op)
+            fmt.Println("网络：", opErr.Net)
+            fmt.Println("地址：", opErr.Addr)
         }
     }
 }
@@ -338,4 +338,4 @@ if errors.As(err, &clientErr) {
 - [错误处理](../../guides/error-handling) - 完整错误处理指南
 - [常量与类型](./constants) - BodyKind 等常量参考
 - [重试与容错](../../guides/retry-fault-tolerance) - 重试策略指南
-- [安全指南](../../security) - SetSecurityWarnOutput 与安全配置实践
+- [安全指南](../../security/) - SetSecurityWarnOutput 与安全配置实践

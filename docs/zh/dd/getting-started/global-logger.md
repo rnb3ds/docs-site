@@ -36,6 +36,7 @@ func main() {
     // dd.Fatal("致命错误")  // ⚠️ 会调用 os.Exit(1)
 
     // 格式化
+    username := "alice"
     dd.Infof("用户 %s 已登录", username)
 
     // 结构化日志
